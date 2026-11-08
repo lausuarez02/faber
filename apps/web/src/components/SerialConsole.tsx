@@ -7,7 +7,7 @@ export function SerialConsole() {
   return (
     <section className="console" aria-label="Serial console">
       <div className="panel-head">
-        <span className="eyebrow">Serial · 9600</span>
+        <span className="eyebrow">Serial · UART0</span>
         <button
           className="btn btn-icon btn-small"
           aria-label="Clear console"
