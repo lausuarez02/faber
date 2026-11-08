@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Sounds while ≥ 3 V is applied with the right polarity." },
+    "timing": { "level": "approx", "note": "Starts and stops instantly; the internal ~2.3 kHz oscillator is not simulated cycle by cycle and there is no audio output yet." },
+    "analog": { "level": "approx", "note": "Modelled as a 180 Ω load (≈ 25 mA at 5 V) with a reverse-blocking diode; loudness ramps linearly from 3 V to 5 V." },
+    "power": { "level": "approx", "note": "Current draw is realistic for a 5 V active buzzer, so GPIO overcurrent checks apply." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["DC-driven beeping", "Polarity (no sound when reversed)", "Typical 25 mA load"],
+  "doesNotEmulate": ["Audio output", "Exact oscillator frequency (2.3 kHz ± 300 Hz)", "Sound pressure level", "Behaviour when driven with PWM/tone()"],
+  "testOnRealDevice": ["Loudness at 3.3 V", "Driving with tone() or PWM (active buzzers can sound distorted)"]
+}

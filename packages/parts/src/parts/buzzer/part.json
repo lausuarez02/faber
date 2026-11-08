@@ -1,0 +1,20 @@
+{
+  "id": "buzzer",
+  "name": "Active buzzer (5 V)",
+  "category": "output",
+  "description": "Active piezo buzzer with a built-in oscillator: it beeps at about 2.3 kHz whenever DC is applied, so digitalWrite(HIGH) is enough (no tone() needed). Polarised: + to the pin, − to GND. Draws about 25 mA at 5 V.",
+  "pins": [
+    { "id": "POS", "label": "+", "x": 20, "y": 66, "type": "passive", "description": "Positive, the longer leg." },
+    { "id": "NEG", "label": "−", "x": 40, "y": 66, "type": "passive", "description": "Negative, to GND." }
+  ],
+  "size": { "w": 60, "h": 70 },
+  "limits": { "maxCurrentmA": 30, "maxVoltage": 7, "minVoltage": 3, "ratedVoltage": 5 },
+  "footprint": "THT 12 mm round buzzer, 7.6 mm lead pitch",
+  "bindings": [
+    { "key": "sounding", "type": "boolean", "description": "True while the buzzer is beeping." },
+    { "key": "volume", "type": "number", "description": "Relative loudness 0..1 (0 below 3 V, 1 at 5 V and above)." },
+    { "key": "volts", "type": "number", "description": "Voltage across the buzzer (+ minus −)." },
+    { "key": "currentmA", "type": "number", "description": "Current into the + pin in mA." }
+  ],
+  "tags": ["buzzer", "beeper", "piezo", "active buzzer", "sound", "alarm", "output"]
+}

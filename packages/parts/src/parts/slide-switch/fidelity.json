@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Break-before-make SPDT: COM connects to exactly one throw." },
+    "timing": { "level": "approx", "note": "Switches instantly; contact bounce is not modelled." },
+    "analog": { "level": "approx", "note": "Closed contact 0.01 Ω, open contact a perfect open circuit." },
+    "power": { "level": "n/a", "note": "Contact rating is documented but not enforced." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Two-position SPDT switching"],
+  "doesNotEmulate": ["Contact bounce", "Mid-travel (both open) state", "Contact wear"],
+  "testOnRealDevice": ["Debounce when the switch selects modes in firmware"]
+}

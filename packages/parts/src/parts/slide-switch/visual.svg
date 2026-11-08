@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 50" width="80" height="50">
+  <path d="M20 30 V44 M40 30 V44 M60 30 V44" stroke="#9AA3AF" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="8" y="12" width="64" height="20" rx="3" fill="#1C2027" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="18" y="17" width="44" height="10" rx="2" fill="#0D0F12"/>
+  <g transform="translate(0 0)" data-bind="transform:knobTransform">
+    <rect x="20" y="4" width="12" height="22" rx="2" fill="#323944" stroke="#5A6474" stroke-width="1"/>
+    <path d="M23 9 H29 M23 12 H29 M23 15 H29" stroke="#8A93A0" stroke-width="1"/>
+  </g>
+  <text x="10" y="9" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">1</text>
+  <text x="66" y="9" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">3</text>
+  <circle data-pin="1" cx="20" cy="44" r="3" fill="#C9CED6"/>
+  <circle data-pin="2" cx="40" cy="44" r="3" fill="#C9CED6"/>
+  <circle data-pin="3" cx="60" cy="44" r="3" fill="#C9CED6"/>
+</svg>

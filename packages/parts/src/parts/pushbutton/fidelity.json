@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Open/closed contact between the two sides, legs on each side always tied." },
+    "timing": { "level": "approx", "note": "Switches instantly; real contacts bounce for 1–10 ms, which firmware must debounce." },
+    "analog": { "level": "approx", "note": "Closed contact is 0.01 Ω, open contact is a perfect open circuit." },
+    "power": { "level": "n/a", "note": "Contact rating (50 mA, 12 V) is documented but not enforced." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Momentary press / release", "Internally tied leg pairs"],
+  "doesNotEmulate": ["Contact bounce", "Contact resistance variation and wear", "Leakage"],
+  "testOnRealDevice": ["Debounce logic (real buttons bounce)", "Long-press / double-click timing"]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "potentiometer",
+  "name": "Potentiometer (10 kΩ)",
+  "category": "input",
+  "description": "Rotary linear potentiometer. The wiper W moves from pin 1 (position 0, fully counter-clockwise) to pin 2 (position 1). Wire 1 to GND, 2 to 5 V and W to an analog pin to read 0–1023.",
+  "pins": [
+    { "id": "1", "label": "1", "x": 20, "y": 84, "type": "passive", "description": "Track end at position 0 (usually GND)." },
+    { "id": "W", "label": "W", "x": 40, "y": 84, "type": "passive", "description": "Wiper." },
+    { "id": "2", "label": "2", "x": 60, "y": 84, "type": "passive", "description": "Track end at position 1 (usually VCC)." }
+  ],
+  "size": { "w": 80, "h": 90 },
+  "props": [
+    { "id": "position", "label": "Position", "type": "number", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "description": "Wiper position, 0 (at pin 1) to 1 (at pin 2)." },
+    { "id": "resistance", "label": "Track resistance", "type": "number", "default": 10000, "min": 100, "max": 1000000, "unit": "Ω", "description": "End-to-end resistance." }
+  ],
+  "limits": { "maxPowerW": 0.125, "maxVoltage": 50 },
+  "footprint": "THT 9 mm rotary potentiometer, 3 pins at 0.1 in",
+  "bindings": [
+    { "key": "position", "type": "number", "description": "Wiper position 0..1." },
+    { "key": "knobAngle", "type": "number", "description": "Knob angle in degrees, −135 (position 0) to +135 (position 1)." },
+    { "key": "knobTransform", "type": "string", "description": "SVG transform rotating the knob about its centre: \"rotate(<knobAngle> 40 38)\"." }
+  ],
+  "tags": ["potentiometer", "pot", "knob", "variable resistor", "trimmer", "analog", "input"]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "slide-switch",
+  "name": "Slide switch (SPDT)",
+  "category": "input",
+  "description": "Single-pole double-throw slide switch. The middle pin (2, common) connects to pin 1 in position 0 and to pin 3 in position 1. Click to toggle.",
+  "pins": [
+    { "id": "1", "label": "1", "x": 20, "y": 44, "type": "passive", "description": "Connected to 2 in position 0." },
+    { "id": "2", "label": "COM", "x": 40, "y": 44, "type": "passive", "description": "Common (middle) pin." },
+    { "id": "3", "label": "3", "x": 60, "y": 44, "type": "passive", "description": "Connected to 2 in position 1." }
+  ],
+  "size": { "w": 80, "h": 50 },
+  "props": [
+    { "id": "position", "label": "Position", "type": "number", "default": 0, "min": 0, "max": 1, "step": 1, "description": "0 = COM–1, 1 = COM–3." }
+  ],
+  "limits": { "maxCurrentmA": 300, "maxVoltage": 50 },
+  "footprint": "THT SS12D00-style SPDT slide switch, 0.1 in pitch",
+  "bindings": [
+    { "key": "position", "type": "number", "description": "0 or 1." },
+    { "key": "knobTransform", "type": "string", "description": "SVG transform for the slider: \"translate(0 0)\" or \"translate(16 0)\"." }
+  ],
+  "tags": ["switch", "slide", "spdt", "toggle", "input"]
+}

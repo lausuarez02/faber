@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 90" width="80" height="90">
+  <defs>
+    <filter id="rgb-led-halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <circle cx="40" cy="26" r="20" fill="#000000" opacity="0" filter="url(#rgb-led-halo)" data-bind="fill:color,opacity:brightness"/>
+  <path d="M10 86 V64 L28 52 M30 86 V52 M50 86 V64 L42 52 M70 86 V60 L46 50" stroke="#9AA3AF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 50 V24 A12 12 0 0 1 52 24 V50 Z" fill="#2E333B" stroke="#E9EDF2" stroke-opacity="0.35" stroke-width="1"/>
+  <circle cx="35" cy="34" r="5" fill="#FF3B2F" opacity="0" data-bind="opacity:r"/>
+  <circle cx="45" cy="34" r="5" fill="#5CF2A1" opacity="0" data-bind="opacity:g"/>
+  <circle cx="40" cy="25" r="5" fill="#4DA3FF" opacity="0" data-bind="opacity:b"/>
+  <path d="M28 50 V24 A12 12 0 0 1 52 24 V50 Z" fill="#000000" opacity="0" data-bind="fill:color,opacity:brightness"/>
+  <path d="M32 24 A8 8 0 0 1 38 16" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M26 48 H54 V53 H26 Z" fill="#E9EDF2" fill-opacity="0.18" stroke="#E9EDF2" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="4" y="78" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">R</text>
+  <text x="33" y="78" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">−</text>
+  <text x="53" y="78" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">G</text>
+  <text x="73" y="78" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">B</text>
+  <circle data-pin="R" cx="10" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="COM" cx="30" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="G" cx="50" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="B" cx="70" cy="86" r="3" fill="#C9CED6"/>
+</svg>

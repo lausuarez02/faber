@@ -1,0 +1,22 @@
+{
+  "name": "@jumper/parts",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "gen": "tsx scripts/gen-registry.ts",
+    "test": "vitest run",
+    "gen:check": "tsx scripts/gen-registry.ts --check"
+  },
+  "dependencies": {
+    "@jumper/project-format": "workspace:*",
+    "@jumper/sim-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@jumper/sim-backends": "workspace:*"
+  }
+}

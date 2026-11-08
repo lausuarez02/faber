@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 340" width="140" height="340">
+  <defs>
+    <filter id="arduino-nano-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="140" height="340" rx="6" fill="#0F1E22" stroke="#24434A" stroke-width="2"/>
+  <rect x="48" y="-2" width="44" height="30" rx="2" fill="#6E7682" stroke="#9AA3AF" stroke-width="1"/>
+  <rect x="54" y="4" width="32" height="16" rx="1" fill="#3A4250"/>
+  <rect x="0" y="20" width="20" height="300" fill="#0B0D10" stroke="#2A3039" stroke-width="1"/>
+  <rect x="120" y="20" width="20" height="300" fill="#0B0D10" stroke="#2A3039" stroke-width="1"/>
+  <g transform="rotate(45 70 170)">
+    <rect x="52" y="152" width="36" height="36" rx="2" fill="#15181D" stroke="#3A4250" stroke-width="1"/>
+    <circle cx="58" cy="158" r="2" fill="#0B0D10"/>
+  </g>
+  <text x="70" y="216" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle">ATMEGA328P</text>
+  <rect x="58" y="290" width="24" height="20" rx="2" fill="#2B313B" stroke="#4A5363" stroke-width="1"/>
+  <circle cx="70" cy="300" r="6" fill="#5A6474"/>
+  <text x="70" y="324" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle">RESET</text>
+  <text x="70" y="250" font-family="Bricolage Grotesque" font-size="15" font-weight="800" fill="#E9EDF2" text-anchor="middle">NANO</text>
+  <rect x="44" y="50" width="10" height="6" rx="1" fill="#3A2A12" stroke="#5A4A2A" stroke-width="0.5"/>
+  <circle cx="49" cy="53" r="7" fill="#FFB23F" opacity="0" filter="url(#arduino-nano-glow)" data-bind="opacity:led_l"/>
+  <rect x="44" y="50" width="10" height="6" rx="1" fill="#FFB23F" opacity="0" data-bind="opacity:led_l"/>
+  <text x="49" y="66" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle">L</text>
+  <rect x="86" y="50" width="10" height="6" rx="1" fill="#143A26" stroke="#2A5A3A" stroke-width="0.5"/>
+  <circle cx="91" cy="53" r="7" fill="#5CF2A1" opacity="0.8" display="none" filter="url(#arduino-nano-glow)" data-bind="visible:powered"/>
+  <rect x="86" y="50" width="10" height="6" rx="1" fill="#5CF2A1" display="none" data-bind="visible:powered"/>
+  <text x="91" y="66" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle">ON</text>
+  <text x="22" y="30" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">13</text>
+  <text x="22" y="50" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">3.3V</text>
+  <text x="22" y="70" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">AREF</text>
+  <text x="22" y="90" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A0</text>
+  <text x="22" y="110" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A1</text>
+  <text x="22" y="130" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A2</text>
+  <text x="22" y="150" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A3</text>
+  <text x="22" y="170" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A4</text>
+  <text x="22" y="190" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A5</text>
+  <text x="22" y="210" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A6</text>
+  <text x="22" y="230" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">A7</text>
+  <text x="22" y="250" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">5V</text>
+  <text x="22" y="270" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">RST</text>
+  <text x="22" y="290" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">GND</text>
+  <text x="22" y="310" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">VIN</text>
+  <text x="118" y="30" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">12</text>
+  <text x="118" y="50" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~11</text>
+  <text x="118" y="70" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~10</text>
+  <text x="118" y="90" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~9</text>
+  <text x="118" y="110" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">8</text>
+  <text x="118" y="130" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">7</text>
+  <text x="118" y="150" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~6</text>
+  <text x="118" y="170" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~5</text>
+  <text x="118" y="190" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">4</text>
+  <text x="118" y="210" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">~3</text>
+  <text x="118" y="230" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">2</text>
+  <text x="118" y="250" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">GND</text>
+  <text x="118" y="270" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">RST</text>
+  <text x="118" y="290" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">0</text>
+  <text x="118" y="310" font-family="IBM Plex Mono" font-size="8" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">1</text>
+  <circle data-pin="D13" cx="10" cy="30" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="3V3" cx="10" cy="50" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="AREF" cx="10" cy="70" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A0" cx="10" cy="90" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A1" cx="10" cy="110" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A2" cx="10" cy="130" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A3" cx="10" cy="150" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A4" cx="10" cy="170" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A5" cx="10" cy="190" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A6" cx="10" cy="210" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A7" cx="10" cy="230" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="5V" cx="10" cy="250" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="RESET.2" cx="10" cy="270" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND.2" cx="10" cy="290" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="VIN" cx="10" cy="310" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D12" cx="130" cy="30" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D11" cx="130" cy="50" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D10" cx="130" cy="70" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D9" cx="130" cy="90" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D8" cx="130" cy="110" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D7" cx="130" cy="130" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D6" cx="130" cy="150" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D5" cx="130" cy="170" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D4" cx="130" cy="190" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D3" cx="130" cy="210" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D2" cx="130" cy="230" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND.1" cx="130" cy="250" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="RESET.1" cx="130" cy="270" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D0" cx="130" cy="290" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D1" cx="130" cy="310" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+</svg>

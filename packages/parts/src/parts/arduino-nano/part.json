@@ -1,0 +1,88 @@
+{
+  "id": "arduino-nano",
+  "name": "Arduino Nano",
+  "category": "board",
+  "description": "Breadboard-friendly ATmega328P board at 16 MHz and 5 V; same chip and pin names as the Uno (D0–D13, A0–A5) plus analog-only A6/A7. Runs real compiled firmware (avr8js). D13 drives the on-board L LED.",
+  "pins": [
+    {"id":"D0","label":"0","x":130,"y":290,"type":"digital","voltage":{"min":0,"max":5},"protocols":["uart-rx"],"description":"ATmega328P PD0; McuBackend pin \"D0\"."},
+    {"id":"D1","label":"1","x":130,"y":310,"type":"digital","voltage":{"min":0,"max":5},"protocols":["uart-tx"],"description":"ATmega328P PD1; McuBackend pin \"D1\"."},
+    {"id":"D2","label":"2","x":130,"y":230,"type":"digital","voltage":{"min":0,"max":5},"protocols":["int0"],"description":"ATmega328P PD2; McuBackend pin \"D2\"."},
+    {"id":"D3","label":"~3","x":130,"y":210,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm","int1"],"description":"ATmega328P PD3; McuBackend pin \"D3\"."},
+    {"id":"D4","label":"4","x":130,"y":190,"type":"digital","voltage":{"min":0,"max":5},"description":"ATmega328P PD4; McuBackend pin \"D4\"."},
+    {"id":"D5","label":"~5","x":130,"y":170,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm"],"description":"ATmega328P PD5; McuBackend pin \"D5\"."},
+    {"id":"D6","label":"~6","x":130,"y":150,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm"],"description":"ATmega328P PD6; McuBackend pin \"D6\"."},
+    {"id":"D7","label":"7","x":130,"y":130,"type":"digital","voltage":{"min":0,"max":5},"description":"ATmega328P PD7; McuBackend pin \"D7\"."},
+    {"id":"D8","label":"8","x":130,"y":110,"type":"digital","voltage":{"min":0,"max":5},"description":"ATmega328P PB0; McuBackend pin \"D8\"."},
+    {"id":"D9","label":"~9","x":130,"y":90,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm"],"description":"ATmega328P PB1; McuBackend pin \"D9\"."},
+    {"id":"D10","label":"~10","x":130,"y":70,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm","spi-ss"],"description":"ATmega328P PB2; McuBackend pin \"D10\"."},
+    {"id":"D11","label":"~11","x":130,"y":50,"type":"digital","voltage":{"min":0,"max":5},"protocols":["pwm","spi-mosi"],"description":"ATmega328P PB3; McuBackend pin \"D11\"."},
+    {"id":"D12","label":"12","x":130,"y":30,"type":"digital","voltage":{"min":0,"max":5},"protocols":["spi-miso"],"description":"ATmega328P PB4; McuBackend pin \"D12\"."},
+    {"id":"D13","label":"13","x":10,"y":30,"type":"digital","voltage":{"min":0,"max":5},"protocols":["spi-sck"],"description":"ATmega328P PB5; McuBackend pin \"D13\". Also drives the on-board L LED (through a buffer, so it does not load the pin)."},
+    {"id":"A0","label":"A0","x":10,"y":90,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC0 / ADC0; McuBackend pin \"A0\". Usable as digital I/O too."},
+    {"id":"A1","label":"A1","x":10,"y":110,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC1 / ADC1; McuBackend pin \"A1\". Usable as digital I/O too."},
+    {"id":"A2","label":"A2","x":10,"y":130,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC2 / ADC2; McuBackend pin \"A2\". Usable as digital I/O too."},
+    {"id":"A3","label":"A3","x":10,"y":150,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC3 / ADC3; McuBackend pin \"A3\". Usable as digital I/O too."},
+    {"id":"A4","label":"A4","x":10,"y":170,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc","i2c-sda"],"description":"ATmega328P PC4 / ADC4; McuBackend pin \"A4\". Usable as digital I/O too."},
+    {"id":"A5","label":"A5","x":10,"y":190,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc","i2c-scl"],"description":"ATmega328P PC5 / ADC5; McuBackend pin \"A5\". Usable as digital I/O too."},
+    {"id":"A6","label":"A6","x":10,"y":210,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC6 / ADC6; McuBackend pin \"A6\". Usable as digital I/O too."},
+    {"id":"A7","label":"A7","x":10,"y":230,"type":"analog","voltage":{"min":0,"max":5},"protocols":["adc"],"description":"ATmega328P PC7 / ADC7; McuBackend pin \"A7\". Usable as digital I/O too."},
+    {"id":"3V3","label":"3.3V","x":10,"y":50,"type":"power","voltage":{"min":3.2,"max":3.4},"description":"3.3 V rail, 50 mA max. Stamped as a 3.3 V source."},
+    {"id":"AREF","label":"AREF","x":10,"y":70,"type":"analog","voltage":{"min":0,"max":5},"description":"ADC reference input. Not used by the M0 ADC model (AVCC = 5 V reference)."},
+    {"id":"5V","label":"5V","x":10,"y":250,"type":"power","voltage":{"min":4.75,"max":5.25},"description":"Regulated 5 V rail (USB or on-board regulator). Stamped as a 5 V source."},
+    {"id":"RESET.2","label":"RST","x":10,"y":270,"type":"digital","voltage":{"min":0,"max":5},"description":"Active-low reset with on-board 10 kΩ pull-up. Not wired to the emulated CPU in M0."},
+    {"id":"GND.2","label":"GND","x":10,"y":290,"type":"ground","description":"Ground (all GND pins are one node)."},
+    {"id":"VIN","label":"VIN","x":10,"y":310,"type":"power","voltage":{"min":7,"max":12},"description":"Raw input to the regulator (barrel jack). Not driven in M0 (USB power assumed)."},
+    {"id":"GND.1","label":"GND","x":130,"y":250,"type":"ground","description":"Ground (all GND pins are one node)."},
+    {"id":"RESET.1","label":"RST","x":130,"y":270,"type":"digital","voltage":{"min":0,"max":5},"description":"Active-low reset with on-board 10 kΩ pull-up. Not wired to the emulated CPU in M0."}
+  ],
+  "size": {
+    "w": 140,
+    "h": 340
+  },
+  "limits": {
+    "maxCurrentmA": 40,
+    "recommendedPinCurrentmA": 20,
+    "maxTotalCurrentmA": 200,
+    "maxVoltage": 5.5
+  },
+  "footprint": "18 × 45 mm DIP-30, 0.6 in row spacing",
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power (always true in M0); lights the ON LED."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "led_l",
+      "type": "number",
+      "description": "On-board L LED brightness 0..1, follows D13."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_D13 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "avr8js",
+    "chip": "atmega328p",
+    "clockHz": 16000000,
+    "vcc": 5,
+    "fqbn": "arduino:avr:nano:cpu=atmega328"
+  },
+  "tags": [
+    "arduino",
+    "nano",
+    "board",
+    "atmega328p",
+    "avr",
+    "microcontroller",
+    "5v",
+    "breadboard"
+  ]
+}

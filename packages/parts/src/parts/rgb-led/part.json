@@ -1,0 +1,24 @@
+{
+  "id": "rgb-led",
+  "name": "RGB LED (common cathode)",
+  "category": "output",
+  "description": "5 mm RGB LED with three dies sharing one cathode. COM (the longest leg) goes to GND; drive R, G and B from PWM pins, each through its own resistor (about 220 Ω at 5 V).",
+  "pins": [
+    { "id": "R", "label": "R", "x": 10, "y": 86, "type": "passive", "description": "Red anode." },
+    { "id": "COM", "label": "COM (−)", "x": 30, "y": 86, "type": "passive", "description": "Common cathode, the longest leg. To GND." },
+    { "id": "G", "label": "G", "x": 50, "y": 86, "type": "passive", "description": "Green anode." },
+    { "id": "B", "label": "B", "x": 70, "y": 86, "type": "passive", "description": "Blue anode." }
+  ],
+  "size": { "w": 80, "h": 90 },
+  "limits": { "maxCurrentmA": 20, "absMaxCurrentmA": 30, "maxReverseVoltage": 5 },
+  "footprint": "THT 5 mm RGB LED, 4 leads at 0.1 in",
+  "bindings": [
+    { "key": "r", "type": "number", "description": "Red brightness 0..1." },
+    { "key": "g", "type": "number", "description": "Green brightness 0..1." },
+    { "key": "b", "type": "number", "description": "Blue brightness 0..1." },
+    { "key": "brightness", "type": "number", "description": "Brightest channel 0..1 (for the mixed halo)." },
+    { "key": "color", "type": "string", "description": "Mixed emitted colour as #RRGGBB (black when off)." },
+    { "key": "on", "type": "boolean", "description": "True when any channel is lit." }
+  ],
+  "tags": ["rgb", "led", "rgb led", "common cathode", "light", "colour", "pwm", "output"]
+}

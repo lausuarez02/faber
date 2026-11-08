@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Analog part." },
+    "timing": { "level": "approx", "note": "Responds instantly; real CdS cells take ~20 ms to rise and ~30 ms or more to fall." },
+    "analog": { "level": "approx", "note": "Power law R = 15 kΩ · (lux/10)^−0.6, capped at 1 MΩ dark resistance, which follows the GL5528 typical curve. Unit-to-unit spread (10–20 kΩ at 10 lx) and spectral response are not modelled." },
+    "power": { "level": "none", "note": "Dissipation is not checked." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["GL5528 typical resistance vs illuminance (γ = 0.6)", "1 MΩ dark resistance"],
+  "doesNotEmulate": ["Response and recovery time", "Unit-to-unit spread (±33 %)", "Spectral sensitivity (peak 540 nm)", "Temperature dependence"],
+  "testOnRealDevice": ["Calibrate thresholds against the real cell and room light", "Fast light changes (cells are slow)"]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "pushbutton",
+  "name": "Pushbutton (6 mm tactile)",
+  "category": "input",
+  "description": "Momentary 4-leg tactile switch. Legs 1a/1b are always connected, as are 2a/2b; pressing connects side 1 to side 2. Pair it with INPUT_PULLUP and GND for the simplest wiring.",
+  "pins": [
+    { "id": "1a", "label": "1a", "x": 10, "y": 10, "type": "passive", "description": "Side 1 (internally tied to 1b)." },
+    { "id": "1b", "label": "1b", "x": 70, "y": 10, "type": "passive", "description": "Side 1 (internally tied to 1a)." },
+    { "id": "2a", "label": "2a", "x": 10, "y": 70, "type": "passive", "description": "Side 2 (internally tied to 2b)." },
+    { "id": "2b", "label": "2b", "x": 70, "y": 70, "type": "passive", "description": "Side 2 (internally tied to 2a)." }
+  ],
+  "size": { "w": 80, "h": 80 },
+  "limits": { "maxCurrentmA": 50, "maxVoltage": 12 },
+  "footprint": "THT 6×6 mm tactile switch, 6.5 × 4.5 mm leg spacing",
+  "bindings": [
+    { "key": "pressed", "type": "boolean", "description": "True while the button is held down." },
+    { "key": "capTransform", "type": "string", "description": "SVG transform for the cap: \"translate(0 0)\" up, \"translate(0 1.5)\" pressed." }
+  ],
+  "tags": ["button", "pushbutton", "tactile", "switch", "momentary", "input"]
+}

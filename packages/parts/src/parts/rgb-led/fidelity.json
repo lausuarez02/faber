@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Each channel lights with forward current through its die to the common cathode." },
+    "timing": { "level": "approx", "note": "Follows each re-solve; PWM shows as on/off per edge without persistence-of-vision averaging, so mixed PWM colours flicker rather than blend." },
+    "analog": { "level": "approx", "note": "Three piecewise-linear diodes: red 2.0 V knee, green/blue 2.9 V knee (InGaN), close to typical datasheet Vf. No exponential curve or thermal effects." },
+    "power": { "level": "approx", "note": "Per-channel over-current warnings at 20 mA and errors at 30 mA; no actual failure." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Per-channel forward voltage", "Additive colour mix of the three channels", "Per-channel over-current diagnostics"],
+  "doesNotEmulate": ["Exact colour gamut and white balance", "Different luminous efficiency per die", "Thermal drift", "PWM averaging"],
+  "testOnRealDevice": ["Colour mixing and white balance (resistor values per channel)", "PWM colour fades"]
+}

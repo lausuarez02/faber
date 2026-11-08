@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Analog part." },
+    "timing": { "level": "approx", "note": "Position changes apply instantly." },
+    "analog": { "level": "ok", "note": "Two resistors split by position (linear taper) plus 0.5 Ω wiper contact; matches an ideal divider. Tolerance (±20 %) and taper non-linearity are not applied." },
+    "power": { "level": "none", "note": "Track power rating is not checked." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Linear-taper voltage divider", "Configurable track resistance"],
+  "doesNotEmulate": ["±20 % track tolerance", "Wiper noise and dead zones at the ends", "Logarithmic tapers", "Track wear"],
+  "testOnRealDevice": ["Readings near the end stops", "Noise on analogRead (add averaging)"]
+}

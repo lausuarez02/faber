@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Lights whenever enough forward current flows; correct polarity behaviour." },
+    "timing": { "level": "approx", "note": "Follows each re-solve instantly; PWM shows as on/off per edge, there is no persistence-of-vision averaging yet." },
+    "analog": { "level": "approx", "note": "Piecewise-linear diode (knee voltage + dynamic resistance per colour), close to typical datasheet Vf at 20 mA. No exponential I-V curve, no temperature dependence, no reverse breakdown." },
+    "power": { "level": "approx", "note": "Warns above 20 mA and reports burn-out above 30 mA, but the part does not actually fail or degrade." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Forward voltage per colour", "Current-limited brightness", "Reverse polarity (no light)", "Over-current diagnostics"],
+  "doesNotEmulate": ["Exponential diode curve below the knee", "Thermal drift and aging", "Reverse breakdown", "Luminous intensity in mcd / viewing angle", "Actual burn-out"],
+  "testOnRealDevice": ["Brightness at very low currents (< 1 mA)", "PWM dimming smoothness", "Matching brightness between colours"]
+}

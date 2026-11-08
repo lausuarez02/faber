@@ -1,0 +1,35 @@
+{
+  "id": "resistor",
+  "name": "Resistor",
+  "category": "passive",
+  "description": "Through-hole carbon-film resistor, 1/4 W. Limits current, divides voltages, pulls lines up or down.",
+  "pins": [
+    { "id": "1", "label": "1", "x": 10, "y": 12, "type": "passive" },
+    { "id": "2", "label": "2", "x": 90, "y": 12, "type": "passive" }
+  ],
+  "size": { "w": 100, "h": 24 },
+  "props": [
+    {
+      "id": "resistance",
+      "label": "Resistance",
+      "type": "number",
+      "default": 220,
+      "min": 0.1,
+      "max": 100000000,
+      "unit": "Ω",
+      "description": "Nominal resistance in ohms (E12/E24 values recommended, e.g. 220, 330, 1000, 10000)."
+    }
+  ],
+  "limits": { "maxPowerW": 0.25, "maxVoltage": 250 },
+  "footprint": "THT axial, 0.4 in (10.16 mm) lead pitch, 1/4 W",
+  "bindings": [
+    { "key": "resistance", "type": "number", "description": "Resistance in ohms." },
+    { "key": "label", "type": "string", "description": "Formatted value, e.g. \"220 Ω\"." },
+    { "key": "band1", "type": "string", "description": "Colour of the first significant-digit band." },
+    { "key": "band2", "type": "string", "description": "Colour of the second significant-digit band." },
+    { "key": "band3", "type": "string", "description": "Colour of the multiplier band." },
+    { "key": "currentmA", "type": "number", "description": "Current from pin 1 to pin 2 in mA (signed)." },
+    { "key": "powerW", "type": "number", "description": "Dissipated power in W." }
+  ],
+  "tags": ["resistor", "ohm", "passive", "pull-up", "pull-down", "current limiting", "divider"]
+}

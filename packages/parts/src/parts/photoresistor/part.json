@@ -1,0 +1,22 @@
+{
+  "id": "photoresistor",
+  "name": "Photoresistor (LDR, GL5528)",
+  "category": "sensor",
+  "description": "Light-dependent resistor, GL5528 class: about 15 kΩ at 10 lux, under 1 kΩ in bright light, 1 MΩ in the dark. Use it as the top or bottom of a divider with a 10 kΩ resistor into an analog pin.",
+  "pins": [
+    { "id": "1", "label": "1", "x": 10, "y": 76, "type": "passive" },
+    { "id": "2", "label": "2", "x": 30, "y": 76, "type": "passive" }
+  ],
+  "size": { "w": 40, "h": 80 },
+  "props": [
+    { "id": "lux", "label": "Illuminance", "type": "number", "default": 100, "min": 0, "max": 100000, "unit": "lx", "description": "Light falling on the sensor. 1 lx moonlit room, 100 lx living room, 500 lx office, 10 000+ lx daylight." }
+  ],
+  "limits": { "maxPowerW": 0.1, "maxVoltage": 150 },
+  "footprint": "THT 5 mm LDR, 0.1 in lead pitch",
+  "bindings": [
+    { "key": "lux", "type": "number", "description": "Current illuminance in lux." },
+    { "key": "resistance", "type": "number", "description": "Current resistance in ohms." },
+    { "key": "light", "type": "number", "description": "Light level 0..1 on a log scale (0 = dark, 1 = 100 000 lx), for the glow overlay." }
+  ],
+  "tags": ["ldr", "photoresistor", "light sensor", "photocell", "gl5528", "analog", "sensor"]
+}

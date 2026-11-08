@@ -1,0 +1,13 @@
+{
+  "level": "exact",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Passive part." },
+    "timing": { "level": "n/a", "note": "Pure resistance; no parasitic inductance or capacitance." },
+    "analog": { "level": "ok", "note": "Ideal Ohm's law at the nominal value; tolerance (±5 %) and temperature coefficient are not applied." },
+    "power": { "level": "approx", "note": "Dissipation is computed and warned above 1/4 W; heating, derating and failure are not simulated." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Ohm's law at the nominal resistance", "Power dissipation warning above 0.25 W"],
+  "doesNotEmulate": ["±5 % tolerance", "Temperature coefficient", "Thermal noise", "Self-heating and burn-out", "Parasitic L/C"],
+  "testOnRealDevice": ["Circuits that depend on precise resistor ratios (use 1 % parts or trim)", "Resistors dissipating close to their power rating"]
+}
