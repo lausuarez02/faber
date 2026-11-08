@@ -34,21 +34,20 @@ The Blink example opens by default. Press **Run** (or Space) and the LED on the 
 
 - **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone.
 - **Parts:** 10 parts. Each one has a spec, a behavioral model, an SVG visual, a fidelity file and tests.
-- **Simulation:** Arduino Uno (ATmega328P) on [avr8js](https://github.com/wokwi/avr8js), running the real `.hex` that arduino-cli builds.
+- **Simulation:** Arduino Uno and Nano (ATmega328P) on [avr8js](https://github.com/wokwi/avr8js), running the real `.hex` that arduino-cli builds.
   - A small DC circuit solver sets each LED's brightness from the actual current through it, so an LED wired without a resistor is flagged.
   - Time is counted in MCU cycles, never wall-clock time, so the same project gives the same run every time.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
-
 - **Serial console:** the firmware's UART output (Serial.print) shows up live next to the canvas.
 
-What M0 does **not** do yet: I2C/SPI buses, building firmware from the browser, scenario tests, the CLI, the AI agent, and boards other than the Uno. These are on the roadmap below, and none of them is faked in the meantime.
+What M0 does **not** do yet: I2C/SPI buses, building firmware from the browser, scenario tests, the CLI, the AI agent, and boards other than the ATmega328P Uno/Nano. These are on the roadmap below, and none of them is faked in the meantime.
 
 ## Roadmap
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | **M0 Foundations** | Monorepo, brand, project format, canvas (pan/zoom/place/wire), parts spec + 10 parts, avr8js running Blink with a live LED, CI | Done ([STATUS.md](STATUS.md)) |
-| **M1 Real Arduino projects** | arduino-cli builds in a container, serial console, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Planned |
+| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Planned |
 | **M2 The agent** | MCP server exposing every canvas and sim action, built-in agent panel, prompt-to-passing-tests demo | Planned |
 | **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | Planned |
 | **M4 Robots** | Physics world, motors/servos/IMU/distance sensors, rover and robot-arm demos | Planned |

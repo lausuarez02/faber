@@ -91,7 +91,7 @@ The important properties:
 
 | Milestone | Adds |
 | --- | --- |
-| M1 | `services/runner` (containerized arduino-cli builds), a serial console, I2C/SPI buses in sim-core, a scenario test runner, and the `jumper` CLI. |
+| M1 | `services/runner` (containerized arduino-cli builds), serial input, I2C/SPI buses in sim-core, a scenario test runner, and the `jumper` CLI. |
 | M2 | `packages/agent` and an MCP server that exposes canvas and sim actions as tools. |
 | M3 | More backends behind the same `McuBackend` interface (QEMU-ESP32, rp2040js, Renode), the confidence report built from `fidelity.json`, and design-rule checks. |
 | M4 | `packages/physics` (MuJoCo or Rapier) bound to motor and sensor models. |

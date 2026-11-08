@@ -22,4 +22,4 @@ The sketch toggles D13 (`LED_BUILTIN`) every 1000 ms with `delay()` and prints `
 
 It proves that real compiled AVR code runs, that GPIO drives the circuit solver, and that the LED's brightness comes from the actual current through it.
 
-It does not exercise ADC, external interrupts, PWM, or any bus (I2C/SPI). M0 has no serial console in the UI yet, although the bytes are captured in the trace. Those come with later milestones.
+It does not exercise ADC, external interrupts, PWM, or any bus (I2C/SPI); later examples will. Its `Serial.println` output shows up in the web app's serial console.
