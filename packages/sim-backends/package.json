@@ -1,0 +1,18 @@
+{
+  "name": "@jumper/sim-backends",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jumper/sim-core": "workspace:*",
+    "avr8js": "0.21.1",
+    "intel-hex": "0.2.0"
+  }
+}
