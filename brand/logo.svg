@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Jumper">
+  <title>Jumper</title>
+  <!-- A jumper wire bent into a J, with a dupont connector on each end. Original artwork, Apache-2.0. -->
+  <style>
+    .wire { stroke: #FF4D2E; }
+    .housing { fill: #E9EDF2; }
+    .pin { fill: #8A93A0; }
+    .slot { fill: #0D0F12; opacity: .28; }
+    @media (prefers-color-scheme: light) {
+      .wire { stroke: #E0391B; }
+      .housing { fill: #14171C; }
+      .pin { fill: #5F6772; }
+      .slot { fill: #F4F1EA; opacity: .3; }
+    }
+  </style>
+  <path class="wire" d="M43 21 V44 A11 11 0 0 1 21 44 V45" fill="none" stroke-width="9"/>
+  <rect class="pin" x="41.5" y="1" width="3" height="6"/>
+  <rect class="pin" x="19.5" y="25" width="3" height="6"/>
+  <rect class="housing" x="35.5" y="6" width="15" height="17" rx="2.5"/>
+  <rect class="housing" x="13.5" y="30" width="15" height="17" rx="2.5"/>
+  <rect class="slot" x="40" y="10" width="6" height="3" rx="1"/>
+  <rect class="slot" x="18" y="34" width="6" height="3" rx="1"/>
+</svg>

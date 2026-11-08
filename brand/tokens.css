@@ -1,0 +1,90 @@
+/*
+ * Jumper design tokens. Dark-first.
+ * Default (no data-theme) follows the OS: dark unless the OS prefers light.
+ * Force a theme with <html data-theme="dark"> or <html data-theme="light">.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --ink: #0d0f12; /* app / canvas background */
+  --panel: #15181d;
+  --panel-2: #1c2027;
+  --line: #262b33;
+
+  /* text */
+  --text: #e9edf2;
+  --muted: #8a93a0;
+
+  /* accents */
+  --wire: #ff4d2e; /* primary accent: the red jumper wire */
+  --live: #5cf2a1; /* signal HIGH, LED glow, running */
+  --warn: #ffb23f;
+  --data: #4da3ff;
+
+  /* derived */
+  --bg: var(--ink);
+  --grid-dot: #2a3039; /* breadboard dot grid */
+  --wire-ink: #0d0f12; /* text on --wire fills */
+  --focus: var(--data);
+
+  /* type */
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* shape */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --grid-size: 20px; /* canvas snap + dot pitch (0.1" breadboard pitch at 1:1 = 20px) */
+
+  /* type scale (px at 1x; UI is 14px base). See brand/README.md. */
+  --text-xs: 11px; /* pin labels, badges (mono) */
+  --text-sm: 12px; /* secondary UI, serial console (mono) */
+  --text-base: 14px; /* UI body */
+  --text-md: 16px; /* panel titles */
+  --text-lg: 20px; /* section headings (display) */
+  --text-xl: 28px; /* page titles (display) */
+  --text-2xl: 44px; /* marketing / empty states (display) */
+  --leading-tight: 1.15;
+  --leading: 1.45;
+
+  /* glow behind lit LEDs and HIGH signals */
+  --live-glow: color-mix(in srgb, var(--live) 35%, transparent);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ink: #f4f1ea; /* paper */
+  --panel: #ffffff;
+  --panel-2: #faf8f3;
+  --line: #dad5cb;
+  --text: #14171c;
+  --muted: #5f6772;
+  --wire: #e0391b;
+  --live: #14a862;
+  --warn: #c9800f;
+  --data: #1f74d1;
+  --grid-dot: #cfc8bb;
+  --wire-ink: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --ink: #f4f1ea;
+    --panel: #ffffff;
+    --panel-2: #faf8f3;
+    --line: #dad5cb;
+    --text: #14171c;
+    --muted: #5f6772;
+    --wire: #e0391b;
+    --live: #14a862;
+    --warn: #c9800f;
+    --data: #1f74d1;
+    --grid-dot: #cfc8bb;
+    --wire-ink: #ffffff;
+  }
+}
