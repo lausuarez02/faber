@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+blob-report/
+/toolchains/arduino/.cache/
+firmware/build/
+*.log
+
+# Golden firmware is committed (each build/ folder has its own .gitignore keeping only the .hex)
+!examples/*/firmware/build/

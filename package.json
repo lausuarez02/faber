@@ -1,0 +1,32 @@
+{
+  "name": "jumper",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Figma for hardware, with a real simulator underneath.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @jumper/web dev",
+    "build": "pnpm gen && pnpm --filter @jumper/web build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "pnpm --filter @jumper/web test:e2e",
+    "gen": "pnpm --filter @jumper/project-format gen:schema && pnpm --if-present --filter @jumper/parts gen"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
