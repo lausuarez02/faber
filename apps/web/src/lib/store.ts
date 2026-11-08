@@ -4,6 +4,12 @@ import { nextPartId } from "./parts.ts";
 
 export const WIRE_COLORS = ["#FF4D2E", "#FFB23F", "#F2E14A", "#4DA3FF", "#E9EDF2", "#2B3038", "#B47CFF"] as const;
 export const SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+/**
+ * The fastest speed the main-thread simulation holds on a typical laptop. Faster settings are
+ * labelled "best effort" in the menu: the sim runs as fast as its per-frame budget allows
+ * (about 5× for Blink) and the clock shows the real factor.
+ */
+export const RELIABLE_SPEED = 4;
 const HISTORY_LIMIT = 200;
 
 export type RunState = "idle" | "running" | "paused";

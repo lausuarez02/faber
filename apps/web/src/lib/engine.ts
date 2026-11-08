@@ -15,6 +15,12 @@ const WALL_BUDGET_MS = 12; // stop simulating this frame after this much wall ti
 const SLICE_MS = 2; // virtual ms per runFor slice inside a frame
 const SERIAL_CAP = 64 * 1024;
 const HIGH_VOLTS = 1.5;
+/**
+ * The flowing dashes on HIGH wires are a stroke-dashoffset animation, which the browser has
+ * to re-rasterize every frame. Past this many live wires it costs frames (measured: 132 live
+ * wires drop a 200-part canvas to ~54 fps), so the dashes hold still and the wire just glows.
+ */
+const WIRE_MOTION_BUDGET = 32;
 
 interface PartView {
   el: HTMLElement;
@@ -37,6 +43,8 @@ export class Engine {
   private parts = new Map<string, PartView>();
   private wires = new Map<string, { el: SVGElement; live: boolean }>();
   private consoleEl: HTMLElement | null = null;
+  private clockEl: HTMLElement | null = null;
+  private clockText = "";
   private serial = "";
   private serialPending: number[] = [];
   private raf = 0;
@@ -76,6 +84,13 @@ export class Engine {
     }
   }
 
+  /** The virtual-clock readout; written directly every frame so React never re-renders per frame. */
+  registerClock(el: HTMLElement | null): void {
+    this.clockEl = el;
+    this.clockText = "";
+    this.paintClock(this.sim?.timeMs ?? this.store.getState().timeMs);
+  }
+
   get serialText(): string {
     return this.serial;
   }
@@ -106,7 +121,7 @@ export class Engine {
     this.raf = 0;
     const s = this.store.getState();
     if (s.run === "running") s.setRun("paused");
-    s.setStats(this.sim?.timeMs ?? 0, 0);
+    this.setStats(this.sim?.timeMs ?? 0, 0);
   }
 
   reset(): void {
@@ -115,7 +130,7 @@ export class Engine {
       this.sim.reset();
       this.paintAll(true);
     }
-    this.store.getState().setStats(0, 0);
+    this.setStats(0, 0);
   }
 
   /** Throw the simulation away (firmware changed, project replaced…). */
@@ -127,7 +142,7 @@ export class Engine {
     this.paintIdle();
     const s = this.store.getState();
     s.setRun("idle");
-    s.setStats(0, 0);
+    this.setStats(0, 0);
   }
 
   interact(partId: string, kind: "press" | "release"): void {
@@ -209,7 +224,7 @@ export class Engine {
       this.clearSerial();
       if (!this.build()) return;
       if (!wasRunning) this.store.getState().setRun("paused");
-      this.store.getState().setStats(0, 0);
+      this.setStats(0, 0);
       return;
     }
     // Same circuit: push prop changes live.
@@ -256,15 +271,30 @@ export class Engine {
 
     this.window.wall += wallDt;
     this.window.virt += sim.timeMs - v0;
-    // The clock readout follows every frame; the real-time factor is averaged over ~250 ms windows.
+    // The clock readout follows every frame (direct DOM write). The store, and so React, only
+    // hears about it every ~250 ms, with the real-time factor averaged over that window.
+    this.paintClock(sim.timeMs);
     if (now - this.statsAt > 250) {
       this.factor = this.window.wall > 0 ? this.window.virt / this.window.wall : this.factor;
       this.statsAt = now;
       this.window = { wall: 0, virt: 0 };
+      s.setStats(sim.timeMs, this.factor);
     }
-    s.setStats(sim.timeMs, this.factor);
     this.raf = requestAnimationFrame(this.frame);
   };
+
+  private setStats(timeMs: number, factor: number): void {
+    this.store.getState().setStats(timeMs, factor);
+    this.paintClock(timeMs);
+  }
+
+  private paintClock(ms: number): void {
+    if (!this.clockEl) return;
+    const text = fmtTime(ms);
+    if (text === this.clockText) return;
+    this.clockText = text;
+    this.clockEl.textContent = text;
+  }
 
   private flushSerial(): void {
     if (this.serialPending.length === 0) return;
@@ -332,6 +362,7 @@ export class Engine {
     if (!sim) return;
     const wires = this.store.getState().project.wires;
     const byId = new Map(wires.map((w) => [w.id, w]));
+    let liveCount = 0;
     for (const [id, view] of this.wires) {
       const w = byId.get(id);
       let live = false;
@@ -346,8 +377,22 @@ export class Engine {
         view.live = live;
         view.el.dataset.live = String(live);
       }
+      if (live) liveCount++;
     }
+    const first = this.wires.values().next().value;
+    const flow = first?.el.closest<HTMLElement>(".react-flow");
+    const motion = liveCount <= WIRE_MOTION_BUDGET ? "on" : "off";
+    if (flow && flow.dataset.wireMotion !== motion) flow.dataset.wireMotion = motion;
   }
+}
+
+/** Virtual time as mm:ss.mmm. */
+export function fmtTime(ms: number): string {
+  const total = Math.floor(ms);
+  const m = Math.floor(total / 60000);
+  const s = Math.floor((total % 60000) / 1000);
+  const r = total % 1000;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(r).padStart(3, "0")}`;
 }
 
 /** Mirror visual state on the node element so CSS (glow) and tests (data-lit) can read it. */

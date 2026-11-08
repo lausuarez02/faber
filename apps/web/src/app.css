@@ -373,6 +373,10 @@ code {
   font-variant-numeric: tabular-nums;
 }
 
+.clock-x abbr {
+  text-decoration: none;
+}
+
 .clock-x {
   font-size: 10px;
   line-height: 1.1;
@@ -985,6 +989,11 @@ input[type="range"] {
   to {
     stroke-dashoffset: -11;
   }
+}
+
+/* Too many live wires to animate cheaply: the engine sets this, the dashes hold still. */
+.react-flow[data-wire-motion="off"] .wire[data-live="true"] .wire-signal {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

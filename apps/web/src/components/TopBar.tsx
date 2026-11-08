@@ -1,17 +1,9 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useRef, useState, type ChangeEvent } from "react";
 import { safeParseProject, serializeProject } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
-import { SPEEDS, type ThemeChoice } from "../lib/store.ts";
+import { RELIABLE_SPEED, SPEEDS, type ThemeChoice } from "../lib/store.ts";
 import { Wordmark } from "./Logo.tsx";
 import { Icon } from "./Icon.tsx";
-
-function fmtTime(ms: number): string {
-  const total = Math.floor(ms);
-  const m = Math.floor(total / 60000);
-  const s = Math.floor((total % 60000) / 1000);
-  const r = total % 1000;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(r).padStart(3, "0")}`;
-}
 
 const THEME_NEXT: Record<ThemeChoice, ThemeChoice> = { system: "dark", dark: "light", light: "system" };
 
@@ -19,13 +11,14 @@ export function TopBar() {
   const name = useJumper((s) => s.project.name);
   const run = useJumper((s) => s.run);
   const speed = useJumper((s) => s.speed);
-  const timeMs = useJumper((s) => s.timeMs);
   const factor = useJumper((s) => s.factor);
   const theme = useJumper((s) => s.theme);
   const firmware = useJumper((s) => s.firmware);
   const canUndo = useJumper((s) => s.past.length > 0);
   const canRedo = useJumper((s) => s.future.length > 0);
   const [menu, setMenu] = useState(false);
+  // The engine writes the virtual clock straight into this span every frame; React stays out of the frame loop.
+  const clockRef = useCallback((el: HTMLSpanElement | null) => engine.registerClock(el), []);
   const fileRef = useRef<HTMLInputElement>(null);
   const hexRef = useRef<HTMLInputElement>(null);
 
@@ -111,20 +104,35 @@ export function TopBar() {
         <button className="btn btn-icon" data-testid="reset-button" aria-label="Reset simulation" title="Reset to t = 0" onClick={() => engine.reset()}>
           <Icon name="reset" />
         </button>
-        <label className="speed" title="Simulation speed">
+        <label className="speed" title={`Simulation speed. Up to ${RELIABLE_SPEED}× holds steady; above that is best effort, as fast as this browser can run it (the clock shows the real factor).`}>
           <span className="sr-only">Speed</span>
           <select data-testid="speed-select" value={speed} onChange={(e) => useJumper.getState().setSpeed(Number(e.target.value))}>
             {SPEEDS.map((v) => (
               <option key={v} value={v}>
-                {v}×
+                {v}×{v > RELIABLE_SPEED ? " max" : ""}
               </option>
             ))}
           </select>
         </label>
         <div className="clock" data-testid="sim-time" data-run={run} title="Virtual time (MCU cycles), not wall clock">
           <span className={`clock-dot ${running ? "on" : ""}`} />
-          <span className="clock-t">{fmtTime(timeMs)}</span>
-          <span className="clock-x">{running ? (factor > 0 ? `${factor.toFixed(2)}× rt` : "–.––× rt") : run === "paused" ? "paused" : "stopped"}</span>
+          <span className="clock-t" data-testid="sim-clock" ref={clockRef} />
+          <span className="sr-only">, </span>
+          <span className="clock-x" data-testid="sim-factor">
+            {running ? (
+              factor > 0 ? (
+                <>
+                  {factor.toFixed(2)}× <abbr title="real time">rt</abbr>
+                </>
+              ) : (
+                "measuring speed"
+              )
+            ) : run === "paused" ? (
+              "paused"
+            ) : (
+              "stopped"
+            )}
+          </span>
         </div>
       </div>
 

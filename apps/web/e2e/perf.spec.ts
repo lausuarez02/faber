@@ -37,20 +37,40 @@ test("perf: 200 parts while Blink runs", async ({ page }) => {
   await expect(page.locator(".react-flow__node")).toHaveCount(200, { timeout: 15_000 });
   await page.getByRole("button", { name: /fit view/i }).click().catch(() => {});
 
+  const gpu = await page.evaluate(() => {
+    const gl = document.createElement("canvas").getContext("webgl");
+    const info = gl?.getExtension("WEBGL_debug_renderer_info");
+    return info ? String(gl!.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown";
+  });
   const idle = await measureFrames(page, 3000);
   await page.getByTestId("run-button").click();
   await page.waitForTimeout(1000); // warm up
   const stats = await measureFrames(page, 5000);
-  const factor = await page.getByTestId("sim-time").textContent();
+  const simClock = await page.getByTestId("sim-clock").textContent();
+  const simFactor = await page.getByTestId("sim-factor").textContent();
   const lit = await page.locator('[data-lit="true"]').count();
   await page.screenshot({ path: `${SHOTS}/desktop-perf-200.png` });
   mkdirSync("test-results", { recursive: true });
-  writeFileSync("test-results/perf.json", JSON.stringify({ parts: 200, running: stats, idle, simTime: factor }, null, 2));
-  console.log(`[perf] 200 parts idle: ${idle.fps.toFixed(1)} fps, p95 ${idle.p95.toFixed(1)} ms`);
-  console.log(`[perf] 200 parts running: ${stats.fps.toFixed(1)} fps, p50 ${stats.p50.toFixed(1)} ms, p95 ${stats.p95.toFixed(1)} ms, max ${stats.max.toFixed(1)} ms; sim: ${factor}; lit now: ${lit}`);
+  writeFileSync(
+    "test-results/perf.json",
+    JSON.stringify({ parts: 200, gpu, running: stats, idle, simClock, simFactor }, null, 2),
+  );
+  console.log(`[perf] renderer: ${gpu}`);
+  console.log(`[perf] 200 parts idle: ${idle.fps.toFixed(1)} fps, p95 ${idle.p95.toFixed(1)} ms, max ${idle.max.toFixed(1)} ms`);
+  console.log(
+    `[perf] 200 parts running: ${stats.fps.toFixed(1)} fps, p50 ${stats.p50.toFixed(1)} ms, p95 ${stats.p95.toFixed(1)} ms, max ${stats.max.toFixed(1)} ms; sim ${simClock} at ${simFactor}; lit now: ${lit}`,
+  );
   await expect(page.getByTestId("sim-error")).toHaveCount(0);
-  // A loose floor so a real regression fails while a busy CI runner does not.
-  expect(stats.fps).toBeGreaterThan(20);
+
+  // The bar from docs/brief.md is 60 fps with 200 parts. Locally (a real GPU) we hold it:
+  // at least 58 fps on average and 95 % of frames inside one 60 Hz vsync (16.7 ms + jitter).
+  // Shared CI runners have no GPU and composite in software, so CI only guards against a
+  // collapse; the numbers are still written to perf.json and the job log.
+  const bar = process.env.CI ? { fps: 30, p95: 50 } : { fps: 58, p95: 17.5 };
+  expect(idle.fps, "idle fps").toBeGreaterThanOrEqual(bar.fps);
+  expect(idle.p95, "idle p95 frame (ms)").toBeLessThanOrEqual(bar.p95);
+  expect(stats.fps, "running fps").toBeGreaterThanOrEqual(bar.fps);
+  expect(stats.p95, "running p95 frame (ms)").toBeLessThanOrEqual(bar.p95);
 });
 
 interface FrameStats {
