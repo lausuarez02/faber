@@ -44,6 +44,25 @@ const EEPROM_BYTES = 1024;
 const VIL = 0.3;
 const VIH = 0.6;
 
+/**
+ * What this backend models, as data. The board parts' fidelity.json files are checked against
+ * it (packages/parts/src/fidelity.crosscheck.test.ts), so the user-facing fidelity card cannot
+ * drift from the code. Change both together.
+ */
+export const AVR_BACKEND_FACTS = {
+  /** Digital input thresholds as fractions of VCC; between them the last level is kept. */
+  inputThresholds: { low: VIL, high: VIH, hysteresis: true },
+  peripherals: {
+    gpio: true,
+    timers: true,
+    usart: true,
+    adc: true,
+    watchdog: true,
+    spi: false,
+    twi: false,
+  },
+} as const;
+
 interface Machine {
   cpu: CPU;
   ports: { B: AVRIOPort; C: AVRIOPort; D: AVRIOPort };

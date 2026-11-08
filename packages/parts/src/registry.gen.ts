@@ -328,7 +328,7 @@ export const partDefinitions: PartDefinition[] = [
           "protocols": [
             "adc"
           ],
-          "description": "ATmega328P PC6 / ADC6; McuBackend pin \"A6\". Usable as digital I/O too."
+          "description": "ATmega328P ADC6, analog input only (no digital buffer); McuBackend pin \"A6\"."
         },
         {
           "id": "A7",
@@ -343,7 +343,7 @@ export const partDefinitions: PartDefinition[] = [
           "protocols": [
             "adc"
           ],
-          "description": "ATmega328P PC7 / ADC7; McuBackend pin \"A7\". Usable as digital I/O too."
+          "description": "ATmega328P ADC7, analog input only (no digital buffer); McuBackend pin \"A7\"."
         },
         {
           "id": "3V3",
@@ -490,15 +490,15 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART and interrupts behave like the chip."
+          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog and interrupts behave like the chip. SPI and TWI (I2C) are not emulated yet."
         },
         "timing": {
           "level": "approx",
-          "note": "Cycle-counted at 16 MHz on a deterministic virtual clock, so delay()/millis() are exact in virtual time. Peripherals the emulator lacks (e.g. some timer modes, watchdog, sleep) and the crystal's ±50 ppm drift are not modelled."
+          "note": "Cycle-counted at 16 MHz on a deterministic virtual clock, so delay()/millis() are exact in virtual time. Peripherals the emulator lacks (e.g. some timer modes, sleep) and the crystal's ±50 ppm drift are not modelled."
         },
         "analog": {
           "level": "approx",
-          "note": "Pins are ideal sources with 25 Ω output resistance; inputs threshold at VCC/2 (no hysteresis). The ADC reads the solved net voltage against a 5 V reference; AREF, noise and input capacitance are ignored."
+          "note": "Pins are ideal sources with 25 Ω output resistance. Digital inputs use the datasheet thresholds (low ≤ 0.3·VCC, high ≥ 0.6·VCC) and keep their last level in between. The ADC reads the solved net voltage against a 5 V reference; AREF, noise and input capacitance are ignored."
         },
         "power": {
           "level": "approx",
@@ -523,9 +523,10 @@ export const partDefinitions: PartDefinition[] = [
         "RESET pin and the reset button",
         "VIN, barrel jack and regulator limits",
         "Brownout detector",
-        "A6/A7 analog-only inputs (not exposed by the M0 backend)",
-        "Input hysteresis and pin capacitance",
-        "EEPROM persistence between runs"
+        "Pin capacitance",
+        "EEPROM persistence between runs",
+        "SPI and TWI (I2C) peripherals: Wire/SPI sketches will not work",
+        "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)"
       ],
       "testOnRealDevice": [
         "Total current from many pins (200 mA package limit)",
@@ -992,15 +993,15 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART and interrupts behave like the chip."
+          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog and interrupts behave like the chip. SPI and TWI (I2C) are not emulated yet."
         },
         "timing": {
           "level": "approx",
-          "note": "Cycle-counted at 16 MHz on a deterministic virtual clock, so delay()/millis() are exact in virtual time. Peripherals the emulator lacks (e.g. some timer modes, watchdog, sleep) and the crystal's ±50 ppm drift are not modelled."
+          "note": "Cycle-counted at 16 MHz on a deterministic virtual clock, so delay()/millis() are exact in virtual time. Peripherals the emulator lacks (e.g. some timer modes, sleep) and the crystal's ±50 ppm drift are not modelled."
         },
         "analog": {
           "level": "approx",
-          "note": "Pins are ideal sources with 25 Ω output resistance; inputs threshold at VCC/2 (no hysteresis). The ADC reads the solved net voltage against a 5 V reference; AREF, noise and input capacitance are ignored."
+          "note": "Pins are ideal sources with 25 Ω output resistance. Digital inputs use the datasheet thresholds (low ≤ 0.3·VCC, high ≥ 0.6·VCC) and keep their last level in between. The ADC reads the solved net voltage against a 5 V reference; AREF, noise and input capacitance are ignored."
         },
         "power": {
           "level": "approx",
@@ -1024,8 +1025,10 @@ export const partDefinitions: PartDefinition[] = [
         "RESET pin and the reset button",
         "VIN, barrel jack and regulator limits",
         "Brownout detector",
-        "Input hysteresis and pin capacitance",
-        "EEPROM persistence between runs"
+        "Pin capacitance",
+        "EEPROM persistence between runs",
+        "SPI and TWI (I2C) peripherals: Wire/SPI sketches will not work",
+        "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)"
       ],
       "testOnRealDevice": [
         "Total current from many pins (200 mA package limit)",

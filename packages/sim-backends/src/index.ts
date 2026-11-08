@@ -2,7 +2,7 @@ import type { BackendFactory, McuBackend } from "@jumper/sim-core";
 import { createAvrBackend } from "./avr.ts";
 import { boardTypeOf, type BoardType } from "./pins.ts";
 
-export { createAvrBackend } from "./avr.ts";
+export { AVR_BACKEND_FACTS, createAvrBackend } from "./avr.ts";
 export type { AvrBackendOptions } from "./avr.ts";
 export { boardPinMap, boardTypeOf } from "./pins.ts";
 export type { BoardPin, BoardType } from "./pins.ts";
