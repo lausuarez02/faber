@@ -30,6 +30,11 @@ export interface McuBoardOptions {
  *   input/analog  → nothing (high impedance); after each solve the net voltage is fed back with setPinInput().
  *
  * visualState: { powered: true, running: boolean, "pin_<id>": 0|1 for every GPIO }.
+ *
+ * A wired input with nothing driving it (no pull-up, no resistor, an open button) has no DC
+ * path in the circuit. The solver ties such nodes to ground through GMIN, so it reads a steady
+ * LOW, whereas a real pin floats and picks up noise. diagnostics() warns ("floating-input")
+ * about every such pin so the sketch is not mistaken for one that works on hardware.
  */
 export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}): PartModel {
   const mcu = ctx.mcu;
@@ -87,6 +92,20 @@ export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}
             message: `${pin} is sourcing/sinking ${mA.toFixed(0)} mA; the limit is ${maxmA} mA. Add a series resistor.`,
           });
         }
+      }
+      // Before the firmware's first instruction every pin is an input; that is not a finding.
+      // Only nodes some part stamps are in the circuit, so an unwired pin is never "floating".
+      const floatingInputs =
+        mcu && last && ctx.now() > 0
+          ? gpio.filter((pin) => mcu.readPin(pin).mode === "input" && last!.isFloating(ctx.node(pin)))
+          : [];
+      for (const pin of floatingInputs) {
+        out.push({
+          severity: "warning",
+          code: "floating-input",
+          pin,
+          message: `${pin} is an input with nothing driving it, so on real hardware it reads random values (the simulator reads LOW). Use INPUT_PULLUP or add a pull-up/pull-down resistor.`,
+        });
       }
       return out;
     },

@@ -31,6 +31,8 @@ class FakeMcu implements McuBackend {
   private pinCbs = new Set<(p: string, s: PinState, c: number) => void>();
   private serialCbs = new Set<(b: number, c: number) => void>();
   readonly half = 500_000; // 500 ms
+  /** How the "firmware" configures D2. The default sketch uses INPUT_PULLUP. */
+  constructor(private readonly d2Mode: "input" | "input_pullup" = "input_pullup") {}
 
   load(fw: Uint8Array | string) {
     this.loaded = fw === "fake-blink";
@@ -61,7 +63,7 @@ class FakeMcu implements McuBackend {
     const end = this.cycles + n;
     if (!this.started) {
       this.started = true;
-      this.set("D2", { mode: "input_pullup", value: this.pins.get("D2")!.value });
+      this.set("D2", { mode: this.d2Mode, value: this.pins.get("D2")!.value });
       this.set("D13", { mode: "output", value: 0 });
     }
     for (;;) {
@@ -273,6 +275,39 @@ describe("Simulation", () => {
     const codes = sim.diagnostics().map((d) => d.code);
     expect(codes).toContain("led-overcurrent");
     expect(codes).toContain("gpio-overcurrent");
+  });
+
+  it("warns about a wired input with nothing driving it, not about pull-ups or unwired pins", () => {
+    const floating = (sim: Simulation) => sim.diagnostics().filter((d) => d.code === "floating-input");
+    // Firmware that forgets INPUT_PULLUP: D2 is a plain INPUT wired only to an open button.
+    const sim = new Simulation({ project, registry, backendFactory: () => new FakeMcu("input"), firmware: "fake-blink" });
+    expect(floating(sim)).toEqual([]); // t = 0: the firmware has not configured anything yet
+    sim.runFor(10);
+    expect(sim.mcu!.readPin("D2").mode).toBe("input");
+    expect(floating(sim)).toEqual([
+      expect.objectContaining({ partId: "b", pin: "D2", severity: "warning", message: expect.stringMatching(/INPUT_PULLUP/) }),
+    ]);
+    // Pressing the button ties D2 to ground: driven, no warning. Releasing it floats again.
+    sim.interact("btn", { kind: "press" });
+    expect(floating(sim)).toEqual([]);
+    sim.interact("btn", { kind: "release" });
+    expect(floating(sim)).toHaveLength(1);
+
+    // The same circuit with INPUT_PULLUP is fine.
+    const ok = make();
+    ok.runFor(10);
+    expect(ok.mcu!.readPin("D2").mode).toBe("input_pullup");
+    expect(floating(ok)).toEqual([]);
+
+    // An unwired plain input is not worth flagging.
+    const bare = new Simulation({
+      project: parseProject({ ...input, wires: input.wires!.filter((w) => w.id !== "w4" && w.id !== "w5") }),
+      registry,
+      backendFactory: () => new FakeMcu("input"),
+      firmware: "fake-blink",
+    });
+    bare.runFor(10);
+    expect(floating(bare)).toEqual([]);
   });
 
   it("stops, resets and emits events", () => {
