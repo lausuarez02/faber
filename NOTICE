@@ -20,4 +20,22 @@ The web app bundles these fonts under the SIL Open Font License 1.1:
   Bricolage Grotesque  Copyright The Bricolage Grotesque Project Authors
   IBM Plex Sans/Mono   Copyright IBM Corp.
 
+Example firmware
+----------------
+
+The compiled example firmware (examples/*/firmware/*.hex, e.g.
+examples/blink/firmware/blink.hex) is bundled into the web app. Besides the
+example sketch (Apache-2.0), each image is statically linked with:
+
+  Arduino AVR core (arduino:avr 1.8.8)  GNU Lesser General Public License 2.1,
+                                        Copyright (c) the Arduino authors
+  avr-libc                              BSD-3-Clause, Copyright (c) the
+                                        avr-libc authors
+
+The sketch sources sit next to each .hex, and the image can be rebuilt from
+source, with the exact pinned toolchain, by following
+examples/blink/firmware/BUILD.md (scripts/build-firmware.sh and
+toolchains/arduino/Dockerfile). The Arduino AVR core sources are available
+from https://github.com/arduino/ArduinoCore-avr (tag 1.8.8).
+
 The full license texts ship with each package in node_modules.
