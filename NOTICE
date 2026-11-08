@@ -1,0 +1,23 @@
+Jumper
+Copyright 2026 The Jumper Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+All artwork in brand/ and all part visuals in packages/parts are original work
+of the Jumper Authors, released under the same license.
+
+This product depends on, and its web build bundles, third-party software
+distributed under their own licenses, including:
+
+  avr8js            MIT License, Copyright (c) Uri Shaked
+  React, React DOM  MIT License, Copyright (c) Meta Platforms, Inc. and affiliates
+  @xyflow/react     MIT License, Copyright (c) webkid GmbH
+  zustand           MIT License, Copyright (c) Paul Henschel
+  zod               MIT License, Copyright (c) Colin McDonnell
+
+The web app bundles these fonts under the SIL Open Font License 1.1:
+
+  Bricolage Grotesque  Copyright The Bricolage Grotesque Project Authors
+  IBM Plex Sans/Mono   Copyright IBM Corp.
+
+The full license texts ship with each package in node_modules.
