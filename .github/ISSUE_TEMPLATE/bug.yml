@@ -1,0 +1,54 @@
+name: Bug report
+description: Something on the canvas, in the simulator or in the tooling does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If the sim and a **real board** disagree, please say what the real board did. Those reports are gold.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: "I wired an LED to D13 with no resistor and pressed Run. Expected an overcurrent warning; got none."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Steps, or paste/attach the `jumper.json` (and firmware) that shows the problem. Smaller is better.
+      render: json
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Canvas (placing, wiring, pan/zoom)
+        - Simulation (firmware, timing, circuit)
+        - A specific part
+        - Project file (jumper.json)
+        - Build / toolchain
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: part
+    attributes:
+      label: Part id (if it is about a part)
+      placeholder: "led"
+  - type: textarea
+    id: real
+    attributes:
+      label: What the real hardware does (if you checked)
+  - type: input
+    id: env
+    attributes:
+      label: Browser and OS, commit
+      placeholder: "Chrome 140 on macOS 15, commit abc1234"
+    validations:
+      required: true

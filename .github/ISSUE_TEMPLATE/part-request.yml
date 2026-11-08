@@ -1,0 +1,59 @@
+name: New part request
+description: Ask for a part (sensor, display, motor, module...) to be added to the library.
+title: "part: "
+labels: ["part request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Once the fields below are filled in, a maintainer relabels this `good first issue: part` so anyone can pick it up. Want to build it yourself? Say so below and read docs/adding-a-part.md.
+  - type: input
+    id: name
+    attributes:
+      label: Part name
+      description: The common name and the exact chip or module.
+      placeholder: "BME280 temperature / humidity / pressure sensor (breakout)"
+    validations:
+      required: true
+  - type: input
+    id: datasheet
+    attributes:
+      label: Datasheet link
+      description: The manufacturer datasheet, not a shop page.
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: checkboxes
+    id: protocols
+    attributes:
+      label: Protocols / interfaces it uses
+      options:
+        - label: Digital GPIO
+        - label: Analog (ADC)
+        - label: PWM
+        - label: I2C
+        - label: SPI
+        - label: UART
+        - label: 1-Wire / custom timing protocol
+        - label: Power only (regulator, battery...)
+  - type: input
+    id: buy
+    attributes:
+      label: Buy link
+      description: Where people usually get it (one link is enough).
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What should the model do?
+      description: What firmware needs from it, e.g. "answers I2C reads at 0x76 with temperature the user can set". Mention anything you think is hard to simulate.
+  - type: dropdown
+    id: build
+    attributes:
+      label: Will you build it?
+      options:
+        - "No, just requesting"
+        - "Yes, I'd like to build it"
+        - "Maybe, with some help"

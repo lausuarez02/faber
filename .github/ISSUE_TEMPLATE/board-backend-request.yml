@@ -1,0 +1,46 @@
+name: Board backend request
+description: Ask for a new board or MCU family (ESP32, RP2040, STM32, nRF52...) to be emulated.
+title: "board: "
+labels: ["board backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Board backends are big pieces of work. They start with a design note in `docs/decisions/` and follow docs/adding-a-board-backend.md.
+  - type: input
+    id: board
+    attributes:
+      label: Board and chip
+      placeholder: "Raspberry Pi Pico (RP2040)"
+    validations:
+      required: true
+  - type: input
+    id: emulator
+    attributes:
+      label: Open-source emulator that could run it
+      description: Must be MIT / Apache-2.0 compatible. Leave empty if you don't know.
+      placeholder: "rp2040js (MIT)"
+  - type: input
+    id: toolchain
+    attributes:
+      label: Toolchain / framework
+      placeholder: "arduino-cli with arduino-pico core, Pico SDK"
+  - type: checkboxes
+    id: peripherals
+    attributes:
+      label: Peripherals your project needs
+      options:
+        - label: GPIO
+        - label: ADC
+        - label: PWM
+        - label: UART
+        - label: I2C
+        - label: SPI
+        - label: WiFi / Bluetooth
+        - label: USB
+  - type: textarea
+    id: why
+    attributes:
+      label: What do you want to build with it?
+    validations:
+      required: true
