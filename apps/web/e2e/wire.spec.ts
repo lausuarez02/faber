@@ -52,3 +52,31 @@ test("wire: dragging from one pin to another creates a wire", async ({ page }, i
   await expect(page.getByTestId(id)).toHaveCount(0);
   await expect(wires).toHaveCount(before);
 });
+
+test("phone: the dock's Undo and Redo buttons undo a wire by tapping", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile", "desktop has Undo/Redo in the top bar and on the keyboard");
+  await openCanvas(page);
+  const undo = page.getByTestId("dock-undo");
+  const redo = page.getByTestId("dock-redo");
+  await expect(undo).toBeVisible();
+  await expect(redo).toBeVisible();
+  await expect(undo).toBeDisabled();
+
+  const wires = page.locator(".react-flow__edge");
+  const before = await wires.count();
+  const a = (await page.getByTestId("pin-uno-D12").boundingBox())!;
+  const b = (await page.getByTestId("pin-r1-1").boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move((a.x + b.x) / 2, (a.y + b.y) / 2 + 30, { steps: 8 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(wires).toHaveCount(before + 1);
+
+  await undo.tap();
+  await expect(wires).toHaveCount(before);
+  await expect(redo).toBeEnabled();
+  await redo.tap();
+  await expect(wires).toHaveCount(before + 1);
+  await shot(page, info, "dock-undo-redo");
+});

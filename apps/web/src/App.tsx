@@ -59,6 +59,8 @@ export function App() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const firmware = useJumper((s) => s.firmware.status);
   const selected = useJumper((s) => s.selectedParts.length + s.selectedWires.length);
+  const canUndo = useJumper((s) => s.past.length > 0);
+  const canRedo = useJumper((s) => s.future.length > 0);
 
   useEffect(() => {
     void loadInitialFirmware();
@@ -97,6 +99,13 @@ export function App() {
           </button>
           <button className={sheet === "serial" ? "on" : ""} onClick={() => toggle("serial")} data-testid="dock-serial">
             <Icon name="terminal" /> Serial
+          </button>
+          {/* Phones have no keyboard and no room for these in the top bar, so they live here. */}
+          <button className="dock-icon" aria-label="Undo" data-testid="dock-undo" disabled={!canUndo} onClick={() => useJumper.getState().undo()}>
+            <Icon name="undo" />
+          </button>
+          <button className="dock-icon" aria-label="Redo" data-testid="dock-redo" disabled={!canRedo} onClick={() => useJumper.getState().redo()}>
+            <Icon name="redo" />
           </button>
         </nav>
         <Toasts />

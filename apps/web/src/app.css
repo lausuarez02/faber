@@ -1209,7 +1209,7 @@ input[type="range"] {
 
   .dock {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 48px 48px;
     background: var(--panel);
     border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom);
@@ -1230,6 +1230,14 @@ input[type="range"] {
 
   .dock button.on {
     color: var(--text);
+  }
+
+  .dock button.dock-icon {
+    border-left: 1px solid var(--line);
+  }
+
+  .dock button:disabled {
+    opacity: 0.35;
   }
 
   .dock button.on::after {
