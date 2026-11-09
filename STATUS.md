@@ -1,10 +1,64 @@
-# Status: M0 Foundations
+# Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-08. M0 is done: every item in the M0 scope works end to end, the 60 fps bar with 200 parts holds on a machine with a GPU, and every check below is green locally.
+Last updated 2026-11-09. M0 is done (below). This round made Jumper usable by AI agents end to end:
+an agent (Claude Code, Codex, any MCP client) goes from a one-line goal to a wired, programmed and
+tested device using only Jumper's tools. Target devices work: a tamagotchi-style pet on an SSD1306
+OLED, an obstacle-avoiding rover and a two-joint servo arm.
 
 <p align="center"><img src="docs/media/m0-blink.gif" alt="Blink running in Jumper" width="720"></p>
 
-## What works
+## This round (2026-11-09)
+
+| Area | What you can do | Check it with |
+| --- | --- | --- |
+| MCP server | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <dir>`: 34 tools, the recommended loop as server instructions, 3 resources, screenshots returned as images. Verified from outside the repo with Claude Code 2.1.319 (`--mcp-config`) and codex-cli 0.163.0 (`config.toml`) | `packages/mcp/test/mcp.test.ts`, [docs/agents.md](docs/agents.md) |
+| CLI | `jumper` with every operation as a subcommand (`--json`), `call <tool>`, `mcp`, `serve` (add `--no-web` for the hub only), `replay`, `record`, `runner` | `apps/cli/test/cli.test.ts` |
+| Build service | arduino-cli in Docker, content-hash cache, pinned libraries (Adafruit SSD1306/GFX/BusIO/BME280/MPU6050, RTClib, U8g2, LiquidCrystal_PCF8574, Servo…), compile errors as file:line with a fix | `services/runner/test/runner.test.ts` (Docker build byte-identical to the golden Blink) |
+| Session engine | `packages/session`: validated, logged (`.jumper/actions.jsonl`), undoable steps grouped by "why"; design-rule checks; fidelity report; export; fault injection (`disconnect`, `noisy`, `i2c_nack`, `i2c_nack_data`, `i2c_garbage`; faults survive `run {reset: true}`) | `packages/session/test/*.test.ts` |
+| Scenarios | `jumper.json` scenarios with press / set / serial / fault / expect_serial / expect_pin / expect_part steps; robots assert on `world.<field>` (collisions, min_clearance_cm, travelled_cm, pose, sonar_cm, gripper, reached) | `packages/session/test/examples.test.ts` runs every example's scenarios |
+| I2C / SPI | AVR TWI with real SCL timing, SPI, bus faults, wiring errors that name the exact wire (`i2c-swapped`, `i2c-address-conflict`…) | `packages/sim-core/src/bus.test.ts`, `packages/sim-backends/src/twi.test.ts` |
+| PWM | cycle-timed edges on every MCU pin (`sim.pwm(part, pin)`), duty-averaged solving for fast PWM, cycle-exact part events (`pulseIn` works) | `packages/sim-core/src/pwm.test.ts`, [PWM.md](packages/sim-core/PWM.md) |
+| Parts | 21 (was 10): SSD1306 OLED, LCD1602 I2C, DS3231, BME280, MPU6050, SG90 servo, DC motor, L298N, HC-SR04, battery pack, 2WD chassis. Each bus part is tested with real compiled firmware and a real Arduino library | `pnpm --filter @jumper/parts gen:check` |
+| Physics | `packages/physics`: Rapier 2D rover (motors → wheels, sonar raycast, IMU feed), arm kinematics, stepped every 4 ms on the CPU clock (deterministic: Node and Chromium agree to the last digit) | `packages/physics/src/*.test.ts` |
+| Web app | Open any example from the project menu or `?example=tamagotchi` / `rover` / `robot-arm`; OLED and LCD pixels drawn live on the part; a World panel (arena top view or arm side view) for projects with a world; follow mode (`?follow=ws://…`) and replay mode (`?replay=<log>`) | `e2e/robots.spec.ts`, `e2e/follow.spec.ts`, `e2e/live.spec.ts` |
+| Headless screenshot | PNG of the canvas with lit LEDs, OLED pixels and, for robots, the arena / arm panel drawn by the same painters as the web app | `packages/session/test/examples.test.ts` |
+| Examples | `examples/tamagotchi` (6 scenarios), `examples/rover` (2), `examples/robot-arm` (2), each with golden firmware and a video in `media/` | `pnpm jumper test -p examples/<name>` |
+| Agent runs | Claude Code built the tamagotchi (9/9 tests) and the arm (6/6), Codex the rover (5/5, 10 virtual minutes without a collision), each with only the MCP tools; videos and action logs | [docs/media/agent-runs](docs/media/agent-runs/README.md) |
+
+### Checks (local, 2026-11-09)
+
+| Command | Result |
+| --- | --- |
+| `pnpm gen` | 21 parts, schema and `docs/mcp-tools.md` written; running it again changes nothing; `gen:check` reports "registry up to date" |
+| `pnpm typecheck` | 0 errors |
+| `pnpm test` | 52 files, **426 tests passed** (Docker build tests run when Docker is up) |
+| `pnpm test:e2e` | **27 passed, 4 skipped** (device-specific tests on the other device): desktop and phone each run the tamagotchi OLED test, the rover World view test, CLI-driven live follow and replay, plus the M0 tests; the 200-part benchmark still holds 60 fps |
+| Outsider smoke test | From a folder outside the repo: `jumper new`, `place`, `connect`, `check`, `write`, `build` (including a compile error with its fix hint), `run`, `test`, `screenshot`; then an MCP SDK client driving a pet build (I2C wired swapped on purpose, fixed from the error text, OLED read back, button click, fault injection, screenshot): 0 failed calls |
+
+### Measured numbers (this round)
+
+| What | Number |
+| --- | --- |
+| Tamagotchi (heavy I2C traffic), Node | about **2.7× real time** |
+| Rover with physics, Node | about **2.5× real time**; 30 s run: 0 collisions, 13.2 m, closest gap 7.47 cm |
+| Blink through the MCP server | 5 to 6.8× real time |
+| Cached firmware build | about 1 ms; a fresh Blink-sized build about 0.7 to 3 s with a warm image |
+
+### Known gaps (this round)
+
+- **Faults not simulated yet:** brownout, Wi-Fi drop, clock drift, flash full (the tool says so).
+- **Sonar cone is ±15°** (not ±7.5°), `pulseIn()` reads about 0.6 % short on the emulated chip, wheels do not load the motors, and the motor model assumes continuous current. All in the fidelity files.
+- **Servo library** is in the agents' build image (`jumper/arduino-runner:…-r1`, Servo 1.3.0) but not in `toolchains/arduino` (the examples' golden builds); the arm example drives Timer1 directly.
+- **The CLI is one process per command**, so simulation state does not carry over between `jumper run` calls (`jumper screenshot --ms N` runs first). The MCP server keeps state.
+- **The web app does not build firmware**; it loads the examples' committed hex. Agents build through the CLI / MCP server (Docker).
+- **The browser World panel** shows the local simulation and follow / replay; the screenshot only shows the world after a `run` in the same session.
+- **`ir-obstacle` and `ws2812`** parts were not done.
+- **Agent-run videos** add about 12 MB to the repo (`docs/media/agent-runs`); move them to a release or LFS before publishing if size matters.
+- **CI** has still not run on GitHub (no remote). The Docker build tests skip when Docker is not available.
+
+# M0 Foundations (2026-11-08)
+
+## What works (M0)
 
 | Area | What you can do | Check it with |
 | --- | --- | --- |
@@ -20,7 +74,7 @@ Last updated 2026-11-08. M0 is done: every item in the M0 scope works end to end
 | Brand | Logo, wordmark, favicon, social card, `brand/tokens.css` (dark-first, light theme, OS preference) | `brand/README.md` |
 | CI | `.github/workflows/ci.yml`: install, generated files up to date, typecheck, unit tests, Playwright desktop + phone, report upload | Not run on GitHub yet (no remote); every step passes locally |
 
-## Checks (local, 2026-11-08)
+## Checks (M0, local, 2026-11-08)
 
 | Command | Result |
 | --- | --- |
@@ -29,7 +83,7 @@ Last updated 2026-11-08. M0 is done: every item in the M0 scope works end to end
 | `pnpm test` | 21 files, **178 tests passed**, 0 skipped, 0 todo. By package: parts 126 (including the fidelity-vs-backend cross-check), sim-core 26, project-format 11, sim-backends 10, web 5 |
 | `pnpm test:e2e` | **17 passed, 4 skipped** (the skips are device-specific tests on the other device): 8 on desktop (1440×900), 8 on phone (iPhone 13 viewport, Chromium), plus the 200-part benchmark, which runs last and alone in full Chromium with the GPU and gates the 60 fps bar (≥ 58 fps and p95 ≤ 17.5 ms, idle and running; CI without a GPU uses a 30 fps / 50 ms floor). Run three times in a row: green each time |
 
-## Measured numbers
+## Measured numbers (M0)
 
 All measured on the dev Mac (Apple Silicon, 16 cores) while other work was running on it, so treat them as lower bounds.
 
@@ -47,15 +101,15 @@ All measured on the dev Mac (Apple Silicon, 16 cores) while other work was runni
 
 The benchmark is `apps/web/e2e/perf.spec.ts`; it writes `apps/web/test-results/perf.json`, including the GPU it ran on. What was costing frames was not the simulation (about 3 ms of JS per frame) but rendering: the clock re-rendered React every frame, and the flowing-dash animation on 132 HIGH wires made the browser re-rasterize every frame. The clock is now written straight to the DOM, and past 32 live wires the dashes hold still while the wires keep glowing. The old benchmark ran in the headless shell, which composites in software; that measured the CPU rasterizer (about 45 to 55 fps whatever the app did), not what a person with a GPU sees. The demo is re-recorded with `pnpm dev` and then `node apps/web/scripts/record-demo.mjs`.
 
-## Known gaps (honest)
+## Known gaps (M0; some are fixed above)
 
 - **The simulation still runs on the main thread.** It costs about 3 ms per frame at 1×, so the 60 fps bar holds, but a heavy sketch or a much bigger circuit would compete with rendering. Moving it into a Web Worker is planned for M1.
 - **Browser sim speed is reliable up to 4×.** The `8× max` setting is best effort and reaches about 5× real time (Node manages about 6×), because of the 12 ms per-frame budget on the main thread. The clock always shows the real factor.
 - **On machines without a GPU the 200-part canvas renders slower.** In software compositing (for example the Playwright headless shell, or a CI runner) it measures 45 to 55 fps. That is why CI only enforces a 30 fps floor.
 - **With more than 32 HIGH wires at once the dashes stop flowing**; the wires still glow. This keeps the frame rate at 60.
-- **No SPI or TWI (I2C)** in the AVR backend. Sketches that use `Wire` or `SPI` will not work, and the board fidelity cards say so. This is M1 scope.
+- ~~No SPI or TWI (I2C)~~: done this round.
 - **Floating inputs read LOW, not random.** The solver ties a node with no DC path to ground through 1 GΩ. A real pin would pick up noise. The board model raises a `floating-input` warning for any wired input with nothing driving it, and the fidelity cards list it, but the web app does not show part diagnostics yet.
-- **PWM is one pin change per edge**, so `analogWrite` costs one circuit solve per edge. It is correct but slow at high duty-cycle rates.
+- ~~PWM is one solve per edge~~: fast PWM is now solved on duty-averaged values.
 - **All ground pins share one node**, even the grounds of two boards that are not wired together.
 - **Firmware is not built from the browser.** You load the committed `.hex` or open your own; building happens with `scripts/build-firmware.sh` (Docker).
 - **CI has not run on GitHub** because there is no remote yet. Every step of `ci.yml` was run locally.
@@ -63,16 +117,10 @@ The benchmark is `apps/web/e2e/perf.spec.ts`; it writes `apps/web/test-results/p
 - **Contact addresses are placeholders**: `conduct@jumper.dev (TBD)` in `CODE_OF_CONDUCT.md` and `security@jumper.dev (TBD)` in `SECURITY.md`.
 - **The Contributor Covenant text was written from memory.** Check it against the official 2.1 text before publishing.
 
-## Next: M1, real Arduino projects
+## Next
 
-From `docs/brief.md`:
-
-1. arduino-cli builds in a container, triggered from the project (not only from the script).
-2. Serial console: input (send to the board), baud rate handling and timestamps. Output already works.
-3. I2C/SPI buses in the AVR backend, with bus-level parts.
-4. 25 parts.
-5. A scenario test runner (`scenarios` in `jumper.json`).
-6. A CLI `test` command (`jumper test`).
-7. A GitHub Action example.
-
-Also carried over from M0: run the simulation in a Web Worker (raises the speed ceiling above about 5×), show part diagnostics such as `floating-input` in the UI, and publish the CI run once a remote exists.
+1. Serial input from the browser console (send to the board), baud handling and timestamps.
+2. Build firmware from the web app (call the runner service), so a person can edit code on the canvas.
+3. A built-in agent panel in the web app on top of the same session operations.
+4. Run the simulation in a Web Worker (raises the browser speed ceiling above about 5×).
+5. More parts (`ir-obstacle`, `ws2812`, keypad), a GitHub Action example running `jumper test`, and the first CI run once a remote exists.

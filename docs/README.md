@@ -6,11 +6,20 @@
 - [Architecture](architecture.md): the packages, and how data moves from the canvas to the simulator and back.
 - [Fidelity](fidelity.md): what the simulator can promise. Exact, Behavioral and Stub.
 
+## For agents
+
+- [Jumper for agents](agents.md): MCP setup for Claude Code and Codex, the loop, scenario steps, robots, faults.
+- [MCP tools](mcp-tools.md): every tool, generated from the definitions.
+- [Agent runs](media/agent-runs/README.md): Claude Code and Codex building a tamagotchi, a rover and a robot arm, with videos.
+
 ## Reference
 
 - [Project format](project-format.md): `jumper.json`, an annotated example, and the diff-friendliness rules.
 - [Part spec](part-spec.md): `part.json`, `fidelity.json`, SVG bindings, and the model contract.
-- [Contracts](contracts.md): the M0 APIs of every package.
+- [Contracts](contracts.md): the APIs of every package.
+- [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
+- [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.
+- [PWM](../packages/sim-core/PWM.md): cycle-timed PWM measurement and the part hooks it adds.
 
 ## Contributing
 

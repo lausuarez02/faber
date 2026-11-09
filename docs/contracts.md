@@ -1,4 +1,4 @@
-# M0 contracts
+# Contracts
 
 The API every M0 builder codes against. Written in the contracts phase; if you need to change a
 signature here, change it in the code **and** in this file, and say so in your report.
@@ -356,6 +356,55 @@ class Simulation {
 - Clock frequency = `mcu.cyclesPerSecond`. The trace is identical whatever `chunkMs` or `runFor` slicing you use (tested). Each `runFor` counts from the previous call's target, so an MCU instruction that overshoots one call is absorbed by the next and `timeMs` does not drift under per-frame slicing.
 - UI loop: on each animation frame call `sim.runFor(frameMs * speed)` then read `partState(id)` for each part and apply it with `applyVisualState`. Never use wall time inside the sim.
 
+### Buses (`bus.ts`, M1) — full description in `docs/buses.md`
+
+```ts
+interface I2cDevice { i2cAddress(): number; i2cConnect(read, repeated): boolean /* ACK */; i2cWrite(byte): boolean; i2cRead(masterAcks): number; i2cStop(): void }
+interface SpiDevice { spiTransfer(mosi): number /* MISO */; spiSelect?(selected): void }
+class I2cBus { attach(partId, dev): Unsubscribe; list(); setFault(partId, "nack"|"nack-data"|"disconnect"|"garbage"|null); transactions(); onTransaction(cb);
+               start(repeated); connect(addr7, read): boolean; write(b): boolean; read(ack): number; stop() }   // master side
+class SpiBus { attach(partId, dev, selected: () => boolean); setFault(partId, "disconnect"|"garbage"|null); transfer(b): number; select(partId, on) }
+interface McuBusPins { i2c?: { sda; scl }; spi?: { mosi; miso; sck; ss } }
+// McuBackend gains optional: busPins?, attachI2c?(bus), attachSpi?(bus)
+// PartModel gains optional: i2c?: I2cDevice, spi?: SpiDevice
+// PartSpec gains optional: bus?: { i2c?: { addresses: number[]; addressProp?; pullUpOhms?; maxHz? }, spi?: { modes?; maxHz? } }
+// Simulation gains: readonly i2c: I2cBus; readonly spi: SpiBus; setProps(partId, record) (one re-solve);
+//                   setBusFault(partId, fault | null) (readable errors for wrong parts/faults)
+// display.ts: bytesToBase64, base64ToBytes, decodeMonoFrame, monoPixel, monoLitCount, monoToAscii
+```
+
+### PWM and timed hooks (`pwm.ts`, M1) — full description in `packages/sim-core/PWM.md`
+
+```ts
+// Simulation gains: pwm(partId, pinId): PwmReading { highUs, periodUs, duty, freqHz, averaged }
+//                   every(periodMs, cb): Unsubscribe   // fixed-cycle host callback, survives reset() (physics steps here)
+//                   interact(partId, event, { solve?: false })
+// PartContext gains optional: pwm(pinId), setPwm(pinId, { duty, freqHz }), schedule(delayMs, cb) (cycle-exact; cuts the MCU step short)
+// PartModel gains optional: tick?(tMs, dtMs), called every 1 ms of virtual time while armed
+// McuBackend gains optional: stopAt(cycle) so a scheduled event ends the current step at the exact cycle
+```
+
+### Physics (`@jumper/physics`, M1) — full description in `packages/physics/README.md`
+
+```ts
+initPhysics(): Promise<void>                         // loads Rapier 2D (WebAssembly) once
+parseWorld(raw, project?): WorldSpec                 // validates project.world; WorldSpecError names each bad field
+attachPhysics(sim, world): PhysicsBinding            // steps every 4 ms on sim.every(); snapshot(), stats(), trail(), traceHash(), dispose()
+drawWorld(ctx, snap, view, pal?) / drawArm(...)      // pure painters over a Ctx2D subset (web canvas and the session's SVG screenshot)
+armPose(spec, servoAngles) / armReach(spec, x, y)    // forward / inverse kinematics
+```
+
+### Agent surface (`@jumper/session`, `@jumper/mcp`, `apps/cli`, `@jumper/runner`)
+
+```ts
+new ProjectSession({ dir, builder?, actor? }).call(op, args)   // the 34 operations of docs/mcp-tools.md, logged to <dir>/.jumper/actions.jsonl
+// run() result: { t_ms, serial, pins, parts, displays?, world?: { robot?, collisions, min_clearance_cm, travelled_cm, sonar_cm, arm?, assert } }
+// scenarios: expect_part "world.<field>" reads SimHost.worldFields() (robot pose / collisions / arm gripper / reached)
+// run { reset: true } restarts at 0 ms and keeps injected faults
+startStdioServer(argv)                                          // @jumper/mcp; `jumper mcp --project <dir>`
+startLiveHub({ dir, port })                                     // WebSocket hub the web app follows (?follow=ws://…)
+```
+
 ### Other helpers
 
 ```ts
@@ -394,7 +443,7 @@ createAvrBackend(opts?: AvrBackendOptions): McuBackend
 backendFactory: BackendFactory          // "avr8js" + atmega328p → createAvrBackend (uno/nano pin names from the part type); otherwise a readable error
 ```
 
-The Nano adds `A6`/`A7` as analog-only pins. SPI and TWI are not attached in M0. See `docs/adding-a-board-backend.md`.
+The Nano adds `A6`/`A7` as analog-only pins. Since M1 the backend implements the optional `busPins` (`i2c: { sda: "A4", scl: "A5" }`, `spi: { mosi: "D11", miso: "D12", sck: "D13", ss: "D10" }`), `attachI2c(bus)` (AVR TWI master with real SCL timing) and `attachSpi(bus)` (AVR SPI master). See `docs/adding-a-board-backend.md` and `docs/buses.md`.
 
 Deps available: `avr8js@0.21.1`, `intel-hex@0.2.0` (or use `parseIntelHex` from sim-core).
 
