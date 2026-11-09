@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+// Connected agents and the agent state live in ../live/agentState.ts (one shared socket, C6).
+
 /**
  * Talks to the local `jumper serve` (default http://localhost:7780): its URLs, install snippets,
  * starter prompt, the agents connected over MCP (live, over a presence-only websocket), and the
@@ -104,54 +106,6 @@ export function useConnectInfo(pollMs = 4000): [ConnectState, () => void] {
     };
   }, [pollMs, tick]);
   return [state, () => setTick((n) => n + 1)];
-}
-
-/** Agents connected over MCP, live (presence-only websocket; reconnects). Empty when no server. */
-export function usePresence(): AgentInfo[] {
-  const [agents, setAgents] = useState<AgentInfo[]>([]);
-  useEffect(() => {
-    let closed = false;
-    let ws: WebSocket | undefined;
-    let retry: ReturnType<typeof setTimeout> | undefined;
-    let i = 0;
-    const bases = serverCandidates();
-    const open = () => {
-      const base = bases[i % bases.length]!;
-      const url = `${base.replace(/^http/, "ws")}/live?presence`;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        i++;
-        retry = setTimeout(open, 3000);
-        return;
-      }
-      let got = false;
-      ws.onmessage = (ev) => {
-        try {
-          const m = JSON.parse(String(ev.data)) as { type?: string; agents?: AgentInfo[] };
-          if (m.type === "presence" && Array.isArray(m.agents)) {
-            got = true;
-            setAgents(m.agents);
-          }
-        } catch {
-          // not ours
-        }
-      };
-      ws.onclose = () => {
-        if (closed) return;
-        if (!got) i++; // try the next candidate
-        setAgents([]);
-        retry = setTimeout(open, got ? 1500 : 3000);
-      };
-    };
-    open();
-    return () => {
-      closed = true;
-      clearTimeout(retry);
-      ws?.close();
-    };
-  }, []);
-  return agents;
 }
 
 export async function copyText(text: string): Promise<boolean> {

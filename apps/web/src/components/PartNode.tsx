@@ -5,6 +5,8 @@ import type { Rotation } from "@jumper/project-format";
 import { pinSide, rotatedPin, rotatedSize, type Side } from "../lib/parts.ts";
 import { engine } from "../lib/app.ts";
 import { categoryIcon } from "../shell/icons.ts";
+import { PartControl } from "../interact/PartControl.tsx";
+import { controlOf } from "../interact/controls.ts";
 
 export interface PartNodeData extends Record<string, unknown> {
   def: PartDefinition | undefined;
@@ -53,6 +55,8 @@ function PartNodeImpl({ id, data, selected }: NodeProps<PartFlowNode>) {
   const { spec } = def;
   const box = rotatedSize(spec, rotation);
   const CatIcon = categoryIcon(spec.category);
+  // While the device runs, buttons press, switches flip and knobs turn instead of dragging the part.
+  const control = controlOf(def);
   return (
     <div
       ref={ref}
@@ -70,6 +74,7 @@ function PartNodeImpl({ id, data, selected }: NodeProps<PartFlowNode>) {
         <span className="part-label-type">{spec.name}</span>
       </div>
       <PartSvg svg={def.svg} w={spec.size.w} h={spec.size.h} rotation={rotation} />
+      {control ? <PartControl id={id} kind={control} /> : null}
       {spec.pins.map((pin) => {
         const p = rotatedPin(spec, pin, rotation);
         return (

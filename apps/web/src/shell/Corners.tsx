@@ -1,9 +1,10 @@
 import { useCallback } from "react";
-import { Activity, ChevronRight, CircleHelp, GraduationCap, Moon, Sun, SunMoon } from "lucide-react";
+import { Activity, ChevronRight, Plug, CircleHelp, GraduationCap, Moon, Sun, SunMoon } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
 import { AgentPresence } from "../connect/AgentPresence.tsx";
+import { agentLabel, useAgentState } from "../live/agentState.ts";
 import { STROKE } from "./primitives.tsx";
 import { cycleTheme } from "./actions.ts";
 
@@ -64,29 +65,36 @@ function StatusPill() {
   );
 }
 
-/** Bottom-right: the agent pill (opens the steps panel) and the presence avatar. */
+/**
+ * Bottom-right: the agent pill (opens the steps panel) and the presence avatar. Both read the one
+ * agent state (C6): "No agent" in grey with Connect until an MCP client has called a tool, then
+ * "building", "idle" or "done". Replays show their position instead.
+ */
 export function BottomRight() {
   const mode = useLive((s) => s.mode);
-  const connected = useLive((s) => s.connected);
   const steps = useLive((s) => s.steps);
   const replay = useLive((s) => s.replay);
+  const agent = useAgentState();
   const open = useUi((s) => s.panels.includes("agent"));
   const pending = steps.filter((s) => s.status === "pending").length;
+  const none = mode !== "replay" && agent.status === "none";
   const status =
-    mode === "follow"
-      ? connected
-        ? steps.length
-          ? `building · ${steps.length} step${steps.length === 1 ? "" : "s"}${pending ? ` · ${pending} to review` : ""}`
-          : "connected"
-        : "reconnecting"
-      : mode === "replay"
-        ? `replay · ${replay.index}/${replay.total}`
-        : "idle";
+    mode === "replay"
+      ? `replay · ${replay.index}/${replay.total}`
+      : none
+        ? "No agent"
+        : `${agentLabel(agent).replace(/^(.*?) (building|idle|done)/, "$2")}${pending ? ` · ${pending} to review` : ""}`;
   return (
     <div className="bottom-right">
-      <button type="button" className={`agent-pill ${open ? "is-open" : ""}`} onClick={() => useUi.getState().togglePanel("agent")} data-testid="agent-pill" aria-expanded={open}>
-        <span className="agent-pill-label">Agent</span>
-        <span className={`agent-pill-status ${mode !== "off" && (connected || mode === "replay") ? "is-live" : ""}`}>{status}</span>
+      {none ? (
+        <button type="button" className="agent-connect" data-testid="agent-connect" onClick={() => useUi.getState().setPopover("mcp")} title="Connect Claude Code, Codex or another MCP agent">
+          <Plug size={14} strokeWidth={STROKE} aria-hidden />
+          Connect
+        </button>
+      ) : null}
+      <button type="button" className={`agent-pill ${open ? "is-open" : ""}`} onClick={() => useUi.getState().togglePanel("agent")} data-testid="agent-pill" data-agent-status={mode === "replay" ? "replay" : agent.status} aria-expanded={open} title={mode === "replay" ? undefined : agentLabel(agent)}>
+        <span className="agent-pill-label">{mode !== "replay" && agent.agent && !none ? agent.agent : "Agent"}</span>
+        <span className={`agent-pill-status is-${mode === "replay" ? "live" : agent.status} ${mode === "replay" || agent.status === "building" ? "is-live" : ""}`}>{status}</span>
         <ChevronRight size={15} strokeWidth={STROKE} aria-hidden />
       </button>
       <AgentPresence />

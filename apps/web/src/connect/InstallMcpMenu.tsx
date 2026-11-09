@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Copy, RefreshCw } from "lucide-react";
-import { copyText, useConnectInfo, usePresence, type InstallSnippet } from "./client.ts";
+import { copyText, useConnectInfo, type InstallSnippet } from "./client.ts";
+import { agentLabel, useAgentList, useAgentState } from "../live/agentState.ts";
 import "./connect.css";
 
 const STROKE = 1.6;
@@ -50,7 +51,8 @@ export function CopyBlock({ text, testId, label = "Copy", caption }: { text: str
 export function InstallMcpMenu({ onClose }: { onClose(): void }) {
   void onClose;
   const [state, refresh] = useConnectInfo();
-  const agents = usePresence();
+  const agents = useAgentList();
+  const agent = useAgentState();
   const snippets = state.status === "ok" ? state.info.install : offlineSnippets(state.status === "offline" ? state.base : "http://localhost:7780");
   const [tab, setTab] = useState<string>("claude-code");
   const current = snippets.find((s) => s.id === tab) ?? snippets[0]!;
@@ -86,19 +88,23 @@ export function InstallMcpMenu({ onClose }: { onClose(): void }) {
       </div>
       <CopyBlock text={current.text} testId={`mcp-snippet-${current.id}`} caption={current.kind === "command" ? `Run in ${current.where}` : `Add to ${current.where}`} />
       {current.note ? <p className="menu-text cx-note">{current.note}</p> : null}
-      <div className="cx-section-title">Connected</div>
+      <div className="cx-section-title">Agent</div>
+      <div className="cx-state" data-testid="mcp-agent-state" data-agent-status={agent.status}>
+        <span className={`cx-dot ${agent.status === "building" ? "is-busy" : agent.status === "idle" ? "is-on" : "is-off"}`} aria-hidden />
+        <span>{agent.status === "none" ? "No agent yet: nothing has called a Jumper tool." : agentLabel(agent)}</span>
+      </div>
       {agents.length ? (
         <ul className="cx-agents" data-testid="mcp-agents">
           {agents.map((a) => (
             <li key={a.id}>
-              <span className={`cx-dot ${a.busy ? "is-busy" : "is-on"}`} aria-hidden />
+              <span className={`cx-dot ${a.busy ? "is-busy" : a.calls ? "is-on" : ""}`} aria-hidden />
               <span className="cx-agent-name">{a.name}</span>
-              <span className="cx-agent-meta">{a.busy ? `building · ${[a.busy.op, a.busy.target].filter(Boolean).join(" ")}` : `${a.calls} ${a.calls === 1 ? "call" : "calls"}${a.transport === "stdio-attach" ? " · stdio" : ""}`}</span>
+              <span className="cx-agent-meta">{a.busy ? `building · ${[a.busy.op.replace(/_/g, " "), a.busy.target].filter(Boolean).join(" ")}` : a.calls ? `${a.calls} ${a.calls === 1 ? "call" : "calls"}${a.transport === "stdio-attach" ? " · stdio" : ""}` : "connected, no tool called yet"}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="menu-text cx-muted">No agent yet. Once one connects, every part it places shows up here live.</p>
+        <p className="menu-text cx-muted">{agent.status === "none" ? "Add Jumper to your agent with the command above, then ask it to build something. Every part it places shows up here live." : "Its MCP session has ended."}</p>
       )}
     </div>
   );

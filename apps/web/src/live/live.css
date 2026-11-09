@@ -544,3 +544,39 @@ html[data-live-chrome="min"] .canvas-minimap {
 .live-link {
   text-decoration: none;
 }
+
+/* Round 5: the followed page runs the device itself. */
+.live-chip-run {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--live, #5cf2a1);
+  background: color-mix(in srgb, var(--live, #5cf2a1) 14%, transparent);
+  white-space: nowrap;
+}
+.live-autorun {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.live-autorun input {
+  accent-color: var(--fg);
+  margin: 0;
+}
+.live-steps > .panel-empty {
+  padding: 12px 14px 14px;
+}
+@media (max-width: 820px) {
+  .live-follow-dir {
+    display: none;
+  }
+  .live-bar {
+    max-width: calc(100% - 32px);
+    gap: 8px;
+  }
+}

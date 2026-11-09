@@ -7,7 +7,6 @@ import { InstallMcpMenu } from "../connect/InstallMcpMenu.tsx";
 import { OpenInAgentMenu } from "../connect/OpenInAgentMenu.tsx";
 import { IconButton, MenuItem, Popover, STROKE } from "./primitives.tsx";
 import { cycleTheme } from "./actions.ts";
-import { localCopyUrl } from "../lib/localCopy.ts";
 
 /** Top-right: one floating container with the panel toggles, the agent dropdowns and the Run pill. */
 export function TopActions() {
@@ -69,7 +68,9 @@ export function TopActions() {
 export function RunPill({ compact = false }: { compact?: boolean }) {
   const run = useJumper((s) => s.run);
   const speed = useJumper((s) => s.speed);
-  const external = useLive((s) => s.mode !== "off");
+  const mode = useLive((s) => s.mode);
+  // Replays show a recorded session; a followed page runs the project here (round 5).
+  const external = mode === "replay";
   const running = run === "running";
   return (
     <div className={`run-pill ${running ? "is-running" : ""}`}>
@@ -78,7 +79,7 @@ export function RunPill({ compact = false }: { compact?: boolean }) {
         className="run-pill-main"
         data-testid="run-button"
         aria-label={running ? "Pause simulation" : "Run simulation"}
-        title={external ? (localCopyUrl() ? "The agent's session runs this one; Run opens a copy you can run in a new tab" : "The agent's session runs the simulation") : running ? "Pause (Space)" : "Run (Space)"}
+        title={external ? "A replay shows a recorded session; open the project to run it" : mode === "follow" && !running ? "Run here with the agent's latest firmware (Space)" : running ? "Pause (Space)" : "Run (Space)"}
         disabled={external}
         onClick={() => (running ? engine.pause() : engine.run())}
       >
