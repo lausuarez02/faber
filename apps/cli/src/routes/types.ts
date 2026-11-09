@@ -22,6 +22,20 @@ export interface RouteContext {
   body<T = Record<string, unknown>>(req: IncomingMessage): Promise<T>;
   /** The CSRF token pages get from GET /api/connect; POST routes that change things check x-jumper-token. */
   token: string;
+  /** Round 5, projects track: where projects live and how to switch the active one (serve sets it). */
+  projects?: ProjectsHost;
+}
+
+/** What jumper serve gives the projects routes (decision 0003, C3). */
+export interface ProjectsHost {
+  /** Where new projects are created (projects/ for `pnpm start`, else the parent of --project). */
+  root: string;
+  /** The repo's examples/ folder (read-only cards; opening one copies it). */
+  examplesRoot: string;
+  /** Make `dir` the active project: new session behind the same MCP endpoint and hub. */
+  open(dir: string): Promise<void>;
+  /** Called with the new session whenever the active project changes. Returns an unsubscribe. */
+  onSessionChange(fn: (session: ProjectSession) => void): () => void;
 }
 
 export interface ApiRoute {
