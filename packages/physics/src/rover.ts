@@ -17,6 +17,13 @@ const ROLLING_DECAY = 0.6;
 export const SONAR_HALF_ANGLE_DEG = 15;
 export const SONAR_RAYS = 7;
 export const SONAR_MAX_CM = 400;
+/** IR obstacle sensor (FC-51 class): a narrow beam, 3 rays over ±5°, seen up to 40 cm. */
+export const IR_HALF_ANGLE_DEG = 5;
+export const IR_RAYS = 3;
+export const IR_MAX_CM = 40;
+/** A bump switch's lever reaches this far past the body edge (cm), over ±20°. */
+export const BUMP_REACH_CM = 1;
+export const BUMP_HALF_ANGLE_DEG = 20;
 /** Counts as touching when the gap is at most this (m). */
 const TOUCH_M = 0.002;
 
@@ -269,6 +276,45 @@ export class RoverWorld {
   }
 
   /** Raycast cone from the sensor, ±15° in 7 rays; nearest hit within 400 cm. */
+  /**
+   * A beam from the body edge at `angleDeg` from the heading (negative = left), as `rays` rays
+   * over ±halfAngleDeg, up to maxCm past the edge. distanceCm 0 = nothing within range.
+   */
+  range(angleDeg: number, halfAngleDeg: number, rays: number, maxCm: number): SonarReading {
+    const R = rapier();
+    const t = this.body.translation();
+    const heading = this.body.rotation();
+    const local = (angleDeg * Math.PI) / 180;
+    // Distance from the body centre to its rectangle's edge along the mount direction (m).
+    const hx = this.robot.length / 200;
+    const hy = this.robot.width / 200;
+    const c = Math.abs(Math.cos(local));
+    const sn = Math.abs(Math.sin(local));
+    const edge = Math.min(c > 1e-9 ? hx / c : Infinity, sn > 1e-9 ? hy / sn : Infinity);
+    const a = heading + local;
+    const o = { x: t.x + edge * Math.cos(a), y: t.y + edge * Math.sin(a) };
+    const max = maxCm / 100;
+    let best = Infinity;
+    const out: SonarReading["rays"] = [];
+    let centre = { x: o.x + max * Math.cos(a), y: o.y + max * Math.sin(a) };
+    for (let i = 0; i < rays; i++) {
+      const da = rays === 1 ? 0 : ((-halfAngleDeg + (2 * halfAngleDeg * i) / (rays - 1)) * Math.PI) / 180;
+      const dir = { x: Math.cos(a + da), y: Math.sin(a + da) };
+      const hit = this.world.castRay(new R.Ray(o, dir), max, true, undefined, undefined, this.collider);
+      const toi = hit ? hit.timeOfImpact : max;
+      const end = { x: o.x + dir.x * toi, y: o.y + dir.y * toi };
+      out.push({ x: end.x * 100, y: end.y * 100, hit: !!hit });
+      if (hit && toi < best) best = toi;
+      if (i === (rays - 1) / 2) centre = end;
+    }
+    return {
+      distanceCm: Number.isFinite(best) ? Math.max(best * 100, 0.1) : 0,
+      from: { x: o.x * 100, y: o.y * 100 },
+      to: { x: centre.x * 100, y: centre.y * 100 },
+      rays: out,
+    };
+  }
+
   sonar(): SonarReading {
     const R = rapier();
     const t = this.body.translation();

@@ -8,7 +8,7 @@
 //   - servos → arm: reads each servo's `angle` and runs forward kinematics.
 import type { PartInteraction, Simulation, Unsubscribe, VisualState } from "@jumper/sim-core";
 import { armPose, type ArmPose } from "./arm.ts";
-import { PHYSICS_DT, RoverWorld, type Pose, type RobotBody, type SonarReading } from "./rover.ts";
+import { BUMP_HALF_ANGLE_DEG, BUMP_REACH_CM, IR_HALF_ANGLE_DEG, IR_MAX_CM, IR_RAYS, PHYSICS_DT, RoverWorld, type Pose, type RobotBody, type SonarReading } from "./rover.ts";
 import { parseWorld, type ArmSpec, type WorldSpec } from "./world.ts";
 
 export const PHYSICS_STEP_MS = PHYSICS_DT * 1000;
@@ -34,6 +34,10 @@ export interface WorldSnapshot {
     speed: number;
     touching: string[];
     sonar?: SonarReading;
+    /** IR obstacle sensors' beams (ir-proximity parts). */
+    ir?: (SonarReading & { id: string })[];
+    /** Bump switches and whether the physics presses them. */
+    bumpers?: { id: string; pressed: boolean }[];
   };
   trail: { x: number; y: number }[];
   stats: PhysicsStats;
@@ -93,6 +97,8 @@ export function attachPhysics(sim: SimHost, world: unknown): PhysicsBinding {
   let hash = 0x811c9dc5;
   let arm: WorldSnapshot["arm"];
   let sonar: SonarReading | undefined;
+  let ir: (SonarReading & { id: string })[] = [];
+  let bumpers: { id: string; pressed: boolean }[] = [];
 
   const set = (partId: string, key: string, value: number) => {
     const e: PartInteraction = { kind: "set", key, value };
@@ -105,6 +111,8 @@ export function attachPhysics(sim: SimHost, world: unknown): PhysicsBinding {
     trail = [];
     hash = 0x811c9dc5;
     sonar = undefined;
+    ir = [];
+    bumpers = [];
     const r = spec.robot;
     if (r) {
       const body = robotBodyFromState(sim.partState(r.chassis));
@@ -122,6 +130,18 @@ export function attachPhysics(sim: SimHost, world: unknown): PhysicsBinding {
       sonar = rover.sonar();
       set(r.sonar, "distance", sonar.distanceCm);
     }
+    // IR obstacle sensors: the nearest hit in their narrow beam; bump switches: something within
+    // the lever's reach on their side.
+    ir = (r.ir ?? []).map((s) => {
+      const reading = rover!.range(s.angleDeg, IR_HALF_ANGLE_DEG, IR_RAYS, IR_MAX_CM);
+      set(s.id, "distance", reading.distanceCm);
+      return { ...reading, id: s.id };
+    });
+    bumpers = (r.bumpers ?? []).map((b) => {
+      const pressed = rover!.range(b.angleDeg, BUMP_HALF_ANGLE_DEG, 3, BUMP_REACH_CM).distanceCm > 0;
+      set(b.id, "pressed", pressed ? 1 : 0);
+      return { id: b.id, pressed };
+    });
     const m = rover.motion();
     set(r.chassis, "x", p.x);
     set(r.chassis, "y", p.y);
@@ -209,6 +229,8 @@ export function attachPhysics(sim: SimHost, world: unknown): PhysicsBinding {
           speed: rover.motion().speed,
           touching: rover.touchingIds(),
           ...(sonar ? { sonar } : {}),
+          ...(ir.length ? { ir: ir.map((x) => ({ ...x, rays: x.rays.slice() })) } : {}),
+          ...(bumpers.length ? { bumpers: bumpers.map((b) => ({ ...b })) } : {}),
         };
       }
       if (arm) snap.arm = arm;

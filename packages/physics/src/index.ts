@@ -1,7 +1,7 @@
 export { initPhysics, rapier } from "./rapier.ts";
-export { parseWorld, worldOf, WorldSpecError } from "./world.ts";
+export { parseWorld, worldOf, WorldSpecError, mountAngle } from "./world.ts";
 export type { WorldSpec, RobotSpec, ArmSpec, ArmJoint, Obstacle, Wall, Vec, PartsView } from "./world.ts";
-export { RoverWorld, PHYSICS_DT, SONAR_HALF_ANGLE_DEG, SONAR_RAYS, SONAR_MAX_CM } from "./rover.ts";
+export { RoverWorld, PHYSICS_DT, SONAR_HALF_ANGLE_DEG, SONAR_RAYS, SONAR_MAX_CM, IR_HALF_ANGLE_DEG, IR_RAYS, IR_MAX_CM, BUMP_REACH_CM } from "./rover.ts";
 export type { RobotBody, Pose, SonarReading } from "./rover.ts";
 export { armPose, armReach } from "./arm.ts";
 export type { ArmPose } from "./arm.ts";

@@ -147,6 +147,23 @@ export function drawWorld(ctx: Ctx2D, snap: WorldSnapshot, view: View, pal: Pale
 
   const r = snap.robot;
   if (r) {
+    // IR obstacle beams: thin, warm, solid when they see something
+    for (const b of r.ir ?? []) {
+      ctx.strokeStyle = pal.warn;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = b.distanceCm > 0 ? 0.9 : 0.35;
+      ctx.beginPath();
+      ctx.moveTo(X(b.from.x), Y(b.from.y));
+      ctx.lineTo(X(b.to.x), Y(b.to.y));
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (b.distanceCm > 0) {
+        ctx.fillStyle = pal.warn;
+        ctx.beginPath();
+        ctx.arc(X(b.to.x), Y(b.to.y), 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     // sonar cone + centre ray
     if (r.sonar) {
       const so = r.sonar;
@@ -210,6 +227,8 @@ export function drawWorld(ctx: Ctx2D, snap: WorldSnapshot, view: View, pal: Pale
   if (Number.isFinite(st.minClearanceCm)) parts.push(`min gap ${st.minClearanceCm.toFixed(1)} cm`);
   parts.push(`travelled ${(st.travelledCm / 100).toFixed(2)} m`);
   if (r?.sonar) parts.push(`sonar ${r.sonar.distanceCm > 0 ? `${r.sonar.distanceCm.toFixed(0)} cm` : "no echo"}`);
+  const bumped = (r?.bumpers ?? []).filter((b) => b.pressed).length;
+  if (r?.bumpers?.length) parts.push(`bump ${bumped ? `${bumped} pressed` : "free"}`);
   // Small panels (the replay's World card): tighten the separators, then wrap onto two lines, so the
   // numbers are never cut off at the right edge.
   // Line the stats up with the arena's left edge, not the view's.
