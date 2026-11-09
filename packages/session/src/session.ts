@@ -150,6 +150,8 @@ export class ProjectSession {
   private diskStamp = "";
   private listeners = new Set<(e: SessionEvent) => void>();
   private lastBuild: BuildResult | undefined;
+  /** What the last commit did to the running simulation (set by pushPropsOrInvalidate). */
+  private liveNote: string | undefined;
 
   constructor(opts: SessionOptions) {
     this.dir = resolve(opts.dir);
@@ -311,20 +313,34 @@ export class ProjectSession {
     const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString());
     this.persist();
     ctx.project = true;
-    if (topoChanged) this.pushPropsOrInvalidate(oldProject);
+    if (topoChanged) this.liveNote = this.pushPropsOrInvalidate(oldProject);
     return step;
   }
 
-  /** Same circuit with new props → push them into the running sim; otherwise the sim restarts on next use. */
-  private pushPropsOrInvalidate(old: Project): void {
-    if (!this.host) return;
-    const sameShape = JSON.stringify([old.parts.map((x) => [x.id, x.type]), old.wires.map((w) => [w.from, w.to]), old.firmware?.board]) === JSON.stringify([this.project.parts.map((x) => [x.id, x.type]), this.project.wires.map((w) => [w.from, w.to]), this.project.firmware?.board]);
-    if (!sameShape) return; // getHost() rebuilds
-    for (const p of this.project.parts) {
-      const prev = old.parts.find((x) => x.id === p.id)?.props ?? {};
-      for (const [k, v] of Object.entries(p.props ?? {})) if (prev[k] !== v) this.host.sim.setProp(p.id, k, v);
+  /**
+   * Same circuit with new props → push them into the running sim (and keep them for run {reset}).
+   * Props of parts the physics world reads at start (chassis, motors…) and anything else restart the
+   * sim on next use. Returns what happened, for the op's result.
+   */
+  private pushPropsOrInvalidate(old: Project): string | undefined {
+    if (!this.host) return undefined;
+    const shape = (p: Project) => JSON.stringify([p.parts.map((x) => [x.id, x.type]), p.wires.map((w) => [w.from, w.to]), p.firmware?.board]);
+    if (shape(old) !== shape(this.project)) return "the next run restarts the simulation at 0 ms with the new circuit and values"; // getHost() rebuilds
+    const worldText = JSON.stringify(this.project.world ?? null);
+    const changedParts = this.project.parts.filter((p) => JSON.stringify(old.parts.find((x) => x.id === p.id)?.props ?? {}) !== JSON.stringify(p.props ?? {})).map((p) => p.id);
+    if (changedParts.some((id) => worldText.includes(`"${id}"`))) {
+      this.hostKey = ""; // getHost() rebuilds (and says so)
+      return `${changedParts.join(", ")} ${changedParts.length > 1 ? "are" : "is"} part of the robot world, which is built at 0 ms, so the next run restarts the simulation at 0 ms with the new value`;
+    }
+    if (this.hostKey !== this.simKey(old)) return "the next run restarts the simulation at 0 ms with the new circuit and values"; // the host was already stale; getHost() rebuilds
+    let changed: string[];
+    try {
+      changed = this.host.adoptProps(this.project);
+    } catch {
+      return "the next run restarts the simulation at 0 ms with the new circuit and values";
     }
     this.hostKey = this.simKey();
+    return changed.length ? `applied live to the running simulation at ${round(this.host.timeMs)} ms (${changed.join(", ")}); run {reset: true} also starts from the new value` : undefined;
   }
 
   private readFileOrNull(rel: string): string | null {
@@ -617,10 +633,12 @@ export class ProjectSession {
     if (args.prop === undefined || args.value === undefined) fail("missing-arg", "set_part_property needs 'prop' and 'value'", "one is missing", `pass e.g. { "id": "${part.id}", "prop": "${spec.props?.[0]?.id ?? "x"}", "value": ${JSON.stringify(spec.props?.[0]?.default ?? 1)} }`);
     const props = this.validateProps(spec, { [args.prop]: args.value });
     const next = { ...this.project, parts: this.project.parts.map((p) => (p.id === part.id ? { ...p, props: { ...p.props, ...props } } : p)) };
+    this.liveNote = undefined;
     const step = this.commit(ctx, `set ${part.id}.${args.prop}`, next);
     ctx.target = { part: part.id };
     ctx.summary = `${part.id}.${args.prop} = ${JSON.stringify(Object.values(props)[0])}`;
-    return { id: part.id, props: next.parts.find((p) => p.id === part.id)!.props, step: { id: step.id, why: step.why } };
+    const simulation = this.liveNote ?? (this.host ? "unchanged value; the running simulation already uses it" : "no simulation running yet; the next run uses the new value");
+    return { id: part.id, props: next.parts.find((p) => p.id === part.id)!.props, simulation, step: { id: step.id, why: step.why } };
   }
 
   async setLibraries(args: { libraries: string[]; why?: string }, ctx: OpCtx): Promise<unknown> {
@@ -833,8 +851,8 @@ export class ProjectSession {
 
   // =================================================================== simulation
 
-  private simKey(): string {
-    return topologyKey(this.project) + "|" + (this.loadHex() ?? "").length + ":" + createHash("sha1").update(this.loadHex() ?? "").digest("hex").slice(0, 8);
+  private simKey(project: Project = this.project): string {
+    return topologyKey(project) + "|" + (this.loadHex() ?? "").length + ":" + createHash("sha1").update(this.loadHex() ?? "").digest("hex").slice(0, 8);
   }
 
   private async getHost(): Promise<{ host: SimHost; restarted?: string }> {

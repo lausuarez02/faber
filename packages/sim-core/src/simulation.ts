@@ -85,7 +85,8 @@ interface PartSlot {
  * re-solves the circuit whenever something changes. Fully deterministic (no Date, no Math.random).
  */
 export class Simulation {
-  readonly project: Project;
+  /** The project being simulated. Replaced only by adoptProps (same parts and wires, new saved props). */
+  project: Project;
   readonly nets: readonly Net[];
   readonly clock: Clock;
   /** Cycle the last runFor aimed for; the next runFor counts from here. */
@@ -346,6 +347,32 @@ export class Simulation {
     s.props[propId] = value;
     s.model.setProp(propId, value);
     this.solve();
+  }
+
+  /**
+   * Live edit of saved props: take a project with the same parts and wires but new prop values,
+   * push every changed prop into the running models (one re-solve), and keep the new project so
+   * reset() starts from these values too. Throws when parts or wires differ (build a new Simulation).
+   */
+  adoptProps(project: Project): string[] {
+    const shape = (p: Project) => JSON.stringify([p.parts.map((x) => [x.id, x.type]), p.wires.map((w) => [w.from.part, w.from.pin, w.to.part, w.to.pin])]);
+    if (shape(project) !== shape(this.project)) throw new Error("adoptProps: the parts or wires changed; create a new Simulation instead");
+    const changed: string[] = [];
+    for (const p of project.parts) {
+      const s = this.slot(p.id);
+      if (!s) continue;
+      const next = resolveProps(s.def.spec, p.props);
+      const before = resolveProps(s.def.spec, this.project.parts.find((x) => x.id === p.id)?.props);
+      for (const [k, v] of Object.entries(next)) {
+        if (before[k] === v) continue;
+        s.props[k] = v;
+        s.model.setProp(k, v);
+        changed.push(`${p.id}.${k}`);
+      }
+    }
+    this.project = project;
+    if (changed.length) this.solve();
+    return changed;
   }
 
   /** Set several props of one part with a single re-solve (e.g. a physics engine feeding an IMU every step). */

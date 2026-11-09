@@ -105,7 +105,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "set_part_property",
     title: "Change a part property",
-    description: 'Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, {"id": "led1", "prop": "color", "value": "green"}, {"id": "oled1", "prop": "address", "value": "0x3D"}. Validated against the part (ranges, options); a running simulation picks it up live. For temporary sensor readings during a run use set_sensor_value instead.',
+    description: 'Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, {"id": "led1", "prop": "color", "value": "green"}, {"id": "oled1", "prop": "address", "value": "0x3D"}. Validated against the part (ranges, options). A running simulation picks it up live (and run {reset: true} starts from it); the result\'s "simulation" says what happened (parts the robot world uses restart the simulation at 0 ms). For temporary sensor readings during a run use set_sensor_value instead.',
     inputSchema: { type: "object", properties: { id: { type: "string" }, prop: { type: "string" }, value: { type: ["string", "number", "boolean"] }, why }, required: ["id", "prop", "value"] },
     edits: true,
   },

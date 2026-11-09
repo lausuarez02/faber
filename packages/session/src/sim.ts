@@ -90,7 +90,8 @@ function round(v: number): number {
 
 export class SimHost {
   readonly sim: Simulation;
-  readonly project: Project;
+  /** Updated by adoptProps when saved props change while the simulation runs. */
+  project: Project;
   readonly registry: PartRegistry;
   readonly hasFirmware: boolean;
   private disconnected = new Set<string>();
@@ -139,6 +140,13 @@ export class SimHost {
   dispose(): void {
     this.physics?.dispose();
     this.sim.dispose();
+  }
+
+  /** Saved props changed (set_part_property, undo…): apply them live and keep them for reset(). */
+  adoptProps(project: Project): string[] {
+    const changed = this.sim.adoptProps(project);
+    this.project = project;
+    return changed;
   }
 
   /** Back to t = 0 with the same firmware, keeping injected faults (they model the hardware, not the run). */
