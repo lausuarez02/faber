@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 # Reproducible Arduino build image for Jumper firmware.
 # Multi-arch: builds natively on linux/amd64 and linux/arm64 (Apple Silicon).
-#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8 toolchains/arduino
+#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs1 toolchains/arduino
+# The -libsN suffix counts the pinned library set below (LIBRARIES.md). Bump N when it changes.
 # Versions are pinned; bump them together and record the change in examples/*/firmware/BUILD.md.
 FROM debian:bookworm-20251020-slim
 
@@ -39,6 +40,29 @@ RUN arduino-cli core update-index \
  && rm -rf /opt/arduino/downloads \
  && chmod -R a+rX /opt/arduino \
  && arduino-cli core list
+
+# Pinned libraries for display, sensor and RTC parts. Licenses and why each one: LIBRARIES.md.
+# Adding libraries does not change sketches that do not include them (Blink stays byte-identical).
+RUN arduino-cli lib update-index \
+ && arduino-cli lib install --no-deps \
+      "Adafruit BusIO@1.17.4" \
+      "Adafruit GFX Library@1.13.0" \
+      "Adafruit SSD1306@2.5.17" \
+      "Adafruit Unified Sensor@1.1.15" \
+      "Adafruit BME280 Library@2.3.0" \
+      "Adafruit MPU6050@2.2.9" \
+      "RTClib@2.1.4" \
+      "LiquidCrystal_PCF8574@2.3.0" \
+      "MPU6050@1.4.5" \
+      "U8g2@2.36.19" \
+ && rm -rf /opt/arduino/downloads \
+ && chmod -R a+rX /opt/arduino \
+ && arduino-cli lib list
+
+# Jumper's own Apache-2.0 LiquidCrystal_I2C (the API of the popular library, whose upstream has no
+# license). Lives in toolchains/arduino/libraries/.
+COPY libraries/LiquidCrystal_I2C /opt/arduino/user/libraries/LiquidCrystal_I2C
+RUN chmod -R a+rX /opt/arduino/user/libraries/LiquidCrystal_I2C
 
 WORKDIR /work
 ENTRYPOINT ["arduino-cli"]
