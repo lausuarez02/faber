@@ -7,7 +7,7 @@
 import { createSandboxNetwork, remoteProvider, type SandboxNet } from "@jumper/ai-gateway";
 
 export const DEFAULT_GATEWAY = "http://127.0.0.1:8787";
-export const GATEWAY_COMMAND = "node services/ai-gateway/bin/ai-gateway.mjs";
+export const GATEWAY_COMMAND = "pnpm start (jumper serve starts it), or node services/ai-gateway/bin/ai-gateway.mjs";
 
 export interface WebNetworkOptions {
   gatewayUrl?: string;
@@ -19,6 +19,29 @@ export function createWebNetwork(opts: WebNetworkOptions = {}): SandboxNet {
   const net = createSandboxNetwork(opts.liveAllowed ? { liveAllowed: opts.liveAllowed } : {});
   net.ai.live = remoteProvider(opts.gatewayUrl ?? DEFAULT_GATEWAY, "AI gateway");
   return net;
+}
+
+/**
+ * Where the AI gateway runs: `jumper serve` starts one and says where at GET /api/ai-gateway (same
+ * origin); otherwise the default port. Never throws.
+ */
+export async function discoverGateway(fallback = DEFAULT_GATEWAY, fetchImpl: typeof fetch = fetch): Promise<string> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1000);
+    const res = await fetchImpl("/api/ai-gateway", { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok) return fallback;
+    const body = (await res.json()) as { url?: unknown };
+    return typeof body.url === "string" && /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(body.url) ? body.url : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Point the network's live mode at this gateway. */
+export function useGateway(net: SandboxNet, url: string): void {
+  net.ai.live = remoteProvider(url, "AI gateway");
 }
 
 export interface GatewayProbe {

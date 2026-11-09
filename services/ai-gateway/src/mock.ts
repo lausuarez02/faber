@@ -46,7 +46,15 @@ export function mockLatencyMs(req: PetRequest, counter: number): number {
   return 400 + (hash32(`lat:${req.action}:${req.food}:${req.joy}:${req.energy}:${counter}`) % 400);
 }
 
+/** Mock answers to something the person typed (m=): canned, but they show the words arrived. */
+const HEARD = ["Ooh, \"%s\"? Tell me more!", "You said \"%s\"! I love that", "Hmm, \"%s\"... let me think!"];
+
 export function mockReply(req: PetRequest, counter: number): PetReply {
+  if (req.message) {
+    const words = req.message.length > 22 ? `${req.message.slice(0, 20).trimEnd()}..` : req.message;
+    const line = HEARD[hash32(`m:${req.message}:${req.seed}:${counter}`) % HEARD.length]!.replace("%s", words.replace(/\|/g, "/"));
+    return { mood: moodFromStats(req) === "sad" ? "sad" : "happy", text: line };
+  }
   const mood: Mood =
     req.action === "feed" ? (req.food < 60 ? "hungry" : "happy") : req.action === "play" ? (req.energy < 25 ? "sleepy" : "excited") : req.action === "sleep" ? "sleepy" : req.action === "lonely" ? (req.food < 30 ? "hungry" : "sad") : moodFromStats(req);
   const table = LINES[req.action];

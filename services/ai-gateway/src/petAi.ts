@@ -83,7 +83,7 @@ export class PetAi {
       return { kind: "now", answer: { status: 200, body: formatReply(mockReply(req, n)), provider: "mock", ...(note ? { note } : {}) }, latencyMs: mockLatencyMs(req, n) };
     }
     const live = this.live;
-    const key = `${req.action}:${req.name}:${Math.round(req.food / 10)}:${Math.round(req.joy / 10)}:${Math.round(req.energy / 10)}`;
+    const key = `${req.action}:${req.name}:${Math.round(req.food / 10)}:${Math.round(req.joy / 10)}:${Math.round(req.energy / 10)}:${req.message ?? ""}`;
     const now = this.o.wallNow();
     const hit = this.cache.get(key);
     if (hit && now - hit.at < this.o.cacheSeconds * 1000) {
