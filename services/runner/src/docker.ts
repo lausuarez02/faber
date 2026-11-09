@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { BASE_DOCKERFILE_DIR, BASE_IMAGE, RUNNER_DOCKERFILE_DIR, RUNNER_IMAGE } from "./config.ts";
+import { BASE_DOCKERFILE_DIR, BASE_IMAGE, PICO_DOCKERFILE_DIR, PICO_IMAGE, RUNNER_DOCKERFILE_DIR, RUNNER_IMAGE } from "./config.ts";
 
 export interface ExecResult {
   code: number;
@@ -64,7 +64,12 @@ export async function ensureDocker(): Promise<void> {
 let imageReady: Promise<void> | undefined;
 
 /** Builds the base toolchain image and the runner image if they are missing (first run: a few minutes). */
-export function ensureImage(log: (line: string) => void = () => {}): Promise<void> {
+/**
+ * Make sure the image that builds `image` exists: the AVR runner image (built from the base
+ * toolchain image), or the RP2040 image on top of it. Built once, on first use.
+ */
+export function ensureImage(log: (line: string) => void = () => {}, image: string = RUNNER_IMAGE): Promise<void> {
+  if (image === PICO_IMAGE) return ensurePicoImage(log);
   imageReady ??= (async () => {
     if ((await exec("docker", ["image", "inspect", RUNNER_IMAGE])).code === 0) return;
     if ((await exec("docker", ["image", "inspect", BASE_IMAGE])).code !== 0) {
@@ -80,6 +85,22 @@ export function ensureImage(log: (line: string) => void = () => {}): Promise<voi
     throw err;
   });
   return imageReady;
+}
+
+let picoReady: Promise<void> | undefined;
+
+function ensurePicoImage(log: (line: string) => void): Promise<void> {
+  picoReady ??= (async () => {
+    if ((await exec("docker", ["image", "inspect", PICO_IMAGE])).code === 0) return;
+    await ensureImage(log, RUNNER_IMAGE);
+    log(`building RP2040 image ${PICO_IMAGE} (arduino-pico core, first RP2040 build only, a few minutes)…`);
+    const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${RUNNER_IMAGE}`, "-t", PICO_IMAGE, PICO_DOCKERFILE_DIR], { timeoutMs: 30 * 60_000 });
+    if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the RP2040 image ${PICO_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the arduino-pico core and its ARM toolchain, about 300 MB), then build again.`);
+  })().catch((err) => {
+    picoReady = undefined;
+    throw err;
+  });
+  return picoReady;
 }
 
 function firstLine(s: string): string {

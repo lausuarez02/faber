@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { cacheDir, PINNED_LIBRARIES, RUNNER_IMAGE } from "./config.ts";
+import { cacheDir, imageFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
 
@@ -10,7 +10,7 @@ export interface BuildRequest {
   sketchDir: string;
   /** Main .ino file inside sketchDir. Default: the only .ino, or the one named like the folder. */
   main?: string;
-  /** e.g. "arduino:avr:uno". */
+  /** e.g. "arduino:avr:uno", "rp2040:rp2040:rpipico" (picks the Docker image). */
   fqbn: string;
   /** "Name" or "Name@version". Names without a version resolve to Jumper's pinned versions. */
   libraries?: readonly string[];
@@ -189,7 +189,7 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   const libraries = resolveLibraries(req.libraries);
 
   const h = createHash("sha256");
-  h.update(`image=${RUNNER_IMAGE}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
+  h.update(`image=${imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
   for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
   const hash = h.digest("hex").slice(0, 24);
 
@@ -216,7 +216,8 @@ async function compile(
   t0: number,
 ): Promise<BuildResult> {
   await ensureDocker();
-  await ensureImage(log);
+  const image = imageFor(req.fqbn);
+  await ensureImage(log, image);
   const libDirs: string[] = [];
   for (const lib of libraries) if (!isPreinstalled(lib)) libDirs.push(await ensureLibrary(lib, log));
 
@@ -236,7 +237,7 @@ async function compile(
   const args = [
     "run", "--rm", ...uidArgs(),
     "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
-    RUNNER_IMAGE,
+    image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
     "/work/sketch",
@@ -248,7 +249,7 @@ async function compile(
     throw new RunnerError("docker-not-running", `Build failed: ${r.stderr.trim().split("\n")[0]}. Fix: start Docker Desktop and build again.`);
   }
   if (/Invalid FQBN|platform not installed|Platform '[^']+' not found/i.test(output)) {
-    throw new RunnerError("bad-fqbn", `Build failed: the board '${req.fqbn}' is not supported by the build image (${output.trim().split("\n").find((l) => /fqbn|platform/i.test(l)) ?? ""}). Fix: use "arduino:avr:uno" or "arduino:avr:nano" (firmware.build.fqbn).`);
+    throw new RunnerError("bad-fqbn", `Build failed: the board '${req.fqbn}' is not supported by the build image (${output.trim().split("\n").find((l) => /fqbn|platform/i.test(l)) ?? ""}). Fix: use one of ${SUPPORTED_FQBNS.map((f) => `"${f}"`).join(", ")} (firmware.build.fqbn; the board part's mcu.fqbn is the default).`);
   }
   const prefix = req.displayPrefix ?? "";
   const pathMap = (p: string): string | undefined => {
