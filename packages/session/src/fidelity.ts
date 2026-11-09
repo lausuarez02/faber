@@ -1,4 +1,5 @@
 import type { Project } from "@jumper/project-format";
+import { AGENT_MADE_LABEL } from "@jumper/parts";
 import type { FidelityArea, PartRegistry } from "@jumper/sim-core";
 
 const AREAS = ["logic", "timing", "analog", "power", "radio"] as const;
@@ -40,7 +41,8 @@ export function fidelityReport(project: Project, registry: PartRegistry, faultsT
         if (!seenTypes.has(p.type)) agg.notes.push(`${p.type}: ${area.note}`);
       }
     }
-    parts.push({ id: p.id, type: p.type, level: f.level, weakest });
+    // Agent-made parts (decision 0003, C4) are never rated like built-ins: their model is the agent's description.
+    parts.push({ id: p.id, type: p.type, level: f.origin === "agent-made" ? AGENT_MADE_LABEL : f.level, weakest });
     if (!seenTypes.has(p.type)) for (const t of f.testOnRealDevice) toTest.push(`${p.id} (${p.type}): ${t}`);
     seenTypes.add(p.type);
   }
@@ -50,11 +52,15 @@ export function fidelityReport(project: Project, registry: PartRegistry, faultsT
     "Supply rails are ideal: brownouts when motors start are not simulated; measure the real supply under load.",
   ];
   if (!faultsTested.length) toTest.push("Unplug each module while running to see how the firmware copes (or rehearse with inject_fault disconnect / i2c_nack).");
+  const agentMade = parts.filter((p) => p.level === AGENT_MADE_LABEL);
+  if (agentMade.length) {
+    global.push(`${agentMade.length} part${agentMade.length > 1 ? "s were" : " was"} made by an agent (${agentMade.map((p) => `${p.id}: ${p.type}`).join(", ")}): ${AGENT_MADE_LABEL}. They behave as described in parts/<id>/part.json, not as a model checked against the datasheet; passing tests only show the firmware agrees with that description.`);
+  }
   const worst = AREAS.filter((a) => areas[a].level === "none" || areas[a].level === "approx");
   const summary =
     parts.length === 0
       ? "Empty project: nothing to rate yet."
-      : `${parts.filter((p) => p.level === "exact").length} exact, ${parts.filter((p) => p.level === "behavioral").length} behavioral, ${parts.filter((p) => p.level === "stub").length} stub parts. ` +
+      : `${parts.filter((p) => p.level === "exact").length} exact, ${parts.filter((p) => p.level === "behavioral").length} behavioral, ${parts.filter((p) => p.level === "stub").length} stub${agentMade.length ? `, ${agentMade.length} agent-made (behavioral, unverified)` : ""} parts. ` +
         `Logic is ${ICON[areas.logic.level]}; ${worst.length ? `approximate or missing: ${worst.join(", ")}` : "no approximate areas"}. Check the ${toTest.length} items in testOnRealDevice on hardware before trusting it.`;
   return { summary, parts, areas, testOnRealDevice: toTest, global };
 }

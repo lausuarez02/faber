@@ -1,0 +1,336 @@
+{
+  "soil": {
+    "id": "soil-moisture-sensor",
+    "name": "Capacitive soil moisture sensor v1.2",
+    "category": "sensor",
+    "description": "Analog soil moisture probe. AOUT falls as the soil gets wetter.",
+    "pins": [
+      {
+        "id": "GND",
+        "type": "ground"
+      },
+      {
+        "id": "VCC",
+        "type": "power",
+        "voltage": {
+          "min": 3.3,
+          "max": 5.5
+        }
+      },
+      {
+        "id": "AOUT",
+        "type": "analog"
+      }
+    ],
+    "behavior": {
+      "kind": "analog-sensor",
+      "output": "AOUT",
+      "quantity": {
+        "id": "moisture",
+        "unit": "%",
+        "min": 0,
+        "max": 100,
+        "default": 40
+      },
+      "curve": [
+        {
+          "value": 0,
+          "volts": 3
+        },
+        {
+          "value": 100,
+          "volts": 1.2
+        }
+      ]
+    },
+    "current_ma": {
+      "typ": 5,
+      "max": 8
+    },
+    "price_usd": 2.5,
+    "dimensions_mm": {
+      "w": 98,
+      "h": 23,
+      "d": 4
+    },
+    "usage": {
+      "wiring": "VCC → 5V, GND → GND, AOUT → A0. Dry soil reads about 614, wet about 245 on an Uno."
+    }
+  },
+  "relay": {
+    "id": "relay-module-1ch",
+    "name": "1-channel 5 V relay module (active low)",
+    "category": "output",
+    "description": "Relay board with an optocoupler input. IN LOW energises the relay: COM connects to NO.",
+    "pins": [
+      {
+        "id": "VCC",
+        "type": "power",
+        "voltage": {
+          "min": 4.5,
+          "max": 5.5
+        }
+      },
+      {
+        "id": "GND",
+        "type": "ground"
+      },
+      {
+        "id": "IN",
+        "type": "digital"
+      },
+      {
+        "id": "COM",
+        "type": "passive"
+      },
+      {
+        "id": "NO",
+        "type": "passive"
+      },
+      {
+        "id": "NC",
+        "type": "passive"
+      }
+    ],
+    "behavior": {
+      "kind": "actuator",
+      "drive": "logic",
+      "input": "IN",
+      "active_level": "low",
+      "input_ohms": 1000,
+      "contacts": {
+        "com": "COM",
+        "no": "NO",
+        "nc": "NC"
+      }
+    },
+    "current_ma": {
+      "typ": 70,
+      "max": 80
+    },
+    "price_usd": 1.8,
+    "dimensions_mm": {
+      "w": 43,
+      "h": 17,
+      "d": 18
+    }
+  },
+  "pump": {
+    "id": "mini-water-pump-5v",
+    "name": "Mini submersible water pump 3-6 V",
+    "category": "motor",
+    "description": "Small DC pump. About 180 mA at 5 V.",
+    "pins": [
+      {
+        "id": "+",
+        "type": "passive"
+      },
+      {
+        "id": "-",
+        "type": "passive"
+      }
+    ],
+    "behavior": {
+      "kind": "actuator",
+      "drive": "load",
+      "plus": "+",
+      "minus": "-",
+      "rated_v": 5,
+      "rated_ma": 180,
+      "effect": {
+        "id": "flow_ml_min",
+        "unit": "ml/min",
+        "at_full": 1200
+      }
+    },
+    "current_ma": {
+      "typ": 180,
+      "max": 250
+    },
+    "price_usd": 2.2,
+    "dimensions_mm": {
+      "w": 45,
+      "h": 30,
+      "d": 24
+    }
+  },
+  "temp": {
+    "id": "tmp-sensor-x",
+    "name": "I2C temperature sensor (example register map)",
+    "category": "sensor",
+    "description": "I2C temperature sensor at 0x40: WHO_AM_I 0xA7 at 0x0F, temperature in 0.01 °C at 0x00 (16-bit, big endian), config at 0x10.",
+    "pins": [
+      {
+        "id": "VCC",
+        "type": "power",
+        "voltage": {
+          "min": 1.8,
+          "max": 5.5
+        }
+      },
+      {
+        "id": "GND",
+        "type": "ground"
+      },
+      {
+        "id": "SCL",
+        "type": "digital",
+        "protocols": [
+          "i2c-scl"
+        ]
+      },
+      {
+        "id": "SDA",
+        "type": "digital",
+        "protocols": [
+          "i2c-sda"
+        ]
+      }
+    ],
+    "behavior": {
+      "kind": "i2c-device",
+      "address": 64,
+      "pullup_ohms": 10000,
+      "who_am_i": {
+        "reg": 15,
+        "value": 167
+      },
+      "registers": [
+        {
+          "reg": 0,
+          "bytes": 2,
+          "field": {
+            "id": "temperature",
+            "unit": "°C",
+            "min": -40,
+            "max": 125,
+            "default": 22.5,
+            "scale": 100,
+            "signed": true
+          }
+        },
+        {
+          "reg": 16,
+          "name": "config",
+          "writable": true,
+          "value": 0
+        }
+      ]
+    },
+    "current_ma": {
+      "typ": 1,
+      "max": 2
+    },
+    "price_usd": 3,
+    "dimensions_mm": {
+      "w": 15,
+      "h": 12,
+      "d": 3
+    }
+  },
+  "pir": {
+    "id": "pir-motion-sensor",
+    "name": "PIR motion sensor HC-SR501",
+    "category": "sensor",
+    "description": "Passive infrared motion sensor. OUT goes HIGH (3.3 V) while it sees motion.",
+    "pins": [
+      {
+        "id": "VCC",
+        "type": "power",
+        "voltage": {
+          "min": 4.5,
+          "max": 20
+        }
+      },
+      {
+        "id": "OUT",
+        "type": "digital"
+      },
+      {
+        "id": "GND",
+        "type": "ground"
+      }
+    ],
+    "behavior": {
+      "kind": "digital-input",
+      "output": "OUT",
+      "field": "motion"
+    },
+    "current_ma": {
+      "typ": 0.065,
+      "max": 0.1
+    },
+    "price_usd": 1.5,
+    "dimensions_mm": {
+      "w": 32,
+      "h": 24,
+      "d": 25
+    }
+  },
+  "uart": {
+    "id": "ping-module",
+    "name": "Serial ping module",
+    "category": "communication",
+    "description": "Answers PING with PONG and its counter value, 9600 baud.",
+    "pins": [
+      {
+        "id": "VCC",
+        "type": "power",
+        "voltage": {
+          "min": 3,
+          "max": 5.5
+        }
+      },
+      {
+        "id": "GND",
+        "type": "ground"
+      },
+      {
+        "id": "TX",
+        "type": "digital",
+        "protocols": [
+          "uart-tx"
+        ]
+      },
+      {
+        "id": "RX",
+        "type": "digital",
+        "protocols": [
+          "uart-rx"
+        ]
+      }
+    ],
+    "behavior": {
+      "kind": "uart-device",
+      "rx": "RX",
+      "tx": "TX",
+      "baud": 9600,
+      "responses": [
+        {
+          "match": "PING",
+          "reply": "PONG {count}"
+        }
+      ],
+      "unknown_reply": "ERR",
+      "fields": [
+        {
+          "id": "count",
+          "min": 0,
+          "max": 1000,
+          "default": 7,
+          "decimals": 0
+        }
+      ]
+    },
+    "current_ma": {
+      "typ": 10,
+      "max": 20
+    },
+    "price_usd": 4,
+    "dimensions_mm": {
+      "w": 20,
+      "h": 15,
+      "d": 3
+    }
+  }
+}

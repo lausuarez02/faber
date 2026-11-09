@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-37 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+40 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -64,6 +64,9 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`set_ai_mode`](#set_ai_mode) | Mock or live pet AI | simulation only |
 | [`read_network_log`](#read_network_log) | Network activity | no (read-only) |
 | [`run_live`](#run_live) | Run at real time with the live AI | simulation only |
+| [`create_part`](#create_part) | Make a missing part | yes (undoable step) |
+| [`update_part`](#update_part) | Change a made part | yes (undoable step) |
+| [`list_project_parts`](#list_project_parts) | Made parts | no (read-only) |
 
 ### new_project
 
@@ -399,3 +402,30 @@ Run the simulation for ms at no more than real time with the live AI allowed (se
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `ms` | number | yes | Virtual (= wall) milliseconds, max 60000. |
+
+### create_part
+
+Make a part the catalog does not have (search_parts found nothing that fits), as data: pins, physical facts and one behaviour template. No code runs; the simulator builds the model from the template. behavior.kind: "digital-input" (PIR, IR obstacle, tilt, hall switch: an output pin HIGH/LOW from a boolean field), "analog-sensor" (soil moisture, gas, flex, force: quantity → voltage curve, optional comparator DO pin), "actuator" (drive "load": pump / motor / solenoid between plus and minus with rated_v and rated_ma; drive "logic": relay or MOSFET module with VCC/GND/IN and optional relay contacts), "i2c-device" (address, registers with raw values or physical fields, WHO_AM_I; read with Wire), "uart-device" (SoftwareSerial line protocol: scripted replies, greeting, periodic stream such as NMEA), "display" (reuse the ssd1306 / st7735 / ili9341 controller with your own resolution or round glass). Visual: pass svg (sanitized: no scripts, no external links; then give size and pin x/y) or leave it out for a generated labelled drawing. Example: {"part": {"id": "soil-moisture-sensor", "name": "Capacitive soil moisture sensor v1.2", "category": "sensor", "description": "Analog soil moisture probe; AOUT falls as the soil gets wetter.", "pins": [{"id": "GND", "type": "ground"}, {"id": "VCC", "type": "power", "voltage": {"min": 3.3, "max": 5.5}}, {"id": "AOUT", "type": "analog"}], "behavior": {"kind": "analog-sensor", "output": "AOUT", "quantity": {"id": "moisture", "unit": "%", "min": 0, "max": 100, "default": 40}, "curve": [{"value": 0, "volts": 3.0}, {"value": 100, "volts": 1.2}]}, "current_ma": {"typ": 5, "max": 8}, "price_usd": 2.5, "dimensions_mm": {"w": 98, "h": 23, "d": 4}}}. The id must not be a built-in type. Returns {type, pins, state, fidelity: "agent-made: behavioral, unverified", warnings, next}; then place_part / connect / run / run_tests it like any part. Always tell the person the part is agent-made and unverified.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `part` | object | yes | The part, format jumper-part/1: pins, physical data and one behavior template. docs/custom-parts.md has an example per behavior kind. |
+| `svg` | string |  | Optional SVG drawing (viewBox = part.size, a <circle data-pin="ID"> per pin is recommended). Scripts, event handlers, <foreignObject> and external links are removed. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "the catalog has no soil sensor". Consecutive edits with the same why form one undoable step. |
+
+### update_part
+
+Change an agent-made part of this project: pass the whole new definition as part (same id), and/or svg (a new drawing, or null for the generated one). Leave part out to change only the drawing. Refuses to drop pins that wires use (disconnect them first). Placed copies use the new definition from the next run. Undo with undo like any edit.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes | The part type id given to create_part. |
+| `part` | object |  | The whole new definition (jumper-part/1, same schema as create_part), same id. |
+| `svg` | string \| null |  | New SVG, or null to use the generated drawing. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "the catalog has no soil sensor". Consecutive edits with the same why form one undoable step. |
+
+### list_project_parts
+
+The agent-made parts of this project (parts/<id>/part.json): {type, name, behavior, pins, placed}, plus problems when a part file cannot be loaded. Built-in parts are listed by search_parts.
+
+No arguments.

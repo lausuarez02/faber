@@ -1,3 +1,4 @@
+import { customUsageOf } from "@jumper/parts";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -115,6 +116,8 @@ function readIfExists(path: string): string | undefined {
 
 /** Usage for a part type: the part folder's files win, then the built-in table, then a hint from the pins. */
 export function usageFor(spec: PartSpec): Usage {
+  const custom = customUsageOf(spec); // agentparts (C7): an agent-made part's own usage block
+  if (custom) return { wiring: custom.wiring + (custom.datasheet ? ` Datasheet: ${custom.datasheet}` : ""), ...(custom.example ? { example: custom.example } : {}), ...(custom.libraries?.length ? { libraries: custom.libraries } : {}) };
   const dir = PARTS_DIR ? join(PARTS_DIR, spec.id) : "";
   const example = dir ? readIfExists(join(dir, "example.ino")) : undefined;
   const usageMd = dir ? readIfExists(join(dir, "usage.md")) : undefined;
