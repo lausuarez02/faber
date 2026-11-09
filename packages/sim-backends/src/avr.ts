@@ -5,6 +5,8 @@ import {
   AVRClock,
   AVREEPROM,
   AVRIOPort,
+  AVRSPI,
+  AVRTWI,
   AVRTimer,
   AVRUSART,
   AVRWatchdog,
@@ -17,13 +19,24 @@ import {
   portBConfig,
   portCConfig,
   portDConfig,
+  spiConfig,
+  twiConfig,
   timer0Config,
   timer1Config,
   timer2Config,
   usart0Config,
   watchdogConfig,
 } from "avr8js";
-import { parseIntelHex, type McuBackend, type PinMode, type PinState, type Unsubscribe } from "@jumper/sim-core";
+import {
+  parseIntelHex,
+  type I2cBus,
+  type McuBackend,
+  type McuBusPins,
+  type PinMode,
+  type PinState,
+  type SpiBus,
+  type Unsubscribe,
+} from "@jumper/sim-core";
 import { boardPinMap, type BoardPin, type BoardType } from "./pins.ts";
 
 export interface AvrBackendOptions {
@@ -58,16 +71,26 @@ export const AVR_BACKEND_FACTS = {
     usart: true,
     adc: true,
     watchdog: true,
-    spi: false,
-    twi: false,
+    spi: true,
+    twi: true,
   },
+  /** TWI (I2C master) timing: each START/STOP takes one SCL period, each address/data byte nine. */
+  twiBitsPerByte: 9,
 } as const;
+
+/** ATmega328P hardware bus pins (Uno and Nano names). */
+const BUS_PINS: McuBusPins = {
+  i2c: { sda: "A4", scl: "A5" },
+  spi: { mosi: "D11", miso: "D12", sck: "D13", ss: "D10" },
+};
 
 interface Machine {
   cpu: CPU;
   ports: { B: AVRIOPort; C: AVRIOPort; D: AVRIOPort };
   adc: AVRADC;
   usart: AVRUSART;
+  twi: AVRTWI;
+  spi: AVRSPI;
 }
 
 type PinListener = (pinId: string, state: PinState, cycle: number) => void;
@@ -77,10 +100,15 @@ class AvrBackend implements McuBackend {
   readonly cyclesPerSecond: number;
   readonly vcc: number;
   readonly pinIds: readonly string[];
+  readonly busPins: McuBusPins = BUS_PINS;
+  private i2cBus: I2cBus | undefined;
+  private spiBus: SpiBus | undefined;
 
   private readonly pins: readonly BoardPin[];
   private readonly pinById: ReadonlyMap<string, BoardPin>;
   private program = new Uint16Array(FLASH_BYTES / 2);
+  /** Target cycle of the step() in progress (0 outside step); lowered by stopAt(). */
+  private stepEnd = 0;
   private m: Machine;
   /** Last reported state per pin id (to report only real changes). */
   private reported = new Map<string, string>();
@@ -118,16 +146,24 @@ class AvrBackend implements McuBackend {
   }
 
   reset(): void {
+    // A transfer cut off by the reset ends the transaction on the bus too.
+    this.i2cBus?.stop();
     this.m = this.build();
   }
 
   step(cycles: number): void {
     const cpu = this.m.cpu;
-    const target = cpu.cycles + Math.max(0, Math.floor(cycles));
-    while (cpu.cycles < target) {
+    this.stepEnd = cpu.cycles + Math.max(0, Math.floor(cycles));
+    while (cpu.cycles < this.stepEnd) {
       avrInstruction(cpu);
       cpu.tick();
     }
+    this.stepEnd = 0;
+  }
+
+  /** End the current step() at `cycle` (see McuBackend.stopAt). No-op outside step() or for a later cycle. */
+  stopAt(cycle: number): void {
+    if (cycle < this.stepEnd) this.stepEnd = Math.max(this.m.cpu.cycles, Math.floor(cycle));
   }
 
   readPin(pinId: string): PinState {
@@ -155,6 +191,14 @@ class AvrBackend implements McuBackend {
   onSerial(cb: SerialListener): Unsubscribe {
     this.serialListeners.add(cb);
     return () => void this.serialListeners.delete(cb);
+  }
+
+  attachI2c(bus: I2cBus): void {
+    this.i2cBus = bus;
+  }
+
+  attachSpi(bus: SpiBus): void {
+    this.spiBus = bus;
   }
 
   writeSerial(byte: number): void {
@@ -191,6 +235,41 @@ class AvrBackend implements McuBackend {
     return { mode, value };
   }
 
+  private twiHandler(cpu: CPU, twi: AVRTWI): TwiHandler {
+    // SCL period in CPU cycles: 16 + 2·TWBR·prescaler (ATmega328P datasheet, 22.5.2). Wire's
+    // default 100 kHz is TWBR = 72 → 160 cycles per bit at 16 MHz, 1440 cycles (90 µs) per byte.
+    const bit = () => Math.max(1, Math.round(this.cyclesPerSecond / twi.sclFrequency));
+    const later = (cycles: number, fn: () => void) =>
+      cpu.addClockEvent(() => {
+        if (this.m.cpu === cpu) fn();
+      }, cycles);
+    const bytes = AVR_BACKEND_FACTS.twiBitsPerByte;
+    return {
+      start: (repeated) =>
+        later(bit(), () => {
+          this.i2cBus?.start(repeated);
+          twi.completeStart();
+        }),
+      stop: () =>
+        later(bit(), () => {
+          this.i2cBus?.stop();
+          twi.completeStop();
+        }),
+      connectToSlave: (addr, write) =>
+        later(bytes * bit(), () => {
+          twi.completeConnect(this.i2cBus ? this.i2cBus.connect(addr, !write) : false);
+        }),
+      writeByte: (value) =>
+        later(bytes * bit(), () => {
+          twi.completeWrite(this.i2cBus ? this.i2cBus.write(value) : false);
+        }),
+      readByte: (ack) =>
+        later(bytes * bit(), () => {
+          twi.completeRead(this.i2cBus ? this.i2cBus.read(ack) : 0xff);
+        }),
+    };
+  }
+
   private build(): Machine {
     const cpu = new CPU(new Uint16Array(this.program), SRAM_BYTES);
     const ports = {
@@ -218,7 +297,19 @@ class AvrBackend implements McuBackend {
       if (pin.port !== undefined && pin.bit !== undefined && this.inputLevel.get(pin.id)) ports[pin.port].setPin(pin.bit, true);
     }
 
-    const m: Machine = { cpu, ports, adc, usart };
+    const twi = new AVRTWI(cpu, twiConfig, this.cyclesPerSecond);
+    twi.eventHandler = this.twiHandler(cpu, twi);
+    const spi = new AVRSPI(cpu, spiConfig, this.cyclesPerSecond);
+    spi.onByte = (value: number) => {
+      // The byte is on the wire for transferCycles (8 SCK periods); the device answers at the end.
+      cpu.addClockEvent(() => {
+        if (this.m.cpu !== cpu) return;
+        const miso = this.spiBus ? this.spiBus.transfer(value) : 0xff;
+        spi.completeTransfer(miso);
+      }, spi.transferCycles);
+    };
+
+    const m: Machine = { cpu, ports, adc, usart, twi, spi };
     this.m = m;
     this.reported.clear();
     for (const pin of this.pins) this.reported.set(pin.id, key(this.stateOf(pin)));
@@ -239,6 +330,15 @@ class AvrBackend implements McuBackend {
     }
     return m;
   }
+}
+
+/** Drives the logical I2C bus from the TWI peripheral, with the time each step takes on the wire. */
+export interface TwiHandler {
+  start(repeated: boolean): void;
+  stop(): void;
+  connectToSlave(addr: number, write: boolean): void;
+  writeByte(value: number): void;
+  readByte(ack: boolean): void;
 }
 
 /** Change key: outputs change on level, inputs only on mode (input levels come from setPinInput, which must not fire). */
