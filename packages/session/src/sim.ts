@@ -390,6 +390,18 @@ export class SimHost {
         v = 0;
       }
       const mode = st.mode === "output" ? "out" : st.mode;
+      let pwm: ReturnType<Simulation["pwm"]>;
+      try {
+        pwm = st.mode === "output" ? this.sim.pwm(board, pin) : undefined;
+      } catch {
+        pwm = undefined;
+      }
+      if (pwm && pwm.periodUs > 0 && pwm.periodUs <= 100_000 && pwm.sinceEdgeUs <= 2 * pwm.periodUs + 1000) {
+        // Still toggling: the level at this instant says little (a servo pulse is HIGH 5% of the time).
+        const hz = pwm.freqHz >= 100 ? Math.round(pwm.freqHz) : Math.round(pwm.freqHz * 10) / 10;
+        out[pin] = pwm.periodUs >= 5000 ? `out pulse ${hz}Hz ${Math.round(pwm.highUs)}us (servo-style; now ${st.value ? "H" : "L"})` : `out PWM ${hz}Hz duty ${Math.round(pwm.duty * 1000) / 10}%`;
+        continue;
+      }
       out[pin] = `${mode} ${st.value ? "H" : "L"} ${v.toFixed(2)}V`;
     }
     return out;

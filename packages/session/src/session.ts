@@ -679,7 +679,15 @@ export class ProjectSession {
     }
     const step = this.commit(ctx, "set_world", next);
     ctx.summary = args.world ? "set the world (arena / robot)" : "removed the world";
-    return { world: args.world ? Object.keys(args.world) : null, next: "run: the robot moves with its motors; parts.<chassis> shows x, y, heading, collisions, minClearance", step: { id: step.id, why: step.why } };
+    const w = (args.world ?? {}) as Record<string, unknown>;
+    const next_: string[] = [];
+    if (w.robot || w.arena) {
+      next_.push('run: the rover moves with its motors; the result\'s world shows {robot {x, y, heading}, collisions, min_clearance_cm, travelled_cm, sonar_cm}. Test with expect_part "world.<field>": e.g. {"expect_part": "world.collisions", "op": "==", "value": 0} and a real safety margin {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3} (any gap above 0 counts as no collision, so 0.5 cm is a scrape)');
+    }
+    if (w.arm) {
+      next_.push('run: the joints follow their servos; the result\'s world shows {arm {gripper {x, y}, reached}}. Test with expect_part "world.gripper_x", "world.gripper_y" (cm) and "world.reached" (comma list of target ids the gripper touches, e.g. {"expect_part": "world.reached", "op": "contains", "value": "cup"}); servo angles are "<servo>.angle"');
+    }
+    return { world: args.world ? Object.keys(args.world) : null, ...(args.world ? { next: next_.join(" | ") || "run, then check the world fields in the run result" } : {}), step: { id: step.id, why: step.why } };
   }
 
   // =================================================================== files
@@ -897,7 +905,9 @@ export class ProjectSession {
     const serial = host.serialSince(serialFrom);
     host.serialCursor = host.sim.serialText().length;
     const diags = host.sim.diagnostics();
-    const notes = [built, restarted, args.reset && faults ? `restarted from 0 ms with the injected faults still active (${JSON.stringify(host.faults())}); inject_fault kind "clear" removes them` : undefined, !host.hasFirmware && this.project.firmware ? "no firmware loaded: only the passive circuit runs" : undefined].filter(Boolean);
+    const wf = host.worldFields();
+    const nearMiss = wf && typeof wf.min_clearance_cm === "number" && wf.min_clearance_cm < 2 && wf.collisions === 0 ? `near miss: the closest gap to a wall or obstacle was ${wf.min_clearance_cm} cm (a real rover scrapes at that distance; sensor noise and wheel slip are not simulated). Fix: turn earlier or slow down, and test a margin with {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3}` : undefined;
+    const notes = [built, restarted, nearMiss, args.reset && faults ? `restarted from 0 ms with the injected faults still active (${JSON.stringify(host.faults())}); inject_fault kind "clear" removes them` : undefined, !host.hasFirmware && this.project.firmware ? "no firmware loaded: only the passive circuit runs" : undefined].filter(Boolean);
     ctx.summary = `ran ${ms} ms (now ${round(host.timeMs)} ms)`;
     const displays = this.project.parts.filter((p) => typeof host.sim.partState(p.id)?.pixels === "string").map((p) => p.id);
     return {
