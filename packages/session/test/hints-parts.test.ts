@@ -1,7 +1,7 @@
 // Round 5 parts: every new part has a usage hint whose typical connections name real pins, and the
 // session places and describes them through get_part like any built-in.
 import { describe, expect, it } from "vitest";
-import { getPart } from "@jumper/parts";
+import { getPart, partDefinitions } from "@jumper/parts";
 import { PARTS_R5_HINTS } from "../src/hints-parts.ts";
 import { usageFor } from "../src/hints.ts";
 
@@ -12,7 +12,7 @@ const NEW = [
 const shortId = (type: string) => type.replace(/[^A-Za-z0-9_]/g, "");
 
 describe("round 5 part hints", () => {
-  it.each(NEW)("%s has wiring, typical connections on real pins and an example", (type) => {
+  it.each([...new Set([...NEW, ...Object.keys(PARTS_R5_HINTS)])])("%s has wiring, typical connections on real pins and an example", (type) => {
     const spec = getPart(type)?.spec;
     expect(spec, `${type} in the registry`).toBeDefined();
     expect(PARTS_R5_HINTS[type], `${type} in hints-parts.ts`).toBeDefined();
@@ -29,7 +29,7 @@ describe("round 5 part hints", () => {
           expect(getPart("arduino-uno")!.spec.pins.some((p) => p.id === pin || (pin === "GND" && p.id.startsWith("GND"))), `${line}: uno.${pin}`).toBe(true);
           continue;
         }
-        const t = NEW.concat(["buzzer"]).find((x) => `${shortId(x)}1` === part);
+        const t = partDefinitions.map((d) => d.spec.id).find((x) => `${shortId(x)}1` === part);
         expect(t, `${line}: '${part}' is a first-placed id`).toBeDefined();
         expect(getPart(t!)!.spec.pins.map((p) => p.id), `${line}: ${part}.${pin}`).toContain(pin);
       }

@@ -45,6 +45,31 @@ the rulebook on top of them.
 | `tags` | no | Search words: aliases, model numbers, use cases (`"ldr"`, `"light sensor"`). |
 | `bus` | bus parts | `{ i2c: { addresses, addressProp?, pullUpOhms?, maxHz? } }` or `{ spi: { modes?, maxHz? } }`. The bus pins carry `protocols` (`i2c-sda`, `i2c-scl`, `spi-mosi`, `spi-miso`, `spi-sck`, `spi-cs`) and the model returns an `i2c` / `spi` member. Bus parts also ship an `example.ino` (+ golden `example.hex`, built with `toolchains/arduino/build-part-examples.sh`) that their test runs on a simulated Uno. See `docs/buses.md`. |
 
+### Physical data
+
+Every shipped part carries what a planner needs to size, weigh, power and price a device
+(decision 0003, C2). `plan_device` sums these; `src/spec/physical.test.ts` fails when one is
+missing.
+
+```json
+"dimensions_mm": { "w": 21, "h": 17.5, "d": 3.5 },
+"mass_g": 3,
+"current_ma": { "typ": 25, "max": 60 },
+"price_usd": 5.4,
+"buy_links": [{ "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-....html" }]
+```
+
+- **`dimensions_mm`**: the module as sold, `w × h` on the board plane, `d` the height off the board
+  (a pump or a battery: its three outer dimensions). Parts with a size prop (`ws2812-strip`,
+  `lipo-battery`) give the default.
+- **`mass_g`**: without wires.
+- **`current_ma`**: what the part itself draws from its supply. `typ` = normal use (a relay
+  energized, a TFT with its backlight on, a servo moving now and then), `max` = worst case (stall,
+  every LED white, radio transmitting). Passive parts and power sources: `{ "typ": 0, "max": 0 }`.
+  A charger's `max` is what it draws from USB while charging.
+- **`price_usd`**: one unit from a generic distributor or the maker's shop, not a bulk price.
+- **`buy_links`**: `https://` only; search URLs are fine and age better than product pages.
+
 ### Pins
 
 ```json
@@ -272,6 +297,27 @@ LED_COLORS, ledBrightness, resistorBands, formatOhms, ldrResistance   // model h
 | `potentiometer` | `1`, `W`, `2` | `position` 0..1, `resistance` (10 kΩ) | `position`, `knobAngle`, `knobTransform` |
 | `photoresistor` | `1`, `2` | `lux` (GL5528 curve) | `lux`, `resistance`, `light` |
 | `buzzer` | `POS`, `NEG` | – | `sounding`, `volume`, `volts`, `currentmA` |
+
+## 9. Round 5 parts
+
+| id | What it adds | Checked with |
+| --- | --- | --- |
+| `gc9a01-round-tft` | 240×240 round colour TFT; MIPI panel options `viewer: "native"`, `invertGlass`, `roundGlass`, `rotationTable` (`src/lib/mipiPanel.ts`) | Adafruit_GFX example on a simulated Uno |
+| `lipo-battery` | 1S cell: OCV vs state of charge, sag, coulomb counting (`speedup` prop for tests, shown in the label), protection cut-off | bench + a charging run with the TP4056 |
+| `tp4056-charger` | trickle / CC / CV / full, R_PROG current, USB plug (press), OUT protection | bench + charging run |
+| `passive-buzzer` | frequency from the measured pin period, note names, melody history | `tone()` melody on firmware |
+| `vibration-motor` | module with its own NPN; the dc-motor model inside (`src/lib/innerMotor.ts`) | bench (timed) |
+| `ttp223-touch` | push-pull touch output, A/B jumpers | bench |
+| `capacitive-soil-moisture` | AOUT falls with moisture, 3.3 / 5 V | bench + the plant waterer |
+| `relay-module` | active low / high input, pull-in voltage, 10 / 5 ms operate / release, COM-NO-NC | bench + the plant waterer |
+| `water-pump` | DC pump (dc-motor model inside), flow and `pumpedMl` | plant waterer example on firmware |
+| `ir-proximity` | active-low obstacle output, threshold knob, surface reflectivity, robot physics (`mount`) | bench + `packages/physics` |
+| `bump-switch` | lever micro switch, robot physics presses it (`mount`) | bench + `packages/physics` |
+| `dht22` | AM2302 single-bus protocol bit for bit, previous-measurement answer, 2 s / 1 s rules | library-free reader on firmware |
+| `pir-motion` | repeat / single trigger, hold and 2.5 s block time, warm-up | bench (timed) |
+| `ws2812-strip` | WS2812B bits decoded from pin edges, up to 16 LEDs, current, timing warnings | bit-banged example on firmware |
+
+The active `buzzer` now reports `buzzer-tone` when it is driven with `tone()`.
 
 Reference numbers proven by the tests: red LED + 220 Ω at 5 V → 13.3 mA at Vf ≈ 2.07 V;
 blue LED Vf ≈ 3.0 V; pot at 0.5 → 2.50 V; GL5528 15 kΩ at 10 lx, ~950 Ω at 1000 lx, 1 MΩ dark;
