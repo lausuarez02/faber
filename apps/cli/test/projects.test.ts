@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { BuildRequest, BuildResult } from "@jumper/runner";
 import { listRegisteredProjects, projectId } from "@jumper/session";
 import { parseDiag } from "../src/routes/projects.ts";
@@ -55,6 +57,11 @@ describe("jumper serve: projects, history, files, build", () => {
     if (oldHome === undefined) delete process.env.JUMPER_HOME;
     else process.env.JUMPER_HOME = oldHome;
     rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("gives the session the hooks new_project {folder} uses (C3)", () => {
+    expect(srv.session.projectsRoot).toBe(join(tmp, "projects"));
+    expect(srv.session.openProject).toBeTypeOf("function");
   });
 
   it("records every change as a version with who, why and what changed", async () => {
@@ -235,6 +242,23 @@ describe("jumper serve: projects, history, files, build", () => {
     expect((await send("POST", `/api/projects/${first.id}/open`)).status).toBe(200);
     expect(srv.dir).toBe(before);
     expect(srv.session.project.name).toBe("Night light");
+
+    // One MCP endpoint: an agent connected before the switch now works on the active project.
+    const client = new Client({ name: "claude-code", version: "9.9.9" });
+    await client.connect(new StreamableHTTPClientTransport(new URL(srv.mcpUrl)));
+    try {
+      const r = (await client.callTool({ name: "get_project", arguments: {} })) as { content: { text: string }[] };
+      expect(JSON.parse(r.content[0]!.text).dir).toBe(before);
+      await srv.openProject(made.body.dir);
+      const r2 = (await client.callTool({ name: "get_project", arguments: {} })) as { content: { text: string }[] };
+      expect(JSON.parse(r2.content[0]!.text)).toMatchObject({ dir: made.body.dir, name: "My blink" });
+      // Resources read the active project too.
+      const res = await client.readResource({ uri: "jumper://project" });
+      expect(JSON.stringify(res)).toContain("My blink");
+      await srv.openProject(before);
+    } finally {
+      await client.close();
+    }
 
     const blank = await send("POST", "/api/projects", { name: "Fresh idea" });
     expect(blank.body.dir).toBe(join(tmp, "projects", "fresh-idea"));
