@@ -44,7 +44,12 @@ function i2cAddress(spec: PartSpec, props: Record<string, unknown> | undefined):
 }
 const hex = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, "0")}`;
 
-export function checkDesign(project: Project, registry: PartRegistry, firmwareSource = ""): DesignIssue[] {
+export interface CheckOptions {
+  /** The sketch is still the starter template (wiring comes first): firmware-dependent rules become reminders. */
+  templateSketch?: boolean;
+}
+
+export function checkDesign(project: Project, registry: PartRegistry, firmwareSource = "", opts: CheckOptions = {}): DesignIssue[] {
   const issues: DesignIssue[] = [];
   const add = (i: DesignIssue) => issues.push(i);
   const partSpec = new Map<string, PartSpec>();
@@ -93,7 +98,13 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
         add({ severity: "error", code: "unconnected-supply", message: `${p.id}.${x.id} (${x.type === "ground" ? "ground" : "supply"}) is not connected: the module needs both power and ground. Fix: connect ${p.id}.${x.id} → ${boardPart ?? "board"}.${x.type === "ground" ? "GND" : x.voltage && x.voltage.max < 4 ? "3V3" : "5V"}.`, parts: [p.id], pins: [`${p.id}.${x.id}`] });
       }
     }
-    if (s.pins.every((x) => !wired.has(`${p.id}.${x.id}`))) {
+    if (s.pins.length === 0) {
+      // Mechanical parts (a chassis) have no pins: the physics world uses them, not the circuit.
+      const inWorld = JSON.stringify(project.world ?? null).includes(`"${p.id}"`) || (!!project.world && s.id.startsWith("robot-chassis") && project.parts.filter((x) => x.type === p.type).length === 1);
+      if (!inWorld) {
+        add({ severity: "warning", code: "not-in-world", message: `${p.id} (${s.name}) has no pins and is not used by a robot world, so it does nothing. Fix: add a world with set_world (robot.chassis "${p.id}"; get_part ${s.id} shows how) or remove ${p.id}.`, parts: [p.id] });
+      }
+    } else if (s.pins.every((x) => !wired.has(`${p.id}.${x.id}`))) {
       add({ severity: "warning", code: "not-connected", message: `${p.id} (${s.name}) is placed but has no wires, so it is not part of the circuit. Fix: wire it (get_part ${s.id} shows how) or remove it.`, parts: [p.id] });
     }
   }
@@ -214,6 +225,11 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
         const named = [...src.matchAll(/\b([A-Za-z_]\w*)\s*=\s*(A?\d+)\b/g), ...src.matchAll(/#define\s+(\w+)\s+(A?\d+)\b/g)].filter((m) => m[2] === num || m[2] === g.pin.id).map((m) => m[1]!);
         const reNamed = named.length ? new RegExp(`pinMode\\s*\\(\\s*(?:${named.join("|")})\\s*,\\s*INPUT_PULLUP`) : undefined;
         if (src && !re.test(src) && !(reNamed && reNamed.test(src))) {
+          const pinArg = g.pin.id.startsWith("A") ? g.pin.id : num;
+          if (opts.templateSketch) {
+            add({ severity: "info", code: "floating-input", message: `Reminder for the sketch you have not written yet: ${key(g.ref)} reads ${p.id} with no resistor, so use pinMode(${pinArg}, INPUT_PULLUP) (pressed reads LOW). This is checked again once firmware/main.ino is yours.`, parts: [p.id, boardPart], pins: [key(g.ref)] });
+            continue;
+          }
           add({ severity: "warning", code: "floating-input", message: `${key(g.ref)} reads ${p.id} with no pull-up or pull-down resistor, and the sketch does not set pinMode(${g.pin.id.startsWith("A") ? g.pin.id : num}, INPUT_PULLUP): the input floats and reads random values on real hardware (the simulator reads LOW). Fix: use pinMode(${g.pin.id.startsWith("A") ? g.pin.id : num}, INPUT_PULLUP) with the button to GND, or add a 10 kΩ resistor.`, parts: [p.id, boardPart], pins: [key(g.ref)] });
         }
       }
@@ -223,21 +239,43 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
     add({ severity: "info", code: "no-firmware", message: `${boardPart} has no firmware yet, so only the passive circuit is simulated. Fix: write_file("firmware/main.ino", …) then build.`, parts: [boardPart] });
   }
 
-  // Power budget on the USB 5 V rail.
+  // Power budget on the board's 5 V / 3V3 rail (USB or the on-board regulator): only parts fed from it count.
   if (boardPart) {
+    const railNets = new Set(nets.filter((n) => n.pins.some((x) => x.ref.part === boardPart && x.pin.type === "power" && /^(5V|3V3|3\.3V|IOREF)$/i.test(x.pin.id))).map((n) => n.id));
+    const motorSupply = (pin: PinSpec) => pin.type === "power" && ((pin.voltage?.max ?? 0) > 5.5 || /^(12V|VS|VM|VMOT|VIN|\+)$/i.test(pin.id));
+    const fedFromRail = (pid: string, s: PartSpec): boolean => {
+      const power = s.pins.filter((x) => x.type === "power");
+      const supply = power.filter(motorSupply);
+      const check = supply.length ? supply : power;
+      return check.some((x) => railNets.has(netOf.get(`${pid}.${x.id}`)?.id ?? ""));
+    };
     let mA = 0;
     const loads: string[] = [];
+    const heavy: string[] = [];
     for (const p of project.parts) {
       const s = partSpec.get(p.id);
-      if (!s || isBoard(s)) continue;
-      const c = s.limits?.typicalCurrentmA ?? (s.category === "motor" ? s.limits?.maxCurrentmA : undefined);
-      if (typeof c === "number") {
+      if (!s || isBoard(s) || s.category === "power" || !fedFromRail(p.id, s)) continue;
+      const lim = (s.limits ?? {}) as Record<string, number | undefined>;
+      let c = lim.typicalCurrentmA ?? lim.movingCurrentmA;
+      let label = lim.typicalCurrentmA !== undefined ? "" : lim.movingCurrentmA !== undefined ? " moving" : "";
+      // A motor driver fed from the rail passes its motors' current through.
+      const outs = s.pins.filter((x) => x.type === "passive").map((x) => netOf.get(`${p.id}.${x.id}`)).filter(Boolean);
+      const motors = project.parts.filter((m) => {
+        const ms = partSpec.get(m.id);
+        return ms && m.id !== p.id && ms.category === "motor" && !ms.pins.some((x) => x.type === "power") && ms.pins.some((x) => outs.includes(netOf.get(`${m.id}.${x.id}`)));
+      });
+      if (motors.length) {
+        c = motors.reduce((sum, m) => sum + (partSpec.get(m.id)!.limits?.maxCurrentmA ?? 500), 0);
+        label = ` for ${motors.map((m) => m.id).join(" + ")} at stall`;
+      }
+      if (typeof c === "number" && c > 0) {
         mA += c;
-        loads.push(`${p.id} ${c} mA`);
+        loads.push(`${p.id} ${c} mA${label}`);
+        if (s.category === "motor") heavy.push(p.id);
       }
     }
     if (mA > 450) {
-      add({ severity: "warning", code: "power-budget", message: `The modules draw about ${mA} mA (${loads.join(", ")}), more than USB's 500 mA minus the board's own ~50 mA. The board may brown out and reset. Fix: power motors and servos from a separate supply (battery pack) with a common ground.`, parts: loads.map((l) => l.split(" ")[0]!) });
+      add({ severity: "warning", code: "power-budget", message: `${boardPart}'s 5V rail feeds about ${mA} mA worst case (${loads.join(", ")}), more than USB's 500 mA minus the board's own ~50 mA: the board browns out and resets when they all move at once. Fix: power ${heavy.length ? heavy.join(", ") : "the heavy loads"} from a separate supply (a battery-pack: POS to their supply pin${heavy.some((h) => partSpec.get(h)?.pins.some(motorSupply)) ? " such as the driver's 12V" : ", e.g. servo VCC"}) and connect its NEG to ${boardPart}.GND (common ground).`, parts: loads.map((l) => l.split(" ")[0]!) });
     }
   }
   const order = { error: 0, warning: 1, info: 2 };

@@ -91,7 +91,7 @@ export const TOOLS: ToolDef[] = [
     name: "connect",
     title: "Wire two pins",
     description:
-      'Draw a wire between two pins: {"from": "uno.D13", "to": "r1.1"}. Pin ids come from place_part/get_part ("A"/"C" on an LED, "1"/"2" on a resistor, "1a"/"2a" on a pushbutton, "D0".."D13", "A0".."A5", "5V", "3V3", "GND" on an Uno). Several wires on one pin are fine (that is how you share GND/5V). Returns the wire id, how forgiving names were resolved, and design warnings about this connection (e.g. LED without resistor, I2C on the wrong pins). Refuses a direct 5V-to-GND short. Already-connected pins return the existing wire.',
+      'Draw a wire between two pins: {"from": "uno.D13", "to": "r1.1"}. Pin ids come from place_part/get_part ("A"/"C" on an LED, "1"/"2" on a resistor, "1a"/"2a" on a pushbutton, "D0".."D13", "A0".."A5", "5V", "3V3", "GND" on an Uno). Several wires on one pin are fine (that is how you share GND/5V). Returns the wire id, how forgiving names were resolved, design warnings about this connection (e.g. LED without resistor, I2C on the wrong pins) and reminders for the sketch you have not written yet (e.g. INPUT_PULLUP for a button). Refuses a direct 5V-to-GND short. Already-connected pins return the existing wire.',
     inputSchema: { type: "object", properties: { from: pinRef("uno.D13"), to: pinRef("r1.1"), color: { type: "string", description: 'CSS colour, e.g. "#FF4D2E". Default: red for supply, dark for ground, varied for signals.' }, why }, required: ["from", "to"] },
     edits: true,
   },
@@ -229,7 +229,7 @@ export const TOOLS: ToolDef[] = [
     name: "check_design",
     title: "Design rule check",
     description:
-      "Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch), Serial pins in use, USB power budget, plus live simulator diagnostics (overcurrent, floating inputs) after a run. Each issue says what, why and the fix. Run it after wiring and before trusting a design.",
+      "Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch; while the sketch is still the starter template this is an info reminder), Serial pins in use, power budget of the board's 5V rail (servos, motor drivers fed from it; loads on a battery do not count), pinless parts not used by the world, plus live simulator diagnostics (overcurrent, floating inputs) after a run. Each issue says what, why and the fix. Run it after wiring and before trusting a design.",
     inputSchema: { type: "object", properties: {} },
     readOnly: true,
   },

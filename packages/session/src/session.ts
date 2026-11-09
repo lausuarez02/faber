@@ -603,11 +603,17 @@ export class ProjectSession {
     ctx.target = { part: b.ref.part, pin: b.ref.pin };
     ctx.summary = `wired ${fmtRef(a.ref)} → ${fmtRef(b.ref)}`;
     const keys = new Set([fmtRef(a.ref), fmtRef(b.ref)]);
-    const warnings = checkDesign(next, this.registry, this.firmwareSource())
-      .filter((i) => i.severity !== "info" && (i.pins ?? []).some((p) => keys.has(p)) && !["unpowered", "unconnected-supply", "i2c-unwired", "not-connected"].includes(i.code))
-      .map((i) => i.message);
+    const mine = checkDesign(next, this.registry, this.firmwareSource(), this.checkOptions()).filter((i) => (i.pins ?? []).some((p) => keys.has(p)));
+    const warnings = mine.filter((i) => i.severity !== "info" && !["unpowered", "unconnected-supply", "i2c-unwired", "not-connected"].includes(i.code)).map((i) => i.message);
+    const reminders = mine.filter((i) => i.severity === "info" && i.code === "floating-input").map((i) => i.message);
     const resolvedNote = [args.from !== fmtRef(a.ref) ? `${args.from} → ${fmtRef(a.ref)}` : "", args.to !== fmtRef(b.ref) ? `${args.to} → ${fmtRef(b.ref)}` : ""].filter(Boolean);
-    return { wire: wire.id, from: fmtRef(a.ref), to: fmtRef(b.ref), ...(resolvedNote.length ? { resolved: resolvedNote } : {}), ...(warnings.length ? { warnings } : {}), step: { id: step.id, why: step.why } };
+    return { wire: wire.id, from: fmtRef(a.ref), to: fmtRef(b.ref), ...(resolvedNote.length ? { resolved: resolvedNote } : {}), ...(warnings.length ? { warnings } : {}), ...(reminders.length ? { reminders } : {}), step: { id: step.id, why: step.why } };
+  }
+
+  /** Design-check options from the project state (the sketch may still be the starter template). */
+  private checkOptions() {
+    const src = this.firmwareSource().trim();
+    return { templateSketch: !src || TEMPLATE_SOURCES.has(src) };
   }
 
   async disconnect(args: { wire?: string; from?: string; to?: string; why?: string }, ctx: OpCtx): Promise<unknown> {
@@ -1058,7 +1064,7 @@ export class ProjectSession {
   // =================================================================== checks & reports
 
   async checkDesign(): Promise<unknown> {
-    const issues: DesignIssue[] = checkDesign(this.project, this.registry, this.firmwareSource());
+    const issues: DesignIssue[] = checkDesign(this.project, this.registry, this.firmwareSource(), this.checkOptions());
     if (this.host) {
       for (const d of this.host.sim.diagnostics()) {
         if (issues.some((i) => i.code === d.code && i.parts.includes(d.partId))) continue;
