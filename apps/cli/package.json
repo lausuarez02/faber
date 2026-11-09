@@ -1,0 +1,24 @@
+{
+  "name": "@jumper/cli",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "The jumper command: every Jumper operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
+  "bin": {
+    "jumper": "./bin/jumper.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jumper/mcp": "workspace:*",
+    "@jumper/runner": "workspace:*",
+    "@jumper/session": "workspace:*",
+    "tsx": "4.23.15",
+    "yaml": "^2.9.1"
+  }
+}
