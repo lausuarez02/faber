@@ -248,7 +248,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       const props = n.key === "resistor10k" ? { resistance: 10000 } : undefined;
       bom.push({
         type: s.id,
-        name: n.key === "resistor10k" ? "10 kΩ resistor" : s.name,
+        name: HELPERS[n.key] ? n.label : s.name,
         qty,
         why: n.why,
         source: def.fidelity.origin === "agent-made" ? "agent-made" : "simulated-exactly",
@@ -268,8 +268,8 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       cannot.add(`the ${n.label} will be agent-made: it behaves as described, unverified against the real part`);
     } else if (n.standIn && reg.get(n.standIn)) {
       const sd = reg.get(n.standIn)!;
-      bom.push({ type: sd.spec.id, name: n.label, qty, why: `${n.why}. Jumper has no ${n.label}, so a ${sd.spec.name} stands in for it in the simulation`, source: "stand-in", fidelity: sd.fidelity.level, stand_in_for: n.label, buy_links: searchLinks(n.label) });
-      cannot.add(`the ${n.label}: a ${sd.spec.name} stands in for it, so its real behaviour is not simulated`);
+      bom.push({ type: sd.spec.id, name: n.label, qty, why: `${n.why}. Jumper has no ${n.label}, so the ${sd.spec.name} stands in for it in the simulation`, source: "stand-in", fidelity: sd.fidelity.level, stand_in_for: n.label, buy_links: searchLinks(n.label) });
+      cannot.add(`the ${n.label}: the ${sd.spec.name} stands in for it, so its real behaviour is not simulated`);
     } else {
       bom.push({ type: null, name: n.label, qty, why: n.why, source: "not-simulated", buy_links: searchLinks(n.label) });
     }
@@ -409,7 +409,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const listed = bom.slice(1).filter((l) => !/resistor|boost/i.test(l.name)).map((l) => `${l.qty > 1 ? `${l.qty} ` : ""}${l.name.replace(/ \(.*\)$/, "")}`);
   const summary = [
     `${goal.trim().replace(/\.$/, "")}: ${b.name}${listed.length ? ` with ${listed.join(", ")}` : ""}.`,
-    `About ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm in a case${battery && battery.hours ? `, about ${battery.hours} h per charge` : ""}, parts about $${total}${noPrice.length ? " plus the unpriced ones" : ""}.`,
+    `About ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm in a case${battery && battery.hours ? `, about ${battery.hours} h per charge` : ""}, ${total > 0 ? `parts about $${total}${noPrice.length ? ` plus ${noPrice.length} unpriced line${noPrice.length > 1 ? "s" : ""}` : ""}` : "price not known yet (the parts have no price data)"}.`,
     `${simulated} of ${bom.length} lines are parts Jumper simulates as themselves${others.length ? `; ${others.map((l) => `${l.name} (${l.source})`).join(", ")}` : ""}.`,
   ].join(" ");
 
