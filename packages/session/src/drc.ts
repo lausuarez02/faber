@@ -32,6 +32,24 @@ function isRail(i: PinInfo): boolean {
 function isResistive(i: PinInfo): boolean {
   return i.spec.id === "resistor" || i.spec.id === "potentiometer" || i.spec.id === "photoresistor";
 }
+/** A module pin that drives its net (UART TX, MISO, an echo or sensor output), from its protocols, id and description. */
+function isOutputPin(i: PinInfo): boolean {
+  if (i.pin.protocols?.some((p) => p === "uart-tx" || p === "spi-miso")) return true;
+  if (/^(TX|TXD|DOUT|DO|OUT|ECHO|MISO|SDO|INT|IRQ|AO|SIG)$/i.test(i.pin.id)) return true;
+  return /\boutput\b|serial out/i.test(i.pin.description ?? "") && !/\binput\b/i.test(i.pin.description ?? "");
+}
+
+/** A pin that supplies a rail: a board's regulated outputs, a battery or supply part, a module's regulator output (L298N 5V with its jumper on). */
+function isSupplyOutput(i: PinInfo, props: Record<string, unknown> | undefined): boolean {
+  if (i.pin.type !== "power") return false;
+  if (isBoard(i.spec)) return /^(5V|3V3|3\.3V|3V3_OUT|VBUS)$/i.test(i.pin.id);
+  if (i.spec.category === "power") return true;
+  if (!/\boutput\b/i.test(i.pin.description ?? "") || !/regulat/i.test(i.pin.description ?? "")) return false;
+  const jumper = Object.entries(props ?? {}).find(([k]) => /regulator.*jumper|jumper.*5v/i.test(k));
+  const dflt = i.spec.props?.find((p) => /regulator.*jumper|jumper.*5v/i.test(p.id))?.default;
+  return (jumper ? jumper[1] : dflt) !== false;
+}
+
 function i2cAddress(spec: PartSpec, props: Record<string, unknown> | undefined): number | undefined {
   const bus = spec.bus?.i2c;
   if (!bus) return undefined;
@@ -84,12 +102,29 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
   for (const n of nets) for (const p of n.pins) netOf.set(key(p.ref), n);
   const wired = new Set(netOf.keys());
   const boardPart = project.firmware?.board ?? project.parts.find((p) => partSpec.get(p.id) && isBoard(partSpec.get(p.id)!))?.id;
+  /** The highest supply rail voltage on the nets of a part's power pins (what its outputs swing to). */
+  const supplyOf = (part: string, s: PartSpec): number | undefined => {
+    let v: number | undefined;
+    for (const pp of s.pins.filter((x) => x.type === "power")) {
+      for (const r of netOf.get(`${part}.${pp.id}`)?.pins.filter(isRail) ?? []) {
+        const rv = r.pin.voltage?.max;
+        if (rv !== undefined) v = Math.max(v ?? 0, rv);
+      }
+    }
+    return v;
+  };
+  /** The voltage a pin drives HIGH: a board GPIO its rating (or the MCU's vcc), a module output its rating or its supply. */
+  const driveVolts = (x: PinInfo): number | undefined => {
+    if (isBoard(x.spec)) return x.pin.voltage?.max ?? x.spec.mcu?.vcc;
+    return x.pin.voltage?.max ?? supplyOf(x.ref.part, x.spec);
+  };
 
   // Power and ground of modules.
   for (const p of project.parts) {
     const s = partSpec.get(p.id);
     if (!s || isBoard(s)) continue;
-    const pins = s.pins.filter((x) => x.type === "power" || x.type === "ground");
+    // A module's regulator output (L298N 5V with its jumper on) is optional to wire.
+    const pins = s.pins.filter((x) => (x.type === "power" || x.type === "ground") && !(x.type === "power" && !isBoard(s) && s.category !== "power" && isSupplyOutput({ ref: { part: p.id, pin: x.id }, spec: s, pin: x }, p.props)));
     const missing = pins.filter((x) => !wired.has(`${p.id}.${x.id}`));
     if (missing.length && missing.length === pins.length && s.category !== "power") {
       add({ severity: "error", code: "unpowered", message: `${p.id} (${s.name}) has no power: ${missing.map((x) => `${p.id}.${x.id}`).join(", ")} ${missing.length > 1 ? "are" : "is"} not connected, so the module does nothing. Fix: connect ${missing.map((x) => `${p.id}.${x.id} → ${x.type === "ground" ? `${boardPart ?? "board"}.GND` : `${boardPart ?? "board"}.5V`}`).join(" and ")}.`, parts: [p.id], pins: missing.map((x) => `${p.id}.${x.id}`) });
@@ -127,14 +162,48 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
     if (gpios.length > 1 && new Set(gpios.map((g) => g.ref.part)).size === 1) {
       add({ severity: "warning", code: "pin-conflict", message: `${gpios.map((g) => key(g.ref)).join(" and ")} are wired together: if one is HIGH and the other LOW as outputs, they short. Fix: use one pin per signal.`, parts: [gpios[0]!.ref.part], pins: gpios.map((g) => key(g.ref)) });
     }
-    // Over-voltage: a 5 V source on a pin rated for less.
-    const sources = n.pins.filter((x) => (isRail(x) || isGpio(x)) && (x.pin.voltage?.max ?? 0) >= 4.5);
-    if (sources.length) {
-      for (const x of n.pins) {
-        if (sources.includes(x) || isBoard(x.spec)) continue;
-        const max = x.pin.voltage?.max ?? x.spec.limits?.maxVoltage;
-        if (max !== undefined && max < 4 && x.pin.type !== "ground" && x.pin.type !== "passive") {
-          add({ severity: "error", code: "overvoltage", message: `5 V on a ${max} V pin: ${key(x.ref)} is rated up to ${max} V but shares a net with ${sources.map((s) => key(s.ref)).join(", ")} (5 V). It may be damaged. Fix: power it from 3V3, or use a level shifter / voltage divider on signals.`, parts: [x.ref.part], pins: [key(x.ref)] });
+    // Over-voltage, by direction (round 5, C5): a supply rail on a module pin rated for less
+    // ("overvoltage"), a supply below what a module needs ("part-needs-5v"), and a pin that drives a
+    // net above what a receiving pin takes ("logic-level"). A 3.3 V output into a 5 V input is fine.
+    if (rails.length) {
+      const railV = Math.max(...rails.map((r) => r.pin.voltage?.max ?? 0));
+      if (railV > 0) {
+        const railNames = rails.map((r) => `${key(r.ref)} (${r.pin.voltage?.max} V)`).join(", ");
+        for (const x of n.pins) {
+          if (isRail(x) || isBoard(x.spec) || x.pin.type === "ground" || x.pin.type === "passive") continue;
+          if (x.pin.type === "power") {
+            const max = x.pin.voltage?.max ?? x.spec.limits?.maxVoltage;
+            const min = x.pin.voltage?.min ?? x.spec.limits?.minVoltage;
+            if (max !== undefined && railV > max + 0.3) {
+              add({ severity: "error", code: "overvoltage", message: `${railV} V on a ${max} V supply pin: ${key(x.ref)} is rated up to ${max} V but is fed from ${railNames}. It may be damaged. Fix: power ${x.ref.part} from a ${max <= 3.6 ? "3.3 V" : `${max} V`} supply (e.g. the board's 3V3 pin, or a separate regulator for heavy loads).`, parts: [x.ref.part], pins: [key(x.ref)] });
+            } else if (min !== undefined && min > 3.6 && railV <= 3.6) {
+              add({ severity: "error", code: "part-needs-5v", message: `${x.ref.part} (${x.spec.name}) needs at least ${min} V on ${x.pin.id}, but it is fed from ${railNames}: it will not work (or work badly) on 3.3 V. Fix: connect ${key(x.ref)} to a 5 V supply (the board's 5V / VBUS pin or a battery through a 5 V regulator) and level-shift its signals back to the board if they are 5 V.`, parts: [x.ref.part], pins: [key(x.ref)] });
+            }
+          } else {
+            const max = x.pin.voltage?.max;
+            if (max !== undefined && railV > max + 0.3) {
+              add({ severity: "error", code: "logic-level", message: `${key(x.ref)} is rated up to ${max} V but is wired straight to ${railNames}. It may be damaged. Fix: tie it to a ${max <= 3.6 ? "3.3 V" : "lower"} rail, or through a 10 kΩ resistor.`, parts: [x.ref.part], pins: [key(x.ref)] });
+            }
+          }
+        }
+      }
+    } else {
+      const signals = n.pins.filter((x) => (x.pin.type === "digital" || x.pin.type === "analog") && !x.pin.protocols?.some((p) => p.startsWith("i2c-")));
+      const outs = signals.filter((x) => !isBoard(x.spec) && isOutputPin(x));
+      const ins = signals.filter((x) => !isBoard(x.spec) && !isOutputPin(x));
+      // A board pin drives the net when a module input listens on it (or nothing says otherwise); with only module outputs on it, it is reading.
+      const boardDrives = ins.length > 0 || outs.length === 0;
+      const drivers = [...outs, ...(boardDrives ? signals.filter((x) => isGpio(x) || (isBoard(x.spec) && x.pin.type !== "power")) : [])];
+      const reported = new Set<string>();
+      for (const d of drivers) {
+        const dv = driveVolts(d);
+        if (dv === undefined) continue;
+        for (const r of signals) {
+          if (r === d || r.ref.part === d.ref.part || drivers.includes(r) && !isBoard(r.spec)) continue;
+          const max = r.pin.voltage?.max ?? (isBoard(r.spec) ? r.spec.mcu?.vcc : undefined);
+          if (max === undefined || dv <= max + 0.3 || reported.has(key(r.ref))) continue;
+          reported.add(key(r.ref));
+          add({ severity: "error", code: "logic-level", message: `${key(d.ref)} drives ${dv} V into ${key(r.ref)}, which takes at most ${max} V: the ${isBoard(r.spec) ? "board pin" : "module pin"} can be damaged over time. Fix: put a level shifter between them, or a divider (1 kΩ from ${key(d.ref)}, 2 kΩ to GND, the middle to ${key(r.ref)}).`, parts: [...new Set([d.ref.part, r.ref.part])], pins: [key(d.ref), key(r.ref)] });
         }
       }
     }
@@ -146,18 +215,39 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
     }
   }
 
-  // LEDs need a series resistor.
+  // LEDs need a series resistor somewhere along their path (round 5, C5): on the anode side, the
+  // cathode side, or past another LED in series. Only one leg of the LED was checked before, so a
+  // resistor on the cathode side was a false positive (persona report, b3).
+  const isLed = (sp: PartSpec | undefined) => !!sp && (sp.id === "led" || sp.id === "rgb-led");
+  /** The LED's other leg(s) for a pin: anode ↔ cathode; on an RGB LED colour ↔ common. */
+  const ledPeers = (sp: PartSpec, pin: string): string[] => {
+    const common = sp.pins.find((x) => /^(COM|CA|CC|K|COMMON)$/i.test(x.id));
+    if (common) return pin === common.id ? sp.pins.filter((x) => x.id !== common.id).map((x) => x.id) : [common.id];
+    return sp.pins.filter((x) => x.id !== pin).map((x) => x.id);
+  };
+  /** Does the path from this net (away from `from`) meet a resistor before a supply, GPIO or ground? */
+  const resistorAhead = (net: (typeof nets)[number] | undefined, seen: Set<string>): boolean => {
+    if (!net) return false;
+    if (net.pins.some(isResistive)) return true;
+    if (net.pins.some((x) => isGpio(x) || isRail(x) || x.pin.type === "ground")) return false;
+    for (const x of net.pins) {
+      if (!isLed(x.spec) || seen.has(x.ref.part)) continue;
+      const next = new Set(seen).add(x.ref.part);
+      if (ledPeers(x.spec, x.ref.pin).some((q) => resistorAhead(netOf.get(`${x.ref.part}.${q}`), next))) return true;
+    }
+    return false;
+  };
   for (const p of project.parts) {
     const s = partSpec.get(p.id);
-    if (!s || (s.id !== "led" && s.id !== "rgb-led")) continue;
-    for (const pin of s.pins) {
+    if (!isLed(s)) continue;
+    for (const pin of s!.pins) {
       const n = netOf.get(`${p.id}.${pin.id}`);
       if (!n) continue;
       const driver = n.pins.filter((x) => isGpio(x) || isRail(x));
-      const hasR = n.pins.some(isResistive);
-      if (driver.length && !hasR) {
-        add({ severity: "error", code: "led-no-resistor", message: `${p.id}.${pin.id} is wired straight to ${driver.map((d) => key(d.ref)).join(", ")} with no resistor: about 100 mA would flow (an LED takes 20 mA max) and burn it and the pin. Fix: insert a 220 Ω resistor between ${driver.map((d) => key(d.ref))[0]} and ${p.id}.${pin.id} (place_part resistor, then connect both ends).`, parts: [p.id], pins: [`${p.id}.${pin.id}`] });
-      }
+      if (!driver.length || n.pins.some(isResistive)) continue;
+      const seen = new Set([p.id]);
+      if (ledPeers(s!, pin.id).some((q) => resistorAhead(netOf.get(`${p.id}.${q}`), seen))) continue;
+      add({ severity: "error", code: "led-no-resistor", message: `${p.id}.${pin.id} is wired straight to ${driver.map((d) => key(d.ref)).join(", ")} with no resistor anywhere along the LED's path: about 100 mA would flow (an LED takes 20 mA max) and burn it and the pin. Fix: insert a 220 Ω resistor between ${driver.map((d) => key(d.ref))[0]} and ${p.id}.${pin.id} (place_part resistor, then connect both ends), or on the other leg (either side works).`, parts: [p.id], pins: [`${p.id}.${pin.id}`] });
     }
   }
 
@@ -278,6 +368,94 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
       add({ severity: "warning", code: "power-budget", message: `${boardPart}'s 5V rail feeds about ${mA} mA worst case (${loads.join(", ")}), more than USB's 500 mA minus the board's own ~50 mA: the board browns out and resets when they all move at once. Fix: power ${heavy.length ? heavy.join(", ") : "the heavy loads"} from a separate supply (a battery-pack: POS to their supply pin${heavy.some((h) => partSpec.get(h)?.pins.some(motorSupply)) ? " such as the driver's 12V" : ", e.g. servo VCC"}) and connect its NEG to ${boardPart}.GND (common ground).`, parts: loads.map((l) => l.split(" ")[0]!) });
     }
   }
+  // Two supply outputs on one net (round 5, C5): regulators in parallel fight each other, and a
+  // battery on a regulator's output back-feeds it (persona report, b4: L298N 5V tied to the Uno's 5V).
+  for (const n of nets) {
+    const sources = n.pins.filter((x) => isSupplyOutput(x, project.parts.find((p) => p.id === x.ref.part)?.props));
+    const byPart = [...new Map(sources.map((x) => [x.ref.part, x])).values()];
+    if (byPart.length < 2) continue;
+    const volts = new Set(byPart.map((x) => x.pin.voltage?.max).filter((v) => v !== undefined));
+    if (volts.size > 1) continue; // rails-shorted already says it
+    const names = byPart.map((x) => `${key(x.ref)}${x.pin.voltage?.max ? ` (${x.pin.voltage.max} V)` : ""}`);
+    const regulator = byPart.find((x) => !isBoard(x.spec) && x.spec.category !== "power");
+    add({
+      severity: "warning",
+      code: "parallel-regulators",
+      message: `${names.join(" and ")} are both supply outputs on one net: two regulators (or a battery and a regulator) in parallel fight each other, and the higher one back-feeds the other, which can overheat it or the USB port. Fix: keep one source per rail${regulator ? `: e.g. remove the wire between ${key(regulator.ref)} and ${byPart.filter((x) => x !== regulator).map((x) => key(x.ref)).join(", ")} (or take the 5V-EN jumper off and feed ${regulator.ref.part} from the board)` : ""}; share only GND.`,
+      parts: byPart.map((x) => x.ref.part),
+      pins: byPart.map((x) => key(x.ref)),
+    });
+  }
+
+  // The 3.3 V pin's budget (round 5, C5): the board's 3V3 regulator gives far less than its 5V rail
+  // (50 mA on an Uno / Nano, about 300 mA on RP2040 boards). Persona report, b1: an ESP-01 on 3V3.
+  for (const b of project.parts) {
+    const bs = partSpec.get(b.id);
+    if (!bs || !isBoard(bs)) continue;
+    const pins3 = bs.pins.filter((x) => x.type === "power" && /^(3V3|3\.3V|3V3_OUT|3V3\(OUT\))$/i.test(x.id));
+    const railNets = new Set(pins3.map((x) => netOf.get(`${b.id}.${x.id}`)?.id).filter(Boolean));
+    if (!railNets.size) continue;
+    const lim = (bs.limits ?? {}) as Record<string, number | undefined>;
+    const budget = lim.max3v3mA ?? (bs.mcu?.backend === "rp2040js" ? 300 : 50);
+    let typ = 0;
+    let peak = 0;
+    const loads: string[] = [];
+    for (const p of project.parts) {
+      const s = partSpec.get(p.id);
+      if (!s || p.id === b.id || isBoard(s)) continue;
+      if (!s.pins.some((x) => x.type === "power" && railNets.has(netOf.get(`${p.id}.${x.id}`)?.id))) continue;
+      const pl = (s.limits ?? {}) as Record<string, number | undefined>;
+      const t = s.current_ma?.typ ?? pl.typicalCurrentmA ?? pl.idleCurrentmA;
+      const m = s.current_ma?.max ?? pl.maxCurrentmA ?? t;
+      if (t === undefined) continue;
+      typ += t;
+      peak += m ?? t;
+      loads.push(`${p.id} ${t} mA${m !== undefined && m > t ? ` (peaks ${m} mA)` : ""}`);
+    }
+    if (typ > budget) {
+      add({ severity: "warning", code: "rail-3v3-budget", message: `${b.id}'s 3V3 pin gives about ${budget} mA, but ${loads.join(", ")} ${loads.length > 1 ? `draw about ${Math.round(typ)} mA${peak > typ ? ` (up to ${Math.round(peak)} mA)` : ""}` : "draws more"}: the 3.3 V rail sags and the module browns out or resets (the simulation does not show this). Fix: feed them from a separate 3.3 V regulator (e.g. an AMS1117-3.3 from 5V, 800 mA) and connect its GND to ${b.id}.GND.`, parts: [b.id, ...loads.map((l) => l.split(" ")[0]!)] });
+    }
+  }
+
+  // Layout (round 5, C5, info): a part far from everything it is wired to makes a "spaghetti" picture
+  // (persona report, b2: resistors far from their LEDs).
+  const boxOf = (p: (typeof project.parts)[number]) => {
+    const s = partSpec.get(p.id);
+    if (!s) return undefined;
+    const turned = p.rotation === 90 || p.rotation === 270;
+    return { x: p.x, y: p.y, w: turned ? s.size.h : s.size.w, h: turned ? s.size.w : s.size.h };
+  };
+  const gap = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => {
+    const dx = Math.max(0, Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w));
+    const dy = Math.max(0, Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h));
+    return Math.hypot(dx, dy);
+  };
+  const farPairs = new Set<string>();
+  // Small parts first, so the advice is to move the resistor, not the board; one note per pair.
+  for (const p of [...project.parts].sort((a, b) => Number(isBoard(partSpec.get(a.id) ?? ({} as PartSpec))) - Number(isBoard(partSpec.get(b.id) ?? ({} as PartSpec))))) {
+    const box = boxOf(p);
+    if (!box) continue;
+    const peers = new Set<string>();
+    for (const w of project.wires) {
+      if (w.from.part === p.id && w.to.part !== p.id) peers.add(w.to.part);
+      if (w.to.part === p.id && w.from.part !== p.id) peers.add(w.from.part);
+    }
+    if (!peers.size) continue;
+    let nearest = Number.POSITIVE_INFINITY;
+    let nearestId = "";
+    for (const id of peers) {
+      const q = project.parts.find((x) => x.id === id);
+      const qb = q ? boxOf(q) : undefined;
+      if (!qb) continue;
+      const g = gap(box, qb);
+      if (g < nearest) [nearest, nearestId] = [g, id];
+    }
+    if (nearest > 600 && Number.isFinite(nearest) && !farPairs.has(`${nearestId}|${p.id}`)) {
+      farPairs.add(`${p.id}|${nearestId}`);
+      add({ severity: "info", code: "far-apart", message: `${p.id} is about ${Math.round(nearest)} px from the nearest part it is wired to (${nearestId}), so its wires cross the whole canvas and the picture is hard to follow. Fix: move_part ${p.id} next to ${nearestId} (only the drawing changes, not the circuit).`, parts: [p.id, nearestId] });
+    }
+  }
+
   const order = { error: 0, warning: 1, info: 2 };
   return issues.sort((a, b) => order[a.severity] - order[b.severity]);
 }
