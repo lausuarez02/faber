@@ -89,7 +89,8 @@ const BUILTIN: Record<string, Usage> = {
   },
   "dc-motor": { wiring: "Two terminals to a motor driver output pair (L298N OUT1/OUT2). Never drive a motor straight from a GPIO." },
   servo: {
-    wiring: "Brown/black GND → GND, red V+ → 5V, orange/yellow SIG → a PWM-capable pin (D9). Use the Servo library.",
+    wiring: "Brown/black GND → GND, red VCC → 5V (two or more servos: a separate 5–6 V supply with common GND), orange/yellow SIG → a free digital pin (typical_connections suggests one; the Servo library works on any pin and disables PWM on D9/D10). Use the Servo library.",
+    connect: ["servo1.GND -> uno.GND", "servo1.VCC -> uno.5V", "servo1.SIG -> uno.D9"],
     libraries: ["Servo"],
     example: `#include <Servo.h>\nServo s;\nvoid setup() { s.attach(9); }\nvoid loop() { s.write(0); delay(1000); s.write(180); delay(1000); }`,
   },
@@ -130,4 +131,79 @@ function derivedWiring(spec: PartSpec): string {
   const signals = spec.pins.filter((p) => (p.type === "digital" || p.type === "analog") && !(p.protocols ?? []).some((x) => x.startsWith("i2c") || x.startsWith("spi")));
   if (signals.length) bits.push(`${signals.map((p) => p.id).join(", ")} → GPIO pins`);
   return bits.length ? bits.join("; ") + "." : spec.description;
+}
+
+/** Pin kind a suggested board pin needs, from the pin the static hint named. */
+function pinKind(pin: { id: string; protocols?: string[] }): "pwm" | "analog" | "digital" | "fixed" {
+  const pr = pin.protocols ?? [];
+  if (pr.some((x) => x.startsWith("i2c") || x.startsWith("uart") || x.startsWith("spi-sck") || x.startsWith("spi-miso") || x.startsWith("spi-mosi"))) return "fixed";
+  if (/^D\d+$/.test(pin.id)) return pr.includes("pwm") ? "pwm" : "digital";
+  if (/^A\d+$/.test(pin.id)) return "analog";
+  return "fixed";
+}
+
+/**
+ * typical_connections for a newly placed part with real board pins: the static hint ("btn1.1a ->
+ * uno.D2") is moved to the next free pin of the same kind when that pin is already wired or was
+ * suggested to an earlier part that has no wires yet. Ids are rewritten to the placed part and board.
+ */
+export function suggestConnections(
+  project: { parts: { id: string; type: string }[]; wires: { from: { part: string; pin: string }; to: { part: string; pin: string } }[] },
+  specOf: (type: string) => PartSpec | undefined,
+  partId: string,
+  shortId: (type: string) => string,
+): string[] | undefined {
+  const board = project.parts.find((p) => specOf(p.type)?.category === "board");
+  const bspec = board ? specOf(board.type) : undefined;
+  const taken = new Set<string>();
+  if (board) for (const w of project.wires) for (const e of [w.from, w.to]) if (e.part === board.id) taken.add(e.pin);
+  taken.add("D0");
+  taken.add("D1");
+  const hasI2c = project.parts.some((p) => specOf(p.type)?.bus?.i2c);
+  if (hasI2c) {
+    taken.add("A4");
+    taken.add("A5");
+  }
+  const wiredParts = new Set(project.wires.flatMap((w) => [w.from.part, w.to.part]));
+  let result: string[] | undefined;
+  for (const p of project.parts) {
+    const spec = specOf(p.type);
+    if (!spec || spec.category === "board") continue;
+    const u = usageFor(spec).connect;
+    if (!u) continue;
+    if (wiredParts.has(p.id) && p.id !== partId) continue; // its real pins are already in `taken`
+    const placeholder = new RegExp(`\\b${shortId(spec.id)}1\\b`, "g");
+    const lines = u.map((line) => {
+      let l = line.replace(placeholder, p.id);
+      if (board) l = l.replace(/\buno\./g, `${board.id}.`);
+      const m = l.match(new RegExp(`\\b${board?.id ?? "uno"}\\.([A-Z]\\w*)$`)) ?? l.match(new RegExp(`^${board?.id ?? "uno"}\\.([A-Z]\\w*)\\b`));
+      if (!m || !bspec) return l;
+      const want = bspec.pins.find((x) => x.id === m[1]);
+      if (!want) return l;
+      const kind = pinKind(want);
+      if (kind === "fixed" || (want.type !== "digital" && want.type !== "analog")) return l;
+      let pick = want.id;
+      if (taken.has(pick)) {
+        const pool = bspec.pins.filter((x) => (x.type === "digital" || x.type === "analog") && !taken.has(x.id) && pinKind(x) !== "fixed");
+        const ok = (x: (typeof pool)[number]) => (kind === "pwm" ? (x.protocols ?? []).includes("pwm") : kind === "analog" ? /^A\d+$/.test(x.id) : /^D\d+$/.test(x.id));
+        // Plain digital needs: prefer non-PWM pins first, keep PWM pins for things that need them, then analog pins as digital.
+        const ranked = [...pool.filter((x) => ok(x) && !(kind === "digital" && (x.protocols ?? []).includes("pwm"))), ...pool.filter((x) => ok(x) && kind === "digital" && (x.protocols ?? []).includes("pwm")), ...(kind === "digital" ? pool.filter((x) => /^A\d+$/.test(x.id)) : [])];
+        const sorted = ranked.slice().sort((a, b) => num(a.id) - num(b.id));
+        const after = sorted.filter((x) => num(x.id) > num(want.id) && sameBank(x.id, want.id));
+        const next = (kind === "digital" ? ranked : [...after, ...sorted])[0];
+        if (next) pick = next.id;
+      }
+      taken.add(pick);
+      return l.replace(new RegExp(`\\.${want.id}\\b`), `.${pick}`);
+    });
+    if (p.id === partId) result = lines;
+  }
+  return result;
+}
+
+function num(id: string): number {
+  return Number(id.replace(/\D/g, "")) + (id.startsWith("A") ? 100 : 0);
+}
+function sameBank(a: string, b: string): boolean {
+  return a[0] === b[0];
 }

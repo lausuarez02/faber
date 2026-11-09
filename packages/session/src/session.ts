@@ -23,7 +23,7 @@ import { checkDesign, type DesignIssue } from "./drc.ts";
 import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
 import { bomMarkdown, wiringMarkdown } from "./exporter.ts";
 import { fidelityReport } from "./fidelity.ts";
-import { usageFor } from "./hints.ts";
+import { suggestConnections, usageFor } from "./hints.ts";
 import {
   applyToProject,
   diffEntities,
@@ -506,7 +506,7 @@ export class ProjectSession {
       size: sizeOf(spec, rotation),
       pins: spec.pins.map((p) => p.id).join(" "),
       wiring: usage.wiring,
-      ...(usage.connect ? { typical_connections: usage.connect.map((c) => c.replace(new RegExp(`\\b${SHORT_IDS[spec.id] ?? spec.id}1\\b`, "g"), id)) } : {}),
+      ...(usage.connect ? { typical_connections: suggestConnections(this.project, (t) => this.registry.get(t)?.spec, id, (t) => SHORT_IDS[t] ?? t) ?? usage.connect } : {}),
       step: { id: step.id, why: step.why },
     };
   }

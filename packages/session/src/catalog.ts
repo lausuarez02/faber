@@ -57,7 +57,7 @@ export const TOOLS: ToolDef[] = [
     name: "place_part",
     title: "Place a part",
     description:
-      'Add a part to the canvas. Omit x/y and Jumper picks a tidy, non-overlapping spot (boards at the origin, parts in a row above the board). Omit id to get a short one: boards "uno"/"nano", then "led1", "btn1", "oled1", "r1", "buzzer1". props sets part properties, e.g. {"resistance": 220} or {"color": "green"} (strings like "10k" work for numbers). Returns {id, pins, wiring hint, typical_connections}. Placing a board when a sketch exists wires up firmware automatically. Common mistake: forgetting the resistor for an LED (check_design catches it).',
+      'Add a part to the canvas. Omit x/y and Jumper picks a tidy, non-overlapping spot (boards at the origin, parts in a row above the board). Omit id to get a short one: boards "uno"/"nano", then "led1", "btn1", "oled1", "r1", "buzzer1". props sets part properties, e.g. {"resistance": 220} or {"color": "green"} (strings like "10k" work for numbers). Returns {id, pins, wiring hint, typical_connections}: typical_connections names free board pins (a second button gets D3 when the first was told D2), so you can connect them as given. Placing a board when a sketch exists wires up firmware automatically. Common mistake: forgetting the resistor for an LED (check_design catches it).',
     inputSchema: {
       type: "object",
       properties: {
