@@ -96,22 +96,31 @@ What to expect:
 - Claude Code asks permission the first time it uses each Jumper tool (choose "don't ask again" for
   `jumper` to let it run).
 - The canvas shows each step as it happens: parts appear, wires draw, the **Agent steps** panel lists
-  every step with Claude's "why", the agent pill (bottom right) says what it is doing.
+  every step with Claude's "why", the agent pill (bottom right) says what it is doing: "No agent"
+  (grey, with Connect) until Claude calls a tool, then "building", "idle" after 10 s of quiet, and
+  "done" when its session ends.
 - Firmware builds take 10 to 40 s the first time (Docker). Test runs show in the Tests panel.
-- To run what it built yourself, press **Run a copy ↗** in the Live bar (or Run): a new tab opens
-  the project with its firmware at `/?local`. That copy does not follow later edits; press it
-  again after the agent changes something.
+- **Run** runs what it built right on this page, with the latest firmware the agent built. When the
+  agent builds, runs or tests again, the page reloads the firmware and starts the device by itself
+  (untick **Auto-run** in the Live bar to stop that). While it runs: click and hold a button to
+  press it, drag a knob to turn it, click a slide switch to flip it; the **Live controls** card
+  (bottom right) tilts, shakes, drops or spins an IMU and has a slider for what each sensor
+  measures. These values only change the running simulation, never `jumper.json`.
 
 Other agents: `codex mcp add jumper --url http://localhost:7780/mcp`; Cursor and Claude Desktop
 snippets are in the **Install MCP** menu (top right).
 
 ## Known gaps
 
-- **The followed page cannot run the simulation itself**; it shows the agent's session. Use **Run a
-  copy** (`/?local`). The followed canvas also does not show colour TFT pixels live (OLED / LCD
-  pixels do).
-- **The agent pill** can read "Agent connected" before an agent connects, and "building · N steps"
-  after it has finished: it does not notice an HTTP MCP session ending.
+- **The page's run and the agent's run are two simulations** of the same project and firmware: what
+  you press here does not reach the agent's session, and the agent's runs do not move your device
+  (they only reload it). A sketch the agent changed but has not built yet keeps running the last
+  build here (the Live bar says "sketch changed, not built yet").
+- **IMU motions are approximate** (a 7 Hz shake, 0.4 s of free fall then a 6 g bump, 360 °/s spin),
+  played in wall-clock time: shapes firmware usually detects, not a model of a hand.
+- **An agent on a separate stdio MCP process** (`jumper mcp --project`) shows as "idle" after it
+  stops, never "done": the server cannot see that process end. HTTP clients (`claude mcp add
+  --transport http`) and `--attach` show "done".
 - **Opening a test frame in 3D** draws the Device title over the project title (top left), and the
   toolbar stays visible. Fault steps (Wi-Fi drop) are not replayed in the scrub view.
 - **The robot's filmstrip** shows the arena for its face checks, not the OLED. In 3D the robot's

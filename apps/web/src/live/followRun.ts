@@ -152,3 +152,17 @@ export async function onAutoRun(hash?: string): Promise<void> {
 export function onSketchWritten(): void {
   if (firmware) useLive.getState().set({ firmwareStale: true });
 }
+
+let openedOnce = false;
+
+/**
+ * `?autorun=1` (the shareable viewer GET /v/:id, C3): start the device as soon as the page has the
+ * project and its firmware, once per page load. Without a build it stays stopped (Run explains).
+ */
+export async function autoRunOnOpen(): Promise<void> {
+  if (openedOnce || typeof location === "undefined" || new URLSearchParams(location.search).get("autorun") !== "1") return;
+  openedOnce = true;
+  const fw = await fetchFirmware();
+  if ("error" in fw || engine.isLocalRun) return;
+  engine.runLocal();
+}

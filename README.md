@@ -37,8 +37,9 @@ pnpm start      # canvas + live link + MCP on one port; prints the URL
    claude mcp add --transport http jumper http://localhost:7780/mcp
    claude "Use the jumper tools to build a plant monitor: soil sensor, OLED, buzzer when it is dry. Write tests."
    ```
-3. Watch the parts, wires, firmware and tests appear on the canvas. Press **Run a copy** in the Live
-   bar (or Run) to run what Claude built yourself: screen, buttons and the 3D Device view.
+3. Watch the parts, wires, firmware and tests appear on the canvas. Press **Run** to run what Claude
+   built right there (it also starts by itself after each agent build): press its buttons, turn its
+   knobs, tilt its IMU, and open the 3D Device view.
 
 To try the two devices above yourself, `pnpm start --project examples/agent-built/claude-ai-pet`
 (or `claude-robot`) and open `http://localhost:7780/?local`. The click-by-click guide, with what to
@@ -84,8 +85,8 @@ for another folder. Then connect your agent (each verified 2026-11-09 against a 
 | **Claude Desktop** / any stdio client | `{"mcpServers": {"jumper": {"command": "node", "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` |
 
 The **Install MCP** menu in the app shows these with Copy buttons and the server's real URL, and
-who is connected; the avatar bottom-right says "Connected: Claude Code" and "building · place part
-led" while a tool runs. **Open in Agent** copies a starter prompt that describes the project, or
+what the agent is doing; the pill bottom-right says "No agent" until a client calls a tool, then
+"Claude Code building · place part led1", "idle" or "done". **Open in Agent** copies a starter prompt that describes the project, or
 launches Claude Code in a new Terminal in the project folder with Jumper already connected (macOS,
 only on your click; the exact command is shown).
 
@@ -107,7 +108,7 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 - **Device view:** the project as the physical thing in 3D: a handheld with its live screen, the rover driving in its arena, the arm on a table. The Tests panel shows every scenario as a filmstrip of what the device looked like at each check; click a frame to open that exact moment.
 - **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
 - **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 37 operations, scenario tests, design-rule checks, fault injection, a fidelity report, live follow and replay of an agent's session in the browser.
-- **Run what the agent built:** the page `pnpm start` opens follows the agent live; **Run a copy** (or `/?local`) opens the same project with its built firmware in a tab where Run, the buttons and the Device view work.
+- **Run what the agent built:** the page `pnpm start` opens follows the agent live, and Run runs the project there with the agent's latest firmware (auto-run after each agent build); buttons press, knobs turn and sensors slide while it runs. `/?local` still opens a standalone copy.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's UART output (Serial.print) shows up live next to the canvas.
 

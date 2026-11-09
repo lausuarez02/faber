@@ -255,3 +255,27 @@ test("Run with nothing to run says why and what to do", async ({ page }, info) =
     await srv.stop();
   }
 });
+
+test("follow page with autorun=1: starts by itself and a colour TFT animates from the page's own simulation", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "the TFT painter is the same on phones; covered once on desktop");
+  const srv = await serve("ai-pet", hubPort(info));
+  try {
+    // The shareable viewer link (GET /v/:id) adds autorun=1: the device starts by itself.
+    await page.goto(`/?follow=${encodeURIComponent(srv.ws)}&autorun=1`);
+    await expect(page.getByTestId("part-tft")).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => (await engineState(page)).run, { timeout: 15_000 }).toBe("running");
+    const colour = () =>
+      page.evaluate(() => {
+        const c = document.querySelector('[data-testid="part-tft"] [data-display-layer="tft"] canvas') as HTMLCanvasElement | null;
+        if (!c) return -1;
+        const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4) if (Math.max(d[i]!, d[i + 1]!, d[i + 2]!) - Math.min(d[i]!, d[i + 1]!, d[i + 2]!) > 80) n++;
+        return n;
+      });
+    await expect.poll(colour, { timeout: 30_000, message: "the TFT canvas should show the colourful pet" }).toBeGreaterThan(2000);
+    await shot(page, info, "live-run-tft");
+  } finally {
+    await srv.stop();
+  }
+});

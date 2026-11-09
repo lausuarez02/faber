@@ -133,13 +133,13 @@ function ImuPad({ part }: { part: string }) {
             pitch {rest.pitch}° · roll {rest.roll}°
           </div>
           <div className="ix-imu-btns">
-            <button type="button" className="ix-btn" data-testid={`imu-shake-${part}`} onClick={() => motion("shake")}>
+            <button type="button" className="ix-btn" data-testid={`imu-shake-${part}`} title="Approximate: 0.8 s of a 7 Hz, ±2.2 g side-to-side shake" onClick={() => motion("shake")}>
               Shake
             </button>
-            <button type="button" className="ix-btn" data-testid={`imu-drop-${part}`} onClick={() => motion("drop")}>
+            <button type="button" className="ix-btn" data-testid={`imu-drop-${part}`} title="Approximate: 0.4 s of free fall (0 g), then a 6 g bump" onClick={() => motion("drop")}>
               Drop
             </button>
-            <button type="button" className="ix-btn" data-testid={`imu-spin-${part}`} onClick={() => motion("spin")}>
+            <button type="button" className="ix-btn" data-testid={`imu-spin-${part}`} title="Approximate: 1 s at 360 °/s around Z" onClick={() => motion("spin")}>
               Spin
             </button>
           </div>

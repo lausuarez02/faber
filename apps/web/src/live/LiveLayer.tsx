@@ -10,7 +10,7 @@ import { useUi } from "../lib/ui.ts";
 import { useInteract } from "../interact/store.ts";
 import "./live.css";
 import { agentLabel, feedAgentState, plural, useAgentState, type AgentState } from "./agentState.ts";
-import { applyFirmwareToStore, autoRunEnabled, fetchFirmware, onAutoRun, onFirmwareEvent, onSketchWritten, runFollowed, setAutoRun } from "./followRun.ts";
+import { applyFirmwareToStore, autoRunEnabled, autoRunOnOpen, fetchFirmware, onAutoRun, onFirmwareEvent, onSketchWritten, runFollowed, setAutoRun } from "./followRun.ts";
 
 /**
  * Follow mode (?follow=ws://127.0.0.1:7782, started by `jumper serve`) and replay mode
@@ -221,7 +221,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         const code = [...(msg.entries ?? [])].reverse().find((e) => e.file?.content);
         if (code?.file?.content) useLive.getState().set({ code: { path: code.file.path, content: code.file.content } });
         // Ready to run here: the latest built hex (quietly; Run says why when there is none).
-        void fetchFirmware();
+        void fetchFirmware().then(() => autoRunOnOpen());
       } else if (msg.type === "action" && msg.entry) {
         player.apply(msg.entry);
         if (msg.entry.ok && msg.entry.op === "write_file") onSketchWritten();
