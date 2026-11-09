@@ -17,13 +17,16 @@ import { create as create_13 } from "./parts/mpu6050/model.ts";
 import { create as create_14 } from "./parts/photoresistor/model.ts";
 import { create as create_15 } from "./parts/potentiometer/model.ts";
 import { create as create_16 } from "./parts/pushbutton/model.ts";
-import { create as create_17 } from "./parts/resistor/model.ts";
-import { create as create_18 } from "./parts/rgb-led/model.ts";
-import { create as create_19 } from "./parts/robot-chassis-2wd/model.ts";
-import { create as create_20 } from "./parts/servo-sg90/model.ts";
-import { create as create_21 } from "./parts/slide-switch/model.ts";
-import { create as create_22 } from "./parts/ssd1306-oled-i2c/model.ts";
-import { create as create_23 } from "./parts/st7735-tft/model.ts";
+import { create as create_17 } from "./parts/raspberry-pi-pico/model.ts";
+import { create as create_18 } from "./parts/resistor/model.ts";
+import { create as create_19 } from "./parts/rgb-led/model.ts";
+import { create as create_20 } from "./parts/robot-chassis-2wd/model.ts";
+import { create as create_21 } from "./parts/seeed-xiao-rp2040/model.ts";
+import { create as create_22 } from "./parts/servo-sg90/model.ts";
+import { create as create_23 } from "./parts/slide-switch/model.ts";
+import { create as create_24 } from "./parts/ssd1306-oled-i2c/model.ts";
+import { create as create_25 } from "./parts/st7735-tft/model.ts";
+import { create as create_26 } from "./parts/waveshare-rp2040-zero/model.ts";
 
 export const partDefinitions: PartDefinition[] = [
   {
@@ -3956,6 +3959,689 @@ export const partDefinitions: PartDefinition[] = [
   },
   {
     spec: {
+      "id": "raspberry-pi-pico",
+      "name": "Raspberry Pi Pico",
+      "category": "board",
+      "description": "RP2040 board (dual Cortex-M0+ at 125 MHz, 264 KB RAM, 2 MB flash) at 3.3 V logic, 51 × 21 mm. Runs real arduino-pico firmware on rp2040js: GPIO, PWM, ADC, UART, I2C, SPI, PIO and USB serial. GPIO ids are GP0 to GP28 (the number you use in pinMode); GP25 drives the on-board LED. 3.3 V only: 5 V on a GPIO damages it.",
+      "pins": [
+        {
+          "id": "GP0",
+          "label": "GP0",
+          "x": 13,
+          "y": 11,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-tx"
+          ],
+          "description": "RP2040 GPIO0; McuBackend pin \"GP0\" (pinMode(0, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0A, SPI0 RX (MISO), UART0 TX, I2C0 SDA, PIO. Serial1 TX by default."
+        },
+        {
+          "id": "GP1",
+          "label": "GP1",
+          "x": 13,
+          "y": 31,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-rx"
+          ],
+          "description": "RP2040 GPIO1; McuBackend pin \"GP1\" (pinMode(1, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0B, SPI0 CSn, UART0 RX, I2C0 SCL, PIO. Serial1 RX by default."
+        },
+        {
+          "id": "GND.1",
+          "label": "GND",
+          "x": 13,
+          "y": 51,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP2",
+          "label": "GP2",
+          "x": 13,
+          "y": 71,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO2; McuBackend pin \"GP2\" (pinMode(2, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1A, SPI0 SCK, UART0 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP3",
+          "label": "GP3",
+          "x": 13,
+          "y": 91,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO3; McuBackend pin \"GP3\" (pinMode(3, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1B, SPI0 TX (MOSI), UART0 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP4",
+          "label": "GP4",
+          "x": 13,
+          "y": 111,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-sda"
+          ],
+          "description": "RP2040 GPIO4; McuBackend pin \"GP4\" (pinMode(4, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2A, SPI0 RX (MISO), UART1 TX, I2C0 SDA, PIO. Wire SDA by default (I2C0)."
+        },
+        {
+          "id": "GP5",
+          "label": "GP5",
+          "x": 13,
+          "y": 131,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-scl"
+          ],
+          "description": "RP2040 GPIO5; McuBackend pin \"GP5\" (pinMode(5, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2B, SPI0 CSn, UART1 RX, I2C0 SCL, PIO. Wire SCL by default (I2C0)."
+        },
+        {
+          "id": "GND.2",
+          "label": "GND",
+          "x": 13,
+          "y": 151,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP6",
+          "label": "GP6",
+          "x": 13,
+          "y": 171,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO6; McuBackend pin \"GP6\" (pinMode(6, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3A, SPI0 SCK, UART1 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP7",
+          "label": "GP7",
+          "x": 13,
+          "y": 191,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO7; McuBackend pin \"GP7\" (pinMode(7, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3B, SPI0 TX (MOSI), UART1 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP8",
+          "label": "GP8",
+          "x": 13,
+          "y": 211,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO8; McuBackend pin \"GP8\" (pinMode(8, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM4A, SPI1 RX (MISO), UART1 TX, I2C0 SDA, PIO. Serial2 TX by default."
+        },
+        {
+          "id": "GP9",
+          "label": "GP9",
+          "x": 13,
+          "y": 231,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO9; McuBackend pin \"GP9\" (pinMode(9, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM4B, SPI1 CSn, UART1 RX, I2C0 SCL, PIO. Serial2 RX by default."
+        },
+        {
+          "id": "GND.3",
+          "label": "GND",
+          "x": 13,
+          "y": 251,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP10",
+          "label": "GP10",
+          "x": 13,
+          "y": 271,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO10; McuBackend pin \"GP10\" (pinMode(10, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP11",
+          "label": "GP11",
+          "x": 13,
+          "y": 291,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO11; McuBackend pin \"GP11\" (pinMode(11, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP12",
+          "label": "GP12",
+          "x": 13,
+          "y": 311,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO12; McuBackend pin \"GP12\" (pinMode(12, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO."
+        },
+        {
+          "id": "GP13",
+          "label": "GP13",
+          "x": 13,
+          "y": 331,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO13; McuBackend pin \"GP13\" (pinMode(13, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6B, SPI1 CSn, UART0 RX, I2C0 SCL, PIO."
+        },
+        {
+          "id": "GND.4",
+          "label": "GND",
+          "x": 13,
+          "y": 351,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP14",
+          "label": "GP14",
+          "x": 13,
+          "y": 371,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO14; McuBackend pin \"GP14\" (pinMode(14, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM7A, SPI1 SCK, UART0 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP15",
+          "label": "GP15",
+          "x": 13,
+          "y": 391,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO15; McuBackend pin \"GP15\" (pinMode(15, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM7B, SPI1 TX (MOSI), UART0 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "VBUS",
+          "label": "VBUS",
+          "x": 153,
+          "y": 11,
+          "type": "power",
+          "voltage": {
+            "min": 4.75,
+            "max": 5.25
+          },
+          "description": "USB 5 V (VBUS), straight from the USB connector. Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+        },
+        {
+          "id": "VSYS",
+          "label": "VSYS",
+          "x": 153,
+          "y": 31,
+          "type": "power",
+          "voltage": {
+            "min": 1.8,
+            "max": 5.5
+          },
+          "description": "Main system input (1.8 to 5.5 V) that feeds the 3.3 V buck-boost regulator; from VBUS through a Schottky diode, about 4.7 V on USB. Stamped as 4.7 V. A battery goes here (through a diode if USB is also connected)."
+        },
+        {
+          "id": "GND.5",
+          "label": "GND",
+          "x": 153,
+          "y": 51,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "3V3_EN",
+          "label": "3V3_EN",
+          "x": 153,
+          "y": 71,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 5.5
+          },
+          "description": "Enable of the 3.3 V regulator, pulled up on the board; tie to GND to switch 3.3 V off. Not simulated (the 3V3 rail is always on)."
+        },
+        {
+          "id": "3V3",
+          "label": "3V3",
+          "x": 153,
+          "y": 91,
+          "type": "power",
+          "voltage": {
+            "min": 3.2,
+            "max": 3.4
+          },
+          "description": "3.3 V output of the on-board RT6150 buck-boost regulator. Keep the load under 300 mA. Stamped as a 3.3 V source."
+        },
+        {
+          "id": "ADC_VREF",
+          "label": "ADC_VREF",
+          "x": 153,
+          "y": 111,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "description": "ADC reference, 3.3 V through a 200 Ω filter resistor. Usable as a quiet reference for potentiometers. The simulated ADC always uses 3.3 V as its reference."
+        },
+        {
+          "id": "GP28",
+          "label": "GP28",
+          "x": 153,
+          "y": 131,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO28; McuBackend pin \"GP28\" (pinMode(28, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO, ADC2."
+        },
+        {
+          "id": "AGND",
+          "label": "AGND",
+          "x": 153,
+          "y": 151,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP27",
+          "label": "GP27",
+          "x": 153,
+          "y": 171,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO27; McuBackend pin \"GP27\" (pinMode(27, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO, ADC1. Wire1 SCL by default."
+        },
+        {
+          "id": "GP26",
+          "label": "GP26",
+          "x": 153,
+          "y": 191,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO26; McuBackend pin \"GP26\" (pinMode(26, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO, ADC0. Wire1 SDA by default."
+        },
+        {
+          "id": "RUN",
+          "label": "RUN",
+          "x": 153,
+          "y": 211,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "description": "Active-low reset (pulled up on the board); short to GND to reset. Not wired to the emulated CPU."
+        },
+        {
+          "id": "GP22",
+          "label": "GP22",
+          "x": 153,
+          "y": 231,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO22; McuBackend pin \"GP22\" (pinMode(22, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3A, SPI0 SCK, UART1 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GND.6",
+          "label": "GND",
+          "x": 153,
+          "y": 251,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP21",
+          "label": "GP21",
+          "x": 153,
+          "y": 271,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO21; McuBackend pin \"GP21\" (pinMode(21, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2B, SPI0 CSn, UART1 RX, I2C0 SCL, PIO."
+        },
+        {
+          "id": "GP20",
+          "label": "GP20",
+          "x": 153,
+          "y": 291,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO20; McuBackend pin \"GP20\" (pinMode(20, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2A, SPI0 RX (MISO), UART1 TX, I2C0 SDA, PIO."
+        },
+        {
+          "id": "GP19",
+          "label": "GP19",
+          "x": 153,
+          "y": 311,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-mosi"
+          ],
+          "description": "RP2040 GPIO19; McuBackend pin \"GP19\" (pinMode(19, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1B, SPI0 TX (MOSI), UART0 RTS, I2C1 SCL, PIO. SPI MOSI by default."
+        },
+        {
+          "id": "GP18",
+          "label": "GP18",
+          "x": 153,
+          "y": 331,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-sck"
+          ],
+          "description": "RP2040 GPIO18; McuBackend pin \"GP18\" (pinMode(18, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1A, SPI0 SCK, UART0 CTS, I2C1 SDA, PIO. SPI SCK by default."
+        },
+        {
+          "id": "GND.7",
+          "label": "GND",
+          "x": 153,
+          "y": 351,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "GP17",
+          "label": "GP17",
+          "x": 153,
+          "y": 371,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-ss"
+          ],
+          "description": "RP2040 GPIO17; McuBackend pin \"GP17\" (pinMode(17, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0B, SPI0 CSn, UART0 RX, I2C0 SCL, PIO. SPI SS by default."
+        },
+        {
+          "id": "GP16",
+          "label": "GP16",
+          "x": 153,
+          "y": 391,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-miso"
+          ],
+          "description": "RP2040 GPIO16; McuBackend pin \"GP16\" (pinMode(16, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0A, SPI0 RX (MISO), UART0 TX, I2C0 SDA, PIO. SPI MISO by default."
+        }
+      ],
+      "size": {
+        "w": 166,
+        "h": 402
+      },
+      "limits": {
+        "maxCurrentmA": 12,
+        "maxVoltage": 3.63,
+        "recommendedPinCurrentmA": 4,
+        "maxTotalCurrentmA": 50,
+        "max3v3mA": 300
+      },
+      "footprint": "51 × 21 mm castellated module, 2 × 20 pins at 0.1 in, rows 0.7 in apart",
+      "dimensions_mm": {
+        "w": 21,
+        "h": 51,
+        "d": 3.9
+      },
+      "mass_g": 3,
+      "current_ma": {
+        "typ": 25,
+        "max": 95
+      },
+      "price_usd": 4,
+      "buy_links": [
+        {
+          "vendor": "Raspberry Pi",
+          "url": "https://www.raspberrypi.com/products/raspberry-pi-pico/"
+        },
+        {
+          "vendor": "Adafruit",
+          "url": "https://www.adafruit.com/product/4864"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "Board has power (USB assumed); lights the power LED where the board has one."
+        },
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "True when this board runs the project's firmware (has an MCU backend)."
+        },
+        {
+          "key": "led",
+          "type": "number",
+          "description": "On-board LED (GP25) brightness 0..1."
+        },
+        {
+          "key": "pin_<id>",
+          "type": "number",
+          "description": "Digital level 0/1 of each GPIO, e.g. pin_GP25 (only on the firmware board)."
+        }
+      ],
+      "mcu": {
+        "backend": "rp2040js",
+        "chip": "rp2040",
+        "clockHz": 125000000,
+        "vcc": 3.3,
+        "fqbn": "rp2040:rp2040:rpipico"
+      },
+      "tags": [
+        "raspberry pi",
+        "pico",
+        "rp2040",
+        "board",
+        "microcontroller",
+        "3.3v",
+        "pocket",
+        "arduino-pico",
+        "breadboard"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Jumper's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Instructions are counted at the firmware's clk_sys on a deterministic virtual clock, so delay(), millis() and PWM periods are exact in virtual time. Bus wait states, the flash cache (XIP) and contention are not modelled; ROM routines (float maths, memcpy, flash erase) take typical cycle counts, not exact ones."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Pins are ideal sources with 50 Ω output resistance and 50 kΩ internal pull-ups. Digital inputs switch at 0.8 V (low) and 2.0 V (high) and keep their last level in between. The 12-bit ADC on GP26-GP29 reads the solved net voltage against an ideal 3.3 V reference; its noise, the RP2040 ADC's non-linearity and its input impedance are ignored."
+        },
+        "power": {
+          "level": "approx",
+          "note": "VBUS 5 V, VSYS 4.7 V and 3V3 are stiff sources; ADC_VREF is 3.3 V through 200 Ω. Per-pin current above 12 mA is flagged. The regulator's 300 mA limit, battery input on VSYS, 3V3_EN, brownout and sleep current are not simulated."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "No radio on this board."
+        }
+      },
+      "emulates": [
+        "RP2040 core 0 (Cortex-M0+) via rp2040js, at the firmware's clock (125 MHz by default)",
+        "Digital I/O with pull-ups, 3.3 V thresholds",
+        "PWM on every GPIO (analogWrite, tone)",
+        "12-bit ADC on GP26-GP29 (analogRead, 10-bit by default in arduino-pico)",
+        "USB serial (Serial) as the console",
+        "Serial1/Serial2 on their TX/RX pins at the set baud rate",
+        "I2C (Wire) and SPI to the parts on the default bus pins",
+        "PIO state machines, DMA, timers and interrupts",
+        "Per-pin over-current check (12 mA)",
+        "On-board LED on GP25",
+        "VBUS sense on GP24 (high) and VSYS/3 on ADC3 (GP29)"
+      ],
+      "doesNotEmulate": [
+        "Second core (core 1): setup1()/loop1() never run",
+        "Raspberry Pi's own boot ROM code (Jumper implements the same function table natively; transcendental maths may differ in the last bit)",
+        "BOOTSEL button, UF2 drag-and-drop upload and the RUN pin",
+        "Flash contents across a reset: EEPROM and LittleFS writes are lost on reset",
+        "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
+        "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
+        "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
+        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "On-chip temperature sensor (reads a fixed 27 °C)",
+        "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
+        "Sleep / dormant modes and their current",
+        "3V3_EN (the 3.3 V rail is always on)"
+      ],
+      "testOnRealDevice": [
+        "Anything that uses core 1 (setup1/loop1, multicore FIFO)",
+        "Analog readings: the RP2040 ADC is noisy and non-linear near codes 512, 1536, 2560 and 3584",
+        "Total current from many pins (50 mA for all GPIOs together)",
+        "Every 5 V part: RP2040 pins are not 5 V tolerant; use a level shifter",
+        "Upload by BOOTSEL / UF2 and USB enumeration on your computer",
+        "Anything powered from VSYS by a battery",
+        "Loads above ~300 mA on the 3V3 pin"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 166 402\" width=\"166\" height=\"402\">\n  <defs>\n    <filter id=\"raspberry-pi-pico-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"166\" height=\"402\" rx=\"4\" fill=\"#0F2A1E\" stroke=\"#24533A\" stroke-width=\"2\"/>\n  <rect x=\"7\" y=\"4\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"24\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"44\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"64\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"84\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"104\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"124\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"144\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"164\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"184\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"204\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"224\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"244\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"264\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"284\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"304\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"324\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"344\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"364\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"384\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"4\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"24\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"44\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"64\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"84\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"104\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"124\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"144\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"164\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"184\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"204\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"224\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"244\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"264\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"284\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"304\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"324\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"344\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"364\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"384\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"58\" y=\"-1\" width=\"50\" height=\"22\" rx=\"2\" fill=\"#6E7682\" stroke=\"#9AA3AF\" stroke-width=\"1\"/>\n  <rect x=\"64\" y=\"5\" width=\"38\" height=\"9\" rx=\"1\" fill=\"#3A4250\"/>\n  <circle cx=\"83\" cy=\"62\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  <text x=\"83\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOTSEL</text>\n  <rect x=\"108\" y=\"37\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#143A26\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <circle cx=\"112\" cy=\"40\" r=\"7\" fill=\"#5CF2A1\" opacity=\"0\" filter=\"url(#raspberry-pi-pico-glow)\" data-bind=\"opacity:led\"/>\n  <rect x=\"108\" y=\"37\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:led\"/>\n  <text x=\"112\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">LED</text>\n  <rect x=\"56\" y=\"168\" width=\"54\" height=\"54\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"61\" cy=\"173\" r=\"1.6\" fill=\"#3A4250\"/>\n  <rect x=\"61.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"61.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"173.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"173.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"68.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"68.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"180.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"180.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"187.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"187.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"82.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"82.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"194.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"194.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"89.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"89.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"201.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"201.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"96.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"96.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"208.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"208.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"103.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"103.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"215.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"215.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <text x=\"83.0\" y=\"195.0\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <rect x=\"64\" y=\"246\" width=\"38\" height=\"22\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <text x=\"83\" y=\"257\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">FLASH 2MB</text>\n  <rect x=\"72\" y=\"128\" width=\"22\" height=\"12\" rx=\"2\" fill=\"#B9BEC6\" stroke=\"#6E7682\" stroke-width=\"0.8\"/>\n  <text x=\"83\" y=\"352\" font-family=\"Bricolage Grotesque\" font-size=\"17\" font-weight=\"800\" fill=\"#E9EDF2\" text-anchor=\"middle\">Pico</text>\n  <text x=\"83\" y=\"370\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040 · 3.3V</text>\n  <text x=\"24\" y=\"11\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP0</text>\n  <text x=\"24\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP1</text>\n  <text x=\"24\" y=\"51\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"71\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP2</text>\n  <text x=\"24\" y=\"91\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP3</text>\n  <text x=\"24\" y=\"111\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP4</text>\n  <text x=\"24\" y=\"131\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP5</text>\n  <text x=\"24\" y=\"151\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"171\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP6</text>\n  <text x=\"24\" y=\"191\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP7</text>\n  <text x=\"24\" y=\"211\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP8</text>\n  <text x=\"24\" y=\"231\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP9</text>\n  <text x=\"24\" y=\"251\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"271\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP10</text>\n  <text x=\"24\" y=\"291\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP11</text>\n  <text x=\"24\" y=\"311\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP12</text>\n  <text x=\"24\" y=\"331\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP13</text>\n  <text x=\"24\" y=\"351\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"371\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP14</text>\n  <text x=\"24\" y=\"391\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP15</text>\n  <text x=\"142\" y=\"11\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">VBUS</text>\n  <text x=\"142\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">VSYS</text>\n  <text x=\"142\" y=\"51\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"71\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3_EN</text>\n  <text x=\"142\" y=\"91\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"142\" y=\"111\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">ADC_VREF</text>\n  <text x=\"142\" y=\"131\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP28</text>\n  <text x=\"142\" y=\"151\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">AGND</text>\n  <text x=\"142\" y=\"171\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP27</text>\n  <text x=\"142\" y=\"191\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP26</text>\n  <text x=\"142\" y=\"211\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">RUN</text>\n  <text x=\"142\" y=\"231\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP22</text>\n  <text x=\"142\" y=\"251\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"271\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP21</text>\n  <text x=\"142\" y=\"291\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP20</text>\n  <text x=\"142\" y=\"311\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP19</text>\n  <text x=\"142\" y=\"331\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP18</text>\n  <text x=\"142\" y=\"351\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"371\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP17</text>\n  <text x=\"142\" y=\"391\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP16</text>\n  <circle data-pin=\"GP0\" cx=\"13\" cy=\"11\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"13\" cy=\"31\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"13\" cy=\"51\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"13\" cy=\"71\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"13\" cy=\"91\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"13\" cy=\"111\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP5\" cx=\"13\" cy=\"131\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.2\" cx=\"13\" cy=\"151\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"13\" cy=\"171\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"13\" cy=\"191\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP8\" cx=\"13\" cy=\"211\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP9\" cx=\"13\" cy=\"231\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.3\" cx=\"13\" cy=\"251\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP10\" cx=\"13\" cy=\"271\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP11\" cx=\"13\" cy=\"291\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP12\" cx=\"13\" cy=\"311\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP13\" cx=\"13\" cy=\"331\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.4\" cx=\"13\" cy=\"351\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP14\" cx=\"13\" cy=\"371\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP15\" cx=\"13\" cy=\"391\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VBUS\" cx=\"153\" cy=\"11\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VSYS\" cx=\"153\" cy=\"31\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.5\" cx=\"153\" cy=\"51\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3_EN\" cx=\"153\" cy=\"71\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"153\" cy=\"91\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"ADC_VREF\" cx=\"153\" cy=\"111\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"153\" cy=\"131\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"AGND\" cx=\"153\" cy=\"151\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"153\" cy=\"171\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP26\" cx=\"153\" cy=\"191\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"RUN\" cx=\"153\" cy=\"211\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP22\" cx=\"153\" cy=\"231\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.6\" cx=\"153\" cy=\"251\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP21\" cx=\"153\" cy=\"271\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP20\" cx=\"153\" cy=\"291\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP19\" cx=\"153\" cy=\"311\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP18\" cx=\"153\" cy=\"331\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.7\" cx=\"153\" cy=\"351\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP17\" cx=\"153\" cy=\"371\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP16\" cx=\"153\" cy=\"391\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
+    create: create_17,
+  },
+  {
+    spec: {
       "id": "resistor",
       "name": "Resistor",
       "category": "passive",
@@ -4085,7 +4771,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 24\" width=\"100\" height=\"24\">\n  <line x1=\"10\" y1=\"12\" x2=\"90\" y2=\"12\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"27\" y=\"4\" width=\"46\" height=\"16\" rx=\"7\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <rect x=\"34\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band1\"/>\n  <rect x=\"42\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band2\"/>\n  <rect x=\"50\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#7A4A26\" data-bind=\"fill:band3\"/>\n  <rect x=\"62\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#C9A43A\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"90\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_17,
+    create: create_18,
   },
   {
     spec: {
@@ -4221,7 +4907,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <defs>\n    <filter id=\"rgb-led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"5\"/>\n    </filter>\n  </defs>\n  <circle cx=\"40\" cy=\"26\" r=\"20\" fill=\"#000000\" opacity=\"0\" filter=\"url(#rgb-led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 86 V64 L28 52 M30 86 V52 M50 86 V64 L42 52 M70 86 V60 L46 50\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#2E333B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <circle cx=\"35\" cy=\"34\" r=\"5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:r\"/>\n  <circle cx=\"45\" cy=\"34\" r=\"5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:g\"/>\n  <circle cx=\"40\" cy=\"25\" r=\"5\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:b\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#000000\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M32 24 A8 8 0 0 1 38 16\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M26 48 H54 V53 H26 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <text x=\"4\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">R</text>\n  <text x=\"33\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">−</text>\n  <text x=\"53\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">G</text>\n  <text x=\"73\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">B</text>\n  <circle data-pin=\"R\" cx=\"10\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"G\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_18,
+    create: create_19,
   },
   {
     spec: {
@@ -4449,7 +5135,372 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 200\" width=\"160\" height=\"200\">\n  <rect x=\"26\" y=\"14\" width=\"108\" height=\"172\" rx=\"18\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <rect x=\"136\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M8 112 H20 M8 122 H20 M8 132 H20 M8 142 H20 M8 152 H20 M140 112 H152 M140 122 H152 M140 132 H152 M140 142 H152 M140 152 H152\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"30\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <rect x=\"96\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"9\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"4\" fill=\"#8A93A0\"/>\n  <path d=\"M80 4 L72 16 H88 Z\" fill=\"#5CF2A1\"/>\n  <text x=\"80\" y=\"80\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"11\" fill=\"#E9EDF2\">2WD</text>\n  <text x=\"80\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" data-bind=\"text:label\">x 0 y 0 cm · 0°</text>\n</svg>",
-    create: create_19,
+    create: create_20,
+  },
+  {
+    spec: {
+      "id": "seeed-xiao-rp2040",
+      "name": "Seeed XIAO RP2040",
+      "category": "board",
+      "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V only.",
+      "pins": [
+        {
+          "id": "GP26",
+          "label": "D0/A0",
+          "x": 9,
+          "y": 36,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO26; McuBackend pin \"GP26\" (pinMode(26, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO, ADC0. Silkscreen D0 / A0: digitalWrite(D0, …) and analogRead(A0) both mean GPIO26."
+        },
+        {
+          "id": "GP27",
+          "label": "D1/A1",
+          "x": 9,
+          "y": 56,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO27; McuBackend pin \"GP27\" (pinMode(27, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO, ADC1. Silkscreen D1 / A1 (GPIO27)."
+        },
+        {
+          "id": "GP28",
+          "label": "D2/A2",
+          "x": 9,
+          "y": 76,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO28; McuBackend pin \"GP28\" (pinMode(28, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO, ADC2. Silkscreen D2 / A2 (GPIO28)."
+        },
+        {
+          "id": "GP29",
+          "label": "D3/A3",
+          "x": 9,
+          "y": 96,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO29; McuBackend pin \"GP29\" (pinMode(29, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6B, SPI1 CSn, UART0 RX, I2C0 SCL, PIO, ADC3. Silkscreen D3 / A3 (GPIO29)."
+        },
+        {
+          "id": "GP6",
+          "label": "D4/SDA",
+          "x": 9,
+          "y": 116,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-sda"
+          ],
+          "description": "RP2040 GPIO6; McuBackend pin \"GP6\" (pinMode(6, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3A, SPI0 SCK, UART1 CTS, I2C1 SDA, PIO. Silkscreen D4 / SDA: Wire SDA (I2C1 on this board)."
+        },
+        {
+          "id": "GP7",
+          "label": "D5/SCL",
+          "x": 9,
+          "y": 136,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-scl"
+          ],
+          "description": "RP2040 GPIO7; McuBackend pin \"GP7\" (pinMode(7, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3B, SPI0 TX (MOSI), UART1 RTS, I2C1 SCL, PIO. Silkscreen D5 / SCL: Wire SCL (I2C1)."
+        },
+        {
+          "id": "GP0",
+          "label": "D6/TX",
+          "x": 9,
+          "y": 156,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-tx"
+          ],
+          "description": "RP2040 GPIO0; McuBackend pin \"GP0\" (pinMode(0, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0A, SPI0 RX (MISO), UART0 TX, I2C0 SDA, PIO. Silkscreen D6 / TX: Serial1 TX."
+        },
+        {
+          "id": "VBUS",
+          "label": "5V",
+          "x": 129,
+          "y": 36,
+          "type": "power",
+          "voltage": {
+            "min": 4.75,
+            "max": 5.25
+          },
+          "description": "Silkscreen 5V: USB 5 V (VBUS). Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+        },
+        {
+          "id": "GND.1",
+          "label": "GND",
+          "x": 129,
+          "y": 56,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "3V3",
+          "label": "3V3",
+          "x": 129,
+          "y": 76,
+          "type": "power",
+          "voltage": {
+            "min": 3.2,
+            "max": 3.4
+          },
+          "description": "3.3 V output of the on-board regulator. Keep the load modest (Jumper checks against 300 mA). Stamped as a 3.3 V source."
+        },
+        {
+          "id": "GP3",
+          "label": "D10/MOSI",
+          "x": 129,
+          "y": 96,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-mosi"
+          ],
+          "description": "RP2040 GPIO3; McuBackend pin \"GP3\" (pinMode(3, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1B, SPI0 TX (MOSI), UART0 RTS, I2C1 SCL, PIO. Silkscreen D10 / MOSI: SPI MOSI."
+        },
+        {
+          "id": "GP4",
+          "label": "D9/MISO",
+          "x": 129,
+          "y": 116,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-miso"
+          ],
+          "description": "RP2040 GPIO4; McuBackend pin \"GP4\" (pinMode(4, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2A, SPI0 RX (MISO), UART1 TX, I2C0 SDA, PIO. Silkscreen D9 / MISO: SPI MISO."
+        },
+        {
+          "id": "GP2",
+          "label": "D8/SCK",
+          "x": 129,
+          "y": 136,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-sck"
+          ],
+          "description": "RP2040 GPIO2; McuBackend pin \"GP2\" (pinMode(2, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1A, SPI0 SCK, UART0 CTS, I2C1 SDA, PIO. Silkscreen D8 / SCK: SPI SCK."
+        },
+        {
+          "id": "GP1",
+          "label": "D7/RX",
+          "x": 129,
+          "y": 156,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-rx",
+            "spi-ss"
+          ],
+          "description": "RP2040 GPIO1; McuBackend pin \"GP1\" (pinMode(1, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0B, SPI0 CSn, UART0 RX, I2C0 SCL, PIO. Silkscreen D7 / RX / CS: Serial1 RX; also the usual SPI chip select."
+        }
+      ],
+      "size": {
+        "w": 138,
+        "h": 166
+      },
+      "limits": {
+        "maxCurrentmA": 12,
+        "maxVoltage": 3.63,
+        "recommendedPinCurrentmA": 4,
+        "maxTotalCurrentmA": 50,
+        "max3v3mA": 300
+      },
+      "footprint": "21 × 17.5 mm castellated module, 2 × 7 pins at 0.1 in, rows 0.6 in apart",
+      "dimensions_mm": {
+        "w": 21,
+        "h": 17.5,
+        "d": 3.5
+      },
+      "mass_g": 3,
+      "current_ma": {
+        "typ": 25,
+        "max": 60
+      },
+      "price_usd": 5.4,
+      "buy_links": [
+        {
+          "vendor": "Seeed",
+          "url": "https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html"
+        },
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=XIAO%20RP2040"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "Board has power (USB assumed); lights the power LED where the board has one."
+        },
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "True when this board runs the project's firmware (has an MCU backend)."
+        },
+        {
+          "key": "led_r",
+          "type": "number",
+          "description": "User LED red (GP17, active low; LED_BUILTIN) brightness 0..1."
+        },
+        {
+          "key": "led_g",
+          "type": "number",
+          "description": "User LED green (GP16, active low) brightness 0..1."
+        },
+        {
+          "key": "led_b",
+          "type": "number",
+          "description": "User LED blue (GP25, active low) brightness 0..1."
+        },
+        {
+          "key": "pin_<id>",
+          "type": "number",
+          "description": "Digital level 0/1 of each GPIO, e.g. pin_GP25 (only on the firmware board)."
+        }
+      ],
+      "mcu": {
+        "backend": "rp2040js",
+        "chip": "rp2040",
+        "clockHz": 125000000,
+        "vcc": 3.3,
+        "fqbn": "rp2040:rp2040:seeed_xiao_rp2040"
+      },
+      "tags": [
+        "seeed",
+        "xiao",
+        "rp2040",
+        "board",
+        "microcontroller",
+        "3.3v",
+        "pocket",
+        "tiny",
+        "usb-c",
+        "arduino-pico"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Jumper's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Instructions are counted at the firmware's clk_sys on a deterministic virtual clock, so delay(), millis() and PWM periods are exact in virtual time. Bus wait states, the flash cache (XIP) and contention are not modelled; ROM routines (float maths, memcpy, flash erase) take typical cycle counts, not exact ones."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Pins are ideal sources with 50 Ω output resistance and 50 kΩ internal pull-ups. Digital inputs switch at 0.8 V (low) and 2.0 V (high) and keep their last level in between. The 12-bit ADC on GP26-GP29 reads the solved net voltage against an ideal 3.3 V reference; its noise, the RP2040 ADC's non-linearity and its input impedance are ignored."
+        },
+        "power": {
+          "level": "approx",
+          "note": "5V (USB VBUS) and 3V3 are stiff sources; per-pin current above 12 mA is flagged. The regulator's limit, battery pads, brownout and sleep current are not simulated."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "No radio on this board."
+        }
+      },
+      "emulates": [
+        "RP2040 core 0 (Cortex-M0+) via rp2040js, at the firmware's clock (125 MHz by default)",
+        "Digital I/O with pull-ups, 3.3 V thresholds",
+        "PWM on every GPIO (analogWrite, tone)",
+        "12-bit ADC on GP26-GP29 (analogRead, 10-bit by default in arduino-pico)",
+        "USB serial (Serial) as the console",
+        "Serial1/Serial2 on their TX/RX pins at the set baud rate",
+        "I2C (Wire) and SPI to the parts on the default bus pins",
+        "PIO state machines, DMA, timers and interrupts",
+        "Per-pin over-current check (12 mA)",
+        "RGB user LED (red GP17 = LED_BUILTIN, green GP16, blue GP25, active low)"
+      ],
+      "doesNotEmulate": [
+        "Second core (core 1): setup1()/loop1() never run",
+        "Raspberry Pi's own boot ROM code (Jumper implements the same function table natively; transcendental maths may differ in the last bit)",
+        "BOOTSEL button, UF2 drag-and-drop upload and the RUN pin",
+        "Flash contents across a reset: EEPROM and LittleFS writes are lost on reset",
+        "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
+        "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
+        "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
+        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "On-chip temperature sensor (reads a fixed 27 °C)",
+        "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
+        "Sleep / dormant modes and their current",
+        "The WS2812 RGB LED on GP12 (its data still runs, nothing is drawn)",
+        "The battery pads on the underside"
+      ],
+      "testOnRealDevice": [
+        "Anything that uses core 1 (setup1/loop1, multicore FIFO)",
+        "Analog readings: the RP2040 ADC is noisy and non-linear near codes 512, 1536, 2560 and 3584",
+        "Total current from many pins (50 mA for all GPIOs together)",
+        "Every 5 V part: RP2040 pins are not 5 V tolerant; use a level shifter",
+        "Upload by BOOTSEL / UF2 and USB enumeration on your computer",
+        "Loads on the 3V3 pin"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 138 166\" width=\"138\" height=\"166\">\n  <defs>\n    <filter id=\"seeed-xiao-rp2040-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"138\" height=\"166\" rx=\"8\" fill=\"#141A22\" stroke=\"#3A4250\" stroke-width=\"2\"/>\n  <rect x=\"3\" y=\"29\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"49\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"69\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"89\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"109\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"129\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"149\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"29\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"49\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"69\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"89\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"109\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"129\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"149\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"45\" y=\"-1\" width=\"48\" height=\"24\" rx=\"5\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"52\" y=\"7\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#3A4250\"/>\n  <rect x=\"36\" y=\"40\" width=\"66\" height=\"96\" rx=\"3\" fill=\"#B9BEC6\" stroke=\"#6E7682\" stroke-width=\"1\"/>\n  <text x=\"69\" y=\"78\" font-family=\"Bricolage Grotesque\" font-size=\"13\" font-weight=\"800\" fill=\"#15181D\" text-anchor=\"middle\">XIAO</text>\n  <text x=\"69\" y=\"94\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#2B313B\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <text x=\"69\" y=\"118\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#2B313B\" text-anchor=\"middle\" dominant-baseline=\"central\">shield: chip below</text>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#3A1A14\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#FF4D2E\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_r\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#FF4D2E\" opacity=\"0\" data-bind=\"opacity:led_r\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#5CF2A1\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_g\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:led_g\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#4DA3FF\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_b\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:led_b\"/>\n  <text x=\"30\" y=\"21\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RGB</text>\n  <rect x=\"102\" y=\"26\" width=\"10\" height=\"7\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"0.5\"/>\n  <text x=\"107\" y=\"20\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RST</text>\n  <rect x=\"102\" y=\"140\" width=\"10\" height=\"7\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"0.5\"/>\n  <text x=\"107\" y=\"153\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOT</text>\n  <text x=\"18\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D0/A0</text>\n  <text x=\"18\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D1/A1</text>\n  <text x=\"18\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D2/A2</text>\n  <text x=\"18\" y=\"96\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D3/A3</text>\n  <text x=\"18\" y=\"116\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D4/SDA</text>\n  <text x=\"18\" y=\"136\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D5/SCL</text>\n  <text x=\"18\" y=\"156\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D6/TX</text>\n  <text x=\"120\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">5V</text>\n  <text x=\"120\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"120\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"120\" y=\"96\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D10/MOSI</text>\n  <text x=\"120\" y=\"116\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D9/MISO</text>\n  <text x=\"120\" y=\"136\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D8/SCK</text>\n  <text x=\"120\" y=\"156\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D7/RX</text>\n  <circle data-pin=\"GP26\" cx=\"9\" cy=\"36\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"9\" cy=\"56\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"9\" cy=\"76\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP29\" cx=\"9\" cy=\"96\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"9\" cy=\"116\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"9\" cy=\"136\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP0\" cx=\"9\" cy=\"156\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VBUS\" cx=\"129\" cy=\"36\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"129\" cy=\"56\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"129\" cy=\"76\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"129\" cy=\"96\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"129\" cy=\"116\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"129\" cy=\"136\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"129\" cy=\"156\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
+    create: create_21,
   },
   {
     spec: {
@@ -4663,7 +5714,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 100\" width=\"160\" height=\"100\">\n  <path d=\"M6 30 H34 M6 50 H34 M6 70 H34\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M14 30 H34\" stroke=\"#7A5230\" stroke-width=\"3\"/>\n  <path d=\"M14 50 H34\" stroke=\"#D9473B\" stroke-width=\"3\"/>\n  <path d=\"M14 70 H34\" stroke=\"#F08A2B\" stroke-width=\"3\"/>\n  <rect x=\"34\" y=\"24\" width=\"12\" height=\"52\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"46\" y=\"20\" width=\"96\" height=\"60\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"44\" width=\"112\" height=\"12\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"112\" cy=\"50\" r=\"14\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g transform=\"rotate(0 112 50)\" data-bind=\"transform:hornTransform\">\n    <path d=\"M106 50 L112 8 L118 50 Z\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n    <circle cx=\"112\" cy=\"16\" r=\"2\" fill=\"#15181D\"/>\n    <circle cx=\"112\" cy=\"50\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n  </g>\n  <circle cx=\"112\" cy=\"50\" r=\"2\" fill=\"#0D0F12\"/>\n  <text x=\"56\" y=\"34\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">SG90</text>\n  <text x=\"56\" y=\"74\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">90°</text>\n  <circle data-pin=\"GND\" cx=\"6\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"6\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SIG\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_20,
+    create: create_22,
   },
   {
     spec: {
@@ -4775,7 +5826,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 50\" width=\"80\" height=\"50\">\n  <path d=\"M20 30 V44 M40 30 V44 M60 30 V44\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"8\" y=\"12\" width=\"64\" height=\"20\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"18\" y=\"17\" width=\"44\" height=\"10\" rx=\"2\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:knobTransform\">\n    <rect x=\"20\" y=\"4\" width=\"12\" height=\"22\" rx=\"2\" fill=\"#323944\" stroke=\"#5A6474\" stroke-width=\"1\"/>\n    <path d=\"M23 9 H29 M23 12 H29 M23 15 H29\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"10\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"66\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"40\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"3\" cx=\"60\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_21,
+    create: create_23,
   },
   {
     spec: {
@@ -4999,7 +6050,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 200\" width=\"220\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"70\" y=\"5\" width=\"80\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"80\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"100\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"120\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"140\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"14\" y=\"44\" width=\"192\" height=\"122\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x64\" x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"#05070A\"/>\n  <rect x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <rect x=\"88\" y=\"166\" width=\"44\" height=\"22\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"110\" y=\"156\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">SSD1306 128x64</text>\n  <circle cx=\"190\" cy=\"154\" r=\"2.5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_22,
+    create: create_24,
   },
   {
     spec: {
@@ -5247,7 +6298,491 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 360\" width=\"220\" height=\"360\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"356\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"28\" y=\"10\" width=\"164\" height=\"20\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"35\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">LED</text>\n  <rect x=\"55\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"60\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCK</text>\n  <rect x=\"75\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"80\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"95\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"100\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">A0</text>\n  <rect x=\"115\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"120\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">RST</text>\n  <rect x=\"135\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"140\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">CS</text>\n  <rect x=\"155\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"160\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"175\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"180\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <rect x=\"14\" y=\"52\" width=\"192\" height=\"292\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"20\" y=\"58\" width=\"180\" height=\"280\" rx=\"2\" fill=\"#0A0C10\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x160\" x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"#05070A\"/>\n  <rect x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <text x=\"110\" y=\"300\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">ST7735 1.8in 128x160</text>\n  <circle cx=\"110\" cy=\"320\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"LED\" cx=\"40\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"60\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"80\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"100\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"120\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"140\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"160\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"180\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_23,
+    create: create_25,
+  },
+  {
+    spec: {
+      "id": "waveshare-rp2040-zero",
+      "name": "Waveshare RP2040-Zero",
+      "category": "board",
+      "description": "Tiny RP2040 board (23.5 × 18 mm, USB-C) at 3.3 V logic with 20 GPIOs on castellated edges (GP0-GP15, GP26-GP29) and a WS2812 RGB LED on GP16. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP0…GP29). 3.3 V only.",
+      "pins": [
+        {
+          "id": "VBUS",
+          "label": "5V",
+          "x": 11,
+          "y": 12,
+          "type": "power",
+          "voltage": {
+            "min": 4.75,
+            "max": 5.25
+          },
+          "description": "Silkscreen 5V: USB 5 V (VBUS). Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+        },
+        {
+          "id": "GND.1",
+          "label": "GND",
+          "x": 11,
+          "y": 32,
+          "type": "ground",
+          "description": "Ground (all GND pins are one node)."
+        },
+        {
+          "id": "3V3",
+          "label": "3V3",
+          "x": 11,
+          "y": 52,
+          "type": "power",
+          "voltage": {
+            "min": 3.2,
+            "max": 3.4
+          },
+          "description": "3.3 V output of the on-board LDO. Keep the load modest (Jumper checks against 300 mA). Stamped as a 3.3 V source."
+        },
+        {
+          "id": "GP29",
+          "label": "GP29",
+          "x": 11,
+          "y": 72,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO29; McuBackend pin \"GP29\" (pinMode(29, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6B, SPI1 CSn, UART0 RX, I2C0 SCL, PIO, ADC3."
+        },
+        {
+          "id": "GP28",
+          "label": "GP28",
+          "x": 11,
+          "y": 92,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO28; McuBackend pin \"GP28\" (pinMode(28, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO, ADC2."
+        },
+        {
+          "id": "GP27",
+          "label": "GP27",
+          "x": 11,
+          "y": 112,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO27; McuBackend pin \"GP27\" (pinMode(27, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO, ADC1. Wire1 SCL by default."
+        },
+        {
+          "id": "GP26",
+          "label": "GP26",
+          "x": 11,
+          "y": 132,
+          "type": "analog",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "adc"
+          ],
+          "description": "RP2040 GPIO26; McuBackend pin \"GP26\" (pinMode(26, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO, ADC0. Wire1 SDA by default."
+        },
+        {
+          "id": "GP15",
+          "label": "GP15",
+          "x": 11,
+          "y": 152,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO15; McuBackend pin \"GP15\" (pinMode(15, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM7B, SPI1 TX (MOSI), UART0 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP14",
+          "label": "GP14",
+          "x": 11,
+          "y": 172,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO14; McuBackend pin \"GP14\" (pinMode(14, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM7A, SPI1 SCK, UART0 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP0",
+          "label": "GP0",
+          "x": 131,
+          "y": 12,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-tx"
+          ],
+          "description": "RP2040 GPIO0; McuBackend pin \"GP0\" (pinMode(0, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0A, SPI0 RX (MISO), UART0 TX, I2C0 SDA, PIO. Serial1 TX by default."
+        },
+        {
+          "id": "GP1",
+          "label": "GP1",
+          "x": 131,
+          "y": 32,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "uart-rx"
+          ],
+          "description": "RP2040 GPIO1; McuBackend pin \"GP1\" (pinMode(1, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0B, SPI0 CSn, UART0 RX, I2C0 SCL, PIO. Serial1 RX by default."
+        },
+        {
+          "id": "GP2",
+          "label": "GP2",
+          "x": 131,
+          "y": 52,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-sck"
+          ],
+          "description": "RP2040 GPIO2; McuBackend pin \"GP2\" (pinMode(2, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1A, SPI0 SCK, UART0 CTS, I2C1 SDA, PIO. SPI SCK by default."
+        },
+        {
+          "id": "GP3",
+          "label": "GP3",
+          "x": 131,
+          "y": 72,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "spi-mosi"
+          ],
+          "description": "RP2040 GPIO3; McuBackend pin \"GP3\" (pinMode(3, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1B, SPI0 TX (MOSI), UART0 RTS, I2C1 SCL, PIO. SPI MOSI by default."
+        },
+        {
+          "id": "GP4",
+          "label": "GP4",
+          "x": 131,
+          "y": 92,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-sda",
+            "spi-miso"
+          ],
+          "description": "RP2040 GPIO4; McuBackend pin \"GP4\" (pinMode(4, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2A, SPI0 RX (MISO), UART1 TX, I2C0 SDA, PIO. Wire SDA by default (I2C0); also the default SPI MISO."
+        },
+        {
+          "id": "GP5",
+          "label": "GP5",
+          "x": 131,
+          "y": 112,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm",
+            "i2c-scl",
+            "spi-ss"
+          ],
+          "description": "RP2040 GPIO5; McuBackend pin \"GP5\" (pinMode(5, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2B, SPI0 CSn, UART1 RX, I2C0 SCL, PIO. Wire SCL by default (I2C0); also the default SPI SS."
+        },
+        {
+          "id": "GP6",
+          "label": "GP6",
+          "x": 131,
+          "y": 132,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO6; McuBackend pin \"GP6\" (pinMode(6, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3A, SPI0 SCK, UART1 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP7",
+          "label": "GP7",
+          "x": 131,
+          "y": 152,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO7; McuBackend pin \"GP7\" (pinMode(7, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3B, SPI0 TX (MOSI), UART1 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP8",
+          "label": "GP8",
+          "x": 131,
+          "y": 172,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO8; McuBackend pin \"GP8\" (pinMode(8, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM4A, SPI1 RX (MISO), UART1 TX, I2C0 SDA, PIO. Serial2 TX by default."
+        },
+        {
+          "id": "GP13",
+          "label": "GP13",
+          "x": 31,
+          "y": 178,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO13; McuBackend pin \"GP13\" (pinMode(13, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6B, SPI1 CSn, UART0 RX, I2C0 SCL, PIO."
+        },
+        {
+          "id": "GP12",
+          "label": "GP12",
+          "x": 51,
+          "y": 178,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO12; McuBackend pin \"GP12\" (pinMode(12, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO."
+        },
+        {
+          "id": "GP11",
+          "label": "GP11",
+          "x": 71,
+          "y": 178,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO11; McuBackend pin \"GP11\" (pinMode(11, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO."
+        },
+        {
+          "id": "GP10",
+          "label": "GP10",
+          "x": 91,
+          "y": 178,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO10; McuBackend pin \"GP10\" (pinMode(10, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO."
+        },
+        {
+          "id": "GP9",
+          "label": "GP9",
+          "x": 111,
+          "y": 178,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "pwm"
+          ],
+          "description": "RP2040 GPIO9; McuBackend pin \"GP9\" (pinMode(9, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM4B, SPI1 CSn, UART1 RX, I2C0 SCL, PIO. Serial2 RX by default."
+        }
+      ],
+      "size": {
+        "w": 142,
+        "h": 186
+      },
+      "limits": {
+        "maxCurrentmA": 12,
+        "maxVoltage": 3.63,
+        "recommendedPinCurrentmA": 4,
+        "maxTotalCurrentmA": 50,
+        "max3v3mA": 300
+      },
+      "footprint": "23.5 × 18 mm castellated module: 2 × 9 pins at 0.1 in (rows 0.6 in apart) plus 5 on the short edge",
+      "dimensions_mm": {
+        "w": 23.5,
+        "h": 18,
+        "d": 3.6
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 25,
+        "max": 60
+      },
+      "price_usd": 4.5,
+      "buy_links": [
+        {
+          "vendor": "Waveshare",
+          "url": "https://www.waveshare.com/rp2040-zero.htm"
+        },
+        {
+          "vendor": "Amazon (search)",
+          "url": "https://www.amazon.com/s?k=waveshare+rp2040-zero"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "Board has power (USB assumed); lights the power LED where the board has one."
+        },
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "True when this board runs the project's firmware (has an MCU backend)."
+        },
+        {
+          "key": "pin_<id>",
+          "type": "number",
+          "description": "Digital level 0/1 of each GPIO, e.g. pin_GP25 (only on the firmware board)."
+        }
+      ],
+      "mcu": {
+        "backend": "rp2040js",
+        "chip": "rp2040",
+        "clockHz": 125000000,
+        "vcc": 3.3,
+        "fqbn": "rp2040:rp2040:waveshare_rp2040_zero"
+      },
+      "tags": [
+        "waveshare",
+        "rp2040-zero",
+        "rp2040",
+        "board",
+        "microcontroller",
+        "3.3v",
+        "pocket",
+        "tiny",
+        "usb-c",
+        "arduino-pico"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Jumper's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Instructions are counted at the firmware's clk_sys on a deterministic virtual clock, so delay(), millis() and PWM periods are exact in virtual time. Bus wait states, the flash cache (XIP) and contention are not modelled; ROM routines (float maths, memcpy, flash erase) take typical cycle counts, not exact ones."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Pins are ideal sources with 50 Ω output resistance and 50 kΩ internal pull-ups. Digital inputs switch at 0.8 V (low) and 2.0 V (high) and keep their last level in between. The 12-bit ADC on GP26-GP29 reads the solved net voltage against an ideal 3.3 V reference; its noise, the RP2040 ADC's non-linearity and its input impedance are ignored."
+        },
+        "power": {
+          "level": "approx",
+          "note": "5V (USB VBUS) and 3V3 are stiff sources; per-pin current above 12 mA is flagged. The LDO's limit, brownout and sleep current are not simulated."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "No radio on this board."
+        }
+      },
+      "emulates": [
+        "RP2040 core 0 (Cortex-M0+) via rp2040js, at the firmware's clock (125 MHz by default)",
+        "Digital I/O with pull-ups, 3.3 V thresholds",
+        "PWM on every GPIO (analogWrite, tone)",
+        "12-bit ADC on GP26-GP29 (analogRead, 10-bit by default in arduino-pico)",
+        "USB serial (Serial) as the console",
+        "Serial1/Serial2 on their TX/RX pins at the set baud rate",
+        "I2C (Wire) and SPI to the parts on the default bus pins",
+        "PIO state machines, DMA, timers and interrupts",
+        "Per-pin over-current check (12 mA)"
+      ],
+      "doesNotEmulate": [
+        "Second core (core 1): setup1()/loop1() never run",
+        "Raspberry Pi's own boot ROM code (Jumper implements the same function table natively; transcendental maths may differ in the last bit)",
+        "BOOTSEL button, UF2 drag-and-drop upload and the RUN pin",
+        "Flash contents across a reset: EEPROM and LittleFS writes are lost on reset",
+        "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
+        "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
+        "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
+        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "On-chip temperature sensor (reads a fixed 27 °C)",
+        "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
+        "Sleep / dormant modes and their current",
+        "The WS2812 RGB LED on GP16 (its data still runs, nothing is drawn)",
+        "The GPIO pads on the underside (only the edge pins are modelled)"
+      ],
+      "testOnRealDevice": [
+        "Anything that uses core 1 (setup1/loop1, multicore FIFO)",
+        "Analog readings: the RP2040 ADC is noisy and non-linear near codes 512, 1536, 2560 and 3584",
+        "Total current from many pins (50 mA for all GPIOs together)",
+        "Every 5 V part: RP2040 pins are not 5 V tolerant; use a level shifter",
+        "Upload by BOOTSEL / UF2 and USB enumeration on your computer",
+        "Loads on the 3V3 pin"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 142 186\" width=\"142\" height=\"186\">\n  <defs>\n    <filter id=\"waveshare-rp2040-zero-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"142\" height=\"186\" rx=\"5\" fill=\"#101820\" stroke=\"#2B3A4A\" stroke-width=\"2\"/>\n  <rect x=\"5\" y=\"5\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"25\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"45\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"65\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"85\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"105\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"125\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"145\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"165\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"5\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"25\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"45\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"65\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"85\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"105\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"125\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"145\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"165\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"24\" y=\"172\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"44\" y=\"172\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"64\" y=\"172\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"84\" y=\"172\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"104\" y=\"172\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"47\" y=\"-1\" width=\"48\" height=\"24\" rx=\"5\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"54\" y=\"7\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#3A4250\"/>\n  <rect x=\"48\" y=\"66\" width=\"46\" height=\"46\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"53\" cy=\"71\" r=\"1.6\" fill=\"#3A4250\"/>\n  <rect x=\"53.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"53.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"71.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"71.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"58.7\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"58.7\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"76.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"76.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"64.3\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"64.3\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"82.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"82.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"70.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"70.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"88.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"88.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.7\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.7\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"93.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"93.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"81.3\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"81.3\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"99.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"99.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"87.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"87.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"105.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"105.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <text x=\"71.0\" y=\"89.0\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <rect x=\"96\" y=\"32\" width=\"12\" height=\"12\" rx=\"1\" fill=\"#E9EDF2\" stroke=\"#8A93A0\" stroke-width=\"0.8\"/>\n  <circle cx=\"102\" cy=\"38\" r=\"3\" fill=\"#C9CED6\"/>\n  <text x=\"102\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RGB</text>\n  <rect x=\"34\" y=\"32\" width=\"12\" height=\"9\" rx=\"1\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"0.8\"/>\n  <text x=\"40\" y=\"48\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOT</text>\n  <rect x=\"34\" y=\"122\" width=\"12\" height=\"9\" rx=\"1\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"0.8\"/>\n  <text x=\"40\" y=\"138\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RESET</text>\n  <text x=\"71\" y=\"135\" font-family=\"Bricolage Grotesque\" font-size=\"11\" font-weight=\"800\" fill=\"#E9EDF2\" text-anchor=\"middle\">Zero</text>\n  <text x=\"71\" y=\"148\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <text x=\"21\" y=\"12\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">5V</text>\n  <text x=\"21\" y=\"32\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"21\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"21\" y=\"72\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP29</text>\n  <text x=\"21\" y=\"92\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP28</text>\n  <text x=\"21\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP27</text>\n  <text x=\"21\" y=\"132\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP26</text>\n  <text x=\"21\" y=\"152\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP15</text>\n  <text x=\"21\" y=\"172\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP14</text>\n  <text x=\"121\" y=\"12\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP0</text>\n  <text x=\"121\" y=\"32\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP1</text>\n  <text x=\"121\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP2</text>\n  <text x=\"121\" y=\"72\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP3</text>\n  <text x=\"121\" y=\"92\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP4</text>\n  <text x=\"121\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP5</text>\n  <text x=\"121\" y=\"132\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP6</text>\n  <text x=\"121\" y=\"152\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP7</text>\n  <text x=\"121\" y=\"172\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP8</text>\n  <text x=\"31\" y=\"166\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">13</text>\n  <text x=\"51\" y=\"166\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">12</text>\n  <text x=\"71\" y=\"166\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">11</text>\n  <text x=\"91\" y=\"166\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">10</text>\n  <text x=\"111\" y=\"166\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">9</text>\n  <circle data-pin=\"VBUS\" cx=\"11\" cy=\"12\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"11\" cy=\"32\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"11\" cy=\"52\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP29\" cx=\"11\" cy=\"72\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"11\" cy=\"92\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"11\" cy=\"112\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP26\" cx=\"11\" cy=\"132\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP15\" cx=\"11\" cy=\"152\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP14\" cx=\"11\" cy=\"172\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP0\" cx=\"131\" cy=\"12\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"131\" cy=\"32\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"131\" cy=\"52\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"131\" cy=\"72\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"131\" cy=\"92\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP5\" cx=\"131\" cy=\"112\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"131\" cy=\"132\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"131\" cy=\"152\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP8\" cx=\"131\" cy=\"172\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP13\" cx=\"31\" cy=\"178\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP12\" cx=\"51\" cy=\"178\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP11\" cx=\"71\" cy=\"178\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP10\" cx=\"91\" cy=\"178\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP9\" cx=\"111\" cy=\"178\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
+    create: create_26,
   },
 ];
 

@@ -1,0 +1,61 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Jumper's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Instructions are counted at the firmware's clk_sys on a deterministic virtual clock, so delay(), millis() and PWM periods are exact in virtual time. Bus wait states, the flash cache (XIP) and contention are not modelled; ROM routines (float maths, memcpy, flash erase) take typical cycle counts, not exact ones."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Pins are ideal sources with 50 Ω output resistance and 50 kΩ internal pull-ups. Digital inputs switch at 0.8 V (low) and 2.0 V (high) and keep their last level in between. The 12-bit ADC on GP26-GP29 reads the solved net voltage against an ideal 3.3 V reference; its noise, the RP2040 ADC's non-linearity and its input impedance are ignored."
+    },
+    "power": {
+      "level": "approx",
+      "note": "VBUS 5 V, VSYS 4.7 V and 3V3 are stiff sources; ADC_VREF is 3.3 V through 200 Ω. Per-pin current above 12 mA is flagged. The regulator's 300 mA limit, battery input on VSYS, 3V3_EN, brownout and sleep current are not simulated."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "No radio on this board."
+    }
+  },
+  "emulates": [
+    "RP2040 core 0 (Cortex-M0+) via rp2040js, at the firmware's clock (125 MHz by default)",
+    "Digital I/O with pull-ups, 3.3 V thresholds",
+    "PWM on every GPIO (analogWrite, tone)",
+    "12-bit ADC on GP26-GP29 (analogRead, 10-bit by default in arduino-pico)",
+    "USB serial (Serial) as the console",
+    "Serial1/Serial2 on their TX/RX pins at the set baud rate",
+    "I2C (Wire) and SPI to the parts on the default bus pins",
+    "PIO state machines, DMA, timers and interrupts",
+    "Per-pin over-current check (12 mA)",
+    "On-board LED on GP25",
+    "VBUS sense on GP24 (high) and VSYS/3 on ADC3 (GP29)"
+  ],
+  "doesNotEmulate": [
+    "Second core (core 1): setup1()/loop1() never run",
+    "Raspberry Pi's own boot ROM code (Jumper implements the same function table natively; transcendental maths may differ in the last bit)",
+    "BOOTSEL button, UF2 drag-and-drop upload and the RUN pin",
+    "Flash contents across a reset: EEPROM and LittleFS writes are lost on reset",
+    "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
+    "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
+    "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
+    "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+    "On-chip temperature sensor (reads a fixed 27 °C)",
+    "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
+    "Sleep / dormant modes and their current",
+    "3V3_EN (the 3.3 V rail is always on)"
+  ],
+  "testOnRealDevice": [
+    "Anything that uses core 1 (setup1/loop1, multicore FIFO)",
+    "Analog readings: the RP2040 ADC is noisy and non-linear near codes 512, 1536, 2560 and 3584",
+    "Total current from many pins (50 mA for all GPIOs together)",
+    "Every 5 V part: RP2040 pins are not 5 V tolerant; use a level shifter",
+    "Upload by BOOTSEL / UF2 and USB enumeration on your computer",
+    "Anything powered from VSYS by a battery",
+    "Loads above ~300 mA on the 3V3 pin"
+  ]
+}
