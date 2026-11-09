@@ -1,0 +1,11 @@
+export { initPhysics, rapier } from "./rapier.ts";
+export { parseWorld, worldOf, WorldSpecError } from "./world.ts";
+export type { WorldSpec, RobotSpec, ArmSpec, ArmJoint, Obstacle, Wall, Vec, PartsView } from "./world.ts";
+export { RoverWorld, PHYSICS_DT, SONAR_HALF_ANGLE_DEG, SONAR_RAYS, SONAR_MAX_CM } from "./rover.ts";
+export type { RobotBody, Pose, SonarReading } from "./rover.ts";
+export { armPose, armReach } from "./arm.ts";
+export type { ArmPose } from "./arm.ts";
+export { attachPhysics, robotBodyFromState, PHYSICS_STEP_MS } from "./binding.ts";
+export type { PhysicsBinding, PhysicsStats, WorldSnapshot, SimHost } from "./binding.ts";
+export { drawWorld, drawArm, readPalette, fitArena } from "./paint.ts";
+export type { Palette, Ctx2D, View } from "./paint.ts";

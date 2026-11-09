@@ -1,0 +1,23 @@
+{
+  "name": "@jumper/physics",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Deterministic 2D physics for Jumper robots: a top-down arena with a differential-drive rover (Rapier 2D), sonar raycasts, and planar servo-arm kinematics, stepped by the simulation clock.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-compat": "0.21.0",
+    "@jumper/project-format": "workspace:*",
+    "@jumper/sim-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@jumper/parts": "workspace:*",
+    "@jumper/sim-backends": "workspace:*"
+  }
+}
