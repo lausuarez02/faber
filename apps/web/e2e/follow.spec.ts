@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
-import { shot } from "./helpers.ts";
+import { hubPort, shot } from "./helpers.ts";
 
 // Follow mode end to end: `jumper serve --no-web` runs the live hub on a project folder, the page
 // follows it over WebSocket, and parts / wires added with the plain CLI show up on the canvas.
@@ -20,7 +20,7 @@ test.describe.configure({ mode: "serial" });
 
 test("live follow: place and connect from the CLI appear on the canvas", async ({ page }, info) => {
   const dir = mkdtempSync(join(tmpdir(), "jumper-follow-"));
-  const port = 7900 + (info.project.name === "mobile" ? 1 : 0) + info.workerIndex * 2;
+  const port = hubPort(info);
   let hub: ChildProcess | undefined;
   try {
     jumper(dir, "new", dir, "--template", "uno");

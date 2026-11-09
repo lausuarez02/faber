@@ -165,3 +165,15 @@ export async function requireFastWebGL(page: Page): Promise<void> {
       `Covered by the Device view smoke test here; run with JUMPER_E2E_GPU=1 on a GPU machine.`,
   );
 }
+
+/**
+ * A port for a `jumper serve` / live hub a spec starts (decision 0003, C9): E2E_HUB_PORT_BASE
+ * (default 7900) + 2 per parallel worker slot + 1 on the phone project + `slot` * 50 for a spec's extra servers.
+ * Parallel worktrees set different bases so their hubs never collide; 7780 is never handed out.
+ */
+export function hubPort(info: TestInfo, slot = 0): number {
+  const base = Number(process.env.E2E_HUB_PORT_BASE ?? 7900);
+  const port = base + slot * 50 + info.parallelIndex * 2 + (info.project.name === "mobile" ? 1 : 0);
+  if (port === 7780) throw new Error("hubPort would hand out 7780, which is reserved for a person's jumper serve. Fix: set E2E_HUB_PORT_BASE to another range, e.g. 8000.");
+  return port;
+}

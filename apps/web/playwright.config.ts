@@ -2,9 +2,18 @@ import { defineConfig, devices } from "@playwright/test";
 
 // `pnpm test:e2e` starts the Vite dev server and runs e2e/*.spec.ts on a desktop
 // and a phone viewport (the brief requires both). Screenshots land in test-results/.
+//
+// Ports (decision 0003, C9): E2E_PORT is the Vite port (default 5173) and E2E_HUB_PORT_BASE the
+// first port specs give to the `jumper serve` processes they start (default 7900, see
+// e2e/helpers.ts hubPort). Parallel worktrees each pick their own pair, e.g. E2E_PORT=5174
+// E2E_HUB_PORT_BASE=8000. Never 7780: a person may be using it.
+const PORT = Number(process.env.E2E_PORT ?? 5173);
+if (!Number.isInteger(PORT) || PORT <= 0 || PORT === 7780) throw new Error(`E2E_PORT=${process.env.E2E_PORT} is not a usable port (7780 is reserved for a person's jumper serve). Fix: pick another, e.g. 5174.`);
+const BASE_URL = `http://localhost:${PORT}`;
+
 export default defineConfig({
   testDir: "./e2e",
-  outputDir: "./test-results/artifacts",
+  outputDir: process.env.E2E_OUTPUT_DIR ?? "./test-results/artifacts",
   fullyParallel: true,
   // The blink test needs the sim at ~1x real time; too many browsers at once starve it.
   workers: 3,
@@ -15,7 +24,7 @@ export default defineConfig({
   // may simulate well below 1x, so it gets more wall time per test.
   timeout: process.env.CI ? 240_000 : 45_000,
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: BASE_URL,
     trace: "retain-on-failure",
     colorScheme: "dark", // dark-first brand; the theme test switches to light itself
   },
@@ -51,8 +60,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm exec vite --port 5173 --strictPort",
-    url: "http://localhost:5173",
+    command: `pnpm exec vite --port ${PORT} --strictPort`,
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
