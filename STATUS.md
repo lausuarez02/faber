@@ -1,10 +1,63 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-09 (fourth pass: new UI, one-step connect, AI pet, Device view). M0 is done (below).
-An agent (Claude Code, Codex, any MCP client) goes from a one-line goal to a wired, programmed and
-tested device using only Jumper's tools, and a person watches it happen on the canvas and in 3D.
+Last updated 2026-11-09 (round 4: design review, live Claude builds of an AI pet and a robot, run
+what the agent built). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
+one-line goal to a wired, programmed and tested device using only Jumper's tools, and a person
+watches it happen on the canvas and in 3D, then runs it themselves.
 
-<p align="center"><img src="docs/media/m0-blink.gif" alt="Blink running in Jumper" width="720"></p>
+<p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 4 (2026-11-09): UI review, two live Claude builds, try it yourself
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| UI review | Every screen captured at 1440x900 and 390x844, reviewed against the reference and fixed (`e9cb3cf`): live wires glow in their own colour instead of green dashes, wires route around part labels, softer screen and LED glow, a "Start here" card on an empty project, outlined secondary buttons, parts library and minimap no longer cover things. Review: [docs/design/review-v2.md](docs/design/review-v2.md) | `node apps/web/scripts/ui-shots.mjs <url> <dir>` |
+| Live build: AI pet | Claude Code 2.1.319 (claude-opus-5-5) over HTTP MCP, only Jumper's tools, canvas recorded: Uno + ILI9341 + ESP-01 + 3 buttons + buzzer, 457-line sketch (AI speech bubble, 5 faces, hunger/joy, attention beeps, OFFLINE + retry). 576 s, $2.69, 98 calls (4 failed), 5/5 tests. Real Claude Haiku replies on the 3D handheld (2.2 to 4.1 s each) | `examples/agent-built/claude-ai-pet`, `docs/media/live-claude-ai-pet.{mp4,gif}` |
+| Live build: robot | Same setup: Uno + L298N + 2 motors + HC-SR04 + SSD1306 face + 2S LiPo + 2WD chassis. First sketch collided 3 times; Claude saw it in the arena view and fixed it. 277 s, $1.57, 66 calls (1 failed), 3/3 tests: 60 s with 0 collisions, 9 cm closest, faces matched pixel by pixel | `examples/agent-built/claude-robot`, `docs/media/live-claude-robot.{mp4,gif}` |
+| Run what the agent built | `GET /api/project` on `jumper serve` (project + built hex, local requests only); `/?local` opens it with the firmware; the followed page has **Run a copy ↗** in the Live bar, and Run there opens that copy instead of silently doing nothing | `apps/cli/test/serve.test.ts`, `apps/web/src/lib/localCopy.test.ts` |
+| Colour screens in tests | `read_display` / `expect_display` work on the ILI9341 / ST7735 (a pixel is lit when it is not black) | `packages/session/test/ai-pet-session.test.ts` |
+| Tests panel after restart | `run_tests` saves `.jumper/visual-report.json`; the server falls back to it, so filmstrips survive a restart; the empty state names `pnpm jumper test --visual -p <dir>` | `packages/session/test/ai-pet-session.test.ts` |
+| `remove` a test | `remove` deletes a scenario by id (undoable) | `packages/session/test/connect-polish.test.ts` |
+| Owner guide | [docs/try-it.md](docs/try-it.md): what to click for the pet (TALK/FEED/PLAY, Mock vs Live, Device view), the robot (cameras, filmstrips) and Claude Code building something new | walked through in Chromium on copies of both projects |
+
+### Checks (round 4, local, 2026-11-09)
+
+| Command | Result |
+| --- | --- |
+| `pnpm gen` | no diff |
+| `pnpm typecheck` | 0 errors |
+| `pnpm test` | 70 files, **544 passed**, 2 skipped (live AI, opt-in) |
+| `pnpm test:e2e` | **39 passed**, 4 skipped; the 200-part perf test failed once at load ~6 and passed on re-run |
+| Agent projects (copies) | claude-ai-pet: `check` clean, rebuild byte-identical, 5/5, `test --visual` 44 checks. claude-robot: `check` clean, 3/3, 15 checks |
+| Media | `docs/media` 49 MB in all (older replays kept); the two new videos 2.8 MB + 5.7 MB (robot re-encoded from 14 MB), GIFs 3.9 + 4.2 MB, hero 116 KB |
+
+### Known gaps (round 4)
+
+- The followed canvas cannot run the sim itself and does not show colour TFT pixels; Run a copy
+  opens `/?local`, which does not follow later agent edits (open it again).
+- The agent pill says "connected" before an agent connects and keeps "building · N steps" after the
+  HTTP MCP session ends.
+- Opening a test frame in 3D: the Device title overlaps the project title and the toolbar stays on
+  top. Fault steps are not replayed in the scrub view. Robot face checks show the arena thumbnail,
+  not the OLED; the 3D rover's face points forward, away from the default cameras.
+- `write_file` replaces whole files (no partial edit), so agents resend whole sketches.
+- The live gateway once returned an empty reply ("happy|...") and cached it 15 s; a fallback to the
+  next line is in, the cause is not confirmed.
+- The headless `screenshot` Claude gets back still draws wires through part labels (the web canvas
+  routes around them).
+- The Tests panel has no Run button; the Wi-Fi checkbox in the Network panel is still browser blue;
+  the small React Flow credit stays (their licence asks open-source projects to keep it).
+
+### Next
+
+1. **ESP32 via QEMU** (Espressif's fork) behind the same backend interface, so Wi-Fi devices run their
+   real network stack instead of the ESP-01 AT sandbox.
+2. **Simulation in a worker thread**, so the canvas and the 3D view stay at 60 fps under heavy
+   firmware and the clock never waits on React.
+3. Agent presence from MCP session lifetime (idle / done), a Run button in the Tests panel, and a
+   partial-edit tool (`edit_file` with old/new strings).
+4. Fix the scrub overlay layering and show OLED crops for display checks in robot filmstrips.
+5. Raspberry Pi Pico (rp2040js), then the real-hardware runner (M5).
 
 ## Round 3 (2026-11-09, fourth pass): UI v2, connect, AI pet, Device view
 

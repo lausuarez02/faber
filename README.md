@@ -8,32 +8,45 @@ Jumper is an open-source browser sandbox for electronics. You place parts on a c
 
 **The promise, stated honestly.** If firmware crashes on real hardware, it should also crash in Jumper. If it runs in Jumper, it should run on the board, as far as the simulation can tell. Every part says what it simulates exactly, what it only approximates and what it does not simulate at all (see [fidelity](docs/fidelity.md)). Jumper does not hide those gaps.
 
-<!-- Recorded with apps/web/scripts/record-demo.mjs -->
-<p align="center"><img src="docs/media/m0-blink.gif" alt="Arduino Blink running in Jumper: the LED on the canvas turns on and off with pin D13" width="720"></p>
+<p align="center"><img src="docs/media/hero.png" alt="Jumper's canvas: an Uno, an ILI9341 colour screen showing the pet Pip with a speech bubble, an ESP-01 Wi-Fi module and three buttons, with the Network panel open on the right" width="900"></p>
 
-## Quickstart
+## Watch Claude build it
 
-You need Node 24 and pnpm 10 (`corepack enable` gives you the pinned pnpm).
+Two unedited live runs (2026-11-09): Claude Code 2.1.319 connected to `pnpm start` over HTTP MCP,
+allowed **only Jumper's tools**, while a browser recorded the canvas the whole time. Each video goes
+from the empty canvas through the build, then into the 3D Device view and the Tests filmstrips.
+
+| | |
+| --- | --- |
+| <a href="docs/media/live-claude-ai-pet.mp4"><img src="docs/media/live-claude-ai-pet.gif" alt="Claude Code builds an AI tamagotchi on a colour screen; real Claude replies appear in its speech bubble in the 3D Device view" width="420"></a> | **AI tamagotchi with a screen.** Uno, ILI9341 colour TFT, ESP-01 Wi-Fi, TALK / FEED / PLAY, buzzer. TALK asks a language model over the sandbox Wi-Fi and shows the answer in a speech bubble; 5 mood faces, hunger and joy bars, an OFFLINE badge and retry when Wi-Fi drops. 9.6 min, $2.69, 98 tool calls (4 failed), 5/5 tests. In the Device view it answered with **real Claude replies** ("Tummy rumbles! Got any snacks for me?"). [Video](docs/media/live-claude-ai-pet.mp4) (90 s) · [project and numbers](examples/agent-built/claude-ai-pet/README.md) |
+| <a href="docs/media/live-claude-robot.mp4"><img src="docs/media/live-claude-robot.gif" alt="Claude Code builds an exploring robot with an OLED face; it drives the 3D arena with zero collisions" width="420"></a> | **Exploring robot with a face.** Uno, L298N, 2 DC motors, HC-SR04 sonar, SSD1306 OLED face, 2S LiPo, 2WD chassis. Its first sketch hit obstacles 3 times; Claude saw it in the arena view and fixed it (dodge at 40 cm, weave). 4.6 min, $1.57, 66 tool calls (1 failed), 3/3 tests: 60 s with 0 collisions, 9 cm closest, faces checked pixel by pixel. [Video](docs/media/live-claude-robot.mp4) (90 s) · [project and numbers](examples/agent-built/claude-robot/README.md) |
+
+## Try it
+
+You need Node 24, pnpm 10 (`corepack enable`) and, for firmware builds, Docker Desktop running.
 
 ```sh
 pnpm i
-pnpm dev        # http://localhost:5173
+pnpm start      # canvas + live link + MCP on one port; prints the URL
 ```
 
-The Blink example opens by default. Press **Run** (or Space) and the LED on the canvas blinks once per second of virtual time, while the serial console prints `LED on` / `LED off`. More detail is in [docs/quickstart.md](docs/quickstart.md).
+1. Open the URL it prints (`http://localhost:7780/`, or the next free port). The canvas follows the
+   project `projects/playground` live.
+2. In another terminal, connect Claude Code (one step), then ask it for a device:
+   ```sh
+   claude mcp add --transport http jumper http://localhost:7780/mcp
+   claude "Use the jumper tools to build a plant monitor: soil sensor, OLED, buzzer when it is dry. Write tests."
+   ```
+3. Watch the parts, wires, firmware and tests appear on the canvas. Press **Run a copy** in the Live
+   bar (or Run) to run what Claude built yourself: screen, buttons and the 3D Device view.
 
-| Command | What it does |
-| --- | --- |
-| `pnpm dev` | Starts the web app (Vite). |
-| `pnpm typecheck` | Type-checks every package. |
-| `pnpm test` | Runs the unit tests (Vitest). |
-| `pnpm test:e2e` | Runs the browser tests (Playwright, desktop and phone). |
-| `pnpm gen` | Regenerates the parts registry and the project JSON Schema. |
+To try the two devices above yourself, `pnpm start --project examples/agent-built/claude-ai-pet`
+(or `claude-robot`) and open `http://localhost:7780/?local`. The click-by-click guide, with what to
+expect and the known gaps, is [docs/try-it.md](docs/try-it.md).
 
-## Built by agents
+## Earlier agent builds (replays)
 
-The whole point: an AI agent with **only Jumper's tools** goes from a one-line goal to a wired,
-programmed and tested device. These are real, unedited runs (2026-11-09), replayed from the
+Before the live recordings above, three runs (2026-11-09, stdio MCP) were replayed from the
 session's own action log: parts appearing with the agent's "why" for each step, wires drawing, the
 firmware, the device running, the scenario tests turning green and the fidelity report at the end.
 
@@ -94,6 +107,7 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 - **Device view:** the project as the physical thing in 3D: a handheld with its live screen, the rover driving in its arena, the arm on a table. The Tests panel shows every scenario as a filmstrip of what the device looked like at each check; click a frame to open that exact moment.
 - **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
 - **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 37 operations, scenario tests, design-rule checks, fault injection, a fidelity report, live follow and replay of an agent's session in the browser.
+- **Run what the agent built:** the page `pnpm start` opens follows the agent live; **Run a copy** (or `/?local`) opens the same project with its built firmware in a tab where Run, the buttons and the Device view work.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's UART output (Serial.print) shows up live next to the canvas.
 
@@ -109,6 +123,25 @@ What is **not** there yet: building firmware from the browser (builds run throug
 | **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | Planned |
 | **M4 Robots** | Physics world, motors/servos/IMU/distance sensors, rover and robot-arm demos | Rover and arm done (pulled forward) |
 | **M5 Real hardware** | Device-farm runner, same tests on real boards, sim-vs-real diff | Planned |
+
+## Develop
+
+```sh
+pnpm i
+pnpm dev        # the web app alone (Vite), http://localhost:5173, Blink open by default
+```
+
+| Command | What it does |
+| --- | --- |
+| `pnpm start` | Canvas, live link and MCP (`/mcp`) on one port; `--project <dir>` for another folder. |
+| `pnpm dev` | Starts the web app (Vite). |
+| `pnpm typecheck` | Type-checks every package. |
+| `pnpm test` | Runs the unit tests (Vitest). |
+| `pnpm test:e2e` | Runs the browser tests (Playwright, desktop and phone). |
+| `pnpm gen` | Regenerates the parts registry, the project JSON Schema and `docs/mcp-tools.md`. |
+
+More detail in [docs/quickstart.md](docs/quickstart.md). The first demo, Blink, is
+`docs/media/m0-blink.gif`.
 
 ## Repository layout
 
