@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { GROUND, type CircuitBuilder } from "@jumper/sim-core";
+import { parseProject } from "@jumper/project-format";
+import { GROUND, Simulation, type CircuitBuilder } from "@jumper/sim-core";
+import { backendFactory } from "@jumper/sim-backends";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 
@@ -73,5 +75,55 @@ describe("tp4056-charger", () => {
       c.voltageSource("vin", GROUND, 9, 0.01);
     });
     expect(b.model.diagnostics!().map((d) => d.code)).toContain("tp4056-overvoltage");
+  });
+});
+
+describe("tp4056-charger + lipo-battery in a simulation (×3600 time, so 1 s = 1 h)", () => {
+  it("charges a half-full 500 mAh cell through CC, then CV, to full, and the LEDs follow", () => {
+    const project = parseProject({
+      format: "jumper/1",
+      name: "charge",
+      parts: [
+        { id: "cell", type: "lipo-battery", x: 0, y: 0, props: { capacity: 500, soc: 50, speedup: 3600 } },
+        { id: "chg", type: "tp4056-charger", x: 0, y: 0, props: { usb: true, chargeCurrentmA: 500 } },
+      ],
+      wires: [
+        { id: "w1", from: { part: "cell", pin: "POS" }, to: { part: "chg", pin: "BAT" } },
+        { id: "w2", from: { part: "cell", pin: "NEG" }, to: { part: "chg", pin: "GND.2" } },
+      ],
+    });
+    const sim = new Simulation({ project, registry, backendFactory });
+    sim.runFor(100);
+    expect(sim.partState("chg")).toMatchObject({ mode: "CC", charging: true });
+    expect(Number(sim.partState("cell")!.currentmA)).toBeCloseTo(-500, 0);
+    const modes = new Set<string>();
+    for (let i = 0; i < 40 && sim.partState("chg")!.mode !== "full"; i++) {
+      sim.runFor(100);
+      modes.add(String(sim.partState("chg")!.mode));
+    }
+    expect([...modes]).toEqual(expect.arrayContaining(["CC", "CV", "full"]));
+    const cell = sim.partState("cell")!;
+    expect(Number(cell.soc)).toBeGreaterThan(95);
+    expect(Number(cell.volts)).toBeGreaterThan(4.15);
+    expect(Number(cell.volts)).toBeLessThanOrEqual(4.21);
+    expect(sim.partState("chg")).toMatchObject({ full: true, charging: false });
+    // No over-charge or fast-charge warning at 1C.
+    expect(sim.diagnostics().map((d) => d.code)).not.toContain("lipo-fast-charge");
+    expect(sim.diagnostics().map((d) => d.code)).not.toContain("lipo-overcharge");
+  }, 60_000);
+
+  it("warns when the 1 A it is sold with charges a 500 mAh cell", () => {
+    const project = parseProject({
+      format: "jumper/1",
+      name: "charge",
+      parts: [
+        { id: "cell", type: "lipo-battery", x: 0, y: 0, props: { capacity: 500, soc: 50 } },
+        { id: "chg", type: "tp4056-charger", x: 0, y: 0, props: { usb: true } },
+      ],
+      wires: [{ id: "w1", from: { part: "cell", pin: "POS" }, to: { part: "chg", pin: "BAT" } }],
+    });
+    const sim = new Simulation({ project, registry, backendFactory });
+    sim.runFor(10);
+    expect(sim.diagnostics().find((d) => d.code === "lipo-fast-charge")?.message).toMatch(/chargeCurrentmA to 500 or less/);
   });
 });

@@ -1,6 +1,6 @@
 {
   "id": "relay-module",
-  "name": "Relay module (1 channel, 5 V, optocoupled)",
+  "name": "Relay module (1 channel, 5 V, opto-isolated)",
   "category": "output",
   "description": "Switches a separate load (pump, lamp, motor, up to 10 A at 30 V DC) with a 5 V relay. Control side: VCC → 5V, GND → GND, IN → a GPIO. Load side: COM and NO in series with the load and its own supply (NO closes when the relay clicks; NC opens). Most modules are active-LOW: digitalWrite(pin, LOW) switches it on (prop trigger).",
   "pins": [

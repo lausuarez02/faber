@@ -1807,13 +1807,14 @@ export const partDefinitions: PartDefinition[] = [
       "emulates": [
         "DC-driven beeping",
         "Polarity (no sound when reversed)",
-        "Typical 25 mA load"
+        "Typical 25 mA load",
+        "An info diagnostic (buzzer-tone) when it is driven with tone() / PWM"
       ],
       "doesNotEmulate": [
         "Audio output",
         "Exact oscillator frequency (2.3 kHz ± 300 Hz)",
         "Sound pressure level",
-        "Behaviour when driven with PWM/tone()"
+        "The rough sound when driven with PWM / tone() (it is flagged, not modelled; use passive-buzzer for notes)"
       ],
       "testOnRealDevice": [
         "Loudness at 3.3 V",
@@ -5924,7 +5925,7 @@ export const partDefinitions: PartDefinition[] = [
   {
     spec: {
       "id": "relay-module",
-      "name": "Relay module (1 channel, 5 V, optocoupled)",
+      "name": "Relay module (1 channel, 5 V, opto-isolated)",
       "category": "output",
       "description": "Switches a separate load (pump, lamp, motor, up to 10 A at 30 V DC) with a 5 V relay. Control side: VCC → 5V, GND → GND, IN → a GPIO. Load side: COM and NO in series with the load and its own supply (NO closes when the relay clicks; NC opens). Most modules are active-LOW: digitalWrite(pin, LOW) switches it on (prop trigger).",
       "pins": [

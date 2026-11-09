@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { GROUND } from "@jumper/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { need } from "../../lib/bench.ts";
+import { exampleSim } from "../../lib/exampleSim.ts";
+import { serialLines } from "../../lib/firmwareBench.ts";
 import { pwmReading, timedMount } from "../../lib/timedBench.ts";
 
 const def = need(registry.get("water-pump"), "water-pump");
@@ -63,4 +65,43 @@ describe("water-pump", () => {
     const d = t.model.diagnostics!().find((x) => x.code === "pump-on-gpio");
     expect(d?.message).toMatch(/relay module/);
   });
+});
+
+describe("water-pump: a plant waterer on real firmware (soil probe + relay module + pump, example.ino)", () => {
+  it("waters dry soil for 3 s through the relay and leaves wet soil alone", () => {
+    const sim = exampleSim(
+      "water-pump",
+      [
+        { id: "soil", type: "capacitive-soil-moisture", x: 0, y: 0, props: { moisture: 20 } },
+        { id: "relay", type: "relay-module", x: 0, y: 0 },
+        { id: "pump", type: "water-pump", x: 0, y: 0 },
+      ],
+      [
+        ["soil.VCC", "uno.5V"],
+        ["soil.GND", "uno.GND.1"],
+        ["soil.AOUT", "uno.A0"],
+        ["relay.VCC", "uno.5V"],
+        ["relay.GND", "uno.GND.2"],
+        ["relay.IN", "uno.D7"],
+        ["relay.COM", "uno.5V"],
+        ["relay.NO", "pump.POS"],
+        ["pump.NEG", "uno.GND.3"],
+      ],
+    );
+    sim.runFor(1500);
+    expect(serialLines(sim)).toEqual(expect.arrayContaining(["watering"]));
+    expect(Number(serialLines(sim)[0]!.split("=")[1])).toBeGreaterThan(500);
+    expect(sim.partState("relay")).toMatchObject({ energized: true, clicks: 1 });
+    expect(sim.partState("pump")!.running).toBe(true);
+    sim.runFor(2000); // pump off at ~3 s
+    const ml = Number(sim.partState("pump")!.pumpedMl);
+    expect(sim.partState("relay")!.energized).toBe(false);
+    expect(ml).toBeGreaterThan(80); // ~3 s at ~110 L/h on the Uno's 5 V
+    expect(ml).toBeLessThan(110);
+    sim.interact("soil", { kind: "set", value: 70 });
+    sim.runFor(6000);
+    expect(Number(sim.partState("pump")!.pumpedMl)).toBeCloseTo(ml, 0);
+    expect(sim.partState("relay")!.clicks).toBe(1);
+    expect(sim.diagnostics().filter((d) => d.severity === "error")).toEqual([]);
+  }, 120_000);
 });
