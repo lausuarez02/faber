@@ -56,6 +56,9 @@ claude -p "Build a tamagotchi on an OLED with three buttons using the jumper too
   --mcp-config .mcp.json --strict-mcp-config --allowedTools "mcp__jumper"
 ```
 
+`--allowedTools` only pre-approves the Jumper tools; to prove an agent used nothing else (an
+evaluation), also pass `--disallowedTools "Bash Edit Write Read"`.
+
 ### Codex
 
 Add to `~/.codex/config.toml`:
@@ -209,14 +212,20 @@ with `world.<field>`:
 { "id": "avoids-walls", "steps": [ { "run_ms": 20000 },
   { "expect_part": "world.collisions", "op": "==", "value": 0 },
   { "expect_part": "world.travelled_cm", "op": ">", "value": 300 },
-  { "expect_part": "world.min_clearance_cm", "op": ">", "value": 3 } ] }
+  { "expect_part": "world.min_clearance_cm", "op": ">=", "value": 3 } ] }
 ```
+
+Always assert a real margin on `min_clearance_cm` (3 cm or more): the physics counts any gap above
+0 as "no collision", so `> 0` passes a rover that scrapes the wall at 2 mm. `run` adds a "near miss"
+note when the closest gap is under 2 cm. For turns, check a minimum heading change rather than
+`heading != 0`.
 
 World fields: `collisions`, `min_clearance_cm`, `travelled_cm`, `x`, `y`, `heading`, `speed`,
 `sonar_cm`, `touching` (rover); `gripper_x`, `gripper_y`, `reached` (arm, a comma list of target ids).
 The chassis part's own state (`chassis.x`, `chassis.collisions`…) has the same pose.
 
-**Servo robot arm**: `servo-sg90` parts on PWM pins (`#include <Servo.h>`, `set_libraries ["Servo"]`),
+**Servo robot arm**: `servo-sg90` parts on digital pins (`#include <Servo.h>`, `set_libraries ["Servo"]`;
+two or more servos need their own 5–6 V supply with a common GND, and `check_design` warns otherwise),
 `potentiometer` wipers on `A0`/`A1`; `set_world {"world": {"arm": {"base": {"x": 0, "y": 6},
 "links": [12, 10], "joints": [{"servo": "shoulder"}, {"servo": "elbow", "zero": 90}],
 "targets": [{"id": "cup", "x": 15, "y": 4, "r": 2}]}}}` gives forward kinematics (gripper position,
@@ -239,14 +248,18 @@ check is instant.
 | sensor / prop | `{"set": "pot1.position", "value": 0.8}` |
 | serial input | `{"serial_write": "feed\n"}` |
 | fault | `{"inject_fault": "oled1", "kind": "i2c_nack"}` |
-| serial output | `{"expect_serial": "LED on", "within_ms": 1100}`, `{"expect_serial": {"regex": "t=\\d+"}}`, `"absent": true` |
+| serial output | `{"expect_serial": "LED on", "within_ms": 1100}`, regex INSIDE expect_serial: `{"expect_serial": {"regex": "t=\\d+"}, "within_ms": 1100}`, `"absent": true` |
+| printed number | `{"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500}` (latest `energy=64` / `energy: 64`; robust to tick timing) |
+| screen | `{"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}}`, or a golden frame: `read_display {"part": "oled1", "save_as": "sad-face"}` then `{"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}` (2 % of pixels may differ; `tolerance` changes it) |
 | pin | `{"expect_pin": "uno.D13", "level": "high"}`, `{"expect_pin": "uno.A0", "voltage": {"min": 2.4, "max": 2.6}}` |
 | part state | `{"expect_part": "oled1.lit", "op": ">", "value": 0}`; ops `== != > >= < <= contains matches` |
 | robot world | `{"expect_part": "world.collisions", "op": "==", "value": 0}` (see Robots) |
 | no damage | `{"expect_no_errors": true}` (overcurrent and similar error diagnostics) |
 
 `expect_serial` only matches text printed after the previous `expect_serial` match, so a sequence
-of them checks order. Part state fields are listed by `get_part` (`state`) and shown by `run`.
+of them checks order. A `within_ms` check passes the moment it holds, so after an input wait for the
+side the value moves toward (`"<"` when it should drop): a condition that was already true before the
+input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part state fields are listed by `get_part` (`state`) and shown by `run`.
 
 ## Faults
 
@@ -277,6 +290,8 @@ of them checks order. Part state fields are listed by `get_part` (`state`) and s
 | `Could not install the Arduino library '…'` | Check the exact Library Manager name (case-sensitive); the first install needs network. |
 | `jumper.json … is invalid` | The file was edited by hand; the message lists each bad field. |
 | A test fails with `it is 0` right after boot | Add `within_ms`: the firmware may not have drawn / switched yet. |
+| `run_tests` passes with a warning `already held 0 ms after step N` | The check did not wait for the change; compare toward the new value. |
+| A picture of a test's key moment | `screenshot {"path": "shots/x.png", "scenario": "<id>", "at_step": N}` (CLI: `jumper screenshot x.png --scenario <id> --at-step N`). |
 
 ## Limits (honest)
 

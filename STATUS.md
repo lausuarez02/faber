@@ -25,6 +25,26 @@ OLED, an obstacle-avoiding rover and a two-joint servo arm.
 | Examples | `examples/tamagotchi` (6 scenarios), `examples/rover` (2), `examples/robot-arm` (2), each with golden firmware and a video in `media/` | `pnpm jumper test -p examples/<name>` |
 | Agent runs | Claude Code built the tamagotchi (9/9 tests) and the arm (6/6), Codex the rover (5/5, 10 virtual minutes without a collision), each with only the MCP tools; videos and action logs | [docs/media/agent-runs](docs/media/agent-runs/README.md) |
 
+### Agent-eval fixes (2026-11-09, second pass)
+
+Claude Code (tamagotchi, arm) and Codex (rover) each built their device with only the MCP tools.
+Their friction is fixed at the tool, with a regression test each (`packages/session/test/agent-evals.test.ts`):
+
+| Friction | Fix |
+| --- | --- |
+| 6 failed `write_scenario` calls guessing the regex shape | sibling / standalone `regex` is rewritten into `expect_serial` (reported as `normalized`); unknown keys list the allowed ones and show the nested form |
+| `set_part_property battery.voltage` ignored after `run {reset}` | the simulation adopts the saved props (`adoptProps`); robot-world parts restart the sim; the result says which (`simulation`) |
+| No way to test what a screen shows | `expect_display` (lit pixels in a region, or a golden frame saved with `read_display {save_as}`) |
+| Tests hard-coded tick-dependent numbers | `expect_serial_value` (latest printed `name=value` with an op) |
+| Every button told `-> uno.D2`, second servo / pot same pin | `typical_connections` names the next free pin of the same kind |
+| Pull-up warnings while the sketch is still the template | an info reminder (`reminders` on connect) until the sketch is yours |
+| Chassis "not wired" and USB power-budget false positives; no warning for two servos on 5V | pinless parts checked against the world; the budget counts only what the board's 5V rail feeds (servos moving, drivers' motors at stall) |
+| `expect_part` failure without a fix hint; waits that held before the change | "checked once at t ms; add within_ms"; `run_tests` warns about 0 ms waits after an input |
+| Arm got the rover's `set_world` hint; servo pins looked idle | per-world `next`; pins show `out pulse 50Hz 903us` / `out PWM … duty` |
+| Rover scraped walls at 0.67 cm with passing tests | near-miss note under 2 cm; docs and hints suggest `min_clearance_cm >= 3` |
+| CLI screenshot could not show a test's key moment | `screenshot {scenario, at_step}` / `--scenario --at-step` |
+| Wires across parts and labels; replay cards over the OLED | orthogonal routing around parts (screenshot and canvas); replay fits the circuit into the space the cards leave |
+
 ### Checks (local, 2026-11-09)
 
 | Command | Result |

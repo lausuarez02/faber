@@ -46,7 +46,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`run`](#run) | Simulate | simulation only |
 | [`read_serial`](#read_serial) | Read serial output | no (read-only) |
 | [`read_pin`](#read_pin) | Measure a pin | no (read-only) |
-| [`read_display`](#read_display) | See a display | no (read-only) |
+| [`read_display`](#read_display) | See a display | simulation only |
 | [`interact`](#interact) | Press / set a control | simulation only |
 | [`set_sensor_value`](#set_sensor_value) | Set a sensor reading | simulation only |
 | [`inject_fault`](#inject_fault) | Inject a fault | simulation only |
@@ -97,7 +97,7 @@ Everything needed to wire and program one part type: pins ("SDA: digital i2c-sda
 
 ### place_part
 
-Add a part to the canvas. Omit x/y and Jumper picks a tidy, non-overlapping spot (boards at the origin, parts in a row above the board). Omit id to get a short one: boards "uno"/"nano", then "led1", "btn1", "oled1", "r1", "buzzer1". props sets part properties, e.g. {"resistance": 220} or {"color": "green"} (strings like "10k" work for numbers). Returns {id, pins, wiring hint, typical_connections}. Placing a board when a sketch exists wires up firmware automatically. Common mistake: forgetting the resistor for an LED (check_design catches it).
+Add a part to the canvas. Omit x/y and Jumper picks a tidy, non-overlapping spot (boards at the origin, parts in a row above the board). Omit id to get a short one: boards "uno"/"nano", then "led1", "btn1", "oled1", "r1", "buzzer1". props sets part properties, e.g. {"resistance": 220} or {"color": "green"} (strings like "10k" work for numbers). Returns {id, pins, wiring hint, typical_connections}: typical_connections names free board pins (a second button gets D3 when the first was told D2), so you can connect them as given. Placing a board when a sketch exists wires up firmware automatically. Common mistake: forgetting the resistor for an LED (check_design catches it).
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -132,7 +132,7 @@ Remove a part (and every wire touching it) or a single wire, by id: {"id": "led2
 
 ### connect
 
-Draw a wire between two pins: {"from": "uno.D13", "to": "r1.1"}. Pin ids come from place_part/get_part ("A"/"C" on an LED, "1"/"2" on a resistor, "1a"/"2a" on a pushbutton, "D0".."D13", "A0".."A5", "5V", "3V3", "GND" on an Uno). Several wires on one pin are fine (that is how you share GND/5V). Returns the wire id, how forgiving names were resolved, and design warnings about this connection (e.g. LED without resistor, I2C on the wrong pins). Refuses a direct 5V-to-GND short. Already-connected pins return the existing wire.
+Draw a wire between two pins: {"from": "uno.D13", "to": "r1.1"}. Pin ids come from place_part/get_part ("A"/"C" on an LED, "1"/"2" on a resistor, "1a"/"2a" on a pushbutton, "D0".."D13", "A0".."A5", "5V", "3V3", "GND" on an Uno). Several wires on one pin are fine (that is how you share GND/5V). Returns the wire id, how forgiving names were resolved, design warnings about this connection (e.g. LED without resistor, I2C on the wrong pins) and reminders for the sketch you have not written yet (e.g. INPUT_PULLUP for a button). Refuses a direct 5V-to-GND short. Already-connected pins return the existing wire.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -154,7 +154,7 @@ Remove a wire by id ({"wire": "w3"}) or the wires between two pins ({"from": "un
 
 ### set_part_property
 
-Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, {"id": "led1", "prop": "color", "value": "green"}, {"id": "oled1", "prop": "address", "value": "0x3D"}. Validated against the part (ranges, options); a running simulation picks it up live. For temporary sensor readings during a run use set_sensor_value instead.
+Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, {"id": "led1", "prop": "color", "value": "green"}, {"id": "oled1", "prop": "address", "value": "0x3D"}. Validated against the part (ranges, options). A running simulation picks it up live (and run {reset: true} starts from it); the result's "simulation" says what happened (parts the robot world uses restart the simulation at 0 ms). For temporary sensor readings during a run use set_sensor_value instead.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -174,7 +174,7 @@ Set the Arduino libraries the sketch needs (replaces the list): {"libraries": ["
 
 ### set_world
 
-Robots only: the physical world the simulation moves the robot in, saved in jumper.json. Rover: {"world": {"arena": {"width": 300, "height": 200}, "obstacles": [{"id": "crate", "shape": "box", "x": 160, "y": 80, "w": 36, "h": 36, "angle": 15}, {"id": "pillar", "shape": "circle", "x": 240, "y": 150, "r": 12}], "robot": {"chassis": "chassis1", "leftMotor": "motor1", "rightMotor": "motor2", "sonar": "sonar1", "start": {"x": 40, "y": 40, "heading": 0}}}} (cm, degrees; robot part ids are filled in when there is exactly one chassis / two motors / one sonar). The rover needs a robot-chassis-2wd part and two dc-motor parts driven by an l298n; the sonar (hc-sr04) then reads real distances to walls and obstacles. Servo arm: {"world": {"arm": {"base": {"x": 0, "y": 5}, "links": [10, 8], "joints": [{"servo": "servo1", "zero": 90, "direction": 1, "offset": 90}, …], "targets": [{"id": "cup", "x": 12, "y": 6, "r": 2}]}}}. After run, the result has world {robot {x, y, heading}, collisions, min_clearance_cm, travelled_cm} (arm: {gripper, reached}); scenarios check them with {"expect_part": "world.collisions", "op": "==", "value": 0} (the chassis part state has the same pose too); screenshot draws the arena / arm next to the circuit. null removes the world.
+Robots only: the physical world the simulation moves the robot in, saved in jumper.json. Rover: {"world": {"arena": {"width": 300, "height": 200}, "obstacles": [{"id": "crate", "shape": "box", "x": 160, "y": 80, "w": 36, "h": 36, "angle": 15}, {"id": "pillar", "shape": "circle", "x": 240, "y": 150, "r": 12}], "robot": {"chassis": "chassis1", "leftMotor": "motor1", "rightMotor": "motor2", "sonar": "sonar1", "start": {"x": 40, "y": 40, "heading": 0}}}} (cm, degrees; robot part ids are filled in when there is exactly one chassis / two motors / one sonar). The rover needs a robot-chassis-2wd part and two dc-motor parts driven by an l298n; the sonar (hc-sr04) then reads real distances to walls and obstacles. Give the rover a safety margin in tests: {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3} (any gap above 0 counts as no collision). Servo arm: {"world": {"arm": {"base": {"x": 0, "y": 5}, "links": [10, 8], "joints": [{"servo": "servo1", "zero": 90, "direction": 1, "offset": 90}, …], "targets": [{"id": "cup", "x": 12, "y": 6, "r": 2}]}}}. After run, the result has world {robot {x, y, heading}, collisions, min_clearance_cm, travelled_cm} (arm: {gripper, reached}; scenarios use world.gripper_x, world.gripper_y, world.reached); scenarios check them with {"expect_part": "world.collisions", "op": "==", "value": 0} (the chassis part state has the same pose too); screenshot draws the arena / arm next to the circuit. null removes the world.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -215,7 +215,7 @@ Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sourc
 
 ### run
 
-Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, closest gap; arms: gripper position, targets reached)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.
+Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -241,12 +241,14 @@ Voltage, logic level (high/low/undefined) and, for board pins, the firmware pin 
 
 ### read_display
 
-The screen of a display part (e.g. ssd1306-oled-i2c) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something.
+The screen of a display part (e.g. ssd1306-oled-i2c) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something. region [x, y, w, h] crops to exact pixels and counts region_lit (e.g. the face area). save_as "sad-face" saves that frame (or region) as a golden snapshot (snapshots/sad-face.json) that scenarios check with {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}: the way to regression-test what the screen shows.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `part` | string | yes |  |
 | `scale` | number |  |  |
+| `region` | number[] |  | [x, y, w, h] in screen pixels; exact (scale 1). |
+| `save_as` | string |  | Save this frame as a golden snapshot for expect_display matches, e.g. "sad-face". |
 
 ### interact
 
@@ -283,7 +285,7 @@ Break something on purpose to harden the firmware: "disconnect" (module unplugge
 
 ### write_scenario
 
-Add or replace a deterministic test in jumper.json. Steps run in order, one action per step: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"), {"expect_serial": "LED on", "within_ms": 1100} (or {"regex": "hunger=\\d+"}; "absent": true to forbid), {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}), {"expect_part": "oled1.lit", "op": ">", "value": 0, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"), {"expect_part": "world.collisions", "op": "==", "value": 0} for robots (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached), {"expect_no_errors": true}. within_ms = keep simulating up to that long until it holds; without it the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user's goal, one per behaviour.
+Add or replace a deterministic test in jumper.json. Steps run in order, one action per step. Inputs: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"). Checks: serial text {"expect_serial": "LED on", "within_ms": 1100}; serial regular expression, with the pattern INSIDE expect_serial: {"expect_serial": {"regex": "hunger=\\d+"}, "within_ms": 1100}; "absent": true forbids the text; a printed number {"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500} (reads the latest "energy=64" / "energy: 64", so tests do not break on tick timing); a pin {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}); a part state {"expect_part": "buzzer1.on", "op": "==", "value": true, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"); a screen {"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}} or against a golden frame saved with read_display {save_as} {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000} (tolerance 0.02 = 2% of pixels may differ; animations: within_ms waits for a matching frame); robots {"expect_part": "world.collisions", "op": "==", "value": 0} (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached). Assert a real safety margin, e.g. world.min_clearance_cm >= 3, not > 0 (any gap counts as no collision). {"expect_no_errors": true}. Timing: within_ms = keep simulating up to that long until it holds, and it passes the moment it holds, so after an input wait for the side the value moves TOWARD (e.g. "<" when it should drop): a condition that was already true before the input passes at 0 ms and tests nothing (run_tests warns). Without within_ms the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user's goal, one per behaviour.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -304,7 +306,7 @@ Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Bui
 
 ### check_design
 
-Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch), Serial pins in use, USB power budget, plus live simulator diagnostics (overcurrent, floating inputs) after a run. Each issue says what, why and the fix. Run it after wiring and before trusting a design.
+Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch; while the sketch is still the starter template this is an info reminder), Serial pins in use, power budget of the board's 5V rail (servos, motor drivers fed from it; loads on a battery do not count), pinless parts not used by the world, plus live simulator diagnostics (overcurrent, floating inputs) after a run. Each issue says what, why and the fix. Run it after wiring and before trusting a design.
 
 No arguments.
 
@@ -316,12 +318,14 @@ No arguments.
 
 ### screenshot
 
-Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state. A .svg path writes SVG.
+Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state, or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `path` | string |  |  |
 | `scale` | number |  | 1 = 1 px per canvas px (default). |
+| `scenario` | string |  | Scenario id to replay first (fresh simulation). |
+| `at_step` | number |  | Stop after this step index (default: the last step). |
 
 ### export
 
