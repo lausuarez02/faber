@@ -16,7 +16,7 @@ jobs:
   check:
     name: typecheck, test, e2e
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +41,9 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Build the Arduino toolchain images (used by firmware build tests)
+        run: pnpm exec tsx -e "import('./services/runner/src/docker.ts').then(m => m.ensureImage(console.log))"
 
       - name: Unit tests
         run: pnpm test

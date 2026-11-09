@@ -76,7 +76,8 @@ describe("jumper MCP server over stdio", () => {
     "places, wires, builds and runs Blink end to end",
     async () => {
       const call = async (name: string, args: Record<string, unknown> = {}) => {
-        const r = (await client.callTool({ name, arguments: args })) as ToolResult;
+        // build may compile in Docker for minutes on a cold machine; the MCP client default is 60 s
+        const r = (await client.callTool({ name, arguments: args }, undefined, { timeout: 600_000 })) as ToolResult;
         if (r.isError) throw new Error(`${name}: ${r.content[0]!.text}`);
         return r;
       };
@@ -102,6 +103,6 @@ describe("jumper MCP server over stdio", () => {
       const shot = (await call("screenshot", { path: "shot.png" })) as ToolResult;
       expect(shot.content.some((c) => c.type === "image" || /"format":"svg"/.test(c.text ?? ""))).toBe(true);
     },
-    240_000,
+    660_000,
   );
 });
