@@ -8,6 +8,7 @@ import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createLiveHub, ProjectSession, type AgentPresence, type CallMeta, type LiveHubCore } from "@jumper/session";
 import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@jumper/mcp";
+import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts";
 
 /**
  * `jumper serve` (and `pnpm start`): one local server for everything.
@@ -258,6 +259,27 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
     }
   };
 
+  // Round 5 routes (apps/cli/src/routes/<track>.ts, decision 0003 C3).
+  const routeCtx: RouteContext = {
+    dir: () => dir,
+    session: () => session,
+    hub,
+    base,
+    call,
+    json,
+    token,
+    async body<T>(req: IncomingMessage): Promise<T> {
+      let raw = "";
+      for await (const c of req) raw += c;
+      if (!raw) return {} as T;
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        throw new Error("The request body is not JSON. Fix: send a JSON object with content-type application/json.");
+      }
+    },
+  };
+
   let vite: ViteDev | undefined;
   let web: WebMode = opts.web ?? "dev";
   const distDir = join(WEB_DIR, "dist");
@@ -307,7 +329,18 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
         ...(hex ? {} : { warning: `No built firmware${artifact ? ` at ${artifact}` : ""}. Why: the sketch has not been built yet. Fix: ask the agent to call run (it builds first), or run \`jumper build -p ${dir}\`.` }),
       });
     }
-    if (p.startsWith("/api/")) return json(res, 404, { error: `No endpoint ${p}. Endpoints: GET /api/info, GET /api/connect, GET /api/project, GET /api/visual-report, POST /api/launch/claude-code.` });
+    const hit = matchRoute(req.method ?? "GET", p);
+    if (hit) {
+      const problem = localRequestProblem(req);
+      if (problem) return json(res, 403, { error: problem });
+      try {
+        return await hit.route.handle(req, res, routeCtx, hit.params);
+      } catch (err) {
+        if (!res.headersSent) json(res, 500, { error: `${hit.route.label} failed: ${(err as Error).message}` });
+        return;
+      }
+    }
+    if (p.startsWith("/api/")) return json(res, 404, { error: `No endpoint ${req.method ?? "GET"} ${p}. Endpoints: GET /api/info, GET /api/connect, GET /api/project, GET /api/visual-report, POST /api/launch/claude-code${ROUTES.map((r) => `, ${r.label}`).join("")}.` });
     if (hub.handleRequest(req, res)) return;
     if (web === "none") {
       res.writeHead(200, { "content-type": "text/plain" });
@@ -377,6 +410,13 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
     throw new Error("apps/web/dist has no build. Fix: run `pnpm build`, or start without --built (dev mode).");
   }
 
+  // Round 5 server hooks (apps/cli/src/routes/<track>.ts, decision 0003 C3).
+  const stops: (() => void | Promise<void>)[] = [];
+  for (const hook of HOOKS) {
+    const stop = await hook(routeCtx);
+    if (typeof stop === "function") stops.push(stop);
+  }
+
   return {
     port,
     url: base(),
@@ -389,6 +429,7 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
     mcp,
     info,
     async close() {
+      for (const stop of stops.reverse()) await stop();
       await mcp.close();
       await hub.close();
       await vite?.close();

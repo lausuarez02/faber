@@ -4,6 +4,8 @@
  * three faces cannot drift apart.
  */
 import { NETWORK_TOOLS } from "./network.ts";
+import { TEMPLATES } from "./templates.ts";
+import { TOOL_MODULES } from "./tools/index.ts";
 
 export interface ToolDef {
   name: string;
@@ -27,7 +29,7 @@ export const TOOLS: ToolDef[] = [
     title: "Start a project",
     description:
       'Start a project in the server\'s project folder from a template. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop). Refuses to replace an existing project unless overwrite is true. Returns the project summary. Usually the first call; skip it if get_project shows parts already.',
-    inputSchema: { type: "object", properties: { template: { type: "string", enum: ["blank", "uno", "nano", "blink"], description: "Default blank." }, name: { type: "string", description: "Project name (default: folder name)." }, overwrite: { type: "boolean", description: "Replace an existing jumper.json." } } },
+    inputSchema: { type: "object", properties: { template: { type: "string", enum: Object.keys(TEMPLATES), description: "Default blank." }, name: { type: "string", description: "Project name (default: folder name)." }, overwrite: { type: "boolean", description: "Replace an existing jumper.json." } } },
     edits: true,
   },
   {
@@ -288,6 +290,8 @@ export const TOOLS: ToolDef[] = [
     edits: true,
   },
   ...NETWORK_TOOLS,
+  // Round 5: each track's tools live in src/tools/<track>.ts (decision 0003, C5).
+  ...TOOL_MODULES.flatMap((m) => m.tools),
 ];
 
 /** The recommended loop, used as MCP server instructions and in the docs. */

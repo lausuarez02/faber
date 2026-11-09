@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type { PartSpec } from "@jumper/sim-core";
+import { BOARDS_R5_HINTS } from "./hints-boards.ts";
+import { PARTS_R5_HINTS } from "./hints-parts.ts";
 
 /**
  * Wiring hints and minimal Arduino examples for get_part. A part folder may ship its own
@@ -27,7 +29,7 @@ const PARTS_DIR = (() => {
   }
 })();
 
-const BUILTIN: Record<string, Usage> = {
+const CORE: Record<string, Usage> = {
   led: {
     wiring: "Anode A through a 220 Ω resistor to a GPIO (or 5V); cathode C to GND. Never connect an LED straight to a pin: it draws ~100 mA and burns out.",
     connect: ["uno.D13 -> r1.1", "r1.2 -> led1.A", "led1.C -> uno.GND"],
@@ -99,6 +101,9 @@ const BUILTIN: Record<string, Usage> = {
     example: `#include <Servo.h>\nServo s;\nvoid setup() { s.attach(9); }\nvoid loop() { s.write(0); delay(1000); s.write(180); delay(1000); }`,
   },
 };
+
+/** Core table + round-5 tables (each track owns its own file; decision 0003, C7). */
+const BUILTIN: Record<string, Usage> = { ...CORE, ...PARTS_R5_HINTS, ...BOARDS_R5_HINTS };
 
 function readIfExists(path: string): string | undefined {
   try {

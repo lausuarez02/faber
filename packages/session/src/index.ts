@@ -1,4 +1,6 @@
-export { ProjectSession, OP_METHODS } from "./session.ts";
+export { ProjectSession, OP_METHODS, allOpNames } from "./session.ts";
+export { TOOL_MODULES, EXT_OPS } from "./tools/index.ts";
+export type { ExtOp, ExtOpContext, ToolModule } from "./tools/index.ts";
 export type { SessionOptions, ActionEntry, SessionEvent, Builder, CallMeta } from "./session.ts";
 export { TOOLS, AGENT_LOOP } from "./catalog.ts";
 export type { ToolDef } from "./catalog.ts";
@@ -28,3 +30,6 @@ export async function renderDevice(opts: import("./device-render.ts").DeviceRend
   const m = await import("./device-render.ts");
   return m.renderDevice(opts);
 }
+export { jumperHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, projectsRegistryPath, registerProject, unregisterProject } from "./projects-registry.ts";
+export type { ProjectsRegistryFile, RegisteredProject } from "./projects-registry.ts";
+export type { AgentState, AgentStateEvent, LiveServerEvent } from "./live-events.ts";

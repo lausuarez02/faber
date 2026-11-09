@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { bindSvgString, composeSvg, JumperError, ProjectSession, TOOLS, OP_METHODS } from "../src/index.ts";
+import { allOpNames, bindSvgString, composeSvg, JumperError, ProjectSession, TOOLS, TOOL_MODULES } from "../src/index.ts";
 
 const GOLDEN = readFileSync(fileURLToPath(new URL("../../../examples/blink/firmware/blink.hex", import.meta.url)), "utf8");
 
@@ -46,7 +46,12 @@ afterEach(() => {
 
 describe("catalog", () => {
   it("has one tool per op and every op has a tool", () => {
-    expect(TOOLS.map((t) => t.name).sort()).toEqual(Object.keys(OP_METHODS).sort());
+    expect(TOOLS.map((t) => t.name).sort()).toEqual(allOpNames().sort());
+  });
+  it("gives every round-5 module tool a handler and no name twice", () => {
+    for (const m of TOOL_MODULES) for (const t of m.tools) expect(typeof m.ops[t.name], `${m.name}: ${t.name}`).toBe("function");
+    const names = TOOLS.map((t) => t.name);
+    expect(new Set(names).size).toBe(names.length);
   });
 });
 

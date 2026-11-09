@@ -15,6 +15,7 @@ import { BottomLeft, BottomRight } from "./shell/Corners.tsx";
 import { PanelColumn, useAutoInspector } from "./shell/Panels.tsx";
 import { fitView, zoomIn, zoomOut } from "./shell/actions.ts";
 import { DeviceView } from "./views/device/DeviceView.tsx";
+import { ChromeSlots, StageSlots } from "./shell/slots.tsx";
 
 function useKeyboard() {
   useEffect(() => {
@@ -147,6 +148,7 @@ export function App() {
           <Canvas />
           <LiveLayer />
           <EmptyHint />
+          <StageSlots />
         </main>
         <header className="chrome-top">
           <TitleBlock />
@@ -161,6 +163,7 @@ export function App() {
             <DeviceView onClose={() => useUi.getState().setDevice(false)} />
           </div>
         ) : null}
+        <ChromeSlots />
         <Toasts />
       </div>
     </ReactFlowProvider>

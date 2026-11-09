@@ -46,6 +46,7 @@ import { composeSvg, svgToPng } from "./screenshot.ts";
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
+import { EXT_OPS, type ExtOpContext } from "./tools/index.ts";
 import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
@@ -58,6 +59,14 @@ export interface SessionOptions {
   builder?: Builder;
   /** Who is acting, recorded in the action log: "mcp", "cli", "web", "test". */
   actor?: string;
+  /**
+   * Round 5 (decision 0003, C3): lets new_project {folder} make the new folder the active project
+   * of the host (jumper serve swaps its session, hub and MCP binding). Without it, new_project
+   * {folder} creates and registers the folder and tells the caller to reopen with --project.
+   */
+  openProject?: (dir: string) => Promise<void>;
+  /** Where new_project {folder} creates project folders (C3). Default: the parent of `dir`. */
+  projectsRoot?: string;
 }
 
 /** One line of .jumper/actions.jsonl: what happened, when (wall + virtual), and the state after. */
@@ -85,8 +94,12 @@ export interface ActionEntry {
   file?: { path: string; content: string | null };
   frames?: Frame[];
   steps?: ReturnType<typeof stepSummary>[];
-  /** Firmware hex after a successful build (replay loads it for live LEDs). */
-  firmware?: { artifact: string };
+  /**
+   * Firmware hex after a successful build (replay loads it for live LEDs). Round 5 (decision 0003,
+   * C3/C6): `hash` is the sha256 of the hex and a copy is kept at .jumper/builds/<hash>.hex, so
+   * history can show the device at any version and followers can tell new firmware from old.
+   */
+  firmware?: { artifact: string; hash?: string };
   /** The op's result when it is small (test results, check results…), for replay captions. */
   result?: unknown;
 }
@@ -110,7 +123,7 @@ interface OpCtx {
   file?: { path: string; content: string | null };
   frames?: Frame[];
   steps?: boolean;
-  firmware?: { artifact: string };
+  firmware?: { artifact: string; hash?: string };
 }
 
 const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5CF2A1"];
@@ -175,8 +188,15 @@ export class ProjectSession {
   /** What the last commit did to the running simulation (set by pushPropsOrInvalidate). */
   private liveNote: string | undefined;
 
+  /** Host hook to switch the active project (SessionOptions.openProject). */
+  readonly openProject: ((dir: string) => Promise<void>) | undefined;
+  /** Where new_project {folder} creates folders (SessionOptions.projectsRoot). */
+  readonly projectsRoot: string;
+
   constructor(opts: SessionOptions) {
     this.dir = resolve(opts.dir);
+    this.openProject = opts.openProject;
+    this.projectsRoot = resolve(opts.projectsRoot ?? dirname(this.dir));
     this.registry = opts.registry ?? defaultRegistry;
     this.builder = opts.builder ?? buildFirmware;
     this.actor = opts.actor ?? "session";
@@ -258,7 +278,7 @@ export class ProjectSession {
     writeFileSync(this.projectFile, serializeProject(this.project));
     writeFileSync(join(this.metaDir, "history.json"), JSON.stringify(this.history));
     const gi = join(this.metaDir, ".gitignore");
-    if (!existsSync(gi)) writeFileSync(gi, "# Jumper session state (undo history, build cache info). The action log is worth keeping for replays.\nhistory.json\nbuild.json\n");
+    if (!existsSync(gi)) writeFileSync(gi, "# Jumper session state (undo history, build cache info). The action log is worth keeping for replays.\nhistory.json\nbuild.json\nbuilds/\nthumbs/\n");
   }
 
   private logAction(entry: ActionEntry): void {
@@ -277,9 +297,13 @@ export class ProjectSession {
    * go through here, so they behave the same.
    */
   async call(op: string, args: Record<string, unknown> = {}, meta: CallMeta = {}): Promise<unknown> {
-    const handler = (this as unknown as Record<string, unknown>)[OP_METHODS[op] ?? ""];
+    const ext = OP_METHODS[op] ? undefined : EXT_OPS[op];
+    const handler = ext
+      ? (a: Record<string, unknown>, c: OpCtx) => ext(a, this.extContext(c))
+      : (this as unknown as Record<string, unknown>)[OP_METHODS[op] ?? ""];
     if (typeof handler !== "function") {
-      fail("unknown-op", `Unknown operation '${op}'`, `the operations are: ${Object.keys(OP_METHODS).join(", ")}`, `call one of those.${didYouMean(op, Object.keys(OP_METHODS))}`);
+      const names = allOpNames();
+      fail("unknown-op", `Unknown operation '${op}'`, `the operations are: ${names.join(", ")}`, `call one of those.${didYouMean(op, names)}`);
     }
     this.sync();
     const why = typeof args.why === "string" ? args.why : undefined;
@@ -314,6 +338,21 @@ export class ProjectSession {
       this.logAction({ seq: ctx.seq, t, ...(vt !== undefined ? { vt } : {}), ...who, op, args: trimArgs(args), ok: false, error: je.message });
       throw je;
     }
+  }
+
+  /** What a round-5 tool module handler gets (src/tools/types.ts). */
+  private extContext(ctx: OpCtx): ExtOpContext {
+    return {
+      session: this,
+      why: ctx.why,
+      commit: (label, next, files) => this.commit(ctx, label, next, files),
+      summary: (text) => {
+        ctx.summary = text;
+      },
+      target: (part, pin) => {
+        ctx.target = pin ? { part, pin } : { part };
+      },
+    };
   }
 
   /** Apply a project change as one recorded edit. Validates, writes jumper.json and files, records the step. */
@@ -860,7 +899,15 @@ export class ProjectSession {
       writeFileSync(info.artifactAbs, r.hex);
       mkdirSync(this.metaDir, { recursive: true });
       writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash: this.sourceHash(), artifact: info.fw.artifact, at: new Date().toISOString() }));
-      if (ctx) ctx.firmware = { artifact: info.fw.artifact };
+      const hexHash = createHash("sha256").update(r.hex).digest("hex");
+      try {
+        mkdirSync(join(this.metaDir, "builds"), { recursive: true });
+        const kept = join(this.metaDir, "builds", `${hexHash}.hex`);
+        if (!existsSync(kept)) writeFileSync(kept, r.hex);
+      } catch {
+        // keeping old builds is a convenience for history; never fail a build over it
+      }
+      if (ctx) ctx.firmware = { artifact: info.fw.artifact, hash: hexHash };
     }
     if (ctx) ctx.summary = r.ok ? `build ok${r.cached ? " (cached)" : ""}` : `build failed: ${r.errors} errors`;
     const pct = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
@@ -1437,6 +1484,11 @@ export const OP_METHODS: Record<string, string> = {
   read_network_log: "readNetworkLog",
   run_live: "runLive",
 };
+
+/** Every op name: the built-in ones (OP_METHODS) and the round-5 tool modules (src/tools). */
+export function allOpNames(): string[] {
+  return [...Object.keys(OP_METHODS), ...Object.keys(EXT_OPS)];
+}
 
 /** Ops whose (compacted) result goes into the action log, for replay captions and the live panel. */
 const LOG_RESULT_OPS = new Set(["build", "run_tests", "check_design", "fidelity_report", "read_display", "run", "export", "screenshot"]);
