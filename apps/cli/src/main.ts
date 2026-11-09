@@ -29,6 +29,9 @@ Project
   write <path> [--from local-file]        write_file (content from --from or stdin)
   read <path>                             read_file
   files                                   list_files
+  create-part <part.json> [--svg F]       make a part the catalog lacks (create_part; docs/custom-parts.md)
+  update-part <id> [part.json] [--svg F | --no-svg]   change it (update_part)
+  project-parts                           this project's agent-made parts (list_project_parts)
 Firmware and simulation
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
@@ -123,6 +126,8 @@ function parse(argv: string[]): Parsed {
       camera: { type: "string" },
       every: { type: "string" },
       until: { type: "string" },
+      svg: { type: "string" },
+      "no-svg": { type: "boolean" },
       since: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
@@ -213,6 +218,25 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       return { op: "read_file", args: { path: need(p.pos[0], "the path") } };
     case "files":
       return { op: "list_files", args: {} };
+    // Agent-made parts (decision 0003, C4/C5).
+    case "create-part":
+    case "update-part": {
+      const create = p.cmd === "create-part";
+      const id = create ? undefined : need(p.pos[0], "the part id");
+      const file = create ? need(p.pos[0], "the part.json file") : p.pos[1];
+      let part: unknown;
+      if (file) {
+        try {
+          part = JSON.parse(readFileSync(resolve(BASE, file), "utf8"));
+        } catch (err) {
+          throw new UsageError(`could not read ${file} as JSON (${(err as Error).message})`);
+        }
+      }
+      const svg = o["no-svg"] ? { svg: null } : o.svg ? { svg: readFileSync(resolve(BASE, o.svg as string), "utf8") } : {};
+      return { op: create ? "create_part" : "update_part", args: { ...(id ? { id } : {}), ...(part ? { part } : {}), ...svg, ...why } };
+    }
+    case "project-parts":
+      return { op: "list_project_parts", args: {} };
     case "build":
       return { op: "build", args: { ...(o.force ? { force: true } : {}) } };
     case "run":

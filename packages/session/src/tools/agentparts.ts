@@ -56,10 +56,10 @@ export function projectPartProblems(registry: PartRegistry): string[] {
 }
 
 /** Agent-made parts with their sanitized / generated SVG (GET /api/project-parts). */
-export function projectPartsWithSvg(session: ProjectSession): { id: string; part: CustomPart; svg: string }[] {
+export function projectPartsWithSvg(session: ProjectSession): { id: string; part: CustomPart; svg: string; generated: boolean }[] {
   refreshProjectParts(session.dir, session.registry);
   const st = STATE.get(session.registry);
-  return st ? [...st.compiled.values()].map((c) => ({ id: c.part.id, part: c.part, svg: c.svg })) : [];
+  return st ? [...st.compiled.values()].map((c) => ({ id: c.part.id, part: c.part, svg: c.svg, generated: c.generatedSvg })) : [];
 }
 
 function compileOrFail(part: unknown, svg: string | null | undefined, builtins: PartRegistry): CompiledCustomPart {

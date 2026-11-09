@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { ProjectSession } from "../src/index.ts";
+import { composeSvg, ProjectSession } from "../src/index.ts";
 
 const fx = (f: string) => fileURLToPath(new URL(`./fixtures/agentparts/${f}`, import.meta.url));
 const HEX = readFileSync(fx("main.hex"), "utf8");
@@ -124,6 +124,11 @@ describe("agent-made parts with real firmware", () => {
     });
     const t = await call("run_tests", { scenario: "dry-soil-runs-pump" });
     expect(t.failed, JSON.stringify(t.results?.[0]?.reason)).toBe(0);
+
+    // Bus faults work on agent-made I2C parts like on built-ins.
+    await call("inject_fault", { part: "tmp", kind: "i2c_nack" });
+    const nack = await call("run", { ms: 300 });
+    expect(nack.serial).toMatch(/who=0xFFFFFFFF err=2|who=0x[0-9A-F]+ err=2/);
   });
 
   it("update_part changes the running model, and the fidelity report and exports say agent-made", async () => {
@@ -137,6 +142,8 @@ describe("agent-made parts with real firmware", () => {
     const relayNoNo = { ...PARTS.relay, pins: (PARTS.relay.pins as { id: string }[]).filter((p) => p.id !== "NO"), behavior: { ...(PARTS.relay.behavior as object), contacts: { com: "COM", nc: "NC" } } };
     await expect(call("update_part", { id: "relay-module-1ch", part: relayNoNo })).rejects.toThrow(/remove pins that wires use: w\d+ \(relay\.NO\).*Fix: disconnect/);
 
+    // Headless screenshots (composeSvg) draw agent-made parts too.
+    expect(composeSvg(s.project, s.registry)).toMatch(/AGENT-MADE/);
     const fid = await call("fidelity_report");
     expect(fid.parts.find((p: { id: string }) => p.id === "tmp").level).toBe("agent-made: behavioral, unverified");
     expect(fid.global.join("\n")).toMatch(/made by an agent/);
