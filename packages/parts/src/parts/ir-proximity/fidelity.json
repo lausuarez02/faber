@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "OUT LOW when an object is within threshold × surface reflectivity (white 1, grey 0.6, black 0.2), HIGH through the module's 10 kΩ pull-up otherwise." },
+    "timing": { "level": "approx", "note": "Switches instantly; the real comparator answers in well under 1 ms. No hysteresis, so an object right at the edge does not flicker here but may on hardware." },
+    "analog": { "level": "approx", "note": "The object is one distance (a prop, or the nearest hit of 3 rays over ±5° from the robot physics, up to 40 cm). No IR reflectance curve, ambient sunlight (which blinds it), angle of the surface or transparent objects." },
+    "power": { "level": "approx", "note": "23 mA from VCC (IR LED + power LED) plus 3 mA for the obstacle LED; works from 3.0 V." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Active-low obstacle output with pull-up", "Trigger distance knob", "Shorter range on grey and black objects", "Distance from the robot physics (raycast on its mount side)"],
+  "doesNotEmulate": ["Sunlight and IR from lamps, which cause false or missed detections", "Glass and shiny surfaces", "Hysteresis and chatter at the edge of the range", "Line-following use (pointing at the floor)"],
+  "testOnRealDevice": ["Set the knob on the real object at the real distance", "Behaviour in sunlight", "Dark objects (often seen only at 1–3 cm)"]
+}

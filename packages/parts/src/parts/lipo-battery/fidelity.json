@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Power part." },
+    "timing": { "level": "approx", "note": "Coulomb counting every 1 ms of virtual time: state of charge falls with the current drawn and rises while charged. Real time by default; prop speedup multiplies it (labelled ×N) so tests can watch hours in seconds." },
+    "analog": { "level": "approx", "note": "Typical LiPo resting-voltage curve (4.20 V full, 3.84 V at 50 %, 3.27 V empty) plus internal resistance (~0.15 Ω for 500 mAh, scaled by capacity, doubling near empty), so it sags under load. No recovery after a load, temperature, ageing or C-rate capacity loss." },
+    "power": { "level": "approx", "note": "Protection board cuts the cell off below 2.5 V and reconnects when a charger lifts the pack voltage; over-current trip is only a warning (> 2C), not a cut-off. Warns on charging above 1C and above 4.25 V." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Voltage vs state of charge", "Sag under load", "Discharge and charge over time (mAh counting)", "Protection cut-off at 2.5 V", "Over-current, fast-charge and over-charge warnings"],
+  "doesNotEmulate": ["Voltage recovery after a heavy load", "Temperature (cold cells give much less)", "Ageing and capacity loss at high current", "The protection board's over-current and short-circuit trip (it only warns)", "Swelling, fire risk"],
+  "testOnRealDevice": ["Real run time: measure the average current of your device and divide the capacity by it, then keep a 20 % margin", "The voltage your firmware reads near empty (3.3–3.5 V) and that it shuts down in time", "Charge only with a LiPo charger; never leave a charging LiPo unattended"]
+}

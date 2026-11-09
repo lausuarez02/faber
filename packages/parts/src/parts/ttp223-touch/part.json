@@ -1,0 +1,53 @@
+{
+  "id": "ttp223-touch",
+  "name": "Capacitive touch button (TTP223 module)",
+  "category": "input",
+  "description": "One-key capacitive touch pad: touching the pad sets I/O HIGH (a push-pull output, no pull-up needed). VCC to 3.3 V or 5 V, GND to GND, I/O to any digital pin read with digitalRead. The A and B solder jumpers (props output, mode) make it active-low or a toggle.",
+  "pins": [
+    { "id": "IO", "label": "I/O", "x": 30, "y": 86, "type": "digital", "description": "Output: HIGH while touched (default), push-pull at the VCC level." },
+    { "id": "VCC", "label": "VCC", "x": 50, "y": 86, "type": "power", "voltage": { "min": 2.0, "max": 5.5 }, "description": "2.0 to 5.5 V supply." },
+    { "id": "GND", "label": "GND", "x": 70, "y": 86, "type": "ground", "description": "Ground." }
+  ],
+  "size": { "w": 100, "h": 90 },
+  "props": [
+    {
+      "id": "output",
+      "label": "Output (jumper A)",
+      "type": "enum",
+      "default": "active-high",
+      "options": [
+        { "value": "active-high", "label": "Active high (A open, as sold)" },
+        { "value": "active-low", "label": "Active low (A bridged)" }
+      ],
+      "description": "Level of I/O while touched."
+    },
+    {
+      "id": "mode",
+      "label": "Mode (jumper B)",
+      "type": "enum",
+      "default": "momentary",
+      "options": [
+        { "value": "momentary", "label": "Momentary (B open, as sold)" },
+        { "value": "toggle", "label": "Toggle (B bridged): each touch flips the output" }
+      ],
+      "description": "Momentary follows the finger; toggle latches on each touch."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 2.0, "maxCurrentmA": 8 },
+  "footprint": "24 × 15 mm module, 3-pin 0.1 in header (I/O VCC GND), touch pad on the front",
+  "dimensions_mm": { "w": 24, "h": 15, "d": 2 },
+  "mass_g": 1,
+  "current_ma": { "typ": 0.01, "max": 3 },
+  "price_usd": 0.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-TTP223-touch-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=TTP223%20capacitive%20touch%20module" }
+  ],
+  "bindings": [
+    { "key": "touched", "type": "boolean", "description": "A finger is on the pad." },
+    { "key": "active", "type": "boolean", "description": "The output is in its active state (touched, or latched on in toggle mode)." },
+    { "key": "out", "type": "boolean", "description": "I/O is HIGH." },
+    { "key": "padOpacity", "type": "number", "description": "Highlight of the pad while touched (0 or 1)." }
+  ],
+  "tags": ["ttp223", "touch", "touch sensor", "capacitive touch", "touch button", "touch pad", "button", "input", "pocket"]
+}

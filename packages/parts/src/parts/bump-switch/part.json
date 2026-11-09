@@ -1,0 +1,45 @@
+{
+  "id": "bump-switch",
+  "name": "Bump switch (lever micro switch, KW12-3)",
+  "category": "input",
+  "description": "Lever micro switch for robot bumpers and end stops: pressing the lever connects COM to NO and opens NC. Wire COM to GND and NO to a pin set to INPUT_PULLUP: it reads LOW while bumped. On a robot in a world, the physics presses it when the robot touches something on the side set by mount.",
+  "pins": [
+    { "id": "COM", "label": "C", "x": 30, "y": 76, "type": "passive", "description": "Common contact. Usually to GND." },
+    { "id": "NO", "label": "NO", "x": 50, "y": 76, "type": "passive", "description": "Normally open: connected to COM only while the lever is pressed. Usually to an INPUT_PULLUP pin." },
+    { "id": "NC", "label": "NC", "x": 70, "y": 76, "type": "passive", "description": "Normally closed: connected to COM while the lever is free." }
+  ],
+  "size": { "w": 100, "h": 80 },
+  "props": [
+    {
+      "id": "mount",
+      "label": "Mounted on",
+      "type": "enum",
+      "default": "front",
+      "options": [
+        { "value": "front", "label": "Front" },
+        { "value": "front-left", "label": "Front left (45°)" },
+        { "value": "front-right", "label": "Front right (45°)" },
+        { "value": "left", "label": "Left side" },
+        { "value": "right", "label": "Right side" },
+        { "value": "rear", "label": "Rear" }
+      ],
+      "description": "Where it sits on the robot. A robot world presses it when the body touches a wall or obstacle within 1 cm on that side; without a world it only changes with press / release."
+    }
+  ],
+  "limits": { "maxCurrentmA": 3000, "maxVoltage": 125 },
+  "footprint": "KW12-3 / SS-5GL style micro switch, 20 × 10 × 6.4 mm body, hinge lever, 3 solder tabs",
+  "dimensions_mm": { "w": 28, "h": 16, "d": 6.4 },
+  "mass_g": 2,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.4,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=micro%20switch%20hinge%20lever" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-KW12-3-micro-switch-lever.html" }
+  ],
+  "bindings": [
+    { "key": "pressed", "type": "boolean", "description": "True while the lever is pressed (COM–NO closed)." },
+    { "key": "contact", "type": "string", "description": "Which contact COM is on: \"NO\" (pressed) or \"NC\" (free)." },
+    { "key": "leverTransform", "type": "string", "description": "SVG transform of the lever." }
+  ],
+  "tags": ["bump switch", "bumper", "micro switch", "microswitch", "limit switch", "lever switch", "end stop", "endstop", "kw12", "collision", "robot", "touch sensor"]
+}

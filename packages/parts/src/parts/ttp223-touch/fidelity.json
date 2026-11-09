@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Active high or low (jumper A), momentary or toggle (jumper B), push-pull output at the VCC level, works from 2.0 to 5.5 V." },
+    "timing": { "level": "approx", "note": "The output follows a touch instantly. The real chip answers in about 60 ms (fast mode) to 220 ms (low-power mode, as sold) and calibrates for ~0.5 s after power-up." },
+    "analog": { "level": "none", "note": "A touch is on or off: no capacitance, no pad size, no cover material or thickness." },
+    "power": { "level": "approx", "note": "Chip standby current plus the module LED (~2 mA) while active." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Touch on/off", "Jumper A (active level) and jumper B (toggle)", "Push-pull output at VCC"],
+  "doesNotEmulate": ["Response time (60–220 ms) and the 0.5 s power-up calibration", "Sensitivity through plastic or glass", "False touches from water, noise or a nearby hand", "The ~100 s maximum on-time after which the chip recalibrates"],
+  "testOnRealDevice": ["Touch through your enclosure's wall (thickness and material change the sensitivity)", "Do not touch the pad while powering up (it calibrates to the finger)", "Debounce in firmware if you count touches"]
+}

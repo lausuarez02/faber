@@ -1,0 +1,30 @@
+{
+  "id": "vibration-motor",
+  "name": "Vibration motor module (coin ERM, with driver transistor)",
+  "category": "motor",
+  "description": "Coin vibration motor (10 mm, 1027 class) on a small board with its own NPN transistor and flyback diode, so a GPIO can switch it: VCC → 3.3 V or 5 V, GND → GND, IN → any pin (digitalWrite for on/off, analogWrite on a PWM pin for strength). A bare coin motor draws 60–90 mA: never put one straight on a pin.",
+  "pins": [
+    { "id": "GND", "label": "GND", "x": 30, "y": 86, "type": "ground", "description": "Ground." },
+    { "id": "VCC", "label": "VCC", "x": 50, "y": 86, "type": "power", "voltage": { "min": 2.5, "max": 5.5 }, "description": "Motor supply, 3.3 or 5 V (the motor runs faster and stronger at 5 V)." },
+    { "id": "IN", "label": "IN", "x": 70, "y": 86, "type": "digital", "description": "Transistor base through 1 kΩ: HIGH = vibrate. PWM works (analogWrite)." }
+  ],
+  "size": { "w": 100, "h": 90 },
+  "limits": { "maxVoltage": 5.5, "maxCurrentmA": 120, "ratedVoltage": 3, "ratedCurrentmA": 75 },
+  "footprint": "Module about 30 × 21 mm with a 10 × 2.7 mm coin motor, 3-pin 0.1 in header (GND VCC IN)",
+  "dimensions_mm": { "w": 30, "h": 21, "d": 6 },
+  "mass_g": 3,
+  "current_ma": { "typ": 75, "max": 120 },
+  "price_usd": 1.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-vibration-motor-module-arduino.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=vibration%20motor%20module%20arduino" }
+  ],
+  "bindings": [
+    { "key": "running", "type": "boolean", "description": "The motor is spinning (vibrating)." },
+    { "key": "strength", "type": "number", "description": "Vibration strength 0..1 relative to the rated speed at 3 V." },
+    { "key": "rpm", "type": "number", "description": "Motor speed." },
+    { "key": "currentmA", "type": "number", "description": "Motor current from VCC (mA)." },
+    { "key": "shakeTransform", "type": "string", "description": "SVG transform that jitters the motor while it runs." }
+  ],
+  "tags": ["vibration", "vibration motor", "haptic", "buzz", "coin motor", "erm", "1027", "rumble", "pager motor", "motor", "pocket", "wearable"]
+}

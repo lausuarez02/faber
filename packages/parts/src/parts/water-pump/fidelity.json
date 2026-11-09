@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Not a logic part." },
+    "timing": { "level": "approx", "note": "Spins up with an 80 ms time constant (the dc-motor model); flow follows the impeller speed with no water inertia or priming delay." },
+    "analog": { "level": "approx", "note": "Brushed DC motor: winding resistance from 4× the running current, back-EMF, friction (the dc-motor model). Flow is linear in speed above 20 % of the rated speed and is the free-flow (no lift) figure; real flow drops with every centimetre of lift and tube length." },
+    "power": { "level": "approx", "note": "Running and start-up current are realistic, so relay, driver and GPIO checks apply. Running dry is not detected." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Spin-up and running current", "Flow vs voltage and PWM duty", "Pumped volume over time (pumpedMl)", "Reversed wiring (almost no flow)", "Direct-from-GPIO error"],
+  "doesNotEmulate": ["Lift (head) and tube length, which reduce flow a lot", "Priming: a pump above the water line pumps nothing", "Running dry (it overheats in minutes)", "Electrical noise that resets boards without a flyback diode and a capacitor"],
+  "testOnRealDevice": ["Measure millilitres per second with your tube and lift, then set flowLph so pumpedMl matches", "Keep it submerged; never run it dry", "Put a diode across the pump (cathode to +) and a 100 µF capacitor on the supply"]
+}

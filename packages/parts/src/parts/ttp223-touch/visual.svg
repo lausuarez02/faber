@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90" width="100" height="90">
+  <path d="M30 70 V86 M50 70 V86 M70 70 V86" stroke="#9AA3AF" stroke-width="2"/>
+  <rect x="8" y="4" width="84" height="68" rx="5" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="40" cy="34" r="22" fill="#1C2027" stroke="#4A5363" stroke-width="1.5"/>
+  <circle cx="40" cy="34" r="15" fill="none" stroke="#3A4250" stroke-dasharray="2 3"/>
+  <circle cx="40" cy="34" r="21" fill="#5CF2A1" opacity="0" data-bind="opacity:padOpacity" fill-opacity="0.18"/>
+  <rect x="70" y="16" width="14" height="10" rx="1" fill="#15181D" stroke="#3A4250"/>
+  <text x="77" y="36" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">A B</text>
+  <circle cx="77" cy="48" r="3" fill="#2B313B"/>
+  <circle cx="77" cy="48" r="3" fill="#FF3B2F" display="none" data-bind="visible:active"/>
+  <text x="40" y="37" text-anchor="middle" font-family="IBM Plex Sans" font-size="7" fill="#8A93A0">TOUCH</text>
+  <text x="30" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">I/O</text>
+  <text x="50" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">VCC</text>
+  <text x="70" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">GND</text>
+  <circle data-pin="IO" cx="30" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="50" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="70" cy="86" r="3" fill="#C9CED6"/>
+</svg>

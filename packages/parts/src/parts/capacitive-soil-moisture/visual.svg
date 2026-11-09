@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 220" width="80" height="220">
+  <path d="M8 2 H72 V196 L40 218 L8 196 Z" fill="#15181D" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="12" y="4" width="56" height="12" rx="2" fill="#F2F2F2" fill-opacity="0.08" stroke="#3A4250"/>
+  <text x="20" y="27" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">GND</text>
+  <text x="40" y="27" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">VCC</text>
+  <text x="60" y="27" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">AOUT</text>
+  <rect x="18" y="36" width="20" height="14" rx="1.5" fill="#2B313B" stroke="#3A4250"/>
+  <text x="28" y="45" text-anchor="middle" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0">555</text>
+  <rect x="46" y="38" width="14" height="9" rx="1" fill="#2B313B" stroke="#3A4250"/>
+  <path d="M14 60 H66" stroke="#E9EDF2" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="40" y="70" text-anchor="middle" font-family="IBM Plex Sans" font-size="6" fill="#8A93A0">max depth</text>
+  <path d="M8 78 H72 V196 L40 218 L8 196 Z" fill="#6B4A2E" opacity="0" data-bind="opacity:wetOpacity"/>
+  <path d="M24 84 V194" stroke="#3A4250" stroke-width="8" stroke-linecap="round"/>
+  <text x="50" y="136" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" transform="rotate(-90 50 136)" data-bind="text:label">40 % · 2.24 V</text>
+  <circle data-pin="GND" cx="20" cy="10" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="40" cy="10" r="3" fill="#C9CED6"/>
+  <circle data-pin="AOUT" cx="60" cy="10" r="3" fill="#C9CED6"/>
+</svg>

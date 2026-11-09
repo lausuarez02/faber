@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "COM–NO closed while pressed, COM–NC closed while free (break before make is instantaneous)." },
+    "timing": { "level": "approx", "note": "Switches instantly; a real micro switch bounces for 1–5 ms, so firmware should debounce." },
+    "analog": { "level": "approx", "note": "Closed contact 0.01 Ω (real: up to ~30 mΩ new, more when worn)." },
+    "power": { "level": "n/a", "note": "Contact rating (about 3–5 A) is documented, not enforced." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Pressed / released contacts", "Pressed by the robot physics when the body touches something on its mount side"],
+  "doesNotEmulate": ["Contact bounce", "Lever travel and the force needed (real levers need 0.5–1.5 N, a light robot may not press them)", "Contact wear"],
+  "testOnRealDevice": ["That your robot hits hard enough to press the lever", "Debounce in firmware (ignore changes for ~10 ms)"]
+}

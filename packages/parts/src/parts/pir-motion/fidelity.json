@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "OUT goes HIGH on motion; repeat (H) mode holds it until delay_s after the last motion, single (L) mode gives one delay_s pulse; motion is ignored for 2.5 s after OUT falls (BISS0001 block time)." },
+    "timing": { "level": "approx", "note": "Hold and block times are exact in virtual time; the real Tx knob is not linear and the block time varies (2–3 s) between modules. Warm-up is 0 s by default (prop warmup_s); real modules need 30–60 s." },
+    "analog": { "level": "none", "note": "Motion is a yes/no input you set: no detection range (~5–7 m), 110° cone, sensitivity knob, body heat or temperature. The Fresnel lens and pyroelectric element are not modelled." },
+    "power": { "level": "approx", "note": "65 µA quiescent from VCC; works from 4.5 V (regulator dropout), not from 3.3 V." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Retrigger (H) and single (L) modes", "Hold time and 2.5 s block time", "3.3 V output level", "No output when VCC is below 4.5 V", "Optional warm-up period"],
+  "doesNotEmulate": ["Detection range, angle and sensitivity", "False triggers from heat sources, sunlight, Wi-Fi radios or the warm-up period", "Slow movement that a real PIR misses", "The non-linear Tx and Sx knobs"],
+  "testOnRealDevice": ["Wait 60 s after power-up before testing", "Range and angle in your room (sensitivity knob Sx)", "False triggers from heaters, sun or a Wi-Fi module next to it"]
+}

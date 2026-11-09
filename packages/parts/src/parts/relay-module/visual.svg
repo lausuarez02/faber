@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect x="4" y="6" width="152" height="98" rx="5" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="38" y="16" width="64" height="58" rx="3" fill="#1D3A6E" stroke="#3A4250"/>
+  <text x="70" y="38" text-anchor="middle" font-family="Bricolage Grotesque" font-size="9" fill="#E9EDF2">RELAY</text>
+  <text x="70" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#C9CED6">5VDC · 10A 30VDC</text>
+  <path d="M48 60 h6 l3 -5 l4 10 l4 -10 l4 10 l4 -10 l3 5 h6" fill="none" stroke="#C9CED6" stroke-width="1"/>
+  <rect x="126" y="18" width="26" height="76" rx="2" fill="#1C2027" stroke="#3A4250"/>
+  <circle cx="140" cy="43" r="2" fill="#9AA3AF"/>
+  <circle cx="140" cy="67" r="2" fill="#9AA3AF"/>
+  <path d="M140 30 V43 M140 80 V67 M118 55 H140" stroke="#3A4250" stroke-width="1"/>
+  <g transform="rotate(28 118 55)" data-bind="transform:armTransform">
+    <path d="M118 55 L141 55" stroke="#E9EDF2" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <circle cx="118" cy="55" r="2.5" fill="#E9EDF2"/>
+  <rect x="24" y="80" width="10" height="7" rx="1.5" fill="#2B313B"/>
+  <rect x="24" y="80" width="10" height="7" rx="1.5" fill="#FF3B2F" display="none" data-bind="visible:energized"/>
+  <text x="70" y="94" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" data-bind="text:label">OFF</text>
+  <text x="18" y="33" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">VCC</text>
+  <text x="18" y="53" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">GND</text>
+  <text x="18" y="73" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN</text>
+  <text x="122" y="33" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">NO</text>
+  <text x="114" y="50" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">COM</text>
+  <text x="122" y="83" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">NC</text>
+  <circle data-pin="VCC" cx="10" cy="30" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="10" cy="50" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN" cx="10" cy="70" r="3" fill="#C9CED6"/>
+  <circle data-pin="NO" cx="150" cy="30" r="3" fill="#C9CED6"/>
+  <circle data-pin="COM" cx="150" cy="55" r="3" fill="#C9CED6"/>
+  <circle data-pin="NC" cx="150" cy="80" r="3" fill="#C9CED6"/>
+</svg>

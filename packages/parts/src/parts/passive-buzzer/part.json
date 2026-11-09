@@ -1,0 +1,35 @@
+{
+  "id": "passive-buzzer",
+  "name": "Passive buzzer (piezo, plays tones)",
+  "category": "output",
+  "description": "Piezo sounder with no oscillator of its own: it plays the frequency you drive it with, so tone(pin, 440) plays A4 and melodies work. + to a GPIO (any pin for tone()), − to GND. A plain digitalWrite(HIGH) only clicks. The simulator reports the frequency, the note name and the melody played, so tests can check a tune.",
+  "pins": [
+    { "id": "POS", "label": "+", "x": 20, "y": 66, "type": "passive", "description": "Signal: the tone() pin." },
+    { "id": "NEG", "label": "−", "x": 40, "y": 66, "type": "passive", "description": "To GND." }
+  ],
+  "size": { "w": 60, "h": 70 },
+  "props": [
+    { "id": "resonantHz", "label": "Resonant frequency", "type": "number", "default": 4000, "min": 1000, "max": 8000, "step": 100, "unit": "Hz", "description": "Where it is loudest. 12 mm piezo sounders: about 4 kHz; it gets quieter away from it." }
+  ],
+  "limits": { "maxVoltage": 30, "maxCurrentmA": 5, "minHz": 20, "maxHz": 20000 },
+  "footprint": "THT 12 mm round piezo sounder, 7.6 mm lead pitch (no sticker, open bottom)",
+  "dimensions_mm": { "w": 12, "h": 12, "d": 9.5 },
+  "mass_g": 1.5,
+  "current_ma": { "typ": 1, "max": 3 },
+  "price_usd": 0.5,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=piezo%20transducer%2012mm%20external%20drive" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-passive-buzzer-12mm.html" }
+  ],
+  "bindings": [
+    { "key": "sounding", "type": "boolean", "description": "A tone is playing." },
+    { "key": "frequency", "type": "number", "description": "Frequency playing now in Hz (0 when silent), measured from the pin's period." },
+    { "key": "note", "type": "string", "description": "Nearest note name, e.g. \"A4\" (empty when silent)." },
+    { "key": "lastFrequency", "type": "number", "description": "Frequency of the last tone played (stays after it stops)." },
+    { "key": "tones", "type": "number", "description": "Number of tones started since reset (a new tone = sound starts or the pitch changes by > 1 %)." },
+    { "key": "melody", "type": "string", "description": "The last 24 notes played, space separated, e.g. \"C4 E4 G4 C5\"." },
+    { "key": "volume", "type": "number", "description": "Relative loudness 0..1 (drive level and distance from the resonant frequency)." },
+    { "key": "label", "type": "string", "description": "e.g. \"A4 · 440 Hz\"." }
+  ],
+  "tags": ["passive buzzer", "piezo", "speaker", "tone", "melody", "music", "sound", "beeper", "sounder", "notes", "output"]
+}

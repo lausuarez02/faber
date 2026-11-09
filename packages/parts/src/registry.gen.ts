@@ -4,26 +4,37 @@ import { create as create_0 } from "./parts/arduino-nano/model.ts";
 import { create as create_1 } from "./parts/arduino-uno/model.ts";
 import { create as create_2 } from "./parts/battery-pack/model.ts";
 import { create as create_3 } from "./parts/bme280/model.ts";
-import { create as create_4 } from "./parts/buzzer/model.ts";
-import { create as create_5 } from "./parts/dc-motor/model.ts";
-import { create as create_6 } from "./parts/ds3231-rtc/model.ts";
-import { create as create_7 } from "./parts/esp01-wifi/model.ts";
-import { create as create_8 } from "./parts/hc-sr04/model.ts";
-import { create as create_9 } from "./parts/ili9341-tft/model.ts";
-import { create as create_10 } from "./parts/l298n/model.ts";
-import { create as create_11 } from "./parts/lcd1602-i2c/model.ts";
-import { create as create_12 } from "./parts/led/model.ts";
-import { create as create_13 } from "./parts/mpu6050/model.ts";
-import { create as create_14 } from "./parts/photoresistor/model.ts";
-import { create as create_15 } from "./parts/potentiometer/model.ts";
-import { create as create_16 } from "./parts/pushbutton/model.ts";
-import { create as create_17 } from "./parts/resistor/model.ts";
-import { create as create_18 } from "./parts/rgb-led/model.ts";
-import { create as create_19 } from "./parts/robot-chassis-2wd/model.ts";
-import { create as create_20 } from "./parts/servo-sg90/model.ts";
-import { create as create_21 } from "./parts/slide-switch/model.ts";
-import { create as create_22 } from "./parts/ssd1306-oled-i2c/model.ts";
-import { create as create_23 } from "./parts/st7735-tft/model.ts";
+import { create as create_4 } from "./parts/bump-switch/model.ts";
+import { create as create_5 } from "./parts/buzzer/model.ts";
+import { create as create_6 } from "./parts/capacitive-soil-moisture/model.ts";
+import { create as create_7 } from "./parts/dc-motor/model.ts";
+import { create as create_8 } from "./parts/ds3231-rtc/model.ts";
+import { create as create_9 } from "./parts/esp01-wifi/model.ts";
+import { create as create_10 } from "./parts/hc-sr04/model.ts";
+import { create as create_11 } from "./parts/ili9341-tft/model.ts";
+import { create as create_12 } from "./parts/ir-proximity/model.ts";
+import { create as create_13 } from "./parts/l298n/model.ts";
+import { create as create_14 } from "./parts/lcd1602-i2c/model.ts";
+import { create as create_15 } from "./parts/led/model.ts";
+import { create as create_16 } from "./parts/lipo-battery/model.ts";
+import { create as create_17 } from "./parts/mpu6050/model.ts";
+import { create as create_18 } from "./parts/passive-buzzer/model.ts";
+import { create as create_19 } from "./parts/photoresistor/model.ts";
+import { create as create_20 } from "./parts/pir-motion/model.ts";
+import { create as create_21 } from "./parts/potentiometer/model.ts";
+import { create as create_22 } from "./parts/pushbutton/model.ts";
+import { create as create_23 } from "./parts/relay-module/model.ts";
+import { create as create_24 } from "./parts/resistor/model.ts";
+import { create as create_25 } from "./parts/rgb-led/model.ts";
+import { create as create_26 } from "./parts/robot-chassis-2wd/model.ts";
+import { create as create_27 } from "./parts/servo-sg90/model.ts";
+import { create as create_28 } from "./parts/slide-switch/model.ts";
+import { create as create_29 } from "./parts/ssd1306-oled-i2c/model.ts";
+import { create as create_30 } from "./parts/st7735-tft/model.ts";
+import { create as create_31 } from "./parts/tp4056-charger/model.ts";
+import { create as create_32 } from "./parts/ttp223-touch/model.ts";
+import { create as create_33 } from "./parts/vibration-motor/model.ts";
+import { create as create_34 } from "./parts/water-pump/model.ts";
 
 export const partDefinitions: PartDefinition[] = [
   {
@@ -1510,6 +1521,176 @@ export const partDefinitions: PartDefinition[] = [
   },
   {
     spec: {
+      "id": "bump-switch",
+      "name": "Bump switch (lever micro switch, KW12-3)",
+      "category": "input",
+      "description": "Lever micro switch for robot bumpers and end stops: pressing the lever connects COM to NO and opens NC. Wire COM to GND and NO to a pin set to INPUT_PULLUP: it reads LOW while bumped. On a robot in a world, the physics presses it when the robot touches something on the side set by mount.",
+      "pins": [
+        {
+          "id": "COM",
+          "label": "C",
+          "x": 30,
+          "y": 76,
+          "type": "passive",
+          "description": "Common contact. Usually to GND."
+        },
+        {
+          "id": "NO",
+          "label": "NO",
+          "x": 50,
+          "y": 76,
+          "type": "passive",
+          "description": "Normally open: connected to COM only while the lever is pressed. Usually to an INPUT_PULLUP pin."
+        },
+        {
+          "id": "NC",
+          "label": "NC",
+          "x": 70,
+          "y": 76,
+          "type": "passive",
+          "description": "Normally closed: connected to COM while the lever is free."
+        }
+      ],
+      "size": {
+        "w": 100,
+        "h": 80
+      },
+      "props": [
+        {
+          "id": "mount",
+          "label": "Mounted on",
+          "type": "enum",
+          "default": "front",
+          "options": [
+            {
+              "value": "front",
+              "label": "Front"
+            },
+            {
+              "value": "front-left",
+              "label": "Front left (45°)"
+            },
+            {
+              "value": "front-right",
+              "label": "Front right (45°)"
+            },
+            {
+              "value": "left",
+              "label": "Left side"
+            },
+            {
+              "value": "right",
+              "label": "Right side"
+            },
+            {
+              "value": "rear",
+              "label": "Rear"
+            }
+          ],
+          "description": "Where it sits on the robot. A robot world presses it when the body touches a wall or obstacle within 1 cm on that side; without a world it only changes with press / release."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 3000,
+        "maxVoltage": 125
+      },
+      "footprint": "KW12-3 / SS-5GL style micro switch, 20 × 10 × 6.4 mm body, hinge lever, 3 solder tabs",
+      "dimensions_mm": {
+        "w": 28,
+        "h": 16,
+        "d": 6.4
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.4,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=micro%20switch%20hinge%20lever"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-KW12-3-micro-switch-lever.html"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "pressed",
+          "type": "boolean",
+          "description": "True while the lever is pressed (COM–NO closed)."
+        },
+        {
+          "key": "contact",
+          "type": "string",
+          "description": "Which contact COM is on: \"NO\" (pressed) or \"NC\" (free)."
+        },
+        {
+          "key": "leverTransform",
+          "type": "string",
+          "description": "SVG transform of the lever."
+        }
+      ],
+      "tags": [
+        "bump switch",
+        "bumper",
+        "micro switch",
+        "microswitch",
+        "limit switch",
+        "lever switch",
+        "end stop",
+        "endstop",
+        "kw12",
+        "collision",
+        "robot",
+        "touch sensor"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "COM–NO closed while pressed, COM–NC closed while free (break before make is instantaneous)."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Switches instantly; a real micro switch bounces for 1–5 ms, so firmware should debounce."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Closed contact 0.01 Ω (real: up to ~30 mΩ new, more when worn)."
+        },
+        "power": {
+          "level": "n/a",
+          "note": "Contact rating (about 3–5 A) is documented, not enforced."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Pressed / released contacts",
+        "Pressed by the robot physics when the body touches something on its mount side"
+      ],
+      "doesNotEmulate": [
+        "Contact bounce",
+        "Lever travel and the force needed (real levers need 0.5–1.5 N, a light robot may not press them)",
+        "Contact wear"
+      ],
+      "testOnRealDevice": [
+        "That your robot hits hard enough to press the lever",
+        "Debounce in firmware (ignore changes for ~10 ms)"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 80\" width=\"100\" height=\"80\">\n  <path d=\"M30 62 V76 M50 62 V76 M70 62 V76\" stroke=\"#9AA3AF\" stroke-width=\"2.5\"/>\n  <rect x=\"14\" y=\"30\" width=\"72\" height=\"32\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"40\" r=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"78\" cy=\"40\" r=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"56\" y=\"25\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g transform=\"rotate(0 18 30)\" data-bind=\"transform:leverTransform\">\n    <path d=\"M18 30 L92 18\" stroke=\"#C9CED6\" stroke-width=\"3\" stroke-linecap=\"round\"/>\n    <circle cx=\"18\" cy=\"30\" r=\"3\" fill=\"#9AA3AF\"/>\n  </g>\n  <text x=\"50\" y=\"45\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">KW12</text>\n  <text x=\"30\" y=\"59\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">C</text>\n  <text x=\"50\" y=\"59\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NO</text>\n  <text x=\"70\" y=\"59\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NC</text>\n  <circle cx=\"88\" cy=\"38\" r=\"2.5\" fill=\"#5CF2A1\" display=\"none\" data-bind=\"visible:pressed\"/>\n  <circle data-pin=\"COM\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NO\" cx=\"50\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NC\" cx=\"70\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_4,
+  },
+  {
+    spec: {
       "id": "buzzer",
       "name": "Active buzzer (5 V)",
       "category": "output",
@@ -1637,7 +1818,175 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M20 46 V66 M40 46 V66\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"20\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"14\" fill=\"#1C2027\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"3\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <text x=\"14\" y=\"16\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <g display=\"none\" opacity=\"1\" data-bind=\"visible:sounding,opacity:volume\">\n    <path d=\"M51 20 A10 10 0 0 1 51 36\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M55 16 A16 16 0 0 1 55 40\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n    <path d=\"M9 20 A10 10 0 0 0 9 36\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M5 16 A16 16 0 0 0 5 40\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n  </g>\n  <circle data-pin=\"POS\" cx=\"20\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"40\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_4,
+    create: create_5,
+  },
+  {
+    spec: {
+      "id": "capacitive-soil-moisture",
+      "name": "Capacitive soil moisture sensor (v1.2)",
+      "category": "sensor",
+      "description": "Corrosion-free soil probe with an analog output that FALLS as the soil gets wetter: about 2.9 V in dry air, about 1.2 V in water (analogRead ≈ 590 dry, ≈ 255 wet on a 5 V Uno). VCC to 3.3 V or 5 V, GND to GND, AOUT to an analog pin. Calibrate dry and wet readings for your soil.",
+      "pins": [
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 20,
+          "y": 10,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 40,
+          "y": 10,
+          "type": "power",
+          "voltage": {
+            "min": 3.3,
+            "max": 5.5
+          },
+          "description": "3.3 to 5.5 V (an on-board 3.3 V regulator feeds the 555 oscillator)."
+        },
+        {
+          "id": "AOUT",
+          "label": "AOUT",
+          "x": 60,
+          "y": 10,
+          "type": "analog",
+          "description": "Analog output: higher = drier. To an analog pin (A0)."
+        }
+      ],
+      "size": {
+        "w": 80,
+        "h": 220
+      },
+      "props": [
+        {
+          "id": "moisture",
+          "label": "Soil moisture",
+          "type": "number",
+          "default": 40,
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "unit": "%",
+          "description": "0 = probe in dry air, 100 = probe in water. Typical potted soil: 20 % dry, 50 % just watered."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 6,
+        "maxVoltage": 5.5,
+        "minVoltage": 3.3,
+        "typicalCurrentmA": 5,
+        "dryVolts": 2.9,
+        "wetVolts": 1.25
+      },
+      "footprint": "98 × 23 mm probe board, 3-pin JST PH 2.0 / 0.1 in header (GND VCC AOUT)",
+      "dimensions_mm": {
+        "w": 98,
+        "h": 23,
+        "d": 4
+      },
+      "mass_g": 5,
+      "current_ma": {
+        "typ": 5,
+        "max": 6
+      },
+      "price_usd": 2,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-capacitive-soil-moisture-sensor-v1.2.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=capacitive%20soil%20moisture%20sensor%20v1.2"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "moisture",
+          "type": "number",
+          "description": "Soil moisture the probe sits in (%)."
+        },
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "AOUT voltage (unloaded)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"40 % · 2.24 V\"."
+        },
+        {
+          "key": "wetOpacity",
+          "type": "number",
+          "description": "Opacity of the wet-soil band (0..0.6)."
+        },
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "VCC is high enough for the oscillator."
+        }
+      ],
+      "tags": [
+        "soil",
+        "soil moisture",
+        "moisture",
+        "capacitive",
+        "plant",
+        "garden",
+        "watering",
+        "humidity soil",
+        "hygrometer",
+        "sensor",
+        "analog"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Analog part."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "AOUT follows a moisture change at once; the real RC detector settles in ~0.5 s after power-up and after a change."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Linear from ~2.9 V (0 %, air) to ~1.25 V (100 %, water) of the regulated 3.3 V, 10 kΩ output resistance. Real probes are not linear, differ by ±10 % between units, and depend on soil type, salt and temperature; dry soil reads 2.2–2.6 V, wet soil 1.4–1.8 V."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Constant 5 mA load; works from 3.3 to 5.5 V; below ~3.0 V AOUT is 0."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Output falls as moisture rises",
+        "Dry and wet voltage typical of the v1.2 board on 3.3 V and 5 V",
+        "Moisture set by prop, set_sensor_value or a scenario"
+      ],
+      "doesNotEmulate": [
+        "Soil type, salinity and temperature effects",
+        "Unit-to-unit spread (calibrate each probe)",
+        "Boards with a missing regulator or an NE555 that needs 5 V (common defects)",
+        "Water reaching the electronics above the line"
+      ],
+      "testOnRealDevice": [
+        "Read the probe in dry air and in a glass of water and use those two numbers as 0 % and 100 %",
+        "Do not push the probe past the white line; seal the board edge",
+        "Power it only while reading (a GPIO-switched supply) for battery projects"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 220\" width=\"80\" height=\"220\">\n  <path d=\"M8 2 H72 V196 L40 218 L8 196 Z\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"12\" y=\"4\" width=\"56\" height=\"12\" rx=\"2\" fill=\"#F2F2F2\" fill-opacity=\"0.08\" stroke=\"#3A4250\"/>\n  <text x=\"20\" y=\"27\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"40\" y=\"27\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"60\" y=\"27\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">AOUT</text>\n  <rect x=\"18\" y=\"36\" width=\"20\" height=\"14\" rx=\"1.5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <text x=\"28\" y=\"45\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\">555</text>\n  <rect x=\"46\" y=\"38\" width=\"14\" height=\"9\" rx=\"1\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M14 60 H66\" stroke=\"#E9EDF2\" stroke-width=\"1\" stroke-dasharray=\"3 2\"/>\n  <text x=\"40\" y=\"70\" text-anchor=\"middle\" font-family=\"IBM Plex Sans\" font-size=\"6\" fill=\"#8A93A0\">max depth</text>\n  <path d=\"M8 78 H72 V196 L40 218 L8 196 Z\" fill=\"#6B4A2E\" opacity=\"0\" data-bind=\"opacity:wetOpacity\"/>\n  <path d=\"M24 84 V194\" stroke=\"#3A4250\" stroke-width=\"8\" stroke-linecap=\"round\"/>\n  <text x=\"50\" y=\"136\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" transform=\"rotate(-90 50 136)\" data-bind=\"text:label\">40 % · 2.24 V</text>\n  <circle data-pin=\"GND\" cx=\"20\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"40\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"AOUT\" cx=\"60\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_6,
   },
   {
     spec: {
@@ -1843,7 +2192,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 140 80\" width=\"140\" height=\"80\">\n  <path d=\"M10 30 H26 M10 50 H26\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"24\" y=\"22\" width=\"40\" height=\"36\" rx=\"6\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"28\" y=\"26\" width=\"8\" height=\"28\" rx=\"2\" fill=\"#1C2027\"/>\n  <rect x=\"62\" y=\"12\" width=\"64\" height=\"56\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"98\" cy=\"40\" r=\"20\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <g transform=\"rotate(0 98 40)\" data-bind=\"transform:spinTransform\">\n    <rect x=\"95\" y=\"22\" width=\"6\" height=\"36\" rx=\"2\" fill=\"#C9CED6\"/>\n    <rect x=\"80\" y=\"37\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#8A93A0\"/>\n    <circle cx=\"98\" cy=\"40\" r=\"4\" fill=\"#0D0F12\" stroke=\"#5CF2A1\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"70\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\" data-bind=\"text:label\">0 rpm</text>\n  <text x=\"13\" y=\"26\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_5,
+    create: create_7,
   },
   {
     spec: {
@@ -2069,7 +2418,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 160\" width=\"300\" height=\"160\">\n  <rect x=\"2\" y=\"2\" width=\"296\" height=\"156\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"20\" width=\"22\" height=\"120\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"32\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">32K</text>\n  <text x=\"32\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">SQW</text>\n  <text x=\"32\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"32\" y=\"93\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"32\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"32\" y=\"133\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"70\" y=\"22\" width=\"70\" height=\"56\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <text x=\"105\" y=\"54\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DS3231</text>\n  <circle cx=\"225\" cy=\"80\" r=\"58\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <circle cx=\"225\" cy=\"80\" r=\"50\" fill=\"#323944\"/>\n  <text x=\"225\" y=\"76\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"15\" fill=\"#5CF2A1\" data-bind=\"text:clock\">12:00:00</text>\n  <text x=\"225\" y=\"96\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">CR2032</text>\n  <text x=\"70\" y=\"140\" font-family=\"IBM Plex Sans\" font-size=\"9\" fill=\"#8A93A0\">RTC · I2C 0x68</text>\n  <circle data-pin=\"32K\" cx=\"14\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SQW\" cx=\"14\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"14\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"14\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"14\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"14\" cy=\"130\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_6,
+    create: create_8,
   },
   {
     spec: {
@@ -2379,7 +2728,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 120\" width=\"200\" height=\"120\">\n  <rect x=\"2\" y=\"2\" width=\"196\" height=\"116\" rx=\"6\" fill=\"#10202A\" stroke=\"#3A4250\" stroke-width=\"1.25\"/>\n  <rect x=\"6\" y=\"18\" width=\"40\" height=\"84\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"11\" y=\"25\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"25\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"45\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"45\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"65\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"65\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"85\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"85\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"54\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">TX  GND</text>\n  <text x=\"54\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">EN  IO2</text>\n  <text x=\"54\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">RST IO0</text>\n  <text x=\"54\" y=\"93\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">3V3 RX</text>\n  <rect x=\"96\" y=\"34\" width=\"40\" height=\"40\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"116\" y=\"57\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">ESP8266</text>\n  <rect x=\"98\" y=\"82\" width=\"26\" height=\"16\" rx=\"1.5\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"111\" y=\"93\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\">FLASH</text>\n  <path d=\"M150 16 V100 H160 V24 H170 V100 H180 V24 H190 V104\" fill=\"none\" stroke=\"#C9A24A\" stroke-width=\"3\" stroke-linejoin=\"round\" opacity=\"0.85\"/>\n  <text x=\"96\" y=\"20\" font-family=\"IBM Plex Sans\" font-size=\"8\" fill=\"#E9EDF2\">ESP-01S</text>\n  <text x=\"96\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">AT 1.7 Wi-Fi</text>\n  <circle cx=\"74\" cy=\"108\" r=\"3\" fill=\"#3A1010\"/>\n  <circle cx=\"74\" cy=\"108\" r=\"3\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:powerOpacity\"/>\n  <circle cx=\"84\" cy=\"108\" r=\"3\" fill=\"#0F1A33\"/>\n  <circle cx=\"84\" cy=\"108\" r=\"3.2\" fill=\"#3FA9F5\" opacity=\"0\" data-bind=\"opacity:ledOpacity\"/>\n  <circle data-pin=\"TX\" cx=\"16\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"36\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"EN\" cx=\"16\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IO2\" cx=\"36\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"16\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IO0\" cx=\"36\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"16\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RX\" cx=\"36\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_7,
+    create: create_9,
   },
   {
     spec: {
@@ -2574,7 +2923,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 100\" width=\"180\" height=\"100\">\n  <rect x=\"2\" y=\"6\" width=\"176\" height=\"80\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <g display=\"none\" data-bind=\"visible:measuring\">\n    <path d=\"M34 36 A12 12 0 0 1 50 36 M30 30 A18 18 0 0 1 54 30\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:echo\">\n    <path d=\"M130 52 A12 12 0 0 0 146 52 M126 58 A18 18 0 0 0 150 58\" fill=\"none\" stroke=\"#FFB23F\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"90\" y=\"20\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"10\" fill=\"#E9EDF2\">HC-SR04</text>\n  <text x=\"90\" y=\"48\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#5CF2A1\" data-bind=\"text:label\">100 cm</text>\n  <text x=\"60\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">VCC</text>\n  <text x=\"80\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">TRIG</text>\n  <text x=\"100\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">ECHO</text>\n  <text x=\"120\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">GND</text>\n  <path d=\"M60 86 V96 M80 86 V96 M100 86 V96 M120 86 V96\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <circle data-pin=\"VCC\" cx=\"60\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"TRIG\" cx=\"80\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ECHO\" cx=\"100\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"120\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_8,
+    create: create_10,
   },
   {
     spec: {
@@ -2863,7 +3212,236 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 680 400\" width=\"680\" height=\"400\">\n  <rect x=\"2\" y=\"2\" width=\"676\" height=\"396\" rx=\"10\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"658\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"22\" cy=\"378\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"658\" cy=\"378\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"8\" y=\"106\" width=\"24\" height=\"188\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"14\" y=\"114\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"123\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">VCC</text>\n  <rect x=\"14\" y=\"134\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"143\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"14\" y=\"154\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"163\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">CS</text>\n  <rect x=\"14\" y=\"174\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"183\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">RESET</text>\n  <rect x=\"14\" y=\"194\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"203\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DC/RS</text>\n  <rect x=\"14\" y=\"214\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"223\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDI(MOSI)</text>\n  <rect x=\"14\" y=\"234\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"243\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SCK</text>\n  <rect x=\"14\" y=\"254\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"263\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">LED</text>\n  <rect x=\"14\" y=\"274\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"283\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDO(MISO)</text>\n  <text x=\"40\" y=\"312\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">ILI9341</text>\n  <text x=\"40\" y=\"324\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">240x320 SPI</text>\n  <rect x=\"118\" y=\"150\" width=\"26\" height=\"100\" rx=\"2\" fill=\"#2A1F0E\" stroke=\"#3A4250\" stroke-width=\"0.75\"/>\n  <path d=\"M122 160 H140 M122 170 H140 M122 180 H140 M122 190 H140 M122 200 H140 M122 210 H140 M122 220 H140 M122 230 H140 M122 240 H140\" stroke=\"#6B5A3A\" stroke-width=\"0.75\"/>\n  <rect x=\"140\" y=\"12\" width=\"500\" height=\"376\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"152\" y=\"21\" width=\"476\" height=\"358\" rx=\"3\" fill=\"#0A0C10\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"320x240\" x=\"162\" y=\"29\" width=\"456\" height=\"342\" fill=\"#05070A\"/>\n  <rect x=\"162\" y=\"29\" width=\"456\" height=\"342\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <path d=\"M170 36 L300 36 L176 160 Z\" fill=\"#FFFFFF\" opacity=\"0.025\"/>\n  <circle cx=\"652\" cy=\"200\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"VCC\" cx=\"20\" cy=\"120\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"20\" cy=\"140\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"20\" cy=\"160\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"20\" cy=\"180\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"20\" cy=\"200\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"20\" cy=\"220\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"20\" cy=\"240\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"LED\" cx=\"20\" cy=\"260\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MISO\" cx=\"20\" cy=\"280\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_9,
+    create: create_11,
+  },
+  {
+    spec: {
+      "id": "ir-proximity",
+      "name": "IR obstacle sensor (FC-51 / TCRT5000-style)",
+      "category": "sensor",
+      "description": "Infrared LED + photodiode + comparator: OUT goes LOW when something is closer than the trigger distance (set with the blue knob, about 2 to 30 cm; prop threshold). VCC → 3.3 V or 5 V, GND → GND, OUT → a digital pin (it has its own pull-up). On a robot in a world, the physics measures the distance on the side set by mount, like the HC-SR04.",
+      "pins": [
+        {
+          "id": "OUT",
+          "label": "OUT",
+          "x": 10,
+          "y": 15,
+          "type": "digital",
+          "description": "LOW = obstacle, HIGH = clear (10 kΩ pull-up to VCC on the module, open-collector comparator)."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 10,
+          "y": 35,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 10,
+          "y": 55,
+          "type": "power",
+          "voltage": {
+            "min": 3,
+            "max": 5.5
+          },
+          "description": "3.3 to 5 V."
+        }
+      ],
+      "size": {
+        "w": 150,
+        "h": 70
+      },
+      "props": [
+        {
+          "id": "distance",
+          "label": "Distance to object",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 500,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "Distance to the nearest object in front. 0 = nothing there. A world with physics overrides it with a raycast."
+        },
+        {
+          "id": "threshold",
+          "label": "Trigger distance (knob)",
+          "type": "number",
+          "default": 10,
+          "min": 2,
+          "max": 30,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "OUT goes LOW for a white object closer than this."
+        },
+        {
+          "id": "surface",
+          "label": "Object surface",
+          "type": "enum",
+          "default": "white",
+          "options": [
+            {
+              "value": "white",
+              "label": "White / light (full range)"
+            },
+            {
+              "value": "grey",
+              "label": "Grey / wood (≈ 60 % of the range)"
+            },
+            {
+              "value": "black",
+              "label": "Black / matte dark (≈ 20 % of the range)"
+            }
+          ],
+          "description": "IR reflectivity of the object: dark surfaces are seen much later."
+        },
+        {
+          "id": "mount",
+          "label": "Mounted on",
+          "type": "enum",
+          "default": "front",
+          "options": [
+            {
+              "value": "front",
+              "label": "Front"
+            },
+            {
+              "value": "front-left",
+              "label": "Front left (30°)"
+            },
+            {
+              "value": "front-right",
+              "label": "Front right (30°)"
+            },
+            {
+              "value": "left",
+              "label": "Left side"
+            },
+            {
+              "value": "right",
+              "label": "Right side"
+            },
+            {
+              "value": "rear",
+              "label": "Rear"
+            }
+          ],
+          "description": "Direction it looks on a robot. Used by the robot physics only."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 30,
+        "maxVoltage": 5.5,
+        "minVoltage": 3,
+        "minRangeCm": 2,
+        "maxRangeCm": 30
+      },
+      "footprint": "FC-51 module, 31 × 14 mm, 3-pin 0.1 in header (OUT GND VCC), IR LED and photodiode at the far end",
+      "dimensions_mm": {
+        "w": 31,
+        "h": 14,
+        "d": 7
+      },
+      "mass_g": 2.5,
+      "current_ma": {
+        "typ": 23,
+        "max": 30
+      },
+      "price_usd": 1,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-FC-51-IR-obstacle-avoidance-sensor.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=FC-51%20IR%20obstacle%20avoidance%20sensor"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "obstacle",
+          "type": "boolean",
+          "description": "Something is within the trigger distance (OUT LOW)."
+        },
+        {
+          "key": "distance",
+          "type": "number",
+          "description": "Distance to the object it sees (cm, 0 = nothing)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"obstacle 6 cm\" or \"clear\"."
+        },
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "VCC is high enough."
+        }
+      ],
+      "tags": [
+        "ir",
+        "infrared",
+        "obstacle",
+        "obstacle sensor",
+        "proximity",
+        "fc-51",
+        "tcrt5000",
+        "line",
+        "avoidance",
+        "robot",
+        "distance",
+        "sensor"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "OUT LOW when an object is within threshold × surface reflectivity (white 1, grey 0.6, black 0.2), HIGH through the module's 10 kΩ pull-up otherwise."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Switches instantly; the real comparator answers in well under 1 ms. No hysteresis, so an object right at the edge does not flicker here but may on hardware."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "The object is one distance (a prop, or the nearest hit of 3 rays over ±5° from the robot physics, up to 40 cm). No IR reflectance curve, ambient sunlight (which blinds it), angle of the surface or transparent objects."
+        },
+        "power": {
+          "level": "approx",
+          "note": "23 mA from VCC (IR LED + power LED) plus 3 mA for the obstacle LED; works from 3.0 V."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Active-low obstacle output with pull-up",
+        "Trigger distance knob",
+        "Shorter range on grey and black objects",
+        "Distance from the robot physics (raycast on its mount side)"
+      ],
+      "doesNotEmulate": [
+        "Sunlight and IR from lamps, which cause false or missed detections",
+        "Glass and shiny surfaces",
+        "Hysteresis and chatter at the edge of the range",
+        "Line-following use (pointing at the floor)"
+      ],
+      "testOnRealDevice": [
+        "Set the knob on the real object at the real distance",
+        "Behaviour in sunlight",
+        "Dark objects (often seen only at 1–3 cm)"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 150 70\" width=\"150\" height=\"70\">\n  <rect x=\"4\" y=\"4\" width=\"128\" height=\"62\" rx=\"4\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"44\" y=\"12\" width=\"20\" height=\"20\" rx=\"2\" fill=\"#1D3A6E\" stroke=\"#3A4250\"/>\n  <circle cx=\"54\" cy=\"22\" r=\"5\" fill=\"#E9EDF2\" stroke=\"#3A4250\"/>\n  <path d=\"M51 22 H57\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"44\" y=\"40\" width=\"20\" height=\"14\" rx=\"1.5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"54\" y=\"49\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"4.5\" fill=\"#8A93A0\">LM393</text>\n  <rect x=\"74\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"74\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#5CF2A1\" display=\"none\" data-bind=\"visible:powered\"/>\n  <rect x=\"74\" y=\"26\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"74\" y=\"26\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:obstacle\"/>\n  <path d=\"M120 22 H142 M120 48 H142\" stroke=\"#9AA3AF\" stroke-width=\"1.5\"/>\n  <rect x=\"134\" y=\"14\" width=\"12\" height=\"16\" rx=\"6\" fill=\"#E9EDF2\" fill-opacity=\"0.85\" stroke=\"#3A4250\"/>\n  <rect x=\"134\" y=\"40\" width=\"12\" height=\"16\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <g display=\"none\" data-bind=\"visible:obstacle\">\n    <path d=\"M146 22 Q150 35 146 48\" fill=\"none\" stroke=\"#FF3B2F\" stroke-width=\"1\" stroke-dasharray=\"2 2\"/>\n  </g>\n  <text x=\"98\" y=\"60\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">clear</text>\n  <text x=\"20\" y=\"18\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT</text>\n  <text x=\"20\" y=\"38\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"20\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <circle data-pin=\"OUT\" cx=\"10\" cy=\"15\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"35\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_12,
   },
   {
     spec: {
@@ -3135,7 +3713,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 200\" width=\"240\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"236\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"2\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"212\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"14\" y=\"162\" width=\"92\" height=\"30\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"110\" y=\"182\" width=\"120\" height=\"14\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"78\" y=\"22\" width=\"84\" height=\"64\" rx=\"4\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M84 22 V10 M96 22 V10 M108 22 V10 M120 22 V10 M132 22 V10 M144 22 V10 M156 22 V10\" stroke=\"#3A4250\" stroke-width=\"3\"/>\n  <rect x=\"88\" y=\"96\" width=\"64\" height=\"26\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"120\" y=\"58\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"14\" fill=\"#E9EDF2\">L298N</text>\n  <text x=\"120\" y=\"74\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">DUAL H-BRIDGE</text>\n  <circle cx=\"184\" cy=\"30\" r=\"5\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"184\" cy=\"30\" r=\"3.5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"visible:powered\"/>\n  <text x=\"34\" y=\"140\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:aLabel\">A off</text>\n  <text x=\"206\" y=\"140\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:bLabel\">B off</text>\n  <text x=\"34\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT1</text>\n  <text x=\"34\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT2</text>\n  <text x=\"206\" y=\"113\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT3</text>\n  <text x=\"206\" y=\"66\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT4</text>\n  <text x=\"30\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">12V</text>\n  <text x=\"60\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"90\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">5V</text>\n  <text x=\"120\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENA</text>\n  <text x=\"140\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN1</text>\n  <text x=\"160\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN2</text>\n  <text x=\"180\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN3</text>\n  <text x=\"200\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN4</text>\n  <text x=\"220\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENB</text>\n  <circle data-pin=\"OUT1\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT2\" cx=\"6\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT3\" cx=\"234\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT4\" cx=\"234\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"12V\" cx=\"30\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"60\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"5V\" cx=\"90\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENA\" cx=\"120\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN1\" cx=\"140\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN2\" cx=\"160\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN3\" cx=\"180\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN4\" cx=\"200\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENB\" cx=\"220\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_10,
+    create: create_13,
   },
   {
     spec: {
@@ -3418,7 +3996,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 290\" width=\"640\" height=\"290\">\n  <rect x=\"2\" y=\"2\" width=\"636\" height=\"286\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"22\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"2\" y=\"88\" width=\"30\" height=\"96\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"40\" y=\"108\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"40\" y=\"128\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"148\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"40\" y=\"168\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SCL</text>\n  <rect x=\"64\" y=\"40\" width=\"548\" height=\"210\" rx=\"6\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"#1C2A6B\" opacity=\"0.15\" data-bind=\"opacity:backlightOpacity\"/>\n  <rect data-screen=\"16x2\" x=\"100\" y=\"90\" width=\"476\" height=\"110\" fill=\"#1C2A6B\" opacity=\"0\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"none\" stroke=\"#3A4250\"/>\n  <text x=\"84\" y=\"242\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#8A93A0\">1602 HD44780 · PCF8574</text>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"105\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"125\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"10\" cy=\"145\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"10\" cy=\"165\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_11,
+    create: create_14,
   },
   {
     spec: {
@@ -3585,7 +4163,217 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"4\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"16\" fill=\"#FF3B2F\" opacity=\"0\" filter=\"url(#led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 48 V62 L10 76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M30 48 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#5A1712\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\" data-bind=\"fill:lens\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M12 22 A8 8 0 0 1 18 14\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M6 44 H32 V49 H6 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <line x1=\"32\" y1=\"43\" x2=\"32\" y2=\"50\" stroke=\"#E9EDF2\" stroke-width=\"1.5\"/>\n  <text x=\"4\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_12,
+    create: create_15,
+  },
+  {
+    spec: {
+      "id": "lipo-battery",
+      "name": "LiPo battery 1S (3.7 V, with protection)",
+      "category": "power",
+      "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to the board's battery input (VSYS / BAT on a 3.3 V board, through a TP4056 charger's B+), − to GND. A 5 V Uno cannot run from it without a boost converter.",
+      "pins": [
+        {
+          "id": "POS",
+          "label": "+",
+          "x": 10,
+          "y": 30,
+          "type": "power",
+          "description": "Positive (red wire)."
+        },
+        {
+          "id": "NEG",
+          "label": "−",
+          "x": 10,
+          "y": 50,
+          "type": "ground",
+          "description": "Negative (black wire)."
+        }
+      ],
+      "size": {
+        "w": 160,
+        "h": 80
+      },
+      "props": [
+        {
+          "id": "capacity",
+          "label": "Capacity",
+          "type": "number",
+          "default": 500,
+          "min": 40,
+          "max": 10000,
+          "step": 10,
+          "unit": "mAh",
+          "description": "Rated capacity. Pocket sizes: 150 mAh (402030), 500 mAh (503035), 1000 mAh (523450)."
+        },
+        {
+          "id": "soc",
+          "label": "State of charge at start",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "unit": "%",
+          "description": "Charge when the simulation starts (or now, when changed while running)."
+        },
+        {
+          "id": "protection",
+          "label": "Protection circuit",
+          "type": "boolean",
+          "default": true,
+          "description": "Most cells have a small protection board (DW01) that disconnects the cell below about 2.5 V."
+        },
+        {
+          "id": "speedup",
+          "label": "Drain speed-up (for tests)",
+          "type": "number",
+          "default": 1,
+          "min": 1,
+          "max": 3600,
+          "step": 1,
+          "unit": "×",
+          "description": "Multiplies how fast charge is used or added, so a test can watch hours of discharge in seconds. 1 = real time. Anything else is NOT realistic and shows in the label."
+        }
+      ],
+      "limits": {
+        "maxVoltage": 4.2,
+        "minVoltage": 3,
+        "cutoffVoltage": 2.5,
+        "maxDischargeC": 2,
+        "maxChargeC": 1
+      },
+      "footprint": "Pouch cell with a protection board, 503035 for 500 mAh (5 × 30 × 35 mm), 2 wires (often a JST-PH 2.0 plug)",
+      "dimensions_mm": {
+        "w": 35,
+        "h": 30,
+        "d": 5
+      },
+      "mass_g": 10,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-503035-lipo-500mah-3.7v.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=3.7V%20500mAh%20lipo%20503035%20JST"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "Terminal voltage under the present load."
+        },
+        {
+          "key": "soc",
+          "type": "number",
+          "description": "State of charge in % (0..100)."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Current out of + (negative while charging)."
+        },
+        {
+          "key": "usedmAh",
+          "type": "number",
+          "description": "Charge taken out since the start (negative after net charging)."
+        },
+        {
+          "key": "charging",
+          "type": "boolean",
+          "description": "Current flows into the cell."
+        },
+        {
+          "key": "cutoff",
+          "type": "boolean",
+          "description": "The protection circuit has disconnected the cell."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"3.92 V · 72 %\"."
+        },
+        {
+          "key": "fillWidth",
+          "type": "number",
+          "description": "Width of the charge bar in the SVG (px)."
+        },
+        {
+          "key": "fillColor",
+          "type": "string",
+          "description": "Colour of the charge bar (green, amber, red)."
+        }
+      ],
+      "tags": [
+        "lipo",
+        "li-po",
+        "lithium",
+        "battery",
+        "1s",
+        "3.7v",
+        "pouch",
+        "rechargeable",
+        "pocket",
+        "portable",
+        "wearable",
+        "power",
+        "cell",
+        "li-ion"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Power part."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Coulomb counting every 1 ms of virtual time: state of charge falls with the current drawn and rises while charged. Real time by default; prop speedup multiplies it (labelled ×N) so tests can watch hours in seconds."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Typical LiPo resting-voltage curve (4.20 V full, 3.84 V at 50 %, 3.27 V empty) plus internal resistance (~0.15 Ω for 500 mAh, scaled by capacity, doubling near empty), so it sags under load. No recovery after a load, temperature, ageing or C-rate capacity loss."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Protection board cuts the cell off below 2.5 V and reconnects when a charger lifts the pack voltage; over-current trip is only a warning (> 2C), not a cut-off. Warns on charging above 1C and above 4.25 V."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Voltage vs state of charge",
+        "Sag under load",
+        "Discharge and charge over time (mAh counting)",
+        "Protection cut-off at 2.5 V",
+        "Over-current, fast-charge and over-charge warnings"
+      ],
+      "doesNotEmulate": [
+        "Voltage recovery after a heavy load",
+        "Temperature (cold cells give much less)",
+        "Ageing and capacity loss at high current",
+        "The protection board's over-current and short-circuit trip (it only warns)",
+        "Swelling, fire risk"
+      ],
+      "testOnRealDevice": [
+        "Real run time: measure the average current of your device and divide the capacity by it, then keep a 20 % margin",
+        "The voltage your firmware reads near empty (3.3–3.5 V) and that it shuts down in time",
+        "Charge only with a LiPo charger; never leave a charging LiPo unattended"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 80\" width=\"160\" height=\"80\">\n  <path d=\"M10 30 H30 M10 50 H30\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <path d=\"M10 30 H26\" stroke=\"#E5484D\" stroke-width=\"2\"/>\n  <rect x=\"30\" y=\"20\" width=\"18\" height=\"40\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"48\" y=\"8\" width=\"106\" height=\"64\" rx=\"6\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <text x=\"101\" y=\"24\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"10\" fill=\"#E9EDF2\">LiPo 3.7 V</text>\n  <rect x=\"59\" y=\"30\" width=\"86\" height=\"14\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"60\" y=\"31\" width=\"84\" height=\"12\" rx=\"2\" fill=\"#5CF2A1\" data-bind=\"width:fillWidth,fill:fillColor\"/>\n  <text x=\"101\" y=\"60\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">4.20 V · 100 %</text>\n  <text x=\"39\" y=\"44\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" transform=\"rotate(-90 39 40)\">PCM</text>\n  <text x=\"20\" y=\"25\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <text x=\"20\" y=\"62\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"POS\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_16,
   },
   {
     spec: {
@@ -3891,7 +4679,175 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 130\" width=\"180\" height=\"130\">\n  <rect x=\"2\" y=\"2\" width=\"176\" height=\"126\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"8\" y=\"5\" width=\"164\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"20\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"60\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"80\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"100\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XDA</text>\n  <text x=\"120\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XCL</text>\n  <text x=\"140\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">AD0</text>\n  <text x=\"160\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">INT</text>\n  <g transform=\"rotate(0 90 80)\" data-bind=\"transform:tiltTransform\">\n    <rect x=\"74\" y=\"64\" width=\"32\" height=\"32\" rx=\"2\" fill=\"#15181D\" stroke=\"#4A5363\"/>\n    <circle cx=\"79\" cy=\"69\" r=\"1.6\" fill=\"#9AA3AF\"/>\n    <path d=\"M90 92 V70 M86 74 L90 70 L94 74\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" fill=\"none\"/>\n  </g>\n  <text x=\"30\" y=\"118\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">GY-521 MPU-6050</text>\n  <circle data-pin=\"VCC\" cx=\"20\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"40\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"60\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XDA\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"AD0\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"INT\" cx=\"160\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_13,
+    create: create_17,
+  },
+  {
+    spec: {
+      "id": "passive-buzzer",
+      "name": "Passive buzzer (piezo, plays tones)",
+      "category": "output",
+      "description": "Piezo sounder with no oscillator of its own: it plays the frequency you drive it with, so tone(pin, 440) plays A4 and melodies work. + to a GPIO (any pin for tone()), − to GND. A plain digitalWrite(HIGH) only clicks. The simulator reports the frequency, the note name and the melody played, so tests can check a tune.",
+      "pins": [
+        {
+          "id": "POS",
+          "label": "+",
+          "x": 20,
+          "y": 66,
+          "type": "passive",
+          "description": "Signal: the tone() pin."
+        },
+        {
+          "id": "NEG",
+          "label": "−",
+          "x": 40,
+          "y": 66,
+          "type": "passive",
+          "description": "To GND."
+        }
+      ],
+      "size": {
+        "w": 60,
+        "h": 70
+      },
+      "props": [
+        {
+          "id": "resonantHz",
+          "label": "Resonant frequency",
+          "type": "number",
+          "default": 4000,
+          "min": 1000,
+          "max": 8000,
+          "step": 100,
+          "unit": "Hz",
+          "description": "Where it is loudest. 12 mm piezo sounders: about 4 kHz; it gets quieter away from it."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 5,
+        "maxVoltage": 30,
+        "minHz": 20,
+        "maxHz": 20000
+      },
+      "footprint": "THT 12 mm round piezo sounder, 7.6 mm lead pitch (no sticker, open bottom)",
+      "dimensions_mm": {
+        "w": 12,
+        "h": 12,
+        "d": 9.5
+      },
+      "mass_g": 1.5,
+      "current_ma": {
+        "typ": 1,
+        "max": 3
+      },
+      "price_usd": 0.5,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=piezo%20transducer%2012mm%20external%20drive"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-passive-buzzer-12mm.html"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "sounding",
+          "type": "boolean",
+          "description": "A tone is playing."
+        },
+        {
+          "key": "frequency",
+          "type": "number",
+          "description": "Frequency playing now in Hz (0 when silent), measured from the pin's period."
+        },
+        {
+          "key": "note",
+          "type": "string",
+          "description": "Nearest note name, e.g. \"A4\" (empty when silent)."
+        },
+        {
+          "key": "lastFrequency",
+          "type": "number",
+          "description": "Frequency of the last tone played (stays after it stops)."
+        },
+        {
+          "key": "tones",
+          "type": "number",
+          "description": "Number of tones started since reset (a new tone = sound starts or the pitch changes by > 1 %)."
+        },
+        {
+          "key": "melody",
+          "type": "string",
+          "description": "The last 24 notes played, space separated, e.g. \"C4 E4 G4 C5\"."
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "description": "Relative loudness 0..1 (drive level and distance from the resonant frequency)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"A4 · 440 Hz\"."
+        }
+      ],
+      "tags": [
+        "passive buzzer",
+        "piezo",
+        "speaker",
+        "tone",
+        "melody",
+        "music",
+        "sound",
+        "beeper",
+        "sounder",
+        "notes",
+        "output"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Sounds while the pin toggles between 20 Hz and 20 kHz; silent on a steady level. Each new tone (start, or pitch change > 1 %) is counted and its note name recorded."
+        },
+        "timing": {
+          "level": "ok",
+          "note": "The frequency is measured from the cycle-exact period of the edges on the pin (tone() timer interrupts, analogWrite PWM), sampled every 1 ms of virtual time. Tones shorter than 1 ms are not counted."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Loudness is a relative 0..1 from the drive amplitude and a resonance curve around resonantHz (4 kHz). Electrically a 10 kΩ load (a real piezo is a ~20 nF capacitor: tiny average current, current spikes on each edge). No audio output."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Under 1 mA average."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Pitch from tone() and PWM, note names and melody history",
+        "Silence on DC (with a hint)",
+        "Louder near its resonant frequency"
+      ],
+      "doesNotEmulate": [
+        "Audio you can hear",
+        "Sound pressure level in dB",
+        "Harmonics and the timbre of a square wave",
+        "Magnetic (coil) passive buzzers, which draw 30–100 mA and need a transistor"
+      ],
+      "testOnRealDevice": [
+        "Loudness at the notes you use (piezos are quiet far below their resonance)",
+        "That your buzzer really is passive: an active one beeps at its own pitch on DC"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M20 46 V66 M40 46 V66\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"22\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"15\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"9\" fill=\"#2B313B\" stroke=\"#4A5363\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"3\" fill=\"#0A0C10\"/>\n  <g display=\"none\" opacity=\"1\" data-bind=\"visible:sounding,opacity:volume\">\n    <path d=\"M50 16 Q56 28 50 40 M54 11 Q62 28 54 45\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"30\" y=\"58\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#5CF2A1\" data-bind=\"text:label\">silent</text>\n  <text x=\"13\" y=\"62\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"POS\" cx=\"20\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"40\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_18,
   },
   {
     spec: {
@@ -4024,7 +4980,204 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"photoresistor-glow\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"3\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"17\" fill=\"#FFB23F\" opacity=\"0.4\" filter=\"url(#photoresistor-glow)\" data-bind=\"opacity:light\"/>\n  <path d=\"M10 36 V76 M30 36 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"13\" fill=\"#E9EDF2\" fill-opacity=\"0.12\" stroke=\"#E9EDF2\" stroke-opacity=\"0.45\" stroke-width=\"1\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"10\" fill=\"#2B2418\"/>\n  <path d=\"M13 18 H27 M13 22 H27 M13 26 H27 M13 30 H27 M27 18 V22 M13 22 V26 M27 26 V30\" stroke=\"#E07B2E\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_14,
+    create: create_19,
+  },
+  {
+    spec: {
+      "id": "pir-motion",
+      "name": "PIR motion sensor (HC-SR501)",
+      "category": "sensor",
+      "description": "Passive infrared motion detector: OUT goes HIGH (3.3 V) when a person moves within ~5 m and stays HIGH for the delay time (prop delay_s, the Tx knob), then ignores motion for ~2.5 s. VCC → 5V (4.5 to 20 V; it has its own 3.3 V regulator), GND → GND, OUT → a digital pin with digitalRead. Simulate motion with press / release or set_sensor_value(part, \"motion\", 1).",
+      "pins": [
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 40,
+          "y": 116,
+          "type": "power",
+          "voltage": {
+            "min": 4.5,
+            "max": 20
+          },
+          "description": "4.5 to 20 V. Not 3.3 V: the on-board regulator needs ≥ 4.5 V."
+        },
+        {
+          "id": "OUT",
+          "label": "OUT",
+          "x": 60,
+          "y": 116,
+          "type": "digital",
+          "description": "HIGH (3.3 V) while motion is reported, LOW otherwise. Safe for 3.3 V and 5 V boards."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 80,
+          "y": 116,
+          "type": "ground",
+          "description": "Ground."
+        }
+      ],
+      "size": {
+        "w": 120,
+        "h": 120
+      },
+      "props": [
+        {
+          "id": "delay_s",
+          "label": "Hold time (Tx knob)",
+          "type": "number",
+          "default": 5,
+          "min": 3,
+          "max": 300,
+          "step": 1,
+          "unit": "s",
+          "description": "How long OUT stays HIGH after motion. Knob fully anticlockwise ≈ 3 s, clockwise ≈ 300 s."
+        },
+        {
+          "id": "retrigger",
+          "label": "Trigger mode (jumper)",
+          "type": "enum",
+          "default": "repeat",
+          "options": [
+            {
+              "value": "repeat",
+              "label": "Repeat (H): motion keeps OUT HIGH"
+            },
+            {
+              "value": "single",
+              "label": "Single (L): one fixed pulse per trigger"
+            }
+          ],
+          "description": "Jumper H restarts the hold time on every movement; L gives one pulse, then a new one if motion is still there after the block time."
+        },
+        {
+          "id": "warmup_s",
+          "label": "Warm-up time",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 60,
+          "step": 1,
+          "unit": "s",
+          "description": "Time after power-up during which motion is ignored. Real modules need 30–60 s (and may trigger falsely meanwhile); 0 keeps tests fast."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 0.1,
+        "maxVoltage": 20,
+        "minVoltage": 4.5,
+        "blockTimeMs": 2500,
+        "rangeM": 7
+      },
+      "footprint": "HC-SR501 module, 32 × 24 mm, 23 mm Fresnel dome, 3-pin 0.1 in header (VCC OUT GND)",
+      "dimensions_mm": {
+        "w": 32,
+        "h": 24,
+        "d": 25
+      },
+      "mass_g": 7,
+      "current_ma": {
+        "typ": 0.065,
+        "max": 0.1
+      },
+      "price_usd": 2,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-HC-SR501-PIR.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=HC-SR501%20PIR%20motion%20sensor"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "motion",
+          "type": "boolean",
+          "description": "Something is moving in front of it (the simulated input)."
+        },
+        {
+          "key": "out",
+          "type": "boolean",
+          "description": "OUT is HIGH."
+        },
+        {
+          "key": "triggers",
+          "type": "number",
+          "description": "Times OUT went HIGH since reset."
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "description": "\"idle\", \"motion\" (OUT high), \"blocked\" (2.5 s after OUT fell), \"warming up\" or \"off\"."
+        },
+        {
+          "key": "glowOpacity",
+          "type": "number",
+          "description": "Opacity of the dome glow (1 while OUT is HIGH)."
+        }
+      ],
+      "tags": [
+        "pir",
+        "motion",
+        "motion sensor",
+        "hc-sr501",
+        "presence",
+        "infrared",
+        "occupancy",
+        "alarm",
+        "people",
+        "sensor",
+        "body"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "OUT goes HIGH on motion; repeat (H) mode holds it until delay_s after the last motion, single (L) mode gives one delay_s pulse; motion is ignored for 2.5 s after OUT falls (BISS0001 block time)."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Hold and block times are exact in virtual time; the real Tx knob is not linear and the block time varies (2–3 s) between modules. Warm-up is 0 s by default (prop warmup_s); real modules need 30–60 s."
+        },
+        "analog": {
+          "level": "none",
+          "note": "Motion is a yes/no input you set: no detection range (~5–7 m), 110° cone, sensitivity knob, body heat or temperature. The Fresnel lens and pyroelectric element are not modelled."
+        },
+        "power": {
+          "level": "approx",
+          "note": "65 µA quiescent from VCC; works from 4.5 V (regulator dropout), not from 3.3 V."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Retrigger (H) and single (L) modes",
+        "Hold time and 2.5 s block time",
+        "3.3 V output level",
+        "No output when VCC is below 4.5 V",
+        "Optional warm-up period"
+      ],
+      "doesNotEmulate": [
+        "Detection range, angle and sensitivity",
+        "False triggers from heat sources, sunlight, Wi-Fi radios or the warm-up period",
+        "Slow movement that a real PIR misses",
+        "The non-linear Tx and Sx knobs"
+      ],
+      "testOnRealDevice": [
+        "Wait 60 s after power-up before testing",
+        "Range and angle in your room (sensitivity knob Sx)",
+        "False triggers from heaters, sun or a Wi-Fi module next to it"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\" width=\"120\" height=\"120\">\n  <path d=\"M40 100 V116 M60 100 V116 M80 100 V116\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"6\" y=\"6\" width=\"108\" height=\"96\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"60\" cy=\"50\" r=\"40\" fill=\"#5CF2A1\" opacity=\"0\" fill-opacity=\"0.18\" data-bind=\"opacity:glowOpacity\"/>\n  <circle cx=\"60\" cy=\"50\" r=\"36\" fill=\"#E9EDF2\" fill-opacity=\"0.12\" stroke=\"#C9CED6\" stroke-width=\"1.5\"/>\n  <g fill=\"none\" stroke=\"#C9CED6\" stroke-opacity=\"0.45\" stroke-width=\"1\">\n    <circle cx=\"60\" cy=\"50\" r=\"28\"/>\n    <circle cx=\"60\" cy=\"50\" r=\"20\"/>\n    <circle cx=\"60\" cy=\"50\" r=\"12\"/>\n    <path d=\"M24 50 H96 M60 14 V86 M35 25 L85 75 M85 25 L35 75\"/>\n  </g>\n  <circle cx=\"16\" cy=\"94\" r=\"3\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <circle cx=\"104\" cy=\"94\" r=\"3\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <text x=\"40\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"60\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT</text>\n  <text x=\"80\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"60\" y=\"53\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:state\">idle</text>\n  <circle data-pin=\"VCC\" cx=\"40\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT\" cx=\"60\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_20,
   },
   {
     spec: {
@@ -4177,7 +5330,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <path d=\"M20 66 V84 M40 66 V84 M60 66 V84\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"10\" y=\"10\" width=\"60\" height=\"58\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <path d=\"M24.4 53.6 A22 22 0 1 1 55.6 53.6\" fill=\"none\" stroke=\"#3A4250\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"40\" cy=\"38\" r=\"17\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <g transform=\"rotate(0 40 38)\" data-bind=\"transform:knobTransform\">\n    <circle cx=\"40\" cy=\"38\" r=\"13\" fill=\"#323944\"/>\n    <line x1=\"40\" y1=\"37\" x2=\"40\" y2=\"25\" stroke=\"#E9EDF2\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"14\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"38\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">W</text>\n  <text x=\"62\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"W\" cx=\"40\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"60\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_15,
+    create: create_21,
   },
   {
     spec: {
@@ -4309,7 +5462,220 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\" width=\"80\" height=\"80\">\n  <path d=\"M10 10 L20 20 M70 10 L60 20 M10 70 L20 60 M70 70 L60 60\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"16\" y=\"16\" width=\"48\" height=\"48\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"22\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"40\" cy=\"41.5\" r=\"15\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:capTransform\">\n    <circle cx=\"40\" cy=\"40\" r=\"14\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n    <circle cx=\"40\" cy=\"40\" r=\"10\" fill=\"#323944\"/>\n  </g>\n  <circle cx=\"40\" cy=\"40\" r=\"17\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" display=\"none\" data-bind=\"visible:pressed\"/>\n  <text x=\"4\" y=\"40\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">1</text>\n  <text x=\"4\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1a\" cx=\"10\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"1b\" cx=\"70\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2a\" cx=\"10\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2b\" cx=\"70\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_16,
+    create: create_22,
+  },
+  {
+    spec: {
+      "id": "relay-module",
+      "name": "Relay module (1 channel, 5 V, optocoupled)",
+      "category": "output",
+      "description": "Switches a separate load (pump, lamp, motor, up to 10 A at 30 V DC) with a 5 V relay. Control side: VCC → 5V, GND → GND, IN → a GPIO. Load side: COM and NO in series with the load and its own supply (NO closes when the relay clicks; NC opens). Most modules are active-LOW: digitalWrite(pin, LOW) switches it on (prop trigger).",
+      "pins": [
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 10,
+          "y": 30,
+          "type": "power",
+          "voltage": {
+            "min": 4.5,
+            "max": 5.5
+          },
+          "description": "5 V for the relay coil (~70 mA). Not 3.3 V: the coil needs at least 3.75 V to pull in."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 10,
+          "y": 50,
+          "type": "ground",
+          "description": "Ground, shared with the board."
+        },
+        {
+          "id": "IN",
+          "label": "IN",
+          "x": 10,
+          "y": 70,
+          "type": "digital",
+          "description": "Control input. Active low (default): LOW = relay on, HIGH or 5 V = off. About 3 mA flows while on."
+        },
+        {
+          "id": "NO",
+          "label": "NO",
+          "x": 150,
+          "y": 30,
+          "type": "passive",
+          "description": "Normally open contact: connected to COM while the relay is on. Usual choice for a load."
+        },
+        {
+          "id": "COM",
+          "label": "COM",
+          "x": 150,
+          "y": 55,
+          "type": "passive",
+          "description": "Common contact of the switch."
+        },
+        {
+          "id": "NC",
+          "label": "NC",
+          "x": 150,
+          "y": 80,
+          "type": "passive",
+          "description": "Normally closed contact: connected to COM while the relay is off."
+        }
+      ],
+      "size": {
+        "w": 160,
+        "h": 110
+      },
+      "props": [
+        {
+          "id": "trigger",
+          "label": "Trigger level",
+          "type": "enum",
+          "default": "low",
+          "options": [
+            {
+              "value": "low",
+              "label": "Active low (LOW = on), most optocoupled modules"
+            },
+            {
+              "value": "high",
+              "label": "Active high (HIGH = on), transistor modules / H jumper"
+            }
+          ],
+          "description": "Which IN level turns the relay on. Check the module's silkscreen or the H/L jumper."
+        }
+      ],
+      "limits": {
+        "maxVoltage": 5.5,
+        "minVoltage": 4.5,
+        "pullInVoltage": 3.75,
+        "coilmA": 71,
+        "contactMaxmA": 10000,
+        "contactMaxDcVoltage": 30,
+        "operateMs": 10,
+        "releaseMs": 5
+      },
+      "footprint": "50 × 26 mm module, 3-pin 0.1 in header (VCC GND IN), 3-way 5 mm screw terminal (NO COM NC)",
+      "dimensions_mm": {
+        "w": 50,
+        "h": 26,
+        "d": 18.5
+      },
+      "mass_g": 15,
+      "current_ma": {
+        "typ": 72,
+        "max": 80
+      },
+      "price_usd": 2,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-5V-1-channel-relay-module-optocoupler.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=5V%201%20channel%20relay%20module%20optocoupler"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "energized",
+          "type": "boolean",
+          "description": "The coil is on and COM is switched to NO."
+        },
+        {
+          "key": "contact",
+          "type": "string",
+          "description": "\"NO\" or \"NC\": which contact COM touches."
+        },
+        {
+          "key": "armTransform",
+          "type": "string",
+          "description": "SVG transform of the switch arm."
+        },
+        {
+          "key": "coilmA",
+          "type": "number",
+          "description": "Coil current (mA)."
+        },
+        {
+          "key": "loadmA",
+          "type": "number",
+          "description": "Current through the closed contact (mA)."
+        },
+        {
+          "key": "clicks",
+          "type": "number",
+          "description": "Times the relay switched on since reset."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"ON · 180 mA\"."
+        }
+      ],
+      "tags": [
+        "relay",
+        "relay module",
+        "switch",
+        "load",
+        "pump",
+        "lamp",
+        "mains",
+        "srd-05vdc",
+        "optocoupler",
+        "5v relay",
+        "output",
+        "actuator"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Active-low (optocoupler LED from VCC through 1 kΩ to IN) or active-high (IN through 1 kΩ to a transistor base) input; turns on above 0.8 mA of input current."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Contacts switch 10 ms after the input turns on and 5 ms after it turns off (datasheet maximums for SRD-class relays); no contact bounce."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Coil 70 Ω (~71 mA at 5 V); pulls in at ≥ 3.75 V and drops out below 0.5 V. Closed contacts are 0.01 Ω."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Coil and power-LED current on VCC; warns above the 10 A contact rating. AC mains loads are not simulated."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Active-low and active-high modules",
+        "Coil pull-in voltage (no click on 3.3 V)",
+        "Operate / release delay",
+        "COM–NO / COM–NC switching of a DC load",
+        "Partial turn-on of active-low modules from a 3.3 V GPIO (warning)"
+      ],
+      "doesNotEmulate": [
+        "Contact bounce (1–5 ms)",
+        "AC loads, arcing and contact wear",
+        "The JD-VCC jumper (separate coil supply)",
+        "Inductive kick from the load (put a diode across DC motor / pump loads)"
+      ],
+      "testOnRealDevice": [
+        "Which level your module switches on (silkscreen or H/L jumper)",
+        "That the module turns fully off from a 3.3 V board",
+        "Mains wiring: only with a proper enclosure and someone qualified; this simulation does not check it"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 110\" width=\"160\" height=\"110\">\n  <rect x=\"4\" y=\"6\" width=\"152\" height=\"98\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"16\" width=\"64\" height=\"58\" rx=\"3\" fill=\"#1D3A6E\" stroke=\"#3A4250\"/>\n  <text x=\"70\" y=\"38\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">RELAY</text>\n  <text x=\"70\" y=\"50\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#C9CED6\">5VDC · 10A 30VDC</text>\n  <path d=\"M48 60 h6 l3 -5 l4 10 l4 -10 l4 10 l4 -10 l3 5 h6\" fill=\"none\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"126\" y=\"18\" width=\"26\" height=\"76\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"140\" cy=\"43\" r=\"2\" fill=\"#9AA3AF\"/>\n  <circle cx=\"140\" cy=\"67\" r=\"2\" fill=\"#9AA3AF\"/>\n  <path d=\"M140 30 V43 M140 80 V67 M118 55 H140\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <g transform=\"rotate(28 118 55)\" data-bind=\"transform:armTransform\">\n    <path d=\"M118 55 L141 55\" stroke=\"#E9EDF2\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  </g>\n  <circle cx=\"118\" cy=\"55\" r=\"2.5\" fill=\"#E9EDF2\"/>\n  <rect x=\"24\" y=\"80\" width=\"10\" height=\"7\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <rect x=\"24\" y=\"80\" width=\"10\" height=\"7\" rx=\"1.5\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:energized\"/>\n  <text x=\"70\" y=\"94\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">OFF</text>\n  <text x=\"18\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"18\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"18\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN</text>\n  <text x=\"122\" y=\"33\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NO</text>\n  <text x=\"114\" y=\"50\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">COM</text>\n  <text x=\"122\" y=\"83\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NC</text>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN\" cx=\"10\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NO\" cx=\"150\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"150\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NC\" cx=\"150\" cy=\"80\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_23,
   },
   {
     spec: {
@@ -4463,7 +5829,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 24\" width=\"100\" height=\"24\">\n  <line x1=\"10\" y1=\"12\" x2=\"90\" y2=\"12\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"27\" y=\"4\" width=\"46\" height=\"16\" rx=\"7\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <rect x=\"34\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band1\"/>\n  <rect x=\"42\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band2\"/>\n  <rect x=\"50\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#7A4A26\" data-bind=\"fill:band3\"/>\n  <rect x=\"62\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#C9A43A\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"90\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_17,
+    create: create_24,
   },
   {
     spec: {
@@ -4620,7 +5986,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <defs>\n    <filter id=\"rgb-led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"5\"/>\n    </filter>\n  </defs>\n  <circle cx=\"40\" cy=\"26\" r=\"20\" fill=\"#000000\" opacity=\"0\" filter=\"url(#rgb-led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 86 V64 L28 52 M30 86 V52 M50 86 V64 L42 52 M70 86 V60 L46 50\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#2E333B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <circle cx=\"35\" cy=\"34\" r=\"5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:r\"/>\n  <circle cx=\"45\" cy=\"34\" r=\"5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:g\"/>\n  <circle cx=\"40\" cy=\"25\" r=\"5\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:b\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#000000\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M32 24 A8 8 0 0 1 38 16\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M26 48 H54 V53 H26 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <text x=\"4\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">R</text>\n  <text x=\"33\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">−</text>\n  <text x=\"53\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">G</text>\n  <text x=\"73\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">B</text>\n  <circle data-pin=\"R\" cx=\"10\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"G\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_18,
+    create: create_25,
   },
   {
     spec: {
@@ -4869,7 +6235,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 200\" width=\"160\" height=\"200\">\n  <rect x=\"26\" y=\"14\" width=\"108\" height=\"172\" rx=\"18\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <rect x=\"136\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M8 112 H20 M8 122 H20 M8 132 H20 M8 142 H20 M8 152 H20 M140 112 H152 M140 122 H152 M140 132 H152 M140 142 H152 M140 152 H152\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"30\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <rect x=\"96\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"9\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"4\" fill=\"#8A93A0\"/>\n  <path d=\"M80 4 L72 16 H88 Z\" fill=\"#5CF2A1\"/>\n  <text x=\"80\" y=\"80\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"11\" fill=\"#E9EDF2\">2WD</text>\n  <text x=\"80\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" data-bind=\"text:label\">x 0 y 0 cm · 0°</text>\n</svg>",
-    create: create_19,
+    create: create_26,
   },
   {
     spec: {
@@ -5104,7 +6470,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 100\" width=\"160\" height=\"100\">\n  <path d=\"M6 30 H34 M6 50 H34 M6 70 H34\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M14 30 H34\" stroke=\"#7A5230\" stroke-width=\"3\"/>\n  <path d=\"M14 50 H34\" stroke=\"#D9473B\" stroke-width=\"3\"/>\n  <path d=\"M14 70 H34\" stroke=\"#F08A2B\" stroke-width=\"3\"/>\n  <rect x=\"34\" y=\"24\" width=\"12\" height=\"52\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"46\" y=\"20\" width=\"96\" height=\"60\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"44\" width=\"112\" height=\"12\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"112\" cy=\"50\" r=\"14\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g transform=\"rotate(0 112 50)\" data-bind=\"transform:hornTransform\">\n    <path d=\"M106 50 L112 8 L118 50 Z\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n    <circle cx=\"112\" cy=\"16\" r=\"2\" fill=\"#15181D\"/>\n    <circle cx=\"112\" cy=\"50\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n  </g>\n  <circle cx=\"112\" cy=\"50\" r=\"2\" fill=\"#0D0F12\"/>\n  <text x=\"56\" y=\"34\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">SG90</text>\n  <text x=\"56\" y=\"74\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">90°</text>\n  <circle data-pin=\"GND\" cx=\"6\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"6\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SIG\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_20,
+    create: create_27,
   },
   {
     spec: {
@@ -5237,7 +6603,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 50\" width=\"80\" height=\"50\">\n  <path d=\"M20 30 V44 M40 30 V44 M60 30 V44\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"8\" y=\"12\" width=\"64\" height=\"20\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"18\" y=\"17\" width=\"44\" height=\"10\" rx=\"2\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:knobTransform\">\n    <rect x=\"20\" y=\"4\" width=\"12\" height=\"22\" rx=\"2\" fill=\"#323944\" stroke=\"#5A6474\" stroke-width=\"1\"/>\n    <path d=\"M23 9 H29 M23 12 H29 M23 15 H29\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"10\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"66\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"40\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"3\" cx=\"60\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_21,
+    create: create_28,
   },
   {
     spec: {
@@ -5482,7 +6848,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 200\" width=\"220\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"70\" y=\"5\" width=\"80\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"80\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"100\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"120\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"140\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"14\" y=\"44\" width=\"192\" height=\"122\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x64\" x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"#05070A\"/>\n  <rect x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <rect x=\"88\" y=\"166\" width=\"44\" height=\"22\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"110\" y=\"156\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">SSD1306 128x64</text>\n  <circle cx=\"190\" cy=\"154\" r=\"2.5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_22,
+    create: create_29,
   },
   {
     spec: {
@@ -5751,7 +7117,745 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 360\" width=\"220\" height=\"360\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"356\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"28\" y=\"10\" width=\"164\" height=\"20\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"35\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">LED</text>\n  <rect x=\"55\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"60\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCK</text>\n  <rect x=\"75\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"80\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"95\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"100\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">A0</text>\n  <rect x=\"115\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"120\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">RST</text>\n  <rect x=\"135\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"140\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">CS</text>\n  <rect x=\"155\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"160\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"175\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"180\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <rect x=\"14\" y=\"52\" width=\"192\" height=\"292\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"20\" y=\"58\" width=\"180\" height=\"280\" rx=\"2\" fill=\"#0A0C10\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x160\" x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"#05070A\"/>\n  <rect x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <text x=\"110\" y=\"300\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">ST7735 1.8in 128x160</text>\n  <circle cx=\"110\" cy=\"320\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"LED\" cx=\"40\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"60\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"80\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"100\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"120\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"140\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"160\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"180\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_23,
+    create: create_30,
+  },
+  {
+    spec: {
+      "id": "tp4056-charger",
+      "name": "LiPo charger module (TP4056 with protection, USB-C)",
+      "category": "power",
+      "description": "Charges a 1S LiPo from USB 5 V (constant current, then 4.2 V constant voltage) and protects it. BAT (B+) and GND.2 (B−) to the cell, OUT (OUT+) and GND.3 (OUT−) to your circuit (e.g. VSYS of a 3.3 V board). Plug USB with press (or prop usb), or feed 5 V into VIN (IN+). Red LED = charging, blue = full. The charge current is 1 A as sold: for a small cell lower it to 1C (chargeCurrentmA, R_PROG).",
+      "pins": [
+        {
+          "id": "VIN",
+          "label": "IN+",
+          "x": 10,
+          "y": 40,
+          "type": "power",
+          "voltage": {
+            "min": 4.5,
+            "max": 8
+          },
+          "description": "5 V input (same as the USB socket). 4.5 to 5.5 V; 8 V absolute max."
+        },
+        {
+          "id": "GND.1",
+          "label": "IN−",
+          "x": 10,
+          "y": 60,
+          "type": "ground",
+          "description": "Input ground."
+        },
+        {
+          "id": "BAT",
+          "label": "B+",
+          "x": 130,
+          "y": 20,
+          "type": "power",
+          "description": "To the LiPo cell's + (red)."
+        },
+        {
+          "id": "GND.2",
+          "label": "B−",
+          "x": 130,
+          "y": 40,
+          "type": "ground",
+          "description": "To the LiPo cell's − (black)."
+        },
+        {
+          "id": "OUT",
+          "label": "OUT+",
+          "x": 130,
+          "y": 60,
+          "type": "power",
+          "description": "Protected battery output (3.0 to 4.2 V) to the load, e.g. VSYS / BAT of a 3.3 V board. Not 5 V: add a boost converter for 5 V boards."
+        },
+        {
+          "id": "GND.3",
+          "label": "OUT−",
+          "x": 130,
+          "y": 80,
+          "type": "ground",
+          "description": "Load ground."
+        }
+      ],
+      "size": {
+        "w": 140,
+        "h": 100
+      },
+      "props": [
+        {
+          "id": "usb",
+          "label": "USB cable plugged in",
+          "type": "boolean",
+          "default": false,
+          "description": "A USB charger gives the module 5 V. press toggles it."
+        },
+        {
+          "id": "chargeCurrentmA",
+          "label": "Charge current (R_PROG)",
+          "type": "number",
+          "default": 1000,
+          "min": 50,
+          "max": 1000,
+          "step": 10,
+          "unit": "mA",
+          "description": "Set by R_PROG: 1.2 kΩ = 1000 mA (as sold), 2 kΩ = 580, 3 kΩ = 400, 5 kΩ = 250, 10 kΩ = 130. Keep it at or below the cell's capacity (1C)."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 1000,
+        "maxVoltage": 8,
+        "minVoltage": 4.5,
+        "chargeVoltage": 4.2,
+        "rechargeVoltage": 4.05,
+        "trickleVoltage": 2.9,
+        "protectCutoffVoltage": 2.4,
+        "protectReleaseVoltage": 3
+      },
+      "footprint": "28 × 17.5 mm module, USB-C socket, solder pads IN+ IN− B+ B− OUT+ OUT−",
+      "dimensions_mm": {
+        "w": 28,
+        "h": 17.5,
+        "d": 5
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 1,
+        "max": 1000
+      },
+      "price_usd": 1,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-TP4056-type-c-protection-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=TP4056%20USB-C%20charger%20module%20protection"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "usb",
+          "type": "boolean",
+          "description": "USB cable plugged in."
+        },
+        {
+          "key": "mode",
+          "type": "string",
+          "description": "\"off\" (no input), \"trickle\", \"CC\" (constant current), \"CV\" (4.2 V), \"full\"."
+        },
+        {
+          "key": "charging",
+          "type": "boolean",
+          "description": "Charging (red CHRG LED)."
+        },
+        {
+          "key": "full",
+          "type": "boolean",
+          "description": "Charge finished (blue STDBY LED)."
+        },
+        {
+          "key": "chargemA",
+          "type": "number",
+          "description": "Current into the cell (mA)."
+        },
+        {
+          "key": "protected",
+          "type": "boolean",
+          "description": "The protection has cut OUT off (cell below 2.4 V)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"CC 1000 mA\"."
+        }
+      ],
+      "tags": [
+        "tp4056",
+        "charger",
+        "lipo charger",
+        "battery charger",
+        "usb charger",
+        "li-ion",
+        "lithium",
+        "dw01",
+        "protection",
+        "power",
+        "pocket",
+        "usb-c"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "TP4056 states: off below 4 V input, trickle (10 %) below 2.9 V, constant current, constant voltage 4.2 V, full when the current falls below 10 %, recharge below 4.05 V. CHRG / STDBY LEDs follow."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "State changes are immediate; a finished charge restarts no sooner than 1 s later. Charging speed comes from the battery part (its speedup prop applies)."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Ideal current source from VIN into BAT clamped at 4.2 V (±10 mV); the real chip is ±1 % on voltage and ±10 % on current, and reduces the current when hot (thermal regulation, often on these modules at 1 A). During CV the input still draws the full set current here."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Protection (DW01): OUT is cut below 2.4 V and restored above 3.0 V or while charging; it is modelled on the + side, the real module switches the − side. Its ~3 A over-current trip is a warning only."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "CC/CV charge profile with trickle, termination and recharge",
+        "Charge current set by R_PROG (prop)",
+        "USB plug (press) or 5 V on IN+",
+        "Over-discharge protection on OUT",
+        "CHRG / STDBY LEDs"
+      ],
+      "doesNotEmulate": [
+        "Thermal regulation (a 1 A module gets hot and slows down)",
+        "Load sharing: with a load on OUT while charging, the real chip may never see the end of charge",
+        "Battery temperature sensing (TEMP pin is grounded on these modules)",
+        "The protection's over-current and short-circuit trip"
+      ],
+      "testOnRealDevice": [
+        "Set R_PROG for your cell (≤ 1C) before the first charge",
+        "How hot the module gets at your charge current",
+        "That your device works while charging (load on OUT during CC/CV)"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 140 100\" width=\"140\" height=\"100\">\n  <rect x=\"4\" y=\"6\" width=\"132\" height=\"88\" rx=\"4\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"0\" y=\"30\" width=\"24\" height=\"40\" rx=\"3\" fill=\"#9AA3AF\" stroke=\"#C9CED6\"/>\n  <rect x=\"4\" y=\"38\" width=\"14\" height=\"24\" rx=\"2\" fill=\"#15181D\"/>\n  <g display=\"none\" data-bind=\"visible:usb\">\n    <rect x=\"-10\" y=\"40\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#2B313B\" stroke=\"#4A5363\"/>\n  </g>\n  <rect x=\"48\" y=\"36\" width=\"34\" height=\"26\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"65\" y=\"52\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">TP4056</text>\n  <rect x=\"88\" y=\"62\" width=\"16\" height=\"10\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"96\" y=\"80\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"4.5\" fill=\"#8A93A0\">DW01</text>\n  <rect x=\"48\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"48\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:charging\"/>\n  <rect x=\"62\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"62\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#4CB5FF\" display=\"none\" data-bind=\"visible:full\"/>\n  <text x=\"65\" y=\"78\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">no input</text>\n  <text x=\"28\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN+</text>\n  <text x=\"28\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN−</text>\n  <text x=\"122\" y=\"23\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">B+</text>\n  <text x=\"122\" y=\"43\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">B−</text>\n  <text x=\"122\" y=\"63\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT+</text>\n  <text x=\"122\" y=\"83\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT−</text>\n  <circle data-pin=\"VIN\" cx=\"10\" cy=\"40\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.1\" cx=\"10\" cy=\"60\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"BAT\" cx=\"130\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.2\" cx=\"130\" cy=\"40\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT\" cx=\"130\" cy=\"60\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.3\" cx=\"130\" cy=\"80\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_31,
+  },
+  {
+    spec: {
+      "id": "ttp223-touch",
+      "name": "Capacitive touch button (TTP223 module)",
+      "category": "input",
+      "description": "One-key capacitive touch pad: touching the pad sets I/O HIGH (a push-pull output, no pull-up needed). VCC to 3.3 V or 5 V, GND to GND, I/O to any digital pin read with digitalRead. The A and B solder jumpers (props output, mode) make it active-low or a toggle.",
+      "pins": [
+        {
+          "id": "IO",
+          "label": "I/O",
+          "x": 30,
+          "y": 86,
+          "type": "digital",
+          "description": "Output: HIGH while touched (default), push-pull at the VCC level."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 50,
+          "y": 86,
+          "type": "power",
+          "voltage": {
+            "min": 2,
+            "max": 5.5
+          },
+          "description": "2.0 to 5.5 V supply."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 70,
+          "y": 86,
+          "type": "ground",
+          "description": "Ground."
+        }
+      ],
+      "size": {
+        "w": 100,
+        "h": 90
+      },
+      "props": [
+        {
+          "id": "output",
+          "label": "Output (jumper A)",
+          "type": "enum",
+          "default": "active-high",
+          "options": [
+            {
+              "value": "active-high",
+              "label": "Active high (A open, as sold)"
+            },
+            {
+              "value": "active-low",
+              "label": "Active low (A bridged)"
+            }
+          ],
+          "description": "Level of I/O while touched."
+        },
+        {
+          "id": "mode",
+          "label": "Mode (jumper B)",
+          "type": "enum",
+          "default": "momentary",
+          "options": [
+            {
+              "value": "momentary",
+              "label": "Momentary (B open, as sold)"
+            },
+            {
+              "value": "toggle",
+              "label": "Toggle (B bridged): each touch flips the output"
+            }
+          ],
+          "description": "Momentary follows the finger; toggle latches on each touch."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 8,
+        "maxVoltage": 5.5,
+        "minVoltage": 2
+      },
+      "footprint": "24 × 15 mm module, 3-pin 0.1 in header (I/O VCC GND), touch pad on the front",
+      "dimensions_mm": {
+        "w": 24,
+        "h": 15,
+        "d": 2
+      },
+      "mass_g": 1,
+      "current_ma": {
+        "typ": 0.01,
+        "max": 3
+      },
+      "price_usd": 0.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-TTP223-touch-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=TTP223%20capacitive%20touch%20module"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "touched",
+          "type": "boolean",
+          "description": "A finger is on the pad."
+        },
+        {
+          "key": "active",
+          "type": "boolean",
+          "description": "The output is in its active state (touched, or latched on in toggle mode)."
+        },
+        {
+          "key": "out",
+          "type": "boolean",
+          "description": "I/O is HIGH."
+        },
+        {
+          "key": "padOpacity",
+          "type": "number",
+          "description": "Highlight of the pad while touched (0 or 1)."
+        }
+      ],
+      "tags": [
+        "ttp223",
+        "touch",
+        "touch sensor",
+        "capacitive touch",
+        "touch button",
+        "touch pad",
+        "button",
+        "input",
+        "pocket"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Active high or low (jumper A), momentary or toggle (jumper B), push-pull output at the VCC level, works from 2.0 to 5.5 V."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "The output follows a touch instantly. The real chip answers in about 60 ms (fast mode) to 220 ms (low-power mode, as sold) and calibrates for ~0.5 s after power-up."
+        },
+        "analog": {
+          "level": "none",
+          "note": "A touch is on or off: no capacitance, no pad size, no cover material or thickness."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Chip standby current plus the module LED (~2 mA) while active."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Touch on/off",
+        "Jumper A (active level) and jumper B (toggle)",
+        "Push-pull output at VCC"
+      ],
+      "doesNotEmulate": [
+        "Response time (60–220 ms) and the 0.5 s power-up calibration",
+        "Sensitivity through plastic or glass",
+        "False touches from water, noise or a nearby hand",
+        "The ~100 s maximum on-time after which the chip recalibrates"
+      ],
+      "testOnRealDevice": [
+        "Touch through your enclosure's wall (thickness and material change the sensitivity)",
+        "Do not touch the pad while powering up (it calibrates to the finger)",
+        "Debounce in firmware if you count touches"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 90\" width=\"100\" height=\"90\">\n  <path d=\"M30 70 V86 M50 70 V86 M70 70 V86\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"8\" y=\"4\" width=\"84\" height=\"68\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"22\" fill=\"#1C2027\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"15\" fill=\"none\" stroke=\"#3A4250\" stroke-dasharray=\"2 3\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"21\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:padOpacity\" fill-opacity=\"0.18\"/>\n  <rect x=\"70\" y=\"16\" width=\"14\" height=\"10\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"77\" y=\"36\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">A B</text>\n  <circle cx=\"77\" cy=\"48\" r=\"3\" fill=\"#2B313B\"/>\n  <circle cx=\"77\" cy=\"48\" r=\"3\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:active\"/>\n  <text x=\"40\" y=\"37\" text-anchor=\"middle\" font-family=\"IBM Plex Sans\" font-size=\"7\" fill=\"#8A93A0\">TOUCH</text>\n  <text x=\"30\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">I/O</text>\n  <text x=\"50\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"70\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <circle data-pin=\"IO\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_32,
+  },
+  {
+    spec: {
+      "id": "vibration-motor",
+      "name": "Vibration motor module (coin ERM, with driver transistor)",
+      "category": "motor",
+      "description": "Coin vibration motor (10 mm, 1027 class) on a small board with its own NPN transistor and flyback diode, so a GPIO can switch it: VCC → 3.3 V or 5 V, GND → GND, IN → any pin (digitalWrite for on/off, analogWrite on a PWM pin for strength). A bare coin motor draws 60–90 mA: never put one straight on a pin.",
+      "pins": [
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 30,
+          "y": 86,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 50,
+          "y": 86,
+          "type": "power",
+          "voltage": {
+            "min": 2.5,
+            "max": 5.5
+          },
+          "description": "Motor supply, 3.3 or 5 V (the motor runs faster and stronger at 5 V)."
+        },
+        {
+          "id": "IN",
+          "label": "IN",
+          "x": 70,
+          "y": 86,
+          "type": "digital",
+          "description": "Transistor base through 1 kΩ: HIGH = vibrate. PWM works (analogWrite)."
+        }
+      ],
+      "size": {
+        "w": 100,
+        "h": 90
+      },
+      "limits": {
+        "maxCurrentmA": 120,
+        "maxVoltage": 5.5,
+        "ratedVoltage": 3,
+        "ratedCurrentmA": 75
+      },
+      "footprint": "Module about 30 × 21 mm with a 10 × 2.7 mm coin motor, 3-pin 0.1 in header (GND VCC IN)",
+      "dimensions_mm": {
+        "w": 30,
+        "h": 21,
+        "d": 6
+      },
+      "mass_g": 3,
+      "current_ma": {
+        "typ": 75,
+        "max": 120
+      },
+      "price_usd": 1.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-vibration-motor-module-arduino.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=vibration%20motor%20module%20arduino"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "The motor is spinning (vibrating)."
+        },
+        {
+          "key": "strength",
+          "type": "number",
+          "description": "Vibration strength 0..1 relative to the rated speed at 3 V."
+        },
+        {
+          "key": "rpm",
+          "type": "number",
+          "description": "Motor speed."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Motor current from VCC (mA)."
+        },
+        {
+          "key": "shakeTransform",
+          "type": "string",
+          "description": "SVG transform that jitters the motor while it runs."
+        }
+      ],
+      "tags": [
+        "vibration",
+        "vibration motor",
+        "haptic",
+        "buzz",
+        "coin motor",
+        "erm",
+        "1027",
+        "rumble",
+        "pager motor",
+        "motor",
+        "pocket",
+        "wearable"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "IN above ~1 V (0.3 mA into the base) switches the transistor on; PWM on IN chops the motor at that duty."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Spin-up / spin-down with a 40 ms time constant (typical for 10 mm coin motors: 30–80 ms)."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "3 V coin ERM as a brushed DC motor (12 000 rpm and 75 mA at 3 V, 120 mA stall) through a saturated NPN (~0.15 V). Vibration strength is reported as speed relative to the rated speed; real vibration force grows with the square of speed."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Motor current comes from VCC; IN draws under 5 mA from the pin."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "On/off and PWM strength from a GPIO through the module's transistor",
+        "Spin-up time",
+        "Motor current on VCC (battery budget)"
+      ],
+      "doesNotEmulate": [
+        "The vibration itself (g-force, how it feels through a case)",
+        "Start failures at low PWM duty (real coin motors need ~40 % to start)",
+        "Brush noise on the supply"
+      ],
+      "testOnRealDevice": [
+        "How strong it feels inside your enclosure",
+        "The lowest PWM duty that still starts the motor"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 90\" width=\"100\" height=\"90\">\n  <path d=\"M30 70 V86 M50 70 V86 M70 70 V86\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"8\" y=\"6\" width=\"84\" height=\"66\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:shakeTransform\">\n    <circle cx=\"40\" cy=\"34\" r=\"20\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1.5\"/>\n    <circle cx=\"40\" cy=\"34\" r=\"15\" fill=\"none\" stroke=\"#6B7380\"/>\n    <path d=\"M27 48 L22 58 M33 51 L31 60\" stroke=\"#E5484D\" stroke-width=\"1.5\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:running\">\n    <path d=\"M14 22 Q10 34 14 46 M66 22 Q70 34 66 46\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <rect x=\"72\" y=\"18\" width=\"12\" height=\"8\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"78\" y=\"36\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\">NPN</text>\n  <text x=\"30\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"50\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"70\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN</text>\n  <circle data-pin=\"GND\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_33,
+  },
+  {
+    spec: {
+      "id": "water-pump",
+      "name": "Mini submersible water pump (3–6 V DC)",
+      "category": "motor",
+      "description": "Small brushed DC pump for plant watering and fountains: about 120 L/h and 180 mA at 5 V. It is a motor: never wire it straight to a GPIO. Switch it with a relay module (COM/NO in series with the pump and 5 V), a MOSFET or an L298N output. Red wire (+) to the switched supply, black (−) to GND.",
+      "pins": [
+        {
+          "id": "POS",
+          "label": "+",
+          "x": 10,
+          "y": 35,
+          "type": "passive",
+          "description": "Red wire. Water flows when + is more positive than −."
+        },
+        {
+          "id": "NEG",
+          "label": "−",
+          "x": 10,
+          "y": 55,
+          "type": "passive",
+          "description": "Black wire."
+        }
+      ],
+      "size": {
+        "w": 150,
+        "h": 90
+      },
+      "props": [
+        {
+          "id": "ratedVoltage",
+          "label": "Rated voltage",
+          "type": "number",
+          "default": 5,
+          "min": 2,
+          "max": 12,
+          "step": 0.1,
+          "unit": "V",
+          "description": "Voltage the flow and current below are given at."
+        },
+        {
+          "id": "flowLph",
+          "label": "Flow at rated voltage",
+          "type": "number",
+          "default": 120,
+          "min": 10,
+          "max": 1000,
+          "unit": "L/h",
+          "description": "Free-flow rate (no lift) at the rated voltage. Common 3–6 V pumps: 80–120 L/h."
+        },
+        {
+          "id": "ratedCurrent",
+          "label": "Running current",
+          "type": "number",
+          "default": 0.18,
+          "min": 0.02,
+          "max": 3,
+          "step": 0.01,
+          "unit": "A",
+          "description": "Current while pumping water at the rated voltage."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 700,
+        "maxVoltage": 6.5,
+        "minStartVoltage": 2.5
+      },
+      "footprint": "Submersible pump, 45 × 30 × 24 mm, 7.5 mm outlet, 2 wires",
+      "dimensions_mm": {
+        "w": 45,
+        "h": 30,
+        "d": 24
+      },
+      "mass_g": 28,
+      "current_ma": {
+        "typ": 180,
+        "max": 700
+      },
+      "price_usd": 3,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-mini-submersible-water-pump-3V-6V.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=mini%20submersible%20water%20pump%203-6V"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "Water is flowing."
+        },
+        {
+          "key": "flowLph",
+          "type": "number",
+          "description": "Flow right now (L/h)."
+        },
+        {
+          "key": "pumpedMl",
+          "type": "number",
+          "description": "Water pumped since reset (ml)."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Motor current (mA)."
+        },
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "Voltage across the pump (+ minus −)."
+        },
+        {
+          "key": "rpm",
+          "type": "number",
+          "description": "Impeller speed."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"118 L/h · 42 ml\"."
+        },
+        {
+          "key": "waterOpacity",
+          "type": "number",
+          "description": "Opacity of the water jet (0..1)."
+        }
+      ],
+      "tags": [
+        "pump",
+        "water pump",
+        "submersible",
+        "plant",
+        "watering",
+        "irrigation",
+        "garden",
+        "fountain",
+        "motor",
+        "dc load",
+        "aquarium"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Not a logic part."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Spins up with an 80 ms time constant (the dc-motor model); flow follows the impeller speed with no water inertia or priming delay."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Brushed DC motor: winding resistance from 4× the running current, back-EMF, friction (the dc-motor model). Flow is linear in speed above 20 % of the rated speed and is the free-flow (no lift) figure; real flow drops with every centimetre of lift and tube length."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Running and start-up current are realistic, so relay, driver and GPIO checks apply. Running dry is not detected."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Spin-up and running current",
+        "Flow vs voltage and PWM duty",
+        "Pumped volume over time (pumpedMl)",
+        "Reversed wiring (almost no flow)",
+        "Direct-from-GPIO error"
+      ],
+      "doesNotEmulate": [
+        "Lift (head) and tube length, which reduce flow a lot",
+        "Priming: a pump above the water line pumps nothing",
+        "Running dry (it overheats in minutes)",
+        "Electrical noise that resets boards without a flyback diode and a capacitor"
+      ],
+      "testOnRealDevice": [
+        "Measure millilitres per second with your tube and lift, then set flowLph so pumpedMl matches",
+        "Keep it submerged; never run it dry",
+        "Put a diode across the pump (cathode to +) and a 100 µF capacitor on the supply"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 150 90\" width=\"150\" height=\"90\">\n  <path d=\"M10 35 H26 M10 55 H26\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <path d=\"M10 35 H24\" stroke=\"#E5484D\" stroke-width=\"2\"/>\n  <rect x=\"26\" y=\"22\" width=\"78\" height=\"46\" rx=\"10\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"34\" y=\"28\" width=\"44\" height=\"34\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"90\" cy=\"45\" r=\"11\" fill=\"#15181D\" stroke=\"#4A5363\"/>\n  <path d=\"M90 37 V53 M82 45 H98\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"104\" y=\"40\" width=\"20\" height=\"10\" rx=\"2\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g opacity=\"0\" data-bind=\"opacity:waterOpacity\">\n    <path d=\"M124 45 Q136 42 144 30 M124 45 Q138 46 146 40 M124 45 Q136 50 144 58\" fill=\"none\" stroke=\"#4CB5FF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"56\" y=\"43\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"8\" fill=\"#E9EDF2\">PUMP</text>\n  <text x=\"56\" y=\"54\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3–6 V</text>\n  <text x=\"65\" y=\"84\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">0 L/h · 0 ml</text>\n  <text x=\"18\" y=\"30\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <text x=\"18\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"POS\" cx=\"10\" cy=\"35\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"10\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_34,
   },
 ];
 

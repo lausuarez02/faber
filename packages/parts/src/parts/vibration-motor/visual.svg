@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90" width="100" height="90">
+  <path d="M30 70 V86 M50 70 V86 M70 70 V86" stroke="#9AA3AF" stroke-width="2"/>
+  <rect x="8" y="6" width="84" height="66" rx="5" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <g transform="translate(0 0)" data-bind="transform:shakeTransform">
+    <circle cx="40" cy="34" r="20" fill="#9AA3AF" stroke="#C9CED6" stroke-width="1.5"/>
+    <circle cx="40" cy="34" r="15" fill="none" stroke="#6B7380"/>
+    <path d="M27 48 L22 58 M33 51 L31 60" stroke="#E5484D" stroke-width="1.5"/>
+  </g>
+  <g display="none" data-bind="visible:running">
+    <path d="M14 22 Q10 34 14 46 M66 22 Q70 34 66 46" fill="none" stroke="#5CF2A1" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <rect x="72" y="18" width="12" height="8" rx="1" fill="#15181D" stroke="#3A4250"/>
+  <text x="78" y="36" text-anchor="middle" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0">NPN</text>
+  <text x="30" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">GND</text>
+  <text x="50" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">VCC</text>
+  <text x="70" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN</text>
+  <circle data-pin="GND" cx="30" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="50" cy="86" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN" cx="70" cy="86" r="3" fill="#C9CED6"/>
+</svg>

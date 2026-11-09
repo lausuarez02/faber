@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "IN above ~1 V (0.3 mA into the base) switches the transistor on; PWM on IN chops the motor at that duty." },
+    "timing": { "level": "approx", "note": "Spin-up / spin-down with a 40 ms time constant (typical for 10 mm coin motors: 30–80 ms)." },
+    "analog": { "level": "approx", "note": "3 V coin ERM as a brushed DC motor (12 000 rpm and 75 mA at 3 V, 120 mA stall) through a saturated NPN (~0.15 V). Vibration strength is reported as speed relative to the rated speed; real vibration force grows with the square of speed." },
+    "power": { "level": "approx", "note": "Motor current comes from VCC; IN draws under 5 mA from the pin." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["On/off and PWM strength from a GPIO through the module's transistor", "Spin-up time", "Motor current on VCC (battery budget)"],
+  "doesNotEmulate": ["The vibration itself (g-force, how it feels through a case)", "Start failures at low PWM duty (real coin motors need ~40 % to start)", "Brush noise on the supply"],
+  "testOnRealDevice": ["How strong it feels inside your enclosure", "The lowest PWM duty that still starts the motor"]
+}

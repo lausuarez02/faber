@@ -1,0 +1,33 @@
+{
+  "id": "capacitive-soil-moisture",
+  "name": "Capacitive soil moisture sensor (v1.2)",
+  "category": "sensor",
+  "description": "Corrosion-free soil probe with an analog output that FALLS as the soil gets wetter: about 2.9 V in dry air, about 1.2 V in water (analogRead ≈ 590 dry, ≈ 255 wet on a 5 V Uno). VCC to 3.3 V or 5 V, GND to GND, AOUT to an analog pin. Calibrate dry and wet readings for your soil.",
+  "pins": [
+    { "id": "GND", "label": "GND", "x": 20, "y": 10, "type": "ground", "description": "Ground." },
+    { "id": "VCC", "label": "VCC", "x": 40, "y": 10, "type": "power", "voltage": { "min": 3.3, "max": 5.5 }, "description": "3.3 to 5.5 V (an on-board 3.3 V regulator feeds the 555 oscillator)." },
+    { "id": "AOUT", "label": "AOUT", "x": 60, "y": 10, "type": "analog", "description": "Analog output: higher = drier. To an analog pin (A0)." }
+  ],
+  "size": { "w": 80, "h": 220 },
+  "props": [
+    { "id": "moisture", "label": "Soil moisture", "type": "number", "default": 40, "min": 0, "max": 100, "step": 1, "unit": "%", "description": "0 = probe in dry air, 100 = probe in water. Typical potted soil: 20 % dry, 50 % just watered." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.3, "maxCurrentmA": 6, "typicalCurrentmA": 5, "dryVolts": 2.9, "wetVolts": 1.25 },
+  "footprint": "98 × 23 mm probe board, 3-pin JST PH 2.0 / 0.1 in header (GND VCC AOUT)",
+  "dimensions_mm": { "w": 98, "h": 23, "d": 4 },
+  "mass_g": 5,
+  "current_ma": { "typ": 5, "max": 6 },
+  "price_usd": 2,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-capacitive-soil-moisture-sensor-v1.2.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=capacitive%20soil%20moisture%20sensor%20v1.2" }
+  ],
+  "bindings": [
+    { "key": "moisture", "type": "number", "description": "Soil moisture the probe sits in (%)." },
+    { "key": "volts", "type": "number", "description": "AOUT voltage (unloaded)." },
+    { "key": "label", "type": "string", "description": "e.g. \"40 % · 2.24 V\"." },
+    { "key": "wetOpacity", "type": "number", "description": "Opacity of the wet-soil band (0..0.6)." },
+    { "key": "powered", "type": "boolean", "description": "VCC is high enough for the oscillator." }
+  ],
+  "tags": ["soil", "soil moisture", "moisture", "capacitive", "plant", "garden", "watering", "humidity soil", "hygrometer", "sensor", "analog"]
+}

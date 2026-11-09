@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Active-low (optocoupler LED from VCC through 1 kΩ to IN) or active-high (IN through 1 kΩ to a transistor base) input; turns on above 0.8 mA of input current." },
+    "timing": { "level": "approx", "note": "Contacts switch 10 ms after the input turns on and 5 ms after it turns off (datasheet maximums for SRD-class relays); no contact bounce." },
+    "analog": { "level": "approx", "note": "Coil 70 Ω (~71 mA at 5 V); pulls in at ≥ 3.75 V and drops out below 0.5 V. Closed contacts are 0.01 Ω." },
+    "power": { "level": "approx", "note": "Coil and power-LED current on VCC; warns above the 10 A contact rating. AC mains loads are not simulated." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Active-low and active-high modules", "Coil pull-in voltage (no click on 3.3 V)", "Operate / release delay", "COM–NO / COM–NC switching of a DC load", "Partial turn-on of active-low modules from a 3.3 V GPIO (warning)"],
+  "doesNotEmulate": ["Contact bounce (1–5 ms)", "AC loads, arcing and contact wear", "The JD-VCC jumper (separate coil supply)", "Inductive kick from the load (put a diode across DC motor / pump loads)"],
+  "testOnRealDevice": ["Which level your module switches on (silkscreen or H/L jumper)", "That the module turns fully off from a 3.3 V board", "Mains wiring: only with a proper enclosure and someone qualified; this simulation does not check it"]
+}
