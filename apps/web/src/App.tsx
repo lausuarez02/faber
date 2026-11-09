@@ -9,6 +9,8 @@ import { Inspector } from "./components/Inspector.tsx";
 import { SerialConsole } from "./components/SerialConsole.tsx";
 import { Toasts } from "./components/Toasts.tsx";
 import { Icon } from "./components/Icon.tsx";
+import { LiveLayer } from "./live/LiveLayer.tsx";
+import { WorldPanel } from "./components/WorldPanel.tsx";
 
 type Sheet = "parts" | "inspect" | "serial" | null;
 
@@ -84,6 +86,8 @@ export function App() {
           </div>
           <main className="stage">
             <Canvas />
+            <WorldPanel />
+            <LiveLayer />
           </main>
           <div className="side side-right">
             <Inspector />

@@ -1,9 +1,10 @@
 import { Engine } from "./engine.ts";
-import { loadBlinkExample, loadExampleFirmware } from "./examples.ts";
+import { loadExample, loadExampleFirmware } from "./examples.ts";
 import { createJumperStore, readTheme } from "./store.ts";
 
 /** App singletons: the project store and the simulation engine. */
-const initial = loadBlinkExample();
+const requested = typeof location !== "undefined" ? new URLSearchParams(location.search).get("example") : null;
+const initial = loadExample(requested || "blink");
 
 export const useJumper = createJumperStore(initial.project);
 export const engine = new Engine(useJumper);
@@ -31,7 +32,7 @@ if (initial.issues) {
   queueMicrotask(() =>
     useJumper.getState().toast({
       kind: "error",
-      title: "examples/blink/jumper.json is invalid; using the built-in Blink",
+      title: `Could not open example "${requested ?? "blink"}"; showing Blink`,
       detail: initial.issues!.join("\n"),
     }),
   );

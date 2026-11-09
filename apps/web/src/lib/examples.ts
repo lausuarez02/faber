@@ -49,16 +49,32 @@ export interface ExampleProject {
 }
 
 export function loadBlinkExample(): ExampleProject {
-  const raw = projectFiles[`${EXAMPLES_PREFIX}blink/jumper.json`];
+  return loadExample("blink");
+}
+
+/** Names of the examples bundled with the app (folders in examples/ with a jumper.json). */
+export function exampleNames(): string[] {
+  return Object.keys(projectFiles)
+    .map((k) => k.slice(EXAMPLES_PREFIX.length).split("/")[0]!)
+    .sort((a, b) => (a === "blink" ? -1 : b === "blink" ? 1 : a.localeCompare(b)));
+}
+
+/** Load examples/<name>/jumper.json. Unknown or invalid examples fall back to the built-in Blink, with issues saying why. */
+export function loadExample(name: string): ExampleProject {
+  const raw = projectFiles[`${EXAMPLES_PREFIX}${name}/jumper.json`];
   if (raw !== undefined) {
     const res = safeParseProject(raw);
-    if (res.ok) return { project: res.project, example: "blink", source: "file" };
+    if (res.ok) return { project: res.project, example: name, source: "file" };
     return {
       project: blinkFallback(),
       example: "blink",
       source: "built-in",
-      issues: res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`),
+      issues: [`examples/${name}/jumper.json is invalid:`, ...res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`)],
     };
+  }
+  if (name !== "blink") {
+    const fallback = loadExample("blink");
+    return { ...fallback, issues: [`There is no example '${name}'. Examples: ${exampleNames().join(", ")}. Open one with ?example=<name>.`, ...(fallback.issues ?? [])] };
   }
   return { project: blinkFallback(), example: "blink", source: "built-in" };
 }

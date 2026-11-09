@@ -2,6 +2,8 @@ import { Simulation, applyVisualState, type VisualState } from "@jumper/sim-core
 import { backendFactory } from "@jumper/sim-backends";
 import type { Project, PropValue } from "@jumper/project-format";
 import { registry } from "./parts.ts";
+import { registerDisplayRenderers } from "../renderers/displays/index.ts";
+import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import type { JumperStore } from "./store.ts";
 
 /**
@@ -53,11 +55,62 @@ export class Engine {
   private factor = 0;
   private window: { wall: number; virt: number } = { wall: 0, virt: 0 };
   private unsubSim: (() => void) | undefined;
+  /** OLED / LCD canvases over display parts' data-screen rects. */
+  private displays = registerDisplayRenderers();
+  /**
+   * Follow / replay mode: part states come from an agent session (live hub or action log) instead
+   * of the local Simulation. Keys are part ids.
+   */
+  private external: Map<string, VisualState> | undefined;
+  private externalLive = new Set<string>();
+  /** Robot / arm physics for a project with a `world` block (stepped on the sim clock). */
+  private physics: PhysicsBinding | undefined;
+  private physicsReady = false;
+  private physicsLoading: Promise<void> | undefined;
+  private worldListeners = new Set<() => void>();
 
   constructor(private readonly store: JumperStore) {
     store.subscribe((s, prev) => {
-      if (s.project !== prev.project) this.onProjectChange(s.project);
+      if (s.project !== prev.project) {
+        this.preparePhysics(s.project);
+        this.onProjectChange(s.project);
+      }
     });
+    this.preparePhysics(store.getState().project);
+  }
+
+  // ------------------------------------------------------------- physics (robots)
+
+  /** The physics binding of the running simulation, when the project has a world. */
+  get world(): PhysicsBinding | undefined {
+    return this.physics;
+  }
+
+  /** Subscribe to the world binding appearing / going away (React: useSyncExternalStore). */
+  subscribeWorld = (fn: () => void): (() => void) => {
+    this.worldListeners.add(fn);
+    return () => this.worldListeners.delete(fn);
+  };
+
+  getWorld = (): PhysicsBinding | undefined => this.physics;
+
+  private notifyWorld(): void {
+    for (const fn of this.worldListeners) fn();
+  }
+
+  /** Load the physics engine (WebAssembly) ahead of time when a project needs it. */
+  private preparePhysics(project: Project): Promise<void> | undefined {
+    if (!project.world || this.physicsReady) return undefined;
+    this.physicsLoading ??= initPhysics().then(
+      () => {
+        this.physicsReady = true;
+      },
+      (err: unknown) => {
+        this.physicsLoading = undefined;
+        this.store.getState().toast({ kind: "error", title: "Physics engine failed to load", detail: `${err instanceof Error ? err.message : String(err)}. The robot world needs WebAssembly; reload the page to try again.` });
+      },
+    );
+    return this.physicsLoading;
   }
 
   // ------------------------------------------------------------- DOM registration
@@ -65,8 +118,13 @@ export class Engine {
   registerPart(id: string, el: HTMLElement | null): void {
     if (el) {
       this.parts.set(id, { el, last: "" });
+      const svg = el.querySelector(".part-svg svg");
+      if (svg && el.dataset.partType) this.displays.attach(id, el.dataset.partType, svg);
       this.paintPart(id);
-    } else this.parts.delete(id);
+    } else {
+      this.parts.delete(id);
+      this.displays.detach(id);
+    }
   }
 
   registerWire(id: string, el: SVGElement | null): void {
@@ -95,6 +153,53 @@ export class Engine {
     return this.serial;
   }
 
+  // ------------------------------------------------------------- follow / replay
+
+  /** Switch to showing states pushed from outside (live agent session or replay). Stops the local sim. */
+  setExternal(on: boolean): void {
+    if (on) {
+      this.stop();
+      this.external = new Map();
+      this.externalLive = new Set();
+    } else {
+      this.external = undefined;
+      this.paintIdle();
+    }
+  }
+
+  get isExternal(): boolean {
+    return this.external !== undefined;
+  }
+
+  /** Apply part states (only the parts given) and, when given, the set of HIGH wires. */
+  showExternal(states: Record<string, VisualState> | undefined, liveWires?: readonly string[], timeMs?: number): void {
+    if (!this.external) return;
+    for (const [id, st] of Object.entries(states ?? {})) {
+      this.external.set(id, { ...(this.external.get(id) ?? {}), ...st });
+      this.paintPart(id);
+    }
+    if (liveWires) {
+      this.externalLive = new Set(liveWires);
+      this.paintWires();
+    }
+    if (timeMs !== undefined) this.paintClock(timeMs);
+  }
+
+  /** Forget pushed states (new project / restart) and repaint idle. */
+  resetExternal(): void {
+    if (!this.external) return;
+    this.external.clear();
+    this.externalLive.clear();
+    this.paintIdle();
+    this.paintWires();
+  }
+
+  /** Append text to the serial console (follow / replay). */
+  appendSerial(text: string): void {
+    for (let i = 0; i < text.length; i++) this.serialPending.push(text.charCodeAt(i) & 0xff);
+    this.flushSerial();
+  }
+
   /** For tests / debugging: the live Simulation, if one exists. */
   get simulation(): Simulation | undefined {
     return this.sim;
@@ -104,7 +209,17 @@ export class Engine {
 
   run(): void {
     const s = this.store.getState();
+    if (this.external) {
+      s.toast({ kind: "info", title: "Following an agent session", detail: "The simulation runs in the session (MCP / CLI); this canvas shows its state. Open the app without ?follow / ?replay to simulate here." });
+      return;
+    }
     if (s.run === "running") return;
+    if (s.project.world && !this.physicsReady) {
+      void this.preparePhysics(s.project)?.then(() => this.run());
+      return;
+    }
+    // A sim built before the physics engine loaded (a button press) has no world yet: rebuild it.
+    if (this.sim && s.project.world && !this.physics) this.disposeSim();
     if (!this.sim && !this.build()) return;
     this.sim!.resume();
     s.setRun("running");
@@ -185,6 +300,10 @@ export class Engine {
       this.unsubSim = sim.subscribe((e) => {
         if (e.type === "serial") this.serialPending.push(e.byte);
       });
+      if (project.world && this.physicsReady) {
+        this.physics = attachPhysics(sim, project.world);
+        this.notifyWorld();
+      }
       const missing = sim.diagnostics().filter((d) => d.code === "unknown-part-type");
       s.setSimError(
         missing.length ? `Not simulated (unknown part types): ${missing.map((d) => d.partId).join(", ")}` : undefined,
@@ -209,6 +328,11 @@ export class Engine {
   }
 
   private disposeSim(): void {
+    if (this.physics) {
+      this.physics.dispose();
+      this.physics = undefined;
+      this.notifyWorld();
+    }
     this.unsubSim?.();
     this.unsubSim = undefined;
     this.sim?.dispose();
@@ -329,12 +453,15 @@ export class Engine {
   private paintPart(id: string, force = false): void {
     const view = this.parts.get(id);
     const sim = this.sim;
-    if (!view || !sim) return;
+    if (!view || (!sim && !this.external)) return;
     let state: VisualState | undefined;
-    try {
-      state = sim.partState(id);
-    } catch {
-      state = undefined;
+    if (this.external) state = this.external.get(id);
+    else {
+      try {
+        state = sim!.partState(id);
+      } catch {
+        state = undefined;
+      }
     }
     if (!state) return;
     const sig = JSON.stringify(state);
@@ -342,6 +469,7 @@ export class Engine {
     view.last = sig;
     const svg = view.el.querySelector(".part-svg");
     if (svg) applyVisualState(svg, state);
+    this.displays.paint(id, state);
     paintStateAttrs(view.el, state);
   }
 
@@ -359,6 +487,20 @@ export class Engine {
 
   private paintWires(): void {
     const sim = this.sim;
+    if (this.external) {
+      let n = 0;
+      for (const [id, view] of this.wires) {
+        const live = this.externalLive.has(id);
+        if (live) n++;
+        if (live !== view.live) {
+          view.live = live;
+          view.el.dataset.live = String(live);
+        }
+      }
+      const flow = this.wires.values().next().value?.el.closest<HTMLElement>(".react-flow");
+      if (flow) flow.dataset.wireMotion = n <= WIRE_MOTION_BUDGET ? "on" : "off";
+      return;
+    }
     if (!sim) return;
     const wires = this.store.getState().project.wires;
     const byId = new Map(wires.map((w) => [w.id, w]));

@@ -400,8 +400,12 @@ code {
   box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.5);
 }
 
-.menu button {
+.menu button,
+.menu .menu-link {
   display: flex;
+  color: inherit;
+  text-decoration: none;
+  font: inherit;
   width: 100%;
   align-items: center;
   gap: 10px;
@@ -413,7 +417,8 @@ code {
   cursor: pointer;
 }
 
-.menu button:hover {
+.menu button:hover,
+.menu .menu-link:hover {
   background: var(--panel-2);
 }
 
@@ -1268,4 +1273,39 @@ input[type="range"] {
 
 .react-flow__attribution a {
   color: var(--muted);
+}
+
+/* Robot world (local simulation of a project with a "world" block). */
+.world-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  width: min(420px, calc(100% - 24px));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.3);
+  overflow: hidden;
+}
+.world-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 4px 12px;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.world-panel[data-collapsed="true"] header {
+  border-bottom: 0;
+}
+.world-panel-body {
+  aspect-ratio: 3 / 2.1;
+}
+@media (max-width: 820px) {
+  .world-panel {
+    bottom: 76px;
+    width: min(320px, calc(100% - 24px));
+  }
 }

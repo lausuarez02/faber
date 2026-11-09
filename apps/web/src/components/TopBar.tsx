@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type ChangeEvent } from "react";
 import { safeParseProject, serializeProject } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
+import { exampleNames } from "../lib/examples.ts";
 import { RELIABLE_SPEED, SPEEDS, type ThemeChoice } from "../lib/store.ts";
 import { Wordmark } from "./Logo.tsx";
 import { Icon } from "./Icon.tsx";
@@ -167,6 +168,12 @@ export function TopBar() {
               <button role="menuitem" onClick={() => hexRef.current?.click()}>
                 <Icon name="chip" /> Load firmware .hex…
               </button>
+              <div className="menu-note mono">examples</div>
+              {exampleNames().map((ex) => (
+                <a key={ex} role="menuitem" className="menu-link" href={`?example=${encodeURIComponent(ex)}`} data-testid={`example-${ex}`}>
+                  <Icon name="chip" /> {ex}
+                </a>
+              ))}
               <div className="menu-note mono">
                 firmware: {firmware.status === "ready" ? firmware.name : firmware.status}
               </div>
