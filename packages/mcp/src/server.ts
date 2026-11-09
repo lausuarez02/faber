@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { AGENT_LOOP, ProjectSession, TOOLS, type Builder } from "@jumper/session";
+import { AGENT_LOOP, ProjectSession, TOOLS, type Builder, type CallMeta } from "@jumper/session";
 
 export const SERVER_NAME = "jumper";
 export const SERVER_VERSION = "0.1.0";
@@ -18,6 +18,31 @@ export interface JumperMcpOptions {
   builder?: Builder;
   /** Attach PNG screenshots as image content (default true; agents with vision can look at them). */
   images?: boolean;
+  /** Use this session instead of creating one (jumper serve: every MCP client and the canvas share one). */
+  session?: ProjectSession;
+  /** How tool calls reach the session (jumper serve passes a queue so calls never interleave). */
+  call?: (op: string, args: Record<string, unknown>, meta: CallMeta) => Promise<unknown>;
+  /** Told before and after each tool call (the canvas shows "building · place_part led1"). */
+  onToolStart?: (op: string, args: Record<string, unknown>) => void;
+  onToolEnd?: (op: string, ok: boolean, result: unknown) => void;
+  /** Extra text for the server instructions (e.g. "the human is watching at http://…"). */
+  instructionsExtra?: string;
+}
+
+/** "claude-code" → "Claude Code": the name the canvas shows for an MCP client. */
+export function prettyClientName(raw: string | undefined): string {
+  const n = (raw ?? "").toLowerCase();
+  if (!n) return "An agent";
+  if (n.includes("claude-code") || n === "claude code") return "Claude Code";
+  if (n.includes("claude-ai") || n.includes("claude desktop")) return "Claude Desktop";
+  if (n.includes("codex")) return "Codex";
+  if (n.includes("cursor")) return "Cursor";
+  if (n.includes("vscode") || n.includes("visual studio code")) return "VS Code";
+  if (n.includes("windsurf")) return "Windsurf";
+  if (n.includes("zed")) return "Zed";
+  if (n.includes("gemini")) return "Gemini CLI";
+  if (n.includes("jumper")) return raw!;
+  return raw!.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /** Resolve the project folder from --project <dir>, JUMPER_PROJECT, or the working directory. */
@@ -52,6 +77,13 @@ export function toContent(op: string, result: unknown, images: boolean): Content
       const buf = readFileSync(r.path);
       if (buf.length < 1_500_000) out.push({ type: "image", data: buf.toString("base64"), mimeType: "image/png" });
     }
+    if (op === "run_tests" && images && Array.isArray(r.frame_images)) {
+      for (const p of r.frame_images.slice(0, 4)) {
+        if (typeof p !== "string" || !existsSync(p)) continue;
+        const buf = readFileSync(p);
+        if (buf.length < 1_500_000) out.push({ type: "image", data: buf.toString("base64"), mimeType: "image/png" });
+      }
+    }
     return out;
   }
   return [{ type: "text", text: JSON.stringify(result) }];
@@ -60,13 +92,14 @@ export function toContent(op: string, result: unknown, images: boolean): Content
 export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server; session: ProjectSession } {
   const dir = resolve(opts.dir);
   mkdirSync(dir, { recursive: true });
-  const session = new ProjectSession({ dir, actor: "mcp", ...(opts.builder ? { builder: opts.builder } : {}) });
+  const session = opts.session ?? new ProjectSession({ dir, actor: "mcp", ...(opts.builder ? { builder: opts.builder } : {}) });
   const images = opts.images ?? true;
+  const call = opts.call ?? ((op: string, args: Record<string, unknown>, meta: CallMeta) => session.call(op, args, meta));
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
       capabilities: { tools: {}, resources: {} },
-      instructions: `${AGENT_LOOP}\n\nProject folder: ${dir}${session.exists ? "" : " (empty: start with new_project or place_part)"}.`,
+      instructions: `${AGENT_LOOP}\n\nProject folder: ${dir}${session.exists ? "" : " (empty: start with new_project or place_part)"}.${opts.instructionsExtra ? `\n\n${opts.instructionsExtra}` : ""}`,
     },
   );
 
@@ -83,10 +116,15 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const name = req.params.name;
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
+    const info = server.getClientVersion();
+    const meta: CallMeta = { actor: "mcp", ...(info?.name ? { client: `${info.name}${info.version ? ` ${info.version}` : ""}` } : {}) };
+    opts.onToolStart?.(name, args);
     try {
-      const result = await session.call(name, args);
+      const result = await call(name, args, meta);
+      opts.onToolEnd?.(name, true, result);
       return { content: toContent(name, result, images) };
     } catch (err) {
+      opts.onToolEnd?.(name, false, (err as Error).message);
       return { isError: true, content: [{ type: "text", text: (err as Error).message }] };
     }
   });
@@ -125,6 +163,13 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
 
 /** Start on stdio (what `jumper mcp` and bin/jumper-mcp.mjs do). Nothing but protocol goes to stdout. */
 export async function startStdioServer(argv = process.argv.slice(2)): Promise<void> {
+  const ai = argv.findIndex((a) => a === "--attach");
+  const attach = argv.find((a) => a.startsWith("--attach="))?.slice("--attach=".length) ?? (ai >= 0 ? argv[ai + 1] : undefined) ?? process.env.JUMPER_ATTACH;
+  if (attach) {
+    const { startAttachedStdio } = await import("./attach.ts");
+    await startAttachedStdio(attach);
+    return;
+  }
   const dir = projectDirFromArgs(argv);
   const { server, session } = createJumperMcpServer({ dir });
   const transport = new StdioServerTransport();

@@ -3,6 +3,7 @@
  * The MCP server, the CLI help and docs/mcp-tools.md are all generated from this list, so the
  * three faces cannot drift apart.
  */
+import { NETWORK_TOOLS } from "./network.ts";
 
 export interface ToolDef {
   name: string;
@@ -158,7 +159,7 @@ export const TOOLS: ToolDef[] = [
     name: "run",
     title: "Simulate",
     description:
-      'Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.',
+      'Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.',
     inputSchema: { type: "object", properties: { ms: { type: "number", description: "Virtual ms to simulate, e.g. 2000 (max 600000)." }, reset: { type: "boolean", description: "Restart from 0 ms first." }, speed: { type: "number", description: "Ignored headless (always as fast as possible); kept for compatibility." } }, required: ["ms"] },
   },
   {
@@ -197,7 +198,7 @@ export const TOOLS: ToolDef[] = [
     name: "inject_fault",
     title: "Inject a fault",
     description:
-      'Break something on purpose to harden the firmware: "disconnect" (module unplugged: no power, gone from the I2C bus), "noisy" (a sensor value jitters ±5% every 10 ms, deterministic; optional field and amplitude), "i2c_nack" (the device NACKs its address: Wire.endTransmission() returns 2, display.begin() fails), "i2c_nack_data", "i2c_garbage" (reads return 0xFF), "clear" (remove faults on that part). Not simulated yet (returns an error saying so): brownout, wifi_drop, clock_drift, flash_full. Example: {"part": "oled1", "kind": "i2c_nack"}, then run and check that the firmware reports it.',
+      'Break something on purpose to harden the firmware: "disconnect" (module unplugged: no power, gone from the I2C bus), "noisy" (a sensor value jitters ±5% every 10 ms, deterministic; optional field and amplitude), "i2c_nack" (the device NACKs its address: Wire.endTransmission() returns 2, display.begin() fails), "i2c_nack_data", "i2c_garbage" (reads return 0xFF), "wifi_drop" (on a Wi-Fi module such as an ESP-01: the sandbox access point disappears, the module prints WIFI DISCONNECT and closes its links; survives reset; "clear" on the same part brings it back and the module reconnects), "clear" (remove faults on that part). Not simulated yet (returns an error saying so): brownout, clock_drift, flash_full. Example: {"part": "oled1", "kind": "i2c_nack"}, then run and check that the firmware reports it.',
     inputSchema: { type: "object", properties: { part: { type: "string" }, kind: { type: "string", enum: ["disconnect", "noisy", "i2c_nack", "i2c_nack_data", "i2c_garbage", "clear"] }, field: { type: "string" }, amplitude: { type: "number" } }, required: ["part", "kind"] },
   },
   {
@@ -222,8 +223,8 @@ export const TOOLS: ToolDef[] = [
   {
     name: "run_tests",
     title: "Run test scenarios",
-    description: 'Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Builds first if needed. Returns {passed, failed, results}; a failure says which step, what was expected, what was seen instead, every step\'s timing and the serial tail. Fix the firmware or wiring and run again until all pass.',
-    inputSchema: { type: "object", properties: { name: { type: "string" } } },
+    description: 'Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Builds first if needed. Returns {passed, failed, results}; a failure says which step, what was expected, what was seen instead, every step\'s timing and the serial tail. Each result also has visual: one line per check with its virtual time, what it saw and what the device looked like then (screen pixels lit, robot pose and sonar, arm position); the web app\'s Tests panel shows the same checks as a filmstrip. Pass images: true to also get a PNG of the screen at each failing check (or the last check when all pass). Fix the firmware or wiring and run again until all pass.',
+    inputSchema: { type: "object", properties: { name: { type: "string" }, images: { type: "boolean", description: "Attach screen PNGs of key checks (default false)." } } },
   },
   {
     name: "check_design",
@@ -243,8 +244,8 @@ export const TOOLS: ToolDef[] = [
   {
     name: "screenshot",
     title: "Picture of the canvas",
-    description: 'Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state, or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.',
-    inputSchema: { type: "object", properties: { path: { type: "string" }, scale: { type: "number", description: "1 = 1 px per canvas px (default)." }, scenario: { type: "string", description: "Scenario id to replay first (fresh simulation)." }, at_step: { type: "number", description: "Stop after this step index (default: the last step)." } } },
+    description: 'Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Colour TFT screens are drawn with their real pixels. Returns the file path. Run first to capture a live state, or pass view "device" to see the device as a 3D product shot ({"view": "device", "ms": 4000}), or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.',
+    inputSchema: { type: "object", properties: { path: { type: "string" }, scale: { type: "number", description: "1 = 1 px per canvas px (default)." }, scenario: { type: "string", description: "Scenario id to replay first (fresh simulation)." }, at_step: { type: "number", description: "Stop after this step index (default: the last step)." }, view: { type: "string", enum: ["canvas", "device"], description: 'canvas (default) or device: the physical device in 3D (handheld with its live screen, rover in its arena, arm on its table) rendered from a fresh simulation at ms.' }, ms: { type: "number", description: "view device only: virtual ms to render at (default: the current session time, or 3000)." } } },
   },
   {
     name: "export",
@@ -286,6 +287,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: { type: "object", properties: { step: { type: "number" } }, required: ["step"] },
     edits: true,
   },
+  ...NETWORK_TOOLS,
 ];
 
 /** The recommended loop, used as MCP server instructions and in the docs. */
@@ -299,7 +301,7 @@ The loop:
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass.
-8. inject_fault (disconnect, i2c_nack, noisy) to check the firmware copes, if it matters.
+8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet: read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
 9. fidelity_report: tell the human what was verified and what must be tested on the real device. screenshot and export when done.
 
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.`;

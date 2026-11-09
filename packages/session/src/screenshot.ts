@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { decodeMonoFrame, monoPixel, parseBindings, routePath, routeWire, type PartRegistry, type RouteBox, type VisualState } from "@jumper/sim-core";
+import { colorFrameToPng, decodeMonoFrame, monoPixel, parseBindings, routePath, routeWire, type ColorFrame, type PartRegistry, type RouteBox, type VisualState } from "@jumper/sim-core";
 import type { Project, Rotation } from "@jumper/project-format";
 import { drawArm, drawWorld, type WorldSnapshot } from "@jumper/physics";
 import { sizeOf } from "./layout.ts";
@@ -121,8 +121,17 @@ function displayOverlay(svg: string, state: VisualState, size: { w: number; h: n
   return `<rect x="${ox}" y="${oy}" width="${px * frame.width}" height="${px * frame.height}" fill="#05070A"/>` + (on ? `<path d="${d}" fill="${state.color === "yellow-blue" ? "#7FC8FF" : color}"/>${dy ? `<path d="${dy}" fill="#FFD43B"/>` : ""}` : "");
 }
 
+/** A colour display's frame (TFT), drawn as an embedded PNG into the part's screen rectangle. */
+function colorOverlay(svg: string, frame: ColorFrame, size: { w: number; h: number }): string {
+  const rect = screenRect(svg) ?? { x: size.w * 0.1, y: size.h * 0.1, w: size.w * 0.8, h: size.h * 0.8 };
+  const png = Buffer.from(colorFrameToPng(frame, 1)).toString("base64");
+  return `<image x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated" href="data:image/png;base64,${png}"/>`;
+}
+
 export interface ComposeOptions {
   states?: Record<string, VisualState>;
+  /** Colour display frames by part id (Simulation.framebuffer), for TFT screens. */
+  framebuffers?: Record<string, ColorFrame>;
   liveWires?: string[];
   title?: string;
   /** Highlight these parts (agent cursor). */
@@ -195,7 +204,8 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     // Make ids unique per instance so gradients/filters of two copies do not collide.
     svg = svg.replace(/\bid="([^"]+)"/g, `id="${b.p.id}--$1"`).replace(/url\(#([^)]+)\)/g, `url(#${b.p.id}--$1)`).replace(/href="#([^"]+)"/g, `href="#${b.p.id}--$1"`);
     svg = svg.replace(/<svg\b([^>]*)>/, (_m, attrs: string) => `<svg${attrs.replace(/\s(width|height|x|y)="[^"]*"/g, "")} x="0" y="0" width="${spec.size.w}" height="${spec.size.h}">`);
-    const overlay = state ? displayOverlay(b.def.svg, state, spec.size) : "";
+    const fb = opts.framebuffers?.[b.p.id];
+    const overlay = fb ? colorOverlay(b.def.svg, fb, spec.size) : state ? displayOverlay(b.def.svg, state, spec.size) : "";
     const rot = b.p.rotation ? ` rotate(${b.p.rotation} ${spec.size.w / 2} ${spec.size.h / 2})` : "";
     // Rotation is about the unrotated centre; then shift so the rotated box sits at x,y.
     const shift = b.p.rotation === 90 || b.p.rotation === 270 ? { x: (spec.size.h - spec.size.w) / 2, y: (spec.size.w - spec.size.h) / 2 } : { x: 0, y: 0 };

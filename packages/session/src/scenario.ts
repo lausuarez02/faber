@@ -161,19 +161,36 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
     ...(warnings.length ? { warnings } : {}),
   });
   const once = (t: number) => ` (checked once at ${Math.round(t)} ms; add within_ms to wait for the firmware to update it)`;
-  /** An expect with within_ms that already held right after an input step tested the old value, not the change. */
-  const heldBefore = (i: number, step: Record<string, unknown>, waited: boolean) => {
+  /** Last value each check saw, by subject ("part:buzzer1.sounding"), so a later warning can tell a real change from a stale value. */
+  const observed = new Map<string, unknown>();
+  /**
+   * An expect with within_ms that already held right after an input step may have tested the old
+   * value, not the change. Not when an earlier check saw this subject with a value that fails the
+   * same condition: then the value did change since, and the check is fine.
+   */
+  const heldBefore = (i: number, step: Record<string, unknown>, waited: boolean, key?: string, holdsFor?: (v: unknown) => boolean) => {
     if (waited || typeof step.within_ms !== "number" || i === 0) return;
     const prev = steps[i - 1] as Record<string, unknown>;
     const input = ["set", "press", "release", "serial_write", "inject_fault"].find((k) => k in prev);
     if (!input) return;
+    if (key && holdsFor && observed.has(key) && !holdsFor(observed.get(key))) return;
     warnings.push(`step ${i} ${stepText(s.steps[i])} already held 0 ms after step ${i - 1} (${input}), so it did not wait for the firmware to react: it may test the old value. Fix: wait for the side the value moves toward (e.g. "<" when it should drop), or add {"run_ms": …} before it.`);
   };
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i] as Record<string, unknown> & ScenarioStep;
     const text = stepText(s.steps[i]);
-    if (sim.timeMs > timeout) return done(false, i, `timed out: virtual time ${Math.round(sim.timeMs)} ms passed timeout_ms ${timeout} before step ${i}`);
+    if (sim.timeMs > timeout) {
+      const waits = steps.slice(0, i).reduce((sum, st) => {
+        const r = st as Record<string, unknown>;
+        return sum + (Number(r.run_ms ?? r.wait_ms ?? 0) || 0) + (Number(r.hold_ms ?? 0) || 0);
+      }, 0);
+      return done(
+        false,
+        i,
+        `timed out: virtual time ${Math.round(sim.timeMs)} ms passed timeout_ms ${timeout} before step ${i} (run_ms / wait_ms / hold_ms steps so far add up to ${waits} ms; the rest is within_ms waiting). Fix: raise the scenario's "timeout_ms" (write_scenario {"id": "${s.id}", "timeout_ms": ${Math.ceil((sim.timeMs + 5000) / 1000) * 1000}, "steps": [...]}), or shorten the waits; a within_ms check that never held also uses up its whole wait`,
+      );
+    }
     let ok = true;
     let detail: string | undefined;
     try {
@@ -237,12 +254,17 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         };
         const tCheck = sim.timeMs;
         ok = check();
-        heldBefore(i, step, !ok);
+        const pinKey = `pin:${part}.${pin}`;
+        heldBefore(i, step, !ok, pinKey, (v) => {
+          const o = v as { level: string; voltage: number };
+          return !((lv && o.level !== lv) || (vr && ((vr.min !== undefined && o.voltage < vr.min) || (vr.max !== undefined && o.voltage > vr.max))));
+        });
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, check);
           ok = check();
         }
         const r = host.pin(part, pin);
+        observed.set(pinKey, { level: r.level, voltage: r.voltage });
         detail = `${part}.${pin} is ${r.level} (${r.voltage} V${r.mode ? `, mode ${r.mode}` : ""})`;
         if (!ok) detail = `expected ${lv ?? ""}${vr ? ` ${vr.min ?? "-∞"}..${vr.max ?? "∞"} V` : ""} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
       } else if ("expect_part" in step) {
@@ -264,14 +286,17 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         const check = () => compare(read(), op, step.value as VisualValue);
         const tCheck = sim.timeMs;
         ok = check();
-        heldBefore(i, step, !ok);
+        const partKey = `part:${part}.${field}`;
+        heldBefore(i, step, !ok, partKey, (v) => compare(v, op, step.value as VisualValue));
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, check);
           ok = check();
         }
         const actual = read();
+        observed.set(partKey, actual);
         detail = `${part}.${field} = ${JSON.stringify(typeof actual === "string" && actual.length > 60 ? `${actual.slice(0, 60)}…` : actual)}`;
         if (!ok) detail = `expected ${part}.${field} ${op} ${JSON.stringify(step.value)} but it is ${JSON.stringify(actual)}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
+        if (!ok && isWorld && host.firstCollisionNote && /collision|clearance|touching/.test(field)) detail += `; ${host.firstCollisionNote}`;
       } else if ("expect_serial_value" in step) {
         const name = step.expect_serial_value as string;
         const op = (step.op as string) ?? "==";
@@ -288,12 +313,14 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         };
         const tCheck = sim.timeMs;
         ok = check();
-        heldBefore(i, step, !ok);
+        const valKey = `serial:${name}`;
+        heldBefore(i, step, !ok, valKey, (v) => v !== undefined && compare(v, op, step.value as number));
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, check);
           ok = check();
         }
         const v = latest();
+        observed.set(valKey, v);
         detail = v === undefined ? `serial never printed a number after "${name}" (looked for "${name}=12", "${name}: 12" or "${name} 12")` : `latest ${name} = ${v}`;
         if (!ok) detail = v === undefined ? `${detail}${typeof step.within_ms === "number" ? ` within ${step.within_ms} ms` : once(tCheck)}; serial tail: ${JSON.stringify(sim.serialText().slice(-160))}` : `expected ${name} ${op} ${step.value} but the latest printed value is ${v}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
       } else if ("expect_display" in step) {
@@ -319,12 +346,14 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         };
         const tCheck = sim.timeMs;
         ok = holds();
-        heldBefore(i, step, !ok);
+        const dispKey = `display:${part}:${JSON.stringify(step.region ?? region ?? null)}`;
+        heldBefore(i, step, !ok, snap ? undefined : dispKey, (v) => !(lit && ((lit.min !== undefined && Number(v) < lit.min) || (lit.max !== undefined && Number(v) > lit.max))));
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, holds);
           ok = holds();
         }
         const m = measure();
+        observed.set(dispKey, m.lit);
         detail = `${part} region [${m.rect.join(", ")}]: ${m.lit} lit${snap ? `, ${(m.diff * 100).toFixed(1)}% differs from '${matches}'` : ""}`;
         if (!ok) {
           const want = [lit ? `${lit.min ?? 0}..${lit.max ?? "∞"} lit pixels` : "", snap ? `at most ${(tol * 100).toFixed(1)}% different from snapshot '${matches}'` : ""].filter(Boolean).join(" and ");
@@ -338,6 +367,12 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
     } catch (err) {
       ok = false;
       detail = err instanceof Error ? err.message : String(err);
+    }
+    if (!ok && i > 0 && /^expect_(pin|part|display|serial_value)$/.test(Object.keys(step).find((k) => k.startsWith("expect_")) ?? "")) {
+      const prev = steps[i - 1] as Record<string, unknown>;
+      if (typeof prev.press === "string" && typeof prev.hold_ms === "number" && prev.hold_ms > 0) {
+        detail = `${detail ?? "failed"}. Note: step ${i - 1} held ${prev.press} for ${prev.hold_ms} ms and released it before this check began, so a reaction that started and ended during the hold (shorter than ${prev.hold_ms} ms) is not seen here. Fix: {"press": "${prev.press}"} without hold_ms, then this check with within_ms, then {"release": "${prev.press}"}`;
+      }
     }
     const r: StepResult = { i, step: text, ok, t_ms: Math.round(sim.timeMs * 1000) / 1000 };
     if (detail) r.detail = detail;

@@ -12,16 +12,17 @@ import {
 import { backendFactory } from "@jumper/sim-backends";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import { fail } from "./errors.ts";
+import { createSessionNetwork, setWifiDrop, type SessionNetwork } from "./network.ts";
 
 /**
  * A headless Simulation plus what agents need around it: fault injection, deterministic sensor
  * noise, serial cursors, compact state summaries and frames for live view / replay.
  */
 
-export const FAULT_KINDS = ["disconnect", "noisy", "i2c_nack", "i2c_nack_data", "i2c_garbage", "clear"] as const;
+export const FAULT_KINDS = ["disconnect", "noisy", "i2c_nack", "i2c_nack_data", "i2c_garbage", "wifi_drop", "clear"] as const;
 export type FaultKind = (typeof FAULT_KINDS)[number];
 /** Documented but not simulated yet; inject_fault explains this instead of pretending. */
-export const FAULTS_NOT_YET = ["brownout", "wifi_drop", "clock_drift", "flash_full", "short", "stuck_pin"] as const;
+export const FAULTS_NOT_YET = ["brownout", "clock_drift", "flash_full", "short", "stuck_pin"] as const;
 
 export interface Frame {
   /** Virtual ms. */
@@ -41,6 +42,8 @@ interface NoiseSpec {
 }
 
 const HIGH_VOLTS = 1.5;
+/** Default simulation slice in run(); a first collision is placed within one slice. */
+const COLLISION_RES_MS = 50;
 
 /** Wrap every model so faults can switch it off electrically without rebuilding the sim. */
 function faultRegistry(base: PartRegistry, disconnected: Set<string>): PartRegistry {
@@ -107,6 +110,12 @@ export class SimHost {
   private lastFrameSerial = 0;
   /** Robot / arm physics, when the project has a world block. */
   readonly physics: PhysicsBinding | undefined;
+  /** When and where the rover first touched a wall or obstacle since t = 0 (run results, scenarios). */
+  private firstCollision: { t_ms: number; x: number; y: number; heading: number; with: string[] } | undefined;
+  private seenCollisions = 0;
+  /** The sandbox Wi-Fi network and pet AI parts like the ESP-01 talk to (packages/session/src/network.ts). */
+  readonly network: SessionNetwork = createSessionNetwork();
+  private wifiDropPart: string | undefined;
 
   /** Load the physics engine once (WASM). Call before creating a SimHost for a project with a world. */
   static async preparePhysics(project: Project): Promise<void> {
@@ -122,6 +131,7 @@ export class SimHost {
       registry: faultRegistry(registry, this.disconnected),
       backendFactory,
       ...(hex !== undefined ? { firmware: hex } : {}),
+      services: { network: this.network },
     });
     if (project.world) {
       try {
@@ -152,6 +162,7 @@ export class SimHost {
 
   /** Back to t = 0 with the same firmware, keeping injected faults (they model the hardware, not the run). */
   reset(): void {
+    this.network.resetRun();
     this.sim.reset();
     this.serialCursor = 0;
     this.lastStates.clear();
@@ -159,6 +170,25 @@ export class SimHost {
     this.lastFrameSerial = 0;
     this.lastNoiseMs = 0;
     this.rand = prng(0x5eed);
+    this.firstCollision = undefined;
+    this.seenCollisions = 0;
+  }
+
+  /** "first hit crate at ~5230 ms…" or undefined (scenario failures quote it). */
+  get firstCollisionNote(): string | undefined {
+    const c = this.firstCollision;
+    return c ? `first hit ${c.with.join(", ") || "a wall"} at ~${Math.round(c.t_ms)} ms, robot at x ${c.x}, y ${c.y} cm, heading ${c.heading}°` : undefined;
+  }
+
+  /** Note the first collision (time, pose, what it hit). Cheap: reads one counter per step. */
+  private watchCollisions(): void {
+    const rover = this.physics?.rover;
+    if (!rover || this.firstCollision) return;
+    const n = rover.collisions;
+    if (n <= this.seenCollisions) return;
+    this.seenCollisions = n;
+    const p = rover.pose();
+    this.firstCollision = { t_ms: round(this.sim.timeMs), x: round(p.x), y: round(p.y), heading: round(p.heading), with: rover.touchingIds() };
   }
 
   /** Compact physics summary for run results. */
@@ -170,6 +200,7 @@ export class SimHost {
     if (snap.robot) {
       out.robot = { x: round(snap.robot.pose.x), y: round(snap.robot.pose.y), heading: round(snap.robot.pose.heading) };
       out.collisions = st.collisions;
+      if (this.firstCollision) out.first_collision = { ...this.firstCollision, note: `${this.firstCollisionNote} (time within ${COLLISION_RES_MS} ms)` };
       if (Number.isFinite(st.minClearanceCm)) out.min_clearance_cm = round(st.minClearanceCm);
       out.travelled_cm = round(st.travelledCm);
       if (snap.robot.touching.length) out.touching = snap.robot.touching;
@@ -222,6 +253,7 @@ export class SimHost {
     while (this.sim.timeMs < end - 1e-9) {
       const dt = Math.min(step, end - this.sim.timeMs, frameMs ? Math.max(0.001, nextFrame - this.sim.timeMs) : Infinity);
       this.sim.runFor(dt);
+      this.watchCollisions();
       this.applyNoise();
       if (opts.onFrame && this.sim.timeMs >= nextFrame - 1e-9) {
         const f = this.frame();
@@ -291,7 +323,14 @@ export class SimHost {
       else this.busFaults.delete(partId);
     };
     switch (kind) {
+      case "wifi_drop":
+        this.wifiDropPart = partId;
+        return setWifiDrop(this.network, true, this.sim.timeMs);
       case "clear":
+        if (this.wifiDropPart === partId) {
+          this.wifiDropPart = undefined;
+          setWifiDrop(this.network, false, this.sim.timeMs);
+        }
         this.disconnected.delete(partId);
         this.noise.delete(partId);
         if (this.busFaults.has(partId)) busFault(null);
@@ -351,6 +390,7 @@ export class SimHost {
     const add = (id: string, f: string) => (out[id] ??= []).push(f);
     for (const id of this.disconnected) add(id, "disconnect");
     for (const id of this.noise.keys()) add(id, "noisy");
+    if (this.wifiDropPart) add(this.wifiDropPart, "wifi_drop");
     for (const [id, f] of this.busFaults) if (f !== "disconnect") add(id, `i2c_${f.replace("-", "_")}`);
     return out;
   }
@@ -399,7 +439,8 @@ export class SimHost {
       if (pwm && pwm.periodUs > 0 && pwm.periodUs <= 100_000 && pwm.sinceEdgeUs <= 2 * pwm.periodUs + 1000) {
         // Still toggling: the level at this instant says little (a servo pulse is HIGH 5% of the time).
         const hz = pwm.freqHz >= 100 ? Math.round(pwm.freqHz) : Math.round(pwm.freqHz * 10) / 10;
-        out[pin] = pwm.periodUs >= 5000 ? `out pulse ${hz}Hz ${Math.round(pwm.highUs)}us (servo-style; now ${st.value ? "H" : "L"})` : `out PWM ${hz}Hz duty ${Math.round(pwm.duty * 1000) / 10}%`;
+        const servoLike = pwm.periodUs >= 10_000 && pwm.periodUs <= 30_000 && pwm.highUs >= 400 && pwm.highUs <= 2600;
+        out[pin] = pwm.periodUs >= 5000 ? `out pulse ${hz}Hz ${Math.round(pwm.highUs)}us (${servoLike ? "servo-style; " : ""}now ${st.value ? "H" : "L"})` : `out PWM ${hz}Hz duty ${Math.round(pwm.duty * 1000) / 10}%`;
         continue;
       }
       out[pin] = `${mode} ${st.value ? "H" : "L"} ${v.toFixed(2)}V`;

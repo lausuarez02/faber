@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, normalize, relative, resolve, sep } from "node:path";
 import {
@@ -40,11 +40,13 @@ import {
 } from "./history.ts";
 import { autoPlace, overlappingParts, sizeOf } from "./layout.ts";
 import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
+import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { runScenario, setPartValue, validateScenario, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
+import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
 
@@ -66,6 +68,10 @@ export interface ActionEntry {
   /** Virtual (simulated) ms at the time of the action, when a simulation exists. */
   vt?: number;
   actor: string;
+  /** Which ProjectSession instance (one per process / server) wrote the line. */
+  sid?: string;
+  /** The MCP client that made the call ("claude-code 2.1.319"), when known. */
+  client?: string;
   op: string;
   args: Record<string, unknown>;
   ok: boolean;
@@ -86,6 +92,14 @@ export interface ActionEntry {
 }
 
 export type SessionEvent = { type: "action"; entry: ActionEntry };
+
+/** Who makes one call, when one session serves several faces (jumper serve: web canvas + MCP clients). */
+export interface CallMeta {
+  /** Overrides the session's actor for this call: "mcp", "web", "cli"… */
+  actor?: string;
+  /** MCP client name and version, e.g. "claude-code 2.1.319". */
+  client?: string;
+}
 
 interface OpCtx {
   seq: number;
@@ -143,6 +157,8 @@ export class ProjectSession {
   readonly dir: string;
   readonly registry: PartRegistry;
   readonly actor: string;
+  /** Short id of this session instance, written on every action-log line (tells processes apart). */
+  readonly sid: string = randomUUID().slice(0, 8);
   private builder: Builder;
   project: Project;
   history: HistoryState = emptyHistory();
@@ -152,6 +168,10 @@ export class ProjectSession {
   private diskStamp = "";
   private listeners = new Set<(e: SessionEvent) => void>();
   private lastBuild: BuildResult | undefined;
+  /** The last run_tests as a visual report (filmstrips), served to the web app's Tests panel. */
+  lastVisualReport: VisualReport | undefined;
+  /** set_ai_mode, kept across simulation restarts. */
+  private aiMode: "mock" | "live" = "mock";
   /** What the last commit did to the running simulation (set by pushPropsOrInvalidate). */
   private liveNote: string | undefined;
 
@@ -256,7 +276,7 @@ export class ProjectSession {
    * Run one op by name with validation, logging and error shaping. All three faces (MCP, CLI, web)
    * go through here, so they behave the same.
    */
-  async call(op: string, args: Record<string, unknown> = {}): Promise<unknown> {
+  async call(op: string, args: Record<string, unknown> = {}, meta: CallMeta = {}): Promise<unknown> {
     const handler = (this as unknown as Record<string, unknown>)[OP_METHODS[op] ?? ""];
     if (typeof handler !== "function") {
       fail("unknown-op", `Unknown operation '${op}'`, `the operations are: ${Object.keys(OP_METHODS).join(", ")}`, `call one of those.${didYouMean(op, Object.keys(OP_METHODS))}`);
@@ -266,6 +286,7 @@ export class ProjectSession {
     const ctx: OpCtx = { seq: ++this.seq, why };
     const t = new Date().toISOString();
     const vt = this.host ? round(this.host.timeMs) : undefined;
+    const who = { actor: meta.actor ?? this.actor, sid: this.sid, ...(meta.client ? { client: meta.client } : {}) };
     try {
       const result = await (handler as (a: Record<string, unknown>, c: OpCtx) => unknown).call(this, args, ctx);
       const step = ctx.project || ctx.file ? this.history.steps.find((s) => s.id === this.history.open) : undefined;
@@ -273,7 +294,7 @@ export class ProjectSession {
         seq: ctx.seq,
         t,
         ...(vt !== undefined ? { vt } : {}),
-        actor: this.actor,
+        ...who,
         op,
         args: trimArgs(args),
         ok: true,
@@ -290,7 +311,7 @@ export class ProjectSession {
       return result;
     } catch (err) {
       const je = asJumperError(err, `${op} failed`);
-      this.logAction({ seq: ctx.seq, t, ...(vt !== undefined ? { vt } : {}), actor: this.actor, op, args: trimArgs(args), ok: false, error: je.message });
+      this.logAction({ seq: ctx.seq, t, ...(vt !== undefined ? { vt } : {}), ...who, op, args: trimArgs(args), ok: false, error: je.message });
       throw je;
     }
   }
@@ -816,14 +837,17 @@ export class ProjectSession {
     if (!info.sketchAbs || !existsSync(info.sketchAbs)) {
       fail("no-sketch", "Nothing to build", `firmware.sketch is ${info.fw.sketch ? `'${info.fw.sketch}' but that file does not exist` : "not set"}`, 'write the sketch with write_file("firmware/main.ino", "...")');
     }
+    const displayPrefix = `${relative(this.dir, info.sketchDir!).split(sep).join("/")}/`;
     const r = await this.builder({
       sketchDir: info.sketchDir!,
       main: basename(info.sketchAbs),
       fqbn: info.fqbn,
       libraries: info.fw.libraries ?? [],
-      displayPrefix: `${relative(this.dir, info.sketchDir!).split(sep).join("/")}/`,
+      displayPrefix,
       ...(args.force ? { cache: false } : {}),
     });
+    // Hints are written for any project; name this project's real sketch folder.
+    for (const d of r.diagnostics ?? []) if (d.hint) d.hint = d.hint.replaceAll("firmware/<sketch folder>/", displayPrefix);
     this.lastBuild = r;
     if (r.ok && r.hex) {
       mkdirSync(dirname(info.artifactAbs), { recursive: true });
@@ -883,6 +907,13 @@ export class ProjectSession {
     this.host?.dispose();
     this.host = new SimHost(this.project, this.registry, this.loadHex());
     this.hostKey = key;
+    if (this.aiMode === "live") {
+      try {
+        setAiMode(this.host.network, "live");
+      } catch {
+        this.aiMode = "mock"; // the provider went away; set_ai_mode live says why next time
+      }
+    }
     return { host: this.host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
   }
 
@@ -1008,6 +1039,37 @@ export class ProjectSession {
     return { fault: did, active: host.faults(), next: "run and watch serial / state: does the firmware notice and recover?" };
   }
 
+  // =================================================================== network / AI
+
+  async setAiMode(args: { mode: string }, ctx: OpCtx): Promise<unknown> {
+    const { host } = await this.getHost();
+    const r = setAiMode(host.network, String(args.mode));
+    this.aiMode = args.mode === "live" ? "live" : "mock";
+    ctx.summary = `AI mode ${args.mode}`;
+    return r;
+  }
+
+  async readNetworkLog(args: { since?: number; limit?: number }): Promise<unknown> {
+    const { host } = await this.getHost();
+    return { t_ms: round(host.timeMs), ...readNetworkLog(host.network, args) };
+  }
+
+  async runLive(args: { ms: number }, ctx: OpCtx): Promise<unknown> {
+    const ms = Number(args.ms);
+    if (!Number.isFinite(ms) || ms <= 0 || ms > 60_000) fail("bad-arg", `run_live: ms ${args.ms} is not valid`, "run_live runs at real time, so one call is capped at 60000 ms", 'pass e.g. { "ms": 8000 }');
+    const built = await this.ensureBuilt(ctx);
+    const { host, restarted } = await this.getHost();
+    const serialFrom = host.serialCursor;
+    const t0 = host.timeMs;
+    const r = await runLive(host.network, (slice) => host.run(slice), ms);
+    const serial = host.serialSince(serialFrom);
+    host.serialCursor = host.sim.serialText().length;
+    ctx.summary = `ran ${ms} ms live (now ${round(host.timeMs)} ms)`;
+    ctx.frames = [host.frame() ?? { vt: round(host.timeMs) }];
+    const notes = [built, restarted, this.aiMode === "live" ? undefined : "AI mode is mock, so the mock answered; call set_ai_mode live first for a real model"].filter(Boolean);
+    return { t_ms: round(host.timeMs), ran_from_ms: round(t0), ...r, serial: serial.length > 2000 ? `…${serial.slice(-2000)}` : serial, parts: host.compactStates(), ...(notes.length ? { notes } : {}), next: "screenshot to see the screen, read_network_log for the full exchange" };
+  }
+
   // =================================================================== tests
 
   async writeScenario(args: { id: string; name?: string; description?: string; steps: unknown[]; timeout_ms?: number; why?: string }, ctx: OpCtx): Promise<unknown> {
@@ -1031,7 +1093,7 @@ export class ProjectSession {
     return { snapshot: (name: string) => loadSnapshot(this.dir, name) };
   }
 
-  async runTests(args: { name?: string }, ctx: OpCtx): Promise<unknown> {
+  async runTests(args: { name?: string; images?: boolean }, ctx: OpCtx): Promise<unknown> {
     const all = this.project.scenarios;
     if (!all.length) fail("no-scenarios", "No scenarios to run", "the project has no tests yet", 'add one with write_scenario, e.g. { "id": "boots", "steps": [{ "expect_serial": "ready", "within_ms": 1000 }] }');
     const pick = args.name ? all.filter((s) => s.id === args.name || s.name === args.name) : all;
@@ -1040,6 +1102,7 @@ export class ProjectSession {
     const hex = this.loadHex();
     await SimHost.preparePhysics(this.project);
     const results: ScenarioResult[] = [];
+    const visuals: VisualScenario[] = [];
     // Frames of one representative scenario (the longest up to 2 virtual minutes), for live view / replay.
     let frames: Frame[] = [];
     let framesSpan = -1;
@@ -1047,10 +1110,13 @@ export class ProjectSession {
       const host = new SimHost(this.project, this.registry, hex);
       const mine: Frame[] = [];
       try {
-        results.push(runScenario(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions()));
+        const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions());
+        results.push(result);
+        visuals.push(visual);
       } catch (err) {
         const je = asJumperError(err);
         results.push({ id: s.id, passed: false, t_ms: round(host.timeMs), failed_step: -1, reason: je.message, serial_tail: "", steps: [] });
+        visuals.push({ id: s.id, ...(s.name ? { name: s.name } : {}), passed: false, t_ms: round(host.timeMs), reason: je.message, inputs: [], frames: [], replayable: false });
       } finally {
         host.dispose();
       }
@@ -1063,12 +1129,39 @@ export class ProjectSession {
     if (frames.length) ctx.frames = frames;
     const passed = results.filter((r) => r.passed).length;
     ctx.summary = `${passed}/${results.length} scenarios passed`;
+    this.lastVisualReport = { format: "jumper-visual-report/1", project: this.project.name, passed, failed: results.length - passed, scenarios: visuals };
+    const frameImages = args.images ? this.writeFrameImages(visuals) : [];
     return {
       passed,
       failed: results.length - passed,
       ...(built ? { notes: [built] } : {}),
-      results: results.map((r) => (r.passed ? { id: r.id, passed: true, t_ms: r.t_ms, ...(r.warnings ? { warnings: r.warnings } : {}) } : { id: r.id, passed: false, t_ms: r.t_ms, reason: r.reason, serial_tail: r.serial_tail, ...(r.warnings ? { warnings: r.warnings } : {}), steps: r.steps.map((s) => `${s.ok ? "ok" : "FAIL"} @${s.t_ms}ms ${s.step}${s.detail ? ` - ${s.detail}` : ""}`) })),
+      results: results.map((r, i) => {
+        const visual = visuals[i] ? compactVisual(visuals[i]) : [];
+        const v = visual.length ? { visual } : {};
+        return r.passed
+          ? { id: r.id, passed: true, t_ms: r.t_ms, ...(r.warnings ? { warnings: r.warnings } : {}), ...v }
+          : { id: r.id, passed: false, t_ms: r.t_ms, reason: r.reason, serial_tail: r.serial_tail, ...(r.warnings ? { warnings: r.warnings } : {}), steps: r.steps.map((s) => `${s.ok ? "ok" : "FAIL"} @${s.t_ms}ms ${s.step}${s.detail ? ` - ${s.detail}` : ""}`), ...v };
+      }),
+      ...(frameImages.length ? { frame_images: frameImages } : {}),
     };
+  }
+
+  /** PNGs of the screen at each scenario's first failing check (or its last check), for run_tests {images: true}. */
+  private writeFrameImages(visuals: VisualScenario[]): string[] {
+    const out: string[] = [];
+    const dir = join(this.dir, ".jumper", "test-frames");
+    for (const v of visuals) {
+      const checks = v.frames.filter((f) => f.kind.startsWith("expect") || !f.ok);
+      const f = checks.find((c) => !c.ok) ?? checks[checks.length - 1];
+      const png = f ? displayPng(f) : undefined;
+      if (!f || !png) continue;
+      mkdirSync(dir, { recursive: true });
+      const path = join(dir, `${v.id}-step${f.step}.png`);
+      writeFileSync(path, png);
+      out.push(path);
+      if (out.length >= 4) break;
+    }
+    return out;
   }
 
   // =================================================================== checks & reports
@@ -1096,7 +1189,9 @@ export class ProjectSession {
     return fidelityReport(this.project, this.registry, this.host ? Object.keys(this.host.faults()) : []);
   }
 
-  async screenshot(args: { path?: string; scale?: number; svg?: boolean; scenario?: string; at_step?: number }, ctx: OpCtx): Promise<unknown> {
+  async screenshot(args: { path?: string; scale?: number; svg?: boolean; scenario?: string; at_step?: number; view?: string; ms?: number }, ctx: OpCtx): Promise<unknown> {
+    if (args.view !== undefined && args.view !== "canvas" && args.view !== "device") fail("bad-arg", `screenshot: unknown view '${args.view}'`, "views are canvas (the circuit) and device (the physical device in 3D)", 'pass { "view": "device", "ms": 4000 } or leave view out');
+    if (args.view === "device") return this.deviceScreenshot(args, ctx);
     let host = this.host;
     let scenarioNote: Record<string, unknown> | undefined;
     let tmpHost: SimHost | undefined;
@@ -1122,10 +1217,34 @@ export class ProjectSession {
     }
   }
 
+  private async deviceScreenshot(args: { path?: string; scenario?: string; ms?: number }, ctx: OpCtx): Promise<Record<string, unknown>> {
+    if (args.scenario) fail("bad-arg", "screenshot: view device does not take scenario", "the device view renders a fresh simulation at a virtual time", 'pass { "view": "device", "ms": 4000 }, or use the canvas view for a scenario step');
+    const ms = Math.round(Number(args.ms ?? (this.host && this.host.timeMs > 0 ? this.host.timeMs : 3000)));
+    if (!Number.isFinite(ms) || ms < 0 || ms > 120_000) fail("bad-arg", `screenshot: ms ${args.ms} is out of range`, "the device view simulates from 0 to ms in a browser (max 120000)", 'pass e.g. { "view": "device", "ms": 4000 }');
+    await this.ensureBuilt(ctx);
+    const out = resolve(this.dir, args.path ?? "device.png");
+    mkdirSync(dirname(out), { recursive: true });
+    const { renderDevice } = await import("./device-render.ts");
+    let png: Buffer | undefined;
+    try {
+      png = (await renderDevice({ dir: this.dir, shots: [ms] }))[0];
+    } catch (err) {
+      fail("device-render-failed", "screenshot: the device view could not be rendered", (err as Error).message, "use the canvas view (leave view out) meanwhile; the device view needs Playwright Chromium (pnpm --filter @jumper/web exec playwright install chromium)");
+    }
+    if (!png) fail("device-render-failed", "screenshot: the device view returned no image", "the render page did not produce a frame", "try again with a smaller ms, or use the canvas view");
+    writeFileSync(out, png);
+    ctx.summary = `device screenshot ${relative(this.dir, out) || out}`;
+    return { path: out, format: "png", bytes: png.length, view: "device", t_ms: ms, note: "rendered from a fresh simulation run to t_ms with no inputs (presses made in this session are not replayed)" };
+  }
+
   private async renderScreenshot(host: SimHost | undefined, args: { path?: string; scale?: number; svg?: boolean }, ctx: OpCtx): Promise<Record<string, unknown>> {
     const states = host ? Object.fromEntries(host.sim.partIds().map((id) => [id, host.sim.partState(id) ?? {}])) : {};
+    const framebuffers = host ? Object.fromEntries(host.sim.partIds().flatMap((id) => {
+      const f = host.sim.framebuffer(id);
+      return f ? [[id, f] as const] : [];
+    })) : {};
     const world = host?.physics?.snapshot();
-    const svg = composeSvg(this.project, this.registry, { states, liveWires: host?.liveWires() ?? [], title: this.project.name, ...(world ? { world } : {}) });
+    const svg = composeSvg(this.project, this.registry, { states, framebuffers, liveWires: host?.liveWires() ?? [], title: this.project.name, ...(world ? { world } : {}) });
     const out = resolve(this.dir, args.path ?? "screenshot.png");
     mkdirSync(dirname(out), { recursive: true });
     if (args.svg || out.endsWith(".svg")) {
@@ -1301,6 +1420,9 @@ export const OP_METHODS: Record<string, string> = {
   redo: "redo",
   accept_step: "acceptStep",
   reject_step: "rejectStep",
+  set_ai_mode: "setAiMode",
+  read_network_log: "readNetworkLog",
+  run_live: "runLive",
 };
 
 /** Ops whose (compacted) result goes into the action log, for replay captions and the live panel. */

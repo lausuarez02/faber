@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-34 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+37 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -17,7 +17,7 @@ The loop:
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass.
-8. inject_fault (disconnect, i2c_nack, noisy) to check the firmware copes, if it matters.
+8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet: read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
 9. fidelity_report: tell the human what was verified and what must be tested on the real device. screenshot and export when done.
 
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.
@@ -61,6 +61,9 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`redo`](#redo) | Redo | yes (undoable step) |
 | [`accept_step`](#accept_step) | Accept steps | simulation only |
 | [`reject_step`](#reject_step) | Reject a step | yes (undoable step) |
+| [`set_ai_mode`](#set_ai_mode) | Mock or live pet AI | simulation only |
+| [`read_network_log`](#read_network_log) | Network activity | no (read-only) |
+| [`run_live`](#run_live) | Run at real time with the live AI | simulation only |
 
 ### new_project
 
@@ -215,7 +218,7 @@ Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sourc
 
 ### run
 
-Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.
+Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -274,7 +277,7 @@ Set what a sensor reads in the running simulation: {"part": "ldr1", "field": "lu
 
 ### inject_fault
 
-Break something on purpose to harden the firmware: "disconnect" (module unplugged: no power, gone from the I2C bus), "noisy" (a sensor value jitters ±5% every 10 ms, deterministic; optional field and amplitude), "i2c_nack" (the device NACKs its address: Wire.endTransmission() returns 2, display.begin() fails), "i2c_nack_data", "i2c_garbage" (reads return 0xFF), "clear" (remove faults on that part). Not simulated yet (returns an error saying so): brownout, wifi_drop, clock_drift, flash_full. Example: {"part": "oled1", "kind": "i2c_nack"}, then run and check that the firmware reports it.
+Break something on purpose to harden the firmware: "disconnect" (module unplugged: no power, gone from the I2C bus), "noisy" (a sensor value jitters ±5% every 10 ms, deterministic; optional field and amplitude), "i2c_nack" (the device NACKs its address: Wire.endTransmission() returns 2, display.begin() fails), "i2c_nack_data", "i2c_garbage" (reads return 0xFF), "wifi_drop" (on a Wi-Fi module such as an ESP-01: the sandbox access point disappears, the module prints WIFI DISCONNECT and closes its links; survives reset; "clear" on the same part brings it back and the module reconnects), "clear" (remove faults on that part). Not simulated yet (returns an error saying so): brownout, clock_drift, flash_full. Example: {"part": "oled1", "kind": "i2c_nack"}, then run and check that the firmware reports it.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -298,11 +301,12 @@ Add or replace a deterministic test in jumper.json. Steps run in order, one acti
 
 ### run_tests
 
-Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Builds first if needed. Returns {passed, failed, results}; a failure says which step, what was expected, what was seen instead, every step's timing and the serial tail. Fix the firmware or wiring and run again until all pass.
+Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Builds first if needed. Returns {passed, failed, results}; a failure says which step, what was expected, what was seen instead, every step's timing and the serial tail. Each result also has visual: one line per check with its virtual time, what it saw and what the device looked like then (screen pixels lit, robot pose and sonar, arm position); the web app's Tests panel shows the same checks as a filmstrip. Pass images: true to also get a PNG of the screen at each failing check (or the last check when all pass). Fix the firmware or wiring and run again until all pass.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `name` | string |  |  |
+| `images` | boolean |  | Attach screen PNGs of key checks (default false). |
 
 ### check_design
 
@@ -318,7 +322,7 @@ No arguments.
 
 ### screenshot
 
-Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state, or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.
+Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Colour TFT screens are drawn with their real pixels. Returns the file path. Run first to capture a live state, or pass view "device" to see the device as a 3D product shot ({"view": "device", "ms": 4000}), or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -326,6 +330,8 @@ Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires 
 | `scale` | number |  | 1 = 1 px per canvas px (default). |
 | `scenario` | string |  | Scenario id to replay first (fresh simulation). |
 | `at_step` | number |  | Stop after this step index (default: the last step). |
+| `view` | string |  | one of `canvas`, `device`. canvas (default) or device: the physical device in 3D (handheld with its live screen, rover in its arena, arm on its table) rendered from a fresh simulation at ms. |
+| `ms` | number |  | view device only: virtual ms to render at (default: the current session time, or 3000). |
 
 ### export
 
@@ -368,3 +374,28 @@ Revert one step by id, even if it is not the last: {"step": 3}. Entities changed
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `step` | number | yes |  |
+
+### set_ai_mode
+
+Choose who answers the sandbox AI host (http://ai.jumper/v1/pet) that an ESP-01 Wi-Fi module reaches: "mock" (default; deterministic canned pet replies, 400 to 800 ms virtual latency, always used by run and run_tests) or "live" (a real model, claude-haiku-5-5, through ANTHROPIC_API_KEY or the logged-in claude CLI; used only by run_live, which runs the simulation at real time). Returns the provider that will answer. Fails with the reason when no live provider exists.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mode` | string | yes | one of `mock`, `live` |
+
+### read_network_log
+
+What the simulated device did on the sandbox network: Wi-Fi joins and drops, DNS lookups, TCP connections and every HTTP request with status, virtual latency, the provider that answered (Mock / Claude CLI / Anthropic API) and the response body. Pass since (a seq from a previous call) to get only new entries. Use it when a Wi-Fi sketch does not get its answer: an empty log means the module never joined.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `since` | number |  | Return entries after this seq. |
+| `limit` | number |  | Max entries (default 50, max 200). |
+
+### run_live
+
+Run the simulation for ms at no more than real time with the live AI allowed (set_ai_mode live first), so a real model answers the device's HTTP requests and the virtual latency is the real one. Not deterministic; use run / run_tests for tests. Returns the requests made meanwhile. Press buttons with interact before it (e.g. the pet's TALK button) and read the screen with screenshot after.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ms` | number | yes | Virtual (= wall) milliseconds, max 60000. |

@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
 import { JumperError, ProjectSession, TOOLS } from "@jumper/session";
@@ -34,11 +34,17 @@ Firmware and simulation
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
   display <part> [--ms N] [--scale S]     run N ms, then show the screen as ASCII
      [--region x,y,w,h] [--save-as NAME]  crop (exact pixels) / save a golden frame for expect_display
-  test [scenario]                         run scenarios (exit 1 when any fails)
+  test [scenario] [--visual] [--out F]    run scenarios (exit 1 when any fails); --visual writes the
+                                          filmstrip report (default .jumper/visual-report.json) and
+                                          PNGs of the screen at key checks (.jumper/test-frames/)
   check                                   design rule check (exit 1 on errors)
   fidelity                                what to trust, what to test on hardware
   screenshot [out.png] [--ms N]           run N ms first, then render the canvas
      [--scenario ID [--at-step N]]        or: replay a scenario up to step N (default: its end), then render
+     [--view device]                      the physical device in 3D (handheld, rover arena, arm) at --ms
+  render-device --ms 2500,6000 [--out D]  Device view PNGs at virtual times (or --every 100 --until 8000
+     [--press part@ms,...] [--camera track|chase|arena] [--size 1280x800]   for a video's frames)
+  network [--since N]                     what a Wi-Fi device did (joins, DNS, HTTP, AI replies)
   export [dir]                            BOM, wiring table, firmware.hex
 History
   steps | undo | redo | accept [step] | reject <step>
@@ -46,10 +52,15 @@ Any tool
   call <tool> [json-args]                 e.g. jumper call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
   tools                                   list tools
 Servers
+  serve [--project D] [--port 7780] [--built] [--no-web] [--no-open] [--strict-port]
+                                          one local server: the canvas (following the project live),
+                                          ws /live, and MCP over HTTP at /mcp on the same session.
+                                          pnpm start = jumper serve (project: projects/playground)
   mcp [--project D]                       MCP server on stdio (for Claude Code, Codex…)
-  serve [--project D] [--port 5173] [--live-port 7782] [--no-web] [--no-open]   web canvas following the project live
-  replay <actions.jsonl> [--speed 2]      play an action log back in the browser
-  record <actions.jsonl> <out.mp4> [--speed 2] [--size 1280x720]   record a replay to video
+  mcp --attach http://localhost:7780      stdio MCP that drives a running serve (live canvas)
+  replay <actions.jsonl> [--speed 2] [--actor mcp] [--client claude] [--session SID]
+                                          play an action log back in the browser (filters: whose lines)
+  record <actions.jsonl> <out.mp4> [--speed 2] [--size 1280x720] [--actor mcp]   record a replay to video
   runner [--port 7781]                    local firmware build service (HTTP)
 
 --project defaults to $JUMPER_PROJECT, then the current folder.`;
@@ -98,7 +109,21 @@ function parse(argv: string[]): Parsed {
       "no-open": { type: "boolean" },
       "no-web": { type: "boolean" },
       "live-port": { type: "string" },
+      attach: { type: "string" },
+      built: { type: "boolean" },
+      "strict-port": { type: "boolean" },
+      actor: { type: "string" },
+      client: { type: "string" },
+      session: { type: "string" },
       chrome: { type: "string" },
+      visual: { type: "boolean" },
+      out: { type: "string" },
+      view: { type: "string" },
+      press: { type: "string" },
+      camera: { type: "string" },
+      every: { type: "string" },
+      until: { type: "string" },
+      since: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -122,6 +147,14 @@ function need(v: string | undefined, what: string): string {
 
 function projectDir(opts: Parsed["opts"]): string {
   return resolve(BASE, (opts.project as string | undefined) ?? process.env.JUMPER_PROJECT ?? ".");
+}
+
+/** `pnpm start` in the Jumper repo itself: use projects/playground, not the repo root, as the project. */
+function serveDir(opts: Parsed["opts"]): string {
+  if (opts.project || process.env.JUMPER_PROJECT) return projectDir(opts);
+  const repo = resolve(BASE);
+  if (existsSync(resolve(repo, "pnpm-workspace.yaml")) && existsSync(resolve(repo, "apps/cli/bin/jumper.mjs"))) return resolve(repo, "projects/playground");
+  return projectDir(opts);
 }
 
 function props(list: unknown): Record<string, string | number | boolean> | undefined {
@@ -187,13 +220,16 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
     case "display":
       return { op: "read_display", args: { part: need(p.pos[0], "the display part id"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}), ...(o.region ? { region: String(o.region).split(",").map((v) => num(v.trim(), "region")) } : {}), ...(o["save-as"] ? { save_as: o["save-as"] } : {}) }, pre: { op: "run", args: { ms: ms ?? 1000 } } };
     case "test":
-      return { op: "run_tests", args: p.pos[0] ? { name: p.pos[0] } : {} };
+      return { op: "run_tests", args: { ...(p.pos[0] ? { name: p.pos[0] } : {}), ...(o.visual ? { images: true } : {}) } };
+    case "network":
+      return { op: "read_network_log", args: { ...(o.since ? { since: num(o.since, "since") } : {}) }, ...(ms ? { pre: { op: "run", args: { ms } } } : {}) };
     case "check":
       return { op: "check_design", args: {} };
     case "fidelity":
       return { op: "fidelity_report", args: {} };
     case "screenshot":
       if (o.scenario && ms) throw new UsageError("screenshot takes --ms or --scenario, not both (a scenario sets its own timing)");
+      if (o.view === "device") return { op: "screenshot", args: { view: "device", path: resolve(BASE, p.pos[0] ?? "device.png"), ...(ms ? { ms } : {}) } };
       return { op: "screenshot", args: { path: resolve(BASE, p.pos[0] ?? "screenshot.png"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}), ...(o.scenario ? { scenario: o.scenario } : {}), ...(o["at-step"] !== undefined ? { at_step: num(o["at-step"], "at-step") } : {}) }, ...(ms ? { pre: { op: "run", args: { ms } } } : {}) };
     case "export":
       return { op: "export", args: p.pos[0] ? { dir: resolve(BASE, p.pos[0]) } : {} };
@@ -259,8 +295,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
   if (["mcp", "serve", "replay", "record", "runner"].includes(p.cmd)) {
     const servers = await import("./servers.ts");
-    return servers.runServerCommand(p.cmd, p.pos, p.opts, projectDir(p.opts), BASE);
+    return servers.runServerCommand(p.cmd, p.pos, p.opts, p.cmd === "serve" ? serveDir(p.opts) : projectDir(p.opts), BASE);
   }
+  if (p.cmd === "render-device") return renderDeviceCommand(p);
   let mapped: Awaited<ReturnType<typeof toOp>>;
   try {
     mapped = await toOp(p);
@@ -278,6 +315,12 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const result = await session.call(mapped.op, mapped.args);
     print(result, json);
     const r = result as Record<string, unknown>;
+    if (mapped.op === "run_tests" && p.opts.visual && session.lastVisualReport) {
+      const out = resolve(BASE, typeof p.opts.out === "string" ? p.opts.out : join(session.dir, ".jumper", "visual-report.json"));
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, JSON.stringify(session.lastVisualReport));
+      process.stderr.write(`visual report: ${out} (open the Tests panel in the web app, or serve it with jumper serve)\n`);
+    }
     if (mapped.op === "run_tests" && Number(r.failed) > 0) return 1;
     if (mapped.op === "check_design" && Number(r.errors) > 0) return 1;
     if (mapped.op === "build" && r.ok === false) return 1;
@@ -290,4 +333,45 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   } finally {
     session.dispose();
   }
+}
+
+async function renderDeviceCommand(p: Parsed): Promise<number> {
+  const o = p.opts;
+  const dir = projectDir(o);
+  const msList = typeof o.ms === "string" ? o.ms.split(",").filter(Boolean).map(Number) : [];
+  const every = Number(o.every ?? 0);
+  const until = Number(o.until ?? 0);
+  if (!msList.length && !(every > 0 && until > 0)) {
+    process.stderr.write("jumper render-device: say when to render. Pass --ms 2500,6000 (virtual ms) or --every 100 --until 8000 for a video's frames.\n");
+    return 2;
+  }
+  if (msList.some((n) => !Number.isFinite(n) || n < 0)) {
+    process.stderr.write(`jumper render-device: --ms ${o.ms} has a value that is not a number of milliseconds. Pass e.g. --ms 2500,6000.\n`);
+    return 2;
+  }
+  const shots = msList.length ? msList : Array.from({ length: Math.floor(until / every) + 1 }, (_, i) => i * every);
+  const presses = typeof o.press === "string" ? o.press.split(",").filter(Boolean).map((s) => ({ part: s.split("@")[0]!, at: Number(s.split("@")[1] ?? 0) })) : [];
+  const [w, h] = (typeof o.size === "string" ? o.size : "1280x800").split("x").map(Number);
+  const outDir = resolve(BASE, typeof o.out === "string" ? o.out : "device-shots");
+  mkdirSync(outDir, { recursive: true });
+  const { renderDevice } = await import("@jumper/session");
+  let n = 0;
+  try {
+    await renderDevice({
+      dir,
+      shots,
+      presses,
+      ...(w && h ? { width: w, height: h } : {}),
+      ...(o.camera === "track" || o.camera === "chase" || o.camera === "arena" ? { camera: o.camera } : {}),
+      onShot: (png, ms, i) => {
+        writeFileSync(join(outDir, msList.length ? `device-${ms}ms.png` : `frame-${String(i).padStart(5, "0")}.png`), png);
+        n++;
+      },
+    });
+  } catch (err) {
+    process.stderr.write(`jumper render-device: ${(err as Error).message}\n`);
+    return 1;
+  }
+  process.stdout.write(`${n} frame(s) in ${outDir}${every && !msList.length ? `; video: ffmpeg -framerate ${Math.round(1000 / every)} -i ${outDir}/frame-%05d.png -pix_fmt yuv420p device.mp4` : ""}\n`);
+  return 0;
 }

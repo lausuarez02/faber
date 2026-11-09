@@ -6,6 +6,7 @@ using only Jumper's tools. The same operations are exposed three ways with ident
 
 | Face | Start it | Best for |
 | --- | --- | --- |
+| **Live server** (canvas + MCP over HTTP) | `pnpm start` in the repo (= `jumper serve`), then `claude mcp add --transport http jumper http://localhost:7780/mcp` | a person watching the agent build, live, on the canvas |
 | MCP server (stdio) | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <dir>` | Claude Code, Codex, Cursor, any MCP client |
 | CLI | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs <command>` (or `pnpm jumper <command>` inside the repo) | shells, CI, scripts (`--json` for machine output) |
 | Browser | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project <dir>` | a human watching the agent work live, accepting / rejecting its steps |
@@ -22,6 +23,50 @@ Jumper. Every tool is documented in [mcp-tools.md](mcp-tools.md) (generated from
 definitions).
 
 ## Setup
+
+### The one-step way: a live server
+
+```sh
+pnpm start                                   # in the Jumper repo; or: jumper serve --project /path/to/my-device
+claude mcp add --transport http jumper http://localhost:7780/mcp
+```
+
+`jumper serve` is one local server (default port 7780; the next free port when taken, printed at
+start) for everything:
+
+| Path | What |
+| --- | --- |
+| `http://localhost:7780/` | the web app, following the project live (redirects to `?follow=ws://localhost:7780/live`) |
+| `http://localhost:7780/mcp` | MCP over Streamable HTTP, bound to the **same session** the canvas shows |
+| `ws://localhost:7780/live` | live events: `hello`, `action`, `presence` (connected agents, what each is running) |
+| `GET /api/info` | URLs, install snippets for each agent, starter prompt, connected agents |
+| `POST /api/launch/claude-code` | the app's "Launch Claude Code here" (needs the page's token; macOS Terminal) |
+
+Every MCP client and the canvas go through one queue on one session, so the canvas run button
+continues the agent's simulation, and calls never interleave. Each action-log line records `actor`
+(`mcp`, `web`, `cli`), `client` (`claude-code 2.1.319`) and `sid` (which server process). Requests
+must come from this machine (`Host` localhost / 127.0.0.1 / ::1, and a localhost `Origin` when a
+browser sends one).
+
+Connect any agent (each verified 2026-11-09 against a running `jumper serve`, without touching the
+real configs: Claude Code with `CLAUDE_CONFIG_DIR=<temp>`, then a real `claude -p` call; Codex with
+`CODEX_HOME=<temp>`, then a real `codex exec -c mcp_servers.jumper.url=…` call):
+
+| Agent | Setup |
+| --- | --- |
+| Claude Code | `claude mcp add --transport http jumper http://localhost:7780/mcp`; `claude mcp list` shows `jumper: http://localhost:7780/mcp (HTTP) - ✔ Connected`. One-off: `claude --mcp-config jumper.json` with `{"mcpServers": {"jumper": {"type": "http", "url": "http://localhost:7780/mcp"}}}` |
+| Codex | `codex mcp add jumper --url http://localhost:7780/mcp`, i.e. `[mcp_servers.jumper]` + `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml` |
+| Cursor | `~/.cursor/mcp.json`: `{"mcpServers": {"jumper": {"url": "http://localhost:7780/mcp"}}}` (not verified here: Cursor is not installed on the build machine) |
+| Claude Desktop | `claude_desktop_config.json`: `{"mcpServers": {"jumper": {"command": "/absolute/path/to/node", "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` (the Install MCP menu fills in your node path; not verified in the app itself, the same stdio bridge is tested with the MCP SDK) |
+| Any stdio-only client | `jumper mcp --attach http://localhost:7780`: a stdio server that forwards to the running serve, so its calls also drive the live canvas |
+
+In the web app, **Install MCP** shows the same snippets with Copy buttons and who is connected;
+**Open in Agent** copies a starter prompt (what the project has, that a person is watching, the
+loop) or launches Claude Code in a new macOS Terminal: `cd <project> && claude --mcp-config
+<temp file pointing at this server>` (only on that click, only from a page served by this server,
+which holds the token; the exact command is shown so you can run it yourself).
+
+### Standalone stdio server
 
 Requirements: Node 24, `pnpm install` once at the repo root, and **Docker Desktop running** (firmware
 is compiled with arduino-cli in a pinned image; the first build creates the image, a few minutes,
@@ -254,6 +299,26 @@ knob; `{"expect_part": "world.reached", "op": "contains", "value": "cup"}` check
 Working references: `examples/rover` and `examples/robot-arm` (each with passing scenarios and a
 video in `media/`).
 
+
+When the rover hits something, `run` reports `world.first_collision`: `{t_ms, x, y, heading, with: ["crate"]}` (time within 50 ms), and a failing `world.collisions` check quotes it, so you know which turn to fix.
+
+## Wi-Fi and the pet AI
+
+An `esp01-wifi` module (Espressif AT firmware, on SoftwareSerial) joins a sandbox Wi-Fi called
+`JumperNet` and can reach one host: `http://ai.jumper/v1/pet?a=talk&f=68&j=68&e=79&n=Pip`, which
+answers `mood|text` (60 characters max). `examples/ai-pet` is the reference: an Uno draws a pet on an
+ILI9341 colour TFT and shows the reply in a speech bubble.
+
+| Tool | Use |
+| --- | --- |
+| `read_network_log` | What the device did: Wi-Fi joins, DNS, TCP and every HTTP request with status, latency, provider and body. Empty means the module never joined (check TX/RX wiring and the divider on its RX). |
+| `set_ai_mode {"mode": "live"}` | A real model (claude-haiku-5-5 through `ANTHROPIC_API_KEY`, else the logged-in `claude` CLI) answers. Fails with the reason when neither exists. |
+| `run_live {"ms": 8000}` | Runs at real time so the live answer arrives while the firmware waits. Not deterministic. `run` and `run_tests` always use the deterministic mock. |
+
+Screenshots draw colour TFT screens with their real pixels. `screenshot {"view": "device", "ms": 6000}`
+renders the project as a physical device in 3D instead (the pet as a handheld, a rover in its
+arena, an arm on its table), from a fresh simulation run to `ms`.
+
 ## Scenario steps
 
 One action per step. `within_ms` = keep simulating up to that long until it holds; without it the
@@ -287,15 +352,19 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
 | `i2c_nack` / `i2c_nack_data` / `i2c_garbage` | the device NACKs its address / NACKs data / reads 0xFF |
 | `noisy` | a numeric sensor value jitters ±5 % every 10 ms (deterministic; `field`, `amplitude`) |
 | `clear` | remove the faults on that part (faults survive `run {"reset": true}`: they model the hardware) |
-| not yet | `brownout`, `wifi_drop`, `clock_drift`, `flash_full` return an error saying so |
+| `wifi_drop` | the sandbox access point disappears (pass the ESP-01's id as `part`); joined modules print `WIFI DISCONNECT`; `clear` brings it back and modules rejoin after about 2.5 s |
+| not yet | `brownout`, `clock_drift`, `flash_full` return an error saying so |
 
 ## Watching an agent work
 
-- `pnpm jumper serve --project <dir>` (add `--no-web` to start only the live hub for a canvas that is already open) opens the canvas following the folder live: parts pop in,
+- `pnpm start` / `pnpm jumper serve --project <dir>` (add `--no-web` for the live link and MCP without the web app, `--built` to serve `apps/web/dist`) opens the canvas following the folder live: parts pop in,
   wires draw themselves, an agent cursor points at what is being edited, the step list shows each
   `why` with Accept / Reject, and runs stream LEDs, displays and serial. Any process editing the
   folder (MCP server, CLI, another agent) shows up.
 - `pnpm jumper replay <dir>/.jumper/actions.jsonl --speed 2` plays a session back in the browser.
+  `--actor mcp` keeps only the agent's calls (a person's CLI checks in the same folder are left
+  out), `--client claude` one client, `--session <sid>` one server process; a mixed log prints the
+  counts per actor.
 - `pnpm jumper record <dir>/.jumper/actions.jsonl out.mp4 --speed 2` renders that replay to a video
   (Playwright Chromium + ffmpeg).
 
@@ -309,11 +378,18 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
 | `jumper.json … is invalid` | The file was edited by hand; the message lists each bad field. |
 | A test fails with `it is 0` right after boot | Add `within_ms`: the firmware may not have drawn / switched yet. |
 | `run_tests` passes with a warning `already held 0 ms after step N` | The check did not wait for the change; compare toward the new value. |
+| `No Jumper server at http://localhost:7780` (`--attach`) | Start it: `pnpm start` in the Jumper repo. |
+| `MCP session '…' is not known to this Jumper server` | The server restarted: reconnect the client (Claude Code: `/mcp`, reconnect). |
+| `Port 7780 is in use` (with `--strict-port`) | Another serve runs; use it, or pass `--port`. Without `--strict-port` the next free port is used and printed. |
+| A test fails right after `{"press": …, "hold_ms": N}` and says the hold hid a reaction | Press without `hold_ms`, check with `within_ms`, then release. |
+| `timed out: … Fix: raise the scenario's "timeout_ms"` | Raise it in `write_scenario`, or shorten the waits. |
+| `run_tests` failed and you want to see the screen | `run_tests {"images": true}` attaches the screen at each scenario's first failing check; every result also has `visual`, one line per check with what the device looked like then. |
+| `read_network_log` is empty | The ESP-01 never joined: TX → the board's RX pin, RX ← the board's TX pin through a divider, CH_PD high, and run at least 3 s. |
 | A picture of a test's key moment | `screenshot {"path": "shots/x.png", "scenario": "<id>", "at_step": N}` (CLI: `jumper screenshot x.png --scenario <id> --at-step N`). |
 
 ## Limits (honest)
 
-- AVR boards only (Uno, Nano). No Wi-Fi, no ESP32 yet.
+- AVR boards only (Uno, Nano). Wi-Fi only through an ESP-01 on the sandbox network (one host, `ai.jumper`); no ESP32 yet.
 - Headless `run` ignores `speed` (it always runs as fast as possible, about 5× real time).
 - The CLI is one process per command: simulation state (time, pressed buttons) does not carry over
   between `jumper run` calls; use the MCP server, `jumper display --ms`, or scenarios for multi-step

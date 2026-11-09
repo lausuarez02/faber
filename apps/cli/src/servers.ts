@@ -1,10 +1,10 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { loadPlaywright, startLiveHub, type LiveHub } from "@jumper/session";
+import { actorCounts, loadPlaywright, startLiveHub, type LiveHub } from "@jumper/session";
 
 const WEB_DIR = fileURLToPath(new URL("../../web/", import.meta.url));
 
@@ -65,12 +65,29 @@ function projectOfLog(log: string): string {
   return d.endsWith(".jumper") ? dirname(d) : d;
 }
 
+/** --actor mcp / --client claude / --session <sid> as a query string for the hub's /replay. */
+function logFilter(log: string, opts: Opts): string {
+  const q = new URLSearchParams();
+  if (opts.actor) q.set("actor", String(opts.actor));
+  if (opts.client) q.set("client", String(opts.client));
+  if (opts.session) q.set("sid", String(opts.session));
+  if (!q.size) {
+    // A log with an agent's lines and a person's CLI checks mixed: say how to keep only the agent.
+    const counts = actorCounts(readFileSync(log, "utf8"));
+    if (Object.keys(counts).length > 1) {
+      process.stderr.write(`The log mixes actors (${Object.entries(counts).map(([a, n]) => `${a} ${n}`).join(", ")}); pass --actor mcp to show only the agent's calls.\n`);
+    }
+  }
+  return q.size ? `&${q}` : "";
+}
+
 async function startReplay(log: string, opts: Opts): Promise<{ hub: LiveHub; web: ViteHandle; url: string }> {
   if (!existsSync(log)) throw new Error(`No action log at ${log}. Fix: pass a project's .jumper/actions.jsonl (every MCP/CLI session writes one).`);
+  const filter = logFilter(log, opts);
   const hub = await startLiveHub({ dir: projectOfLog(log), port: Number(opts["live-port"] ?? 0), replayFiles: [log] });
   const web = await startWeb(Number(opts.port ?? 5173));
   const speed = Number(opts.speed ?? 1) || 1;
-  const url = `${web.url}?replay=${encodeURIComponent(`${hub.url}/replay?path=${encodeURIComponent(log)}`)}&speed=${speed}${opts.chrome ? `&chrome=${String(opts.chrome)}` : ""}`;
+  const url = `${web.url}?replay=${encodeURIComponent(`${hub.url}/replay?path=${encodeURIComponent(log)}${filter}`)}&speed=${speed}${opts.chrome ? `&chrome=${String(opts.chrome)}` : ""}`;
   return { hub, web, url };
 }
 
@@ -79,7 +96,7 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
     switch (cmd) {
       case "mcp": {
         const { startStdioServer } = await import("@jumper/mcp");
-        await startStdioServer(["--project", projectDir]);
+        await startStdioServer(["--project", projectDir, ...(opts.attach ? ["--attach", String(opts.attach)] : [])]);
         return await new Promise<number>(() => {}); // runs until stdin closes
       }
       case "runner": {
@@ -90,20 +107,22 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
         return await waitForever(async () => {});
       }
       case "serve": {
-        mkdirSync(projectDir, { recursive: true });
-        const hub = await startLiveHub({ dir: projectDir, port: Number(opts["live-port"] ?? 7782) });
-        if (opts["no-web"]) {
-          process.stdout.write(`Jumper live hub for ${projectDir}\n  ws: ${hub.wsUrl}\n  open any Jumper web app with ?follow=${encodeURIComponent(hub.wsUrl)}\nCtrl+C to stop.\n`);
-          return await waitForever(() => hub.close());
-        }
-        const web = await startWeb(Number(opts.port ?? 5173));
-        const url = `${web.url}?follow=${encodeURIComponent(hub.wsUrl)}`;
-        process.stdout.write(`Jumper live view of ${projectDir}\n  open: ${url}\n  live hub: ${hub.url} (GET /log for the action log)\nDrive it from another terminal or an agent (jumper mcp --project ${projectDir}); every change appears here. Ctrl+C to stop.\n`);
-        if (!opts["no-open"]) openBrowser(url);
-        return await waitForever(async () => {
-          await hub.close();
-          await web.close();
-        });
+        const { startJumperServer, DEFAULT_PORT } = await import("./serve.ts");
+        const port = Number(opts.port ?? opts["live-port"] ?? process.env.JUMPER_PORT ?? DEFAULT_PORT);
+        const web = opts["no-web"] ? "none" : opts.built ? "built" : "dev";
+        const srv = await startJumperServer({ dir: projectDir, port, web, ...(opts["strict-port"] ? { strictPort: true } : {}) });
+        const lines = [`Jumper is running for ${srv.dir}`];
+        if (srv.port !== port && port !== 0) lines.push(`  (port ${port} was taken, so this is ${srv.port})`);
+        if (srv.web !== "none") lines.push(`  open:  ${srv.url}/   (the canvas follows this project live)`);
+        lines.push(`  ws:    ${srv.wsUrl}${srv.web === "none" ? `   (web app off; any Jumper app can follow it with ?follow=${encodeURIComponent(srv.wsUrl)})` : ""}`);
+        lines.push(`  MCP:   ${srv.mcpUrl}`, "", "Connect an agent (one step):");
+        lines.push(`  Claude Code:  claude mcp add --transport http jumper ${srv.mcpUrl}`);
+        lines.push(`  Codex:        codex mcp add jumper --url ${srv.mcpUrl}`);
+        lines.push(`  stdio only:   jumper mcp --attach ${srv.url}`);
+        lines.push("More (Claude Desktop, Cursor): the Connect menu in the app, or docs/agents.md. Ctrl+C to stop.", "");
+        process.stdout.write(lines.join("\n"));
+        if (!opts["no-open"] && srv.web !== "none") openBrowser(`${srv.url}/`);
+        return await waitForever(() => srv.close());
       }
       case "replay": {
         const log = resolve(base, pos[0] ?? join(projectDir, ".jumper/actions.jsonl"));

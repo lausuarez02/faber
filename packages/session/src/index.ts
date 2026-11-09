@@ -1,5 +1,5 @@
 export { ProjectSession, OP_METHODS } from "./session.ts";
-export type { SessionOptions, ActionEntry, SessionEvent, Builder } from "./session.ts";
+export type { SessionOptions, ActionEntry, SessionEvent, Builder, CallMeta } from "./session.ts";
 export { TOOLS, AGENT_LOOP } from "./catalog.ts";
 export type { ToolDef } from "./catalog.ts";
 export { JumperError, fail, asJumperError } from "./errors.ts";
@@ -13,5 +13,18 @@ export type { ScenarioResult } from "./scenario.ts";
 export { composeSvg, svgToPng, bindSvgString, loadPlaywright } from "./screenshot.ts";
 export { TEMPLATES } from "./templates.ts";
 export { autoPlace } from "./layout.ts";
-export { startLiveHub } from "./live.ts";
-export type { LiveHub, LiveHubOptions } from "./live.ts";
+export { startLiveHub, createLiveHub, filterActionLog, actorCounts } from "./live.ts";
+export type { LiveHub, LiveHubOptions, LiveHubCore, AgentPresence } from "./live.ts";
+export { createSessionNetwork, setAiMode, readNetworkLog, runLive, setWifiDrop, NETWORK_TOOLS } from "./network.ts";
+export type { SessionNetwork } from "./network.ts";
+export { runScenarioVisual, compactVisual, displayPng, replayKeyframes, applyInput, snapshotDevice } from "./visual-capture.ts";
+export type { VisualReport, VisualScenario, VisualFrame, VisualInput, VisualState3 } from "./visual-capture.ts";
+export { buildVisualReport, loadProjectDir } from "./visual-report.ts";
+export type { VisualReportOptions } from "./visual-report.ts";
+export type { DeviceRenderOptions } from "./device-render.ts";
+
+/** Headless Device view render (lazy: it loads Playwright and Vite only when called). */
+export async function renderDevice(opts: import("./device-render.ts").DeviceRenderOptions): Promise<Buffer[]> {
+  const m = await import("./device-render.ts");
+  return m.renderDevice(opts);
+}
