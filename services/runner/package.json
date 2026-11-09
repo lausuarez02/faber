@@ -1,0 +1,21 @@
+{
+  "name": "@jumper/runner",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Local firmware build service: arduino-cli in a pinned Docker image, cached by content hash.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "jumper-runner": "./bin/jumper-runner.mjs"
+  },
+  "scripts": {
+    "start": "node bin/jumper-runner.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}
