@@ -14,6 +14,7 @@ import {
   type Rotation,
   type Scenario,
   type Wire,
+  normalizeScenarioStep,
 } from "@jumper/project-format";
 import { registry as defaultRegistry, searchParts as searchCatalog } from "@jumper/parts";
 import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
@@ -41,8 +42,9 @@ import { autoPlace, overlappingParts, sizeOf } from "./layout.ts";
 import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { runScenario, setPartValue, validateScenario, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
+import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
-import { TEMPLATES } from "./templates.ts";
+import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
 
@@ -924,12 +926,24 @@ export class ProjectSession {
     return { pin: fmtRef(r.ref), t_ms: round(host.timeMs), ...info, connected_to: net ? net.pins.filter((p) => !(p.part === r.ref.part && p.pin === r.ref.pin)).map(fmtRef) : [] };
   }
 
-  async readDisplay(args: { part: string; scale?: number }): Promise<unknown> {
+  async readDisplay(args: { part: string; scale?: number; region?: number[]; save_as?: string }, ctx: OpCtx): Promise<unknown> {
     findPart(this.project, args.part);
     const { host } = await this.getHost();
     const scale = Math.max(1, Math.min(8, Math.round(args.scale ?? 2)));
     const d = host.display(args.part, scale);
-    return { part: args.part, t_ms: round(host.timeMs), width: d.width, height: d.height, lit_pixels: d.lit, scale, screen: d.ascii };
+    let saved: Record<string, unknown> | undefined;
+    if (args.region !== undefined || args.save_as !== undefined) {
+      const f = host.displayFrame(args.part);
+      const region = clampRegion(f, args.region, `read_display ${args.part}`);
+      const rows = regionRows(f, region);
+      if (args.save_as !== undefined) {
+        const path = saveSnapshot(this.dir, String(args.save_as), { part: args.part, t_ms: round(host.timeMs), region, rows });
+        ctx.summary = `saved ${args.part} snapshot '${args.save_as}'`;
+        saved = { saved_as: args.save_as, file: relative(this.dir, path), use: `{"expect_display": "${args.part}", "matches": "${args.save_as}", "within_ms": 2000} in a scenario` };
+      }
+      return { part: args.part, t_ms: round(host.timeMs), width: d.width, height: d.height, lit_pixels: d.lit, region, region_lit: litCount(rows), ...saved, scale: 1, screen: rows.join("\n") };
+    }
+    return { part: args.part, t_ms: round(host.timeMs), width: d.width, height: d.height, lit_pixels: d.lit, scale, screen: d.ascii, test_it: `{"expect_display": "${args.part}", "region": [x, y, w, h], "lit": {"min": n}} or save this frame with save_as and use "matches"` };
   }
 
   async interact(args: { part: string; action: string; value?: VisualValue; key?: string; hold_ms?: number }, ctx: OpCtx): Promise<unknown> {
@@ -982,13 +996,23 @@ export class ProjectSession {
 
   async writeScenario(args: { id: string; name?: string; description?: string; steps: unknown[]; timeout_ms?: number; why?: string }, ctx: OpCtx): Promise<unknown> {
     if (!args.id || !Array.isArray(args.steps)) fail("missing-arg", "write_scenario needs 'id' and 'steps'", "one is missing", 'pass e.g. { "id": "blinks", "steps": [{ "expect_serial": "LED on", "within_ms": 1100 }] }');
-    const s: Scenario = { id: args.id, ...(args.name ? { name: args.name } : {}), ...(args.description ? { description: args.description } : {}), steps: args.steps, ...(args.timeout_ms ? { timeout_ms: args.timeout_ms } : {}) } as Scenario;
-    validateScenario(s, this.project, this.registry);
+    const normalized: string[] = [];
+    const steps = args.steps.map((raw, i) => {
+      const n = normalizeScenarioStep(raw);
+      if (n.note) normalized.push(`step ${i}: ${n.note}`);
+      return n.step;
+    });
+    const s: Scenario = { id: args.id, ...(args.name ? { name: args.name } : {}), ...(args.description ? { description: args.description } : {}), steps, ...(args.timeout_ms ? { timeout_ms: args.timeout_ms } : {}) } as Scenario;
+    validateScenario(s, this.project, this.registry, this.scenarioOptions());
     const exists = this.project.scenarios.some((x) => x.id === s.id);
     const next = { ...this.project, scenarios: exists ? this.project.scenarios.map((x) => (x.id === s.id ? s : x)) : [...this.project.scenarios, s] };
     const step = this.commit(ctx, `write_scenario ${s.id}`, next);
     ctx.summary = `${exists ? "updated" : "added"} scenario ${s.id} (${s.steps.length} steps)`;
-    return { scenario: s.id, steps: s.steps.length, replaced: exists, next: "run_tests", step: { id: step.id, why: step.why } };
+    return { scenario: s.id, steps: s.steps.length, replaced: exists, ...(normalized.length ? { normalized } : {}), next: "run_tests", step: { id: step.id, why: step.why } };
+  }
+
+  private scenarioOptions() {
+    return { snapshot: (name: string) => loadSnapshot(this.dir, name) };
   }
 
   async runTests(args: { name?: string }, ctx: OpCtx): Promise<unknown> {
@@ -1007,7 +1031,7 @@ export class ProjectSession {
       const host = new SimHost(this.project, this.registry, hex);
       const mine: Frame[] = [];
       try {
-        results.push(runScenario(host, s, this.project, this.registry, (f) => mine.push(f)));
+        results.push(runScenario(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions()));
       } catch (err) {
         const je = asJumperError(err);
         results.push({ id: s.id, passed: false, t_ms: round(host.timeMs), failed_step: -1, reason: je.message, serial_tail: "", steps: [] });
@@ -1027,7 +1051,7 @@ export class ProjectSession {
       passed,
       failed: results.length - passed,
       ...(built ? { notes: [built] } : {}),
-      results: results.map((r) => (r.passed ? { id: r.id, passed: true, t_ms: r.t_ms } : { id: r.id, passed: false, t_ms: r.t_ms, reason: r.reason, serial_tail: r.serial_tail, steps: r.steps.map((s) => `${s.ok ? "ok" : "FAIL"} @${s.t_ms}ms ${s.step}${s.detail ? ` - ${s.detail}` : ""}`) })),
+      results: results.map((r) => (r.passed ? { id: r.id, passed: true, t_ms: r.t_ms, ...(r.warnings ? { warnings: r.warnings } : {}) } : { id: r.id, passed: false, t_ms: r.t_ms, reason: r.reason, serial_tail: r.serial_tail, ...(r.warnings ? { warnings: r.warnings } : {}), steps: r.steps.map((s) => `${s.ok ? "ok" : "FAIL"} @${s.t_ms}ms ${s.step}${s.detail ? ` - ${s.detail}` : ""}`) })),
     };
   }
 

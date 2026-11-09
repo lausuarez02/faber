@@ -93,3 +93,6 @@ export const TEMPLATES: Record<string, Template> = {
     files: { "firmware/main.ino": BLINK_INO },
   },
 };
+
+/** Every starter sketch a template writes, to tell "still the template" from firmware someone wrote. */
+export const TEMPLATE_SOURCES: ReadonlySet<string> = new Set(Object.values(TEMPLATES).flatMap((t) => Object.values(t.files).map((f) => f.trim())));

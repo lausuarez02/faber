@@ -533,6 +533,123 @@
                 {
                   "type": "object",
                   "properties": {
+                    "expect_serial_value": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][\\w.-]*$",
+                      "description": "Name printed before a number on serial, e.g. 'hunger' matches \"hunger=40\", \"hunger: 40\" or \"hunger 40\". The latest printed value is compared."
+                    },
+                    "op": {
+                      "default": "==",
+                      "type": "string",
+                      "enum": [
+                        "==",
+                        "!=",
+                        ">",
+                        ">=",
+                        "<",
+                        "<=",
+                        "contains",
+                        "matches"
+                      ]
+                    },
+                    "value": {
+                      "type": "number"
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_serial_value",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_display": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                      "description": "Display part id, e.g. 'oled1'."
+                    },
+                    "region": {
+                      "description": "[x, y, w, h] in screen pixels; default the whole screen.",
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    "lit": {
+                      "description": "Lit pixel count inside the region, inclusive range.",
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "matches": {
+                      "description": "Name of a golden frame saved with read_display {save_as: name} (snapshots/<name>.txt).",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "tolerance": {
+                      "description": "matches: fraction of region pixels allowed to differ (default 0.02).",
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_display"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
                     "expect_no_errors": {
                       "type": "boolean",
                       "const": true,

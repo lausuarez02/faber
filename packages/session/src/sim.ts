@@ -2,6 +2,7 @@ import type { Project, PropValue } from "@jumper/project-format";
 import {
   Simulation,
   decodeMonoFrame,
+  type MonoFrame,
   monoToAscii,
   type PartDefinition,
   type PartModel,
@@ -406,6 +407,18 @@ export class SimHost {
   }
 
   /** ASCII art of a display part's screen (pixels/width/height in its state). */
+  /** The current frame of a display part (1 bit per pixel). Fails with a readable error on non-displays. */
+  displayFrame(partId: string): MonoFrame {
+    const s = this.sim.partState(partId);
+    if (!s) fail("unknown-part", `no simulated display '${partId}'`, "it is not in the project or its type is unknown", "pass a display part id from get_project");
+    const width = Number(s.width);
+    const height = Number(s.height);
+    if (typeof s.pixels !== "string" || !width || !height) {
+      fail("not-a-display", `'${partId}' has no screen`, `its state has no pixels/width/height (keys: ${Object.keys(s).join(", ")})`, "use a display part such as ssd1306-oled-i2c");
+    }
+    return decodeMonoFrame(s.pixels, width, height);
+  }
+
   display(partId: string, scale = 2): { width: number; height: number; lit: number; ascii: string } {
     const s = this.sim.partState(partId);
     if (!s) fail("unknown-part", `read_display: no simulated part '${partId}'`, "it is not in the project or its type is unknown", "pass a display part id from get_project");

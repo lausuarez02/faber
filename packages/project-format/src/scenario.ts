@@ -98,6 +98,40 @@ export const ExpectPartStepSchema = z
     ...common,
   })
   .strict();
+export const ExpectSerialValueStepSchema = z
+  .object({
+    expect_serial_value: z
+      .string()
+      .regex(/^[A-Za-z_][\w.-]*$/, "must be the name the firmware prints before the number, e.g. 'hunger' for \"hunger=40\"")
+      .describe("Name printed before a number on serial, e.g. 'hunger' matches \"hunger=40\", \"hunger: 40\" or \"hunger 40\". The latest printed value is compared."),
+    op: CompareOpSchema.default("=="),
+    value: z.number(),
+    within_ms: Ms.optional(),
+    ...common,
+  })
+  .strict();
+export const ExpectDisplayStepSchema = z
+  .object({
+    expect_display: PartRef.describe("Display part id, e.g. 'oled1'."),
+    region: z
+      .tuple([z.number().int().nonnegative(), z.number().int().nonnegative(), z.number().int().positive(), z.number().int().positive()])
+      .optional()
+      .describe("[x, y, w, h] in screen pixels; default the whole screen."),
+    lit: z
+      .object({ min: z.number().nonnegative().optional(), max: z.number().nonnegative().optional() })
+      .strict()
+      .optional()
+      .describe("Lit pixel count inside the region, inclusive range."),
+    matches: z
+      .string()
+      .regex(/^[A-Za-z][A-Za-z0-9_-]*$/, "must be a snapshot name saved with read_display {save_as}")
+      .optional()
+      .describe("Name of a golden frame saved with read_display {save_as: name} (snapshots/<name>.txt)."),
+    tolerance: z.number().min(0).max(1).optional().describe("matches: fraction of region pixels allowed to differ (default 0.02)."),
+    within_ms: Ms.optional(),
+    ...common,
+  })
+  .strict();
 export const ExpectNoErrorsStepSchema = z
   .object({ expect_no_errors: z.literal(true).describe("Fail if any part reports an error diagnostic (overcurrent…)."), ...common })
   .strict();
@@ -113,6 +147,8 @@ export const ScenarioStepSchema = z.union([
   ExpectSerialStepSchema,
   ExpectPinStepSchema,
   ExpectPartStepSchema,
+  ExpectSerialValueStepSchema,
+  ExpectDisplayStepSchema,
   ExpectNoErrorsStepSchema,
 ]);
 
@@ -128,6 +164,8 @@ export const STEP_KINDS = {
   expect_serial: ExpectSerialStepSchema,
   expect_pin: ExpectPinStepSchema,
   expect_part: ExpectPartStepSchema,
+  expect_serial_value: ExpectSerialValueStepSchema,
+  expect_display: ExpectDisplayStepSchema,
   expect_no_errors: ExpectNoErrorsStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
@@ -143,11 +181,32 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   set: `{ "set": "pot1.position", "value": 0.5 }`,
   serial_write: `{ "serial_write": "feed\\n" }`,
   inject_fault: `{ "inject_fault": "oled1", "kind": "disconnect" } or { "inject_fault": "pot1", "kind": "noisy", "field": "position", "amplitude": 0.02 }`,
-  expect_serial: `{ "expect_serial": "LED on", "within_ms": 1100 }`,
+  expect_serial: `{ "expect_serial": "LED on", "within_ms": 1100 } (text), or { "expect_serial": { "regex": "MOOD \\\\w+ -> sad" }, "within_ms": 1100 } (regular expression: put it INSIDE expect_serial)`,
   expect_pin: `{ "expect_pin": "uno.D13", "level": "high", "within_ms": 50 }`,
   expect_part: `{ "expect_part": "oled1.blank", "op": "==", "value": false, "within_ms": 500 }`,
+  expect_serial_value: `{ "expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500 }`,
+  expect_display: `{ "expect_display": "oled1", "region": [40, 16, 48, 32], "lit": { "min": 20 } } or { "expect_display": "oled1", "matches": "sad-face", "within_ms": 2000 }`,
   expect_no_errors: `{ "expect_no_errors": true }`,
 };
+
+/**
+ * Forms agents guess first, rewritten to the canonical step (and what was changed, for the result):
+ * a sibling or standalone "regex" goes inside expect_serial.
+ */
+export function normalizeScenarioStep(raw: unknown): { step: unknown; note?: string } {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return { step: raw };
+  const o = raw as Record<string, unknown>;
+  if (typeof o.regex === "string") {
+    const actions = Object.keys(o).filter((k) => k in STEP_KINDS);
+    const es = o.expect_serial;
+    if ((actions.length === 0 || (actions.length === 1 && actions[0] === "expect_serial")) && (es === undefined || typeof es === "string" || es === true)) {
+      const { regex, ...rest } = o;
+      delete rest.expect_serial;
+      return { step: { expect_serial: { regex }, ...rest }, note: `moved "regex" inside expect_serial: {"expect_serial": {"regex": ${JSON.stringify(regex)}}}${typeof es === "string" ? ` (the text ${JSON.stringify(es)} was dropped: the regex decides)` : ""}` };
+    }
+  }
+  return { step: raw };
+}
 
 export interface StepIssue {
   path: string;
@@ -162,7 +221,8 @@ export function parseScenarioStep(raw: unknown, path = "step"): { ok: true; step
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
     return { ok: false, issues: [{ path, message: `a step must be an object such as ${STEP_EXAMPLES.expect_serial}` }] };
   }
-  const keys = Object.keys(raw).filter((k) => k in STEP_KINDS) as StepKind[];
+  const obj = normalizeScenarioStep(raw).step as Record<string, unknown>;
+  const keys = Object.keys(obj).filter((k) => k in STEP_KINDS) as StepKind[];
   if (keys.length !== 1) {
     const list = Object.keys(STEP_KINDS).join(", ");
     return {
@@ -172,14 +232,14 @@ export function parseScenarioStep(raw: unknown, path = "step"): { ok: true; step
           path,
           message:
             keys.length === 0
-              ? `no action key found (got keys: ${Object.keys(raw).join(", ") || "none"}); use exactly one of: ${list}`
+              ? `no action key found (got keys: ${Object.keys(obj).join(", ") || "none"}); use exactly one of: ${list}${"pattern" in obj || "contains" in obj ? `. Fix: serial checks are {"expect_serial": "text"} or {"expect_serial": {"regex": "..."}}` : ""}`
               : `has ${keys.length} action keys (${keys.join(", ")}); split it into one step per action`,
         },
       ],
     };
   }
   const kind = keys[0]!;
-  const res = STEP_KINDS[kind].safeParse(raw);
+  const res = STEP_KINDS[kind].safeParse(obj);
   if (res.success) {
     const step = res.data as ScenarioStep;
     if (kind === "expect_pin") {
@@ -205,7 +265,15 @@ export function parseScenarioStep(raw: unknown, path = "step"): { ok: true; step
     issues: res.error.issues.map((i) => {
       const sub = i.path.map(String).join(".");
       let message = i.message;
-      if (i.code === "unrecognized_keys") message = `unknown field(s) ${(i as { keys?: string[] }).keys?.map((k) => `'${k}'`).join(", ")} for a ${kind} step`;
+      if (i.code === "unrecognized_keys") {
+        const bad = (i as { keys?: string[] }).keys ?? [];
+        message = `unknown field(s) ${bad.map((k) => `'${k}'`).join(", ")} for a ${kind} step`;
+        const allowed = Object.keys((STEP_KINDS[kind] as unknown as { shape: Record<string, unknown> }).shape);
+        message += ` (allowed: ${allowed.join(", ")})`;
+        if (kind === "expect_serial" && bad.some((k) => /^(pattern|regexp?|re|match)$/i.test(k))) message += `. Fix: put the pattern inside expect_serial: {"expect_serial": {"regex": "..."}}`;
+        if (kind === "expect_serial" && bad.some((k) => /^(op|value)$/.test(k))) message += `. Fix: to compare a printed number use {"expect_serial_value": "energy", "op": ">=", "value": 60}`;
+        if (kind === "expect_part" && bad.includes("level")) message += `. Fix: pin levels use {"expect_pin": "uno.D13", "level": "high"}`;
+      }
       return { path: sub ? `${path}.${sub}` : path, message: `${message}; expected shape: ${STEP_EXAMPLES[kind]}` };
     }),
   };

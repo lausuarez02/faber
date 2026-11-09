@@ -3,6 +3,14 @@ import type { PartRegistry, VisualValue } from "@jumper/sim-core";
 import { fail, JumperError } from "./errors.ts";
 import { findPart, resolvePin, specOf, splitRef } from "./pins.ts";
 import type { Frame, SimHost } from "./sim.ts";
+import { clampRegion, diffFraction, litCount, regionRows, type DisplaySnapshot } from "./snapshots.ts";
+
+export interface ScenarioOptions {
+  /** Golden display frames by name (snapshots/<name>.json), for expect_display matches. */
+  snapshot?: (name: string) => DisplaySnapshot | undefined;
+  /** Stop (as passed) right after this step index: screenshot {scenario, at_step}. */
+  stopAfter?: number;
+}
 
 export interface StepResult {
   i: number;
@@ -24,6 +32,8 @@ export interface ScenarioResult {
   reason?: string;
   serial_tail: string;
   steps: StepResult[];
+  /** Steps that passed but probably do not test what was meant (e.g. a wait that held before the change). */
+  warnings?: string[];
 }
 
 const DEFAULT_TIMEOUT_MS = 60_000;
@@ -92,7 +102,7 @@ function compare(actual: unknown, op: string, expected: VisualValue): boolean {
 }
 
 /** Check a scenario's references against the project before running it (errors name the step). */
-export function validateScenario(s: Scenario, project: Project, registry: PartRegistry): ScenarioStep[] {
+export function validateScenario(s: Scenario, project: Project, registry: PartRegistry, opts: ScenarioOptions = {}): ScenarioStep[] {
   const steps: ScenarioStep[] = [];
   s.steps.forEach((raw, i) => {
     const r = parseScenarioStep(raw, `scenarios.${s.id}.steps[${i}]`);
@@ -105,6 +115,16 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         resolvePin(part, specOf(registry, findPart(project, part)), rest);
       }
       if (typeof step.set === "string") findPart(project, splitRef(step.set).part);
+      if (typeof step.expect_display === "string") {
+        const part = findPart(project, step.expect_display);
+        const spec = specOf(registry, part);
+        if (!spec.bindings?.some((b) => b.key === "pixels") && !/oled|lcd|display/.test(spec.id)) {
+          fail("not-a-display", `expect_display ${part.id}`, `${part.id} is a ${spec.id}, which has no screen`, "point expect_display at a display part (ssd1306-oled-i2c, lcd1602-i2c)");
+        }
+        if (typeof step.matches === "string" && opts.snapshot && !opts.snapshot(step.matches)) {
+          fail("no-snapshot", `expect_display matches '${step.matches}'`, `there is no snapshot '${step.matches}' (snapshots/${step.matches}.json)`, `run until the screen shows it, then read_display {"part": "${part.id}", "save_as": "${step.matches}"} (optionally with "region": [x, y, w, h]) to save it`);
+        }
+      }
       if (typeof step.expect_part === "string") {
         const ref = splitRef(step.expect_part).part;
         if (ref === "world" && !project.parts.some((p) => p.id === "world")) {
@@ -121,9 +141,10 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
 }
 
 /** Run one scenario on a fresh SimHost (created by the caller at t = 0). Deterministic. */
-export function runScenario(host: SimHost, s: Scenario, project: Project, registry: PartRegistry, onFrame?: (f: Frame) => void): ScenarioResult {
-  const steps = validateScenario(s, project, registry);
+export function runScenario(host: SimHost, s: Scenario, project: Project, registry: PartRegistry, onFrame?: (f: Frame) => void, opts: ScenarioOptions = {}): ScenarioResult {
+  const steps = validateScenario(s, project, registry, opts);
   const results: StepResult[] = [];
+  const warnings: string[] = [];
   const timeout = s.timeout_ms ?? DEFAULT_TIMEOUT_MS;
   let serialCursor = 0;
   const sim = host.sim;
@@ -137,7 +158,17 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
     ...(failed !== undefined ? { failed_step: failed, reason: reason! } : {}),
     serial_tail: tail(),
     steps: results,
+    ...(warnings.length ? { warnings } : {}),
   });
+  const once = (t: number) => ` (checked once at ${Math.round(t)} ms; add within_ms to wait for the firmware to update it)`;
+  /** An expect with within_ms that already held right after an input step tested the old value, not the change. */
+  const heldBefore = (i: number, step: Record<string, unknown>, waited: boolean) => {
+    if (waited || typeof step.within_ms !== "number" || i === 0) return;
+    const prev = steps[i - 1] as Record<string, unknown>;
+    const input = ["set", "press", "release", "serial_write", "inject_fault"].find((k) => k in prev);
+    if (!input) return;
+    warnings.push(`step ${i} ${stepText(s.steps[i])} already held 0 ms after step ${i - 1} (${input}), so it did not wait for the firmware to react: it may test the old value. Fix: wait for the side the value moves toward (e.g. "<" when it should drop), or add {"run_ms": …} before it.`);
+  };
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i] as Record<string, unknown> & ScenarioStep;
@@ -204,14 +235,16 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
           if (vr && ((vr.min !== undefined && r.voltage < vr.min) || (vr.max !== undefined && r.voltage > vr.max))) return false;
           return true;
         };
+        const tCheck = sim.timeMs;
         ok = check();
+        heldBefore(i, step, !ok);
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, check);
           ok = check();
         }
         const r = host.pin(part, pin);
         detail = `${part}.${pin} is ${r.level} (${r.voltage} V${r.mode ? `, mode ${r.mode}` : ""})`;
-        if (!ok) detail = `expected ${lv ?? ""}${vr ? ` ${vr.min ?? "-∞"}..${vr.max ?? "∞"} V` : ""} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : ""}`;
+        if (!ok) detail = `expected ${lv ?? ""}${vr ? ` ${vr.min ?? "-∞"}..${vr.max ?? "∞"} V` : ""} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
       } else if ("expect_part" in step) {
         const { part, rest: field } = splitRef(step.expect_part as string);
         const op = (step.op as string) ?? "==";
@@ -229,14 +262,74 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
           fail("unknown-field", `expect_part ${part}.${field}`, `${part} has no ${isWorld ? "world" : "state"} field '${field}' (fields: ${keys.join(", ") || "none"})`, `use one of those fields, e.g. "${part}.${keys[0] ?? "on"}"`);
         }
         const check = () => compare(read(), op, step.value as VisualValue);
+        const tCheck = sim.timeMs;
         ok = check();
+        heldBefore(i, step, !ok);
         if (!ok && typeof step.within_ms === "number") {
           run(step.within_ms, check);
           ok = check();
         }
         const actual = read();
         detail = `${part}.${field} = ${JSON.stringify(typeof actual === "string" && actual.length > 60 ? `${actual.slice(0, 60)}…` : actual)}`;
-        if (!ok) detail = `expected ${part}.${field} ${op} ${JSON.stringify(step.value)} but it is ${JSON.stringify(actual)}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : ""}`;
+        if (!ok) detail = `expected ${part}.${field} ${op} ${JSON.stringify(step.value)} but it is ${JSON.stringify(actual)}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
+      } else if ("expect_serial_value" in step) {
+        const name = step.expect_serial_value as string;
+        const op = (step.op as string) ?? "==";
+        const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(`(?:^|[^A-Za-z0-9_])${esc}\\s*[=:]?\\s*(-?\\d+(?:\\.\\d+)?)`, "g");
+        const latest = (): number | undefined => {
+          let v: number | undefined;
+          for (const m of sim.serialText().matchAll(re)) v = Number(m[1]);
+          return v;
+        };
+        const check = () => {
+          const v = latest();
+          return v !== undefined && compare(v, op, step.value as number);
+        };
+        const tCheck = sim.timeMs;
+        ok = check();
+        heldBefore(i, step, !ok);
+        if (!ok && typeof step.within_ms === "number") {
+          run(step.within_ms, check);
+          ok = check();
+        }
+        const v = latest();
+        detail = v === undefined ? `serial never printed a number after "${name}" (looked for "${name}=12", "${name}: 12" or "${name} 12")` : `latest ${name} = ${v}`;
+        if (!ok) detail = v === undefined ? `${detail}${typeof step.within_ms === "number" ? ` within ${step.within_ms} ms` : once(tCheck)}; serial tail: ${JSON.stringify(sim.serialText().slice(-160))}` : `expected ${name} ${op} ${step.value} but the latest printed value is ${v}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}`;
+      } else if ("expect_display" in step) {
+        const part = step.expect_display as string;
+        const lit = step.lit as { min?: number; max?: number } | undefined;
+        const matches = step.matches as string | undefined;
+        const tol = typeof step.tolerance === "number" ? step.tolerance : 0.02;
+        const snap = matches ? opts.snapshot?.(matches) : undefined;
+        if (matches && !snap) fail("no-snapshot", `expect_display matches '${matches}'`, `snapshots/${matches}.json was not found`, `save it with read_display {"part": "${part}", "save_as": "${matches}"}`);
+        if (!lit && !matches) fail("bad-step", `expect_display ${part} checks nothing`, "it needs \"lit\" ({min, max} lit pixels) and/or \"matches\" (a saved snapshot)", `e.g. {"expect_display": "${part}", "region": [40, 16, 48, 32], "lit": {"min": 20}}`);
+        const region = (snap?.region ?? step.region) as number[] | undefined;
+        const measure = () => {
+          const f = host.displayFrame(part);
+          const rect = clampRegion(f, step.region ? (step.region as number[]) : region, `expect_display ${part}`);
+          const rows = regionRows(f, rect);
+          return { rect, rows, lit: litCount(rows), diff: snap ? diffFraction(rows, snap.rows) : 0 };
+        };
+        const holds = () => {
+          const m = measure();
+          if (lit && ((lit.min !== undefined && m.lit < lit.min) || (lit.max !== undefined && m.lit > lit.max))) return false;
+          if (snap && m.diff > tol) return false;
+          return true;
+        };
+        const tCheck = sim.timeMs;
+        ok = holds();
+        heldBefore(i, step, !ok);
+        if (!ok && typeof step.within_ms === "number") {
+          run(step.within_ms, holds);
+          ok = holds();
+        }
+        const m = measure();
+        detail = `${part} region [${m.rect.join(", ")}]: ${m.lit} lit${snap ? `, ${(m.diff * 100).toFixed(1)}% differs from '${matches}'` : ""}`;
+        if (!ok) {
+          const want = [lit ? `${lit.min ?? 0}..${lit.max ?? "∞"} lit pixels` : "", snap ? `at most ${(tol * 100).toFixed(1)}% different from snapshot '${matches}'` : ""].filter(Boolean).join(" and ");
+          detail = `expected ${want} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}; read_display {"part": "${part}"} shows the screen now`;
+        }
       } else if ("expect_no_errors" in step) {
         const errs = sim.diagnostics().filter((d) => d.severity === "error");
         ok = errs.length === 0;
@@ -250,6 +343,7 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
     if (detail) r.detail = detail;
     results.push(r);
     if (!ok) return done(false, i, `step ${i} ${text} failed: ${detail}`);
+    if (opts.stopAfter !== undefined && i >= opts.stopAfter) return done(true);
   }
   return done(true);
 }

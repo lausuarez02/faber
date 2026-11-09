@@ -43,5 +43,6 @@ export {
   STEP_KINDS,
   STEP_EXAMPLES,
   parseScenarioStep,
+  normalizeScenarioStep,
 } from "./scenario.ts";
 export type { ScenarioStep, CompareOp, StepKind, StepIssue } from "./scenario.ts";
