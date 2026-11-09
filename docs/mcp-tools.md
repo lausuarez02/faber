@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-37 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+38 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -64,6 +64,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`set_ai_mode`](#set_ai_mode) | Mock or live pet AI | simulation only |
 | [`read_network_log`](#read_network_log) | Network activity | no (read-only) |
 | [`run_live`](#run_live) | Run at real time with the live AI | simulation only |
+| [`restore_version`](#restore_version) | Restore an earlier version | yes (undoable step) |
 
 ### new_project
 
@@ -399,3 +400,12 @@ Run the simulation for ms at no more than real time with the live AI allowed (se
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `ms` | number | yes | Virtual (= wall) milliseconds, max 60000. |
+
+### restore_version
+
+Put the project back the way it was at version N of its history (parts, wires, props, scenarios, firmware block and the sketch files). Versions are numbered from 1 in the order changes happened; the web app's History scrubber shows them, and GET /api/history lists them with who made each change and why. Restoring is a new step (undo brings the newer state back), and the firmware is rebuilt on the next run. Example: {"version": 4, "why": "go back to before the buzzer was added"}. Returns {version, step, changes: {added, removed, changed}} (entity keys such as "part:led1", "wire:w3", "file:firmware/main/main.ino").
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes | Version number, 1 = the first change in the history. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "back to the working version". |

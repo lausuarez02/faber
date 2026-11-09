@@ -70,6 +70,8 @@ export interface LiveHubCore {
   setPresence(agents: AgentPresence[]): void;
   followers(): number;
   close(): Promise<void>;
+  /** Follow another project (jumper serve's active project changed): new log, new hello to every follower. */
+  retarget(session: ProjectSession): void;
 }
 
 const HELLO_TAIL = 400;
@@ -116,11 +118,12 @@ export function actorCounts(text: string): Record<string, number> {
 }
 
 export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
-  const dir = resolve(opts.dir);
+  // let: jumper serve may retarget the hub to another project (decision 0003, C3).
+  let dir = resolve(opts.dir);
   const ownSession = !opts.session;
-  const session = opts.session ?? new ProjectSession({ dir, actor: "web" });
+  let session = opts.session ?? new ProjectSession({ dir, actor: "web" });
   const call = opts.call ?? ((op: string, args: Record<string, unknown>) => session.call(op, args, { actor: "web" }));
-  const logFile = session.actionLogFile;
+  let logFile = session.actionLogFile;
   const allowed = new Set((opts.replayFiles ?? []).map((f) => resolve(f)));
   const clients = new Set<WebSocket>();
   /** Connect menus listening for the agents list only. */
@@ -166,17 +169,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
     return false;
   };
 
-  const wss = new WebSocketServer({ noServer: true });
-  wss.on("connection", (ws, req?: IncomingMessage) => {
-    // ?presence: only the connected-agents list (the connect menus), no project, history or actions.
-    if (req && new URL(req.url ?? "/", "http://localhost").searchParams.has("presence")) {
-      watchers.add(ws);
-      ws.on("close", () => watchers.delete(ws));
-      ws.send(JSON.stringify({ type: "presence", agents: presence }));
-      return;
-    }
-    clients.add(ws);
-    ws.on("close", () => clients.delete(ws));
+  const hello = (): string => {
     try {
       session.sync();
     } catch {
@@ -190,7 +183,21 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
         return [];
       }
     });
-    ws.send(JSON.stringify({ type: "hello", dir, project: session.project, steps: session.history.steps.slice(-30).map(stepSummary), entries: tail.map(stripFrames) }));
+    return JSON.stringify({ type: "hello", dir, project: session.project, steps: session.history.steps.slice(-30).map(stepSummary), entries: tail.map(stripFrames) });
+  };
+
+  const wss = new WebSocketServer({ noServer: true });
+  wss.on("connection", (ws, req?: IncomingMessage) => {
+    // ?presence: only the connected-agents list (the connect menus), no project, history or actions.
+    if (req && new URL(req.url ?? "/", "http://localhost").searchParams.has("presence")) {
+      watchers.add(ws);
+      ws.on("close", () => watchers.delete(ws));
+      ws.send(JSON.stringify({ type: "presence", agents: presence }));
+      return;
+    }
+    clients.add(ws);
+    ws.on("close", () => clients.delete(ws));
+    ws.send(hello());
     ws.send(JSON.stringify({ type: "presence", agents: presence }));
     ws.on("message", async (raw) => {
       let msg: { type?: string; id?: unknown; op?: string; args?: Record<string, unknown> };
@@ -237,7 +244,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
       send(`{"type":"action","entry":${line}}`);
     }
   };
-  const unsubscribe = session.onEvent(() => pump());
+  let unsubscribe = session.onEvent(() => pump());
   let watcher: FSWatcher | undefined;
   const tryWatch = () => {
     try {
@@ -253,7 +260,9 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
   }, 250);
 
   return {
-    session,
+    get session() {
+      return session;
+    },
     handleRequest,
     handleUpgrade: (req, socket, head) => wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req)),
     broadcast: send,
@@ -274,6 +283,22 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
         wss.close(() => r());
         if (ownSession) session.dispose();
       }),
+    // Round 5, projects track (decision 0003, C3): follow another project folder with the same
+    // websocket clients. Tails the new folder's log from its end and sends every follower a fresh hello.
+    retarget(next) {
+      unsubscribe();
+      watcher?.close();
+      watcher = undefined;
+      session = next;
+      dir = next.dir;
+      logFile = next.actionLogFile;
+      offset = existsSync(logFile) ? statSync(logFile).size : 0;
+      partial = "";
+      unsubscribe = session.onEvent(() => pump());
+      tryWatch();
+      const text = hello();
+      for (const c of clients) if (c.readyState === c.OPEN) c.send(text);
+    },
   };
 }
 
