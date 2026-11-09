@@ -1,0 +1,86 @@
+{
+  "format": "jumper/1",
+  "name": "claude-arm",
+  "parts": [
+    { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "shoulder", "type": "servo-sg90", "x": 180, "y": -200, "rotation": 0 },
+    { "id": "elbow", "type": "servo-sg90", "x": 400, "y": -200, "rotation": 0 },
+    { "id": "pot1", "type": "potentiometer", "x": 620, "y": -200, "rotation": 0 },
+    { "id": "pot2", "type": "potentiometer", "x": 760, "y": -200, "rotation": 0 },
+    { "id": "btnrec", "type": "pushbutton", "x": 0, "y": -360, "rotation": 0 },
+    { "id": "btnplay", "type": "pushbutton", "x": 140, "y": -360, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "shoulder", "pin": "SIG" }, "to": { "part": "uno", "pin": "D9" }, "color": "#FFB23F" },
+    { "id": "w2", "from": { "part": "shoulder", "pin": "VCC" }, "to": { "part": "uno", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w3", "from": { "part": "shoulder", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w4", "from": { "part": "elbow", "pin": "SIG" }, "to": { "part": "uno", "pin": "D10" }, "color": "#B47CFF" },
+    { "id": "w5", "from": { "part": "elbow", "pin": "VCC" }, "to": { "part": "shoulder", "pin": "VCC" }, "color": "#FF4D2E" },
+    { "id": "w6", "from": { "part": "elbow", "pin": "GND" }, "to": { "part": "shoulder", "pin": "GND" }, "color": "#2B3038" },
+    { "id": "w7", "from": { "part": "pot1", "pin": "W" }, "to": { "part": "uno", "pin": "A0" }, "color": "#FFB23F" },
+    { "id": "w8", "from": { "part": "pot1", "pin": "1" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#2B3038" },
+    { "id": "w9", "from": { "part": "pot1", "pin": "2" }, "to": { "part": "shoulder", "pin": "VCC" }, "color": "#FF4D2E" },
+    { "id": "w10", "from": { "part": "pot2", "pin": "W" }, "to": { "part": "uno", "pin": "A1" }, "color": "#B47CFF" },
+    { "id": "w11", "from": { "part": "pot2", "pin": "1" }, "to": { "part": "pot1", "pin": "1" }, "color": "#E9EDF2" },
+    { "id": "w12", "from": { "part": "pot2", "pin": "2" }, "to": { "part": "pot1", "pin": "2" }, "color": "#5CF2A1" },
+    { "id": "w13", "from": { "part": "btnrec", "pin": "1a" }, "to": { "part": "uno", "pin": "D2" }, "color": "#FFB23F" },
+    { "id": "w14", "from": { "part": "btnrec", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#2B3038" },
+    { "id": "w15", "from": { "part": "btnplay", "pin": "1a" }, "to": { "part": "uno", "pin": "D3" }, "color": "#F2E14A" },
+    { "id": "w16", "from": { "part": "btnplay", "pin": "2a" }, "to": { "part": "btnrec", "pin": "2a" }, "color": "#B47CFF" }
+  ],
+  "firmware": {
+    "board": "uno",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "arduino:avr:uno"
+    },
+    "libraries": [
+      "Servo"
+    ]
+  },
+  "scenarios": [
+    { "id": "boots", "name": "Boots and centres on the knobs", "steps": [{ "expect_serial": "ARM ready s=89 e=89", "within_ms": 500 }, { "run_ms": 500 }, { "expect_part": "shoulder.angle", "op": ">", "value": 87 }, { "expect_part": "shoulder.angle", "op": "<", "value": 91 }, { "expect_part": "elbow.angle", "op": ">", "value": 87 }, { "expect_part": "elbow.angle", "op": "<", "value": 91 }, { "expect_no_errors": true }] },
+    { "id": "knobs-drive-servos", "name": "Each knob steers its own joint across the full range", "steps": [{ "run_ms": 300 }, { "set": "pot1.position", "value": 0 }, { "expect_part": "shoulder.angle", "op": "<", "value": 2, "within_ms": 1500 }, { "expect_part": "elbow.angle", "op": ">", "value": 87 }, { "set": "pot1.position", "value": 1 }, { "expect_part": "shoulder.angle", "op": ">", "value": 178, "within_ms": 1500 }, { "set": "pot2.position", "value": 0.25 }, { "expect_part": "elbow.angle", "op": "<", "value": 46, "within_ms": 1500 }, { "run_ms": 300 }, { "expect_part": "elbow.angle", "op": ">", "value": 42 }, { "expect_part": "shoulder.angle", "op": ">", "value": 178 }, { "expect_no_errors": true }] },
+    { "id": "record-saves-pose", "name": "REC button stores the current pose", "steps": [{ "run_ms": 300 }, { "set": "pot1.position", "value": 0.2 }, { "set": "pot2.position", "value": 0.8 }, { "run_ms": 600 }, { "hold_ms": 100, "press": "btnrec" }, { "release": "btnrec" }, { "expect_serial": "REC 1 s=35 e=143", "within_ms": 200 }, { "run_ms": 300 }, { "absent": true, "expect_serial": "REC 2" }, { "expect_part": "shoulder.angle", "op": "<", "value": 37 }, { "expect_no_errors": true }] },
+    { "id": "playback-replays-poses", "name": "PLAY moves through every recorded pose in order", "steps": [{ "run_ms": 300 }, { "set": "pot1.position", "value": 0.2 }, { "set": "pot2.position", "value": 0.8 }, { "run_ms": 600 }, { "hold_ms": 100, "press": "btnrec" }, { "release": "btnrec" }, { "expect_serial": "REC 1 s=35 e=143", "within_ms": 200 }, { "set": "pot1.position", "value": 0.9 }, { "set": "pot2.position", "value": 0.3 }, { "run_ms": 600 }, { "hold_ms": 100, "press": "btnrec" }, { "release": "btnrec" }, { "expect_serial": "REC 2 s=162 e=54", "within_ms": 200 }, { "set": "pot1.position", "value": 0.5 }, { "set": "pot2.position", "value": 0.5 }, { "expect_part": "shoulder.angle", "op": "<", "value": 92, "within_ms": 1500 }, { "hold_ms": 100, "press": "btnplay" }, { "release": "btnplay" }, { "expect_serial": "PLAY start n=2", "within_ms": 200 }, { "expect_serial": "AT 1 s=35 e=143", "within_ms": 3000 }, { "run_ms": 300 }, { "expect_part": "shoulder.angle", "op": "<", "value": 37 }, { "expect_part": "elbow.angle", "op": ">", "value": 141 }, { "expect_part": "world.gripper_x", "op": ">", "value": 7.5 }, { "expect_part": "world.gripper_x", "op": "<", "value": 9.5 }, { "expect_serial": "AT 2 s=162 e=54", "within_ms": 3000 }, { "run_ms": 300 }, { "expect_part": "shoulder.angle", "op": ">", "value": 160 }, { "expect_part": "elbow.angle", "op": "<", "value": 56 }, { "expect_part": "world.gripper_x", "op": "<", "value": -13 }, { "expect_serial": "PLAY done", "within_ms": 1000 }, { "expect_part": "shoulder.angle", "op": "<", "value": 92, "within_ms": 2000 }, { "expect_part": "shoulder.angle", "op": ">", "value": 87 }, { "expect_no_errors": true }], "timeout_ms": 20000 },
+    { "id": "play-with-nothing-recorded", "name": "PLAY with an empty memory does nothing", "steps": [{ "run_ms": 300 }, { "hold_ms": 100, "press": "btnplay" }, { "release": "btnplay" }, { "expect_serial": "PLAY empty", "within_ms": 200 }, { "set": "pot1.position", "value": 0 }, { "expect_part": "shoulder.angle", "op": "<", "value": 2, "within_ms": 1500 }, { "absent": true, "expect_serial": "PLAY start" }, { "expect_no_errors": true }] },
+    { "id": "memory-full", "name": "An 11th REC is refused, not overflowing memory", "steps": [{ "run_ms": 300 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "expect_serial": "REC 10 s=89 e=89", "within_ms": 200 }, { "run_ms": 60 }, { "hold_ms": 60, "press": "btnrec" }, { "release": "btnrec" }, { "expect_serial": "REC full", "within_ms": 200 }, { "absent": true, "expect_serial": "REC 11" }, { "expect_no_errors": true }], "timeout_ms": 20000 }
+  ],
+  "world": {
+    "arm": {
+      "base": {
+        "x": 0,
+        "y": 5
+      },
+      "links": [
+        10,
+        8
+      ],
+      "joints": [
+        {
+          "servo": "shoulder",
+          "zero": 90,
+          "direction": 1,
+          "offset": 90
+        },
+        {
+          "servo": "elbow",
+          "zero": 90,
+          "direction": 1,
+          "offset": 0
+        }
+      ],
+      "targets": [
+        {
+          "id": "cup",
+          "x": 12,
+          "y": 6,
+          "r": 2
+        }
+      ]
+    }
+  }
+}

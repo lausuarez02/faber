@@ -1,0 +1,65 @@
+{
+  "format": "jumper/1",
+  "name": "codex-rover-r2",
+  "parts": [
+    { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "driver", "type": "l298n", "x": 180, "y": -300, "rotation": 0, "props": { "regulatorJumper": false } },
+    { "id": "battery", "type": "battery-pack", "x": 480, "y": -180, "rotation": 0, "props": { "preset": "2S-LiPo" } },
+    { "id": "left", "type": "dc-motor", "x": 700, "y": -180, "rotation": 0 },
+    { "id": "right", "type": "dc-motor", "x": 0, "y": -460, "rotation": 0 },
+    { "id": "chassis", "type": "robot-chassis-2wd", "x": 200, "y": -580, "rotation": 0 },
+    { "id": "sonar", "type": "hc-sr04", "x": 420, "y": -480, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "battery", "pin": "POS" }, "to": { "part": "driver", "pin": "12V" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "battery", "pin": "POS" }, "to": { "part": "uno", "pin": "VIN" }, "color": "#FF4D2E" },
+    { "id": "w3", "from": { "part": "battery", "pin": "NEG" }, "to": { "part": "driver", "pin": "GND" }, "color": "#2B3038" },
+    { "id": "w4", "from": { "part": "driver", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w5", "from": { "part": "uno", "pin": "5V" }, "to": { "part": "driver", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w6", "from": { "part": "driver", "pin": "OUT1" }, "to": { "part": "left", "pin": "A" }, "color": "#5CF2A1" },
+    { "id": "w7", "from": { "part": "driver", "pin": "OUT2" }, "to": { "part": "left", "pin": "B" }, "color": "#FFB23F" },
+    { "id": "w8", "from": { "part": "driver", "pin": "OUT3" }, "to": { "part": "right", "pin": "A" }, "color": "#4DA3FF" },
+    { "id": "w9", "from": { "part": "driver", "pin": "OUT4" }, "to": { "part": "right", "pin": "B" }, "color": "#F2E14A" },
+    { "id": "w10", "from": { "part": "uno", "pin": "D5" }, "to": { "part": "driver", "pin": "ENA" }, "color": "#B47CFF" },
+    { "id": "w11", "from": { "part": "uno", "pin": "D6" }, "to": { "part": "driver", "pin": "ENB" }, "color": "#E9EDF2" },
+    { "id": "w12", "from": { "part": "uno", "pin": "D7" }, "to": { "part": "driver", "pin": "IN1" }, "color": "#5CF2A1" },
+    { "id": "w13", "from": { "part": "uno", "pin": "D8" }, "to": { "part": "driver", "pin": "IN2" }, "color": "#FFB23F" },
+    { "id": "w14", "from": { "part": "uno", "pin": "D11" }, "to": { "part": "driver", "pin": "IN3" }, "color": "#4DA3FF" },
+    { "id": "w15", "from": { "part": "uno", "pin": "D12" }, "to": { "part": "driver", "pin": "IN4" }, "color": "#F2E14A" },
+    { "id": "w16", "from": { "part": "uno", "pin": "5V" }, "to": { "part": "sonar", "pin": "VCC" }, "color": "#FF4D2E" },
+    { "id": "w17", "from": { "part": "uno", "pin": "GND.2" }, "to": { "part": "sonar", "pin": "GND" }, "color": "#2B3038" },
+    { "id": "w18", "from": { "part": "uno", "pin": "D9" }, "to": { "part": "sonar", "pin": "TRIG" }, "color": "#5CF2A1" },
+    { "id": "w19", "from": { "part": "uno", "pin": "D10" }, "to": { "part": "sonar", "pin": "ECHO" }, "color": "#FFB23F" }
+  ],
+  "firmware": {
+    "board": "uno",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "arduino:avr:uno"
+    }
+  },
+  "scenarios": [
+    { "description": "Real arena sonar, nonzero travel, zero accumulated collisions and at least 3 cm clearance.", "id": "arena-30-seconds", "name": "Drive safely for 30 seconds", "steps": [{ "run_ms": 30000 }, { "expect_part": "world.collisions", "op": "==", "value": 0 }, { "expect_part": "world.min_clearance_cm", "op": ">=", "value": 3 }, { "expect_part": "world.travelled_cm", "op": ">", "value": 500 }, { "expect_no_errors": true }] },
+    { "description": "Approach a real arena wall, observe threshold crossing, verify opposite wheel directions and a changed heading, then clearance and forward recovery.", "id": "wall-under-20", "name": "Turn away below 20 cm", "steps": [{ "expect_part": "world.sonar_cm", "op": ">", "value": 20 }, { "expect_part": "driver.aState", "op": "==", "value": "fwd", "within_ms": 300 }, { "expect_part": "driver.bState", "op": "==", "value": "fwd" }, { "expect_part": "world.sonar_cm", "op": "<", "value": 20, "within_ms": 10000 }, { "expect_serial_value": "distance_cm", "op": "<", "value": 20, "within_ms": 150 }, { "expect_part": "driver.bState", "op": "==", "value": "rev", "within_ms": 400 }, { "expect_part": "driver.aState", "op": "==", "value": "fwd" }, { "run_ms": 250 }, { "expect_part": "world.heading", "op": ">", "value": 10 }, { "expect_part": "world.sonar_cm", "op": ">", "value": 25, "within_ms": 2500 }, { "expect_part": "driver.bState", "op": "==", "value": "fwd", "within_ms": 1500 }, { "expect_part": "world.collisions", "op": "==", "value": 0 }, { "expect_part": "world.min_clearance_cm", "op": ">=", "value": 3 }, { "expect_no_errors": true }] }
+  ],
+  "world": {
+    "arena": {
+      "width": 200,
+      "height": 150
+    },
+    "robot": {
+      "chassis": "chassis",
+      "leftMotor": "left",
+      "rightMotor": "right",
+      "sonar": "sonar",
+      "start": {
+        "x": 45,
+        "y": 75,
+        "heading": 0
+      }
+    }
+  }
+}

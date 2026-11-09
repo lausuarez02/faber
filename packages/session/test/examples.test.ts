@@ -23,7 +23,7 @@ afterEach(() => {
 
 /** Copy an example to a temp folder, keeping the hex newer than its sources (so it is "fresh"). */
 function open(name: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), `jumper-example-${name}-`));
+  const dir = mkdtempSync(join(tmpdir(), `jumper-example-${name.replace(/\//g, "-")}-`));
   dirs.push(dir);
   cpSync(join(EXAMPLES, name), dir, { recursive: true, preserveTimestamps: true });
   const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { firmware?: { artifact: string } };
@@ -85,4 +85,17 @@ describe("examples through the agent surface", () => {
     expect(svg).toContain("collisions 0");
     expect(readdirSync(EXAMPLES)).toContain("rover");
   }, 60_000);
+});
+
+// Devices AI agents built from a one-line goal (examples/agent-built), kept as the agents left them:
+// their own scenarios must keep passing as Jumper changes.
+describe("agent-built examples", () => {
+  for (const [name, min] of [["claude-tamagotchi", 8], ["codex-rover", 2], ["claude-robot-arm", 6]] as const) {
+    it(`${name}: the agent's scenarios pass`, async () => {
+      const s = open(`agent-built/${name}`);
+      const t = await call(s, "run_tests");
+      expect(t.failed, JSON.stringify(t.results?.filter((r: { passed: boolean }) => !r.passed))).toBe(0);
+      expect(t.passed).toBeGreaterThanOrEqual(min);
+    }, 300_000);
+  }
 });
