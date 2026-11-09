@@ -1,0 +1,280 @@
+/* Round 5, projects track: the code editor drawer (CodeMirror 6). */
+
+.code-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100vw);
+  background: var(--bg-canvas);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-float);
+  animation: code-in 180ms var(--ease);
+}
+@keyframes code-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.code-title {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+.code-title > span:first-child {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-title .mono {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.code-ro {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.code-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.code-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.code-tab:hover {
+  color: var(--fg);
+}
+.code-tab.is-active {
+  border-color: var(--border);
+  background: var(--bg-float);
+  color: var(--fg);
+}
+.code-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.code-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-float);
+  color: var(--fg-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.code-banner-error {
+  color: var(--fg);
+  border-left: 3px solid var(--error);
+}
+
+.code-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.code-body .cm-editor {
+  height: 100%;
+}
+
+.code-status {
+  border-top: 1px solid var(--border);
+  padding: 8px 16px 10px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+  max-height: 34%;
+  overflow: auto;
+}
+.code-status > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.code-ok {
+  color: var(--accent);
+}
+.code-bad {
+  color: var(--error);
+}
+.code-problems {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.code-problems button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font-size: 12.5px;
+}
+.code-problems button:hover {
+  background: var(--bg-hover);
+}
+.code-problems li[data-severity="error"] svg {
+  color: var(--error);
+}
+.code-problems li[data-severity="warning"] svg {
+  color: var(--warn);
+}
+.code-problems .muted {
+  flex-basis: 100%;
+  padding-left: 21px;
+}
+
+.spin {
+  animation: code-spin 0.9s linear infinite;
+}
+@keyframes code-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* C++ highlighting from @lezer/highlight's classHighlighter (tok-*), in the app's palette. */
+.code-drawer .tok-keyword,
+.code-drawer .tok-operatorKeyword,
+.code-drawer .tok-modifier {
+  color: #c792ea;
+}
+.code-drawer .tok-typeName,
+.code-drawer .tok-className,
+.code-drawer .tok-namespace {
+  color: #ffcb6b;
+}
+.code-drawer .tok-string,
+.code-drawer .tok-string2,
+.code-drawer .tok-character {
+  color: #c3e88d;
+}
+.code-drawer .tok-number,
+.code-drawer .tok-bool,
+.code-drawer .tok-atom {
+  color: #f78c6c;
+}
+.code-drawer .tok-comment {
+  color: var(--fg-faint);
+  font-style: italic;
+}
+.code-drawer .tok-meta,
+.code-drawer .tok-macroName {
+  color: #89ddff;
+}
+.code-drawer .tok-variableName.tok-definition,
+.code-drawer .tok-propertyName.tok-definition {
+  color: #82aaff;
+}
+.code-drawer .tok-propertyName {
+  color: var(--fg-2);
+}
+.code-drawer .tok-punctuation,
+.code-drawer .tok-operator {
+  color: var(--fg-muted);
+}
+
+:root[data-theme="light"] .code-drawer .tok-keyword,
+:root[data-theme="light"] .code-drawer .tok-modifier {
+  color: #7c3aed;
+}
+:root[data-theme="light"] .code-drawer .tok-typeName,
+:root[data-theme="light"] .code-drawer .tok-className {
+  color: #b45309;
+}
+:root[data-theme="light"] .code-drawer .tok-string {
+  color: #15803d;
+}
+:root[data-theme="light"] .code-drawer .tok-number,
+:root[data-theme="light"] .code-drawer .tok-bool {
+  color: #c2410c;
+}
+:root[data-theme="light"] .code-drawer .tok-meta {
+  color: #0369a1;
+}
+:root[data-theme="light"] .code-drawer .tok-variableName.tok-definition {
+  color: #1d4ed8;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .code-drawer .tok-keyword {
+    color: #7c3aed;
+  }
+  :root:not([data-theme="dark"]) .code-drawer .tok-typeName {
+    color: #b45309;
+  }
+  :root:not([data-theme="dark"]) .code-drawer .tok-string {
+    color: #15803d;
+  }
+  :root:not([data-theme="dark"]) .code-drawer .tok-number {
+    color: #c2410c;
+  }
+  :root:not([data-theme="dark"]) .code-drawer .tok-meta {
+    color: #0369a1;
+  }
+}
+
+@media (max-width: 820px) {
+  .code-drawer {
+    width: 100vw;
+    border-left: 0;
+  }
+  .code-actions .pj-btn {
+    padding: 0 9px;
+  }
+}
