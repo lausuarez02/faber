@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@jumper/ai-gateway": "workspace:*",
     "@jumper/parts": "workspace:*",
     "@jumper/physics": "workspace:*",
     "@jumper/project-format": "workspace:*",

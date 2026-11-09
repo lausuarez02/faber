@@ -1,0 +1,19 @@
+{
+  "name": "@jumper/ai-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "The sandbox network for simulated Wi-Fi parts, and the pet AI behind http://ai.jumper/v1/pet: deterministic mock, the logged-in claude CLI, or the Anthropic API. Also a real HTTP server for real devices.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node/index.ts"
+  },
+  "bin": {
+    "jumper-ai-gateway": "./bin/ai-gateway.mjs"
+  },
+  "scripts": {
+    "start": "node bin/ai-gateway.mjs",
+    "test": "vitest run"
+  }
+}

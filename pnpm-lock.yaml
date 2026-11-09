@@ -72,6 +72,9 @@ importers:
       '@fontsource/ibm-plex-sans':
         specifier: 5.3.0
         version: 5.3.0
+      '@jumper/ai-gateway':
+        specifier: workspace:*
+        version: link:../../services/ai-gateway
       '@jumper/parts':
         specifier: workspace:*
         version: link:../../packages/parts
@@ -193,6 +196,9 @@ importers:
 
   packages/session:
     dependencies:
+      '@jumper/ai-gateway':
+        specifier: workspace:*
+        version: link:../../services/ai-gateway
       '@jumper/parts':
         specifier: workspace:*
         version: link:../parts
@@ -239,6 +245,8 @@ importers:
       zod:
         specifier: 4.6.7
         version: 4.6.7
+
+  services/ai-gateway: {}
 
   services/runner:
     devDependencies:
