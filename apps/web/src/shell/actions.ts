@@ -22,12 +22,15 @@ export function chromeInsets(): { top: number; right: number; bottom: number; le
   const col = typeof document !== "undefined" ? document.querySelector(".panel-column") : null;
   const open = !!col && col.childElementCount > 0;
   const r = open ? col!.getBoundingClientRect() : undefined;
+  // The empty-canvas "Start here" card sits under the board: keep the board above it.
+  const hint = typeof document !== "undefined" ? document.querySelector(".empty-hint") : null;
+  const hintRoom = hint ? innerHeight - hint.getBoundingClientRect().top + 16 : 0;
   if (isPhone()) {
     // Sheets rise from the bottom: keep the circuit above the open one.
     const sheetTop = open ? Math.min(...[...col!.children].map((c) => c.getBoundingClientRect().top)) : Infinity;
-    return { top: 72, right: 20, bottom: Number.isFinite(sheetTop) ? Math.max(150, innerHeight - sheetTop + 12) : 150, left: 20 };
+    return { top: 72, right: 20, bottom: Math.max(hintRoom, Number.isFinite(sheetTop) ? Math.max(150, innerHeight - sheetTop + 12) : 150), left: 20 };
   }
-  return { top: 120, right: open && r ? Math.max(80, innerWidth - r.left + 24) : 80, bottom: 212, left: 120 };
+  return { top: 120, right: open && r ? Math.max(80, innerWidth - r.left + 24) : 80, bottom: Math.max(236, hintRoom), left: 120 };
 }
 
 /** The same insets in React Flow's padding form (used for the very first fit). */
@@ -52,7 +55,9 @@ export function fitView(duration = 300, ids?: string[], maxZoom = 1.25): void {
   const labelRoom = 28; // part labels sit above the top edge
   const w = Math.max(80, el.width - ins.left - ins.right);
   const h = Math.max(80, el.height - ins.top - ins.bottom);
-  const zoom = Math.max(0.15, Math.min(maxZoom, w / b.width, (h - labelRoom) / b.height));
+  // A lone board should sit in a calm, mostly empty canvas, not fill the window.
+  const cap = nodes.length <= 1 ? Math.min(maxZoom, 0.8) : maxZoom;
+  const zoom = Math.max(0.15, Math.min(cap, w / b.width, (h - labelRoom) / b.height));
   const x = ins.left + (w - b.width * zoom) / 2 - b.x * zoom;
   const y = ins.top + labelRoom + (h - labelRoom - b.height * zoom) / 2 - b.y * zoom;
   void rf.setViewport({ x, y, zoom }, { duration });

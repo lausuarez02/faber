@@ -60,7 +60,7 @@ screen on chrome. v2 gives the canvas the whole window and floats a few precise 
 - **Right**: floating panels stack in one column under the top-right container (Inspector opens for
   the selection, Serial, Tests, Firmware, Instruments, World, Agent steps). Each is closable;
   none is docked chrome.
-- **Bottom-left**: minimap card (280 x 150), then 48 px circular buttons (theme, help / shortcuts,
+- **Bottom-left**: minimap card (264 x 144), then 48 px circular buttons (theme, help / shortcuts,
   learn), then the status pill: green dot + virtual clock, a divider, the real-time factor.
   Gray when stopped or paused.
 - **Bottom-right**: `Agent  idle >` pill (or `building · 3 steps`, `replay · 12/40`) opening the
@@ -77,10 +77,16 @@ above the bar, one at a time. The status pill sits above the bar on the left. Th
 ## Canvas
 
 - Background `--bg-canvas`, dots `--dot` every 22 px (size 1.2).
-- Parts: a label above each part (`icon id · type`, 12 px muted, mono id) and the part's own SVG.
-  Selection: a 1.5 px white (light: black) rounded outline 6 px out, not blue.
-- Wires: 2.5 px core, colors mixed 18 % toward gray (desaturated), a thin dark casing; HIGH wires
-  get the green glow and the moving dashes, nothing else glows.
+- Parts: a label above each part (`icon id · type`, 12.5 px muted, 12 px mono id) and the part's own
+  SVG. The label strip (24 px) counts as part of the body for wire routing, so no wire crosses it.
+  Selection: a 1.5 px white (light: black) rounded outline 7 px out, not blue.
+- Wires: 2.4 px core, colors mixed 18 % toward gray (desaturated), a thin dark casing. HIGH wires
+  wake up in their *own* colour: full saturation, a soft 7 px halo of that colour, and small bright
+  beads moving along them. No green-on-red stripes.
+- Lit parts: LEDs get a soft 10 px glow of their colour; displays get none (the glass is the light;
+  a halo around the whole module looked cheap).
+- Empty canvas (only a board, no wires): the board fits at most 0.8x and a node-style "Start here"
+  card sits under it (label above, muted text, outlined "Add a part" and "Connect an agent").
 - Pins: hover ring in the wire red, valid target ring green; label tooltip in mono.
 
 ## Tokens (`brand/tokens.css`)
@@ -159,3 +165,6 @@ color · ⌫ delete · ⌘Z / ⇧⌘Z · ⇧1 fit · +/− zoom · I inspector �
 Screenshots for review: `node apps/web/scripts/ui-shots.mjs <baseUrl> <outDir> [scene]` takes every
 scene (blink, running, tamagotchi, rover, parts, select, serial + tests, MCP menu, more menu,
 light, device view, replay, instruments) at 1440x900 and 390x844.
+
+Design review of this spec against the running app, with before/after screenshots:
+[review-v2.md](review-v2.md).

@@ -65,9 +65,12 @@ export function FloatingPanel({
   children,
   className = "",
   testId,
+  meta,
 }: {
   id: PanelId;
   title: ReactNode;
+  /** Small muted mono text after the title (a port, a count). */
+  meta?: string;
   icon?: LucideIcon;
   actions?: ReactNode;
   children: ReactNode;
@@ -79,6 +82,7 @@ export function FloatingPanel({
       <header className="float-panel-head">
         {I ? <I size={15} strokeWidth={STROKE} aria-hidden className="float-panel-icon" /> : null}
         <span className="float-panel-title">{title}</span>
+        {meta ? <span className="float-panel-meta">{meta}</span> : null}
         <span className="float-panel-actions">
           {actions}
           <IconButton icon={X} label={`Close ${typeof title === "string" ? title : "panel"}`} iconSize={15} className="icon-btn-sm" onClick={() => useUi.getState().closePanel(id)} />

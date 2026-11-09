@@ -76,8 +76,10 @@ export interface View {
 
 /** World cm → canvas px transform that fits the arena with a margin. */
 export function fitArena(arena: { width: number; height: number }, view: View, margin = 16): { scale: number; ox: number; oy: number } {
-  const scale = Math.max(0.01, Math.min((view.width - 2 * margin) / arena.width, (view.height - 2 * margin - 18) / arena.height));
-  return { scale, ox: (view.width - arena.width * scale) / 2, oy: (view.height - 18 - arena.height * scale) / 2 };
+  // Room under the arena for the stats line (two lines in narrow views).
+  const foot = view.width < 520 ? 34 : 20;
+  const scale = Math.max(0.01, Math.min((view.width - 2 * margin) / arena.width, (view.height - 2 * margin - foot) / arena.height));
+  return { scale, ox: (view.width - arena.width * scale) / 2, oy: (view.height - foot - arena.height * scale) / 2 };
 }
 
 /** Top view: floor grid, walls, obstacles, trail, sonar cone, robot, stats line. */
@@ -210,16 +212,18 @@ export function drawWorld(ctx: Ctx2D, snap: WorldSnapshot, view: View, pal: Pale
   if (r?.sonar) parts.push(`sonar ${r.sonar.distanceCm > 0 ? `${r.sonar.distanceCm.toFixed(0)} cm` : "no echo"}`);
   // Small panels (the replay's World card): tighten the separators, then wrap onto two lines, so the
   // numbers are never cut off at the right edge.
-  const room = view.width - 24;
+  // Line the stats up with the arena's left edge, not the view's.
+  const tx = Math.max(12, Math.round(ox));
+  const room = view.width - tx - 12;
   const fits = (t: string) => !ctx.measureText || ctx.measureText(t).width <= room;
   const wide = parts.join("  ·  ");
   const tight = parts.join(" · ");
-  if (fits(wide)) ctx.fillText(wide, 12, view.height - 8);
-  else if (fits(tight)) ctx.fillText(tight, 12, view.height - 8);
+  if (fits(wide)) ctx.fillText(wide, tx, view.height - 8);
+  else if (fits(tight)) ctx.fillText(tight, tx, view.height - 8);
   else {
     const half = Math.ceil(parts.length / 2);
-    ctx.fillText(parts.slice(0, half).join(" · "), 12, view.height - 22);
-    ctx.fillText(parts.slice(half).join(" · "), 12, view.height - 8);
+    ctx.fillText(parts.slice(0, half).join(" · "), tx, view.height - 22);
+    ctx.fillText(parts.slice(half).join(" · "), tx, view.height - 8);
   }
   ctx.restore();
 }

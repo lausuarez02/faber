@@ -84,7 +84,7 @@ function InspectorPanel() {
 
 function SerialPanel() {
   return (
-    <FloatingPanel id="serial" title="Serial · UART0" icon={SquareTerminal} actions={<IconButton icon={Eraser} iconSize={15} className="icon-btn-sm" label="Clear console" onClick={() => engine.clearSerial()} />}>
+    <FloatingPanel id="serial" title="Serial" meta="UART0" icon={SquareTerminal} actions={<IconButton icon={Eraser} iconSize={15} className="icon-btn-sm" label="Clear console" onClick={() => engine.clearSerial()} />}>
       <SerialConsole />
     </FloatingPanel>
   );

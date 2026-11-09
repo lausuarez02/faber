@@ -208,22 +208,36 @@
   color: var(--fg-2, #c4cbd4);
   cursor: pointer;
 }
+.cx-check input {
+  accent-color: var(--fg);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
 .cx-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: var(--r-md, 8px);
-  background: var(--primary, #e9edf2);
-  color: var(--on-primary, #0b0d10);
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md, 12px);
+  background: var(--bg-raised);
+  color: var(--fg);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+/* The white pill stays the screen's one primary action (Run); menu actions are outlined. */
+.cx-primary:hover:not(:disabled) {
+  background: var(--bg-active);
 }
 .cx-primary:disabled {
-  opacity: 0.45;
+  background: transparent;
+  border-style: dashed;
+  color: var(--fg-faint);
   cursor: not-allowed;
 }
 .cx-ok {

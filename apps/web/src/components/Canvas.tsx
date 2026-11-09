@@ -26,6 +26,8 @@ const ROUTE_MAX_PARTS = 60;
 const nodeTypes = { part: PartNode };
 const edgeTypes = { wire: WireEdge };
 const SNAP = 10;
+/** Height of the "icon id · type" label that floats above every part. */
+const LABEL_ROOM = 24;
 export const PART_MIME = "application/x-jumper-part";
 
 const snap = (v: number) => Math.round(v / SNAP) * SNAP;
@@ -110,7 +112,8 @@ export function Canvas() {
     return project.parts.map((p) => {
       const def = getDef(p.type);
       const size = def ? rotatedSize(def.spec, p.rotation) : { w: 160, h: 64 };
-      return { id: p.id, x: p.x, y: p.y, w: size.w, h: size.h };
+      // The label above each part counts as part of its body, so wires never run through it.
+      return { id: p.id, x: p.x, y: p.y - LABEL_ROOM, w: size.w, h: size.h + LABEL_ROOM };
     });
   }, [project.parts]);
   const { screenToFlowPosition } = useReactFlow();
@@ -222,12 +225,12 @@ export function Canvas() {
               position="bottom-left"
               className="canvas-minimap"
               ariaLabel="Minimap"
-              style={{ width: 240, height: 130 }}
+              style={{ width: 264, height: 144 }}
               nodeColor="var(--minimap-node)"
               nodeStrokeColor="transparent"
               nodeBorderRadius={4}
               maskColor="var(--minimap-mask)"
-              maskStrokeColor="var(--border-strong)"
+              maskStrokeColor="var(--border)"
               maskStrokeWidth={1}
             />
           )}

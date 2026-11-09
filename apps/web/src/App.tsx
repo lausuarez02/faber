@@ -5,6 +5,7 @@ import { partDefinitions } from "./lib/parts.ts";
 import { useIsPhone, useUi } from "./lib/ui.ts";
 import { Canvas } from "./components/Canvas.tsx";
 import { Toasts } from "./components/Toasts.tsx";
+import { EmptyHint } from "./components/EmptyHint.tsx";
 import { LiveLayer } from "./live/LiveLayer.tsx";
 import { useLive } from "./live/liveStore.ts";
 import { TitleBlock } from "./shell/TitleBlock.tsx";
@@ -145,6 +146,7 @@ export function App() {
         <main className="stage">
           <Canvas />
           <LiveLayer />
+          <EmptyHint />
         </main>
         <header className="chrome-top">
           <TitleBlock />
