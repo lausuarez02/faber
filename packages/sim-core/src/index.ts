@@ -56,9 +56,15 @@ export type {
 export type { PinMode, PinState, Unsubscribe, McuBackend, BackendFactory } from "./mcu.ts";
 export { createMcuBoardModel, GPIO_R_OUT, PULLUP_OHMS } from "./board.ts";
 export type { McuBoardOptions } from "./board.ts";
-export { Simulation } from "./simulation.ts";
+export { Simulation, TICK_MS } from "./simulation.ts";
+export { PwmMeter, averageSolves, PWM_FAST_PERIOD_US, PWM_DUTY_EPSILON, PWM_STALE_PERIODS } from "./pwm.ts";
+export type { PwmReading } from "./pwm.ts";
 export type { SimulationOptions, TraceEntry, SimEvent, SimDiagnostic } from "./simulation.ts";
 export { parseIntelHex } from "./hex.ts";
 export { hashString } from "./hash.ts";
 export { parseBindings, applyVisualState } from "./bindings.ts";
 export type { Binding } from "./bindings.ts";
+export { I2cBus, SpiBus, I2C_FAULTS, SPI_FAULTS, I2C_LOG_BYTES } from "./bus.ts";
+export type { I2cDevice, I2cFault, I2cTransaction, SpiDevice, SpiFault, McuBusPins } from "./bus.ts";
+export { bytesToBase64, base64ToBytes, decodeMonoFrame, monoPixel, monoLitCount, monoToAscii, monoStride } from "./display.ts";
+export type { MonoFrame } from "./display.ts";

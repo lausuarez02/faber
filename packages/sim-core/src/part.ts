@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type { PropValue } from "@jumper/project-format";
 import type { CircuitBuilder, NodeId, SolveResultView } from "./circuit.ts";
+import type { I2cDevice, SpiDevice } from "./bus.ts";
 import type { McuBackend } from "./mcu.ts";
+import type { PwmReading } from "./pwm.ts";
 
 // ---------------------------------------------------------------------------
 // part.json
@@ -102,6 +104,31 @@ export const PartSpecSchema = z.object({
   buyLinks: z.array(z.object({ vendor: z.string(), url: z.string() })).optional(),
   bindings: z.array(BindingSpecSchema).optional(),
   mcu: McuSpecSchema.optional(),
+  bus: z
+    .object({
+      /** The part is an I2C target. Its SDA/SCL pins carry protocols "i2c-sda" / "i2c-scl". */
+      i2c: z
+        .object({
+          /** Every 7-bit address the part can have (e.g. [60, 61] for 0x3C/0x3D). The first is the default. */
+          addresses: z.array(z.number().int().min(0).max(127)).min(1),
+          /** Prop that selects the address, if any (its value is the address, e.g. "0x3C" or 60). */
+          addressProp: z.string().optional(),
+          /** On-board pull-up resistors on SDA/SCL (Ω), when the module has them. */
+          pullUpOhms: z.number().positive().optional(),
+          /** Max SCL clock the part supports (Hz), e.g. 400000. */
+          maxHz: z.number().positive().optional(),
+        })
+        .optional(),
+      /** The part is an SPI peripheral. Pins carry "spi-mosi", "spi-miso", "spi-sck", "spi-cs". */
+      spi: z
+        .object({
+          /** SPI modes the part accepts (0..3). */
+          modes: z.array(z.number().int().min(0).max(3)).optional(),
+          maxHz: z.number().positive().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
   tags: z.array(z.string()).optional(),
 });
 export type PartSpec = z.infer<typeof PartSpecSchema>;
@@ -176,6 +203,25 @@ export interface PartContext {
   requestSolve(): void;
   /** Current virtual time in ms. */
   now(): number;
+  /**
+   * PWM / pulse measurement of the net one of this part's pins is on: set when an MCU pin drives
+   * that net directly, or when a driver part declared it with setPwm (an H-bridge output). Measured
+   * from cycle stamps, so a servo reads its pulse width to the cycle. Optional: the Simulation
+   * provides it, simple test benches may not.
+   */
+  pwm?(pinId: string): PwmReading | undefined;
+  /**
+   * Declare that this part switches the net of `pinId` with a duty cycle (e.g. an L298N output
+   * while its ENA pin gets analogWrite). Parts on that net (a DC motor) read it with pwm(). Pass
+   * undefined to clear.
+   */
+  setPwm?(pinId: string, reading: { duty: number; freqHz?: number } | undefined): void;
+  /**
+   * Run `cb` after `delayMs` of virtual time (cycle-exact on the MCU clock; the MCU is stopped at
+   * that cycle so firmware polling the pin sees the change on time, as pulseIn() needs). Returns a
+   * cancel function. Events are dropped on reset.
+   */
+  schedule?(delayMs: number, cb: () => void): () => void;
 }
 
 export interface PartModel {
@@ -189,6 +235,19 @@ export interface PartModel {
   diagnostics?(): Diagnostic[];
   /** Called on sim reset/stop to drop resources (optional). */
   dispose?(): void;
+  /**
+   * Time-stepped behaviour (motor inertia, servo slew). The Simulation calls it every TICK_MS of
+   * virtual time, at fixed cycle numbers, so the result does not depend on how runFor is sliced.
+   * Call ctx.requestSolve() from here only when the electrical picture changed.
+   */
+  tick?(tMs: number, dtMs: number): void;
+  /**
+   * I2C target behaviour. The Simulation attaches it to the board's I2C bus when the part's
+   * "i2c-sda" / "i2c-scl" pins are wired to the board's SDA / SCL.
+   */
+  i2c?: I2cDevice;
+  /** SPI peripheral behaviour, attached when its MOSI/MISO/SCK pins are wired to the board's. */
+  spi?: SpiDevice;
 }
 
 export type PartModelFactory = (ctx: PartContext) => PartModel;

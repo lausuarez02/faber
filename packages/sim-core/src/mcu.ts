@@ -1,3 +1,5 @@
+import type { I2cBus, McuBusPins, SpiBus } from "./bus.ts";
+
 export type PinMode = "input" | "input_pullup" | "output" | "analog";
 
 export interface PinState {
@@ -36,6 +38,23 @@ export interface McuBackend {
   writeSerial?(byte: number): void;
   /** Reset CPU and peripherals, keep the loaded program, cycles → 0. */
   reset(): void;
+  /** Optional: which pins the hardware I2C / SPI peripherals use (McuBackend pin ids). */
+  readonly busPins?: McuBusPins;
+  /**
+   * Optional: connect the MCU's I2C master (e.g. AVR TWI) to a bus. The Simulation calls this once
+   * after creating the backend; the backend keeps using the bus across reset().
+   */
+  attachI2c?(bus: I2cBus): void;
+  /** Optional: connect the MCU's SPI master to a bus. Same lifetime as attachI2c. */
+  attachSpi?(bus: SpiBus): void;
+  /**
+   * Optional: end the step() in progress at `cycle` (or as soon as possible after it) instead of its
+   * original target. The Simulation calls it, from inside a pin-change callback, when a part
+   * schedules an event earlier than the end of the current step (an HC-SR04 raising ECHO 460 µs
+   * after the trigger), so the firmware sees the change at the right cycle. Without it the event
+   * still runs, but only after the step ends (up to chunkMs late).
+   */
+  stopAt?(cycle: number): void;
 }
 
 /** Creates a backend for a board part. `spec.mcu.backend` says which one (e.g. "avr8js"). */
