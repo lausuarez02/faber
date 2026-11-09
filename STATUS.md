@@ -1,13 +1,55 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-09 (third pass: videos and agent-built examples). M0 is done (below). This round made Jumper usable by AI agents end to end:
-an agent (Claude Code, Codex, any MCP client) goes from a one-line goal to a wired, programmed and
-tested device using only Jumper's tools. Target devices work: a tamagotchi-style pet on an SSD1306
-OLED, an obstacle-avoiding rover and a two-joint servo arm.
+Last updated 2026-11-09 (fourth pass: new UI, one-step connect, AI pet, Device view). M0 is done (below).
+An agent (Claude Code, Codex, any MCP client) goes from a one-line goal to a wired, programmed and
+tested device using only Jumper's tools, and a person watches it happen on the canvas and in 3D.
 
 <p align="center"><img src="docs/media/m0-blink.gif" alt="Blink running in Jumper" width="720"></p>
 
-## This round (2026-11-09)
+## Round 3 (2026-11-09, fourth pass): UI v2, connect, AI pet, Device view
+
+| Area | What you can do | Check it with |
+| --- | --- | --- |
+| UI v2 | Full-window canvas with floating containers: title block, top-right actions (Serial, Tests, Device view, Install MCP, Open in Agent, Run pill), left tool rail with the parts library, right panel column, minimap and status bottom-left, agent pill bottom-right; light theme; phone layout with a bottom bar and sheets. Spec: [docs/design/ui-v2.md](docs/design/ui-v2.md) | `e2e/*.spec.ts`, `node apps/web/scripts/ui-shots.mjs <url> <dir>` |
+| One-step connect | `pnpm start` serves the canvas, `ws://…/live` and MCP over Streamable HTTP at `http://localhost:7780/mcp`, all on one session. **`claude mcp add --transport http jumper http://localhost:7780/mcp`** (verified with a real Claude Code 2.1.319 run: it placed, wired, wrote and ran Blink and the open canvas showed each step live, labelled "Claude Code"). Codex: `codex mcp add jumper --url http://localhost:7780/mcp`. Stdio clients: `jumper mcp --attach http://localhost:7780`. Local-only (Host/Origin checks) | `apps/cli/test/serve.test.ts`, `e2e/devices.spec.ts` (Install MCP) |
+| AI pet | `examples/ai-pet`: Uno + ILI9341 colour TFT + ESP-01 on SoftwareSerial (AT firmware emulated bit by bit) + 3 buttons. The pet asks `http://ai.jumper/v1/pet` on the sandbox Wi-Fi and draws the reply in a speech bubble. Mock AI by default (deterministic); Live = `ANTHROPIC_API_KEY` or the logged-in `claude` CLI (a real Claude reply was shown on the simulated TFT). 5 scenarios. [Decision record](docs/decisions/0002-ai-pet.md) | `pnpm jumper test -p examples/ai-pet`, `packages/session/test/ai-pet-session.test.ts`, `e2e/devices.spec.ts` |
+| Parts | 24 (was 21): `ili9341-tft`, `st7735-tft`, `esp01-wifi`, each tested with the real Adafruit library / AT sketch. Build image `jumper/arduino-cli:…-libs2`, runner `jumper/arduino-runner:…-libs2-r1` (adds Adafruit ILI9341 1.7.0, ST7735/ST7789 1.12.0; older sketches build byte-identical) | `pnpm --filter @jumper/parts gen:check` |
+| Network tools | `set_ai_mode`, `read_network_log`, `run_live` (37 tools); `inject_fault wifi_drop` is real | `docs/mcp-tools.md` |
+| Device view | The Device view button: the project as a physical device in 3D (react-three-fiber). Handheld with the live OLED or colour TFT behind glass, buttons that travel and drive the sim (keys 1-3); rover in an arena built from `jumper.json` with spinning wheels, sonar beam and trail (track / chase / arena cameras, F); arm on a table following the servos. 60 fps measured | `e2e/devices.spec.ts` (pet handheld, rover moving) |
+| Visual tests | Tests panel: each scenario as a filmstrip of the device at every check with what the check saw; click a frame to open the 3D device at that exact moment (replayed from the recorded inputs). Fed by `GET /api/visual-report` (the server's latest `run_tests`) or the prebuilt `apps/web/public/reports/<example>.json`. `run_tests` returns `visual` lines per check and, with `images: true`, screen PNGs as MCP images | `packages/session/test/visual-capture.test.ts`, `apps/cli/test/serve.test.ts` |
+| Pictures for agents | `screenshot` draws colour TFT pixels; `screenshot {"view": "device", "ms": 6000}` renders the 3D device (Playwright + Vite, about 5 s); CLI `jumper screenshot --view device`, `jumper render-device --ms … / --every … --until …` (frames for a video), `jumper test --visual`, `jumper network` | `packages/session/test/ai-pet-session.test.ts` |
+
+The round-2 open items are fixed (each with a test in `packages/session/test/connect-polish.test.ts`):
+press/`hold_ms` failures explain the hidden reaction; no false "already held 0 ms" warning;
+timeouts suggest a `timeout_ms`; the compile hint names the real sketch folder; `run` returns
+`world.first_collision`; the sonar trigger is no longer "servo-style"; every action-log line has
+`actor`, `sid` and `client`, and `jumper replay` / `record` filter by them.
+
+### Checks (round 3, local, 2026-11-09)
+
+| Command | Result |
+| --- | --- |
+| `pnpm gen` | 24 parts, schema, `docs/mcp-tools.md` (37 tools); running it again changes nothing |
+| `pnpm typecheck` | 0 errors |
+| `pnpm test` | 69 files, **537 passed**, 2 skipped (live-AI tests, opt-in) |
+| `pnpm test:e2e` | **39 passed, 4 skipped** (device-specific): desktop and phone each run Install MCP, AI pet TFT + mock reply bubble, Device view (pet handheld, rover driving), the visual Tests panel, plus every earlier test; the 200-part benchmark holds 60 fps |
+| Real Claude Code over HTTP | `pnpm start`, then `claude -p … --mcp-config <{"mcpServers":{"jumper":{"type":"http","url":"http://localhost:7780/mcp"}}}> --strict-mcp-config --allowedTools mcp__jumper`: new project, LED + 220 Ω, 3 wires, Blink sketch, run; 18.6 s, 0 failed calls; the open canvas showed each step and "Connected: Claude Code"; serial `on/off` x3 |
+
+### Known gaps (round 3)
+
+- **Follow mode does not show colour TFT pixels:** the live link streams part states, and TFT frames
+  are too big for them. Open `?example=ai-pet` (local simulation) to see the screen live, or use
+  `screenshot` / the Device view render.
+- **Live AI in the browser** needs the gateway running: `node services/ai-gateway/bin/ai-gateway.mjs`
+  (port 8787), then the Network panel's Live switch. Live answers pause while the sim runs faster
+  than real time.
+- **The Network panel is desktop-only** (on phones it would cover the circuit); phones see the
+  exchange in the serial console.
+- **`screenshot {"view": "device"}` starts from 0 ms with no inputs** (presses made in the session
+  are not replayed); fault steps cannot be replayed in the browser's scrub view yet.
+- Claude Desktop and Cursor snippets in the Install MCP menu were not tested with those apps.
+
+## Round 2 (2026-11-09)
 
 | Area | What you can do | Check it with |
 | --- | --- | --- |
@@ -38,7 +80,7 @@ Re-checked on the current `main`: `jumper check`, `test`, `fidelity` on a copy o
 folder. Tamagotchi 8/8 (1 false-alarm warning, below), rover 2/2, arm 6/6; the arm now gets the new
 power-budget warning (two servos on the Uno 5V), as intended.
 
-### Open from the round-2 agent runs (all minor; none blocked an agent)
+### Open from the round-2 agent runs (fixed in round 3, see above)
 
 - A `press` step hides reactions shorter than `hold_ms`; the failure message does not say so.
 - The "already held 0 ms after press" warning fires even when an earlier step proved the opposite
@@ -103,7 +145,7 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 
 ### Known gaps (this round)
 
-- **Faults not simulated yet:** brownout, Wi-Fi drop, clock drift, flash full (the tool says so).
+- **Faults not simulated yet:** brownout, clock drift, flash full (the tool says so). Wi-Fi drop is simulated since round 3.
 - **Sonar cone is ±15°** (not ±7.5°), `pulseIn()` reads about 0.6 % short on the emulated chip, wheels do not load the motors, and the motor model assumes continuous current. All in the fidelity files.
 - **Servo library** is in the agents' build image (`jumper/arduino-runner:…-r1`, Servo 1.3.0) but not in `toolchains/arduino` (the examples' golden builds); the arm example drives Timer1 directly.
 - **The CLI is one process per command**, so simulation state does not carry over between `jumper run` calls (`jumper screenshot --ms N` runs first). The MCP server keeps state.

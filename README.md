@@ -49,70 +49,55 @@ reference builds, running in the web app:
 [tamagotchi](docs/media/example-tamagotchi.mp4) · [rover](docs/media/example-rover.mp4) ·
 [robot arm](docs/media/example-robot-arm.mp4) (GIFs next to them in `docs/media/`).
 
-## Use Jumper from Claude Code / Codex
+## Use Jumper from your agent
 
-Run `pnpm i` once in this repo and keep Docker Desktop running (firmware builds run in Docker). The
-device folder can be anywhere. These are the exact setups the runs above used.
-
-**Claude Code** (verified with 2.1.319):
+One step: start Jumper, then add it to your agent. The agent's calls appear on the canvas you are
+watching, as it makes them.
 
 ```sh
-claude mcp add jumper -- node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project /path/to/my-device
+pnpm i          # once, in this repo; keep Docker Desktop running for firmware builds
+pnpm start      # = jumper serve: canvas + live link + MCP at http://localhost:7780/mcp
 ```
 
-or a `.mcp.json` (also `claude --mcp-config .mcp.json`):
+`pnpm start` opens the canvas at `http://localhost:7780/` (next free port if 7780 is taken; it
+prints the one it uses) on the project `projects/playground`; pass `pnpm start --project ../my-device`
+for another folder. Then connect your agent (each verified 2026-11-09 against a running server):
 
-```json
-{
-  "mcpServers": {
-    "jumper": {
-      "command": "node",
-      "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--project", "/path/to/my-device"],
-      "env": { "MCP_TOOL_TIMEOUT": "600000" }
-    }
-  }
-}
-```
+| Agent | One step |
+| --- | --- |
+| **Claude Code** (2.1.319) | `claude mcp add --transport http jumper http://localhost:7780/mcp` (then `claude`; `/mcp` shows jumper connected) |
+| **Codex** (0.163.0) | `codex mcp add jumper --url http://localhost:7780/mcp` (or `[mcp_servers.jumper]` / `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml`) |
+| **Cursor** | `~/.cursor/mcp.json`: `{"mcpServers": {"jumper": {"url": "http://localhost:7780/mcp"}}}` |
+| **Claude Desktop** / any stdio client | `{"mcpServers": {"jumper": {"command": "node", "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` |
 
-Headless, with nothing but Jumper's tools (how the tamagotchi was built):
+The **Install MCP** menu in the app shows these with Copy buttons and the server's real URL, and
+who is connected; the avatar bottom-right says "Connected: Claude Code" and "building · place part
+led" while a tool runs. **Open in Agent** copies a starter prompt that describes the project, or
+launches Claude Code in a new Terminal in the project folder with Jumper already connected (macOS,
+only on your click; the exact command is shown).
 
-```sh
-claude -p "Build me a tamagotchi-style AI pet on an Arduino Uno with a 128x64 OLED, three buttons and a buzzer. Prove it works with scenario tests." \
-  --mcp-config .mcp.json --strict-mcp-config --tools "" \
-  --allowedTools "mcp__jumper" --disallowedTools "Bash Edit Write Read"
-```
-
-**Codex** (verified with codex-cli 0.163.0), `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.jumper]
-command = "node"
-args = ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--project", "/path/to/my-device"]
-startup_timeout_sec = 30
-tool_timeout_sec = 600
-default_tools_approval_mode = "approve"   # without it, `codex exec` rejects every tool that edits
-```
-
-then `codex exec --skip-git-repo-check "Build an obstacle-avoiding rover using the jumper tools, with passing tests"`.
-To restrict Codex to Jumper's tools, set `shell_tool`, `unified_exec`, `browser_use` and
-`computer_use` to `false` under `[features]`, but leave `code_mode_host` on: Codex routes MCP calls
-through it ([full config](examples/agent-built/codex-rover/README.md)).
-
-Watch an agent build live with `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project /path/to/my-device`, and record any session with `jumper record <project>/.jumper/actions.jsonl out.mp4 --speed 2 --size 1440x900`. The paths are absolute so they work from any directory; on another machine use your clone's path. The full guide (loop, scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents.md); every tool is in [docs/mcp-tools.md](docs/mcp-tools.md).
+Without the canvas, `jumper mcp --project <dir>` is still a plain stdio MCP server (the setups the
+agent-built examples used, with headless `claude -p` / `codex exec` flags, are in
+[docs/agents.md](docs/agents.md)). Record any session with `jumper record <project>/.jumper/actions.jsonl
+out.mp4 --speed 2 --actor mcp` (`--actor mcp` keeps only the agent's calls). The full guide (loop,
+scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents.md); every tool is in
+[docs/mcp-tools.md](docs/mcp-tools.md).
 
 ## What works today
 
-- **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone. Open the examples from the project menu (or `?example=tamagotchi`, `rover`, `robot-arm`).
-- **Parts:** 21 parts, including an SSD1306 OLED, a 16x2 I2C LCD, DS3231, BME280, MPU6050, servo, DC motor, L298N, HC-SR04, battery pack and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file and tests.
+- **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone. Open the examples from the project menu (or `?example=tamagotchi`, `ai-pet`, `rover`, `robot-arm`).
+- **Parts:** 24 parts, including an SSD1306 OLED, ILI9341 and ST7735 colour TFTs, an ESP-01 Wi-Fi module, a 16x2 I2C LCD, DS3231, BME280, MPU6050, servo, DC motor, L298N, HC-SR04, battery pack and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file and tests.
 - **Simulation:** Arduino Uno and Nano (ATmega328P) on [avr8js](https://github.com/wokwi/avr8js), running the real `.hex` that arduino-cli builds, with I2C and SPI buses and cycle-timed PWM.
   - A small DC circuit solver sets each LED's brightness from the actual current through it, so an LED wired without a resistor is flagged.
   - Time is counted in MCU cycles, never wall-clock time, so the same project gives the same run every time.
 - **Robots:** a deterministic 2D physics world (Rapier) moves a rover with its simulated motors, feeds its sonar real distances, and moves a servo arm; the canvas shows the arena or the arm next to the circuit.
-- **Agents:** an MCP server and a CLI with the same 34 operations, scenario tests, design-rule checks, fault injection, a fidelity report, live follow and replay of an agent's session in the browser.
+- **Device view:** the project as the physical thing in 3D: a handheld with its live screen, the rover driving in its arena, the arm on a table. The Tests panel shows every scenario as a filmstrip of what the device looked like at each check; click a frame to open that exact moment.
+- **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
+- **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 37 operations, scenario tests, design-rule checks, fault injection, a fidelity report, live follow and replay of an agent's session in the browser.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's UART output (Serial.print) shows up live next to the canvas.
 
-What is **not** there yet: building firmware from the browser (builds run through the CLI / MCP server with Docker), boards other than the ATmega328P Uno/Nano, Wi-Fi, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
+What is **not** there yet: building firmware from the browser (builds run through the CLI / MCP server with Docker), boards other than the ATmega328P Uno/Nano, Wi-Fi beyond the ESP-01 sandbox, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
 
 ## Roadmap
 
