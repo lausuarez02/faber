@@ -1,0 +1,998 @@
+{
+  "$id": "urn:jumper:custom-part:1",
+  "title": "Jumper agent-made part (parts/<id>/part.json)",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "default": "jumper-part/1",
+      "type": "string",
+      "const": "jumper-part/1"
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 48,
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "board",
+        "output",
+        "input",
+        "passive",
+        "sensor",
+        "power",
+        "display",
+        "motor",
+        "communication",
+        "misc"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "pins": {
+      "default": [],
+      "maxItems": 40,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "digital",
+              "analog",
+              "power",
+              "ground",
+              "passive"
+            ]
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "voltage": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "min",
+              "max"
+            ]
+          },
+          "protocols": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 16
+            }
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 400
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      }
+    },
+    "size": {
+      "type": "object",
+      "properties": {
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2000
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2000
+        }
+      },
+      "required": [
+        "w",
+        "h"
+      ],
+      "additionalProperties": false
+    },
+    "props": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "number",
+              "boolean",
+              "color",
+              "enum"
+            ]
+          },
+          "default": {
+            "type": [
+              "number",
+              "boolean",
+              "string"
+            ]
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ]
+                }
+              ]
+            }
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "type",
+          "default"
+        ]
+      }
+    },
+    "power": {
+      "type": "object",
+      "properties": {
+        "vcc": {
+          "type": "string",
+          "maxLength": 24,
+          "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+        },
+        "gnd": {
+          "type": "string",
+          "maxLength": 24,
+          "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+        },
+        "min_v": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_v": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "behavior": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "digital-input"
+            },
+            "output": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "field": {
+              "default": "active",
+              "type": "string",
+              "maxLength": 32,
+              "pattern": "^[a-z][a-zA-Z0-9_]*$"
+            },
+            "active_level": {
+              "default": "high",
+              "type": "string",
+              "enum": [
+                "high",
+                "low"
+              ]
+            },
+            "drive": {
+              "default": "push-pull",
+              "type": "string",
+              "enum": [
+                "push-pull",
+                "open-drain"
+              ]
+            },
+            "default_active": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "output"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "analog-sensor"
+            },
+            "output": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "quantity": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-zA-Z0-9_]*$"
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "unit": {
+                  "type": "string",
+                  "maxLength": 12
+                },
+                "min": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                },
+                "default": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "min",
+                "max",
+                "default"
+              ],
+              "additionalProperties": false
+            },
+            "curve": {
+              "minItems": 2,
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  },
+                  "volts": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 24
+                  }
+                },
+                "required": [
+                  "value",
+                  "volts"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "ratiometric": {
+              "default": true,
+              "type": "boolean"
+            },
+            "output_ohms": {
+              "default": 1000,
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10000000
+            },
+            "digital": {
+              "type": "object",
+              "properties": {
+                "output": {
+                  "type": "string",
+                  "maxLength": 24,
+                  "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+                },
+                "threshold": {
+                  "type": "number"
+                },
+                "when": {
+                  "default": "above",
+                  "type": "string",
+                  "enum": [
+                    "above",
+                    "below"
+                  ]
+                },
+                "active_level": {
+                  "default": "low",
+                  "type": "string",
+                  "enum": [
+                    "high",
+                    "low"
+                  ]
+                }
+              },
+              "required": [
+                "output",
+                "threshold"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "kind",
+            "output",
+            "quantity",
+            "curve"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "actuator"
+            },
+            "drive": {
+              "type": "string",
+              "enum": [
+                "load",
+                "logic"
+              ]
+            },
+            "plus": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "minus": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "rated_v": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 48
+            },
+            "rated_ma": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10000
+            },
+            "polarized": {
+              "default": false,
+              "type": "boolean"
+            },
+            "input": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "active_level": {
+              "default": "high",
+              "type": "string",
+              "enum": [
+                "high",
+                "low"
+              ]
+            },
+            "input_ohms": {
+              "default": 10000,
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10000000
+            },
+            "contacts": {
+              "type": "object",
+              "properties": {
+                "com": {
+                  "type": "string",
+                  "maxLength": 24,
+                  "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+                },
+                "no": {
+                  "type": "string",
+                  "maxLength": 24,
+                  "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+                },
+                "nc": {
+                  "type": "string",
+                  "maxLength": 24,
+                  "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+                }
+              },
+              "required": [
+                "com"
+              ],
+              "additionalProperties": false
+            },
+            "effect": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-zA-Z0-9_]*$"
+                },
+                "unit": {
+                  "type": "string",
+                  "maxLength": 12
+                },
+                "at_full": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "at_full"
+              ],
+              "additionalProperties": false
+            },
+            "force_n": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          "required": [
+            "kind",
+            "drive"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "i2c-device"
+            },
+            "address": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 3,
+                  "maximum": 119
+                },
+                {
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 119
+                  }
+                }
+              ]
+            },
+            "registers": {
+              "maxItems": 128,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "reg": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "pattern": "^[a-z][a-zA-Z0-9_]*$"
+                  },
+                  "bytes": {
+                    "default": 1,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4
+                  },
+                  "endian": {
+                    "default": "big",
+                    "type": "string",
+                    "enum": [
+                      "big",
+                      "little"
+                    ]
+                  },
+                  "value": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "writable": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "field": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "maxLength": 32,
+                        "pattern": "^[a-z][a-zA-Z0-9_]*$"
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "unit": {
+                        "type": "string",
+                        "maxLength": 12
+                      },
+                      "min": {
+                        "type": "number"
+                      },
+                      "max": {
+                        "type": "number"
+                      },
+                      "default": {
+                        "type": "number"
+                      },
+                      "scale": {
+                        "default": 1,
+                        "type": "number"
+                      },
+                      "offset": {
+                        "default": 0,
+                        "type": "number"
+                      },
+                      "signed": {
+                        "default": false,
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "min",
+                      "max",
+                      "default"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "reg"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "who_am_i": {
+              "type": "object",
+              "properties": {
+                "reg": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "value": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                }
+              },
+              "required": [
+                "reg",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "auto_increment": {
+              "default": true,
+              "type": "boolean"
+            },
+            "pullup_ohms": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            "default_byte": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "required": [
+            "kind",
+            "address",
+            "registers"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "uart-device"
+            },
+            "rx": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "tx": {
+              "type": "string",
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9+-][A-Za-z0-9_+\\-.]*$"
+            },
+            "baud": {
+              "default": 9600,
+              "type": "integer",
+              "minimum": 300,
+              "maximum": 115200
+            },
+            "newline": {
+              "default": "\r\n",
+              "type": "string",
+              "enum": [
+                "\r\n",
+                "\n",
+                "\r"
+              ]
+            },
+            "responses": {
+              "maxItems": 64,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "match": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "mode": {
+                    "default": "exact",
+                    "type": "string",
+                    "enum": [
+                      "exact",
+                      "prefix",
+                      "contains"
+                    ]
+                  },
+                  "reply": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "delay_ms": {
+                    "default": 1,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 60000
+                  }
+                },
+                "required": [
+                  "match",
+                  "reply"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "unknown_reply": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "greeting": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "stream": {
+              "type": "object",
+              "properties": {
+                "every_ms": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 600000
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "every_ms",
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            "echo": {
+              "default": false,
+              "type": "boolean"
+            },
+            "fields": {
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "pattern": "^[a-z][a-zA-Z0-9_]*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "unit": {
+                    "type": "string",
+                    "maxLength": 12
+                  },
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  },
+                  "default": {
+                    "type": "number"
+                  },
+                  "decimals": {
+                    "default": 2,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 8
+                  }
+                },
+                "required": [
+                  "id",
+                  "min",
+                  "max",
+                  "default"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "rx",
+            "tx",
+            "responses"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "display"
+            },
+            "controller": {
+              "type": "string",
+              "enum": [
+                "ssd1306",
+                "st7735",
+                "ili9341",
+                "gc9a01"
+              ]
+            },
+            "resolution": {
+              "type": "object",
+              "properties": {
+                "w": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 480
+                },
+                "h": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 480
+                }
+              },
+              "required": [
+                "w",
+                "h"
+              ],
+              "additionalProperties": false
+            },
+            "round": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "controller"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "wiring": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "example": {
+          "type": "string",
+          "maxLength": 8000
+        },
+        "libraries": {
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        }
+      },
+      "required": [
+        "wiring"
+      ],
+      "additionalProperties": false
+    },
+    "dimensions_mm": {
+      "type": "object",
+      "properties": {
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "d": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "w",
+        "h",
+        "d"
+      ],
+      "additionalProperties": false
+    },
+    "mass_g": {
+      "type": "number",
+      "minimum": 0
+    },
+    "current_ma": {
+      "type": "object",
+      "properties": {
+        "typ": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "typ",
+        "max"
+      ],
+      "additionalProperties": false
+    },
+    "price_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "buy_links": {
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "vendor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https:\\/\\/[^\\s\"'<>]+$"
+          }
+        },
+        "required": [
+          "vendor",
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tags": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 40
+      }
+    },
+    "datasheet": {
+      "type": "string",
+      "pattern": "^https:\\/\\/[^\\s\"'<>]+$"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "category",
+    "description",
+    "behavior"
+  ],
+  "additionalProperties": false
+}
