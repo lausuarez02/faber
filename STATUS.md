@@ -40,8 +40,6 @@ power-budget warning (two servos on the Uno 5V), as intended.
 
 ### Open from the round-2 agent runs (all minor; none blocked an agent)
 
-- `place_part` hints: the battery pack says `POS → 5V` (wrong and harmful for an 8.4 V pack; its
-  description is right), and the second DC motor gets the same `OUT1/OUT2` as the first.
 - A `press` step hides reactions shorter than `hold_ms`; the failure message does not say so.
 - The "already held 0 ms after press" warning fires even when an earlier step proved the opposite
   value (`examples/agent-built/claude-tamagotchi`, `feed-lowers-hunger`).

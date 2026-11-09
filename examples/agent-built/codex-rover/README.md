@@ -102,9 +102,9 @@ ignored after `run {reset}`, the chassis "has no wires" warning, a USB power-bud
 
 Still open (all minor; the agent worked around none of them, it just ignored the wrong hints):
 
-- After placing the battery, `place_part` hinted `POS → 5V` — wrong and harmful for an 8.4 V pack.
+- After placing the battery, `place_part` hinted `POS → 5V` — wrong and harmful for an 8.4 V pack. **Fixed:** it now says VIN / driver supply and warns never to use 5V.
   The part's description was right (12V terminal or VIN), and the agent followed that.
-- The second motor got the same `OUT1/OUT2` hint as the first.
+- The second motor got the same `OUT1/OUT2` hint as the first. **Fixed:** the hint names both pairs.
 - `run` gives collision totals but not when or where the first one happened; the agent needed an
   extra 7 s run to find it.
 - The 10 µs sonar trigger is labelled `(servo-style)` in the pin summary.

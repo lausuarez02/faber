@@ -87,7 +87,11 @@ const BUILTIN: Record<string, Usage> = {
     wiring: "Motor supply +12V (or 5V for small motors) and GND shared with the Arduino. ENA/ENB → PWM pins (D5, D6), IN1..IN4 → GPIOs; OUT1/OUT2 to motor A, OUT3/OUT4 to motor B.",
     example: `const int ENA = 5, IN1 = 7, IN2 = 8;\nvoid setup() { pinMode(ENA, OUTPUT); pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT); }\nvoid loop() { digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); analogWrite(ENA, 180); }`,
   },
-  "dc-motor": { wiring: "Two terminals to a motor driver output pair (L298N OUT1/OUT2). Never drive a motor straight from a GPIO." },
+  "dc-motor": { wiring: "Two terminals to a FREE motor driver output pair: the first motor on L298N OUT1/OUT2, the second on OUT3/OUT4. Never drive a motor straight from a GPIO." },
+  "battery-pack": {
+    wiring: "POS → the board's VIN (6–12 V, goes through the onboard regulator) and/or a motor driver's supply (L298N 12V); NEG → GND, shared with the board. NEVER connect a battery pack to the 5V pin: anything above 5.5 V there damages the board.",
+    connect: ["battery.POS -> uno.VIN", "battery.NEG -> uno.GND"],
+  },
   servo: {
     wiring: "Brown/black GND → GND, red VCC → 5V (two or more servos: a separate 5–6 V supply with common GND), orange/yellow SIG → a free digital pin (typical_connections suggests one; the Servo library works on any pin and disables PWM on D9/D10). Use the Servo library.",
     connect: ["servo1.GND -> uno.GND", "servo1.VCC -> uno.5V", "servo1.SIG -> uno.D9"],
@@ -120,7 +124,10 @@ function derivedWiring(spec: PartSpec): string {
   const bits: string[] = [];
   const power = spec.pins.filter((p) => p.type === "power").map((p) => p.id);
   const ground = spec.pins.filter((p) => p.type === "ground").map((p) => p.id);
-  if (power.length) bits.push(`${power.join("/")} → 5V (check the voltage range in pins)`);
+  if (power.length) {
+    const max = Math.max(...spec.pins.filter((p) => p.type === "power").map((p) => p.voltage?.max ?? 5));
+    bits.push(max <= 3.6 ? `${power.join("/")} → 3V3 (3.3 V part: 5 V damages it)` : `${power.join("/")} → 5V if the pin's voltage range allows it (check get_part pins)`);
+  }
   if (ground.length) bits.push(`${ground.join("/")} → GND`);
   for (const p of spec.pins) {
     const proto = p.protocols ?? [];
