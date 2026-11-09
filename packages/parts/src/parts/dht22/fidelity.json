@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "AM2302 single-bus protocol bit for bit: start pulse ≥ 0.8 ms, 80/80 µs response, 40 data bits (humidity, temperature with sign bit, checksum), open-drain line with the module's 10 kΩ pull-up. Answers with the measurement from the previous read, as the datasheet says." },
+    "timing": { "level": "ok", "note": "Cycle-exact on the MCU clock: response 30 µs after the release, bits of 50 µs LOW + 26 or 70 µs HIGH, so both libraries and hand-written readers that time pulses see datasheet timing. No answer in the first 1 s after power-up; reads closer than 2 s repeat the old measurement." },
+    "analog": { "level": "approx", "note": "Reports exactly the temperature and humidity you set (0.1 resolution). Real accuracy is ±0.5 °C and ±2–5 % RH, with slow response (~2 s for temperature, longer for humidity) and self-heating if read too often." },
+    "power": { "level": "approx", "note": "50 µA standby on VCC, works from 3.0 V. The ~1.5 mA during a measurement is not modelled." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Start signal detection and the full 40-bit answer", "Negative temperatures (sign bit) and checksum", "Previous-measurement answer and the 2 s minimum interval", "1 s power-up time", "On-module pull-up"],
+  "doesNotEmulate": ["Sensor accuracy, drift and response time", "Long-wire capacitance (keep the wire under ~20 m with a stronger pull-up)", "Condensation and saturation above 95 % RH"],
+  "testOnRealDevice": ["Compare against a reference thermometer / hygrometer", "Reads failing with long wires or without the pull-up (bare 4-pin sensor)", "That firmware handles a failed read (it happens on hardware)"]
+}

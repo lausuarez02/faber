@@ -1,0 +1,34 @@
+{
+  "id": "dht22",
+  "name": "Temperature and humidity sensor DHT22 (AM2302 module)",
+  "category": "sensor",
+  "description": "Digital temperature (−40 to 80 °C, ±0.5 °C) and humidity (0 to 100 %, ±2 %) sensor on a one-wire protocol of its own. VCC → 3.3 V or 5 V, GND → GND, DATA → a digital pin (the module has its 10 kΩ pull-up). Read it at most every 2 s; it answers with the measurement it took at the previous read.",
+  "pins": [
+    { "id": "VCC", "label": "+", "x": 30, "y": 126, "type": "power", "voltage": { "min": 3.3, "max": 6 }, "description": "3.3 to 6 V." },
+    { "id": "DATA", "label": "OUT", "x": 50, "y": 126, "type": "digital", "description": "Bidirectional data line, open drain with a 10 kΩ pull-up to VCC on the module." },
+    { "id": "GND", "label": "−", "x": 70, "y": 126, "type": "ground", "description": "Ground." }
+  ],
+  "size": { "w": 100, "h": 130 },
+  "props": [
+    { "id": "temperature", "label": "Temperature", "type": "number", "default": 22, "min": -40, "max": 80, "step": 0.1, "unit": "°C", "description": "Air temperature at the sensor." },
+    { "id": "humidity", "label": "Relative humidity", "type": "number", "default": 55, "min": 0, "max": 100, "step": 0.1, "unit": "%", "description": "Relative humidity at the sensor." }
+  ],
+  "limits": { "maxVoltage": 6, "minVoltage": 3.3, "maxCurrentmA": 1.5, "minIntervalMs": 2000, "startLowMinMs": 0.8 },
+  "footprint": "AM2302 / DHT22 on a 3-pin module, sensor 15 × 25 mm, 0.1 in header (+ OUT −)",
+  "dimensions_mm": { "w": 38, "h": 20, "d": 8 },
+  "mass_g": 4,
+  "current_ma": { "typ": 0.5, "max": 1.5 },
+  "price_usd": 5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-DHT22-AM2302-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=DHT22%20AM2302%20module" }
+  ],
+  "bindings": [
+    { "key": "temperature", "type": "number", "description": "Temperature it is exposed to (°C)." },
+    { "key": "humidity", "type": "number", "description": "Humidity it is exposed to (%)." },
+    { "key": "label", "type": "string", "description": "e.g. \"22.0 °C · 55 %\"." },
+    { "key": "reads", "type": "number", "description": "Readings answered since reset." },
+    { "key": "sending", "type": "boolean", "description": "The sensor is driving DATA right now." }
+  ],
+  "tags": ["dht22", "am2302", "dht", "temperature", "humidity", "thermometer", "hygrometer", "weather", "climate", "sensor"]
+}

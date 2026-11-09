@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { GROUND } from "@jumper/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { need } from "../../lib/bench.ts";
+import { exampleSim } from "../../lib/exampleSim.ts";
+import { serialLines } from "../../lib/firmwareBench.ts";
 import { pwmReading, timedMount } from "../../lib/timedBench.ts";
 import { noteName } from "./model.ts";
 
@@ -65,4 +67,29 @@ describe("passive-buzzer", () => {
     expect(t.model.visualState().sounding).toBe(false);
     expect(t.model.diagnostics!()[0]!.code).toBe("passive-buzzer-dc");
   });
+});
+
+describe("passive-buzzer: real firmware (tone() on D8, example.ino)", () => {
+  it("hears the melody C4 E4 G4 C5 that tone() plays", () => {
+    const sim = exampleSim("passive-buzzer", [{ id: "bz", type: "passive-buzzer", x: 0, y: 0 }], [
+      ["bz.POS", "uno.D8"],
+      ["bz.NEG", "uno.GND.1"],
+    ]);
+    sim.runFor(100);
+    expect(sim.partState("bz")).toMatchObject({ sounding: true, note: "C4" });
+    expect(Number(sim.partState("bz")!.frequency)).toBeCloseTo(262, -1);
+    sim.runFor(1100);
+    expect(serialLines(sim)).toContain("melody done");
+    expect(sim.partState("bz")).toMatchObject({ sounding: false, tones: 4, melody: "C4 E4 G4 C5" });
+    expect(Number(sim.partState("bz")!.lastFrequency)).toBeCloseTo(523, -1);
+  }, 60_000);
+
+  it("an ACTIVE buzzer on the same sketch says tone() is the wrong way to drive it", () => {
+    const sim = exampleSim("passive-buzzer", [{ id: "bz", type: "buzzer", x: 0, y: 0 }], [
+      ["bz.POS", "uno.D8"],
+      ["bz.NEG", "uno.GND.1"],
+    ]);
+    sim.runFor(100);
+    expect(sim.diagnostics().map((d) => d.code)).toContain("buzzer-tone");
+  }, 60_000);
 });
