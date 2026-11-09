@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { shot } from "./helpers.ts";
+import { expectWithinSimTime, shot, waitForSimTime } from "./helpers.ts";
 
 type W = { jumper: { engine: { simulation?: { timeMs: number; partState(id: string): Record<string, unknown> | undefined }; world?: { stats(): { pose?: { x: number; y: number }; travelledCm: number; collisions: number } } } } };
 
@@ -15,7 +15,8 @@ test("tamagotchi: the firmware draws the pet on the OLED (non-blank pixels)", as
   await page.getByTestId("run-button").click();
   await expect(page.getByTestId("sim-error")).toHaveCount(0);
   // The OLED part reports lit pixels; the canvas over its glass shows them.
-  await expect.poll(async () => page.evaluate(() => Number((window as unknown as W).jumper.engine.simulation?.partState("oled")?.lit ?? 0)), { timeout: 20_000 }).toBeGreaterThan(50);
+  // Within 20 s of virtual time (sim time, not wall time: CI may simulate below 1x).
+  await expectWithinSimTime(page, 20_000, async () => (await page.evaluate(() => Number((window as unknown as W).jumper.engine.simulation?.partState("oled")?.lit ?? 0))) > 50, "the OLED should light more than 50 pixels");
   await expect(page.getByTestId("part-oled")).toHaveAttribute("data-state-blank", "false");
   const canvasLit = await page.evaluate(() => {
     const c = document.querySelector('[data-testid="part-oled"] [data-display-layer] canvas') as HTMLCanvasElement | null;
@@ -36,9 +37,9 @@ test("rover: the robot drives in the World view", async ({ page }, info) => {
   await expect(page.getByTestId("world-panel")).toHaveAttribute("data-world", "robot");
   await expect(page.getByTestId("world-panel").getByTestId("physics-canvas")).toBeVisible();
   const read = () => page.evaluate(() => (window as unknown as W).jumper.engine.world?.stats());
-  await expect.poll(async () => (await read())?.travelledCm ?? 0, { timeout: 20_000 }).toBeGreaterThan(20);
+  await expectWithinSimTime(page, 20_000, async () => ((await read())?.travelledCm ?? 0) > 20, "the rover should travel more than 20 cm");
   const a = await read();
-  await page.waitForTimeout(1500);
+  await waitForSimTime(page, 1500);
   const b = await read();
   expect(a?.pose && b?.pose, "the rover should report a pose").toBeTruthy();
   expect(Math.hypot(b!.pose!.x - a!.pose!.x, b!.pose!.y - a!.pose!.y) + (b!.travelledCm - a!.travelledCm)).toBeGreaterThan(5);

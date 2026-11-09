@@ -11,7 +11,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  timeout: 45_000,
+  // Sim behaviour is asserted on virtual time (e2e/helpers.ts waitForSimTime); a 2-vCPU CI runner
+  // may simulate well below 1x, so it gets more wall time per test.
+  timeout: process.env.CI ? 240_000 : 45_000,
   use: {
     baseURL: "http://localhost:5173",
     trace: "retain-on-failure",

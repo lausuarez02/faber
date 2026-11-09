@@ -1,8 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { shot } from "./helpers.ts";
+import { expectWithinSimTime, requireFastWebGL, shot, waitForSimTime } from "./helpers.ts";
 
 // The round-3 surfaces: Install MCP, the 3D Device view (AI pet handheld, rover arena), the AI pet's
 // colour screen and speech bubble with the mock AI, and the visual Tests panel.
+//
+// Firmware behaviour is asserted on VIRTUAL time (see helpers.ts). Budgets are the old wall-clock
+// timeouts times the sim speed the test ran at, so the assertions are as strict as before at 1x.
+// The tests that measure the 3D scene itself are tagged @gpu and skip without fast WebGL; the
+// "Device view smoke" test covers the overlay everywhere.
+
+const SLOW_TEST_MS = process.env.CI ? 300_000 : 90_000;
 
 type W = {
   jumper: {
@@ -74,12 +81,12 @@ test("Install MCP shows the one-line Claude Code command", async ({ page }, info
 });
 
 test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble", async ({ page }, info) => {
-  test.setTimeout(90_000);
+  test.setTimeout(SLOW_TEST_MS);
   await openExample(page, "ai-pet");
   await setSpeed(page, 2);
   await page.getByTestId("run-button").click();
   await expect(page.getByTestId("sim-error")).toHaveCount(0);
-  await expect.poll(() => serial(page), { timeout: 40_000 }).toContain("wifi: online");
+  await expectWithinSimTime(page, 80_000, async () => (await serial(page)).includes("wifi: online"), "serial should print \"wifi: online\"");
   // The TFT canvas over the part's glass shows colour pixels.
   const tftColour = await page.evaluate(() => {
     const c = document.querySelector('[data-testid="part-tft"] [data-display-layer="tft"] canvas') as HTMLCanvasElement | null;
@@ -93,10 +100,28 @@ test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble
   // Only the colour layer sits on the TFT (a mono display canvas on top would hide it).
   await expect(page.locator('[data-testid="part-tft"] [data-display-layer]')).toHaveCount(1);
   // TALK: the Uno asks the mock AI through the ESP-01 and draws the reply in a bubble.
-  await page.evaluate(() => (window as unknown as W).jumper.engine.interact("btnTalk", "press"));
-  await page.waitForTimeout(250);
+  // Pressed right after one of the firmware's 2 s status ticks. At each tick the sketch redraws its
+  // stats on the TFT, and an HTTP reply (~1 s after the press) that lands during that redraw can
+  // overflow SoftwareSerial's 64-byte buffer. Pressing at an arbitrary wall-clock moment made the
+  // reply depend on the machine's speed; this puts it mid-way between ticks on every machine.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const engine = (window as unknown as W).jumper.engine;
+        const ticks = () => (engine.simulation?.serialText().match(/^t=\d+/gm) ?? []).length;
+        const n0 = ticks();
+        const watch = () => {
+          if (ticks() > n0) {
+            engine.interact("btnTalk", "press");
+            resolve();
+          } else requestAnimationFrame(watch);
+        };
+        watch();
+      }),
+  );
+  await waitForSimTime(page, 250); // held for 250 virtual ms (the firmware debounces 30 ms)
   await page.evaluate(() => (window as unknown as W).jumper.engine.interact("btnTalk", "release"));
-  await expect.poll(() => serial(page), { timeout: 30_000 }).toMatch(/bubble: [^.\r\n][^\r\n]+/);
+  await expectWithinSimTime(page, 60_000, async () => /bubble: [^.\r\n][^\r\n]+/.test(await serial(page)), "serial should print the reply bubble");
   expect(await serial(page)).toMatch(/reply 200 \w+\|/);
   // The bubble is white on the screen.
   const white = await page.evaluate(() => {
@@ -117,12 +142,33 @@ test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble
   await shot(page, info, "ai-pet-bubble");
 });
 
-test("Device view: the AI pet handheld shows its live colour screen", async ({ page }, info) => {
-  test.setTimeout(90_000);
+test("Device view smoke: the overlay opens with the handheld and the rover arena HUD", async ({ page }) => {
+  // CI-safe: no screenshots of the 3D scene and no frame-rate dependent checks, so it holds with
+  // software WebGL. The @gpu tests below measure the scene itself.
+  await openExample(page, "ai-pet");
+  await openDevice(page);
+  await expect(page.getByTestId("device-stage")).toHaveAttribute("data-kind", "handheld");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("device-view")).toHaveCount(0);
+
+  await openExample(page, "rover");
+  await page.getByTestId("run-button").click();
+  await expect(page.getByTestId("sim-error")).toHaveCount(0);
+  await openDevice(page);
+  await expect(page.getByTestId("device-stage")).toHaveAttribute("data-kind", "rover");
+  await expect(page.getByTestId("device-readouts")).toBeVisible();
+  await expect(page.getByTestId("sim-time")).toHaveAttribute("data-run", "running");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("device-view")).toHaveCount(0);
+});
+
+test("Device view: the AI pet handheld shows its live colour screen @gpu", async ({ page }, info) => {
+  test.setTimeout(SLOW_TEST_MS);
+  await requireFastWebGL(page);
   await openExample(page, "ai-pet");
   await setSpeed(page, 2);
   await page.getByTestId("run-button").click();
-  await expect.poll(() => serial(page), { timeout: 40_000 }).toContain("Pet hatched");
+  await expectWithinSimTime(page, 80_000, async () => (await serial(page)).includes("Pet hatched"), "serial should print \"Pet hatched\"");
   await openDevice(page);
   const stage = page.getByTestId("device-stage");
   await expect(stage).toHaveAttribute("data-kind", "handheld");
@@ -134,17 +180,18 @@ test("Device view: the AI pet handheld shows its live colour screen", async ({ p
   await expect(page.getByTestId("device-view")).toHaveCount(0);
 });
 
-test("Device view: the rover drives in the 3D arena", async ({ page }, info) => {
-  test.setTimeout(90_000);
+test("Device view: the rover drives in the 3D arena @gpu", async ({ page }, info) => {
+  test.setTimeout(SLOW_TEST_MS);
+  await requireFastWebGL(page);
   await openExample(page, "rover");
   await page.getByTestId("run-button").click();
   await openDevice(page);
   await expect(page.getByTestId("device-stage")).toHaveAttribute("data-kind", "rover");
   const read = () => page.evaluate(() => (window as unknown as W).jumper.engine.world?.stats());
-  await expect.poll(async () => (await read())?.travelledCm ?? 0, { timeout: 30_000 }).toBeGreaterThan(20);
+  await expectWithinSimTime(page, 30_000, async () => ((await read())?.travelledCm ?? 0) > 20, "the rover should travel more than 20 cm");
   const a = await read();
   const shotA = await page.screenshot();
-  await page.waitForTimeout(1500);
+  await waitForSimTime(page, 1500);
   const b = await read();
   const shotB = await page.screenshot();
   expect(Math.hypot(b!.pose!.x - a!.pose!.x, b!.pose!.y - a!.pose!.y) + (b!.travelledCm - a!.travelledCm)).toBeGreaterThan(5);

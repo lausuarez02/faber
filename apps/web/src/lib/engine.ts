@@ -461,6 +461,8 @@ export class Engine {
 
   private paintClock(ms: number): void {
     if (!this.clockEl) return;
+    // Exact virtual milliseconds for tests and agents (`data-time-ms` on the sim-time pill's clock).
+    this.clockEl.dataset.timeMs = String(Math.floor(ms));
     const text = fmtTime(ms);
     if (text === this.clockText) return;
     this.clockText = text;
