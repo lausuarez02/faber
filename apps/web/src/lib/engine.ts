@@ -3,6 +3,9 @@ import { backendFactory } from "@jumper/sim-backends";
 import type { Project, PropValue } from "@jumper/project-format";
 import { registry } from "./parts.ts";
 import { registerDisplayRenderers } from "../renderers/displays/index.ts";
+import { registerTftRenderers, TFT_PART_TYPES } from "../renderers/tft/index.ts";
+import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
+import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import type { JumperStore } from "./store.ts";
 
@@ -57,6 +60,11 @@ export class Engine {
   private unsubSim: (() => void) | undefined;
   /** OLED / LCD canvases over display parts' data-screen rects. */
   private displays = registerDisplayRenderers();
+  /** Colour TFT canvases (ILI9341, ST7735): pixels come from Simulation.framebuffer, not visualState. */
+  private tfts = registerTftRenderers((id) => this.sim?.framebuffer(id));
+  /** The sandbox Wi-Fi + pet AI for projects with a Wi-Fi part (one per simulation). */
+  private net: SandboxNet | undefined;
+  private netListeners = new Set<() => void>();
   /**
    * Follow / replay mode: part states come from an agent session (live hub or action log) instead
    * of the local Simulation. Keys are part ids.
@@ -94,6 +102,22 @@ export class Engine {
 
   getWorld = (): PhysicsBinding | undefined => this.physics;
 
+  /** The sandbox network of the running simulation (projects with an ESP-01), for the Network panel. */
+  get network(): SandboxNet | undefined {
+    return this.net;
+  }
+
+  subscribeNetwork = (fn: () => void): (() => void) => {
+    this.netListeners.add(fn);
+    return () => this.netListeners.delete(fn);
+  };
+
+  getNetwork = (): SandboxNet | undefined => this.net;
+
+  private notifyNetwork(): void {
+    for (const fn of this.netListeners) fn();
+  }
+
   private notifyWorld(): void {
     for (const fn of this.worldListeners) fn();
   }
@@ -119,11 +143,16 @@ export class Engine {
     if (el) {
       this.parts.set(id, { el, last: "" });
       const svg = el.querySelector(".part-svg svg");
-      if (svg && el.dataset.partType) this.displays.attach(id, el.dataset.partType, svg);
+      if (svg && el.dataset.partType) {
+        // Colour TFTs get their own layer; the mono layer would mount a black canvas over them.
+        if (TFT_PART_TYPES.includes(el.dataset.partType)) this.tfts.attach(id, el.dataset.partType, svg);
+        else this.displays.attach(id, el.dataset.partType, svg);
+      }
       this.paintPart(id);
     } else {
       this.parts.delete(id);
       this.displays.detach(id);
+      this.tfts.detach(id);
     }
   }
 
@@ -243,6 +272,7 @@ export class Engine {
     this.clearSerial();
     if (this.sim) {
       this.sim.reset();
+      this.net?.resetRun();
       this.paintAll(true);
     }
     this.setStats(0, 0);
@@ -293,7 +323,11 @@ export class Engine {
     }
     try {
       this.disposeSim();
-      const sim = new Simulation({ project, registry, backendFactory, ...(firmware ? { firmware } : {}) });
+      // Live AI answers only while the sim runs at real time or slower (a model takes seconds).
+      const net = hasWifiPart(project) ? createWebNetwork({ liveAllowed: () => this.store.getState().speed <= 1 }) : undefined;
+      const sim = new Simulation({ project, registry, backendFactory, ...(firmware ? { firmware } : {}), ...(net ? { services: { network: net } } : {}) });
+      this.net = net;
+      this.notifyNetwork();
       this.sim = sim;
       this.simKey = topologyKey(project);
       this.simProps = new Map(project.parts.map((p) => [p.id, { ...p.props }]));
@@ -338,6 +372,10 @@ export class Engine {
     this.sim?.dispose();
     this.sim = undefined;
     this.serialPending = [];
+    if (this.net) {
+      this.net = undefined;
+      this.notifyNetwork();
+    }
   }
 
   private onProjectChange(project: Project): void {
@@ -470,6 +508,7 @@ export class Engine {
     const svg = view.el.querySelector(".part-svg");
     if (svg) applyVisualState(svg, state);
     this.displays.paint(id, state);
+    this.tfts.paint(id, state);
     paintStateAttrs(view.el, state);
   }
 
