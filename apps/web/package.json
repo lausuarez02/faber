@@ -12,6 +12,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@codemirror/lang-cpp": "6.0.3",
+    "@codemirror/lint": "6.9.7",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@fontsource/bricolage-grotesque": "5.3.0",
@@ -26,6 +30,7 @@
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.2",
     "@xyflow/react": "12.12.1",
+    "codemirror": "6.0.2",
     "lucide-react": "1.70.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
