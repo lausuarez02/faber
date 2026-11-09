@@ -1,0 +1,91 @@
+{
+  "format": "jumper/1",
+  "name": "Obstacle-avoiding rover",
+  "description": "2WD robot car: an Arduino Uno drives two TT motors through an L298N and steers away from walls with an HC-SR04 sonar. Runs in a 300 x 200 cm arena with three obstacles.",
+  "parts": [
+    { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "drv", "type": "l298n", "x": 660, "y": 20, "rotation": 0 },
+    { "id": "mL", "type": "dc-motor", "x": 960, "y": -60, "rotation": 0 },
+    { "id": "mR", "type": "dc-motor", "x": 960, "y": 140, "rotation": 0 },
+    { "id": "sonar", "type": "hc-sr04", "x": 120, "y": -200, "rotation": 0, "props": { "distance": 100 } },
+    { "id": "bat", "type": "battery-pack", "x": 660, "y": 300, "rotation": 0, "props": { "preset": "2S-LiPo" } },
+    { "id": "chassis", "type": "robot-chassis-2wd", "x": 960, "y": 300, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "uno", "pin": "D5" }, "to": { "part": "drv", "pin": "ENA" }, "color": "#FFB23F" },
+    { "id": "w2", "from": { "part": "uno", "pin": "D7" }, "to": { "part": "drv", "pin": "IN1" }, "color": "#5CF2A1" },
+    { "id": "w3", "from": { "part": "uno", "pin": "D8" }, "to": { "part": "drv", "pin": "IN2" }, "color": "#5CF2A1" },
+    { "id": "w4", "from": { "part": "uno", "pin": "D6" }, "to": { "part": "drv", "pin": "ENB" }, "color": "#FFB23F" },
+    { "id": "w5", "from": { "part": "uno", "pin": "D4" }, "to": { "part": "drv", "pin": "IN3" }, "color": "#4FB3FF" },
+    { "id": "w6", "from": { "part": "uno", "pin": "D2" }, "to": { "part": "drv", "pin": "IN4" }, "color": "#4FB3FF" },
+    { "id": "w7", "from": { "part": "drv", "pin": "OUT1" }, "to": { "part": "mL", "pin": "A" }, "color": "#FF4D2E" },
+    { "id": "w8", "from": { "part": "drv", "pin": "OUT2" }, "to": { "part": "mL", "pin": "B" }, "color": "#4A515C" },
+    { "id": "w9", "from": { "part": "drv", "pin": "OUT3" }, "to": { "part": "mR", "pin": "A" }, "color": "#FF4D2E" },
+    { "id": "w10", "from": { "part": "drv", "pin": "OUT4" }, "to": { "part": "mR", "pin": "B" }, "color": "#4A515C" },
+    { "id": "w11", "from": { "part": "bat", "pin": "POS" }, "to": { "part": "drv", "pin": "12V" }, "color": "#FF4D2E" },
+    { "id": "w12", "from": { "part": "bat", "pin": "NEG" }, "to": { "part": "drv", "pin": "GND" }, "color": "#4A515C" },
+    { "id": "w13", "from": { "part": "drv", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#4A515C" },
+    { "id": "w14", "from": { "part": "uno", "pin": "5V" }, "to": { "part": "sonar", "pin": "VCC" }, "color": "#FF4D2E" },
+    { "id": "w15", "from": { "part": "sonar", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#4A515C" },
+    { "id": "w16", "from": { "part": "uno", "pin": "D9" }, "to": { "part": "sonar", "pin": "TRIG" }, "color": "#C58BFF" },
+    { "id": "w17", "from": { "part": "sonar", "pin": "ECHO" }, "to": { "part": "uno", "pin": "D10" }, "color": "#C58BFF" }
+  ],
+  "firmware": {
+    "board": "uno",
+    "dir": "firmware",
+    "sketch": "rover/rover.ino",
+    "artifact": "firmware/rover.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "arduino:avr:uno"
+    }
+  },
+  "scenarios": [
+    { "id": "drives-without-crashing", "name": "Drives for 20 s without touching anything", "steps": [{ "expect_serial": "rover ready", "within_ms": 1000 }, { "run_ms": 20000 }, { "expect_part": "world.collisions", "op": "==", "value": 0 }, { "expect_part": "world.travelled_cm", "op": ">", "value": 300 }, { "expect_part": "world.min_clearance_cm", "op": ">", "value": 3 }, { "expect_no_errors": true }] },
+    { "id": "sees-the-wall", "name": "The sonar sees the far wall at start", "steps": [{ "expect_part": "sonar.distance", "op": ">", "value": 50, "within_ms": 500 }] }
+  ],
+  "world": {
+    "arena": {
+      "width": 300,
+      "height": 200
+    },
+    "obstacles": [
+      {
+        "id": "crate",
+        "shape": "box",
+        "x": 160,
+        "y": 80,
+        "w": 36,
+        "h": 36,
+        "angle": 15
+      },
+      {
+        "id": "pillar",
+        "shape": "circle",
+        "x": 240,
+        "y": 150,
+        "r": 12
+      },
+      {
+        "id": "bin",
+        "shape": "box",
+        "x": 70,
+        "y": 150,
+        "w": 30,
+        "h": 22,
+        "angle": 0
+      }
+    ],
+    "robot": {
+      "chassis": "chassis",
+      "leftMotor": "mL",
+      "rightMotor": "mR",
+      "sonar": "sonar",
+      "start": {
+        "x": 40,
+        "y": 40,
+        "heading": 0
+      }
+    }
+  }
+}

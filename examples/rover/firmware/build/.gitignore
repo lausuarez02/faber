@@ -1,0 +1,4 @@
+# Only the golden .hex is committed; everything else arduino-cli writes here is ignored.
+*
+!.gitignore
+!rover.ino.hex
