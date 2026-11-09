@@ -7,7 +7,7 @@
     { "id": "POS", "label": "+", "x": 20, "y": 66, "type": "passive", "description": "Signal: the tone() pin." },
     { "id": "NEG", "label": "−", "x": 40, "y": 66, "type": "passive", "description": "To GND." }
   ],
-  "size": { "w": 60, "h": 70 },
+  "size": { "w": 100, "h": 70 },
   "props": [
     { "id": "resonantHz", "label": "Resonant frequency", "type": "number", "default": 4000, "min": 1000, "max": 8000, "step": 100, "unit": "Hz", "description": "Where it is loudest. 12 mm piezo sounders: about 4 kHz; it gets quieter away from it." }
   ],

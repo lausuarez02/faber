@@ -1,0 +1,57 @@
+{
+  "id": "gc9a01-round-tft",
+  "name": "Round colour display 1.28in 240x240 (GC9A01, SPI)",
+  "category": "display",
+  "description": "1.28 in round IPS colour display, 240 x 240 pixels (the corners are not on the glass), RGB565 on the GC9A01 controller over SPI. Uno wiring: VCC → 5V (or 3V3), GND → GND, SCL → D13, SDA → D11 (it is SPI MOSI, not I2C), RES → D8, DC → D9, CS → D10, BLK → 5V or a PWM pin. Draw with Adafruit_GFX (see the example), Adafruit_GC9A01A or TFT_eSPI.",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 50, "y": 16, "type": "power", "voltage": { "min": 3.0, "max": 5.5 }, "description": "3.3 to 5 V (on-board regulator)." },
+    { "id": "GND", "label": "GND", "x": 70, "y": 16, "type": "ground", "description": "Ground." },
+    { "id": "SCK", "label": "SCL", "x": 90, "y": 16, "type": "digital", "protocols": ["spi-sck"], "description": "SPI clock (labelled SCL, but it is SPI). Uno: D13." },
+    { "id": "MOSI", "label": "SDA", "x": 110, "y": 16, "type": "digital", "protocols": ["spi-mosi"], "description": "SPI data in (labelled SDA, but it is SPI MOSI, not I2C). Uno: D11." },
+    { "id": "RST", "label": "RES", "x": 130, "y": 16, "type": "digital", "description": "Reset, active low, pulled up on the module. Uno: D8." },
+    { "id": "DC", "label": "DC", "x": 150, "y": 16, "type": "digital", "description": "Data / command select: LOW = command, HIGH = data. Uno: D9." },
+    { "id": "CS", "label": "CS", "x": 170, "y": 16, "type": "digital", "protocols": ["spi-cs"], "description": "Chip select, active low. Uno: D10." },
+    { "id": "LED", "label": "BLK", "x": 190, "y": 16, "type": "digital", "description": "Backlight: HIGH or unwired = on; analogWrite on a PWM pin dims it." }
+  ],
+  "size": { "w": 240, "h": 290 },
+  "props": [
+    {
+      "id": "logic",
+      "label": "Logic level",
+      "type": "enum",
+      "default": "5v-safe",
+      "options": [
+        { "value": "5v-safe", "label": "5 V tolerant (module with level shifting)" },
+        { "value": "3v3-only", "label": "3.3 V only (bare module)" }
+      ],
+      "description": "Most GC9A01 modules are 3.3 V logic; on a 5 V Uno add series resistors or a level shifter for real hardware (choose 3v3-only to get the warning)."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.0, "maxCurrentmA": 40, "typicalCurrentmA": 25 },
+  "footprint": "Round module about 36 mm across with an 8-pin 0.1 in header tab (VCC GND SCL SDA RES DC CS BLK)",
+  "dimensions_mm": { "w": 36, "h": 41, "d": 4.5 },
+  "mass_g": 6,
+  "current_ma": { "typ": 25, "max": 40 },
+  "price_usd": 5.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-GC9A01-1.28-round-display.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=GC9A01%201.28%20inch%20round%20display" }
+  ],
+  "bus": { "spi": { "modes": [0], "maxHz": 50000000 } },
+  "bindings": [
+    { "key": "on", "type": "boolean", "description": "The glass shows an image: powered, sleep out (0x11), display on (0x29) and backlight on." },
+    { "key": "backlight", "type": "number", "description": "Backlight brightness 0..1." },
+    { "key": "frame", "type": "number", "description": "Counts visible changes. Pixels: Simulation.framebuffer(partId) (RGB565, 240 x 240; corners off the glass stay black)." },
+    { "key": "width", "type": "number", "description": "Frame width (240)." },
+    { "key": "height", "type": "number", "description": "Frame height (240)." },
+    { "key": "rotation", "type": "number", "description": "The rotation (0..3) MADCTL matches, using the GC9A01 table (0 = BGR only, 1 = MX|MV, 2 = MX|MY, 3 = MY|MV); -1 otherwise." },
+    { "key": "lit", "type": "number", "description": "Pixels on the glass that are not black." },
+    { "key": "bright", "type": "number", "description": "Near-white pixels." },
+    { "key": "blank", "type": "boolean", "description": "Nothing shown." },
+    { "key": "sleeping", "type": "boolean", "description": "Controller in sleep mode." },
+    { "key": "inverted", "type": "boolean", "description": "INVON register set (this glass needs it for true colours)." },
+    { "key": "pixelsWritten", "type": "number", "description": "Pixels written since power-on (corners included)." },
+    { "key": "screenOpacity", "type": "number", "description": "1 when the glass shows an image (bound in the SVG)." }
+  ],
+  "tags": ["gc9a01", "round display", "round lcd", "round tft", "1.28", "240x240", "circular", "watch", "smartwatch", "colour display", "color display", "tft", "spi", "ips", "pocket", "wearable"]
+}

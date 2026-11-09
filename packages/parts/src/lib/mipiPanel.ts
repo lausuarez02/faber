@@ -51,8 +51,17 @@ export interface PanelOptions {
    *  - "portrait":  native columns run left to right (setRotation(0) upright).
    * `portraitFlip` adds a 180° turn for panels whose rotation 0 is MX|MY (ST7735 black tab).
    */
-  viewer: "landscape" | "portrait";
+  viewer: "landscape" | "portrait" | "native";
   portraitFlip?: boolean;
+  /**
+   * Glass that shows the RAM inverted (GC9A01): the controller must be in INVON for true colours,
+   * so the frame's `inverted` flag is the opposite of the INVON register.
+   */
+  invertGlass?: boolean;
+  /** Round glass (GC9A01 1.28in): pixels outside the inscribed circle are not visible and stay black. */
+  roundGlass?: boolean;
+  /** MADCTL (MY | MX | MV) of each Adafruit-style rotation 0..3, when it differs from the ILI9341 / ST7735 tables. */
+  rotationTable?: readonly number[];
   /** Glass colour order: true when MADCTL.BGR = 1 gives correct colours (most ILI9341 modules). */
   bgrPanel: boolean;
   /** Bytes returned by RDID4 / RDDID (chip id), e.g. ILI9341: 0x00 0x93 0x41. */
@@ -150,14 +159,23 @@ export class MipiPanel {
     const m = this.regs.madctl & (MADCTL.MY | MADCTL.MX | MADCTL.MV);
     const ili = [MADCTL.MX, MADCTL.MV, MADCTL.MY, MADCTL.MX | MADCTL.MY | MADCTL.MV];
     const st = [MADCTL.MX | MADCTL.MY, MADCTL.MY | MADCTL.MV, 0, MADCTL.MX | MADCTL.MV];
-    const table = this.opts.portraitFlip ? st : ili;
+    const table = this.opts.rotationTable ?? (this.opts.portraitFlip ? st : ili);
     return table.indexOf(m);
+  }
+
+  /** Pixel (vx, vy) is on the visible glass (always, unless roundGlass). */
+  onGlass(vx: number, vy: number): boolean {
+    if (!this.opts.roundGlass) return true;
+    const r = this.width / 2;
+    const dx = vx + 0.5 - r;
+    const dy = vy + 0.5 - this.height / 2;
+    return dx * dx + dy * dy <= r * r;
   }
 
   framebuffer(on: boolean): ColorFrame {
     this.frame.version = this.version;
     this.frame.on = on && this.lit;
-    this.frame.inverted = this.regs.inverted;
+    this.frame.inverted = this.regs.inverted !== (this.opts.invertGlass ?? false);
     return this.frame;
   }
 
@@ -344,6 +362,9 @@ export class MipiPanel {
       if (this.opts.viewer === "landscape") {
         vx = pr;
         vy = pc;
+      } else if (this.opts.viewer === "native") {
+        vx = pc;
+        vy = pr;
       } else if (this.opts.portraitFlip) {
         vx = this.opts.nativeW - 1 - pc;
         vy = this.opts.nativeH - 1 - pr;
@@ -352,7 +373,9 @@ export class MipiPanel {
         vy = pr;
       }
       const i = vy * this.width + vx;
-      if (this.data[i] !== px) {
+      if (this.opts.roundGlass && !this.onGlass(vx, vy)) {
+        // Outside the round glass: written to RAM on the chip, never visible.
+      } else if (this.data[i] !== px) {
         this.data[i] = px;
         this.dirty.add(vx, vy, vx + 1, vy + 1);
         this.version++;

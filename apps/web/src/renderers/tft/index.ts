@@ -1,4 +1,4 @@
-// Live renderer for colour TFT parts (ILI9341 320x240, ST7735 160x128). Their frames are too big
+// Live renderer for colour TFT parts (ILI9341 320x240, ST7735 160x128, GC9A01 240x240 round). Their frames are too big
 // for visualState, so the part model exposes them as a ColorFrame (Simulation.framebuffer(id),
 // RGB565, viewer orientation). mountTft() puts a <canvas> over the part's [data-screen] rect,
 // like the OLED/LCD renderers, and each update() repaints only the rectangle that changed since
@@ -13,7 +13,7 @@ import { colorFrameToRgba, type ColorFrame, type DirtyRect, type VisualState } f
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
-export const TFT_PART_TYPES: readonly string[] = ["ili9341-tft", "st7735-tft"];
+export const TFT_PART_TYPES: readonly string[] = ["ili9341-tft", "st7735-tft", "gc9a01-round-tft"];
 
 /** Bounding box of the pixels that differ between two frames of the same size, or null. */
 export function diffRect(prev: Uint16Array, next: Uint16Array, width: number, height: number): DirtyRect | null {
@@ -97,6 +97,8 @@ export function mountTft(svg: SVGSVGElement | Element): TftRenderer | undefined 
   canvas.width = width;
   canvas.height = height;
   Object.assign(canvas.style, { width: "100%", height: "100%", display: "block", imageRendering: "pixelated", background: "#05070a" });
+  // Round glass (GC9A01): the part's SVG covers the corners too, this keeps the canvas itself round.
+  if (screen.getAttribute("data-screen-shape") === "round") canvas.style.borderRadius = "50%";
   fo.appendChild(canvas);
   screen.parentNode?.insertBefore(fo, screen.nextSibling);
   let ctx2d: CanvasRenderingContext2D | null = null;

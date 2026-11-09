@@ -13,9 +13,11 @@ export interface TftScreenProps {
   width?: number | string;
   className?: string;
   label?: string;
+  /** Round glass (GC9A01): clip the canvas to a circle. */
+  round?: boolean;
 }
 
-export function TftScreen({ frame, backlight, width = "100%", className, label }: TftScreenProps) {
+export function TftScreen({ frame, backlight, width = "100%", className, label, round = false }: TftScreenProps) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let raf = 0;
@@ -45,13 +47,14 @@ export function TftScreen({ frame, backlight, width = "100%", className, label }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [frame, backlight]);
+  // Height follows the canvas's own width / height (the frame size), so 4:3, 4:5 and 1:1 panels all fit.
   return (
     <canvas
       ref={ref}
       className={className}
       aria-label={label ?? "Simulated colour screen"}
       role="img"
-      style={{ width, aspectRatio: "4 / 3", imageRendering: "pixelated", display: "block", background: "#05070a", borderRadius: 6 }}
+      style={{ width, height: "auto", imageRendering: "pixelated", display: "block", background: "#05070a", borderRadius: round ? "50%" : 6 }}
     />
   );
 }
