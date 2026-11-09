@@ -65,16 +65,63 @@ function usePort(): CanvasPort {
     },
     fit: () => {
       clearTimeout(fitTimer.current);
-      // Leave room for the overlays: steps panel on the right, bar on top, code / world cards below.
+      // Fit the circuit into the space the overlays leave free (steps, tests, code, world cards), so
+      // no card covers a part, least of all a display.
       const wide = typeof window !== "undefined" && window.innerWidth > 820;
-      fitTimer.current = setTimeout(() => void rf.fitView({ padding: wide ? { top: "64px", right: "290px", bottom: "56px", left: "48px" } : 0.12, duration: 450 }), 120);
+      fitTimer.current = setTimeout(() => void rf.fitView({ padding: wide ? overlayPadding() : 0.12, duration: 450 }), 120);
     },
   }).current;
+}
+
+/**
+ * fitView padding that keeps the circuit clear of the live overlays: each card reserves the side
+ * of the canvas it hugs, choosing between its width (left/right) and its height (top/bottom),
+ * whichever costs less canvas.
+ */
+type Px = `${number}px`;
+function overlayPadding(): { top: Px; right: Px; bottom: Px; left: Px } {
+  const pad = { top: 64, right: 48, bottom: 56, left: 48 };
+  const canvas = document.querySelector('[data-testid="canvas"]')?.getBoundingClientRect();
+  if (!canvas) return { top: "64px", right: "290px", bottom: "56px", left: "48px" };
+  for (const el of document.querySelectorAll(".live-steps, .live-tests, .live-code, .live-world")) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const gap = 16;
+    const left = r.right - canvas.left + gap;
+    const right = canvas.right - r.left + gap;
+    const top = r.bottom - canvas.top + gap;
+    const bottom = canvas.bottom - r.top + gap;
+    const horiz = Math.min(left, right);
+    const vert = Math.min(top, bottom);
+    // Lost canvas area if this card reserves a column vs a row.
+    if (horiz * canvas.height <= vert * canvas.width) {
+      if (left <= right) pad.left = Math.max(pad.left, left);
+      else pad.right = Math.max(pad.right, right);
+    } else if (top <= bottom) pad.top = Math.max(pad.top, top);
+    else pad.bottom = Math.max(pad.bottom, bottom);
+  }
+  // Never squeeze the circuit below a third of the canvas in either direction.
+  const fitAxis = (a: number, b: number, total: number): [number, number] => {
+    const max = total * (2 / 3);
+    if (a + b <= max) return [a, b];
+    const k = max / (a + b);
+    return [a * k, b * k];
+  };
+  const [l, r] = fitAxis(pad.left, pad.right, canvas.width);
+  const [t, b] = fitAxis(pad.top, pad.bottom, canvas.height);
+  const px = (v: number): Px => `${Math.round(v)}px`;
+  return { top: px(t), right: px(r), bottom: px(b), left: px(l) };
 }
 
 export function LiveLayer() {
   const mode = useLive((s) => s.mode);
   const port = usePort();
+  const tests = useLive((s) => s.tests);
+  const hasCode = useLive((s) => !!s.code);
+  // A card appearing (tests result, firmware) changes the free space: fit again.
+  useEffect(() => {
+    if (mode !== "off" && (tests || hasCode)) port.fit();
+  }, [mode, tests, hasCode, port]);
 
   useEffect(() => {
     const params = liveParams();
@@ -295,8 +342,13 @@ function AgentCursor() {
 
 function CodeCard() {
   const code = useLive((s) => s.code);
+  const tests = useLive((s) => s.tests);
   const [open, setOpen] = useState(true);
   useEffect(() => setOpen(true), [code]);
+  // Once tests have run the code is old news: fold it so the circuit (and its screen) has room.
+  useEffect(() => {
+    if (tests) setOpen(false);
+  }, [tests]);
   if (!code) return null;
   const lines = code.content.split("\n");
   return (

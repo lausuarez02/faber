@@ -68,3 +68,5 @@ export { I2cBus, SpiBus, I2C_FAULTS, SPI_FAULTS, I2C_LOG_BYTES } from "./bus.ts"
 export type { I2cDevice, I2cFault, I2cTransaction, SpiDevice, SpiFault, McuBusPins } from "./bus.ts";
 export { bytesToBase64, base64ToBytes, decodeMonoFrame, monoPixel, monoLitCount, monoToAscii, monoStride } from "./display.ts";
 export type { MonoFrame } from "./display.ts";
+export { routeWire, routePath } from "./route.ts";
+export type { RoutePoint, RouteBox } from "./route.ts";

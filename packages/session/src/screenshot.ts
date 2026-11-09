@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { decodeMonoFrame, monoPixel, parseBindings, type PartRegistry, type VisualState } from "@jumper/sim-core";
+import { decodeMonoFrame, monoPixel, parseBindings, routePath, routeWire, type PartRegistry, type RouteBox, type VisualState } from "@jumper/sim-core";
 import type { Project, Rotation } from "@jumper/project-format";
 import { drawArm, drawWorld, type WorldSnapshot } from "@jumper/physics";
 import { sizeOf } from "./layout.ts";
@@ -205,16 +205,16 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     out.push(`<text x="${b.p.x}" y="${b.p.y + b.h + 16}" font-family="IBM Plex Mono, monospace" font-size="12" fill="${MUTED}">${esc(b.p.id)}</text>`);
   }
 
+  // Wires route around part bodies and their id labels (drawn below each part).
+  const obstacles: RouteBox[] = boxes.flatMap((b) => [
+    { id: b.p.id, x: b.p.x, y: b.p.y, w: b.w, h: b.h },
+    { id: `${b.p.id}#label`, x: b.p.x - 2, y: b.p.y + b.h + 3, w: b.p.id.length * 7.5 + 4, h: 17 },
+  ]);
   for (const w of project.wires) {
     const a = pinAbs.get(`${w.from.part}.${w.from.pin}`);
     const z = pinAbs.get(`${w.to.part}.${w.to.pin}`);
     if (!a || !z) continue;
-    const pts = [a, ...(w.waypoints ?? []), z];
-    let d = `M${a.x} ${a.y}`;
-    if (!w.waypoints?.length) {
-      const midY = (a.y + z.y) / 2;
-      d += ` L${a.x} ${midY} L${z.x} ${midY} L${z.x} ${z.y}`;
-    } else for (const p of pts.slice(1)) d += ` L${p.x} ${p.y}`;
+    const d = w.waypoints?.length ? routePath([a, ...w.waypoints, z]) : routePath(routeWire(a, z, obstacles, w.from.part, w.to.part));
     const color = w.color ?? "#FF4D2E";
     const isLive = live.has(w.id);
     if (isLive) out.push(`<path d="${d}" fill="none" stroke="${LIVE}" stroke-width="8" stroke-opacity="0.35" stroke-linejoin="round" filter="url(#jumper-glow)"/>`);

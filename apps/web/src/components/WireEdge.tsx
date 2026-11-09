@@ -1,6 +1,10 @@
-import { memo, useCallback, useLayoutEffect, useRef } from "react";
+import { createContext, memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
+import { routePath, routeWire, type RouteBox } from "@jumper/sim-core";
 import { engine } from "../lib/app.ts";
+
+/** Part bodies wires route around (empty: plain smooth-step wires, e.g. on very large canvases). */
+export const RouteObstacles = createContext<readonly RouteBox[]>([]);
 
 export interface WireEdgeData extends Record<string, unknown> {
   color: string;
@@ -8,18 +12,13 @@ export interface WireEdgeData extends Record<string, unknown> {
 export type WireFlowEdge = Edge<WireEdgeData, "wire">;
 
 function WireEdgeImpl(props: EdgeProps<WireFlowEdge>) {
-  const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected } = props;
+  const { id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected } = props;
   const ref = useCallback((el: SVGGElement | null) => engine.registerWire(id, el), [id]);
-  const [path] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    borderRadius: 14,
-    offset: 18,
-  });
+  const obstacles = useContext(RouteObstacles);
+  const path = useMemo(() => {
+    if (obstacles.length) return routePath(routeWire({ x: sourceX, y: sourceY }, { x: targetX, y: targetY }, obstacles as RouteBox[], source, target));
+    return getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 14, offset: 18 })[0];
+  }, [obstacles, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
   const color = data?.color ?? "var(--wire)";
   // The hit area stops 12px short of each end so a pin that already has a wire can start another.
   const hitRef = useRef<SVGPathElement>(null);

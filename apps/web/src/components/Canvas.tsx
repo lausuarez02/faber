@@ -16,7 +16,11 @@ import type { PartInstance, Wire } from "@jumper/project-format";
 import { useJumper } from "../lib/app.ts";
 import { getDef, rotatedSize } from "../lib/parts.ts";
 import { PartNode, type PartFlowNode } from "./PartNode.tsx";
-import { WireEdge, type WireFlowEdge } from "./WireEdge.tsx";
+import { RouteObstacles, WireEdge, type WireFlowEdge } from "./WireEdge.tsx";
+import type { RouteBox } from "@jumper/sim-core";
+
+/** Above this many parts wires stay plain smooth-step curves (routing every wire on every drag frame costs too much). */
+const ROUTE_MAX_PARTS = 60;
 
 const nodeTypes = { part: PartNode };
 const edgeTypes = { wire: WireEdge };
@@ -100,6 +104,14 @@ export function Canvas() {
   const selectedWires = useJumper((s) => s.selectedWires);
   const nodes = useFlowNodes(project.parts, selectedParts);
   const edges = useFlowEdges(project.wires, selectedWires);
+  const obstacles = useMemo<RouteBox[]>(() => {
+    if (project.parts.length > ROUTE_MAX_PARTS) return [];
+    return project.parts.map((p) => {
+      const def = getDef(p.type);
+      const size = def ? rotatedSize(def.spec, p.rotation) : { w: 160, h: 64 };
+      return { id: p.id, x: p.x, y: p.y, w: size.w, h: size.h };
+    });
+  }, [project.parts]);
   const { screenToFlowPosition } = useReactFlow();
 
   const onNodesChange = useCallback((changes: NodeChange<PartFlowNode>[]) => {
@@ -163,45 +175,47 @@ export function Canvas() {
 
   return (
     <div className="canvas" data-testid="canvas" onDragOver={onDragOver} onDrop={onDrop}>
-      <ReactFlow<PartFlowNode, WireFlowEdge>
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onDelete={onDelete}
-        onNodeDragStart={onNodeDragStart}
-        connectionMode={ConnectionMode.Loose}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        connectionLineStyle={{ stroke: "var(--wire)", strokeWidth: 3, strokeLinecap: "round" }}
-        connectionRadius={14}
-        snapToGrid
-        snapGrid={[SNAP, SNAP]}
-        deleteKeyCode={["Backspace", "Delete"]}
-        multiSelectionKeyCode={["Shift", "Meta", "Control"]}
-        fitView
-        fitViewOptions={{ padding: 0.28, maxZoom: 1.4 }}
-        minZoom={0.15}
-        maxZoom={4}
-        attributionPosition="top-right"
-        elevateNodesOnSelect={false}
-        defaultEdgeOptions={{ type: "wire" }}
-      >
-        <Background id="dots" variant={BackgroundVariant.Dots} gap={20} size={1.6} color="var(--grid-dot)" />
-        <Controls showInteractive={false} position="bottom-left" className="canvas-controls" />
-        <MiniMap
-          pannable
-          zoomable
-          position="bottom-right"
-          className="canvas-minimap"
-          style={{ width: 150, height: 100 }}
-          nodeColor="var(--panel-2)"
-          nodeStrokeColor="var(--line)"
-          maskColor="color-mix(in srgb, var(--ink) 70%, transparent)"
-        />
-      </ReactFlow>
+      <RouteObstacles.Provider value={obstacles}>
+        <ReactFlow<PartFlowNode, WireFlowEdge>
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDelete={onDelete}
+          onNodeDragStart={onNodeDragStart}
+          connectionMode={ConnectionMode.Loose}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineStyle={{ stroke: "var(--wire)", strokeWidth: 3, strokeLinecap: "round" }}
+          connectionRadius={14}
+          snapToGrid
+          snapGrid={[SNAP, SNAP]}
+          deleteKeyCode={["Backspace", "Delete"]}
+          multiSelectionKeyCode={["Shift", "Meta", "Control"]}
+          fitView
+          fitViewOptions={{ padding: 0.28, maxZoom: 1.4 }}
+          minZoom={0.15}
+          maxZoom={4}
+          attributionPosition="top-right"
+          elevateNodesOnSelect={false}
+          defaultEdgeOptions={{ type: "wire" }}
+        >
+          <Background id="dots" variant={BackgroundVariant.Dots} gap={20} size={1.6} color="var(--grid-dot)" />
+          <Controls showInteractive={false} position="bottom-left" className="canvas-controls" />
+          <MiniMap
+            pannable
+            zoomable
+            position="bottom-right"
+            className="canvas-minimap"
+            style={{ width: 150, height: 100 }}
+            nodeColor="var(--panel-2)"
+            nodeStrokeColor="var(--line)"
+            maskColor="color-mix(in srgb, var(--ink) 70%, transparent)"
+          />
+        </ReactFlow>
+      </RouteObstacles.Provider>
     </div>
   );
 }
