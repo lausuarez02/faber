@@ -19,6 +19,14 @@
   ],
   "limits": { "maxVoltage": 6.0, "minVoltage": 4.0, "stallCurrentmA": 650, "movingCurrentmA": 250, "idleCurrentmA": 10, "minPulseUs": 400, "maxPulseUs": 2600 },
   "footprint": "SG90 micro servo, 23 × 12.2 × 29 mm, 3-wire 0.1 in female connector",
+  "dimensions_mm": { "w": 23, "h": 12.2, "d": 29 },
+  "mass_g": 9,
+  "current_ma": { "typ": 100, "max": 650 },
+  "price_usd": 2.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-SG90-micro-servo.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=SG90%20micro%20servo" }
+  ],
   "bindings": [
     { "key": "angle", "type": "number", "description": "Horn angle in degrees (0..180)." },
     { "key": "target", "type": "number", "description": "Angle the last pulse asked for." },

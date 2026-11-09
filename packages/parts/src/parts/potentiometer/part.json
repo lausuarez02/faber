@@ -15,6 +15,14 @@
   ],
   "limits": { "maxPowerW": 0.125, "maxVoltage": 50 },
   "footprint": "THT 9 mm rotary potentiometer, 3 pins at 0.1 in",
+  "dimensions_mm": { "w": 9.8, "h": 11, "d": 21 },
+  "mass_g": 2,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.6,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=10k%20rotary%20potentiometer%209mm" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-10k-potentiometer-9mm.html" }
+  ],
   "bindings": [
     { "key": "position", "type": "number", "description": "Wiper position 0..1." },
     { "key": "knobAngle", "type": "number", "description": "Knob angle in degrees, −135 (position 0) to +135 (position 1)." },

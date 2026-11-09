@@ -17,6 +17,14 @@
   ],
   "limits": { "maxVoltage": 9, "maxCurrentmA": 1500 },
   "footprint": "TT gearbox motor, 70 × 22 × 18 mm, 5.4 mm double-flat shaft",
+  "dimensions_mm": { "w": 70, "h": 22, "d": 18 },
+  "mass_g": 30,
+  "current_ma": { "typ": 150, "max": 1500 },
+  "price_usd": 2.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-TT-gear-motor-3-6V.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=TT%20DC%20gear%20motor%203-6V" }
+  ],
   "bindings": [
     { "key": "rpm", "type": "number", "description": "Output-shaft speed in rpm, signed (positive = A more positive than B)." },
     { "key": "omega", "type": "number", "description": "Output-shaft speed in rad/s, signed. Physics reads this to turn the wheel." },

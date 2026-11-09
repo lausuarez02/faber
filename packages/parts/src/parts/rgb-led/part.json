@@ -12,6 +12,14 @@
   "size": { "w": 80, "h": 90 },
   "limits": { "maxCurrentmA": 20, "absMaxCurrentmA": 30, "maxReverseVoltage": 5 },
   "footprint": "THT 5 mm RGB LED, 4 leads at 0.1 in",
+  "dimensions_mm": { "w": 5.8, "h": 5.8, "d": 8.7 },
+  "mass_g": 0.4,
+  "current_ma": { "typ": 20, "max": 60 },
+  "price_usd": 0.25,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=5mm%20RGB%20LED%20common%20cathode" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-5mm-RGB-LED-common-cathode.html" }
+  ],
   "bindings": [
     { "key": "r", "type": "number", "description": "Red brightness 0..1." },
     { "key": "g", "type": "number", "description": "Green brightness 0..1." },

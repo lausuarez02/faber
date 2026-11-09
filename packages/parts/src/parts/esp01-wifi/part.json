@@ -26,6 +26,14 @@
   ],
   "limits": { "maxVoltage": 3.6, "minVoltage": 3.0, "maxCurrentmA": 300, "typicalCurrentmA": 80 },
   "footprint": "24.8 x 14.3 mm module, 2 x 4 pin 0.1 in header",
+  "dimensions_mm": { "w": 24.8, "h": 14.3, "d": 12 },
+  "mass_g": 2,
+  "current_ma": { "typ": 80, "max": 300 },
+  "price_usd": 3,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-ESP-01S-ESP8266-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=ESP-01S%20ESP8266" }
+  ],
   "bindings": [
     { "key": "powered", "type": "boolean", "description": "3.0 to 3.6 V on VCC with EN and RST high." },
     { "key": "wifi", "type": "string", "description": "off, idle (booted, not joined), connecting, connected, or down (the Wi-Fi went away; the module reconnects by itself)." },

@@ -459,6 +459,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxTotalCurrentmA": 200
       },
       "footprint": "18 × 45 mm DIP-30, 0.6 in row spacing",
+      "dimensions_mm": {
+        "w": 45,
+        "h": 18,
+        "d": 8
+      },
+      "mass_g": 7,
+      "current_ma": {
+        "typ": 20,
+        "max": 40
+      },
+      "price_usd": 24.9,
+      "buy_links": [
+        {
+          "vendor": "Arduino Store",
+          "url": "https://store.arduino.cc/products/arduino-nano"
+        },
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=Arduino%20Nano"
+        }
+      ],
       "bindings": [
         {
           "key": "powered",
@@ -964,6 +985,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxTotalCurrentmA": 200
       },
       "footprint": "68.6 × 53.4 mm, Uno R3 shield headers",
+      "dimensions_mm": {
+        "w": 68.6,
+        "h": 53.4,
+        "d": 15
+      },
+      "mass_g": 25,
+      "current_ma": {
+        "typ": 45,
+        "max": 60
+      },
+      "price_usd": 27.6,
+      "buy_links": [
+        {
+          "vendor": "Arduino Store",
+          "url": "https://store.arduino.cc/products/arduino-uno-rev3"
+        },
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=Arduino%20Uno%20Rev3"
+        }
+      ],
       "bindings": [
         {
           "key": "powered",
@@ -1141,6 +1183,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxCurrentmA": 2000
       },
       "footprint": "Battery holder / pack with 2 leads",
+      "dimensions_mm": {
+        "w": 62,
+        "h": 58,
+        "d": 16
+      },
+      "mass_g": 110,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 6,
+      "buy_links": [
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=4xAA%20battery%20holder%20with%20switch"
+        },
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=4xAA%20battery%20holder"
+        }
+      ],
       "bindings": [
         {
           "key": "volts",
@@ -1325,6 +1388,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 0.4
       },
       "footprint": "13 x 10 mm GY-BME280 module, 4-pin 0.1 in header",
+      "dimensions_mm": {
+        "w": 13,
+        "h": 10.5,
+        "d": 3
+      },
+      "mass_g": 1,
+      "current_ma": {
+        "typ": 0.5,
+        "max": 1
+      },
+      "price_usd": 5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-GY-BME280-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=BME280%20module%20I2C"
+        }
+      ],
       "bindings": [
         {
           "key": "temperature",
@@ -1459,6 +1543,27 @@ export const partDefinitions: PartDefinition[] = [
         "ratedVoltage": 5
       },
       "footprint": "THT 12 mm round buzzer, 7.6 mm lead pitch",
+      "dimensions_mm": {
+        "w": 12,
+        "h": 12,
+        "d": 9.5
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 25,
+        "max": 30
+      },
+      "price_usd": 0.8,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=active%20buzzer%205V%2012mm"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-active-buzzer-5V-12mm.html"
+        }
+      ],
       "bindings": [
         {
           "key": "sounding",
@@ -1622,6 +1727,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxVoltage": 9
       },
       "footprint": "TT gearbox motor, 70 × 22 × 18 mm, 5.4 mm double-flat shaft",
+      "dimensions_mm": {
+        "w": 70,
+        "h": 22,
+        "d": 18
+      },
+      "mass_g": 30,
+      "current_ma": {
+        "typ": 150,
+        "max": 1500
+      },
+      "price_usd": 2.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-TT-gear-motor-3-6V.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=TT%20DC%20gear%20motor%203-6V"
+        }
+      ],
       "bindings": [
         {
           "key": "rpm",
@@ -1829,6 +1955,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 0.2
       },
       "footprint": "38 x 22 mm ZS-042 module, 6-pin 0.1 in header, CR2032 holder",
+      "dimensions_mm": {
+        "w": 38,
+        "h": 22,
+        "d": 10
+      },
+      "mass_g": 8,
+      "current_ma": {
+        "typ": 2,
+        "max": 4
+      },
+      "price_usd": 3.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-DS3231-ZS-042-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=DS3231%20RTC%20module"
+        }
+      ],
       "bindings": [
         {
           "key": "time",
@@ -2057,6 +2204,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 80
       },
       "footprint": "24.8 x 14.3 mm module, 2 x 4 pin 0.1 in header",
+      "dimensions_mm": {
+        "w": 24.8,
+        "h": 14.3,
+        "d": 12
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 80,
+        "max": 300
+      },
+      "price_usd": 3,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-ESP-01S-ESP8266-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=ESP-01S%20ESP8266"
+        }
+      ],
       "bindings": [
         {
           "key": "powered",
@@ -2295,6 +2463,27 @@ export const partDefinitions: PartDefinition[] = [
         "burstDelayUs": 460
       },
       "footprint": "HC-SR04 module, 45 × 20 mm, 4-pin 0.1 in header",
+      "dimensions_mm": {
+        "w": 45,
+        "h": 20,
+        "d": 15
+      },
+      "mass_g": 8.5,
+      "current_ma": {
+        "typ": 15,
+        "max": 20
+      },
+      "price_usd": 2.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-HC-SR04-ultrasonic-module.html"
+        },
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=HC-SR04"
+        }
+      ],
       "bindings": [
         {
           "key": "distance",
@@ -2514,6 +2703,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxLogicVoltage3v3": 3.6
       },
       "footprint": "86 x 50 mm module, 9-pin 0.1 in header (VCC GND CS RESET DC SDI SCK LED SDO)",
+      "dimensions_mm": {
+        "w": 86,
+        "h": 50,
+        "d": 7
+      },
+      "mass_g": 30,
+      "current_ma": {
+        "typ": 80,
+        "max": 120
+      },
+      "price_usd": 12,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-2.8-inch-ILI9341-SPI-TFT-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=ILI9341%202.8%20inch%20SPI%20TFT"
+        }
+      ],
       "bindings": [
         {
           "key": "on",
@@ -2805,6 +3015,27 @@ export const partDefinitions: PartDefinition[] = [
         "minLogicVoltage": 4.5
       },
       "footprint": "L298N module, 43 × 43 mm, 3 + 2 + 2 screw terminals, 6-pin header",
+      "dimensions_mm": {
+        "w": 43,
+        "h": 43,
+        "d": 27
+      },
+      "mass_g": 30,
+      "current_ma": {
+        "typ": 36,
+        "max": 70
+      },
+      "price_usd": 3.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-L298N-motor-driver-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=L298N%20motor%20driver%20module"
+        }
+      ],
       "bindings": [
         {
           "key": "powered",
@@ -3005,6 +3236,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 25
       },
       "footprint": "80 x 36 mm module, backpack header 4 pins 0.1 in (GND VCC SDA SCL)",
+      "dimensions_mm": {
+        "w": 80,
+        "h": 36,
+        "d": 20
+      },
+      "mass_g": 40,
+      "current_ma": {
+        "typ": 25,
+        "max": 40
+      },
+      "price_usd": 6,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-LCD1602-I2C-PCF8574-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=LCD%201602%20I2C%20module"
+        }
+      ],
       "bindings": [
         {
           "key": "on",
@@ -3233,6 +3485,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxReverseVoltage": 5
       },
       "footprint": "THT 5 mm round LED, 0.1 in (2.54 mm) lead pitch",
+      "dimensions_mm": {
+        "w": 5.8,
+        "h": 5.8,
+        "d": 8.7
+      },
+      "mass_g": 0.35,
+      "current_ma": {
+        "typ": 10,
+        "max": 20
+      },
+      "price_usd": 0.1,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=5mm%20LED"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-5mm-LED-assortment.html"
+        }
+      ],
       "bindings": [
         {
           "key": "brightness",
@@ -3480,6 +3753,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 3.9
       },
       "footprint": "21 x 16 mm GY-521 board, 8-pin 0.1 in header",
+      "dimensions_mm": {
+        "w": 21,
+        "h": 16,
+        "d": 3
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 4,
+        "max": 6
+      },
+      "price_usd": 3,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-GY-521-MPU6050-module.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=GY-521%20MPU-6050"
+        }
+      ],
       "bindings": [
         {
           "key": "accelX",
@@ -3642,6 +3936,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxPowerW": 0.1
       },
       "footprint": "THT 5 mm LDR, 0.1 in lead pitch",
+      "dimensions_mm": {
+        "w": 5.1,
+        "h": 4.3,
+        "d": 2
+      },
+      "mass_g": 0.2,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.15,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-GL5528-photoresistor.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=GL5528%20LDR%20photoresistor"
+        }
+      ],
       "bindings": [
         {
           "key": "lux",
@@ -3774,6 +4089,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxPowerW": 0.125
       },
       "footprint": "THT 9 mm rotary potentiometer, 3 pins at 0.1 in",
+      "dimensions_mm": {
+        "w": 9.8,
+        "h": 11,
+        "d": 21
+      },
+      "mass_g": 2,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.6,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=10k%20rotary%20potentiometer%209mm"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-10k-potentiometer-9mm.html"
+        }
+      ],
       "bindings": [
         {
           "key": "position",
@@ -3892,6 +4228,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxVoltage": 12
       },
       "footprint": "THT 6×6 mm tactile switch, 6.5 × 4.5 mm leg spacing",
+      "dimensions_mm": {
+        "w": 6,
+        "h": 6,
+        "d": 5
+      },
+      "mass_g": 0.4,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.15,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=6x6mm%20tactile%20switch%20THT"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-6x6x5-tactile-switch.html"
+        }
+      ],
       "bindings": [
         {
           "key": "pressed",
@@ -3997,6 +4354,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxPowerW": 0.25
       },
       "footprint": "THT axial, 0.4 in (10.16 mm) lead pitch, 1/4 W",
+      "dimensions_mm": {
+        "w": 6.3,
+        "h": 2.5,
+        "d": 2.5
+      },
+      "mass_g": 0.25,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.05,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=1%2F4W%20through%20hole%20resistor"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-1/4W-resistor-kit.html"
+        }
+      ],
       "bindings": [
         {
           "key": "resistance",
@@ -4137,6 +4515,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxReverseVoltage": 5
       },
       "footprint": "THT 5 mm RGB LED, 4 leads at 0.1 in",
+      "dimensions_mm": {
+        "w": 5.8,
+        "h": 5.8,
+        "d": 8.7
+      },
+      "mass_g": 0.4,
+      "current_ma": {
+        "typ": 20,
+        "max": 60
+      },
+      "price_usd": 0.25,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=5mm%20RGB%20LED%20common%20cathode"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-5mm-RGB-LED-common-cathode.html"
+        }
+      ],
       "bindings": [
         {
           "key": "r",
@@ -4312,6 +4711,27 @@ export const partDefinitions: PartDefinition[] = [
         }
       ],
       "footprint": "Acrylic 2WD chassis, about 210 × 150 mm",
+      "dimensions_mm": {
+        "w": 210,
+        "h": 150,
+        "d": 65
+      },
+      "mass_g": 160,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 8,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-2WD-robot-car-chassis-kit.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=2WD%20smart%20robot%20car%20chassis%20kit"
+        }
+      ],
       "bindings": [
         {
           "key": "label",
@@ -4564,6 +4984,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxPulseUs": 2600
       },
       "footprint": "SG90 micro servo, 23 × 12.2 × 29 mm, 3-wire 0.1 in female connector",
+      "dimensions_mm": {
+        "w": 23,
+        "h": 12.2,
+        "d": 29
+      },
+      "mass_g": 9,
+      "current_ma": {
+        "typ": 100,
+        "max": 650
+      },
+      "price_usd": 2.5,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-SG90-micro-servo.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=SG90%20micro%20servo"
+        }
+      ],
       "bindings": [
         {
           "key": "angle",
@@ -4718,6 +5159,27 @@ export const partDefinitions: PartDefinition[] = [
         "maxVoltage": 50
       },
       "footprint": "THT SS12D00-style SPDT slide switch, 0.1 in pitch",
+      "dimensions_mm": {
+        "w": 8.6,
+        "h": 3.6,
+        "d": 7.5
+      },
+      "mass_g": 0.5,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.3,
+      "buy_links": [
+        {
+          "vendor": "DigiKey",
+          "url": "https://www.digikey.com/en/products/result?keywords=SS12D00%20slide%20switch"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-SS12D00-slide-switch.html"
+        }
+      ],
       "bindings": [
         {
           "key": "position",
@@ -4863,6 +5325,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 10
       },
       "footprint": "27 x 27 mm module, 4-pin 0.1 in header (GND VCC SCL SDA)",
+      "dimensions_mm": {
+        "w": 27,
+        "h": 27.8,
+        "d": 4
+      },
+      "mass_g": 3,
+      "current_ma": {
+        "typ": 10,
+        "max": 25
+      },
+      "price_usd": 4,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-0.96-inch-OLED-SSD1306-I2C-128x64.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=SSD1306%200.96%20OLED%20I2C"
+        }
+      ],
       "bindings": [
         {
           "key": "on",
@@ -5116,6 +5599,27 @@ export const partDefinitions: PartDefinition[] = [
         "typicalCurrentmA": 40
       },
       "footprint": "34 x 56 mm module, 8-pin 0.1 in header (LED SCK SDA A0 RESET CS GND VCC), SD slot on the back",
+      "dimensions_mm": {
+        "w": 34,
+        "h": 56,
+        "d": 7
+      },
+      "mass_g": 13,
+      "current_ma": {
+        "typ": 40,
+        "max": 60
+      },
+      "price_usd": 6,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-1.8-inch-ST7735-TFT-SPI-128x160.html"
+        },
+        {
+          "vendor": "Amazon",
+          "url": "https://www.amazon.com/s?k=1.8%20inch%20TFT%20ST7735%20128x160"
+        }
+      ],
       "bindings": [
         {
           "key": "on",

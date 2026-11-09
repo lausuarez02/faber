@@ -10,6 +10,14 @@
   "size": { "w": 60, "h": 70 },
   "limits": { "maxCurrentmA": 30, "maxVoltage": 7, "minVoltage": 3, "ratedVoltage": 5 },
   "footprint": "THT 12 mm round buzzer, 7.6 mm lead pitch",
+  "dimensions_mm": { "w": 12, "h": 12, "d": 9.5 },
+  "mass_g": 2,
+  "current_ma": { "typ": 25, "max": 30 },
+  "price_usd": 0.8,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=active%20buzzer%205V%2012mm" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-active-buzzer-5V-12mm.html" }
+  ],
   "bindings": [
     { "key": "sounding", "type": "boolean", "description": "True while the buzzer is beeping." },
     { "key": "volume", "type": "number", "description": "Relative loudness 0..1 (0 below 3 V, 1 at 5 V and above)." },

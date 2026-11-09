@@ -16,6 +16,14 @@
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 4.5, "maxCurrentmA": 15, "minRangeCm": 2, "maxRangeCm": 400, "minTriggerUs": 10, "timeoutMs": 38, "burstDelayUs": 460 },
   "footprint": "HC-SR04 module, 45 × 20 mm, 4-pin 0.1 in header",
+  "dimensions_mm": { "w": 45, "h": 20, "d": 15 },
+  "mass_g": 8.5,
+  "current_ma": { "typ": 15, "max": 20 },
+  "price_usd": 2.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-HC-SR04-ultrasonic-module.html" },
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=HC-SR04" }
+  ],
   "bindings": [
     { "key": "distance", "type": "number", "description": "Distance the sensor currently sees (cm)." },
     { "key": "echo", "type": "boolean", "description": "ECHO pin is HIGH." },

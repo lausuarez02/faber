@@ -25,6 +25,14 @@
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 3, "maxCurrentmA": 5, "typicalCurrentmA": 3.9 },
   "footprint": "21 x 16 mm GY-521 board, 8-pin 0.1 in header",
+  "dimensions_mm": { "w": 21, "h": 16, "d": 3 },
+  "mass_g": 2,
+  "current_ma": { "typ": 4, "max": 6 },
+  "price_usd": 3,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-GY-521-MPU6050-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=GY-521%20MPU-6050" }
+  ],
   "bus": { "i2c": { "addresses": [104, 105], "pullUpOhms": 4700, "maxHz": 400000 } },
   "bindings": [
     { "key": "accelX", "type": "number", "description": "Acceleration X in g (what the sensor measures)." },

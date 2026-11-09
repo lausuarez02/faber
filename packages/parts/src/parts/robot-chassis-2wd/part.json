@@ -86,6 +86,14 @@
     }
   ],
   "footprint": "Acrylic 2WD chassis, about 210 × 150 mm",
+  "dimensions_mm": { "w": 210, "h": 150, "d": 65 },
+  "mass_g": 160,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 8,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-2WD-robot-car-chassis-kit.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=2WD%20smart%20robot%20car%20chassis%20kit" }
+  ],
   "bindings": [
     {
       "key": "label",

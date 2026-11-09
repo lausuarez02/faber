@@ -13,6 +13,14 @@
   ],
   "limits": { "maxPowerW": 0.1, "maxVoltage": 150 },
   "footprint": "THT 5 mm LDR, 0.1 in lead pitch",
+  "dimensions_mm": { "w": 5.1, "h": 4.3, "d": 2 },
+  "mass_g": 0.2,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.15,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-GL5528-photoresistor.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=GL5528%20LDR%20photoresistor" }
+  ],
   "bindings": [
     { "key": "lux", "type": "number", "description": "Current illuminance in lux." },
     { "key": "resistance", "type": "number", "description": "Current resistance in ohms." },

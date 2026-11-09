@@ -107,6 +107,14 @@
     "typicalCurrentmA": 0.2
   },
   "footprint": "38 x 22 mm ZS-042 module, 6-pin 0.1 in header, CR2032 holder",
+  "dimensions_mm": { "w": 38, "h": 22, "d": 10 },
+  "mass_g": 8,
+  "current_ma": { "typ": 2, "max": 4 },
+  "price_usd": 3.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-DS3231-ZS-042-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=DS3231%20RTC%20module" }
+  ],
   "bus": {
     "i2c": {
       "addresses": [
