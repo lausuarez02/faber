@@ -1096,8 +1096,33 @@ export class ProjectSession {
     return fidelityReport(this.project, this.registry, this.host ? Object.keys(this.host.faults()) : []);
   }
 
-  async screenshot(args: { path?: string; scale?: number; svg?: boolean }, ctx: OpCtx): Promise<unknown> {
-    const host = this.host;
+  async screenshot(args: { path?: string; scale?: number; svg?: boolean; scenario?: string; at_step?: number }, ctx: OpCtx): Promise<unknown> {
+    let host = this.host;
+    let scenarioNote: Record<string, unknown> | undefined;
+    let tmpHost: SimHost | undefined;
+    if (args.at_step !== undefined && !args.scenario) fail("missing-arg", "screenshot at_step needs 'scenario'", "at_step counts steps of a scenario", `pass e.g. { "scenario": "${this.project.scenarios[0]?.id ?? "my-test"}", "at_step": 3 }`);
+    if (args.scenario) {
+      const sc = this.project.scenarios.find((x) => x.id === args.scenario || x.name === args.scenario);
+      const ids = this.project.scenarios.map((x) => x.id);
+      if (!sc) fail("unknown-scenario", `screenshot: no scenario '${args.scenario}'`, `scenarios are: ${ids.join(", ") || "none"}`, `pass one of them.${didYouMean(args.scenario, ids)}`);
+      const last = sc.steps.length - 1;
+      const at = args.at_step ?? last;
+      if (!Number.isInteger(at) || at < 0 || at > last) fail("bad-arg", `screenshot: at_step ${args.at_step} is out of range`, `scenario '${sc.id}' has steps 0..${last}`, `pass a step index between 0 and ${last} (or leave at_step out for the end)`);
+      await this.ensureBuilt(ctx);
+      await SimHost.preparePhysics(this.project);
+      tmpHost = new SimHost(this.project, this.registry, this.loadHex());
+      const r = runScenario(tmpHost, sc, this.project, this.registry, undefined, { ...this.scenarioOptions(), stopAfter: at });
+      host = tmpHost;
+      scenarioNote = { scenario: sc.id, at_step: at, step: JSON.stringify(sc.steps[at]), ...(r.passed ? {} : { note: `the scenario failed before step ${at}: ${r.reason}; the picture shows the moment it failed` }) };
+    }
+    try {
+      return { ...(await this.renderScreenshot(host, args, ctx)), ...scenarioNote };
+    } finally {
+      tmpHost?.dispose();
+    }
+  }
+
+  private async renderScreenshot(host: SimHost | undefined, args: { path?: string; scale?: number; svg?: boolean }, ctx: OpCtx): Promise<Record<string, unknown>> {
     const states = host ? Object.fromEntries(host.sim.partIds().map((id) => [id, host.sim.partState(id) ?? {}])) : {};
     const world = host?.physics?.snapshot();
     const svg = composeSvg(this.project, this.registry, { states, liveWires: host?.liveWires() ?? [], title: this.project.name, ...(world ? { world } : {}) });

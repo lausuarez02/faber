@@ -243,8 +243,8 @@ export const TOOLS: ToolDef[] = [
   {
     name: "screenshot",
     title: "Picture of the canvas",
-    description: 'Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state. A .svg path writes SVG.',
-    inputSchema: { type: "object", properties: { path: { type: "string" }, scale: { type: "number", description: "1 = 1 px per canvas px (default)." } } },
+    description: 'Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state, or pass scenario (and at_step) to replay a test in a fresh simulation up to that step and picture that exact moment: {"path": "shots/playback.png", "scenario": "playback", "at_step": 12}. A .svg path writes SVG.',
+    inputSchema: { type: "object", properties: { path: { type: "string" }, scale: { type: "number", description: "1 = 1 px per canvas px (default)." }, scenario: { type: "string", description: "Scenario id to replay first (fresh simulation)." }, at_step: { type: "number", description: "Stop after this step index (default: the last step)." } } },
   },
   {
     name: "export",

@@ -33,10 +33,12 @@ Firmware and simulation
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
   display <part> [--ms N] [--scale S]     run N ms, then show the screen as ASCII
+     [--region x,y,w,h] [--save-as NAME]  crop (exact pixels) / save a golden frame for expect_display
   test [scenario]                         run scenarios (exit 1 when any fails)
   check                                   design rule check (exit 1 on errors)
   fidelity                                what to trust, what to test on hardware
   screenshot [out.png] [--ms N]           run N ms first, then render the canvas
+     [--scenario ID [--at-step N]]        or: replay a scenario up to step N (default: its end), then render
   export [dir]                            BOM, wiring table, firmware.hex
 History
   steps | undo | redo | accept [step] | reject <step>
@@ -85,6 +87,10 @@ function parse(argv: string[]): Parsed {
       ms: { type: "string" },
       reset: { type: "boolean" },
       scale: { type: "string" },
+      scenario: { type: "string" },
+      "at-step": { type: "string" },
+      region: { type: "string" },
+      "save-as": { type: "string" },
       port: { type: "string" },
       speed: { type: "string" },
       size: { type: "string" },
@@ -179,7 +185,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
     case "run":
       return { op: "run", args: { ms: ms ?? 1000, ...(o.reset ? { reset: true } : {}) } };
     case "display":
-      return { op: "read_display", args: { part: need(p.pos[0], "the display part id"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}) }, pre: { op: "run", args: { ms: ms ?? 1000 } } };
+      return { op: "read_display", args: { part: need(p.pos[0], "the display part id"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}), ...(o.region ? { region: String(o.region).split(",").map((v) => num(v.trim(), "region")) } : {}), ...(o["save-as"] ? { save_as: o["save-as"] } : {}) }, pre: { op: "run", args: { ms: ms ?? 1000 } } };
     case "test":
       return { op: "run_tests", args: p.pos[0] ? { name: p.pos[0] } : {} };
     case "check":
@@ -187,7 +193,8 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
     case "fidelity":
       return { op: "fidelity_report", args: {} };
     case "screenshot":
-      return { op: "screenshot", args: { path: resolve(BASE, p.pos[0] ?? "screenshot.png"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}) }, ...(ms ? { pre: { op: "run", args: { ms } } } : {}) };
+      if (o.scenario && ms) throw new UsageError("screenshot takes --ms or --scenario, not both (a scenario sets its own timing)");
+      return { op: "screenshot", args: { path: resolve(BASE, p.pos[0] ?? "screenshot.png"), ...(o.scale ? { scale: num(o.scale, "scale") } : {}), ...(o.scenario ? { scenario: o.scenario } : {}), ...(o["at-step"] !== undefined ? { at_step: num(o["at-step"], "at-step") } : {}) }, ...(ms ? { pre: { op: "run", args: { ms } } } : {}) };
     case "export":
       return { op: "export", args: p.pos[0] ? { dir: resolve(BASE, p.pos[0]) } : {} };
     case "steps":
