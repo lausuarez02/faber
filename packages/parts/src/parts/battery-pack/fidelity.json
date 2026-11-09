@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Power part." },
+    "timing": { "level": "none", "note": "Never discharges: the voltage does not drop over time (set the voltage prop to simulate a drained pack)." },
+    "analog": { "level": "approx", "note": "Thevenin model: open-circuit voltage + internal resistance (alkaline AA 0.15 Ω/cell, NiMH 0.03 Ω/cell, LiPo 0.02 Ω/cell, 9 V block 1.7 Ω), so it sags under motor load. No polarization, temperature or state-of-charge curve." },
+    "power": { "level": "approx", "note": "Warns above the pack's practical current (AA 2 A, NiMH 5 A, LiPo 20 A, 9 V 0.5 A). No capacity (mAh) accounting." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Voltage sag under load", "Common pack presets", "Over-current warning"],
+  "doesNotEmulate": ["Discharge over time and capacity", "Voltage recovery after load", "LiPo over-discharge protection", "Temperature effects"],
+  "testOnRealDevice": ["Run time with your motors (capacity)", "Brown-out of the Arduino when motors start on a shared pack", "Never discharge a LiPo below 3.0 V per cell"]
+}

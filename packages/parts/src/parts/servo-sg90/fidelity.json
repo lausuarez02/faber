@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Angle = linear map of the HIGH pulse width (544 µs → 0°, 2400 µs → 180°, as the Arduino Servo library assumes). Pulses outside 400–2600 µs are ignored; with no pulses the horn holds where it is." },
+    "timing": { "level": "approx", "note": "Pulse width is measured from cycle-stamped pin edges (exact to one CPU cycle). The horn moves at the datasheet speed (0.1 s/60° at 4.8 V, scaled with voltage) in 1 ms steps; there is no acceleration, overshoot or deadband (real SG90 deadband ≈ 5–10 µs ≈ 1°)." },
+    "analog": { "level": "approx", "note": "No position noise, gear backlash or load-dependent sag; under load the real horn droops a few degrees." },
+    "power": { "level": "approx", "note": "Supply current switches between 10 mA idle, 250 mA moving and 650 mA stalled (scaled with voltage), so supply sag on a shared 5 V rail shows up." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Pulse width → angle", "Travel speed (slew rate) and its voltage dependence", "Mechanical end stops and stall current", "Holding position when pulses stop", "Moving/idle/stall supply current"],
+  "doesNotEmulate": ["Deadband and jitter", "Torque limit under load (1.8 kg·cm) except a hard block", "Overshoot and acceleration", "Behaviour with pulse rates far from 50 Hz", "Unit-to-unit spread of the pulse range (many SG90s reach only ~170°)"],
+  "testOnRealDevice": ["The real pulse range of your servo (end stops buzz when driven past them)", "Brown-outs when several servos move at once on the Arduino 5 V (use a separate 5–6 V supply)", "Holding torque under your load"]
+}

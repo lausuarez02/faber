@@ -1,0 +1,182 @@
+{
+  "id": "robot-chassis-2wd",
+  "name": "2WD robot car chassis",
+  "category": "misc",
+  "description": "Mechanical part: the acrylic base of a 2-wheel-drive robot with two TT motors, 65 mm wheels and a front caster. It has no pins. Put it in a project with a \"world\" block and two dc-motor parts: the physics engine drives it with the motors' speeds and moves the robot around the arena.",
+  "pins": [],
+  "size": {
+    "w": 160,
+    "h": 200
+  },
+  "props": [
+    {
+      "id": "wheelRadius",
+      "label": "Wheel radius",
+      "type": "number",
+      "default": 3.25,
+      "min": 1,
+      "max": 20,
+      "step": 0.05,
+      "unit": "cm",
+      "description": "Drive wheel radius (65 mm TT wheels → 3.25 cm)."
+    },
+    {
+      "id": "trackWidth",
+      "label": "Track width",
+      "type": "number",
+      "default": 13.5,
+      "min": 4,
+      "max": 60,
+      "step": 0.5,
+      "unit": "cm",
+      "description": "Distance between the two drive wheels' contact points."
+    },
+    {
+      "id": "length",
+      "label": "Length",
+      "type": "number",
+      "default": 20,
+      "min": 5,
+      "max": 80,
+      "step": 0.5,
+      "unit": "cm",
+      "description": "Body length (front to back), used for collisions."
+    },
+    {
+      "id": "width",
+      "label": "Width",
+      "type": "number",
+      "default": 15,
+      "min": 5,
+      "max": 80,
+      "step": 0.5,
+      "unit": "cm",
+      "description": "Body width (including the wheels), used for collisions."
+    },
+    {
+      "id": "mass",
+      "label": "Mass",
+      "type": "number",
+      "default": 450,
+      "min": 50,
+      "max": 20000,
+      "unit": "g",
+      "description": "Total mass with motors, boards and batteries."
+    },
+    {
+      "id": "wheelGrip",
+      "label": "Tyre grip",
+      "type": "number",
+      "default": 0.8,
+      "min": 0.05,
+      "max": 1.5,
+      "step": 0.05,
+      "description": "Friction coefficient between the tyres and the floor (rubber on wood ≈ 0.8, on tiles ≈ 0.5)."
+    },
+    {
+      "id": "sensorOffset",
+      "label": "Sensor offset",
+      "type": "number",
+      "default": 15,
+      "min": 0,
+      "max": 40,
+      "step": 0.5,
+      "unit": "cm",
+      "description": "How far in front of the wheel axle the forward sensor (HC-SR04) sits. The axle is a quarter of the length behind the body centre, so 15 cm puts it at the front edge of a 20 cm body."
+    }
+  ],
+  "footprint": "Acrylic 2WD chassis, about 210 × 150 mm",
+  "bindings": [
+    {
+      "key": "label",
+      "type": "string",
+      "description": "Pose summary, e.g. \"x 52 y 40 cm · 90°\"."
+    },
+    {
+      "key": "x",
+      "type": "number",
+      "description": "Robot body centre x in the world (cm), written by the physics engine."
+    },
+    {
+      "key": "y",
+      "type": "number",
+      "description": "Robot body centre y (cm); y grows downwards like the canvas."
+    },
+    {
+      "key": "heading",
+      "type": "number",
+      "description": "Heading in degrees, 0..360 (0 = facing +x, 90 = facing +y)."
+    },
+    {
+      "key": "collisions",
+      "type": "number",
+      "description": "How many times the robot hit a wall or obstacle since reset."
+    },
+    {
+      "key": "minClearance",
+      "type": "number",
+      "description": "Smallest gap to any wall/obstacle so far (cm); 9999 before the world starts."
+    },
+    {
+      "key": "clearance",
+      "type": "number",
+      "description": "Gap to the nearest wall/obstacle now (cm)."
+    },
+    {
+      "key": "travelled",
+      "type": "number",
+      "description": "Distance driven since reset (cm)."
+    },
+    {
+      "key": "speed",
+      "type": "number",
+      "description": "Forward speed (cm/s, negative when reversing)."
+    },
+    {
+      "key": "wheelRadius",
+      "type": "number",
+      "description": "Echo of the wheelRadius prop (cm), read by the physics engine."
+    },
+    {
+      "key": "trackWidth",
+      "type": "number",
+      "description": "Echo of the trackWidth prop (cm)."
+    },
+    {
+      "key": "length",
+      "type": "number",
+      "description": "Echo of the length prop (cm)."
+    },
+    {
+      "key": "width",
+      "type": "number",
+      "description": "Echo of the width prop (cm)."
+    },
+    {
+      "key": "mass",
+      "type": "number",
+      "description": "Echo of the mass prop (g)."
+    },
+    {
+      "key": "grip",
+      "type": "number",
+      "description": "Echo of the wheelGrip prop."
+    },
+    {
+      "key": "sensorOffset",
+      "type": "number",
+      "description": "Echo of the sensorOffset prop (cm)."
+    }
+  ],
+  "tags": [
+    "robot",
+    "chassis",
+    "car",
+    "2wd",
+    "rover",
+    "smart car",
+    "wheels",
+    "mechanical",
+    "obstacle avoiding robot"
+  ]
+}

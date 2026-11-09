@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Mechanical part." },
+    "timing": { "level": "approx", "note": "Moved by the 2D physics world (Rapier) in fixed 4 ms steps of virtual time." },
+    "analog": { "level": "approx", "note": "Top-down 2D rigid body: each wheel pushes with the motor's surface speed, limited by tyre grip (Coulomb friction); sideways slip is resisted the same way; the caster adds rolling drag. No suspension, weight transfer, uneven floor or wheel slip on acceleration beyond the grip limit." },
+    "power": { "level": "n/a", "note": "Has no electrical connections." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Differential drive kinematics", "Tyre grip limit and skidding", "Collisions with arena walls and obstacles", "Mass and inertia"],
+  "doesNotEmulate": ["Motor load from the wheels (motors spin at their free speed; a blocked robot does not stall its motors)", "Caster swivel dynamics", "Bumps, ramps, carpets", "Wheel diameter mismatch"],
+  "testOnRealDevice": ["Straight-line drift (motors differ, add a trim)", "Turning radius on your floor", "Whether the sensor sees low obstacles below its mount height"]
+}

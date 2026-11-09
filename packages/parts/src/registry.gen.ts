@@ -2,14 +2,25 @@
 import { createRegistry, type PartDefinition, type PartRegistry } from "@jumper/sim-core";
 import { create as create_0 } from "./parts/arduino-nano/model.ts";
 import { create as create_1 } from "./parts/arduino-uno/model.ts";
-import { create as create_2 } from "./parts/buzzer/model.ts";
-import { create as create_3 } from "./parts/led/model.ts";
-import { create as create_4 } from "./parts/photoresistor/model.ts";
-import { create as create_5 } from "./parts/potentiometer/model.ts";
-import { create as create_6 } from "./parts/pushbutton/model.ts";
-import { create as create_7 } from "./parts/resistor/model.ts";
-import { create as create_8 } from "./parts/rgb-led/model.ts";
-import { create as create_9 } from "./parts/slide-switch/model.ts";
+import { create as create_2 } from "./parts/battery-pack/model.ts";
+import { create as create_3 } from "./parts/bme280/model.ts";
+import { create as create_4 } from "./parts/buzzer/model.ts";
+import { create as create_5 } from "./parts/dc-motor/model.ts";
+import { create as create_6 } from "./parts/ds3231-rtc/model.ts";
+import { create as create_7 } from "./parts/hc-sr04/model.ts";
+import { create as create_8 } from "./parts/l298n/model.ts";
+import { create as create_9 } from "./parts/lcd1602-i2c/model.ts";
+import { create as create_10 } from "./parts/led/model.ts";
+import { create as create_11 } from "./parts/mpu6050/model.ts";
+import { create as create_12 } from "./parts/photoresistor/model.ts";
+import { create as create_13 } from "./parts/potentiometer/model.ts";
+import { create as create_14 } from "./parts/pushbutton/model.ts";
+import { create as create_15 } from "./parts/resistor/model.ts";
+import { create as create_16 } from "./parts/rgb-led/model.ts";
+import { create as create_17 } from "./parts/robot-chassis-2wd/model.ts";
+import { create as create_18 } from "./parts/servo-sg90/model.ts";
+import { create as create_19 } from "./parts/slide-switch/model.ts";
+import { create as create_20 } from "./parts/ssd1306-oled-i2c/model.ts";
 
 export const partDefinitions: PartDefinition[] = [
   {
@@ -490,7 +501,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog and interrupts behave like the chip. SPI and TWI (I2C) are not emulated yet."
+          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog, interrupts, SPI and TWI (I2C, master mode) behave like the chip; Wire and SPI talk to the I2C and SPI parts wired to SDA/SCL (A4/A5) and MOSI/MISO/SCK (D11/D12/D13)."
         },
         "timing": {
           "level": "approx",
@@ -525,7 +536,8 @@ export const partDefinitions: PartDefinition[] = [
         "Brownout detector",
         "Pin capacitance",
         "EEPROM persistence between runs",
-        "SPI and TWI (I2C) peripherals: Wire/SPI sketches will not work",
+        "Target (slave) mode of the two-wire interface, Wire.begin(address): the board can only be the bus master",
+        "Two-wire bus electrical detail: the bus carries whole bytes, not SDA/SCL edges, so clock stretching, rise times and bus capacitance are not modelled",
         "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)"
       ],
       "testOnRealDevice": [
@@ -993,7 +1005,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog and interrupts behave like the chip. SPI and TWI (I2C) are not emulated yet."
+          "note": "Runs the real compiled firmware on an ATmega328P emulator (avr8js): GPIO, timers, USART, ADC, watchdog, interrupts, SPI and TWI (I2C, master mode) behave like the chip; Wire and SPI talk to the I2C and SPI parts wired to SDA/SCL (A4/A5) and MOSI/MISO/SCK (D11/D12/D13)."
         },
         "timing": {
           "level": "approx",
@@ -1027,7 +1039,8 @@ export const partDefinitions: PartDefinition[] = [
         "Brownout detector",
         "Pin capacitance",
         "EEPROM persistence between runs",
-        "SPI and TWI (I2C) peripherals: Wire/SPI sketches will not work",
+        "Target (slave) mode of the two-wire interface, Wire.begin(address): the board can only be the bus master",
+        "Two-wire bus electrical detail: the bus carries whole bytes, not SDA/SCL edges, so clock stretching, rise times and bus capacitance are not modelled",
         "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)"
       ],
       "testOnRealDevice": [
@@ -1039,6 +1052,374 @@ export const partDefinitions: PartDefinition[] = [
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 540 420\" width=\"540\" height=\"420\">\n  <defs>\n    <filter id=\"arduino-uno-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"3\"/>\n    </filter>\n  </defs>\n  <path d=\"M8 0 H520 L540 20 V160 L530 170 V390 L512 408 V420 H8 A8 8 0 0 1 0 412 V8 A8 8 0 0 1 8 0 Z\" fill=\"#0F1E22\" stroke=\"#24434A\" stroke-width=\"2\"/>\n  <circle cx=\"60\" cy=\"400\" r=\"7\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"120\" cy=\"30\" r=\"7\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"520\" cy=\"340\" r=\"7\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"-2\" y=\"70\" width=\"88\" height=\"96\" rx=\"3\" fill=\"#6E7682\" stroke=\"#9AA3AF\" stroke-width=\"1.5\"/>\n  <rect x=\"10\" y=\"90\" width=\"64\" height=\"56\" rx=\"2\" fill=\"#3A4250\"/>\n  <text x=\"42\" y=\"122\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\" text-anchor=\"middle\">USB</text>\n  <rect x=\"-2\" y=\"290\" width=\"72\" height=\"72\" rx=\"4\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"34\" cy=\"326\" r=\"16\" fill=\"#0B0D10\" stroke=\"#2A3039\" stroke-width=\"1.5\"/>\n  <circle cx=\"34\" cy=\"326\" r=\"5\" fill=\"#6E7682\"/>\n  <rect x=\"24\" y=\"16\" width=\"28\" height=\"28\" rx=\"3\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <circle cx=\"38\" cy=\"30\" r=\"8\" fill=\"#5A6474\"/>\n  <text x=\"38\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"middle\">RESET</text>\n  <rect x=\"250\" y=\"240\" width=\"250\" height=\"62\" rx=\"4\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"262\" cy=\"271\" r=\"4\" fill=\"#0B0D10\"/>\n  <text x=\"375\" y=\"276\" font-family=\"IBM Plex Mono\" font-size=\"11\" fill=\"#8A93A0\" text-anchor=\"middle\">ATMEGA328P</text>\n  <rect x=\"258\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"258\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"275.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"275.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"293\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"293\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"310.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"310.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"328\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"328\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"345.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"345.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"363\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"363\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"380.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"380.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"398\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"398\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"415.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"415.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"433\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"433\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"450.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"450.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"468\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"468\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"485.5\" y=\"234\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/><rect x=\"485.5\" y=\"302\" width=\"6\" height=\"6\" fill=\"#9AA3AF\"/>\n  <rect x=\"170\" y=\"200\" width=\"44\" height=\"18\" rx=\"2\" fill=\"#9AA3AF\"/>\n  <text x=\"192\" y=\"232\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" text-anchor=\"middle\">16MHz</text>\n  <text x=\"300\" y=\"196\" font-family=\"Bricolage Grotesque\" font-size=\"34\" font-weight=\"800\" fill=\"#E9EDF2\">UNO</text>\n  <text x=\"302\" y=\"216\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#8A93A0\">ATmega328P · 5V · 16 MHz</text>\n  <text x=\"302\" y=\"102\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DIGITAL (PWM ~)</text>\n  <text x=\"290\" y=\"330\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">POWER</text>\n  <text x=\"420\" y=\"330\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">ANALOG IN</text>\n  <rect x=\"224\" y=\"78\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#3A2A12\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <circle cx=\"230\" cy=\"81.5\" r=\"9\" fill=\"#FFB23F\" opacity=\"0\" filter=\"url(#arduino-uno-glow)\" data-bind=\"opacity:led_l\"/>\n  <rect x=\"224\" y=\"78\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#FFB23F\" opacity=\"0\" data-bind=\"opacity:led_l\"/>\n  <text x=\"242\" y=\"84\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">L</text>\n  <rect x=\"224\" y=\"96\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#3A2A12\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <text x=\"242\" y=\"102\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">TX</text>\n  <rect x=\"224\" y=\"110\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#3A2A12\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <text x=\"242\" y=\"116\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">RX</text>\n  <rect x=\"470\" y=\"150\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#143A26\" stroke=\"#2A5A3A\" stroke-width=\"0.5\"/>\n  <circle cx=\"476\" cy=\"153.5\" r=\"9\" fill=\"#5CF2A1\" opacity=\"0.8\" display=\"none\" filter=\"url(#arduino-uno-glow)\" data-bind=\"visible:powered\"/>\n  <rect x=\"470\" y=\"150\" width=\"12\" height=\"7\" rx=\"1\" fill=\"#5CF2A1\" display=\"none\" data-bind=\"visible:powered\"/>\n  <text x=\"488\" y=\"157\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">ON</text>\n  <rect x=\"370\" y=\"10\" width=\"160\" height=\"20\" rx=\"2\" fill=\"#0B0D10\" stroke=\"#2A3039\" stroke-width=\"1\"/>\n  <rect x=\"198\" y=\"10\" width=\"160\" height=\"20\" rx=\"2\" fill=\"#0B0D10\" stroke=\"#2A3039\" stroke-width=\"1\"/>\n  <rect x=\"210\" y=\"390\" width=\"160\" height=\"20\" rx=\"2\" fill=\"#0B0D10\" stroke=\"#2A3039\" stroke-width=\"1\"/>\n  <rect x=\"390\" y=\"390\" width=\"120\" height=\"20\" rx=\"2\" fill=\"#0B0D10\" stroke=\"#2A3039\" stroke-width=\"1\"/>\n  <rect x=\"216\" y=\"396\" width=\"8\" height=\"8\" fill=\"#2A3039\"/>\n  <text x=\"520\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 520 36)\" dominant-baseline=\"central\">0</text>\n  <text x=\"500\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 500 36)\" dominant-baseline=\"central\">1</text>\n  <text x=\"480\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 480 36)\" dominant-baseline=\"central\">2</text>\n  <text x=\"460\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 460 36)\" dominant-baseline=\"central\">~3</text>\n  <text x=\"440\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 440 36)\" dominant-baseline=\"central\">4</text>\n  <text x=\"420\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 420 36)\" dominant-baseline=\"central\">~5</text>\n  <text x=\"400\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 400 36)\" dominant-baseline=\"central\">~6</text>\n  <text x=\"380\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 380 36)\" dominant-baseline=\"central\">7</text>\n  <text x=\"348\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 348 36)\" dominant-baseline=\"central\">8</text>\n  <text x=\"328\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 328 36)\" dominant-baseline=\"central\">~9</text>\n  <text x=\"308\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 308 36)\" dominant-baseline=\"central\">~10</text>\n  <text x=\"288\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 288 36)\" dominant-baseline=\"central\">~11</text>\n  <text x=\"268\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 268 36)\" dominant-baseline=\"central\">12</text>\n  <text x=\"248\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 248 36)\" dominant-baseline=\"central\">13</text>\n  <text x=\"228\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 228 36)\" dominant-baseline=\"central\">GND</text>\n  <text x=\"208\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"end\" transform=\"rotate(-90 208 36)\" dominant-baseline=\"central\">AREF</text>\n  <text x=\"240\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 240 384)\" dominant-baseline=\"central\">IOREF</text>\n  <text x=\"260\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 260 384)\" dominant-baseline=\"central\">RST</text>\n  <text x=\"280\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 280 384)\" dominant-baseline=\"central\">3.3V</text>\n  <text x=\"300\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 300 384)\" dominant-baseline=\"central\">5V</text>\n  <text x=\"320\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 320 384)\" dominant-baseline=\"central\">GND</text>\n  <text x=\"340\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 340 384)\" dominant-baseline=\"central\">GND</text>\n  <text x=\"360\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 360 384)\" dominant-baseline=\"central\">VIN</text>\n  <text x=\"400\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 400 384)\" dominant-baseline=\"central\">A0</text>\n  <text x=\"420\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 420 384)\" dominant-baseline=\"central\">A1</text>\n  <text x=\"440\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 440 384)\" dominant-baseline=\"central\">A2</text>\n  <text x=\"460\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 460 384)\" dominant-baseline=\"central\">A3</text>\n  <text x=\"480\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 480 384)\" dominant-baseline=\"central\">A4</text>\n  <text x=\"500\" y=\"384\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\" text-anchor=\"start\" transform=\"rotate(-90 500 384)\" dominant-baseline=\"central\">A5</text>\n  <circle data-pin=\"D0\" cx=\"520\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D1\" cx=\"500\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D2\" cx=\"480\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D3\" cx=\"460\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D4\" cx=\"440\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D5\" cx=\"420\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D6\" cx=\"400\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D7\" cx=\"380\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D8\" cx=\"348\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D9\" cx=\"328\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D10\" cx=\"308\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D11\" cx=\"288\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D12\" cx=\"268\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"D13\" cx=\"248\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"228\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"AREF\" cx=\"208\" cy=\"20\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"IOREF\" cx=\"240\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"RESET\" cx=\"260\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"280\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"5V\" cx=\"300\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.2\" cx=\"320\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.3\" cx=\"340\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VIN\" cx=\"360\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A0\" cx=\"400\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A1\" cx=\"420\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A2\" cx=\"440\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A3\" cx=\"460\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A4\" cx=\"480\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"A5\" cx=\"500\" cy=\"400\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
     create: create_1,
+  },
+  {
+    spec: {
+      "id": "battery-pack",
+      "name": "Battery pack (4×AA, 2S LiPo, 9 V)",
+      "category": "power",
+      "description": "Battery for motors and robots: a voltage source with internal resistance, so it sags under load. POS (+) to the motor driver's 12V terminal or the Arduino VIN; NEG (−) to GND. Pick a preset; set voltage to model a drained pack.",
+      "pins": [
+        {
+          "id": "POS",
+          "label": "+",
+          "x": 10,
+          "y": 30,
+          "type": "power",
+          "description": "Positive terminal (red wire)."
+        },
+        {
+          "id": "NEG",
+          "label": "−",
+          "x": 10,
+          "y": 50,
+          "type": "ground",
+          "description": "Negative terminal (black wire). Shares GND with everything."
+        }
+      ],
+      "size": {
+        "w": 160,
+        "h": 80
+      },
+      "props": [
+        {
+          "id": "preset",
+          "label": "Type",
+          "type": "enum",
+          "default": "4xAA",
+          "options": [
+            {
+              "value": "4xAA",
+              "label": "4 × AA alkaline (6.0 V fresh, 0.6 Ω)"
+            },
+            {
+              "value": "4xNiMH",
+              "label": "4 × AA NiMH (5.2 V, 0.12 Ω)"
+            },
+            {
+              "value": "2S-LiPo",
+              "label": "2S LiPo (8.4 V full, 7.4 V nominal, 0.04 Ω)"
+            },
+            {
+              "value": "9V",
+              "label": "9 V block (9.0 V, 1.7 Ω)"
+            },
+            {
+              "value": "custom",
+              "label": "Custom (set voltage and internalResistance)"
+            }
+          ],
+          "description": "Chemistry and cell count. Sets the open-circuit voltage, internal resistance and current limit."
+        },
+        {
+          "id": "voltage",
+          "label": "Open-circuit voltage",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 30,
+          "step": 0.1,
+          "unit": "V",
+          "description": "0 = the preset's fresh voltage. Set it to model a partly drained pack (e.g. 4×AA at 4.8 V) or a custom battery."
+        },
+        {
+          "id": "internalResistance",
+          "label": "Internal resistance",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 20,
+          "step": 0.01,
+          "unit": "Ω",
+          "description": "0 = the preset's value. Terminal voltage = voltage − current × this."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 2000
+      },
+      "footprint": "Battery holder / pack with 2 leads",
+      "bindings": [
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "Terminal voltage under the present load."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Current delivered (mA)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "e.g. \"5.6 V · 410 mA\"."
+        },
+        {
+          "key": "presetLabel",
+          "type": "string",
+          "description": "e.g. \"4×AA\"."
+        }
+      ],
+      "tags": [
+        "battery",
+        "batteries",
+        "aa",
+        "lipo",
+        "9v",
+        "power",
+        "supply",
+        "robot",
+        "pack",
+        "cell"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Power part."
+        },
+        "timing": {
+          "level": "none",
+          "note": "Never discharges: the voltage does not drop over time (set the voltage prop to simulate a drained pack)."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Thevenin model: open-circuit voltage + internal resistance (alkaline AA 0.15 Ω/cell, NiMH 0.03 Ω/cell, LiPo 0.02 Ω/cell, 9 V block 1.7 Ω), so it sags under motor load. No polarization, temperature or state-of-charge curve."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Warns above the pack's practical current (AA 2 A, NiMH 5 A, LiPo 20 A, 9 V 0.5 A). No capacity (mAh) accounting."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Voltage sag under load",
+        "Common pack presets",
+        "Over-current warning"
+      ],
+      "doesNotEmulate": [
+        "Discharge over time and capacity",
+        "Voltage recovery after load",
+        "LiPo over-discharge protection",
+        "Temperature effects"
+      ],
+      "testOnRealDevice": [
+        "Run time with your motors (capacity)",
+        "Brown-out of the Arduino when motors start on a shared pack",
+        "Never discharge a LiPo below 3.0 V per cell"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 80\" width=\"160\" height=\"80\">\n  <path d=\"M10 30 H30\" stroke=\"#D9473B\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <path d=\"M10 50 H30\" stroke=\"#8A93A0\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"28\" y=\"10\" width=\"124\" height=\"60\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"34\" y=\"16\" width=\"26\" height=\"48\" rx=\"4\" fill=\"#2B313B\"/>\n  <rect x=\"62\" y=\"16\" width=\"26\" height=\"48\" rx=\"4\" fill=\"#2B313B\"/>\n  <rect x=\"90\" y=\"16\" width=\"26\" height=\"48\" rx=\"4\" fill=\"#2B313B\"/>\n  <rect x=\"118\" y=\"16\" width=\"26\" height=\"48\" rx=\"4\" fill=\"#2B313B\"/>\n  <text x=\"90\" y=\"32\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"11\" fill=\"#E9EDF2\" data-bind=\"text:presetLabel\">4×AA</text>\n  <text x=\"90\" y=\"52\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">6.0 V</text>\n  <text x=\"16\" y=\"25\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">+</text>\n  <text x=\"16\" y=\"62\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"POS\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_2,
+  },
+  {
+    spec: {
+      "id": "bme280",
+      "name": "Temperature, humidity and pressure sensor BME280 (I2C)",
+      "category": "sensor",
+      "description": "Bosch BME280 breakout on I2C (0x76 on most modules, 0x77 when SDO is high). Wire VIN → 5V, GND → GND, SCL → A5, SDA → A4 on an Uno. With Adafruit_BME280 call bme.begin(0x76): its default address is 0x77. Temperature, pressure and humidity are props you (or a test) set; the sensor returns raw readings that the library's compensation formulas turn back into exactly those values.",
+      "pins": [
+        {
+          "id": "VIN",
+          "label": "VIN",
+          "x": 30,
+          "y": 14,
+          "type": "power",
+          "voltage": {
+            "min": 3.3,
+            "max": 5.5
+          },
+          "description": "3.3 to 5 V supply (on-board regulator and level shifting)."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 50,
+          "y": 14,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "SCL",
+          "label": "SCL",
+          "x": 70,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-scl"
+          ],
+          "description": "I2C clock. Uno: A5. 10 kOhm pull-up on the module."
+        },
+        {
+          "id": "SDA",
+          "label": "SDA",
+          "x": 90,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-sda"
+          ],
+          "description": "I2C data. Uno: A4. 10 kOhm pull-up on the module."
+        }
+      ],
+      "size": {
+        "w": 120,
+        "h": 110
+      },
+      "props": [
+        {
+          "id": "address",
+          "label": "I2C address",
+          "type": "enum",
+          "default": "0x76",
+          "options": [
+            "0x76",
+            "0x77"
+          ],
+          "description": "0x76 with SDO to GND (most modules), 0x77 with SDO high (Adafruit's board and the library default)."
+        },
+        {
+          "id": "temperature",
+          "label": "Temperature",
+          "type": "number",
+          "default": 22.5,
+          "min": -40,
+          "max": 85,
+          "step": 0.1,
+          "unit": "°C"
+        },
+        {
+          "id": "humidity",
+          "label": "Humidity",
+          "type": "number",
+          "default": 45,
+          "min": 0,
+          "max": 100,
+          "step": 0.5,
+          "unit": "%RH"
+        },
+        {
+          "id": "pressure",
+          "label": "Pressure",
+          "type": "number",
+          "default": 1013.25,
+          "min": 300,
+          "max": 1100,
+          "step": 0.1,
+          "unit": "hPa",
+          "description": "Absolute pressure. 1013.25 hPa reads as altitude 0 m with readAltitude(1013.25)."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 1,
+        "maxVoltage": 5.5,
+        "minVoltage": 3.3,
+        "typicalCurrentmA": 0.4
+      },
+      "footprint": "13 x 10 mm GY-BME280 module, 4-pin 0.1 in header",
+      "bindings": [
+        {
+          "key": "temperature",
+          "type": "number",
+          "description": "Temperature it reports, °C (after the compensation formula, 0.01 °C steps)."
+        },
+        {
+          "key": "humidity",
+          "type": "number",
+          "description": "Relative humidity it reports, %."
+        },
+        {
+          "key": "pressure",
+          "type": "number",
+          "description": "Pressure it reports, hPa."
+        },
+        {
+          "key": "mode",
+          "type": "string",
+          "description": "sleep, forced or normal (ctrl_meas mode bits)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Short reading for the drawing, e.g. 22.5°C 45%."
+        }
+      ],
+      "bus": {
+        "i2c": {
+          "addresses": [
+            118,
+            119
+          ],
+          "addressProp": "address",
+          "pullUpOhms": 10000,
+          "maxHz": 400000
+        }
+      },
+      "tags": [
+        "bme280",
+        "bmp280",
+        "temperature",
+        "humidity",
+        "pressure",
+        "barometer",
+        "altitude",
+        "weather",
+        "environment sensor",
+        "i2c",
+        "adafruit_bme280"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "I2C at 0x76/0x77: chip id 0x60, soft reset, calibration block (0x88-0xA1, 0xE1-0xE7), ctrl_hum/ctrl_meas/config, sleep/forced/normal mode, skipped measurements (0x80000 / 0x8000 when oversampling is 0) and burst reads of 0xF7-0xFE. Raw values come from inverting the datasheet's integer compensation, so Adafruit_BME280 reads the prop values back to 0.01 °C, about 0.01 hPa and 0.001 %RH."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Conversions finish instantly: the status register never shows 'measuring', and normal mode has a fresh sample at every read whatever the standby time."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "No sensor noise, IIR filter or self-heating; one fixed calibration set instead of a per-chip one. Values are exactly what you set."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Fixed 0.4 mA from VIN; answers only from 3.0 V. 10 kOhm pull-ups on SDA and SCL."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "Chip id 0x60 and the I2C address prop (0x76/0x77)",
+        "Calibration registers and the datasheet compensation formulas (temperature, 64-bit pressure, humidity)",
+        "Sleep, forced and normal modes, oversampling 0 = skipped",
+        "Soft reset (0xE0 = 0xB6)",
+        "Settable temperature, humidity and pressure (props or set interactions)"
+      ],
+      "doesNotEmulate": [
+        "Conversion time and the 'measuring' status bit",
+        "IIR filter and standby timing",
+        "Noise, drift and self-heating",
+        "The SPI interface of the chip",
+        "Per-chip calibration differences"
+      ],
+      "testOnRealDevice": [
+        "Self-heating: in normal mode with fast sampling a real BME280 reads 1-2 °C high",
+        "Which address your module uses (0x76 or 0x77)",
+        "Absolute pressure vs your local sea-level pressure for altitude"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 110\" width=\"120\" height=\"110\">\n  <rect x=\"2\" y=\"2\" width=\"116\" height=\"106\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"20\" y=\"5\" width=\"80\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"30\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VIN</text>\n  <text x=\"50\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"70\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"90\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"48\" y=\"46\" width=\"24\" height=\"24\" rx=\"2\" fill=\"#9AA3AF\" stroke=\"#3A4250\"/>\n  <circle cx=\"66\" cy=\"52\" r=\"1.6\" fill=\"#15181D\"/>\n  <text x=\"60\" y=\"84\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">BME280</text>\n  <text x=\"60\" y=\"98\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">22.5°C 45%</text>\n  <circle data-pin=\"VIN\" cx=\"30\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"50\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"70\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"90\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_3,
   },
   {
     spec: {
@@ -1148,7 +1529,1084 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M20 46 V66 M40 46 V66\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"20\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"14\" fill=\"#1C2027\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"3\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <text x=\"14\" y=\"16\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <g display=\"none\" opacity=\"1\" data-bind=\"visible:sounding,opacity:volume\">\n    <path d=\"M51 20 A10 10 0 0 1 51 36\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M55 16 A16 16 0 0 1 55 40\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n    <path d=\"M9 20 A10 10 0 0 0 9 36\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M5 16 A16 16 0 0 0 5 40\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n  </g>\n  <circle data-pin=\"POS\" cx=\"20\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"40\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_2,
+    create: create_4,
+  },
+  {
+    spec: {
+      "id": "dc-motor",
+      "name": "DC gear motor (TT, 3–6 V)",
+      "category": "motor",
+      "description": "Yellow TT gear motor used on 2WD robot cars: about 200 rpm at 6 V. Never wire it to an Arduino pin (it needs 150–1500 mA): drive it from an L298N output (OUT1/OUT2 or OUT3/OUT4). Swap A and B to reverse it.",
+      "pins": [
+        {
+          "id": "A",
+          "label": "M+",
+          "x": 10,
+          "y": 30,
+          "type": "passive",
+          "description": "Motor terminal. The shaft turns forward (positive rpm) when A is more positive than B."
+        },
+        {
+          "id": "B",
+          "label": "M−",
+          "x": 10,
+          "y": 50,
+          "type": "passive",
+          "description": "Other motor terminal."
+        }
+      ],
+      "size": {
+        "w": 140,
+        "h": 80
+      },
+      "props": [
+        {
+          "id": "ratedVoltage",
+          "label": "Rated voltage",
+          "type": "number",
+          "default": 6,
+          "min": 1,
+          "max": 24,
+          "step": 0.1,
+          "unit": "V",
+          "description": "Voltage the no-load speed and currents below are given at."
+        },
+        {
+          "id": "noLoadRpm",
+          "label": "No-load speed",
+          "type": "number",
+          "default": 200,
+          "min": 1,
+          "max": 20000,
+          "unit": "rpm",
+          "description": "Output-shaft speed with no load at the rated voltage (after the gearbox). TT motors: 120–250 rpm depending on gear ratio."
+        },
+        {
+          "id": "stallCurrent",
+          "label": "Stall current",
+          "type": "number",
+          "default": 1.5,
+          "min": 0.05,
+          "max": 20,
+          "step": 0.05,
+          "unit": "A",
+          "description": "Current with the shaft blocked at the rated voltage. Sets the winding resistance (ratedVoltage / stallCurrent)."
+        },
+        {
+          "id": "noLoadCurrent",
+          "label": "No-load current",
+          "type": "number",
+          "default": 0.15,
+          "min": 0.001,
+          "max": 5,
+          "step": 0.01,
+          "unit": "A",
+          "description": "Current when spinning freely at the rated voltage. Sets friction."
+        },
+        {
+          "id": "timeConstantMs",
+          "label": "Spin-up time constant",
+          "type": "number",
+          "default": 60,
+          "min": 5,
+          "max": 2000,
+          "unit": "ms",
+          "description": "Time to reach 63 % of the final speed after a voltage step (rotor + gearbox inertia)."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 1500,
+        "maxVoltage": 9
+      },
+      "footprint": "TT gearbox motor, 70 × 22 × 18 mm, 5.4 mm double-flat shaft",
+      "bindings": [
+        {
+          "key": "rpm",
+          "type": "number",
+          "description": "Output-shaft speed in rpm, signed (positive = A more positive than B)."
+        },
+        {
+          "key": "omega",
+          "type": "number",
+          "description": "Output-shaft speed in rad/s, signed. Physics reads this to turn the wheel."
+        },
+        {
+          "key": "spinning",
+          "type": "boolean",
+          "description": "True while |rpm| > 1."
+        },
+        {
+          "key": "spinTransform",
+          "type": "string",
+          "description": "SVG transform turning the hub: \"rotate(<deg> 98 40)\"."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Average winding current in mA (signed)."
+        },
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "Average voltage across A–B."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Speed label, e.g. \"182 rpm\"."
+        }
+      ],
+      "tags": [
+        "dc motor",
+        "gear motor",
+        "tt motor",
+        "yellow motor",
+        "robot",
+        "wheel",
+        "car",
+        "2wd",
+        "rover"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Not a logic part."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "First-order mechanics (inertia + viscous and Coulomb friction) integrated every 1 ms of virtual time; winding inductance (electrical time constant ≈ 1 ms) is ignored."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Linear DC motor: back-EMF = Ke·ω in series with the winding resistance, Ke/Kt/friction derived from the rated voltage, no-load speed, stall and no-load current. Under fast PWM (an L298N output while ENA gets analogWrite) the winding is duty-averaged assuming continuous current: I = (duty·V_on − Ke·ω)/R, so speed ≈ duty × full speed, and the battery supplies duty·I. Real drivers in fast-decay mode with a light load can run faster than that at low duty, and below ~20–30 % duty a real TT motor often does not start under load."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Draws its real current from the driver and the battery (stall ≈ 1.5 A at 6 V), so supply sag and driver overcurrent show up; heating and brush losses are not modelled."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Speed proportional to average voltage minus friction",
+        "Spin-up and coast-down with a time constant",
+        "Direction from polarity",
+        "Stall current when blocked (loadTorque)",
+        "Duty-averaged speed under PWM",
+        "Start-up dead band from static friction"
+      ],
+      "doesNotEmulate": [
+        "Winding inductance and current ripple",
+        "Brush noise and EMI",
+        "Gearbox backlash",
+        "Unit-to-unit spread (real TT motors differ by ±10–20 % in speed, which makes a robot curve)",
+        "Temperature and wear"
+      ],
+      "testOnRealDevice": [
+        "Whether both motors run at the same speed (calibrate a per-motor PWM trim)",
+        "Minimum PWM that starts the motor under load",
+        "Supply brown-out on the Arduino when motors start (use a separate battery for the motors)"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 140 80\" width=\"140\" height=\"80\">\n  <path d=\"M10 30 H26 M10 50 H26\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"24\" y=\"22\" width=\"40\" height=\"36\" rx=\"6\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"28\" y=\"26\" width=\"8\" height=\"28\" rx=\"2\" fill=\"#1C2027\"/>\n  <rect x=\"62\" y=\"12\" width=\"64\" height=\"56\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"98\" cy=\"40\" r=\"20\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <g transform=\"rotate(0 98 40)\" data-bind=\"transform:spinTransform\">\n    <rect x=\"95\" y=\"22\" width=\"6\" height=\"36\" rx=\"2\" fill=\"#C9CED6\"/>\n    <rect x=\"80\" y=\"37\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#8A93A0\"/>\n    <circle cx=\"98\" cy=\"40\" r=\"4\" fill=\"#0D0F12\" stroke=\"#5CF2A1\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"70\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\" data-bind=\"text:label\">0 rpm</text>\n  <text x=\"13\" y=\"26\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_5,
+  },
+  {
+    spec: {
+      "id": "ds3231-rtc",
+      "name": "Real-time clock DS3231 (I2C)",
+      "category": "sensor",
+      "description": "Battery-backed real-time clock with a temperature-compensated crystal, on I2C at 0x68. Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno and use RTClib (RTC_DS3231 rtc; rtc.begin(); rtc.now()). The simulated clock starts at the startTime prop and runs with simulation time, so every run is reproducible.",
+      "pins": [
+        {
+          "id": "32K",
+          "label": "32K",
+          "x": 14,
+          "y": 30,
+          "type": "digital",
+          "description": "32.768 kHz output (open drain). Not modelled: stays high-impedance."
+        },
+        {
+          "id": "SQW",
+          "label": "SQW",
+          "x": 14,
+          "y": 50,
+          "type": "digital",
+          "description": "Square wave / alarm interrupt output (open drain, active low). Not modelled: stays high-impedance."
+        },
+        {
+          "id": "SCL",
+          "label": "SCL",
+          "x": 14,
+          "y": 70,
+          "type": "digital",
+          "protocols": [
+            "i2c-scl"
+          ],
+          "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the module."
+        },
+        {
+          "id": "SDA",
+          "label": "SDA",
+          "x": 14,
+          "y": 90,
+          "type": "digital",
+          "protocols": [
+            "i2c-sda"
+          ],
+          "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the module."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 14,
+          "y": 110,
+          "type": "power",
+          "voltage": {
+            "min": 2.3,
+            "max": 5.5
+          },
+          "description": "2.3 to 5.5 V supply."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 14,
+          "y": 130,
+          "type": "ground",
+          "description": "Ground."
+        }
+      ],
+      "size": {
+        "w": 300,
+        "h": 160
+      },
+      "props": [
+        {
+          "id": "startTime",
+          "label": "Time at t = 0",
+          "type": "enum",
+          "default": "2026-01-01T12:00:00",
+          "options": [
+            "2026-01-01T12:00:00",
+            "2026-06-15T08:30:00",
+            "2026-12-31T23:59:50",
+            "2030-02-28T23:59:55"
+          ],
+          "description": "Clock time when the simulation starts. The options are presets; to set any other time while running, set the 'time' field (interaction set, key 'time', value 'YYYY-MM-DDTHH:MM:SS'), or let the sketch call rtc.adjust()."
+        },
+        {
+          "id": "temperature",
+          "label": "Temperature",
+          "type": "number",
+          "default": 25,
+          "min": -40,
+          "max": 85,
+          "step": 0.25,
+          "unit": "°C",
+          "description": "Die temperature the RTC reports (registers 0x11/0x12, 0.25 °C steps)."
+        },
+        {
+          "id": "lostPower",
+          "label": "Lost power",
+          "type": "boolean",
+          "default": false,
+          "description": "Start with the oscillator-stop flag set, as after the backup battery ran out (RTClib rtc.lostPower() returns true)."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 1,
+        "maxVoltage": 5.5,
+        "minVoltage": 2.3,
+        "typicalCurrentmA": 0.2
+      },
+      "footprint": "38 x 22 mm ZS-042 module, 6-pin 0.1 in header, CR2032 holder",
+      "bindings": [
+        {
+          "key": "time",
+          "type": "string",
+          "description": "Current clock time, YYYY-MM-DD HH:MM:SS."
+        },
+        {
+          "key": "clock",
+          "type": "string",
+          "description": "HH:MM:SS shown on the module drawing."
+        },
+        {
+          "key": "temperature",
+          "type": "number",
+          "description": "Temperature it reports, °C."
+        },
+        {
+          "key": "running",
+          "type": "boolean",
+          "description": "Powered (a real DS3231 keeps time on its battery, but answers I2C only when powered)."
+        },
+        {
+          "key": "lostPower",
+          "type": "boolean",
+          "description": "Oscillator-stop flag (status register bit 7)."
+        }
+      ],
+      "bus": {
+        "i2c": {
+          "addresses": [
+            104
+          ],
+          "pullUpOhms": 4700,
+          "maxHz": 400000
+        }
+      },
+      "tags": [
+        "rtc",
+        "ds3231",
+        "real time clock",
+        "clock",
+        "time",
+        "rtclib",
+        "zs-042",
+        "i2c",
+        "alarm"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "I2C at 0x68 with the register map, auto-incrementing pointer and wrap-around: BCD seconds to year with century bit, 12/24-hour mode, the time latched at START for consistent multi-byte reads, the oscillator-stop flag (cleared by writing 0), control/aging registers, and the temperature registers in 0.25 °C steps."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "The clock runs with simulation time, exactly (0 ppm). Writing the time restarts the second like the chip's countdown chain. Alarms are stored but never fire."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Temperature is whatever the temperature prop says, rounded to 0.25 °C; on the chip it is measured every 64 s."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Fixed 0.2 mA from VCC; answers I2C only above 2.3 V. The backup battery is not modelled: the time survives power loss and lostPower is a prop."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "Registers 0x00-0x12 with BCD time and date, century bit and 12/24-hour mode",
+        "Time copied to the read buffer at START, so RTClib's 7-byte read never tears",
+        "Setting the time (rtc.adjust) and the oscillator-stop flag (rtc.lostPower)",
+        "Temperature registers (rtc.getTemperature) from the temperature prop",
+        "Deterministic start time from the startTime prop"
+      ],
+      "doesNotEmulate": [
+        "Alarm matching, the A1F/A2F flags and the SQW/INT interrupt output",
+        "The 32 kHz and square-wave outputs",
+        "Crystal drift, aging offset and temperature compensation",
+        "The AT24C32 EEPROM at 0x57 that many ZS-042 modules carry",
+        "The day-of-week register as written: it is always derived from the date"
+      ],
+      "testOnRealDevice": [
+        "Alarms and the SQW interrupt",
+        "Drift over days (about 2 ppm, one minute a year)",
+        "Keeping time on the coin cell with the board unpowered; some ZS-042 modules charge the cell and damage non-rechargeable CR2032s"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 160\" width=\"300\" height=\"160\">\n  <rect x=\"2\" y=\"2\" width=\"296\" height=\"156\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"20\" width=\"22\" height=\"120\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"32\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">32K</text>\n  <text x=\"32\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">SQW</text>\n  <text x=\"32\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"32\" y=\"93\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"32\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"32\" y=\"133\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"70\" y=\"22\" width=\"70\" height=\"56\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <text x=\"105\" y=\"54\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DS3231</text>\n  <circle cx=\"225\" cy=\"80\" r=\"58\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <circle cx=\"225\" cy=\"80\" r=\"50\" fill=\"#323944\"/>\n  <text x=\"225\" y=\"76\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"15\" fill=\"#5CF2A1\" data-bind=\"text:clock\">12:00:00</text>\n  <text x=\"225\" y=\"96\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">CR2032</text>\n  <text x=\"70\" y=\"140\" font-family=\"IBM Plex Sans\" font-size=\"9\" fill=\"#8A93A0\">RTC · I2C 0x68</text>\n  <circle data-pin=\"32K\" cx=\"14\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SQW\" cx=\"14\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"14\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"14\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"14\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"14\" cy=\"130\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_6,
+  },
+  {
+    spec: {
+      "id": "hc-sr04",
+      "name": "Ultrasonic distance sensor (HC-SR04)",
+      "category": "sensor",
+      "description": "Measures distance from 2 to 400 cm. Pulse TRIG HIGH for 10 µs; ECHO then goes HIGH for 58 µs per cm. In code: digitalWrite(trig, HIGH); delayMicroseconds(10); digitalWrite(trig, LOW); cm = pulseIn(echo, HIGH, 30000) / 58. VCC to 5V, GND to GND.",
+      "pins": [
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 60,
+          "y": 96,
+          "type": "power",
+          "voltage": {
+            "min": 4.5,
+            "max": 5.5
+          },
+          "description": "5 V supply (about 15 mA)."
+        },
+        {
+          "id": "TRIG",
+          "label": "TRIG",
+          "x": 80,
+          "y": 96,
+          "type": "digital",
+          "description": "Trigger input: a HIGH pulse of at least 10 µs starts one measurement."
+        },
+        {
+          "id": "ECHO",
+          "label": "ECHO",
+          "x": 100,
+          "y": 96,
+          "type": "digital",
+          "description": "Echo output (5 V): HIGH for the sound's round-trip time, 58 µs per cm. Stays HIGH ~38 ms when nothing is in range."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 120,
+          "y": 96,
+          "type": "ground",
+          "description": "Ground."
+        }
+      ],
+      "size": {
+        "w": 180,
+        "h": 100
+      },
+      "props": [
+        {
+          "id": "distance",
+          "label": "Distance to target",
+          "type": "number",
+          "default": 100,
+          "min": 0,
+          "max": 1000,
+          "step": 1,
+          "unit": "cm",
+          "description": "Distance to the nearest object in front of the sensor. Over 400 cm (or 0) = nothing in range: ECHO stays HIGH for the 38 ms timeout. A world with physics overrides it every step with a raycast."
+        },
+        {
+          "id": "temperature",
+          "label": "Air temperature",
+          "type": "number",
+          "default": 20,
+          "min": -20,
+          "max": 50,
+          "unit": "°C",
+          "description": "Sets the speed of sound (331.3 + 0.606·T m/s); 20 °C → 343.4 m/s → 58.2 µs per cm round trip."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 15,
+        "maxVoltage": 5.5,
+        "minVoltage": 4.5,
+        "minRangeCm": 2,
+        "maxRangeCm": 400,
+        "minTriggerUs": 10,
+        "timeoutMs": 38,
+        "burstDelayUs": 460
+      },
+      "footprint": "HC-SR04 module, 45 × 20 mm, 4-pin 0.1 in header",
+      "bindings": [
+        {
+          "key": "distance",
+          "type": "number",
+          "description": "Distance the sensor currently sees (cm)."
+        },
+        {
+          "key": "echo",
+          "type": "boolean",
+          "description": "ECHO pin is HIGH."
+        },
+        {
+          "key": "measuring",
+          "type": "boolean",
+          "description": "A measurement is in progress (burst sent, waiting for the echo)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Distance label, e.g. \"23 cm\" or \"> 400 cm\"."
+        },
+        {
+          "key": "lastEchoUs",
+          "type": "number",
+          "description": "Width of the last ECHO pulse in µs (0 before the first)."
+        },
+        {
+          "key": "pings",
+          "type": "number",
+          "description": "Measurements started since reset."
+        }
+      ],
+      "tags": [
+        "hc-sr04",
+        "ultrasonic",
+        "sonar",
+        "distance sensor",
+        "range finder",
+        "obstacle",
+        "robot",
+        "ping"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "TRIG pulses shorter than 10 µs are ignored, a new trigger is ignored while a measurement runs, ECHO is a push-pull 5 V output."
+        },
+        "timing": {
+          "level": "ok",
+          "note": "Cycle-exact on the MCU clock: ECHO rises 460 µs after TRIG falls (200 µs 40 kHz burst + module processing) and stays HIGH distance × 2 / speed-of-sound (58.2 µs/cm at 20 °C), or 38 ms with nothing in 2–400 cm. The MCU is stopped at the exact cycle so pulseIn() measures it correctly."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "The target is a single distance: a prop, or from the physics world the nearest hit of 7 rays over ±15° (a 30° cone, roughly what measured beam patterns show for walls and large objects; the datasheet's 15° 'effectual angle' is for small targets). No beam pattern, no soft or angled surfaces that absorb or deflect the sound, no multipath, no noise."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Constant 15 mA load on VCC; it measures only with VCC ≥ 4.5 V."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part (ultrasound is not modelled as a medium)."
+        }
+      },
+      "emulates": [
+        "10 µs trigger requirement",
+        "Echo pulse width proportional to distance",
+        "Speed of sound vs temperature",
+        "No-echo 38 ms timeout beyond 400 cm",
+        "Busy while measuring",
+        "Distance from the physics world (raycast)"
+      ],
+      "doesNotEmulate": [
+        "Beam shape and side lobes (here 7 rays over ±15°; a thin pole at the edge of that cone may not echo on hardware)",
+        "Soft, round or angled targets that return no echo",
+        "Crosstalk between two sensors",
+        "Measurement noise (± 0.3–1 cm) and occasional zero readings",
+        "Minimum time between pings (~60 ms recommended)"
+      ],
+      "testOnRealDevice": [
+        "Readings on soft (fabric), round or angled obstacles",
+        "Readings closer than 3 cm",
+        "Two sensors pinging at the same time",
+        "Ping rate faster than every 60 ms"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 100\" width=\"180\" height=\"100\">\n  <rect x=\"2\" y=\"6\" width=\"176\" height=\"80\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <g display=\"none\" data-bind=\"visible:measuring\">\n    <path d=\"M34 36 A12 12 0 0 1 50 36 M30 30 A18 18 0 0 1 54 30\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:echo\">\n    <path d=\"M130 52 A12 12 0 0 0 146 52 M126 58 A18 18 0 0 0 150 58\" fill=\"none\" stroke=\"#FFB23F\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"90\" y=\"20\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"10\" fill=\"#E9EDF2\">HC-SR04</text>\n  <text x=\"90\" y=\"48\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#5CF2A1\" data-bind=\"text:label\">100 cm</text>\n  <text x=\"60\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">VCC</text>\n  <text x=\"80\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">TRIG</text>\n  <text x=\"100\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">ECHO</text>\n  <text x=\"120\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">GND</text>\n  <path d=\"M60 86 V96 M80 86 V96 M100 86 V96 M120 86 V96\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <circle data-pin=\"VCC\" cx=\"60\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"TRIG\" cx=\"80\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ECHO\" cx=\"100\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"120\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_7,
+  },
+  {
+    spec: {
+      "id": "l298n",
+      "name": "L298N dual H-bridge motor driver module",
+      "category": "motor",
+      "description": "Drives two DC motors from a separate battery. Battery + → 12V, battery − → GND, and also wire GND to the Arduino GND. Motor A on OUT1/OUT2 is controlled by ENA (speed, analogWrite) and IN1/IN2 (direction); motor B on OUT3/OUT4 by ENB and IN3/IN4. The outputs lose about 2 V, so a 6 V pack gives a motor about 4 V.",
+      "pins": [
+        {
+          "id": "OUT1",
+          "label": "OUT1",
+          "x": 6,
+          "y": 70,
+          "type": "passive",
+          "description": "Motor A terminal 1 (HIGH when IN1 is HIGH and ENA is on)."
+        },
+        {
+          "id": "OUT2",
+          "label": "OUT2",
+          "x": 6,
+          "y": 110,
+          "type": "passive",
+          "description": "Motor A terminal 2 (HIGH when IN2 is HIGH and ENA is on)."
+        },
+        {
+          "id": "OUT3",
+          "label": "OUT3",
+          "x": 234,
+          "y": 110,
+          "type": "passive",
+          "description": "Motor B terminal 1 (HIGH when IN3 is HIGH and ENB is on)."
+        },
+        {
+          "id": "OUT4",
+          "label": "OUT4",
+          "x": 234,
+          "y": 70,
+          "type": "passive",
+          "description": "Motor B terminal 2 (HIGH when IN4 is HIGH and ENB is on)."
+        },
+        {
+          "id": "12V",
+          "label": "12V (VS)",
+          "x": 30,
+          "y": 194,
+          "type": "power",
+          "voltage": {
+            "min": 5,
+            "max": 35
+          },
+          "description": "Motor supply from the battery, 5–35 V (the on-board 5 V regulator needs ≥ 7 V; keep ≤ 12 V with the 5V-EN jumper on)."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 60,
+          "y": 194,
+          "type": "ground",
+          "description": "Battery − and Arduino GND (all must be common)."
+        },
+        {
+          "id": "5V",
+          "label": "5V",
+          "x": 90,
+          "y": 194,
+          "type": "power",
+          "description": "With the 5V-EN jumper (prop regulatorJumper) this is a 5 V output from the on-board regulator; without it, feed 5 V logic power here."
+        },
+        {
+          "id": "ENA",
+          "label": "ENA",
+          "x": 120,
+          "y": 194,
+          "type": "digital",
+          "description": "Enable motor A. HIGH = on; analogWrite() here sets motor A's speed. Leave unwired only with the ENA jumper on (prop enaJumper)."
+        },
+        {
+          "id": "IN1",
+          "label": "IN1",
+          "x": 140,
+          "y": 194,
+          "type": "digital",
+          "description": "Motor A direction input 1."
+        },
+        {
+          "id": "IN2",
+          "label": "IN2",
+          "x": 160,
+          "y": 194,
+          "type": "digital",
+          "description": "Motor A direction input 2."
+        },
+        {
+          "id": "IN3",
+          "label": "IN3",
+          "x": 180,
+          "y": 194,
+          "type": "digital",
+          "description": "Motor B direction input 1."
+        },
+        {
+          "id": "IN4",
+          "label": "IN4",
+          "x": 200,
+          "y": 194,
+          "type": "digital",
+          "description": "Motor B direction input 2."
+        },
+        {
+          "id": "ENB",
+          "label": "ENB",
+          "x": 220,
+          "y": 194,
+          "type": "digital",
+          "description": "Enable motor B. HIGH = on; analogWrite() here sets motor B's speed."
+        }
+      ],
+      "size": {
+        "w": 240,
+        "h": 200
+      },
+      "props": [
+        {
+          "id": "enaJumper",
+          "label": "ENA jumper fitted",
+          "type": "boolean",
+          "default": false,
+          "description": "Many modules ship with a jumper on ENA tying it HIGH (motor A always enabled, full speed only). Remove it (false) to control speed with analogWrite on ENA."
+        },
+        {
+          "id": "enbJumper",
+          "label": "ENB jumper fitted",
+          "type": "boolean",
+          "default": false,
+          "description": "Same for ENB / motor B."
+        },
+        {
+          "id": "regulatorJumper",
+          "label": "5V-EN jumper fitted",
+          "type": "boolean",
+          "default": true,
+          "description": "On-board 78M05 regulator on: the module makes its own 5 V logic supply from 12V (needs ≥ 7 V for a full 5 V) and outputs it on the 5V pin."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 2000,
+        "maxVoltage": 46,
+        "peakCurrentmA": 3000,
+        "minLogicVoltage": 4.5
+      },
+      "footprint": "L298N module, 43 × 43 mm, 3 + 2 + 2 screw terminals, 6-pin header",
+      "bindings": [
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "Logic supply present (power LED)."
+        },
+        {
+          "key": "aState",
+          "type": "string",
+          "description": "Motor A output: \"fwd\", \"rev\", \"brake\" or \"off\"."
+        },
+        {
+          "key": "bState",
+          "type": "string",
+          "description": "Motor B output: \"fwd\", \"rev\", \"brake\" or \"off\"."
+        },
+        {
+          "key": "aDuty",
+          "type": "number",
+          "description": "Motor A drive fraction 0..1 (ENA duty × direction inputs)."
+        },
+        {
+          "key": "bDuty",
+          "type": "number",
+          "description": "Motor B drive fraction 0..1."
+        },
+        {
+          "key": "aLabel",
+          "type": "string",
+          "description": "Motor A summary for the SVG, e.g. \"A fwd 63%\"."
+        },
+        {
+          "key": "bLabel",
+          "type": "string",
+          "description": "Motor B summary for the SVG."
+        },
+        {
+          "key": "vs",
+          "type": "number",
+          "description": "Motor supply voltage at the 12V terminal."
+        }
+      ],
+      "tags": [
+        "l298n",
+        "l298",
+        "h-bridge",
+        "motor driver",
+        "dual motor driver",
+        "robot",
+        "dc motor",
+        "car",
+        "rover"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Truth table per bridge: EN low = coast (outputs off), IN1≠IN2 = drive in that direction, IN1=IN2 = brake (both outputs to the same rail). Inputs threshold at VIL 1.5 V / VIH 2.3 V with hysteresis, as in the L298 datasheet."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Switching is instantaneous (the real L298 needs ~1–2 µs, so PWM above ~25 kHz misbehaves on hardware but not here). PWM on ENA/ENB or IN pins is duty-averaged: the module declares the duty on its outputs and the motor averages its current."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Bipolar output stage as piecewise-linear drops: high side 0.9 V + 0.35 Ω, low side 0.8 V + 0.35 Ω, so a motor sees about VS − 1.9 V at 0.2 A and VS − 2.4 V at 1 A (datasheet: 1.8 V typ, 3.2 V max total at 1 A). Flyback diodes on every output."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Motor current is drawn from the 12V terminal, so the battery sags. 78M05 regulator: 5 V when VS ≥ 7 V, else VS − 2 V. No thermal model (the real chip needs its heatsink above ~1 A)."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Forward / reverse / brake / coast per channel",
+        "Speed control with analogWrite on ENA/ENB (or on IN pins)",
+        "~2 V output drop that grows with current",
+        "Motor current drawn from the battery",
+        "On-board 5 V regulator and its dropout below 7 V",
+        "ENA/ENB jumpers"
+      ],
+      "doesNotEmulate": [
+        "Switching delays and PWM frequency limits",
+        "Thermal shutdown and heatsink temperature",
+        "Current sense resistors (SENSA/SENSB are tied to GND on the module)",
+        "Slow-decay current recirculation during PWM off-time"
+      ],
+      "testOnRealDevice": [
+        "Motor speed at low PWM duty (L298N loses torque below ~30 % duty)",
+        "Chip temperature at your motor current",
+        "Whether the motors reset the Arduino when they start (separate supplies, common ground)"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 200\" width=\"240\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"236\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"2\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"212\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"14\" y=\"162\" width=\"92\" height=\"30\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"110\" y=\"182\" width=\"120\" height=\"14\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"78\" y=\"22\" width=\"84\" height=\"64\" rx=\"4\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M84 22 V10 M96 22 V10 M108 22 V10 M120 22 V10 M132 22 V10 M144 22 V10 M156 22 V10\" stroke=\"#3A4250\" stroke-width=\"3\"/>\n  <rect x=\"88\" y=\"96\" width=\"64\" height=\"26\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"120\" y=\"58\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"14\" fill=\"#E9EDF2\">L298N</text>\n  <text x=\"120\" y=\"74\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">DUAL H-BRIDGE</text>\n  <circle cx=\"184\" cy=\"30\" r=\"5\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"184\" cy=\"30\" r=\"3.5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"visible:powered\"/>\n  <text x=\"34\" y=\"140\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:aLabel\">A off</text>\n  <text x=\"206\" y=\"140\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:bLabel\">B off</text>\n  <text x=\"34\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT1</text>\n  <text x=\"34\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT2</text>\n  <text x=\"206\" y=\"113\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT3</text>\n  <text x=\"206\" y=\"66\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT4</text>\n  <text x=\"30\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">12V</text>\n  <text x=\"60\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"90\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">5V</text>\n  <text x=\"120\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENA</text>\n  <text x=\"140\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN1</text>\n  <text x=\"160\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN2</text>\n  <text x=\"180\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN3</text>\n  <text x=\"200\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN4</text>\n  <text x=\"220\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENB</text>\n  <circle data-pin=\"OUT1\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT2\" cx=\"6\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT3\" cx=\"234\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT4\" cx=\"234\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"12V\" cx=\"30\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"60\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"5V\" cx=\"90\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENA\" cx=\"120\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN1\" cx=\"140\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN2\" cx=\"160\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN3\" cx=\"180\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN4\" cx=\"200\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENB\" cx=\"220\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_8,
+  },
+  {
+    spec: {
+      "id": "lcd1602-i2c",
+      "name": "LCD 16x2 with I2C backpack (HD44780 + PCF8574)",
+      "category": "display",
+      "description": "Character LCD, 2 lines of 16 characters, with a PCF8574 I2C backpack (address 0x27, or 0x3F for the PCF8574A). Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno. Use the LiquidCrystal_PCF8574 library: LiquidCrystal_PCF8574 lcd(0x27); lcd.begin(16, 2); lcd.setBacklight(255); lcd.print(\"hi\").",
+      "pins": [
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 10,
+          "y": 105,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 10,
+          "y": 125,
+          "type": "power",
+          "voltage": {
+            "min": 4.5,
+            "max": 5.5
+          },
+          "description": "5 V supply (the HD44780 and backlight need 5 V)."
+        },
+        {
+          "id": "SDA",
+          "label": "SDA",
+          "x": 10,
+          "y": 145,
+          "type": "digital",
+          "protocols": [
+            "i2c-sda"
+          ],
+          "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the backpack."
+        },
+        {
+          "id": "SCL",
+          "label": "SCL",
+          "x": 10,
+          "y": 165,
+          "type": "digital",
+          "protocols": [
+            "i2c-scl"
+          ],
+          "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the backpack."
+        }
+      ],
+      "size": {
+        "w": 640,
+        "h": 290
+      },
+      "props": [
+        {
+          "id": "address",
+          "label": "I2C address",
+          "type": "enum",
+          "default": "0x27",
+          "options": [
+            "0x20",
+            "0x21",
+            "0x22",
+            "0x23",
+            "0x24",
+            "0x25",
+            "0x26",
+            "0x27",
+            "0x38",
+            "0x39",
+            "0x3A",
+            "0x3B",
+            "0x3C",
+            "0x3D",
+            "0x3E",
+            "0x3F"
+          ],
+          "description": "0x27 for a PCF8574T backpack with no jumpers bridged, 0x3F for a PCF8574AT. Bridging A0-A2 lowers it."
+        },
+        {
+          "id": "color",
+          "label": "Display colour",
+          "type": "enum",
+          "default": "blue",
+          "options": [
+            "blue",
+            "green"
+          ],
+          "description": "blue: white text on blue; green: dark text on yellow-green."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 40,
+        "maxVoltage": 5.5,
+        "minVoltage": 4.5,
+        "typicalCurrentmA": 25
+      },
+      "footprint": "80 x 36 mm module, backpack header 4 pins 0.1 in (GND VCC SDA SCL)",
+      "bindings": [
+        {
+          "key": "on",
+          "type": "boolean",
+          "description": "Powered and DISPLAY ON (HD44780 display control D = 1)."
+        },
+        {
+          "key": "backlight",
+          "type": "boolean",
+          "description": "Backlight on (PCF8574 P3)."
+        },
+        {
+          "key": "backlightOpacity",
+          "type": "number",
+          "description": "1 with the backlight on, 0.15 off (bound in the SVG)."
+        },
+        {
+          "key": "line0",
+          "type": "string",
+          "description": "The 16 characters visible on line 1. Custom characters (codes 0-7) show as U+25AF, unknown ROM codes as '?'."
+        },
+        {
+          "key": "line1",
+          "type": "string",
+          "description": "The 16 characters visible on line 2."
+        },
+        {
+          "key": "glyphs",
+          "type": "string",
+          "description": "base64 of the 32 visible character codes (16 of line 1, then 16 of line 2), for renderers."
+        },
+        {
+          "key": "cgram",
+          "type": "string",
+          "description": "base64 of the 64 CGRAM bytes (8 custom characters x 8 rows, low 5 bits = pixels, bit 4 = leftmost)."
+        },
+        {
+          "key": "cursorCol",
+          "type": "number",
+          "description": "Cursor column 0..15 on screen, -1 when off screen."
+        },
+        {
+          "key": "cursorRow",
+          "type": "number",
+          "description": "Cursor row 0..1."
+        },
+        {
+          "key": "cursorOn",
+          "type": "boolean",
+          "description": "Underline cursor enabled (lcd.cursor())."
+        },
+        {
+          "key": "blinkOn",
+          "type": "boolean",
+          "description": "True during the visible half of the blinking block cursor (lcd.blink()), about 0.4 s per phase."
+        },
+        {
+          "key": "frame",
+          "type": "number",
+          "description": "Counts visible changes; renderers redraw only when it changes."
+        },
+        {
+          "key": "cols",
+          "type": "number",
+          "description": "Columns (16)."
+        },
+        {
+          "key": "rows",
+          "type": "number",
+          "description": "Rows (2)."
+        },
+        {
+          "key": "color",
+          "type": "string",
+          "description": "Colour prop: blue or green."
+        }
+      ],
+      "bus": {
+        "i2c": {
+          "addresses": [
+            39,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
+          ],
+          "addressProp": "address",
+          "pullUpOhms": 4700,
+          "maxHz": 100000
+        }
+      },
+      "tags": [
+        "lcd",
+        "1602",
+        "16x2",
+        "hd44780",
+        "pcf8574",
+        "i2c lcd",
+        "character display",
+        "liquidcrystal",
+        "liquidcrystal_pcf8574",
+        "display"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "PCF8574 port expander at its I2C address driving an HD44780 in 4-bit mode (P0 RS, P1 RW, P2 EN, P3 backlight, P4-P7 D4-D7): power-up 8-bit mode, the 4-bit switch, clear, home, entry mode, display/cursor/blink control, cursor and display shift, function set (1 or 2 lines), CGRAM custom characters and DDRAM addressing with the 0x40 second line."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Every instruction completes instantly; the busy flag always reads clear, so a sketch that sends too fast for a real LCD (no delay after clear) still works here. The cursor blinks at the HD44780 rate of about 0.4 s per phase."
+        },
+        "analog": {
+          "level": "none",
+          "note": "The contrast trimmer on the backpack is not modelled: text is always readable. On real modules a mis-set trimmer shows blank or solid blocks."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Draws a fixed 25 mA from VCC (backlight included) and works from 4 to 6 V. 4.7 kOhm pull-ups on SDA and SCL."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "I2C address from the prop (0x20-0x27 PCF8574, 0x38-0x3F PCF8574A)",
+        "Nibble latching on the falling edge of EN, 8-bit power-up state and the switch to 4-bit",
+        "Clear, home, entry mode (increment/decrement, shift), display on/off, cursor, blink, cursor/display shift, function set",
+        "8 custom characters in CGRAM (lcd.createChar)",
+        "Backlight on P3 (lcd.setBacklight / lcd.backlight)",
+        "HD44780 ROM A00 for ASCII, plus ¥ → ← ° µ Ω"
+      ],
+      "doesNotEmulate": [
+        "Busy flag and instruction execution time (1.52 ms for clear/home)",
+        "Contrast trimmer, viewing angle and LCD response time (ghosting)",
+        "Katakana and other ROM A00 codes above 0x7F, except ° µ Ω",
+        "5x10 dot font mode",
+        "Backpacks with a different pin map (some use P0 = EN)"
+      ],
+      "testOnRealDevice": [
+        "Turn the contrast trimmer on the back until the text is readable",
+        "Check the address with an I2C scanner (0x27 or 0x3F are the common ones)",
+        "Add a short delay after lcd.clear() if your library does not wait for the busy flag"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 290\" width=\"640\" height=\"290\">\n  <rect x=\"2\" y=\"2\" width=\"636\" height=\"286\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"22\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"2\" y=\"88\" width=\"30\" height=\"96\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"40\" y=\"108\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"40\" y=\"128\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"148\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"40\" y=\"168\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SCL</text>\n  <rect x=\"64\" y=\"40\" width=\"548\" height=\"210\" rx=\"6\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"#1C2A6B\" opacity=\"0.15\" data-bind=\"opacity:backlightOpacity\"/>\n  <rect data-screen=\"16x2\" x=\"100\" y=\"90\" width=\"476\" height=\"110\" fill=\"#1C2A6B\" opacity=\"0\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"none\" stroke=\"#3A4250\"/>\n  <text x=\"84\" y=\"242\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#8A93A0\">1602 HD44780 · PCF8574</text>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"105\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"125\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"10\" cy=\"145\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"10\" cy=\"165\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_9,
   },
   {
     spec: {
@@ -1294,7 +2752,292 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"4\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"16\" fill=\"#FF3B2F\" opacity=\"0\" filter=\"url(#led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 48 V62 L10 76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M30 48 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#5A1712\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\" data-bind=\"fill:lens\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M12 22 A8 8 0 0 1 18 14\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M6 44 H32 V49 H6 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <line x1=\"32\" y1=\"43\" x2=\"32\" y2=\"50\" stroke=\"#E9EDF2\" stroke-width=\"1.5\"/>\n  <text x=\"4\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_3,
+    create: create_10,
+  },
+  {
+    spec: {
+      "id": "mpu6050",
+      "name": "Accelerometer + gyroscope MPU-6050 (GY-521, I2C)",
+      "category": "sensor",
+      "description": "6-axis motion sensor (3-axis accelerometer, 3-axis gyroscope, temperature) on a GY-521 board, I2C address 0x68 (0x69 with AD0 wired to VCC). Wire VCC → 5V, GND → GND, SCL → A5, SDA → A4 on an Uno. Works with Adafruit_MPU6050 and Electronic Cats MPU6050. Acceleration (g), rotation (°/s) and temperature are props; a physics engine can drive them every step with sim.setProps(id, { accelX, accelY, accelZ, gyroX, gyroY, gyroZ }).",
+      "pins": [
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 20,
+          "y": 14,
+          "type": "power",
+          "voltage": {
+            "min": 3,
+            "max": 5.5
+          },
+          "description": "3.3 to 5 V (on-board 3.3 V regulator)."
+        },
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 40,
+          "y": 14,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "SCL",
+          "label": "SCL",
+          "x": 60,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-scl"
+          ],
+          "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the board."
+        },
+        {
+          "id": "SDA",
+          "label": "SDA",
+          "x": 80,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-sda"
+          ],
+          "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the board."
+        },
+        {
+          "id": "XDA",
+          "label": "XDA",
+          "x": 100,
+          "y": 14,
+          "type": "digital",
+          "description": "Auxiliary I2C data (for a magnetometer). Not modelled."
+        },
+        {
+          "id": "XCL",
+          "label": "XCL",
+          "x": 120,
+          "y": 14,
+          "type": "digital",
+          "description": "Auxiliary I2C clock. Not modelled."
+        },
+        {
+          "id": "AD0",
+          "label": "AD0",
+          "x": 140,
+          "y": 14,
+          "type": "digital",
+          "description": "Address select: LOW or unconnected (4.7 kOhm pull-down on the board) = 0x68, HIGH = 0x69."
+        },
+        {
+          "id": "INT",
+          "label": "INT",
+          "x": 160,
+          "y": 14,
+          "type": "digital",
+          "description": "Interrupt output. Not modelled: stays high-impedance."
+        }
+      ],
+      "size": {
+        "w": 180,
+        "h": 130
+      },
+      "props": [
+        {
+          "id": "accelX",
+          "label": "Accel X",
+          "type": "number",
+          "default": 0,
+          "min": -16,
+          "max": 16,
+          "step": 0.01,
+          "unit": "g"
+        },
+        {
+          "id": "accelY",
+          "label": "Accel Y",
+          "type": "number",
+          "default": 0,
+          "min": -16,
+          "max": 16,
+          "step": 0.01,
+          "unit": "g"
+        },
+        {
+          "id": "accelZ",
+          "label": "Accel Z",
+          "type": "number",
+          "default": 1,
+          "min": -16,
+          "max": 16,
+          "step": 0.01,
+          "unit": "g",
+          "description": "1 g when lying flat, chip up."
+        },
+        {
+          "id": "gyroX",
+          "label": "Gyro X",
+          "type": "number",
+          "default": 0,
+          "min": -2000,
+          "max": 2000,
+          "step": 1,
+          "unit": "°/s"
+        },
+        {
+          "id": "gyroY",
+          "label": "Gyro Y",
+          "type": "number",
+          "default": 0,
+          "min": -2000,
+          "max": 2000,
+          "step": 1,
+          "unit": "°/s"
+        },
+        {
+          "id": "gyroZ",
+          "label": "Gyro Z",
+          "type": "number",
+          "default": 0,
+          "min": -2000,
+          "max": 2000,
+          "step": 1,
+          "unit": "°/s"
+        },
+        {
+          "id": "temperature",
+          "label": "Temperature",
+          "type": "number",
+          "default": 25,
+          "min": -40,
+          "max": 85,
+          "step": 0.1,
+          "unit": "°C"
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 5,
+        "maxVoltage": 5.5,
+        "minVoltage": 3,
+        "typicalCurrentmA": 3.9
+      },
+      "footprint": "21 x 16 mm GY-521 board, 8-pin 0.1 in header",
+      "bindings": [
+        {
+          "key": "accelX",
+          "type": "number",
+          "description": "Acceleration X in g (what the sensor measures)."
+        },
+        {
+          "key": "accelY",
+          "type": "number",
+          "description": "Acceleration Y in g."
+        },
+        {
+          "key": "accelZ",
+          "type": "number",
+          "description": "Acceleration Z in g."
+        },
+        {
+          "key": "gyroX",
+          "type": "number",
+          "description": "Rotation rate X in °/s."
+        },
+        {
+          "key": "gyroY",
+          "type": "number",
+          "description": "Rotation rate Y in °/s."
+        },
+        {
+          "key": "gyroZ",
+          "type": "number",
+          "description": "Rotation rate Z in °/s."
+        },
+        {
+          "key": "address",
+          "type": "number",
+          "description": "Current I2C address (104 = 0x68 or 105 = 0x69, from AD0)."
+        },
+        {
+          "key": "asleep",
+          "type": "boolean",
+          "description": "SLEEP bit of PWR_MGMT_1 (set at power-up until the sketch wakes it)."
+        },
+        {
+          "key": "tiltTransform",
+          "type": "string",
+          "description": "Small rotation of the chip drawing from the X acceleration."
+        }
+      ],
+      "bus": {
+        "i2c": {
+          "addresses": [
+            104,
+            105
+          ],
+          "pullUpOhms": 4700,
+          "maxHz": 400000
+        }
+      },
+      "tags": [
+        "mpu6050",
+        "mpu-6050",
+        "gy-521",
+        "imu",
+        "accelerometer",
+        "gyroscope",
+        "gyro",
+        "tilt",
+        "motion",
+        "balance",
+        "robot",
+        "i2c"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "I2C at 0x68/0x69 (from the AD0 pin), WHO_AM_I 0x68, sleep at power-up, DEVICE_RESET, signal path reset, accelerometer and gyro full-scale ranges, temperature, and the data-ready flag. Readings saturate at the 16-bit limits like the real ADCs."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "A new sample is ready at every read; the sample rate divider, the digital low-pass filter delay and the FIFO are not modelled."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Readings are the prop values exactly: no noise, bias, cross-axis sensitivity or temperature drift. A real sensor needs offset calibration."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Fixed 3.9 mA from VCC; answers only from 2.9 V. 4.7 kOhm pull-ups on SDA/SCL, 4.7 kOhm pull-down on AD0."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "WHO_AM_I, PWR_MGMT_1 sleep/reset, ACCEL_CONFIG and GYRO_CONFIG full-scale ranges",
+        "Accelerometer, gyroscope and temperature output registers (big-endian, two's complement)",
+        "Address 0x68 or 0x69 from the AD0 pin voltage",
+        "Saturation at ±32767 counts",
+        "Props or sim.setProps(...) from a physics step set the motion"
+      ],
+      "doesNotEmulate": [
+        "Digital motion processor (DMP), FIFO and interrupts on the INT pin",
+        "Sample rate divider and low-pass filter delay",
+        "Noise, offsets and drift (calibration routines converge instantly)",
+        "The auxiliary I2C bus (XDA/XCL) and pass-through mode",
+        "Self-test"
+      ],
+      "testOnRealDevice": [
+        "Offset calibration: real gyros read a few °/s at rest",
+        "Vibration and noise on a moving robot (motors couple into the accelerometer)",
+        "DMP-based sketches (MPU6050_DMP6) and interrupt-driven reads"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 130\" width=\"180\" height=\"130\">\n  <rect x=\"2\" y=\"2\" width=\"176\" height=\"126\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"8\" y=\"5\" width=\"164\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"20\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"60\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"80\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"100\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XDA</text>\n  <text x=\"120\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XCL</text>\n  <text x=\"140\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">AD0</text>\n  <text x=\"160\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">INT</text>\n  <g transform=\"rotate(0 90 80)\" data-bind=\"transform:tiltTransform\">\n    <rect x=\"74\" y=\"64\" width=\"32\" height=\"32\" rx=\"2\" fill=\"#15181D\" stroke=\"#4A5363\"/>\n    <circle cx=\"79\" cy=\"69\" r=\"1.6\" fill=\"#9AA3AF\"/>\n    <path d=\"M90 92 V70 M86 74 L90 70 L94 74\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" fill=\"none\"/>\n  </g>\n  <text x=\"30\" y=\"118\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">GY-521 MPU-6050</text>\n  <circle data-pin=\"VCC\" cx=\"20\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"40\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"60\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XDA\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"AD0\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"INT\" cx=\"160\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_11,
   },
   {
     spec: {
@@ -1406,7 +3149,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"photoresistor-glow\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"3\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"17\" fill=\"#FFB23F\" opacity=\"0.4\" filter=\"url(#photoresistor-glow)\" data-bind=\"opacity:light\"/>\n  <path d=\"M10 36 V76 M30 36 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"13\" fill=\"#E9EDF2\" fill-opacity=\"0.12\" stroke=\"#E9EDF2\" stroke-opacity=\"0.45\" stroke-width=\"1\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"10\" fill=\"#2B2418\"/>\n  <path d=\"M13 18 H27 M13 22 H27 M13 26 H27 M13 30 H27 M27 18 V22 M13 22 V26 M27 26 V30\" stroke=\"#E07B2E\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_4,
+    create: create_12,
   },
   {
     spec: {
@@ -1538,7 +3281,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <path d=\"M20 66 V84 M40 66 V84 M60 66 V84\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"10\" y=\"10\" width=\"60\" height=\"58\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <path d=\"M24.4 53.6 A22 22 0 1 1 55.6 53.6\" fill=\"none\" stroke=\"#3A4250\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"40\" cy=\"38\" r=\"17\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <g transform=\"rotate(0 40 38)\" data-bind=\"transform:knobTransform\">\n    <circle cx=\"40\" cy=\"38\" r=\"13\" fill=\"#323944\"/>\n    <line x1=\"40\" y1=\"37\" x2=\"40\" y2=\"25\" stroke=\"#E9EDF2\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"14\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"38\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">W</text>\n  <text x=\"62\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"W\" cx=\"40\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"60\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_5,
+    create: create_13,
   },
   {
     spec: {
@@ -1649,7 +3392,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\" width=\"80\" height=\"80\">\n  <path d=\"M10 10 L20 20 M70 10 L60 20 M10 70 L20 60 M70 70 L60 60\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"16\" y=\"16\" width=\"48\" height=\"48\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"22\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"40\" cy=\"41.5\" r=\"15\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:capTransform\">\n    <circle cx=\"40\" cy=\"40\" r=\"14\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n    <circle cx=\"40\" cy=\"40\" r=\"10\" fill=\"#323944\"/>\n  </g>\n  <circle cx=\"40\" cy=\"40\" r=\"17\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" display=\"none\" data-bind=\"visible:pressed\"/>\n  <text x=\"4\" y=\"40\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">1</text>\n  <text x=\"4\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1a\" cx=\"10\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"1b\" cx=\"70\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2a\" cx=\"10\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2b\" cx=\"70\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_6,
+    create: create_14,
   },
   {
     spec: {
@@ -1782,7 +3525,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 24\" width=\"100\" height=\"24\">\n  <line x1=\"10\" y1=\"12\" x2=\"90\" y2=\"12\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"27\" y=\"4\" width=\"46\" height=\"16\" rx=\"7\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <rect x=\"34\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band1\"/>\n  <rect x=\"42\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band2\"/>\n  <rect x=\"50\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#7A4A26\" data-bind=\"fill:band3\"/>\n  <rect x=\"62\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#C9A43A\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"90\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_7,
+    create: create_15,
   },
   {
     spec: {
@@ -1918,7 +3661,449 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <defs>\n    <filter id=\"rgb-led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"5\"/>\n    </filter>\n  </defs>\n  <circle cx=\"40\" cy=\"26\" r=\"20\" fill=\"#000000\" opacity=\"0\" filter=\"url(#rgb-led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 86 V64 L28 52 M30 86 V52 M50 86 V64 L42 52 M70 86 V60 L46 50\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#2E333B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <circle cx=\"35\" cy=\"34\" r=\"5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:r\"/>\n  <circle cx=\"45\" cy=\"34\" r=\"5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:g\"/>\n  <circle cx=\"40\" cy=\"25\" r=\"5\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:b\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#000000\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M32 24 A8 8 0 0 1 38 16\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M26 48 H54 V53 H26 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <text x=\"4\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">R</text>\n  <text x=\"33\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">−</text>\n  <text x=\"53\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">G</text>\n  <text x=\"73\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">B</text>\n  <circle data-pin=\"R\" cx=\"10\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"G\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_8,
+    create: create_16,
+  },
+  {
+    spec: {
+      "id": "robot-chassis-2wd",
+      "name": "2WD robot car chassis",
+      "category": "misc",
+      "description": "Mechanical part: the acrylic base of a 2-wheel-drive robot with two TT motors, 65 mm wheels and a front caster. It has no pins. Put it in a project with a \"world\" block and two dc-motor parts: the physics engine drives it with the motors' speeds and moves the robot around the arena.",
+      "pins": [],
+      "size": {
+        "w": 160,
+        "h": 200
+      },
+      "props": [
+        {
+          "id": "wheelRadius",
+          "label": "Wheel radius",
+          "type": "number",
+          "default": 3.25,
+          "min": 1,
+          "max": 20,
+          "step": 0.05,
+          "unit": "cm",
+          "description": "Drive wheel radius (65 mm TT wheels → 3.25 cm)."
+        },
+        {
+          "id": "trackWidth",
+          "label": "Track width",
+          "type": "number",
+          "default": 13.5,
+          "min": 4,
+          "max": 60,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "Distance between the two drive wheels' contact points."
+        },
+        {
+          "id": "length",
+          "label": "Length",
+          "type": "number",
+          "default": 20,
+          "min": 5,
+          "max": 80,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "Body length (front to back), used for collisions."
+        },
+        {
+          "id": "width",
+          "label": "Width",
+          "type": "number",
+          "default": 15,
+          "min": 5,
+          "max": 80,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "Body width (including the wheels), used for collisions."
+        },
+        {
+          "id": "mass",
+          "label": "Mass",
+          "type": "number",
+          "default": 450,
+          "min": 50,
+          "max": 20000,
+          "unit": "g",
+          "description": "Total mass with motors, boards and batteries."
+        },
+        {
+          "id": "wheelGrip",
+          "label": "Tyre grip",
+          "type": "number",
+          "default": 0.8,
+          "min": 0.05,
+          "max": 1.5,
+          "step": 0.05,
+          "description": "Friction coefficient between the tyres and the floor (rubber on wood ≈ 0.8, on tiles ≈ 0.5)."
+        },
+        {
+          "id": "sensorOffset",
+          "label": "Sensor offset",
+          "type": "number",
+          "default": 15,
+          "min": 0,
+          "max": 40,
+          "step": 0.5,
+          "unit": "cm",
+          "description": "How far in front of the wheel axle the forward sensor (HC-SR04) sits. The axle is a quarter of the length behind the body centre, so 15 cm puts it at the front edge of a 20 cm body."
+        }
+      ],
+      "footprint": "Acrylic 2WD chassis, about 210 × 150 mm",
+      "bindings": [
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Pose summary, e.g. \"x 52 y 40 cm · 90°\"."
+        },
+        {
+          "key": "x",
+          "type": "number",
+          "description": "Robot body centre x in the world (cm), written by the physics engine."
+        },
+        {
+          "key": "y",
+          "type": "number",
+          "description": "Robot body centre y (cm); y grows downwards like the canvas."
+        },
+        {
+          "key": "heading",
+          "type": "number",
+          "description": "Heading in degrees, 0..360 (0 = facing +x, 90 = facing +y)."
+        },
+        {
+          "key": "collisions",
+          "type": "number",
+          "description": "How many times the robot hit a wall or obstacle since reset."
+        },
+        {
+          "key": "minClearance",
+          "type": "number",
+          "description": "Smallest gap to any wall/obstacle so far (cm); 9999 before the world starts."
+        },
+        {
+          "key": "clearance",
+          "type": "number",
+          "description": "Gap to the nearest wall/obstacle now (cm)."
+        },
+        {
+          "key": "travelled",
+          "type": "number",
+          "description": "Distance driven since reset (cm)."
+        },
+        {
+          "key": "speed",
+          "type": "number",
+          "description": "Forward speed (cm/s, negative when reversing)."
+        },
+        {
+          "key": "wheelRadius",
+          "type": "number",
+          "description": "Echo of the wheelRadius prop (cm), read by the physics engine."
+        },
+        {
+          "key": "trackWidth",
+          "type": "number",
+          "description": "Echo of the trackWidth prop (cm)."
+        },
+        {
+          "key": "length",
+          "type": "number",
+          "description": "Echo of the length prop (cm)."
+        },
+        {
+          "key": "width",
+          "type": "number",
+          "description": "Echo of the width prop (cm)."
+        },
+        {
+          "key": "mass",
+          "type": "number",
+          "description": "Echo of the mass prop (g)."
+        },
+        {
+          "key": "grip",
+          "type": "number",
+          "description": "Echo of the wheelGrip prop."
+        },
+        {
+          "key": "sensorOffset",
+          "type": "number",
+          "description": "Echo of the sensorOffset prop (cm)."
+        }
+      ],
+      "tags": [
+        "robot",
+        "chassis",
+        "car",
+        "2wd",
+        "rover",
+        "smart car",
+        "wheels",
+        "mechanical",
+        "obstacle avoiding robot"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": "Mechanical part."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Moved by the 2D physics world (Rapier) in fixed 4 ms steps of virtual time."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Top-down 2D rigid body: each wheel pushes with the motor's surface speed, limited by tyre grip (Coulomb friction); sideways slip is resisted the same way; the caster adds rolling drag. No suspension, weight transfer, uneven floor or wheel slip on acceleration beyond the grip limit."
+        },
+        "power": {
+          "level": "n/a",
+          "note": "Has no electrical connections."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Differential drive kinematics",
+        "Tyre grip limit and skidding",
+        "Collisions with arena walls and obstacles",
+        "Mass and inertia"
+      ],
+      "doesNotEmulate": [
+        "Motor load from the wheels (motors spin at their free speed; a blocked robot does not stall its motors)",
+        "Caster swivel dynamics",
+        "Bumps, ramps, carpets",
+        "Wheel diameter mismatch"
+      ],
+      "testOnRealDevice": [
+        "Straight-line drift (motors differ, add a trim)",
+        "Turning radius on your floor",
+        "Whether the sensor sees low obstacles below its mount height"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 200\" width=\"160\" height=\"200\">\n  <rect x=\"26\" y=\"14\" width=\"108\" height=\"172\" rx=\"18\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <rect x=\"136\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M8 112 H20 M8 122 H20 M8 132 H20 M8 142 H20 M8 152 H20 M140 112 H152 M140 122 H152 M140 132 H152 M140 142 H152 M140 152 H152\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"30\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <rect x=\"96\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"9\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"4\" fill=\"#8A93A0\"/>\n  <path d=\"M80 4 L72 16 H88 Z\" fill=\"#5CF2A1\"/>\n  <text x=\"80\" y=\"80\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"11\" fill=\"#E9EDF2\">2WD</text>\n  <text x=\"80\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" data-bind=\"text:label\">x 0 y 0 cm · 0°</text>\n</svg>",
+    create: create_17,
+  },
+  {
+    spec: {
+      "id": "servo-sg90",
+      "name": "Micro servo (SG90, 180°)",
+      "category": "motor",
+      "description": "Hobby servo that turns its horn to an angle from 0 to 180°. Brown wire GND, red 5V, orange signal to any digital pin. In code: #include <Servo.h>, servo.attach(pin), servo.write(angle). It reads 50 Hz pulses: 544 µs = 0°, 1472 µs = 90°, 2400 µs = 180°.",
+      "pins": [
+        {
+          "id": "GND",
+          "label": "GND (brown)",
+          "x": 6,
+          "y": 30,
+          "type": "ground",
+          "description": "Ground, brown wire."
+        },
+        {
+          "id": "VCC",
+          "label": "V+ (red)",
+          "x": 6,
+          "y": 50,
+          "type": "power",
+          "voltage": {
+            "min": 4,
+            "max": 6
+          },
+          "description": "Supply 4.8–6 V, red wire. Draws ~10 mA idle, ~250 mA moving, ~650 mA stalled."
+        },
+        {
+          "id": "SIG",
+          "label": "PWM (orange)",
+          "x": 6,
+          "y": 70,
+          "type": "digital",
+          "description": "Control pulses, orange wire: 50 Hz, 544–2400 µs HIGH."
+        }
+      ],
+      "size": {
+        "w": 160,
+        "h": 100
+      },
+      "props": [
+        {
+          "id": "minPulseUs",
+          "label": "Pulse for 0°",
+          "type": "number",
+          "default": 544,
+          "min": 300,
+          "max": 1500,
+          "unit": "µs",
+          "description": "Pulse width that means 0° (Arduino Servo library default 544)."
+        },
+        {
+          "id": "maxPulseUs",
+          "label": "Pulse for 180°",
+          "type": "number",
+          "default": 2400,
+          "min": 1500,
+          "max": 3000,
+          "unit": "µs",
+          "description": "Pulse width that means 180° (Servo library default 2400)."
+        },
+        {
+          "id": "speed",
+          "label": "Speed",
+          "type": "number",
+          "default": 0.1,
+          "min": 0.02,
+          "max": 1,
+          "step": 0.01,
+          "unit": "s/60°",
+          "description": "Datasheet speed at 4.8 V (SG90: 0.1 s per 60°). Scales with supply voltage."
+        },
+        {
+          "id": "minAngle",
+          "label": "Mechanical stop (low)",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 90,
+          "unit": "°",
+          "description": "Where the horn hits its end stop or the mechanism it drives."
+        },
+        {
+          "id": "maxAngle",
+          "label": "Mechanical stop (high)",
+          "type": "number",
+          "default": 180,
+          "min": 90,
+          "max": 180,
+          "unit": "°",
+          "description": "Upper end stop."
+        },
+        {
+          "id": "initialAngle",
+          "label": "Angle at power-up",
+          "type": "number",
+          "default": 90,
+          "min": 0,
+          "max": 180,
+          "unit": "°",
+          "description": "Where the horn is before the first pulse."
+        }
+      ],
+      "limits": {
+        "maxVoltage": 6,
+        "minVoltage": 4,
+        "stallCurrentmA": 650,
+        "movingCurrentmA": 250,
+        "idleCurrentmA": 10,
+        "minPulseUs": 400,
+        "maxPulseUs": 2600
+      },
+      "footprint": "SG90 micro servo, 23 × 12.2 × 29 mm, 3-wire 0.1 in female connector",
+      "bindings": [
+        {
+          "key": "angle",
+          "type": "number",
+          "description": "Horn angle in degrees (0..180)."
+        },
+        {
+          "key": "target",
+          "type": "number",
+          "description": "Angle the last pulse asked for."
+        },
+        {
+          "key": "pulseUs",
+          "type": "number",
+          "description": "Width of the last valid control pulse (µs), 0 before the first."
+        },
+        {
+          "key": "moving",
+          "type": "boolean",
+          "description": "Horn is still travelling to the target."
+        },
+        {
+          "key": "stalled",
+          "type": "boolean",
+          "description": "Pushing against a stop (draws stall current)."
+        },
+        {
+          "key": "hornTransform",
+          "type": "string",
+          "description": "SVG transform of the horn: \"rotate(<angle − 90> 112 50)\"."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Angle label, e.g. \"90°\"."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "Supply current in mA."
+        }
+      ],
+      "tags": [
+        "servo",
+        "sg90",
+        "micro servo",
+        "9g servo",
+        "hobby servo",
+        "robot arm",
+        "pwm",
+        "motor",
+        "tower pro"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Angle = linear map of the HIGH pulse width (544 µs → 0°, 2400 µs → 180°, as the Arduino Servo library assumes). Pulses outside 400–2600 µs are ignored; with no pulses the horn holds where it is."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Pulse width is measured from cycle-stamped pin edges (exact to one CPU cycle). The horn moves at the datasheet speed (0.1 s/60° at 4.8 V, scaled with voltage) in 1 ms steps; there is no acceleration, overshoot or deadband (real SG90 deadband ≈ 5–10 µs ≈ 1°)."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "No position noise, gear backlash or load-dependent sag; under load the real horn droops a few degrees."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Supply current switches between 10 mA idle, 250 mA moving and 650 mA stalled (scaled with voltage), so supply sag on a shared 5 V rail shows up."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": "Not a radio part."
+        }
+      },
+      "emulates": [
+        "Pulse width → angle",
+        "Travel speed (slew rate) and its voltage dependence",
+        "Mechanical end stops and stall current",
+        "Holding position when pulses stop",
+        "Moving/idle/stall supply current"
+      ],
+      "doesNotEmulate": [
+        "Deadband and jitter",
+        "Torque limit under load (1.8 kg·cm) except a hard block",
+        "Overshoot and acceleration",
+        "Behaviour with pulse rates far from 50 Hz",
+        "Unit-to-unit spread of the pulse range (many SG90s reach only ~170°)"
+      ],
+      "testOnRealDevice": [
+        "The real pulse range of your servo (end stops buzz when driven past them)",
+        "Brown-outs when several servos move at once on the Arduino 5 V (use a separate 5–6 V supply)",
+        "Holding torque under your load"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 100\" width=\"160\" height=\"100\">\n  <path d=\"M6 30 H34 M6 50 H34 M6 70 H34\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M14 30 H34\" stroke=\"#7A5230\" stroke-width=\"3\"/>\n  <path d=\"M14 50 H34\" stroke=\"#D9473B\" stroke-width=\"3\"/>\n  <path d=\"M14 70 H34\" stroke=\"#F08A2B\" stroke-width=\"3\"/>\n  <rect x=\"34\" y=\"24\" width=\"12\" height=\"52\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"46\" y=\"20\" width=\"96\" height=\"60\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"44\" width=\"112\" height=\"12\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"112\" cy=\"50\" r=\"14\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g transform=\"rotate(0 112 50)\" data-bind=\"transform:hornTransform\">\n    <path d=\"M106 50 L112 8 L118 50 Z\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n    <circle cx=\"112\" cy=\"16\" r=\"2\" fill=\"#15181D\"/>\n    <circle cx=\"112\" cy=\"50\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n  </g>\n  <circle cx=\"112\" cy=\"50\" r=\"2\" fill=\"#0D0F12\"/>\n  <text x=\"56\" y=\"34\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">SG90</text>\n  <text x=\"56\" y=\"74\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">90°</text>\n  <circle data-pin=\"GND\" cx=\"6\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"6\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SIG\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_18,
   },
   {
     spec: {
@@ -2030,7 +4215,231 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 50\" width=\"80\" height=\"50\">\n  <path d=\"M20 30 V44 M40 30 V44 M60 30 V44\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"8\" y=\"12\" width=\"64\" height=\"20\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"18\" y=\"17\" width=\"44\" height=\"10\" rx=\"2\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:knobTransform\">\n    <rect x=\"20\" y=\"4\" width=\"12\" height=\"22\" rx=\"2\" fill=\"#323944\" stroke=\"#5A6474\" stroke-width=\"1\"/>\n    <path d=\"M23 9 H29 M23 12 H29 M23 15 H29\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"10\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"66\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"40\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"3\" cx=\"60\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_9,
+    create: create_19,
+  },
+  {
+    spec: {
+      "id": "ssd1306-oled-i2c",
+      "name": "OLED display 128x64 (SSD1306, I2C)",
+      "category": "display",
+      "description": "0.96 in monochrome OLED, 128 x 64 pixels, on the SSD1306 controller over I2C (address 0x3C, or 0x3D with the address jumper). Wire GND → GND, VCC → 5V (or 3.3V), SCL → A5, SDA → A4 on an Uno. Works with Adafruit_SSD1306 (display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) and U8g2 (U8G2_SSD1306_128X64_NONAME_F_HW_I2C).",
+      "pins": [
+        {
+          "id": "GND",
+          "label": "GND",
+          "x": 80,
+          "y": 14,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 100,
+          "y": 14,
+          "type": "power",
+          "voltage": {
+            "min": 3,
+            "max": 5.5
+          },
+          "description": "3.3 to 5 V supply; the module has its own 3.3 V regulator and charge pump."
+        },
+        {
+          "id": "SCL",
+          "label": "SCL",
+          "x": 120,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-scl"
+          ],
+          "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up to VCC on the module."
+        },
+        {
+          "id": "SDA",
+          "label": "SDA",
+          "x": 140,
+          "y": 14,
+          "type": "digital",
+          "protocols": [
+            "i2c-sda"
+          ],
+          "description": "I2C data. Uno: A4. 4.7 kOhm pull-up to VCC on the module."
+        }
+      ],
+      "size": {
+        "w": 220,
+        "h": 200
+      },
+      "props": [
+        {
+          "id": "address",
+          "label": "I2C address",
+          "type": "enum",
+          "default": "0x3C",
+          "options": [
+            "0x3C",
+            "0x3D"
+          ],
+          "description": "0x3C on most modules; 0x3D when the address jumper on the back is moved."
+        },
+        {
+          "id": "color",
+          "label": "Pixel colour",
+          "type": "enum",
+          "default": "white",
+          "options": [
+            "white",
+            "blue",
+            "yellow-blue"
+          ],
+          "description": "Panel colour. yellow-blue is the two-colour panel: the top 16 rows are yellow, the rest blue."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 25,
+        "maxVoltage": 5.5,
+        "minVoltage": 3,
+        "typicalCurrentmA": 10
+      },
+      "footprint": "27 x 27 mm module, 4-pin 0.1 in header (GND VCC SCL SDA)",
+      "bindings": [
+        {
+          "key": "on",
+          "type": "boolean",
+          "description": "Panel is lit: powered, display ON (0xAF) and the charge pump enabled."
+        },
+        {
+          "key": "pixels",
+          "type": "string",
+          "description": "The displayed image (after remap, offset, invert): base64 of 1 bit per pixel, row-major, MSB = leftmost pixel, 16 bytes per row, 64 rows. Decode with decodeMonoFrame(pixels, 128, 64) from @jumper/sim-core."
+        },
+        {
+          "key": "frame",
+          "type": "number",
+          "description": "Counts changes of the displayed image; a renderer redraws only when it changes."
+        },
+        {
+          "key": "width",
+          "type": "number",
+          "description": "Panel width in pixels (128)."
+        },
+        {
+          "key": "height",
+          "type": "number",
+          "description": "Panel height in pixels (64)."
+        },
+        {
+          "key": "contrast",
+          "type": "number",
+          "description": "Contrast register 0..255 (0x81 command)."
+        },
+        {
+          "key": "brightness",
+          "type": "number",
+          "description": "Approximate pixel brightness 0.35..1 from the contrast."
+        },
+        {
+          "key": "inverted",
+          "type": "boolean",
+          "description": "Inverse display (0xA7)."
+        },
+        {
+          "key": "color",
+          "type": "string",
+          "description": "Panel colour prop: white, blue or yellow-blue."
+        },
+        {
+          "key": "lit",
+          "type": "number",
+          "description": "Number of lit pixels on screen (handy in tests)."
+        },
+        {
+          "key": "blank",
+          "type": "boolean",
+          "description": "True when no pixel is lit (dark panel or empty screen). Handy in scenario tests: expect oled.blank == false."
+        },
+        {
+          "key": "screenOpacity",
+          "type": "number",
+          "description": "1 when the panel is lit, 0 when dark (bound in the SVG)."
+        }
+      ],
+      "bus": {
+        "i2c": {
+          "addresses": [
+            60,
+            61
+          ],
+          "addressProp": "address",
+          "pullUpOhms": 4700,
+          "maxHz": 400000
+        }
+      },
+      "tags": [
+        "oled",
+        "ssd1306",
+        "display",
+        "screen",
+        "128x64",
+        "0.96",
+        "i2c",
+        "adafruit_ssd1306",
+        "u8g2",
+        "tamagotchi",
+        "pixel display"
+      ]
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "Answers on I2C at 0x3C/0x3D and decodes the SSD1306 control-byte framing and command set: horizontal, vertical and page addressing, column/page ranges, contrast, normal/inverse, entire-display-on, display on/off, charge pump, start line, display offset, segment remap, COM scan direction, COM pin configuration and multiplex ratio. The screen shows exactly what is in display RAM after those transforms."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Bytes take real I2C time (set by the MCU's TWI clock), but the panel shows a new frame instantly: no refresh rate, no tearing, and the clock/pre-charge settings (0xD5, 0xD9, 0xDB) have no effect."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "Contrast is shown as a simple brightness scale. No OLED burn-in, no brightness difference between few and many lit pixels."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Draws a fixed 10 mA from VCC (real modules use about 8 to 25 mA depending on how many pixels are lit) and only works between 2.8 and 5.5 V. 4.7 kOhm pull-ups on SDA and SCL to VCC."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "I2C address 0x3C or 0x3D (address prop), ACK/NACK, and the status byte on reads",
+        "Co/D-C# control bytes, including one-command-per-control-byte streams",
+        "Memory addressing modes 0x20 (horizontal, vertical, page) with 0x21/0x22 ranges and wrap-around",
+        "Page-mode pointers 0xB0-0xB7, 0x00-0x0F and 0x10-0x1F (also honoured in horizontal mode, as U8g2 relies on)",
+        "Display on/off 0xAE/0xAF and the charge pump 0x8D: without 0x8D 0x14 the panel stays dark, like a real module",
+        "Contrast 0x81, inverse 0xA6/0xA7, entire display on 0xA4/0xA5",
+        "Start line 0x40-0x7F, display offset 0xD3, segment remap 0xA0/0xA1, COM scan 0xC0/0xC8, COM pins 0xDA, multiplex ratio 0xA8",
+        "A power loss clears the controller: the sketch must initialise it again"
+      ],
+      "doesNotEmulate": [
+        "Scrolling: 0x26/0x27/0x29/0x2A/0x2F are accepted but the image does not move",
+        "The SPI version of the module and the parallel interfaces",
+        "Refresh timing, flicker and the frame rate limit of the panel",
+        "Pixel-count dependent current and OLED ageing",
+        "The 128x32 variant (this part is 128x64)"
+      ],
+      "testOnRealDevice": [
+        "Scrolling effects (startscrollright and friends)",
+        "Which address your module really uses (check the jumper on the back; some are labelled 0x78/0x7A, which is 0x3C/0x3D shifted left)",
+        "Readability of the contrast setting in daylight",
+        "Supply current if you run from a battery"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 200\" width=\"220\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"70\" y=\"5\" width=\"80\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"80\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"100\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"120\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"140\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"14\" y=\"44\" width=\"192\" height=\"122\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x64\" x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"#05070A\"/>\n  <rect x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <rect x=\"88\" y=\"166\" width=\"44\" height=\"22\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"110\" y=\"156\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">SSD1306 128x64</text>\n  <circle cx=\"190\" cy=\"154\" r=\"2.5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_20,
   },
 ];
 

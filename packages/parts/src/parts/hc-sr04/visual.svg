@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 100" width="180" height="100">
+  <rect x="2" y="6" width="176" height="80" rx="6" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="42" cy="44" r="30" fill="#2B313B" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="42" cy="44" r="22" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="138" cy="44" r="30" fill="#2B313B" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="138" cy="44" r="22" fill="#15181D" stroke="#3A4250"/>
+  <g display="none" data-bind="visible:measuring">
+    <path d="M34 36 A12 12 0 0 1 50 36 M30 30 A18 18 0 0 1 54 30" fill="none" stroke="#5CF2A1" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <g display="none" data-bind="visible:echo">
+    <path d="M130 52 A12 12 0 0 0 146 52 M126 58 A18 18 0 0 0 150 58" fill="none" stroke="#FFB23F" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <text x="90" y="20" text-anchor="middle" font-family="Bricolage Grotesque" font-size="10" fill="#E9EDF2">HC-SR04</text>
+  <text x="90" y="48" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#5CF2A1" data-bind="text:label">100 cm</text>
+  <text x="60" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">VCC</text>
+  <text x="80" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">TRIG</text>
+  <text x="100" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">ECHO</text>
+  <text x="120" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">GND</text>
+  <path d="M60 86 V96 M80 86 V96 M100 86 V96 M120 86 V96" stroke="#9AA3AF" stroke-width="2"/>
+  <circle data-pin="VCC" cx="60" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="TRIG" cx="80" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="ECHO" cx="100" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="120" cy="96" r="3" fill="#C9CED6"/>
+</svg>

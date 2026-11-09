@@ -1,0 +1,33 @@
+{
+  "id": "servo-sg90",
+  "name": "Micro servo (SG90, 180°)",
+  "category": "motor",
+  "description": "Hobby servo that turns its horn to an angle from 0 to 180°. Brown wire GND, red 5V, orange signal to any digital pin. In code: #include <Servo.h>, servo.attach(pin), servo.write(angle). It reads 50 Hz pulses: 544 µs = 0°, 1472 µs = 90°, 2400 µs = 180°.",
+  "pins": [
+    { "id": "GND", "label": "GND (brown)", "x": 6, "y": 30, "type": "ground", "description": "Ground, brown wire." },
+    { "id": "VCC", "label": "V+ (red)", "x": 6, "y": 50, "type": "power", "voltage": { "min": 4.0, "max": 6.0 }, "description": "Supply 4.8–6 V, red wire. Draws ~10 mA idle, ~250 mA moving, ~650 mA stalled." },
+    { "id": "SIG", "label": "PWM (orange)", "x": 6, "y": 70, "type": "digital", "description": "Control pulses, orange wire: 50 Hz, 544–2400 µs HIGH." }
+  ],
+  "size": { "w": 160, "h": 100 },
+  "props": [
+    { "id": "minPulseUs", "label": "Pulse for 0°", "type": "number", "default": 544, "min": 300, "max": 1500, "unit": "µs", "description": "Pulse width that means 0° (Arduino Servo library default 544)." },
+    { "id": "maxPulseUs", "label": "Pulse for 180°", "type": "number", "default": 2400, "min": 1500, "max": 3000, "unit": "µs", "description": "Pulse width that means 180° (Servo library default 2400)." },
+    { "id": "speed", "label": "Speed", "type": "number", "default": 0.1, "min": 0.02, "max": 1, "step": 0.01, "unit": "s/60°", "description": "Datasheet speed at 4.8 V (SG90: 0.1 s per 60°). Scales with supply voltage." },
+    { "id": "minAngle", "label": "Mechanical stop (low)", "type": "number", "default": 0, "min": 0, "max": 90, "unit": "°", "description": "Where the horn hits its end stop or the mechanism it drives." },
+    { "id": "maxAngle", "label": "Mechanical stop (high)", "type": "number", "default": 180, "min": 90, "max": 180, "unit": "°", "description": "Upper end stop." },
+    { "id": "initialAngle", "label": "Angle at power-up", "type": "number", "default": 90, "min": 0, "max": 180, "unit": "°", "description": "Where the horn is before the first pulse." }
+  ],
+  "limits": { "maxVoltage": 6.0, "minVoltage": 4.0, "stallCurrentmA": 650, "movingCurrentmA": 250, "idleCurrentmA": 10, "minPulseUs": 400, "maxPulseUs": 2600 },
+  "footprint": "SG90 micro servo, 23 × 12.2 × 29 mm, 3-wire 0.1 in female connector",
+  "bindings": [
+    { "key": "angle", "type": "number", "description": "Horn angle in degrees (0..180)." },
+    { "key": "target", "type": "number", "description": "Angle the last pulse asked for." },
+    { "key": "pulseUs", "type": "number", "description": "Width of the last valid control pulse (µs), 0 before the first." },
+    { "key": "moving", "type": "boolean", "description": "Horn is still travelling to the target." },
+    { "key": "stalled", "type": "boolean", "description": "Pushing against a stop (draws stall current)." },
+    { "key": "hornTransform", "type": "string", "description": "SVG transform of the horn: \"rotate(<angle − 90> 112 50)\"." },
+    { "key": "label", "type": "string", "description": "Angle label, e.g. \"90°\"." },
+    { "key": "currentmA", "type": "number", "description": "Supply current in mA." }
+  ],
+  "tags": ["servo", "sg90", "micro servo", "9g servo", "hobby servo", "robot arm", "pwm", "motor", "tower pro"]
+}

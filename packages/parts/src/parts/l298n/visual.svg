@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" width="240" height="200">
+  <rect x="2" y="2" width="236" height="196" rx="8" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="2" y="52" width="26" height="76" rx="3" fill="#1C2027" stroke="#3A4250"/>
+  <rect x="212" y="52" width="26" height="76" rx="3" fill="#1C2027" stroke="#3A4250"/>
+  <rect x="14" y="162" width="92" height="30" rx="3" fill="#1C2027" stroke="#3A4250"/>
+  <rect x="110" y="182" width="120" height="14" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <rect x="78" y="22" width="84" height="64" rx="4" fill="#2B313B" stroke="#3A4250"/>
+  <path d="M84 22 V10 M96 22 V10 M108 22 V10 M120 22 V10 M132 22 V10 M144 22 V10 M156 22 V10" stroke="#3A4250" stroke-width="3"/>
+  <rect x="88" y="96" width="64" height="26" rx="3" fill="#15181D" stroke="#3A4250"/>
+  <text x="120" y="58" text-anchor="middle" font-family="Bricolage Grotesque" font-size="14" fill="#E9EDF2">L298N</text>
+  <text x="120" y="74" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">DUAL H-BRIDGE</text>
+  <circle cx="184" cy="30" r="5" fill="#1C2027" stroke="#3A4250"/>
+  <circle cx="184" cy="30" r="3.5" fill="#FF3B2F" opacity="0" data-bind="visible:powered"/>
+  <text x="34" y="140" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" data-bind="text:aLabel">A off</text>
+  <text x="206" y="140" text-anchor="end" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" data-bind="text:bLabel">B off</text>
+  <text x="34" y="66" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">OUT1</text>
+  <text x="34" y="113" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">OUT2</text>
+  <text x="206" y="113" text-anchor="end" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">OUT3</text>
+  <text x="206" y="66" text-anchor="end" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">OUT4</text>
+  <text x="30" y="158" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">12V</text>
+  <text x="60" y="158" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">GND</text>
+  <text x="90" y="158" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">5V</text>
+  <text x="120" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">ENA</text>
+  <text x="140" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN1</text>
+  <text x="160" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN2</text>
+  <text x="180" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN3</text>
+  <text x="200" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN4</text>
+  <text x="220" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">ENB</text>
+  <circle data-pin="OUT1" cx="6" cy="70" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT2" cx="6" cy="110" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT3" cx="234" cy="110" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT4" cx="234" cy="70" r="3" fill="#C9CED6"/>
+  <circle data-pin="12V" cx="30" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="60" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="5V" cx="90" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="ENA" cx="120" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN1" cx="140" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN2" cx="160" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN3" cx="180" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="IN4" cx="200" cy="194" r="3" fill="#C9CED6"/>
+  <circle data-pin="ENB" cx="220" cy="194" r="3" fill="#C9CED6"/>
+</svg>

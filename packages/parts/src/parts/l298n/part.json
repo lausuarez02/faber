@@ -1,0 +1,40 @@
+{
+  "id": "l298n",
+  "name": "L298N dual H-bridge motor driver module",
+  "category": "motor",
+  "description": "Drives two DC motors from a separate battery. Battery + → 12V, battery − → GND, and also wire GND to the Arduino GND. Motor A on OUT1/OUT2 is controlled by ENA (speed, analogWrite) and IN1/IN2 (direction); motor B on OUT3/OUT4 by ENB and IN3/IN4. The outputs lose about 2 V, so a 6 V pack gives a motor about 4 V.",
+  "pins": [
+    { "id": "OUT1", "label": "OUT1", "x": 6, "y": 70, "type": "passive", "description": "Motor A terminal 1 (HIGH when IN1 is HIGH and ENA is on)." },
+    { "id": "OUT2", "label": "OUT2", "x": 6, "y": 110, "type": "passive", "description": "Motor A terminal 2 (HIGH when IN2 is HIGH and ENA is on)." },
+    { "id": "OUT3", "label": "OUT3", "x": 234, "y": 110, "type": "passive", "description": "Motor B terminal 1 (HIGH when IN3 is HIGH and ENB is on)." },
+    { "id": "OUT4", "label": "OUT4", "x": 234, "y": 70, "type": "passive", "description": "Motor B terminal 2 (HIGH when IN4 is HIGH and ENB is on)." },
+    { "id": "12V", "label": "12V (VS)", "x": 30, "y": 194, "type": "power", "voltage": { "min": 5, "max": 35 }, "description": "Motor supply from the battery, 5–35 V (the on-board 5 V regulator needs ≥ 7 V; keep ≤ 12 V with the 5V-EN jumper on)." },
+    { "id": "GND", "label": "GND", "x": 60, "y": 194, "type": "ground", "description": "Battery − and Arduino GND (all must be common)." },
+    { "id": "5V", "label": "5V", "x": 90, "y": 194, "type": "power", "description": "With the 5V-EN jumper (prop regulatorJumper) this is a 5 V output from the on-board regulator; without it, feed 5 V logic power here." },
+    { "id": "ENA", "label": "ENA", "x": 120, "y": 194, "type": "digital", "description": "Enable motor A. HIGH = on; analogWrite() here sets motor A's speed. Leave unwired only with the ENA jumper on (prop enaJumper)." },
+    { "id": "IN1", "label": "IN1", "x": 140, "y": 194, "type": "digital", "description": "Motor A direction input 1." },
+    { "id": "IN2", "label": "IN2", "x": 160, "y": 194, "type": "digital", "description": "Motor A direction input 2." },
+    { "id": "IN3", "label": "IN3", "x": 180, "y": 194, "type": "digital", "description": "Motor B direction input 1." },
+    { "id": "IN4", "label": "IN4", "x": 200, "y": 194, "type": "digital", "description": "Motor B direction input 2." },
+    { "id": "ENB", "label": "ENB", "x": 220, "y": 194, "type": "digital", "description": "Enable motor B. HIGH = on; analogWrite() here sets motor B's speed." }
+  ],
+  "size": { "w": 240, "h": 200 },
+  "props": [
+    { "id": "enaJumper", "label": "ENA jumper fitted", "type": "boolean", "default": false, "description": "Many modules ship with a jumper on ENA tying it HIGH (motor A always enabled, full speed only). Remove it (false) to control speed with analogWrite on ENA." },
+    { "id": "enbJumper", "label": "ENB jumper fitted", "type": "boolean", "default": false, "description": "Same for ENB / motor B." },
+    { "id": "regulatorJumper", "label": "5V-EN jumper fitted", "type": "boolean", "default": true, "description": "On-board 78M05 regulator on: the module makes its own 5 V logic supply from 12V (needs ≥ 7 V for a full 5 V) and outputs it on the 5V pin." }
+  ],
+  "limits": { "maxVoltage": 46, "maxCurrentmA": 2000, "peakCurrentmA": 3000, "minLogicVoltage": 4.5 },
+  "footprint": "L298N module, 43 × 43 mm, 3 + 2 + 2 screw terminals, 6-pin header",
+  "bindings": [
+    { "key": "powered", "type": "boolean", "description": "Logic supply present (power LED)." },
+    { "key": "aState", "type": "string", "description": "Motor A output: \"fwd\", \"rev\", \"brake\" or \"off\"." },
+    { "key": "bState", "type": "string", "description": "Motor B output: \"fwd\", \"rev\", \"brake\" or \"off\"." },
+    { "key": "aDuty", "type": "number", "description": "Motor A drive fraction 0..1 (ENA duty × direction inputs)." },
+    { "key": "bDuty", "type": "number", "description": "Motor B drive fraction 0..1." },
+    { "key": "aLabel", "type": "string", "description": "Motor A summary for the SVG, e.g. \"A fwd 63%\"." },
+    { "key": "bLabel", "type": "string", "description": "Motor B summary for the SVG." },
+    { "key": "vs", "type": "number", "description": "Motor supply voltage at the 12V terminal." }
+  ],
+  "tags": ["l298n", "l298", "h-bridge", "motor driver", "dual motor driver", "robot", "dc motor", "car", "rover"]
+}

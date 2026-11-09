@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Truth table per bridge: EN low = coast (outputs off), IN1≠IN2 = drive in that direction, IN1=IN2 = brake (both outputs to the same rail). Inputs threshold at VIL 1.5 V / VIH 2.3 V with hysteresis, as in the L298 datasheet." },
+    "timing": { "level": "approx", "note": "Switching is instantaneous (the real L298 needs ~1–2 µs, so PWM above ~25 kHz misbehaves on hardware but not here). PWM on ENA/ENB or IN pins is duty-averaged: the module declares the duty on its outputs and the motor averages its current." },
+    "analog": { "level": "approx", "note": "Bipolar output stage as piecewise-linear drops: high side 0.9 V + 0.35 Ω, low side 0.8 V + 0.35 Ω, so a motor sees about VS − 1.9 V at 0.2 A and VS − 2.4 V at 1 A (datasheet: 1.8 V typ, 3.2 V max total at 1 A). Flyback diodes on every output." },
+    "power": { "level": "approx", "note": "Motor current is drawn from the 12V terminal, so the battery sags. 78M05 regulator: 5 V when VS ≥ 7 V, else VS − 2 V. No thermal model (the real chip needs its heatsink above ~1 A)." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Forward / reverse / brake / coast per channel", "Speed control with analogWrite on ENA/ENB (or on IN pins)", "~2 V output drop that grows with current", "Motor current drawn from the battery", "On-board 5 V regulator and its dropout below 7 V", "ENA/ENB jumpers"],
+  "doesNotEmulate": ["Switching delays and PWM frequency limits", "Thermal shutdown and heatsink temperature", "Current sense resistors (SENSA/SENSB are tied to GND on the module)", "Slow-decay current recirculation during PWM off-time"],
+  "testOnRealDevice": ["Motor speed at low PWM duty (L298N loses torque below ~30 % duty)", "Chip temperature at your motor current", "Whether the motors reset the Arduino when they start (separate supplies, common ground)"]
+}

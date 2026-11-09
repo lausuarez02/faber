@@ -1,0 +1,28 @@
+{
+  "id": "hc-sr04",
+  "name": "Ultrasonic distance sensor (HC-SR04)",
+  "category": "sensor",
+  "description": "Measures distance from 2 to 400 cm. Pulse TRIG HIGH for 10 µs; ECHO then goes HIGH for 58 µs per cm. In code: digitalWrite(trig, HIGH); delayMicroseconds(10); digitalWrite(trig, LOW); cm = pulseIn(echo, HIGH, 30000) / 58. VCC to 5V, GND to GND.",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 60, "y": 96, "type": "power", "voltage": { "min": 4.5, "max": 5.5 }, "description": "5 V supply (about 15 mA)." },
+    { "id": "TRIG", "label": "TRIG", "x": 80, "y": 96, "type": "digital", "description": "Trigger input: a HIGH pulse of at least 10 µs starts one measurement." },
+    { "id": "ECHO", "label": "ECHO", "x": 100, "y": 96, "type": "digital", "description": "Echo output (5 V): HIGH for the sound's round-trip time, 58 µs per cm. Stays HIGH ~38 ms when nothing is in range." },
+    { "id": "GND", "label": "GND", "x": 120, "y": 96, "type": "ground", "description": "Ground." }
+  ],
+  "size": { "w": 180, "h": 100 },
+  "props": [
+    { "id": "distance", "label": "Distance to target", "type": "number", "default": 100, "min": 0, "max": 1000, "step": 1, "unit": "cm", "description": "Distance to the nearest object in front of the sensor. Over 400 cm (or 0) = nothing in range: ECHO stays HIGH for the 38 ms timeout. A world with physics overrides it every step with a raycast." },
+    { "id": "temperature", "label": "Air temperature", "type": "number", "default": 20, "min": -20, "max": 50, "unit": "°C", "description": "Sets the speed of sound (331.3 + 0.606·T m/s); 20 °C → 343.4 m/s → 58.2 µs per cm round trip." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 4.5, "maxCurrentmA": 15, "minRangeCm": 2, "maxRangeCm": 400, "minTriggerUs": 10, "timeoutMs": 38, "burstDelayUs": 460 },
+  "footprint": "HC-SR04 module, 45 × 20 mm, 4-pin 0.1 in header",
+  "bindings": [
+    { "key": "distance", "type": "number", "description": "Distance the sensor currently sees (cm)." },
+    { "key": "echo", "type": "boolean", "description": "ECHO pin is HIGH." },
+    { "key": "measuring", "type": "boolean", "description": "A measurement is in progress (burst sent, waiting for the echo)." },
+    { "key": "label", "type": "string", "description": "Distance label, e.g. \"23 cm\" or \"> 400 cm\"." },
+    { "key": "lastEchoUs", "type": "number", "description": "Width of the last ECHO pulse in µs (0 before the first)." },
+    { "key": "pings", "type": "number", "description": "Measurements started since reset." }
+  ],
+  "tags": ["hc-sr04", "ultrasonic", "sonar", "distance sensor", "range finder", "obstacle", "robot", "ping"]
+}

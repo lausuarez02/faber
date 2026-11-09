@@ -1,0 +1,38 @@
+{
+  "id": "battery-pack",
+  "name": "Battery pack (4×AA, 2S LiPo, 9 V)",
+  "category": "power",
+  "description": "Battery for motors and robots: a voltage source with internal resistance, so it sags under load. POS (+) to the motor driver's 12V terminal or the Arduino VIN; NEG (−) to GND. Pick a preset; set voltage to model a drained pack.",
+  "pins": [
+    { "id": "POS", "label": "+", "x": 10, "y": 30, "type": "power", "description": "Positive terminal (red wire)." },
+    { "id": "NEG", "label": "−", "x": 10, "y": 50, "type": "ground", "description": "Negative terminal (black wire). Shares GND with everything." }
+  ],
+  "size": { "w": 160, "h": 80 },
+  "props": [
+    {
+      "id": "preset",
+      "label": "Type",
+      "type": "enum",
+      "default": "4xAA",
+      "options": [
+        { "value": "4xAA", "label": "4 × AA alkaline (6.0 V fresh, 0.6 Ω)" },
+        { "value": "4xNiMH", "label": "4 × AA NiMH (5.2 V, 0.12 Ω)" },
+        { "value": "2S-LiPo", "label": "2S LiPo (8.4 V full, 7.4 V nominal, 0.04 Ω)" },
+        { "value": "9V", "label": "9 V block (9.0 V, 1.7 Ω)" },
+        { "value": "custom", "label": "Custom (set voltage and internalResistance)" }
+      ],
+      "description": "Chemistry and cell count. Sets the open-circuit voltage, internal resistance and current limit."
+    },
+    { "id": "voltage", "label": "Open-circuit voltage", "type": "number", "default": 0, "min": 0, "max": 30, "step": 0.1, "unit": "V", "description": "0 = the preset's fresh voltage. Set it to model a partly drained pack (e.g. 4×AA at 4.8 V) or a custom battery." },
+    { "id": "internalResistance", "label": "Internal resistance", "type": "number", "default": 0, "min": 0, "max": 20, "step": 0.01, "unit": "Ω", "description": "0 = the preset's value. Terminal voltage = voltage − current × this." }
+  ],
+  "limits": { "maxCurrentmA": 2000 },
+  "footprint": "Battery holder / pack with 2 leads",
+  "bindings": [
+    { "key": "volts", "type": "number", "description": "Terminal voltage under the present load." },
+    { "key": "currentmA", "type": "number", "description": "Current delivered (mA)." },
+    { "key": "label", "type": "string", "description": "e.g. \"5.6 V · 410 mA\"." },
+    { "key": "presetLabel", "type": "string", "description": "e.g. \"4×AA\"." }
+  ],
+  "tags": ["battery", "batteries", "aa", "lipo", "9v", "power", "supply", "robot", "pack", "cell"]
+}

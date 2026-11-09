@@ -1,0 +1,30 @@
+{
+  "id": "dc-motor",
+  "name": "DC gear motor (TT, 3–6 V)",
+  "category": "motor",
+  "description": "Yellow TT gear motor used on 2WD robot cars: about 200 rpm at 6 V. Never wire it to an Arduino pin (it needs 150–1500 mA): drive it from an L298N output (OUT1/OUT2 or OUT3/OUT4). Swap A and B to reverse it.",
+  "pins": [
+    { "id": "A", "label": "M+", "x": 10, "y": 30, "type": "passive", "description": "Motor terminal. The shaft turns forward (positive rpm) when A is more positive than B." },
+    { "id": "B", "label": "M−", "x": 10, "y": 50, "type": "passive", "description": "Other motor terminal." }
+  ],
+  "size": { "w": 140, "h": 80 },
+  "props": [
+    { "id": "ratedVoltage", "label": "Rated voltage", "type": "number", "default": 6, "min": 1, "max": 24, "step": 0.1, "unit": "V", "description": "Voltage the no-load speed and currents below are given at." },
+    { "id": "noLoadRpm", "label": "No-load speed", "type": "number", "default": 200, "min": 1, "max": 20000, "unit": "rpm", "description": "Output-shaft speed with no load at the rated voltage (after the gearbox). TT motors: 120–250 rpm depending on gear ratio." },
+    { "id": "stallCurrent", "label": "Stall current", "type": "number", "default": 1.5, "min": 0.05, "max": 20, "step": 0.05, "unit": "A", "description": "Current with the shaft blocked at the rated voltage. Sets the winding resistance (ratedVoltage / stallCurrent)." },
+    { "id": "noLoadCurrent", "label": "No-load current", "type": "number", "default": 0.15, "min": 0.001, "max": 5, "step": 0.01, "unit": "A", "description": "Current when spinning freely at the rated voltage. Sets friction." },
+    { "id": "timeConstantMs", "label": "Spin-up time constant", "type": "number", "default": 60, "min": 5, "max": 2000, "unit": "ms", "description": "Time to reach 63 % of the final speed after a voltage step (rotor + gearbox inertia)." }
+  ],
+  "limits": { "maxVoltage": 9, "maxCurrentmA": 1500 },
+  "footprint": "TT gearbox motor, 70 × 22 × 18 mm, 5.4 mm double-flat shaft",
+  "bindings": [
+    { "key": "rpm", "type": "number", "description": "Output-shaft speed in rpm, signed (positive = A more positive than B)." },
+    { "key": "omega", "type": "number", "description": "Output-shaft speed in rad/s, signed. Physics reads this to turn the wheel." },
+    { "key": "spinning", "type": "boolean", "description": "True while |rpm| > 1." },
+    { "key": "spinTransform", "type": "string", "description": "SVG transform turning the hub: \"rotate(<deg> 98 40)\"." },
+    { "key": "currentmA", "type": "number", "description": "Average winding current in mA (signed)." },
+    { "key": "volts", "type": "number", "description": "Average voltage across A–B." },
+    { "key": "label", "type": "string", "description": "Speed label, e.g. \"182 rpm\"." }
+  ],
+  "tags": ["dc motor", "gear motor", "tt motor", "yellow motor", "robot", "wheel", "car", "2wd", "rover"]
+}

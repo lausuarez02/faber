@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" width="160" height="100">
+  <path d="M6 30 H34 M6 50 H34 M6 70 H34" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M14 30 H34" stroke="#7A5230" stroke-width="3"/>
+  <path d="M14 50 H34" stroke="#D9473B" stroke-width="3"/>
+  <path d="M14 70 H34" stroke="#F08A2B" stroke-width="3"/>
+  <rect x="34" y="24" width="12" height="52" rx="2" fill="#1C2027" stroke="#3A4250"/>
+  <rect x="46" y="20" width="96" height="60" rx="6" fill="#15181D" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="38" y="44" width="112" height="12" rx="2" fill="#1C2027" stroke="#3A4250"/>
+  <circle cx="112" cy="50" r="14" fill="#2B313B" stroke="#3A4250"/>
+  <g transform="rotate(0 112 50)" data-bind="transform:hornTransform">
+    <path d="M106 50 L112 8 L118 50 Z" fill="#E9EDF2" stroke="#8A93A0"/>
+    <circle cx="112" cy="16" r="2" fill="#15181D"/>
+    <circle cx="112" cy="50" r="7" fill="#E9EDF2" stroke="#8A93A0"/>
+  </g>
+  <circle cx="112" cy="50" r="2" fill="#0D0F12"/>
+  <text x="56" y="34" font-family="Bricolage Grotesque" font-size="9" fill="#E9EDF2">SG90</text>
+  <text x="56" y="74" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" data-bind="text:label">90°</text>
+  <circle data-pin="GND" cx="6" cy="30" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="6" cy="50" r="3" fill="#C9CED6"/>
+  <circle data-pin="SIG" cx="6" cy="70" r="3" fill="#C9CED6"/>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "TRIG pulses shorter than 10 µs are ignored, a new trigger is ignored while a measurement runs, ECHO is a push-pull 5 V output." },
+    "timing": { "level": "ok", "note": "Cycle-exact on the MCU clock: ECHO rises 460 µs after TRIG falls (200 µs 40 kHz burst + module processing) and stays HIGH distance × 2 / speed-of-sound (58.2 µs/cm at 20 °C), or 38 ms with nothing in 2–400 cm. The MCU is stopped at the exact cycle so pulseIn() measures it correctly." },
+    "analog": { "level": "approx", "note": "The target is a single distance: a prop, or from the physics world the nearest hit of 7 rays over ±15° (a 30° cone, roughly what measured beam patterns show for walls and large objects; the datasheet's 15° 'effectual angle' is for small targets). No beam pattern, no soft or angled surfaces that absorb or deflect the sound, no multipath, no noise." },
+    "power": { "level": "approx", "note": "Constant 15 mA load on VCC; it measures only with VCC ≥ 4.5 V." },
+    "radio": { "level": "n/a", "note": "Not a radio part (ultrasound is not modelled as a medium)." }
+  },
+  "emulates": ["10 µs trigger requirement", "Echo pulse width proportional to distance", "Speed of sound vs temperature", "No-echo 38 ms timeout beyond 400 cm", "Busy while measuring", "Distance from the physics world (raycast)"],
+  "doesNotEmulate": ["Beam shape and side lobes (here 7 rays over ±15°; a thin pole at the edge of that cone may not echo on hardware)", "Soft, round or angled targets that return no echo", "Crosstalk between two sensors", "Measurement noise (± 0.3–1 cm) and occasional zero readings", "Minimum time between pings (~60 ms recommended)"],
+  "testOnRealDevice": ["Readings on soft (fabric), round or angled obstacles", "Readings closer than 3 cm", "Two sensors pinging at the same time", "Ping rate faster than every 60 ms"]
+}

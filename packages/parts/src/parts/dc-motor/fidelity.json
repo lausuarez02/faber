@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Not a logic part." },
+    "timing": { "level": "approx", "note": "First-order mechanics (inertia + viscous and Coulomb friction) integrated every 1 ms of virtual time; winding inductance (electrical time constant ≈ 1 ms) is ignored." },
+    "analog": { "level": "approx", "note": "Linear DC motor: back-EMF = Ke·ω in series with the winding resistance, Ke/Kt/friction derived from the rated voltage, no-load speed, stall and no-load current. Under fast PWM (an L298N output while ENA gets analogWrite) the winding is duty-averaged assuming continuous current: I = (duty·V_on − Ke·ω)/R, so speed ≈ duty × full speed, and the battery supplies duty·I. Real drivers in fast-decay mode with a light load can run faster than that at low duty, and below ~20–30 % duty a real TT motor often does not start under load." },
+    "power": { "level": "approx", "note": "Draws its real current from the driver and the battery (stall ≈ 1.5 A at 6 V), so supply sag and driver overcurrent show up; heating and brush losses are not modelled." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Speed proportional to average voltage minus friction", "Spin-up and coast-down with a time constant", "Direction from polarity", "Stall current when blocked (loadTorque)", "Duty-averaged speed under PWM", "Start-up dead band from static friction"],
+  "doesNotEmulate": ["Winding inductance and current ripple", "Brush noise and EMI", "Gearbox backlash", "Unit-to-unit spread (real TT motors differ by ±10–20 % in speed, which makes a robot curve)", "Temperature and wear"],
+  "testOnRealDevice": ["Whether both motors run at the same speed (calibrate a per-motor PWM trim)", "Minimum PWM that starts the motor under load", "Supply brown-out on the Arduino when motors start (use a separate battery for the motors)"]
+}
