@@ -84,3 +84,37 @@ Libraries that are not preinstalled are downloaded from the Arduino Library
 Manager on first use, under their own licenses (some, e.g. NewPing, are GPL).
 
 The full license texts ship with each package in node_modules.
+
+RP2040 boards (round 5)
+-----------------------
+
+The RP2040 simulator backend (packages/sim-backends/src/rp2040) uses:
+
+  rp2040js 1.4.1                   MIT License, Copyright (c) Uri Shaked
+                                   (an open-source emulator library; no Wokwi
+                                   parts or assets are used)
+
+It does not include Raspberry Pi's RP2040 boot ROM. packages/sim-backends/src/
+rp2040/rom.ts is an original implementation by the Jumper Authors of the ROM's
+public function tables (as documented in the RP2040 datasheet and the pico-sdk
+headers), so no ROM code is distributed.
+
+RP2040 firmware (packages/sim-backends/fixtures/xiao_*.hex, pico_*.hex, and
+anything `build` compiles for an RP2040 board) is built with the pinned image
+toolchains/arduino-pico/Dockerfile and statically linked with:
+
+  arduino-pico core 6.3.1          GNU Lesser General Public License 2.1,
+  (rp2040:rp2040)                  Copyright (c) Earle F. Philhower, III and
+                                   contributors
+  Raspberry Pi pico-sdk (bundled   BSD-3-Clause, Copyright (c) 2020 Raspberry Pi
+  in the core)                     (Trading) Ltd.
+  TinyUSB (bundled in the core)    MIT License, Copyright (c) Ha Thach
+                                   (tinyusb.org)
+  newlib / libgcc (toolchain)      BSD-style / GPL with the GCC Runtime Library
+                                   Exception
+
+plus the Arduino libraries the sketch includes (the same pinned versions as
+above). The arduino-pico sources are available from
+https://github.com/earlephilhower/arduino-pico (tag 6.3.1); each fixture's
+sketch sits next to its .hex and packages/sim-backends/fixtures/BUILD.md says
+how to rebuild it.
