@@ -198,7 +198,7 @@ interface PartSpec {
   props?: PropSpec[];
   limits?: { maxCurrentmA?; maxVoltage?; minVoltage?; maxPowerW?; [k: string]: number };
   footprint?: string;                         // e.g. "THT 5mm LED"
-  buyLinks?: { vendor: string; url: string }[];
+  // round 5 (decision 0003, C2): dimensions_mm {w,h,d}, mass_g, current_ma {typ,max}, price_usd, buy_links {vendor,url}[]
   bindings?: BindingSpec[];                   // documents visualState keys
   mcu?: McuSpec;                              // boards only
   tags?: string[];

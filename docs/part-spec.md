@@ -35,9 +35,13 @@ the rulebook on top of them.
 | `props` | no | User-editable settings (inspector + `setProp`). |
 | `limits` | no | `maxCurrentmA`, `maxVoltage`, `minVoltage`, `maxPowerW`, plus any other numeric limit (`absMaxCurrentmA`, `maxReverseVoltage`, …). Models read their thresholds from here. |
 | `footprint` | no | Physical package, e.g. `"THT 5 mm round LED, 0.1 in (2.54 mm) lead pitch"`. |
-| `buyLinks` | no | `{ vendor, url }[]`. Generic distributors only. |
+| `dimensions_mm` | yes (round 5) | `{ w, h, d }` in mm: outer size of the module as sold; `d` is the height off the board. |
+| `mass_g` | yes (round 5) | Grams, the module as sold, without wires. |
+| `current_ma` | yes (round 5) | `{ typ, max }` supply current the part itself draws (mA). Passive parts `{ typ: 0, max: 0 }`. |
+| `price_usd` | yes (round 5) | Typical single-unit price (USD) from a generic distributor. |
+| `buy_links` | yes (round 5) | `{ vendor, url }[]`, `https://` only. Generic distributors or the maker's shop; search URLs are fine. |
 | `bindings` | no* | Every `visualState()` key the SVG binds to. *Required for each key used in `data-bind`. |
-| `mcu` | boards | `{ backend, chip, clockHz, vcc, fqbn? }`. Required when `category` is `board`. |
+| `mcu` | boards | `{ backend, chip, clockHz, vcc, fqbn? }`. Required when `category` is `board`. `backend` is `"avr8js"` or `"rp2040js"` (`BOARD_BACKENDS` in sim-core). |
 | `tags` | no | Search words: aliases, model numbers, use cases (`"ldr"`, `"light sensor"`). |
 | `bus` | bus parts | `{ i2c: { addresses, addressProp?, pullUpOhms?, maxHz? } }` or `{ spi: { modes?, maxHz? } }`. The bus pins carry `protocols` (`i2c-sda`, `i2c-scl`, `spi-mosi`, `spi-miso`, `spi-sck`, `spi-cs`) and the model returns an `i2c` / `spi` member. Bus parts also ship an `example.ino` (+ golden `example.hex`, built with `toolchains/arduino/build-part-examples.sh`) that their test runs on a simulated Uno. See `docs/buses.md`. |
 

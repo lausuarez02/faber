@@ -68,9 +68,18 @@ export const BindingSpecSchema = z.object({
 });
 export type BindingSpec = z.infer<typeof BindingSpecSchema>;
 
+/**
+ * Simulator backends a board part may declare in `mcu.backend` (decision 0003, C1).
+ *   avr8js    ATmega328P (Uno, Nano) through avr8js
+ *   rp2040js  RP2040 (Pico, XIAO RP2040, RP2040-Zero) through rp2040js (round 5, track rp2040)
+ * ESP32 ("qemu-esp32") is planned, not implemented.
+ */
+export const BOARD_BACKENDS = ["avr8js", "rp2040js"] as const;
+export type BoardBackendId = (typeof BOARD_BACKENDS)[number];
+
 /** Extra block for MCU boards. */
 export const McuSpecSchema = z.object({
-  /** Backend id the backendFactory understands, e.g. "avr8js". */
+  /** Backend id the backendFactory understands. Shipped boards use one of BOARD_BACKENDS (tests may use fakes). */
   backend: z.string().min(1),
   /** Chip name, e.g. "atmega328p". */
   chip: z.string().min(1),
@@ -103,7 +112,19 @@ export const PartSpecSchema = z.object({
     .catchall(z.number())
     .optional(),
   footprint: z.string().optional(),
-  buyLinks: z.array(z.object({ vendor: z.string(), url: z.string() })).optional(),
+  // --- Physical data (round 5, decision 0003, C2). Optional in the schema so a part can land before
+  // its numbers; packages/parts' spec test requires them for every shipped part. Typical figures for
+  // the common module, from its datasheet or a vendor listing; plan_device sums them.
+  /** Outer size of the module in mm: w × h on the board plane, d = height off the board / thickness. */
+  dimensions_mm: z.object({ w: z.number().positive(), h: z.number().positive(), d: z.number().positive() }).optional(),
+  /** Mass in grams (the module as sold, without wires). */
+  mass_g: z.number().nonnegative().optional(),
+  /** Supply current drawn by the part itself in mA: typ = usual operation, max = worst case (stall, all LEDs white, radio TX). Passive parts: 0/0. */
+  current_ma: z.object({ typ: z.number().nonnegative(), max: z.number().nonnegative() }).optional(),
+  /** Typical single-unit price in US dollars from a generic distributor. */
+  price_usd: z.number().nonnegative().optional(),
+  /** Where to buy it: generic distributors or the maker's own shop. Search URLs are fine. */
+  buy_links: z.array(z.object({ vendor: z.string().min(1), url: z.string().regex(/^https:\/\//) })).optional(),
   bindings: z.array(BindingSpecSchema).optional(),
   mcu: McuSpecSchema.optional(),
   bus: z
@@ -147,6 +168,12 @@ export type FidelityArea = z.infer<typeof FidelityAreaSchema>;
 
 export const FidelitySchema = z.object({
   level: z.enum(["exact", "behavioral", "stub"]),
+  /**
+   * Round 5 (decision 0003, C4): who made the part. "agent-made" parts come from a project's parts/
+   * folder (create_part); fidelity reports and exports print "agent-made: behavioral, unverified".
+   * Omitted = "builtin".
+   */
+  origin: z.enum(["builtin", "agent-made"]).optional(),
   areas: z.object({
     logic: FidelityAreaSchema,
     timing: FidelityAreaSchema,

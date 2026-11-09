@@ -74,6 +74,11 @@
                 "boolean"
               ]
             }
+          },
+          "standIn": {
+            "description": "Set when this part stands in for a real part Jumper does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note.",
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [

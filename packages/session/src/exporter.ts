@@ -17,7 +17,7 @@ export function bomMarkdown(project: Project, registry: PartRegistry): string {
   const lines = [`# Bill of materials: ${project.name}`, "", "| Qty | Part | Value / options | Ids | Buy |", "| --- | --- | --- | --- | --- |"];
   for (const g of groups.values()) {
     const spec = registry.get(g.type)?.spec;
-    const links = (spec?.buyLinks ?? []).map((l) => `[${l.vendor}](${l.url})`).join(", ") || searchLinks(spec?.name ?? g.type);
+    const links = (spec?.buy_links ?? []).map((l) => `[${l.vendor}](${l.url})`).join(", ") || searchLinks(spec?.name ?? g.type);
     lines.push(`| ${g.ids.length} | ${spec?.name ?? g.type} | ${g.props || "–"} | ${g.ids.join(", ")} | ${links} |`);
   }
   const wires = project.wires.length;

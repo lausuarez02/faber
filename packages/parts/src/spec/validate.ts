@@ -2,7 +2,7 @@
 // spec test, so `pnpm gen` refuses to write a registry that `pnpm test` would reject.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { FidelitySchema, PartSpecSchema, parseBindings, type Fidelity, type PartSpec } from "@jumper/sim-core";
+import { BOARD_BACKENDS, FidelitySchema, PartSpecSchema, parseBindings, type Fidelity, type PartSpec } from "@jumper/sim-core";
 import { parseSvg, parseViewBox, type ParsedSvg } from "./svg.ts";
 
 export const REQUIRED_FILES = ["part.json", "fidelity.json", "visual.svg", "model.ts", "model.test.ts"] as const;
@@ -90,6 +90,7 @@ function checkSpec(dir: string, spec: PartSpec, p: string[]): void {
     }
   }
   if (spec.category === "board" && !spec.mcu) p.push(`${dir}/part.json: board parts need an "mcu" block`);
+  if (spec.mcu && !(BOARD_BACKENDS as readonly string[]).includes(spec.mcu.backend)) p.push(`${dir}/part.json: mcu.backend "${spec.mcu.backend}" is not a simulator backend (use one of ${BOARD_BACKENDS.join(", ")})`);
   const props = new Set<string>();
   for (const prop of spec.props ?? []) {
     if (props.has(prop.id)) p.push(`${dir}/part.json: duplicate prop '${prop.id}'`);

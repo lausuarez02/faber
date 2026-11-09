@@ -25,6 +25,11 @@ export const PartInstanceSchema = z.object({
   y: z.number().describe("Canvas y of the part's top-left corner, in canvas px."),
   rotation: RotationSchema.default(0).describe("Clockwise rotation in degrees."),
   props: z.record(z.string(), PropValueSchema).optional().describe("Overrides for the part's props."),
+  standIn: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Set when this part stands in for a real part Jumper does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note."),
 });
 
 export const PinRefSchema = z.object({
