@@ -16,10 +16,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "pnpm --filter @jumper/web test:e2e",
-    "gen": "pnpm --filter @jumper/project-format gen:schema && pnpm --if-present --filter @jumper/parts gen"
+    "gen": "pnpm --filter @jumper/project-format gen:schema && pnpm --if-present --filter @jumper/parts gen && pnpm --filter @jumper/mcp gen:docs",
+    "jumper": "node apps/cli/bin/jumper.mjs"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
+    "@types/ws": "^8.18.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.1.0"
@@ -28,5 +30,11 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-compat": "0.21.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "ws": "8.22.2",
+    "yaml": "^2.9.1"
   }
 }

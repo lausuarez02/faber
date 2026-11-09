@@ -16,6 +16,7 @@
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@fontsource/ibm-plex-sans": "5.3.0",
     "@jumper/parts": "workspace:*",
+    "@jumper/physics": "workspace:*",
     "@jumper/project-format": "workspace:*",
     "@jumper/sim-backends": "workspace:*",
     "@jumper/sim-core": "workspace:*",

@@ -11,7 +11,11 @@
     "packages/*/test/**/*.ts",
     "apps/web/src/**/*",
     "apps/web/e2e/**/*.ts",
-    "apps/web/*.config.ts"
+    "apps/web/*.config.ts",
+    "apps/cli/src/**/*",
+    "apps/cli/test/**/*.ts",
+    "services/*/src/**/*",
+    "services/*/test/**/*.ts"
   ],
   "exclude": ["**/node_modules", "**/dist"]
 }
