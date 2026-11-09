@@ -1,12 +1,15 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { openCanvas, SHOTS } from "./helpers.ts";
+import { openCanvas, requireFastWebGL, SHOTS } from "./helpers.ts";
 
 // 200 parts on the canvas while Blink runs: the Uno, 66 resistor + LED pairs all driven from D13
 // (so every Blink edge re-solves a ~200-node circuit and repaints 66 LEDs), plus 67 spare parts.
 // Measures real frame intervals with requestAnimationFrame and writes them to test-results/perf.json.
-test("perf: 200 parts while Blink runs", async ({ page }) => {
+// A frame-rate benchmark of the GPU compositor: @gpu, so it skips on CI runners with software WebGL
+// (see requireFastWebGL in helpers.ts; JUMPER_E2E_GPU=1 forces it).
+test("perf: 200 parts while Blink runs @gpu", async ({ page }) => {
   test.setTimeout(90_000);
+  await requireFastWebGL(page);
   await openCanvas(page);
   await expect(page.getByTestId("app")).toHaveAttribute("data-firmware", "ready");
 
