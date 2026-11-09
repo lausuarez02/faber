@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "ILI9341 command set as Adafruit_ILI9341 / Adafruit_GFX use it: SWRESET, SLPIN/SLPOUT, DISPON/DISPOFF, INVON/INVOFF, CASET/PASET windows with wrap, RAMWR/RAMWRC, MADCTL (MY, MX, MV, BGR), COLMOD 16-bit RGB565 and 18-bit RGB666, the 0xD9 register-index reads (RDMODE, RDMADCTL, RDPIXFMT, RDSELFDIAG, RDID4). Power, gamma, frame-rate and display-function parameters are accepted and ignored." },
+    "timing": { "level": "approx", "note": "Bytes arrive at the speed of the emulated AVR SPI (8 MHz SCK max on an Uno, about 20 CPU cycles per byte with Adafruit's loop), so how long a redraw takes is realistic. The panel itself is instant: no 70 Hz refresh, no tearing, no 5 ms wait after reset or 120 ms after SLPOUT enforced (the library waits anyway)." },
+    "analog": { "level": "approx", "note": "Colours are RGB565 expanded to 8 bits per channel with no gamma curve, so the canvas looks more saturated than a real TN panel, which also washes out at an angle. The backlight is on/off or PWM duty." },
+    "power": { "level": "approx", "note": "Draws about 20 mA logic plus 60 mA backlight at full brightness from VCC. Losing VCC clears the controller RAM. A 3.3 V-only module reports 5 V logic as an error; electrically nothing breaks in the sim." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Every drawing call of Adafruit_GFX / Adafruit_ILI9341 (pixels, lines, fillRect fast path, circles, text, bitmaps)", "setRotation 0..3 and colour order (BGR)", "Hardware and software reset, sleep, display on/off, inversion", "Register reads through MISO (readcommand8)", "Backlight on, off and PWM dimming", "18-bit colour mode"],
+  "doesNotEmulate": ["Panel refresh, tearing and the TE pin", "Vertical scrolling (VSCRSADD is stored but the image does not scroll)", "Partial mode and idle mode (8-colour)", "Gamma curves and viewing-angle colour shift", "Touch controller (XPT2046 / resistive touch) and the SD card slot", "Reading pixels back (RAMRD returns 0xFF)"],
+  "testOnRealDevice": ["Colours: some modules are RGB instead of BGR (red and blue swapped): try tft.invertDisplay() or a different MADCTL", "Logic level: bare red modules are 3.3 V logic; on a 5 V Uno use a level shifter (74HC4050) or the module can fail over time", "Long SPI wires above 15 cm corrupt pixels at 8 MHz; shorten them or lower the SPI clock", "Backlight current (60 to 100 mA) from the Uno 5 V pin together with Wi-Fi and servos"]
+}

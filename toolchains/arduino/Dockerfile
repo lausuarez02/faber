@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Reproducible Arduino build image for Jumper firmware.
 # Multi-arch: builds natively on linux/amd64 and linux/arm64 (Apple Silicon).
-#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs1 toolchains/arduino
+#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs2 toolchains/arduino
 # The -libsN suffix counts the pinned library set below (LIBRARIES.md). Bump N when it changes.
 # Versions are pinned; bump them together and record the change in examples/*/firmware/BUILD.md.
 FROM debian:bookworm-20251020-slim
@@ -55,6 +55,8 @@ RUN arduino-cli lib update-index \
       "LiquidCrystal_PCF8574@2.3.0" \
       "MPU6050@1.4.5" \
       "U8g2@2.36.19" \
+      "Adafruit ILI9341@1.7.0" \
+      "Adafruit ST7735 and ST7789 Library@1.12.0" \
  && rm -rf /opt/arduino/downloads \
  && chmod -R a+rX /opt/arduino \
  && arduino-cli lib list

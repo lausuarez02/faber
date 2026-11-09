@@ -1,6 +1,6 @@
 # Arduino libraries in the toolchain image
 
-The image `jumper/arduino-cli:1.5.1-avr1.8.8-libs1` (built from `Dockerfile` in this folder)
+The image `jumper/arduino-cli:1.5.1-avr1.8.8-libs2` (built from `Dockerfile` in this folder)
 ships these libraries, pinned, so sketches for Jumper's display, sensor and RTC parts build with
 no network access and give the same bytes on every machine. Install is `--no-deps`: every
 dependency is listed here explicitly.
@@ -22,9 +22,11 @@ them, not into Jumper itself. A firmware image Jumper ships (for example
 | LiquidCrystal_PCF8574 | 2.3.0 | BSD-3-Clause | `lcd1602-i2c` | `LiquidCrystal_PCF8574 lcd(0x27); lcd.begin(16, 2);` |
 | LiquidCrystal_I2C | 1.1.2-jumper.1 | Apache-2.0 (Jumper) | `lcd1602-i2c` | Jumper's own clean-room implementation of the API, see below |
 | MPU6050 (Electronic Cats) | 1.4.5 | MIT (I2Cdevlib, MIT) | `mpu6050` | The I2Cdevlib-style `MPU6050` class |
+| Adafruit ILI9341 | 1.7.0 | MIT (README) / BSD (source headers), Adafruit | `ili9341-tft`, `examples/ai-pet` | `Adafruit_ILI9341 tft(CS, DC, RST); tft.begin(); tft.setRotation(1);`. Added in libs2. |
+| Adafruit ST7735 and ST7789 Library | 1.12.0 | MIT, Adafruit | `st7735-tft` | `Adafruit_ST7735 tft(CS, DC, RST); tft.initR(INITR_BLACKTAB);`. Installed `--no-deps`: its seesaw / SD dependencies are only for the TFT FeatherWing examples. Added in libs2. |
 | U8g2 | 2.36.19 | BSD-2-Clause (code); fonts under their own licenses | `ssd1306-oled-i2c` | Font licenses are listed in the library's `LICENSE`; most are public domain, X11/MIT or OFL. Check before shipping a font in a product. |
 
-Versions are the latest in the Arduino library index on 2026-11-09. Licenses were checked
+Versions are the latest in the Arduino library index on 2026-11-09. libs2 (2026-11-09) adds the two TFT libraries; sketches that do not include them build byte-identical to libs1. Licenses were checked
 against the `LICENSE`/`license.txt` file inside each installed library.
 
 ## Why there is a Jumper LiquidCrystal_I2C

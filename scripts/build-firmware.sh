@@ -15,7 +15,7 @@ if [[ $# -ne 3 ]]; then
 fi
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE="${JUMPER_ARDUINO_IMAGE:-jumper/arduino-cli:1.5.1-avr1.8.8-libs1}"
+IMAGE="${JUMPER_ARDUINO_IMAGE:-jumper/arduino-cli:1.5.1-avr1.8.8-libs2}"
 PLATFORM_ARGS=()
 if [[ -n "${JUMPER_DOCKER_PLATFORM:-}" ]]; then PLATFORM_ARGS=(--platform "$JUMPER_DOCKER_PLATFORM"); fi
 

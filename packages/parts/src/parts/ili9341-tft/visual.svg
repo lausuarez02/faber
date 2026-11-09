@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" width="680" height="400">
+  <rect x="2" y="2" width="676" height="396" rx="10" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="22" cy="22" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="658" cy="22" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="22" cy="378" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="658" cy="378" r="9" fill="#15181D" stroke="#3A4250"/>
+  <rect x="8" y="106" width="24" height="188" rx="3" fill="#15181D" stroke="#3A4250"/>
+  <rect x="14" y="114" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="123" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">VCC</text>
+  <rect x="14" y="134" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="143" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">GND</text>
+  <rect x="14" y="154" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="163" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">CS</text>
+  <rect x="14" y="174" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="183" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">RESET</text>
+  <rect x="14" y="194" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="203" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">DC/RS</text>
+  <rect x="14" y="214" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="223" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">SDI(MOSI)</text>
+  <rect x="14" y="234" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="243" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">SCK</text>
+  <rect x="14" y="254" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="263" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">LED</text>
+  <rect x="14" y="274" width="12" height="12" rx="1.5" fill="#2B313B"/>
+  <text x="40" y="283" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">SDO(MISO)</text>
+  <text x="40" y="312" font-family="IBM Plex Mono" font-size="8" fill="#8A93A0">ILI9341</text>
+  <text x="40" y="324" font-family="IBM Plex Mono" font-size="8" fill="#8A93A0">240x320 SPI</text>
+  <rect x="118" y="150" width="26" height="100" rx="2" fill="#2A1F0E" stroke="#3A4250" stroke-width="0.75"/>
+  <path d="M122 160 H140 M122 170 H140 M122 180 H140 M122 190 H140 M122 200 H140 M122 210 H140 M122 220 H140 M122 230 H140 M122 240 H140" stroke="#6B5A3A" stroke-width="0.75"/>
+  <rect x="140" y="12" width="500" height="376" rx="6" fill="#1C2027" stroke="#3A4250"/>
+  <rect x="152" y="21" width="476" height="358" rx="3" fill="#0A0C10" stroke="#2B313B"/>
+  <rect data-screen="320x240" x="162" y="29" width="456" height="342" fill="#05070A"/>
+  <rect x="162" y="29" width="456" height="342" fill="none" stroke="#2B313B" stroke-width="0.75"/>
+  <path d="M170 36 L300 36 L176 160 Z" fill="#FFFFFF" opacity="0.025"/>
+  <circle cx="652" cy="200" r="3" fill="#5CF2A1" opacity="0" data-bind="opacity:screenOpacity"/>
+  <circle data-pin="VCC" cx="20" cy="120" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="20" cy="140" r="3" fill="#C9CED6"/>
+  <circle data-pin="CS" cx="20" cy="160" r="3" fill="#C9CED6"/>
+  <circle data-pin="RST" cx="20" cy="180" r="3" fill="#C9CED6"/>
+  <circle data-pin="DC" cx="20" cy="200" r="3" fill="#C9CED6"/>
+  <circle data-pin="MOSI" cx="20" cy="220" r="3" fill="#C9CED6"/>
+  <circle data-pin="SCK" cx="20" cy="240" r="3" fill="#C9CED6"/>
+  <circle data-pin="LED" cx="20" cy="260" r="3" fill="#C9CED6"/>
+  <circle data-pin="MISO" cx="20" cy="280" r="3" fill="#C9CED6"/>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120">
+  <rect x="2" y="2" width="196" height="116" rx="6" fill="#10202A" stroke="#3A4250" stroke-width="1.25"/>
+  <rect x="6" y="18" width="40" height="84" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <rect x="11" y="25" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="31" y="25" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="11" y="45" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="31" y="45" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="11" y="65" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="31" y="65" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="11" y="85" width="10" height="10" rx="1" fill="#2B313B"/>
+  <rect x="31" y="85" width="10" height="10" rx="1" fill="#2B313B"/>
+  <text x="54" y="33" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">TX  GND</text>
+  <text x="54" y="53" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">EN  IO2</text>
+  <text x="54" y="73" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">RST IO0</text>
+  <text x="54" y="93" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">3V3 RX</text>
+  <rect x="96" y="34" width="40" height="40" rx="2" fill="#1C2027" stroke="#3A4250"/>
+  <text x="116" y="57" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">ESP8266</text>
+  <rect x="98" y="82" width="26" height="16" rx="1.5" fill="#1C2027" stroke="#3A4250"/>
+  <text x="111" y="93" text-anchor="middle" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0">FLASH</text>
+  <path d="M150 16 V100 H160 V24 H170 V100 H180 V24 H190 V104" fill="none" stroke="#C9A24A" stroke-width="3" stroke-linejoin="round" opacity="0.85"/>
+  <text x="96" y="20" font-family="IBM Plex Sans" font-size="8" fill="#E9EDF2">ESP-01S</text>
+  <text x="96" y="112" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">AT 1.7 Wi-Fi</text>
+  <circle cx="74" cy="108" r="3" fill="#3A1010"/>
+  <circle cx="74" cy="108" r="3" fill="#FF3B2F" opacity="0" data-bind="opacity:powerOpacity"/>
+  <circle cx="84" cy="108" r="3" fill="#0F1A33"/>
+  <circle cx="84" cy="108" r="3.2" fill="#3FA9F5" opacity="0" data-bind="opacity:ledOpacity"/>
+  <circle data-pin="TX" cx="16" cy="30" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="36" cy="30" r="3" fill="#C9CED6"/>
+  <circle data-pin="EN" cx="16" cy="50" r="3" fill="#C9CED6"/>
+  <circle data-pin="IO2" cx="36" cy="50" r="3" fill="#C9CED6"/>
+  <circle data-pin="RST" cx="16" cy="70" r="3" fill="#C9CED6"/>
+  <circle data-pin="IO0" cx="36" cy="70" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="16" cy="90" r="3" fill="#C9CED6"/>
+  <circle data-pin="RX" cx="36" cy="90" r="3" fill="#C9CED6"/>
+</svg>

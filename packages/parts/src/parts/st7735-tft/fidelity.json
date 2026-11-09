@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "ST7735 command set as Adafruit_ST7735 uses it (initR black tab): SWRESET, SLPOUT, COLMOD 16/18-bit, MADCTL (MY, MX, MV, RGB/BGR), CASET/RASET windows with wrap, RAMWR, INVON/INVOFF, DISPON/DISPOFF. Frame-rate, power and gamma commands are accepted and ignored. The panel is the 128x160 black-tab glass with no column/row offset." },
+    "timing": { "level": "approx", "note": "Bytes arrive at the emulated SPI speed, so redraw times are realistic; the panel shows each pixel immediately (no refresh, no tearing)." },
+    "analog": { "level": "approx", "note": "RGB565 expanded linearly to 8 bits per channel, no gamma or viewing angle." },
+    "power": { "level": "approx", "note": "About 20 mA logic plus 30 mA backlight from VCC; losing VCC clears RAM." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Adafruit_GFX drawing through Adafruit_ST7735", "setRotation 0..3 and RGB/BGR order", "Reset, sleep, display on/off, inversion", "Backlight on, off and PWM"],
+  "doesNotEmulate": ["Green-tab and red-tab panels' column/row offsets (initR(INITR_GREENTAB) draws shifted on real hardware)", "The SD card slot", "Reading registers or pixels back", "Gamma and viewing angle"],
+  "testOnRealDevice": ["Which tab your module has (black, green, red): the wrong initR option shifts the image or swaps colours", "Logic level on a 5 V board", "SPI wire length at full speed"]
+}

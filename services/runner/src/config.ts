@@ -9,9 +9,9 @@ export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
  * Base toolchain image (toolchains/arduino): arduino-cli 1.5.1 + arduino:avr 1.8.8 + the pinned display /
  * sensor libraries listed in toolchains/arduino/LIBRARIES.md. Keep the tag in sync with that Dockerfile.
  */
-export const BASE_IMAGE = process.env.JUMPER_ARDUINO_IMAGE ?? "jumper/arduino-cli:1.5.1-avr1.8.8-libs1";
+export const BASE_IMAGE = process.env.JUMPER_ARDUINO_IMAGE ?? "jumper/arduino-cli:1.5.1-avr1.8.8-libs2";
 /** Runner image = base + the robot libraries (Servo) from services/runner/docker/Dockerfile. */
-export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-runner:1.5.1-avr1.8.8-libs1-r1";
+export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-runner:1.5.1-avr1.8.8-libs2-r1";
 
 export const BASE_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino");
 export const RUNNER_DOCKERFILE_DIR = join(REPO_ROOT, "services/runner/docker");
@@ -41,6 +41,8 @@ export const PINNED_LIBRARIES: Record<string, { version: string; preinstalled: b
   LiquidCrystal_PCF8574: { version: "2.3.0", preinstalled: true, license: "see toolchains/arduino/LIBRARIES.md", headers: ["LiquidCrystal_PCF8574.h"] },
   "LiquidCrystal I2C": { version: "1.1.2", preinstalled: true, license: "see toolchains/arduino/LIBRARIES.md", headers: ["LiquidCrystal_I2C.h"] },
   MPU6050: { version: "1.4.5", preinstalled: true, license: "see toolchains/arduino/LIBRARIES.md", headers: ["MPU6050.h"] },
+  "Adafruit ILI9341": { version: "1.7.0", preinstalled: true, license: "MIT / BSD (see toolchains/arduino/LIBRARIES.md)", deps: ["Adafruit GFX Library", "Adafruit BusIO"], headers: ["Adafruit_ILI9341.h"] },
+  "Adafruit ST7735 and ST7789 Library": { version: "1.12.0", preinstalled: true, license: "MIT", deps: ["Adafruit GFX Library", "Adafruit BusIO"], headers: ["Adafruit_ST7735.h", "Adafruit_ST7789.h", "Adafruit_ST77xx.h"] },
   NewPing: { version: "1.9.7", preinstalled: false, license: "GPL-3.0 (copyleft: your firmware becomes GPL if you ship it)", headers: ["NewPing.h"] },
 };
 

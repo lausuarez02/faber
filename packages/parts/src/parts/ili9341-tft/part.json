@@ -1,0 +1,50 @@
+{
+  "id": "ili9341-tft",
+  "name": "Colour TFT display 2.8in 320x240 (ILI9341, SPI)",
+  "category": "display",
+  "description": "2.8 in colour TFT, 240 x 320 pixels (320 x 240 in landscape), RGB565, on the ILI9341 controller over SPI. Uno wiring: VCC → 5V, GND → GND, CS → D10, DC → D9, RST → D8, MOSI → D11, SCK → D13, MISO → D12 (optional), LED → 5V or a PWM pin for the backlight. Works with Adafruit_ILI9341 (Adafruit_ILI9341 tft(10, 9, 8); tft.begin(); tft.setRotation(1);).",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 20, "y": 120, "type": "power", "voltage": { "min": 3.0, "max": 5.5 }, "description": "3.3 to 5 V supply; the module has a 3.3 V regulator." },
+    { "id": "GND", "label": "GND", "x": 20, "y": 140, "type": "ground", "description": "Ground." },
+    { "id": "CS", "label": "CS", "x": 20, "y": 160, "type": "digital", "protocols": ["spi-cs"], "description": "Chip select, active low. Uno: D10 (any digital pin; pass it to the library)." },
+    { "id": "RST", "label": "RESET", "x": 20, "y": 180, "type": "digital", "description": "Reset, active low, 10 kΩ pull-up on the module. Uno: D8, or leave unwired and pass -1 (the library then uses a software reset)." },
+    { "id": "DC", "label": "DC/RS", "x": 20, "y": 200, "type": "digital", "description": "Data / command select: LOW = the SPI byte is a command, HIGH = parameter or pixel data. Uno: D9 (any digital pin)." },
+    { "id": "MOSI", "label": "SDI(MOSI)", "x": 20, "y": 220, "type": "digital", "protocols": ["spi-mosi"], "description": "SPI data in. Uno: D11." },
+    { "id": "SCK", "label": "SCK", "x": 20, "y": 240, "type": "digital", "protocols": ["spi-sck"], "description": "SPI clock. Uno: D13." },
+    { "id": "LED", "label": "LED", "x": 20, "y": 260, "type": "digital", "description": "Backlight. HIGH (or unwired: 10 kΩ pull-up on the module) = on; analogWrite on a PWM pin dims it." },
+    { "id": "MISO", "label": "SDO(MISO)", "x": 20, "y": 280, "type": "digital", "protocols": ["spi-miso"], "description": "SPI data out, only needed to read registers. Uno: D12." }
+  ],
+  "size": { "w": 680, "h": 400 },
+  "props": [
+    {
+      "id": "logic",
+      "label": "Logic level",
+      "type": "enum",
+      "default": "5v-safe",
+      "options": [
+        { "value": "5v-safe", "label": "5 V safe (breakout with level shifter)" },
+        { "value": "3v3-only", "label": "3.3 V only (bare module)" }
+      ],
+      "description": "Breakouts with a level shifter (Adafruit 2.8in) take 5 V logic from an Uno. Bare red modules are 3.3 V logic: wiring them straight to 5 V pins is out of spec (add a 74HC4050 or series resistors)."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.0, "maxCurrentmA": 120, "typicalCurrentmA": 80, "maxLogicVoltage3v3": 3.6 },
+  "footprint": "86 x 50 mm module, 9-pin 0.1 in header (VCC GND CS RESET DC SDI SCK LED SDO)",
+  "bus": { "spi": { "modes": [0], "maxHz": 10000000 } },
+  "bindings": [
+    { "key": "on", "type": "boolean", "description": "The glass shows an image: powered, sleep out (0x11), display on (0x29) and backlight on." },
+    { "key": "backlight", "type": "number", "description": "Backlight brightness 0..1 (LED pin level, or its PWM duty)." },
+    { "key": "frame", "type": "number", "description": "Counts visible changes; a renderer repaints when it changes. Pixels: Simulation.framebuffer(partId) (RGB565, 320 x 240, viewer orientation)." },
+    { "key": "width", "type": "number", "description": "Frame width in pixels as drawn on the canvas (320)." },
+    { "key": "height", "type": "number", "description": "Frame height in pixels as drawn on the canvas (240)." },
+    { "key": "rotation", "type": "number", "description": "The Adafruit setRotation() value the MADCTL register matches (0..3, -1 for other settings). 1 and 3 are upright on the canvas." },
+    { "key": "lit", "type": "number", "description": "Pixels that are not black (0 while the glass is dark). Handy in tests: expect tft.lit > 1000." },
+    { "key": "bright", "type": "number", "description": "Near-white pixels (text boxes, speech bubbles). Handy in tests." },
+    { "key": "blank", "type": "boolean", "description": "True when nothing is shown (dark glass or an all-black frame)." },
+    { "key": "sleeping", "type": "boolean", "description": "Controller in sleep mode (power-on default until SLPOUT 0x11)." },
+    { "key": "inverted", "type": "boolean", "description": "Inversion on (INVON 0x21)." },
+    { "key": "pixelsWritten", "type": "number", "description": "Pixels written since power-on (counts redraws; useful to spot a sketch that repaints the whole screen every loop)." },
+    { "key": "screenOpacity", "type": "number", "description": "1 when the glass shows an image, 0 when dark (bound in the SVG)." }
+  ],
+  "tags": ["tft", "ili9341", "lcd", "colour display", "color display", "screen", "320x240", "2.8", "spi", "adafruit_ili9341", "rgb565", "tamagotchi", "touchscreen display"]
+}
