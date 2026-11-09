@@ -1,9 +1,9 @@
 import { Simulation, applyVisualState, type VisualState } from "@jumper/sim-core";
 import { backendFactory } from "@jumper/sim-backends";
 import type { Project, PropValue } from "@jumper/project-format";
-import { registry } from "./parts.ts";
+import { registry, tftTypeFor } from "./parts.ts";
 import { registerDisplayRenderers } from "../renderers/displays/index.ts";
-import { registerTftRenderers, TFT_PART_TYPES } from "../renderers/tft/index.ts";
+import { registerTftRenderers } from "../renderers/tft/index.ts";
 import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
 import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
@@ -146,7 +146,8 @@ export class Engine {
       const svg = el.querySelector(".part-svg svg");
       if (svg && el.dataset.partType) {
         // Colour TFTs get their own layer; the mono layer would mount a black canvas over them.
-        if (TFT_PART_TYPES.includes(el.dataset.partType)) this.tfts.attach(id, el.dataset.partType, svg);
+        const tft = tftTypeFor(el.dataset.partType); // built-in TFTs and agent-made displays on a TFT controller
+        if (tft) this.tfts.attach(id, tft, svg);
         else this.displays.attach(id, el.dataset.partType, svg);
       }
       this.paintPart(id);

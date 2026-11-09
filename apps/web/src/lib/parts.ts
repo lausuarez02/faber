@@ -1,8 +1,34 @@
-import { partDefinitions, registry } from "@jumper/parts";
+import { partDefinitions as builtinDefinitions, registry as builtinRegistry, withProjectParts } from "@jumper/parts";
 import type { PartCategory, PartDefinition, PartSpec, PinSpec } from "@jumper/sim-core";
 import type { Rotation } from "@jumper/project-format";
+import { TFT_PART_TYPES } from "../renderers/tft/index.ts";
 
-export { registry, partDefinitions };
+/**
+ * The built-in catalog plus the open project's agent-made parts (decision 0003, C4). Everything in
+ * the app reads parts through this overlay; lib/projectParts.ts feeds it from GET /api/project-parts.
+ */
+export const registry = withProjectParts(builtinRegistry);
+/** Built-in definitions (the parts library lists these). */
+export const partDefinitions = builtinDefinitions;
+
+/** Colour-TFT controller part types an agent-made display may reuse, by type id of the display. */
+const tftOf = new Map<string, string>();
+
+/**
+ * Replace the agent-made parts. `tftBase` maps a custom display type to the built-in TFT type whose
+ * renderer draws it. Returns warnings (a project part hiding a built-in id).
+ */
+export function setProjectParts(defs: readonly PartDefinition[], tftBase: Record<string, string> = {}): string[] {
+  tftOf.clear();
+  for (const [k, v] of Object.entries(tftBase)) tftOf.set(k, v);
+  return registry.setProjectParts(defs);
+}
+
+/** The built-in TFT type that renders this part type (itself for built-in TFTs), or undefined. */
+export function tftTypeFor(type: string): string | undefined {
+  if (TFT_PART_TYPES.includes(type) && !tftOf.has(type)) return type;
+  return tftOf.get(type);
+}
 
 export const CATEGORY_LABEL: Record<PartCategory, string> = {
   board: "Boards",
