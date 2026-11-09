@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" width="220" height="200">
+  <rect x="2" y="2" width="216" height="196" rx="8" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="14" cy="14" r="5" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="206" cy="14" r="5" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="14" cy="186" r="5" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="206" cy="186" r="5" fill="#15181D" stroke="#3A4250"/>
+  <rect x="70" y="5" width="80" height="18" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <text x="80" y="34" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">GND</text>
+  <text x="100" y="34" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">VCC</text>
+  <text x="120" y="34" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">SCL</text>
+  <text x="140" y="34" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">SDA</text>
+  <rect x="14" y="44" width="192" height="122" rx="3" fill="#15181D" stroke="#2B313B"/>
+  <rect data-screen="128x64" x="24" y="56" width="172" height="86" fill="#05070A"/>
+  <rect x="24" y="56" width="172" height="86" fill="none" stroke="#2B313B" stroke-width="0.75"/>
+  <rect x="88" y="166" width="44" height="22" rx="2" fill="#1C2027" stroke="#3A4250"/>
+  <text x="110" y="156" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">SSD1306 128x64</text>
+  <circle cx="190" cy="154" r="2.5" fill="#5CF2A1" opacity="0" data-bind="opacity:screenOpacity"/>
+  <circle data-pin="GND" cx="80" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="100" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="SCL" cx="120" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="SDA" cx="140" cy="14" r="3" fill="#C9CED6"/>
+</svg>

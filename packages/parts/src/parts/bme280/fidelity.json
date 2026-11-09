@@ -1,0 +1,29 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "I2C at 0x76/0x77: chip id 0x60, soft reset, calibration block (0x88-0xA1, 0xE1-0xE7), ctrl_hum/ctrl_meas/config, sleep/forced/normal mode, skipped measurements (0x80000 / 0x8000 when oversampling is 0) and burst reads of 0xF7-0xFE. Raw values come from inverting the datasheet's integer compensation, so Adafruit_BME280 reads the prop values back to 0.01 °C, about 0.01 hPa and 0.001 %RH." },
+    "timing": { "level": "approx", "note": "Conversions finish instantly: the status register never shows 'measuring', and normal mode has a fresh sample at every read whatever the standby time." },
+    "analog": { "level": "approx", "note": "No sensor noise, IIR filter or self-heating; one fixed calibration set instead of a per-chip one. Values are exactly what you set." },
+    "power": { "level": "approx", "note": "Fixed 0.4 mA from VIN; answers only from 3.0 V. 10 kOhm pull-ups on SDA and SCL." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "Chip id 0x60 and the I2C address prop (0x76/0x77)",
+    "Calibration registers and the datasheet compensation formulas (temperature, 64-bit pressure, humidity)",
+    "Sleep, forced and normal modes, oversampling 0 = skipped",
+    "Soft reset (0xE0 = 0xB6)",
+    "Settable temperature, humidity and pressure (props or set interactions)"
+  ],
+  "doesNotEmulate": [
+    "Conversion time and the 'measuring' status bit",
+    "IIR filter and standby timing",
+    "Noise, drift and self-heating",
+    "The SPI interface of the chip",
+    "Per-chip calibration differences"
+  ],
+  "testOnRealDevice": [
+    "Self-heating: in normal mode with fast sampling a real BME280 reads 1-2 °C high",
+    "Which address your module uses (0x76 or 0x77)",
+    "Absolute pressure vs your local sea-level pressure for altitude"
+  ]
+}

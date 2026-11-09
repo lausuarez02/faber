@@ -1,0 +1,30 @@
+{
+  "id": "bme280",
+  "name": "Temperature, humidity and pressure sensor BME280 (I2C)",
+  "category": "sensor",
+  "description": "Bosch BME280 breakout on I2C (0x76 on most modules, 0x77 when SDO is high). Wire VIN → 5V, GND → GND, SCL → A5, SDA → A4 on an Uno. With Adafruit_BME280 call bme.begin(0x76): its default address is 0x77. Temperature, pressure and humidity are props you (or a test) set; the sensor returns raw readings that the library's compensation formulas turn back into exactly those values.",
+  "pins": [
+    { "id": "VIN", "label": "VIN", "x": 30, "y": 14, "type": "power", "voltage": { "min": 3.3, "max": 5.5 }, "description": "3.3 to 5 V supply (on-board regulator and level shifting)." },
+    { "id": "GND", "label": "GND", "x": 50, "y": 14, "type": "ground", "description": "Ground." },
+    { "id": "SCL", "label": "SCL", "x": 70, "y": 14, "type": "digital", "protocols": ["i2c-scl"], "description": "I2C clock. Uno: A5. 10 kOhm pull-up on the module." },
+    { "id": "SDA", "label": "SDA", "x": 90, "y": 14, "type": "digital", "protocols": ["i2c-sda"], "description": "I2C data. Uno: A4. 10 kOhm pull-up on the module." }
+  ],
+  "size": { "w": 120, "h": 110 },
+  "props": [
+    { "id": "address", "label": "I2C address", "type": "enum", "default": "0x76", "options": ["0x76", "0x77"], "description": "0x76 with SDO to GND (most modules), 0x77 with SDO high (Adafruit's board and the library default)." },
+    { "id": "temperature", "label": "Temperature", "type": "number", "default": 22.5, "min": -40, "max": 85, "step": 0.1, "unit": "°C" },
+    { "id": "humidity", "label": "Humidity", "type": "number", "default": 45, "min": 0, "max": 100, "step": 0.5, "unit": "%RH" },
+    { "id": "pressure", "label": "Pressure", "type": "number", "default": 1013.25, "min": 300, "max": 1100, "step": 0.1, "unit": "hPa", "description": "Absolute pressure. 1013.25 hPa reads as altitude 0 m with readAltitude(1013.25)." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.3, "maxCurrentmA": 1, "typicalCurrentmA": 0.4 },
+  "footprint": "13 x 10 mm GY-BME280 module, 4-pin 0.1 in header",
+  "bus": { "i2c": { "addresses": [118, 119], "addressProp": "address", "pullUpOhms": 10000, "maxHz": 400000 } },
+  "bindings": [
+    { "key": "temperature", "type": "number", "description": "Temperature it reports, °C (after the compensation formula, 0.01 °C steps)." },
+    { "key": "humidity", "type": "number", "description": "Relative humidity it reports, %." },
+    { "key": "pressure", "type": "number", "description": "Pressure it reports, hPa." },
+    { "key": "mode", "type": "string", "description": "sleep, forced or normal (ctrl_meas mode bits)." },
+    { "key": "label", "type": "string", "description": "Short reading for the drawing, e.g. 22.5°C 45%." }
+  ],
+  "tags": ["bme280", "bmp280", "temperature", "humidity", "pressure", "barometer", "altitude", "weather", "environment sensor", "i2c", "adafruit_bme280"]
+}

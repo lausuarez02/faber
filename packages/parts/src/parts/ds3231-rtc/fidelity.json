@@ -1,0 +1,29 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "I2C at 0x68 with the register map, auto-incrementing pointer and wrap-around: BCD seconds to year with century bit, 12/24-hour mode, the time latched at START for consistent multi-byte reads, the oscillator-stop flag (cleared by writing 0), control/aging registers, and the temperature registers in 0.25 °C steps." },
+    "timing": { "level": "approx", "note": "The clock runs with simulation time, exactly (0 ppm). Writing the time restarts the second like the chip's countdown chain. Alarms are stored but never fire." },
+    "analog": { "level": "approx", "note": "Temperature is whatever the temperature prop says, rounded to 0.25 °C; on the chip it is measured every 64 s." },
+    "power": { "level": "approx", "note": "Fixed 0.2 mA from VCC; answers I2C only above 2.3 V. The backup battery is not modelled: the time survives power loss and lostPower is a prop." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "Registers 0x00-0x12 with BCD time and date, century bit and 12/24-hour mode",
+    "Time copied to the read buffer at START, so RTClib's 7-byte read never tears",
+    "Setting the time (rtc.adjust) and the oscillator-stop flag (rtc.lostPower)",
+    "Temperature registers (rtc.getTemperature) from the temperature prop",
+    "Deterministic start time from the startTime prop"
+  ],
+  "doesNotEmulate": [
+    "Alarm matching, the A1F/A2F flags and the SQW/INT interrupt output",
+    "The 32 kHz and square-wave outputs",
+    "Crystal drift, aging offset and temperature compensation",
+    "The AT24C32 EEPROM at 0x57 that many ZS-042 modules carry",
+    "The day-of-week register as written: it is always derived from the date"
+  ],
+  "testOnRealDevice": [
+    "Alarms and the SQW interrupt",
+    "Drift over days (about 2 ppm, one minute a year)",
+    "Keeping time on the coin cell with the board unpowered; some ZS-042 modules charge the cell and damage non-rechargeable CR2032s"
+  ]
+}

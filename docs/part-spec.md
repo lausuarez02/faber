@@ -39,6 +39,7 @@ the rulebook on top of them.
 | `bindings` | no* | Every `visualState()` key the SVG binds to. *Required for each key used in `data-bind`. |
 | `mcu` | boards | `{ backend, chip, clockHz, vcc, fqbn? }`. Required when `category` is `board`. |
 | `tags` | no | Search words: aliases, model numbers, use cases (`"ldr"`, `"light sensor"`). |
+| `bus` | bus parts | `{ i2c: { addresses, addressProp?, pullUpOhms?, maxHz? } }` or `{ spi: { modes?, maxHz? } }`. The bus pins carry `protocols` (`i2c-sda`, `i2c-scl`, `spi-mosi`, `spi-miso`, `spi-sck`, `spi-cs`) and the model returns an `i2c` / `spi` member. Bus parts also ship an `example.ino` (+ golden `example.hex`, built with `toolchains/arduino/build-part-examples.sh`) that their test runs on a simulated Uno. See `docs/buses.md`. |
 
 ### Pins
 

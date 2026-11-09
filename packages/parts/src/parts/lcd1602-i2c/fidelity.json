@@ -1,0 +1,30 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "PCF8574 port expander at its I2C address driving an HD44780 in 4-bit mode (P0 RS, P1 RW, P2 EN, P3 backlight, P4-P7 D4-D7): power-up 8-bit mode, the 4-bit switch, clear, home, entry mode, display/cursor/blink control, cursor and display shift, function set (1 or 2 lines), CGRAM custom characters and DDRAM addressing with the 0x40 second line." },
+    "timing": { "level": "approx", "note": "Every instruction completes instantly; the busy flag always reads clear, so a sketch that sends too fast for a real LCD (no delay after clear) still works here. The cursor blinks at the HD44780 rate of about 0.4 s per phase." },
+    "analog": { "level": "none", "note": "The contrast trimmer on the backpack is not modelled: text is always readable. On real modules a mis-set trimmer shows blank or solid blocks." },
+    "power": { "level": "approx", "note": "Draws a fixed 25 mA from VCC (backlight included) and works from 4 to 6 V. 4.7 kOhm pull-ups on SDA and SCL." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "I2C address from the prop (0x20-0x27 PCF8574, 0x38-0x3F PCF8574A)",
+    "Nibble latching on the falling edge of EN, 8-bit power-up state and the switch to 4-bit",
+    "Clear, home, entry mode (increment/decrement, shift), display on/off, cursor, blink, cursor/display shift, function set",
+    "8 custom characters in CGRAM (lcd.createChar)",
+    "Backlight on P3 (lcd.setBacklight / lcd.backlight)",
+    "HD44780 ROM A00 for ASCII, plus ¥ → ← ° µ Ω"
+  ],
+  "doesNotEmulate": [
+    "Busy flag and instruction execution time (1.52 ms for clear/home)",
+    "Contrast trimmer, viewing angle and LCD response time (ghosting)",
+    "Katakana and other ROM A00 codes above 0x7F, except ° µ Ω",
+    "5x10 dot font mode",
+    "Backpacks with a different pin map (some use P0 = EN)"
+  ],
+  "testOnRealDevice": [
+    "Turn the contrast trimmer on the back until the text is readable",
+    "Check the address with an I2C scanner (0x27 or 0x3F are the common ones)",
+    "Add a short delay after lcd.clear() if your library does not wait for the busy flag"
+  ]
+}

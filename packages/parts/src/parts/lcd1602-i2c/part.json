@@ -1,0 +1,213 @@
+{
+  "id": "lcd1602-i2c",
+  "name": "LCD 16x2 with I2C backpack (HD44780 + PCF8574)",
+  "category": "display",
+  "description": "Character LCD, 2 lines of 16 characters, with a PCF8574 I2C backpack (address 0x27, or 0x3F for the PCF8574A). Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno. Use the LiquidCrystal_PCF8574 library: LiquidCrystal_PCF8574 lcd(0x27); lcd.begin(16, 2); lcd.setBacklight(255); lcd.print(\"hi\").",
+  "pins": [
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 10,
+      "y": 105,
+      "type": "ground",
+      "description": "Ground."
+    },
+    {
+      "id": "VCC",
+      "label": "VCC",
+      "x": 10,
+      "y": 125,
+      "type": "power",
+      "voltage": {
+        "min": 4.5,
+        "max": 5.5
+      },
+      "description": "5 V supply (the HD44780 and backlight need 5 V)."
+    },
+    {
+      "id": "SDA",
+      "label": "SDA",
+      "x": 10,
+      "y": 145,
+      "type": "digital",
+      "protocols": [
+        "i2c-sda"
+      ],
+      "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the backpack."
+    },
+    {
+      "id": "SCL",
+      "label": "SCL",
+      "x": 10,
+      "y": 165,
+      "type": "digital",
+      "protocols": [
+        "i2c-scl"
+      ],
+      "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the backpack."
+    }
+  ],
+  "size": {
+    "w": 640,
+    "h": 290
+  },
+  "props": [
+    {
+      "id": "address",
+      "label": "I2C address",
+      "type": "enum",
+      "default": "0x27",
+      "options": [
+        "0x20",
+        "0x21",
+        "0x22",
+        "0x23",
+        "0x24",
+        "0x25",
+        "0x26",
+        "0x27",
+        "0x38",
+        "0x39",
+        "0x3A",
+        "0x3B",
+        "0x3C",
+        "0x3D",
+        "0x3E",
+        "0x3F"
+      ],
+      "description": "0x27 for a PCF8574T backpack with no jumpers bridged, 0x3F for a PCF8574AT. Bridging A0-A2 lowers it."
+    },
+    {
+      "id": "color",
+      "label": "Display colour",
+      "type": "enum",
+      "default": "blue",
+      "options": [
+        "blue",
+        "green"
+      ],
+      "description": "blue: white text on blue; green: dark text on yellow-green."
+    }
+  ],
+  "limits": {
+    "maxVoltage": 5.5,
+    "minVoltage": 4.5,
+    "maxCurrentmA": 40,
+    "typicalCurrentmA": 25
+  },
+  "footprint": "80 x 36 mm module, backpack header 4 pins 0.1 in (GND VCC SDA SCL)",
+  "bus": {
+    "i2c": {
+      "addresses": [
+        39,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ],
+      "addressProp": "address",
+      "pullUpOhms": 4700,
+      "maxHz": 100000
+    }
+  },
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Powered and DISPLAY ON (HD44780 display control D = 1)."
+    },
+    {
+      "key": "backlight",
+      "type": "boolean",
+      "description": "Backlight on (PCF8574 P3)."
+    },
+    {
+      "key": "backlightOpacity",
+      "type": "number",
+      "description": "1 with the backlight on, 0.15 off (bound in the SVG)."
+    },
+    {
+      "key": "line0",
+      "type": "string",
+      "description": "The 16 characters visible on line 1. Custom characters (codes 0-7) show as U+25AF, unknown ROM codes as '?'."
+    },
+    {
+      "key": "line1",
+      "type": "string",
+      "description": "The 16 characters visible on line 2."
+    },
+    {
+      "key": "glyphs",
+      "type": "string",
+      "description": "base64 of the 32 visible character codes (16 of line 1, then 16 of line 2), for renderers."
+    },
+    {
+      "key": "cgram",
+      "type": "string",
+      "description": "base64 of the 64 CGRAM bytes (8 custom characters x 8 rows, low 5 bits = pixels, bit 4 = leftmost)."
+    },
+    {
+      "key": "cursorCol",
+      "type": "number",
+      "description": "Cursor column 0..15 on screen, -1 when off screen."
+    },
+    {
+      "key": "cursorRow",
+      "type": "number",
+      "description": "Cursor row 0..1."
+    },
+    {
+      "key": "cursorOn",
+      "type": "boolean",
+      "description": "Underline cursor enabled (lcd.cursor())."
+    },
+    {
+      "key": "blinkOn",
+      "type": "boolean",
+      "description": "True during the visible half of the blinking block cursor (lcd.blink()), about 0.4 s per phase."
+    },
+    {
+      "key": "frame",
+      "type": "number",
+      "description": "Counts visible changes; renderers redraw only when it changes."
+    },
+    {
+      "key": "cols",
+      "type": "number",
+      "description": "Columns (16)."
+    },
+    {
+      "key": "rows",
+      "type": "number",
+      "description": "Rows (2)."
+    },
+    {
+      "key": "color",
+      "type": "string",
+      "description": "Colour prop: blue or green."
+    }
+  ],
+  "tags": [
+    "lcd",
+    "1602",
+    "16x2",
+    "hd44780",
+    "pcf8574",
+    "i2c lcd",
+    "character display",
+    "liquidcrystal",
+    "liquidcrystal_pcf8574",
+    "display"
+  ]
+}

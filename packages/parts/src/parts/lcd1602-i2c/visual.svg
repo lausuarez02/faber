@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 290" width="640" height="290">
+  <rect x="2" y="2" width="636" height="286" rx="8" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <circle cx="22" cy="22" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="618" cy="22" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="22" cy="268" r="9" fill="#15181D" stroke="#3A4250"/>
+  <circle cx="618" cy="268" r="9" fill="#15181D" stroke="#3A4250"/>
+  <rect x="2" y="88" width="30" height="96" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <text x="40" y="108" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">GND</text>
+  <text x="40" y="128" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">VCC</text>
+  <text x="40" y="148" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">SDA</text>
+  <text x="40" y="168" font-family="IBM Plex Mono" font-size="9" fill="#E9EDF2">SCL</text>
+  <rect x="64" y="40" width="548" height="210" rx="6" fill="#15181D" stroke="#2B313B"/>
+  <rect x="82" y="66" width="512" height="158" rx="3" fill="#1C2A6B" opacity="0.15" data-bind="opacity:backlightOpacity"/>
+  <rect data-screen="16x2" x="100" y="90" width="476" height="110" fill="#1C2A6B" opacity="0"/>
+  <rect x="82" y="66" width="512" height="158" rx="3" fill="none" stroke="#3A4250"/>
+  <text x="84" y="242" font-family="IBM Plex Mono" font-size="9" fill="#8A93A0">1602 HD44780 · PCF8574</text>
+  <circle data-pin="GND" cx="10" cy="105" r="3" fill="#C9CED6"/>
+  <circle data-pin="VCC" cx="10" cy="125" r="3" fill="#C9CED6"/>
+  <circle data-pin="SDA" cx="10" cy="145" r="3" fill="#C9CED6"/>
+  <circle data-pin="SCL" cx="10" cy="165" r="3" fill="#C9CED6"/>
+</svg>

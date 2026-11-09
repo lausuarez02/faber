@@ -1,0 +1,172 @@
+{
+  "id": "ssd1306-oled-i2c",
+  "name": "OLED display 128x64 (SSD1306, I2C)",
+  "category": "display",
+  "description": "0.96 in monochrome OLED, 128 x 64 pixels, on the SSD1306 controller over I2C (address 0x3C, or 0x3D with the address jumper). Wire GND → GND, VCC → 5V (or 3.3V), SCL → A5, SDA → A4 on an Uno. Works with Adafruit_SSD1306 (display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) and U8g2 (U8G2_SSD1306_128X64_NONAME_F_HW_I2C).",
+  "pins": [
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 80,
+      "y": 14,
+      "type": "ground",
+      "description": "Ground."
+    },
+    {
+      "id": "VCC",
+      "label": "VCC",
+      "x": 100,
+      "y": 14,
+      "type": "power",
+      "voltage": {
+        "min": 3,
+        "max": 5.5
+      },
+      "description": "3.3 to 5 V supply; the module has its own 3.3 V regulator and charge pump."
+    },
+    {
+      "id": "SCL",
+      "label": "SCL",
+      "x": 120,
+      "y": 14,
+      "type": "digital",
+      "protocols": [
+        "i2c-scl"
+      ],
+      "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up to VCC on the module."
+    },
+    {
+      "id": "SDA",
+      "label": "SDA",
+      "x": 140,
+      "y": 14,
+      "type": "digital",
+      "protocols": [
+        "i2c-sda"
+      ],
+      "description": "I2C data. Uno: A4. 4.7 kOhm pull-up to VCC on the module."
+    }
+  ],
+  "size": {
+    "w": 220,
+    "h": 200
+  },
+  "props": [
+    {
+      "id": "address",
+      "label": "I2C address",
+      "type": "enum",
+      "default": "0x3C",
+      "options": [
+        "0x3C",
+        "0x3D"
+      ],
+      "description": "0x3C on most modules; 0x3D when the address jumper on the back is moved."
+    },
+    {
+      "id": "color",
+      "label": "Pixel colour",
+      "type": "enum",
+      "default": "white",
+      "options": [
+        "white",
+        "blue",
+        "yellow-blue"
+      ],
+      "description": "Panel colour. yellow-blue is the two-colour panel: the top 16 rows are yellow, the rest blue."
+    }
+  ],
+  "limits": {
+    "maxVoltage": 5.5,
+    "minVoltage": 3,
+    "maxCurrentmA": 25,
+    "typicalCurrentmA": 10
+  },
+  "footprint": "27 x 27 mm module, 4-pin 0.1 in header (GND VCC SCL SDA)",
+  "bus": {
+    "i2c": {
+      "addresses": [
+        60,
+        61
+      ],
+      "addressProp": "address",
+      "pullUpOhms": 4700,
+      "maxHz": 400000
+    }
+  },
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Panel is lit: powered, display ON (0xAF) and the charge pump enabled."
+    },
+    {
+      "key": "pixels",
+      "type": "string",
+      "description": "The displayed image (after remap, offset, invert): base64 of 1 bit per pixel, row-major, MSB = leftmost pixel, 16 bytes per row, 64 rows. Decode with decodeMonoFrame(pixels, 128, 64) from @jumper/sim-core."
+    },
+    {
+      "key": "frame",
+      "type": "number",
+      "description": "Counts changes of the displayed image; a renderer redraws only when it changes."
+    },
+    {
+      "key": "width",
+      "type": "number",
+      "description": "Panel width in pixels (128)."
+    },
+    {
+      "key": "height",
+      "type": "number",
+      "description": "Panel height in pixels (64)."
+    },
+    {
+      "key": "contrast",
+      "type": "number",
+      "description": "Contrast register 0..255 (0x81 command)."
+    },
+    {
+      "key": "brightness",
+      "type": "number",
+      "description": "Approximate pixel brightness 0.35..1 from the contrast."
+    },
+    {
+      "key": "inverted",
+      "type": "boolean",
+      "description": "Inverse display (0xA7)."
+    },
+    {
+      "key": "color",
+      "type": "string",
+      "description": "Panel colour prop: white, blue or yellow-blue."
+    },
+    {
+      "key": "lit",
+      "type": "number",
+      "description": "Number of lit pixels on screen (handy in tests)."
+    },
+    {
+      "key": "blank",
+      "type": "boolean",
+      "description": "True when no pixel is lit (dark panel or empty screen). Handy in scenario tests: expect oled.blank == false."
+    },
+    {
+      "key": "screenOpacity",
+      "type": "number",
+      "description": "1 when the panel is lit, 0 when dark (bound in the SVG)."
+    }
+  ],
+  "tags": [
+    "oled",
+    "ssd1306",
+    "display",
+    "screen",
+    "128x64",
+    "0.96",
+    "i2c",
+    "adafruit_ssd1306",
+    "u8g2",
+    "tamagotchi",
+    "pixel display"
+  ]
+}

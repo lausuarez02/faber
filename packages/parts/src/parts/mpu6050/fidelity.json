@@ -1,0 +1,29 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "I2C at 0x68/0x69 (from the AD0 pin), WHO_AM_I 0x68, sleep at power-up, DEVICE_RESET, signal path reset, accelerometer and gyro full-scale ranges, temperature, and the data-ready flag. Readings saturate at the 16-bit limits like the real ADCs." },
+    "timing": { "level": "approx", "note": "A new sample is ready at every read; the sample rate divider, the digital low-pass filter delay and the FIFO are not modelled." },
+    "analog": { "level": "approx", "note": "Readings are the prop values exactly: no noise, bias, cross-axis sensitivity or temperature drift. A real sensor needs offset calibration." },
+    "power": { "level": "approx", "note": "Fixed 3.9 mA from VCC; answers only from 2.9 V. 4.7 kOhm pull-ups on SDA/SCL, 4.7 kOhm pull-down on AD0." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "WHO_AM_I, PWR_MGMT_1 sleep/reset, ACCEL_CONFIG and GYRO_CONFIG full-scale ranges",
+    "Accelerometer, gyroscope and temperature output registers (big-endian, two's complement)",
+    "Address 0x68 or 0x69 from the AD0 pin voltage",
+    "Saturation at ±32767 counts",
+    "Props or sim.setProps(...) from a physics step set the motion"
+  ],
+  "doesNotEmulate": [
+    "Digital motion processor (DMP), FIFO and interrupts on the INT pin",
+    "Sample rate divider and low-pass filter delay",
+    "Noise, offsets and drift (calibration routines converge instantly)",
+    "The auxiliary I2C bus (XDA/XCL) and pass-through mode",
+    "Self-test"
+  ],
+  "testOnRealDevice": [
+    "Offset calibration: real gyros read a few °/s at rest",
+    "Vibration and noise on a moving robot (motors couple into the accelerometer)",
+    "DMP-based sketches (MPU6050_DMP6) and interrupt-driven reads"
+  ]
+}

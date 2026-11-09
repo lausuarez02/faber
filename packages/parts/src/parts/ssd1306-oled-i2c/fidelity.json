@@ -1,0 +1,33 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Answers on I2C at 0x3C/0x3D and decodes the SSD1306 control-byte framing and command set: horizontal, vertical and page addressing, column/page ranges, contrast, normal/inverse, entire-display-on, display on/off, charge pump, start line, display offset, segment remap, COM scan direction, COM pin configuration and multiplex ratio. The screen shows exactly what is in display RAM after those transforms." },
+    "timing": { "level": "approx", "note": "Bytes take real I2C time (set by the MCU's TWI clock), but the panel shows a new frame instantly: no refresh rate, no tearing, and the clock/pre-charge settings (0xD5, 0xD9, 0xDB) have no effect." },
+    "analog": { "level": "approx", "note": "Contrast is shown as a simple brightness scale. No OLED burn-in, no brightness difference between few and many lit pixels." },
+    "power": { "level": "approx", "note": "Draws a fixed 10 mA from VCC (real modules use about 8 to 25 mA depending on how many pixels are lit) and only works between 2.8 and 5.5 V. 4.7 kOhm pull-ups on SDA and SCL to VCC." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "I2C address 0x3C or 0x3D (address prop), ACK/NACK, and the status byte on reads",
+    "Co/D-C# control bytes, including one-command-per-control-byte streams",
+    "Memory addressing modes 0x20 (horizontal, vertical, page) with 0x21/0x22 ranges and wrap-around",
+    "Page-mode pointers 0xB0-0xB7, 0x00-0x0F and 0x10-0x1F (also honoured in horizontal mode, as U8g2 relies on)",
+    "Display on/off 0xAE/0xAF and the charge pump 0x8D: without 0x8D 0x14 the panel stays dark, like a real module",
+    "Contrast 0x81, inverse 0xA6/0xA7, entire display on 0xA4/0xA5",
+    "Start line 0x40-0x7F, display offset 0xD3, segment remap 0xA0/0xA1, COM scan 0xC0/0xC8, COM pins 0xDA, multiplex ratio 0xA8",
+    "A power loss clears the controller: the sketch must initialise it again"
+  ],
+  "doesNotEmulate": [
+    "Scrolling: 0x26/0x27/0x29/0x2A/0x2F are accepted but the image does not move",
+    "The SPI version of the module and the parallel interfaces",
+    "Refresh timing, flicker and the frame rate limit of the panel",
+    "Pixel-count dependent current and OLED ageing",
+    "The 128x32 variant (this part is 128x64)"
+  ],
+  "testOnRealDevice": [
+    "Scrolling effects (startscrollright and friends)",
+    "Which address your module really uses (check the jumper on the back; some are labelled 0x78/0x7A, which is 0x3C/0x3D shifted left)",
+    "Readability of the contrast setting in daylight",
+    "Supply current if you run from a battery"
+  ]
+}

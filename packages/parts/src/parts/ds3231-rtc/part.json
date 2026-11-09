@@ -1,0 +1,157 @@
+{
+  "id": "ds3231-rtc",
+  "name": "Real-time clock DS3231 (I2C)",
+  "category": "sensor",
+  "description": "Battery-backed real-time clock with a temperature-compensated crystal, on I2C at 0x68. Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno and use RTClib (RTC_DS3231 rtc; rtc.begin(); rtc.now()). The simulated clock starts at the startTime prop and runs with simulation time, so every run is reproducible.",
+  "pins": [
+    {
+      "id": "32K",
+      "label": "32K",
+      "x": 14,
+      "y": 30,
+      "type": "digital",
+      "description": "32.768 kHz output (open drain). Not modelled: stays high-impedance."
+    },
+    {
+      "id": "SQW",
+      "label": "SQW",
+      "x": 14,
+      "y": 50,
+      "type": "digital",
+      "description": "Square wave / alarm interrupt output (open drain, active low). Not modelled: stays high-impedance."
+    },
+    {
+      "id": "SCL",
+      "label": "SCL",
+      "x": 14,
+      "y": 70,
+      "type": "digital",
+      "protocols": [
+        "i2c-scl"
+      ],
+      "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the module."
+    },
+    {
+      "id": "SDA",
+      "label": "SDA",
+      "x": 14,
+      "y": 90,
+      "type": "digital",
+      "protocols": [
+        "i2c-sda"
+      ],
+      "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the module."
+    },
+    {
+      "id": "VCC",
+      "label": "VCC",
+      "x": 14,
+      "y": 110,
+      "type": "power",
+      "voltage": {
+        "min": 2.3,
+        "max": 5.5
+      },
+      "description": "2.3 to 5.5 V supply."
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 14,
+      "y": 130,
+      "type": "ground",
+      "description": "Ground."
+    }
+  ],
+  "size": {
+    "w": 300,
+    "h": 160
+  },
+  "props": [
+    {
+      "id": "startTime",
+      "label": "Time at t = 0",
+      "type": "enum",
+      "default": "2026-01-01T12:00:00",
+      "options": [
+        "2026-01-01T12:00:00",
+        "2026-06-15T08:30:00",
+        "2026-12-31T23:59:50",
+        "2030-02-28T23:59:55"
+      ],
+      "description": "Clock time when the simulation starts. The options are presets; to set any other time while running, set the 'time' field (interaction set, key 'time', value 'YYYY-MM-DDTHH:MM:SS'), or let the sketch call rtc.adjust()."
+    },
+    {
+      "id": "temperature",
+      "label": "Temperature",
+      "type": "number",
+      "default": 25,
+      "min": -40,
+      "max": 85,
+      "step": 0.25,
+      "unit": "°C",
+      "description": "Die temperature the RTC reports (registers 0x11/0x12, 0.25 °C steps)."
+    },
+    {
+      "id": "lostPower",
+      "label": "Lost power",
+      "type": "boolean",
+      "default": false,
+      "description": "Start with the oscillator-stop flag set, as after the backup battery ran out (RTClib rtc.lostPower() returns true)."
+    }
+  ],
+  "limits": {
+    "maxVoltage": 5.5,
+    "minVoltage": 2.3,
+    "maxCurrentmA": 1,
+    "typicalCurrentmA": 0.2
+  },
+  "footprint": "38 x 22 mm ZS-042 module, 6-pin 0.1 in header, CR2032 holder",
+  "bus": {
+    "i2c": {
+      "addresses": [
+        104
+      ],
+      "pullUpOhms": 4700,
+      "maxHz": 400000
+    }
+  },
+  "bindings": [
+    {
+      "key": "time",
+      "type": "string",
+      "description": "Current clock time, YYYY-MM-DD HH:MM:SS."
+    },
+    {
+      "key": "clock",
+      "type": "string",
+      "description": "HH:MM:SS shown on the module drawing."
+    },
+    {
+      "key": "temperature",
+      "type": "number",
+      "description": "Temperature it reports, °C."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "Powered (a real DS3231 keeps time on its battery, but answers I2C only when powered)."
+    },
+    {
+      "key": "lostPower",
+      "type": "boolean",
+      "description": "Oscillator-stop flag (status register bit 7)."
+    }
+  ],
+  "tags": [
+    "rtc",
+    "ds3231",
+    "real time clock",
+    "clock",
+    "time",
+    "rtclib",
+    "zs-042",
+    "i2c",
+    "alarm"
+  ]
+}

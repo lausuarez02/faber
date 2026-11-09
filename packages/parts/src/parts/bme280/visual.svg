@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" width="120" height="110">
+  <rect x="2" y="2" width="116" height="106" rx="6" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="20" y="5" width="80" height="18" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <text x="30" y="33" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">VIN</text>
+  <text x="50" y="33" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">GND</text>
+  <text x="70" y="33" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">SCL</text>
+  <text x="90" y="33" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">SDA</text>
+  <rect x="48" y="46" width="24" height="24" rx="2" fill="#9AA3AF" stroke="#3A4250"/>
+  <circle cx="66" cy="52" r="1.6" fill="#15181D"/>
+  <text x="60" y="84" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">BME280</text>
+  <text x="60" y="98" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#5CF2A1" data-bind="text:label">22.5°C 45%</text>
+  <circle data-pin="VIN" cx="30" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="50" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="SCL" cx="70" cy="14" r="3" fill="#C9CED6"/>
+  <circle data-pin="SDA" cx="90" cy="14" r="3" fill="#C9CED6"/>
+</svg>

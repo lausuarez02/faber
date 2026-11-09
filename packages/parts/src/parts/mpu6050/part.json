@@ -1,0 +1,41 @@
+{
+  "id": "mpu6050",
+  "name": "Accelerometer + gyroscope MPU-6050 (GY-521, I2C)",
+  "category": "sensor",
+  "description": "6-axis motion sensor (3-axis accelerometer, 3-axis gyroscope, temperature) on a GY-521 board, I2C address 0x68 (0x69 with AD0 wired to VCC). Wire VCC → 5V, GND → GND, SCL → A5, SDA → A4 on an Uno. Works with Adafruit_MPU6050 and Electronic Cats MPU6050. Acceleration (g), rotation (°/s) and temperature are props; a physics engine can drive them every step with sim.setProps(id, { accelX, accelY, accelZ, gyroX, gyroY, gyroZ }).",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 20, "y": 14, "type": "power", "voltage": { "min": 3, "max": 5.5 }, "description": "3.3 to 5 V (on-board 3.3 V regulator)." },
+    { "id": "GND", "label": "GND", "x": 40, "y": 14, "type": "ground", "description": "Ground." },
+    { "id": "SCL", "label": "SCL", "x": 60, "y": 14, "type": "digital", "protocols": ["i2c-scl"], "description": "I2C clock. Uno: A5. 4.7 kOhm pull-up on the board." },
+    { "id": "SDA", "label": "SDA", "x": 80, "y": 14, "type": "digital", "protocols": ["i2c-sda"], "description": "I2C data. Uno: A4. 4.7 kOhm pull-up on the board." },
+    { "id": "XDA", "label": "XDA", "x": 100, "y": 14, "type": "digital", "description": "Auxiliary I2C data (for a magnetometer). Not modelled." },
+    { "id": "XCL", "label": "XCL", "x": 120, "y": 14, "type": "digital", "description": "Auxiliary I2C clock. Not modelled." },
+    { "id": "AD0", "label": "AD0", "x": 140, "y": 14, "type": "digital", "description": "Address select: LOW or unconnected (4.7 kOhm pull-down on the board) = 0x68, HIGH = 0x69." },
+    { "id": "INT", "label": "INT", "x": 160, "y": 14, "type": "digital", "description": "Interrupt output. Not modelled: stays high-impedance." }
+  ],
+  "size": { "w": 180, "h": 130 },
+  "props": [
+    { "id": "accelX", "label": "Accel X", "type": "number", "default": 0, "min": -16, "max": 16, "step": 0.01, "unit": "g" },
+    { "id": "accelY", "label": "Accel Y", "type": "number", "default": 0, "min": -16, "max": 16, "step": 0.01, "unit": "g" },
+    { "id": "accelZ", "label": "Accel Z", "type": "number", "default": 1, "min": -16, "max": 16, "step": 0.01, "unit": "g", "description": "1 g when lying flat, chip up." },
+    { "id": "gyroX", "label": "Gyro X", "type": "number", "default": 0, "min": -2000, "max": 2000, "step": 1, "unit": "°/s" },
+    { "id": "gyroY", "label": "Gyro Y", "type": "number", "default": 0, "min": -2000, "max": 2000, "step": 1, "unit": "°/s" },
+    { "id": "gyroZ", "label": "Gyro Z", "type": "number", "default": 0, "min": -2000, "max": 2000, "step": 1, "unit": "°/s" },
+    { "id": "temperature", "label": "Temperature", "type": "number", "default": 25, "min": -40, "max": 85, "step": 0.1, "unit": "°C" }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3, "maxCurrentmA": 5, "typicalCurrentmA": 3.9 },
+  "footprint": "21 x 16 mm GY-521 board, 8-pin 0.1 in header",
+  "bus": { "i2c": { "addresses": [104, 105], "pullUpOhms": 4700, "maxHz": 400000 } },
+  "bindings": [
+    { "key": "accelX", "type": "number", "description": "Acceleration X in g (what the sensor measures)." },
+    { "key": "accelY", "type": "number", "description": "Acceleration Y in g." },
+    { "key": "accelZ", "type": "number", "description": "Acceleration Z in g." },
+    { "key": "gyroX", "type": "number", "description": "Rotation rate X in °/s." },
+    { "key": "gyroY", "type": "number", "description": "Rotation rate Y in °/s." },
+    { "key": "gyroZ", "type": "number", "description": "Rotation rate Z in °/s." },
+    { "key": "address", "type": "number", "description": "Current I2C address (104 = 0x68 or 105 = 0x69, from AD0)." },
+    { "key": "asleep", "type": "boolean", "description": "SLEEP bit of PWR_MGMT_1 (set at power-up until the sketch wakes it)." },
+    { "key": "tiltTransform", "type": "string", "description": "Small rotation of the chip drawing from the X acceleration." }
+  ],
+  "tags": ["mpu6050", "mpu-6050", "gy-521", "imu", "accelerometer", "gyroscope", "gyro", "tilt", "motion", "balance", "robot", "i2c"]
+}
