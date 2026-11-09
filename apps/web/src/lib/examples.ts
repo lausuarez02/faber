@@ -109,3 +109,57 @@ export async function loadExampleFirmware(example: string, project: Project): Pr
   }
   return undefined;
 }
+
+// ---- Round 5, projects track: example cards and sources for the Projects home and the code viewer.
+
+const sourceFiles = import.meta.glob(["../../../../examples/*/firmware/**/*.{ino,h,hpp,c,cpp}", "!**/build/**"], {
+  query: "?raw",
+  import: "default",
+}) as Record<string, () => Promise<string>>;
+
+export interface ExampleInfo {
+  /** Folder name, e.g. "blink" (open with ?example=blink). */
+  example: string;
+  title: string;
+  /** One line. */
+  description?: string;
+  parts: number;
+  scenarios: number;
+  /** Board part type. */
+  board?: string;
+}
+
+/** One sentence from a description. */
+function firstSentence(text: string | undefined, max = 140): string | undefined {
+  if (!text) return undefined;
+  const first = text.split(/(?<=\.)\s/)[0]!.trim();
+  return first.length > max ? `${first.slice(0, max - 1).trimEnd()}…` : first;
+}
+
+/** Every bundled example with what a card shows (Blink first). */
+export function exampleInfos(): ExampleInfo[] {
+  return exampleNames().flatMap((example) => {
+    const raw = projectFiles[`${EXAMPLES_PREFIX}${example}/jumper.json`];
+    const res = raw ? safeParseProject(raw) : undefined;
+    if (!res?.ok) return [];
+    const p = res.project;
+    const board = p.parts.find((x) => x.id === p.firmware?.board)?.type;
+    const description = firstSentence(p.description);
+    return [{ example, title: p.name, ...(description ? { description } : {}), parts: p.parts.length, scenarios: p.scenarios.length, ...(board ? { board } : {}) }];
+  });
+}
+
+/** The example's firmware sources (path → text), for the read-only code viewer without a server. */
+export async function exampleSources(example: string): Promise<Record<string, string>> {
+  const base = `${EXAMPLES_PREFIX}${example}/`;
+  const out: Record<string, string> = {};
+  for (const [key, load] of Object.entries(sourceFiles)) {
+    if (!key.startsWith(base)) continue;
+    try {
+      out[key.slice(base.length)] = await load();
+    } catch {
+      // skip unreadable files
+    }
+  }
+  return out;
+}
