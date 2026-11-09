@@ -1,6 +1,6 @@
 import type { Project } from "@jumper/project-format";
 import type { VisualState } from "@jumper/sim-core";
-import { nextCursorN, useLive, type LiveStep, type TestResultView } from "./liveStore.ts";
+import { nextCursorN, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
 
 /**
  * Applies action-log entries (from the live hub or a replay file) to the canvas, and paces a replay.
@@ -115,6 +115,10 @@ export function parseLog(text: string): LogEntry[] {
 
 function caption(e: LogEntry): { title: string; detail?: string; ok: boolean } {
   if (!e.ok) return { title: `${e.op} failed`, detail: e.error?.split(". Fix:")[0], ok: false };
+  if (e.op === "fidelity_report") {
+    const f = fidelityView(e.result);
+    return { title: "Fidelity report: what still needs real hardware", ...(f ? { detail: f.summary } : {}), ok: true };
+  }
   const title = e.step?.why && e.op !== "run" && e.op !== "run_tests" ? e.step.why : (e.summary ?? e.op.replace(/_/g, " "));
   return { title, ...(e.summary && e.summary !== title ? { detail: e.summary } : {}), ok: true };
 }
@@ -143,6 +147,10 @@ export function applyEntry(e: LogEntry, port: CanvasPort): LogFrame[] {
     const r = e.result as { passed?: number; failed?: number; results?: TestResultView[] };
     patch.tests = { passed: r.passed ?? 0, failed: r.failed ?? 0, results: (r.results ?? []).map((x) => ({ id: x.id, passed: x.passed, ...(x.reason ? { reason: x.reason } : {}) })) };
   }
+  if (e.op === "fidelity_report" && e.ok) {
+    const f = fidelityView(e.result);
+    if (f) patch.fidelity = f;
+  }
   if (!e.ok) patch.error = e.error;
   useLive.getState().set(patch);
   if (e.frames?.length && (e.op === "run_tests" || e.frames[0]!.vt === 0)) {
@@ -151,6 +159,18 @@ export function applyEntry(e: LogEntry, port: CanvasPort): LogFrame[] {
     port.resetStates();
   }
   return e.frames ?? [];
+}
+
+/** The parts of a fidelity_report result the replay shows (summary, area levels, real-device checks). */
+export function fidelityView(result: unknown): FidelityView | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const r = result as { summary?: unknown; areas?: Record<string, { level?: unknown }>; testOnRealDevice?: unknown };
+  if (typeof r.summary !== "string") return undefined;
+  const areas = Object.entries(r.areas ?? {})
+    .map(([name, a]) => ({ name, level: typeof a?.level === "string" ? a.level : "?" }))
+    .filter((a) => a.level !== "n/a");
+  const realDevice = Array.isArray(r.testOnRealDevice) ? r.testOnRealDevice.filter((x): x is string => typeof x === "string") : [];
+  return { summary: r.summary, areas, realDevice };
 }
 
 /** Plays frames over `durationMs` of wall time; returns a cancel function. */
@@ -219,7 +239,7 @@ export class ReplayPlayer {
     this.i = 0;
     this.port.clearSerial();
     this.port.resetStates();
-    useLive.getState().set({ steps: [], cursor: undefined, caption: undefined, code: undefined, tests: undefined, error: undefined, ops: 0 });
+    useLive.getState().set({ steps: [], cursor: undefined, caption: undefined, code: undefined, tests: undefined, fidelity: undefined, error: undefined, ops: 0 });
     this.setReplay({ index: 0, done: false });
   }
 

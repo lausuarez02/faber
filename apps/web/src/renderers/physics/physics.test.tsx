@@ -10,6 +10,7 @@ function recorder() {
   const ctx = new Proxy({ fillStyle: "", strokeStyle: "", lineWidth: 1, font: "", globalAlpha: 1, textAlign: "left", textBaseline: "alphabetic" } as unknown as Ctx2D, {
     get(t, k) {
       if (k in t) return (t as unknown as Record<string | symbol, unknown>)[k];
+      if (k === "measureText") return (text: string) => ({ width: text.length * 6.6 }); // 11px mono
       return (...args: unknown[]) => {
         calls.push(String(k));
         if (k === "fillText") texts.push(String(args[0]));
@@ -64,6 +65,12 @@ describe("physics painters", () => {
     expect(r.calls.filter((c) => c === "arc").length).toBeGreaterThanOrEqual(2); // pillar + sonar hit
     expect(r.calls).toContain("strokeRect");
     expect(r.texts.at(-1)).toBe("t 1.2 s  ·  collisions 0  ·  min gap 12.3 cm  ·  travelled 0.55 m  ·  sonar 120 cm");
+  });
+
+  it("keeps the stats line inside a narrow World card (tighter, then two lines)", () => {
+    const r = recorder();
+    drawWorld(r.ctx, snap, { width: 300, height: 210 });
+    expect(r.texts.slice(-2)).toEqual(["t 1.2 s · collisions 0 · min gap 12.3 cm", "travelled 0.55 m · sonar 120 cm"]);
   });
 
   it("draws the arm with joint labels and the gripper position", () => {

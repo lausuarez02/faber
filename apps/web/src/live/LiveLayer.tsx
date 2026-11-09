@@ -80,7 +80,8 @@ function usePort(): CanvasPort {
  */
 type Px = `${number}px`;
 function overlayPadding(): { top: Px; right: Px; bottom: Px; left: Px } {
-  const pad = { top: 64, right: 48, bottom: 56, left: 48 };
+  // With a World card the caption moves under the replay bar (live.css): keep a band for it.
+  const pad = { top: document.querySelector(".live-world") ? 136 : 64, right: 48, bottom: 56, left: 48 };
   const canvas = document.querySelector('[data-testid="canvas"]')?.getBoundingClientRect();
   if (!canvas) return { top: "64px", right: "290px", bottom: "56px", left: "48px" };
   for (const el of document.querySelectorAll(".live-steps, .live-tests, .live-code, .live-world")) {
@@ -117,11 +118,12 @@ export function LiveLayer() {
   const mode = useLive((s) => s.mode);
   const port = usePort();
   const tests = useLive((s) => s.tests);
+  const fidelity = useLive((s) => s.fidelity);
   const hasCode = useLive((s) => !!s.code);
-  // A card appearing (tests result, firmware) changes the free space: fit again.
+  // A card appearing (tests result, fidelity, firmware) changes the free space: fit again.
   useEffect(() => {
-    if (mode !== "off" && (tests || hasCode)) port.fit();
-  }, [mode, tests, hasCode, port]);
+    if (mode !== "off" && (tests || fidelity || hasCode)) port.fit();
+  }, [mode, tests, fidelity, hasCode, port]);
 
   useEffect(() => {
     const params = liveParams();
@@ -373,20 +375,47 @@ function CodeCard() {
 
 function TestsCard() {
   const tests = useLive((s) => s.tests);
-  if (!tests) return null;
+  const fidelity = useLive((s) => s.fidelity);
+  if (!tests && !fidelity) return null;
   return (
-    <section className="live-tests" data-testid="live-tests" data-failed={tests.failed}>
-      <header>
-        Tests <b className={tests.failed ? "bad" : "good"}>{tests.passed}/{tests.passed + tests.failed} passed</b>
-      </header>
-      <ul>
-        {tests.results.map((r) => (
-          <li key={r.id} data-passed={r.passed}>
-            <span className="live-test-mark">{r.passed ? "✓" : "✗"}</span> {r.id}
-            {r.reason ? <div className="live-test-reason">{r.reason}</div> : null}
-          </li>
-        ))}
-      </ul>
+    <section className="live-tests" data-testid="live-tests" data-failed={tests?.failed ?? 0}>
+      {tests ? (
+        <>
+          <header>
+            Tests <b className={tests.failed ? "bad" : "good"}>{tests.passed}/{tests.passed + tests.failed} passed</b>
+          </header>
+          <ul>
+            {tests.results.map((r) => (
+              <li key={r.id} data-passed={r.passed}>
+                <span className="live-test-mark">{r.passed ? "✓" : "✗"}</span> {r.id}
+                {r.reason ? <div className="live-test-reason">{r.reason}</div> : null}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      {fidelity ? (
+        <div className="live-fidelity" data-testid="live-fidelity">
+          <header>Fidelity: what the simulation does not prove</header>
+          <div className="live-fidelity-areas">
+            {fidelity.areas.map((a) => (
+              <span key={a.name} data-level={a.level}>
+                {a.name} <b>{a.level}</b>
+              </span>
+            ))}
+          </div>
+          {fidelity.realDevice.length ? (
+            <>
+              <div className="live-fidelity-count">{fidelity.realDevice.length} checks for the real device, e.g.</div>
+              <ul>
+                {fidelity.realDevice.slice(0, 3).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

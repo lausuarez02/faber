@@ -348,6 +348,65 @@
   margin: 2px 0 4px 16px;
 }
 
+/* Fidelity report, under the tests */
+.live-fidelity {
+  border-top: 1px solid var(--line);
+}
+
+.live-tests > .live-fidelity:first-child {
+  border-top: 0;
+}
+
+.live-fidelity header {
+  padding: 8px 10px 4px;
+  color: var(--text);
+  border-bottom: 0;
+}
+
+.live-fidelity-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 0 10px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.live-fidelity-areas span[data-level="ok"] b,
+.live-fidelity-areas span[data-level="exact"] b {
+  color: var(--live);
+}
+
+.live-fidelity-areas span[data-level="approx"] b {
+  color: var(--text);
+}
+
+.live-fidelity-areas span[data-level="missing"] b,
+.live-fidelity-areas span[data-level="stub"] b {
+  color: var(--wire);
+}
+
+.live-fidelity-count {
+  padding: 0 10px;
+  font-size: var(--text-xs);
+  color: var(--text);
+}
+
+.live-fidelity ul {
+  padding-top: 2px;
+}
+
+.live-fidelity li {
+  white-space: normal;
+  color: var(--muted);
+}
+
+/* With a World card bottom right, the steps list stops above it. */
+.live-layer:has(.live-world) .live-steps {
+  max-height: calc(100% - 24px - 12px - min(420px, 40vw) * 0.7);
+}
+
 /* Caption, bottom centre */
 .live-caption {
   position: absolute;
@@ -382,6 +441,15 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--muted);
+}
+
+/* With a World card bottom right (and the code card bottom left) the bottom is full: the caption
+   moves to the top, under the replay bar. */
+.live-layer:has(.live-world) .live-caption {
+  top: 64px;
+  bottom: auto;
+  left: 50%;
+  max-width: min(480px, calc(100% - 640px));
 }
 
 /* New parts pop in, new wires draw themselves */

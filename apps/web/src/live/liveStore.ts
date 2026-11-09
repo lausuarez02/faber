@@ -25,6 +25,14 @@ export interface TestResultView {
   reason?: string;
 }
 
+export interface FidelityView {
+  summary: string;
+  /** Area → level (ok / approx / missing / n/a). */
+  areas: { name: string; level: string }[];
+  /** Things to check on the real device. */
+  realDevice: string[];
+}
+
 export interface LiveState {
   mode: LiveMode;
   connected: boolean;
@@ -36,6 +44,8 @@ export interface LiveState {
   caption: { title: string; detail?: string; ok: boolean } | undefined;
   code: { path: string; content: string } | undefined;
   tests: { passed: number; failed: number; results: TestResultView[] } | undefined;
+  /** Last fidelity_report: what the simulation does not prove. */
+  fidelity: FidelityView | undefined;
   error: string | undefined;
   replay: { playing: boolean; speed: number; index: number; total: number; done: boolean };
   /** Op counter, to show activity. */
@@ -58,6 +68,7 @@ export const useLive = create<LiveState>()((set) => ({
   caption: undefined,
   code: undefined,
   tests: undefined,
+  fidelity: undefined,
   error: undefined,
   replay: { playing: false, speed: 1, index: 0, total: 0, done: false },
   ops: 0,

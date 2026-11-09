@@ -64,6 +64,8 @@ export type Ctx2D = Pick<
   globalAlpha: number;
   textAlign: CanvasTextAlign;
   textBaseline: CanvasTextBaseline;
+  /** Optional: used to keep text inside small views. */
+  measureText?: (text: string) => { width: number };
 };
 
 export interface View {
@@ -206,7 +208,19 @@ export function drawWorld(ctx: Ctx2D, snap: WorldSnapshot, view: View, pal: Pale
   if (Number.isFinite(st.minClearanceCm)) parts.push(`min gap ${st.minClearanceCm.toFixed(1)} cm`);
   parts.push(`travelled ${(st.travelledCm / 100).toFixed(2)} m`);
   if (r?.sonar) parts.push(`sonar ${r.sonar.distanceCm > 0 ? `${r.sonar.distanceCm.toFixed(0)} cm` : "no echo"}`);
-  ctx.fillText(parts.join("  ·  "), 12, view.height - 8);
+  // Small panels (the replay's World card): tighten the separators, then wrap onto two lines, so the
+  // numbers are never cut off at the right edge.
+  const room = view.width - 24;
+  const fits = (t: string) => !ctx.measureText || ctx.measureText(t).width <= room;
+  const wide = parts.join("  ·  ");
+  const tight = parts.join(" · ");
+  if (fits(wide)) ctx.fillText(wide, 12, view.height - 8);
+  else if (fits(tight)) ctx.fillText(tight, 12, view.height - 8);
+  else {
+    const half = Math.ceil(parts.length / 2);
+    ctx.fillText(parts.slice(0, half).join(" · "), 12, view.height - 22);
+    ctx.fillText(parts.slice(half).join(" · "), 12, view.height - 8);
+  }
   ctx.restore();
 }
 

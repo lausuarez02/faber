@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "@jumper/project-format";
 import { useLive } from "./liveStore.ts";
-import { ReplayPlayer, entryDuration, parseLog, type CanvasPort, type LogEntry, type Timers } from "./player.ts";
+import { ReplayPlayer, entryDuration, fidelityView, parseLog, type CanvasPort, type LogEntry, type Timers } from "./player.ts";
 
 const proj = (parts: string[], wires: number): Project => ({
   format: "jumper/1",
@@ -88,5 +88,17 @@ describe("replay player", () => {
     expect(entryDuration(entries[0]!)).toBe(1000);
     expect(entryDuration(entries[4]!)).toBe(900);
     expect(parseLog('{"seq":1,"t":"","op":"x","ok":true}\n{"seq":2,"t":')).toHaveLength(1);
+  });
+});
+
+describe("fidelityView", () => {
+  it("keeps the summary, the areas that apply and the real-device checks", () => {
+    const v = fidelityView({
+      summary: "0 exact, 2 behavioral",
+      areas: { logic: { level: "ok" }, timing: { level: "approx" }, radio: { level: "n/a" } },
+      testOnRealDevice: ["uno: total current", 3],
+    });
+    expect(v).toEqual({ summary: "0 exact, 2 behavioral", areas: [{ name: "logic", level: "ok" }, { name: "timing", level: "approx" }], realDevice: ["uno: total current"] });
+    expect(fidelityView({ nope: 1 })).toBeUndefined();
   });
 });
