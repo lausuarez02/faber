@@ -18,21 +18,21 @@
 
 .live-bar {
   position: absolute;
-  top: 12px;
+  top: 84px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 12px;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  border: 1px solid var(--line);
+  background: var(--bg-float);
+  border: 1px solid var(--border);
   border-radius: 999px;
   font-size: var(--text-sm);
   color: var(--text);
   white-space: nowrap;
   pointer-events: auto;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+  box-shadow: var(--shadow-float);
 }
 
 .live-bar-title {
@@ -117,17 +117,10 @@
 }
 
 /* Steps panel, top right of the canvas */
+/* Steps list: rendered inside the "Agent steps" floating panel (shell/Panels.tsx). */
 .live-steps {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 260px;
-  max-height: calc(100% - 220px);
-  overflow: auto;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
   font-size: var(--text-sm);
+  margin: -12px -14px -14px;
 }
 
 .live-steps header {
@@ -250,15 +243,16 @@
 /* Firmware card, bottom left */
 .live-code {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
-  width: min(440px, 45%);
+  left: 92px;
+  bottom: 80px;
+  width: min(440px, 40%);
   max-height: 46%;
   display: flex;
   flex-direction: column;
-  background: color-mix(in srgb, var(--panel) 96%, transparent);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background: var(--bg-float);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
   overflow: hidden;
   animation: live-slide-in 0.35s ease-out;
 }
@@ -297,12 +291,14 @@
 /* Test results, top left */
 .live-tests {
   position: absolute;
-  left: 12px;
-  top: 12px;
+  left: 92px;
+  top: 96px;
   width: 300px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background: var(--bg-float);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
   font-size: var(--text-sm);
   animation: live-slide-in 0.35s ease-out;
 }
@@ -343,6 +339,7 @@
 }
 
 .live-test-reason {
+  overflow-wrap: anywhere;
   color: var(--muted);
   white-space: normal;
   margin: 2px 0 4px 16px;
@@ -402,34 +399,41 @@
   color: var(--muted);
 }
 
-/* With a World card bottom right, the steps list stops above it. */
-.live-layer:has(.live-world) .live-steps {
-  max-height: calc(100% - 24px - 12px - min(420px, 40vw) * 0.7);
+/* With a World card bottom right, the panel column stops above it. */
+.app:has(.live-world) .panel-column {
+  bottom: calc(80px + 12px + min(400px, 32vw) * 0.7);
 }
 
 /* Caption, bottom centre */
 .live-caption {
   position: absolute;
-  bottom: 18px;
-  left: calc(50% + 120px);
+  bottom: 22px;
+  left: 50%;
   transform: translateX(-50%);
-  max-width: min(520px, 50%);
-  padding: 8px 14px;
-  background: color-mix(in srgb, var(--ink) 88%, transparent);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--data);
-  border-radius: var(--radius);
+  max-width: min(520px, calc(100% - 820px));
+  min-width: 240px;
+  padding: 9px 16px;
+  background: var(--bg-float);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-float);
   animation: live-slide-in 0.3s ease-out;
 }
 
-.live-caption.bad {
-  border-left-color: var(--wire);
+.live-caption.bad .live-caption-title::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--error);
+  vertical-align: 1px;
 }
 
 .live-caption-title {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--text-md);
+  font-weight: 500;
+  font-size: 13.5px;
   color: var(--text);
 }
 
@@ -446,10 +450,9 @@
 /* With a World card bottom right (and the code card bottom left) the bottom is full: the caption
    moves to the top, under the replay bar. */
 .live-layer:has(.live-world) .live-caption {
-  top: 64px;
+  top: 136px;
   bottom: auto;
-  left: 50%;
-  max-width: min(480px, calc(100% - 640px));
+  max-width: min(480px, calc(100% - 900px));
 }
 
 /* New parts pop in, new wires draw themselves */
@@ -481,14 +484,30 @@
 }
 
 @media (max-width: 820px) {
-  .live-steps {
-    width: 200px;
+  .live-bar {
+    top: 64px;
+    max-width: calc(100% - 24px);
+  }
+  .live-progress {
+    display: none;
   }
   .live-code {
     display: none;
   }
   .live-tests {
+    left: 12px;
+    top: 108px;
     width: 220px;
+  }
+  .live-caption {
+    min-width: 0;
+    max-width: calc(100% - 24px);
+    bottom: 132px;
+  }
+  .live-world {
+    right: 12px !important;
+    bottom: 132px !important;
+    width: min(260px, 60%) !important;
   }
 }
 
@@ -501,25 +520,23 @@
   }
 }
 
-/* ?chrome=min: canvas + inspector/serial only (used by `jumper record`). */
-html[data-live-chrome="min"] .side-left {
+/* ?chrome=min: no tool rail, minimap or round buttons (used by `jumper record`). */
+html[data-live-chrome="min"] .rail-zone,
+html[data-live-chrome="min"] .round-btn,
+html[data-live-chrome="min"] .canvas-minimap {
   display: none;
-}
-
-html[data-live-chrome="min"] .workspace {
-  grid-template-columns: 1fr 328px;
 }
 
 /* Robot arena / arm view, bottom right of the canvas */
 .live-world {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: min(420px, 40%);
+  right: 16px;
+  bottom: 80px;
+  width: min(400px, 32vw);
   aspect-ratio: 3 / 2.1;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  background: var(--bg);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.3);
+  background: var(--bg-float);
+  box-shadow: var(--shadow-float);
 }

@@ -4,7 +4,6 @@ import {
   BackgroundVariant,
   ConnectionLineType,
   ConnectionMode,
-  Controls,
   MiniMap,
   ReactFlow,
   useReactFlow,
@@ -18,6 +17,8 @@ import { getDef, rotatedSize } from "../lib/parts.ts";
 import { PartNode, type PartFlowNode } from "./PartNode.tsx";
 import { RouteObstacles, WireEdge, type WireFlowEdge } from "./WireEdge.tsx";
 import type { RouteBox } from "@jumper/sim-core";
+import { useIsPhone, useUi } from "../lib/ui.ts";
+import { chromePadding, fitView, setFlow } from "../shell/actions.ts";
 
 /** Above this many parts wires stay plain smooth-step curves (routing every wire on every drag frame costs too much). */
 const ROUTE_MAX_PARTS = 60;
@@ -113,6 +114,9 @@ export function Canvas() {
     });
   }, [project.parts]);
   const { screenToFlowPosition } = useReactFlow();
+  const tool = useUi((s) => s.tool);
+  const phone = useIsPhone();
+  const editable = tool === "select";
 
   const onNodesChange = useCallback((changes: NodeChange<PartFlowNode>[]) => {
     const moves = new Map<string, { x: number; y: number }>();
@@ -174,7 +178,7 @@ export function Canvas() {
   );
 
   return (
-    <div className="canvas" data-testid="canvas" onDragOver={onDragOver} onDrop={onDrop}>
+    <div className="canvas" data-testid="canvas" data-tool={tool} onDragOver={onDragOver} onDrop={onDrop}>
       <RouteObstacles.Provider value={obstacles}>
         <ReactFlow<PartFlowNode, WireFlowEdge>
           nodes={nodes}
@@ -186,34 +190,47 @@ export function Canvas() {
           onConnect={onConnect}
           onDelete={onDelete}
           onNodeDragStart={onNodeDragStart}
+          onInit={(i) => {
+            setFlow(i);
+            requestAnimationFrame(() => fitView(0));
+          }}
+          nodesDraggable={editable}
+          nodesConnectable={tool !== "hand"}
+          elementsSelectable={tool !== "hand"}
+          selectionKeyCode={tool === "hand" ? null : "Shift"}
           connectionMode={ConnectionMode.Loose}
           connectionLineType={ConnectionLineType.SmoothStep}
-          connectionLineStyle={{ stroke: "var(--wire)", strokeWidth: 3, strokeLinecap: "round" }}
+          connectionLineStyle={{ stroke: "var(--wire)", strokeWidth: 2.4, strokeLinecap: "round" }}
           connectionRadius={14}
           snapToGrid
           snapGrid={[SNAP, SNAP]}
           deleteKeyCode={["Backspace", "Delete"]}
           multiSelectionKeyCode={["Shift", "Meta", "Control"]}
           fitView
-          fitViewOptions={{ padding: 0.28, maxZoom: 1.4 }}
+          fitViewOptions={{ padding: chromePadding(), maxZoom: 1.25 }}
           minZoom={0.15}
           maxZoom={4}
-          attributionPosition="top-right"
+          attributionPosition="bottom-center"
           elevateNodesOnSelect={false}
           defaultEdgeOptions={{ type: "wire" }}
         >
-          <Background id="dots" variant={BackgroundVariant.Dots} gap={20} size={1.6} color="var(--grid-dot)" />
-          <Controls showInteractive={false} position="bottom-left" className="canvas-controls" />
-          <MiniMap
-            pannable
-            zoomable
-            position="bottom-right"
-            className="canvas-minimap"
-            style={{ width: 150, height: 100 }}
-            nodeColor="var(--panel-2)"
-            nodeStrokeColor="var(--line)"
-            maskColor="color-mix(in srgb, var(--ink) 70%, transparent)"
-          />
+          <Background id="dots" variant={BackgroundVariant.Dots} gap={22} size={1.3} color="var(--dot)" />
+          {phone ? null : (
+            <MiniMap
+              pannable
+              zoomable
+              position="bottom-left"
+              className="canvas-minimap"
+              ariaLabel="Minimap"
+              style={{ width: 240, height: 130 }}
+              nodeColor="var(--minimap-node)"
+              nodeStrokeColor="transparent"
+              nodeBorderRadius={4}
+              maskColor="var(--minimap-mask)"
+              maskStrokeColor="var(--border-strong)"
+              maskStrokeWidth={1}
+            />
+          )}
         </ReactFlow>
       </RouteObstacles.Provider>
     </div>

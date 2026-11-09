@@ -1,5 +1,5 @@
+import { CircleAlert, Info, X } from "lucide-react";
 import { useJumper } from "../lib/app.ts";
-import { Icon } from "./Icon.tsx";
 
 export function Toasts() {
   const toasts = useJumper((s) => s.toasts);
@@ -7,12 +7,13 @@ export function Toasts() {
     <div className="toasts" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`toast toast-${t.kind}`} role={t.kind === "error" ? "alert" : "status"}>
+          {t.kind === "error" ? <CircleAlert size={16} strokeWidth={1.8} className="toast-icon" aria-hidden /> : <Info size={16} strokeWidth={1.8} className="toast-icon" aria-hidden />}
           <div className="toast-text">
             <strong>{t.title}</strong>
             {t.detail && <pre>{t.detail}</pre>}
           </div>
-          <button className="btn btn-icon btn-small" aria-label="Dismiss" onClick={() => useJumper.getState().dismissToast(t.id)}>
-            <Icon name="close" size={14} />
+          <button type="button" className="icon-btn icon-btn-sm" aria-label="Dismiss" onClick={() => useJumper.getState().dismissToast(t.id)}>
+            <X size={14} strokeWidth={1.6} aria-hidden />
           </button>
         </div>
       ))}

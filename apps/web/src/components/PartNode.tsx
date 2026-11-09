@@ -4,6 +4,7 @@ import type { PartDefinition } from "@jumper/sim-core";
 import type { Rotation } from "@jumper/project-format";
 import { pinSide, rotatedPin, rotatedSize, type Side } from "../lib/parts.ts";
 import { engine } from "../lib/app.ts";
+import { categoryIcon } from "../shell/icons.ts";
 
 export interface PartNodeData extends Record<string, unknown> {
   def: PartDefinition | undefined;
@@ -51,16 +52,23 @@ function PartNodeImpl({ id, data, selected }: NodeProps<PartFlowNode>) {
   }
   const { spec } = def;
   const box = rotatedSize(spec, rotation);
+  const CatIcon = categoryIcon(spec.category);
   return (
     <div
       ref={ref}
       className="part"
       data-testid={`part-${id}`}
       data-part-type={spec.id}
+      data-category={spec.category}
       data-selected={selected}
       data-lit="false"
       style={{ width: box.w, height: box.h }}
     >
+      <div className="part-label" aria-hidden>
+        <CatIcon size={12} strokeWidth={1.8} />
+        <span className="part-label-id">{id}</span>
+        <span className="part-label-type">{spec.name}</span>
+      </div>
       <PartSvg svg={def.svg} w={spec.size.w} h={spec.size.h} rotation={rotation} />
       {spec.pins.map((pin) => {
         const p = rotatedPin(spec, pin, rotation);

@@ -1,11 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { openCanvas, requireParts, shot } from "./helpers.ts";
+import { openCanvas, openSerial, requireParts, shot } from "./helpers.ts";
 
 test("blink: Run lights the D13 LED and the on-board L LED, serial prints", async ({ page }, info) => {
   await openCanvas(page);
-  if (info.project.name === "mobile") await page.getByTestId("dock-parts").click();
   await requireParts(page, ["arduino-uno", "resistor", "led"]);
-  if (info.project.name === "mobile") await page.getByTestId("dock-parts").click();
 
   const fw = page.getByTestId("firmware-status");
   await expect(page.getByTestId("app")).not.toHaveAttribute("data-firmware", "loading");
@@ -29,7 +27,7 @@ test("blink: Run lights the D13 LED and the on-board L LED, serial prints", asyn
   await shot(page, info, "blink-off");
 
   // the D13 wire carries HIGH at some point
-  if (info.project.name === "mobile") await page.getByTestId("dock-serial").click();
+  await openSerial(page);
   await expect(page.getByTestId("serial-console")).toContainText("LED on", { timeout: 3000 });
   await expect(page.getByTestId("sim-time")).toHaveAttribute("data-run", "running");
   await shot(page, info, "blink-serial");

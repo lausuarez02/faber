@@ -3,7 +3,7 @@ import type { PropValue } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { WIRE_COLORS } from "../lib/store.ts";
-import { Icon } from "./Icon.tsx";
+import { RotateCw, Trash2 } from "lucide-react";
 
 const NAMED_COLORS: Record<string, string> = {
   red: "#FF3B30",
@@ -26,17 +26,14 @@ export function Inspector() {
   const wire = wireId ? project.wires.find((w) => w.id === wireId) : undefined;
 
   return (
-    <section className="inspector" data-testid="inspector" aria-label="Inspector">
-      <div className="panel-head">
-        <span className="eyebrow">Inspector</span>
-      </div>
+    <div className="inspector" data-testid="inspector">
       {simError && (
         <div className="callout callout-error" data-testid="sim-error" role="alert">
           {simError}
         </div>
       )}
       {part ? <PartInspector partId={part.id} /> : wire ? <WireInspector wireId={wire.id} /> : <Overview />}
-    </section>
+    </div>
   );
 }
 
@@ -127,15 +124,15 @@ function PartInspector({ partId }: { partId: string }) {
 
       <div className="insp-row">
         <button className="btn" onClick={() => useJumper.getState().rotateSelected()}>
-          <Icon name="rotate" size={16} /> Rotate
+          <RotateCw size={15} strokeWidth={1.6} aria-hidden /> Rotate
         </button>
         <button className="btn btn-danger" onClick={() => useJumper.getState().removeItems([part.id], [])}>
-          <Icon name="trash" size={16} /> Delete
+          <Trash2 size={15} strokeWidth={1.6} aria-hidden /> Delete
         </button>
       </div>
 
       <details className="insp-pins">
-        <summary className="eyebrow">Pins · {spec.pins.length}</summary>
+        <summary className="insp-summary">Pins · {spec.pins.length}</summary>
         <ul className="pin-list mono">
           {spec.pins.map((p) => (
             <li key={p.id}>
@@ -148,7 +145,7 @@ function PartInspector({ partId }: { partId: string }) {
       </details>
       {fidelity.doesNotEmulate.length > 0 && (
         <details className="insp-pins">
-          <summary className="eyebrow">Not emulated</summary>
+          <summary className="insp-summary">Not emulated</summary>
           <ul className="small muted">
             {fidelity.doesNotEmulate.map((x) => (
               <li key={x}>{x}</li>
@@ -286,7 +283,7 @@ function WireInspector({ wireId }: { wireId: string }) {
       </div>
       <div className="insp-row">
         <button className="btn btn-danger" onClick={() => useJumper.getState().removeItems([], [wire.id])}>
-          <Icon name="trash" size={16} /> Delete wire
+          <Trash2 size={15} strokeWidth={1.6} aria-hidden /> Delete wire
         </button>
       </div>
     </div>

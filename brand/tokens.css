@@ -1,53 +1,87 @@
 /*
- * Jumper design tokens. Dark-first.
+ * Jumper design tokens (UI v2, see docs/design/ui-v2.md). Dark-first.
  * Default (no data-theme) follows the OS: dark unless the OS prefers light.
  * Force a theme with <html data-theme="dark"> or <html data-theme="light">.
+ *
+ * The v1 names (--ink, --panel, --line, --text, --muted, --live …) are kept as aliases of the
+ * v2 tokens, so anything that reads them keeps working.
  */
 
 :root {
   color-scheme: dark;
 
-  /* surfaces */
-  --ink: #0d0f12; /* app / canvas background */
-  --panel: #15181d;
-  --panel-2: #1c2027;
-  --line: #262b33;
+  /* ---- v2 surfaces */
+  --bg-canvas: #0a0a0a;
+  --dot: #1f1f1f;
+  --bg-float: #131313;
+  --bg-rail: #111111;
+  --bg-raised: #1a1a1a;
+  --bg-node: #141414;
+  --bg-active: #2a2a2a;
+  --bg-hover: #1e1e1e;
+  --border: #232323;
+  --border-strong: #2e2e2e;
 
-  /* text */
-  --text: #e9edf2;
-  --muted: #8a93a0;
+  /* ---- v2 text */
+  --fg: #ededed;
+  --fg-2: #b4b4b4;
+  --fg-muted: #8a8a8a;
+  --fg-faint: #5a5a5a;
 
-  /* accents */
-  --wire: #ff4d2e; /* primary accent: the red jumper wire */
-  --live: #5cf2a1; /* signal HIGH, LED glow, running */
-  --warn: #ffb23f;
-  --data: #4da3ff;
+  /* ---- v2 roles */
+  --primary: #ffffff;
+  --on-primary: #0a0a0a;
+  --accent: #3ddc97; /* live / running status only */
+  --warn: #f5a524;
+  --error: #f2555a;
+  --select: #ffffff;
+  --wire: #ff4d2e; /* the red jumper wire: connection line, pin hover */
+  --data: #6aa8ff; /* replay / agent cursor */
 
-  /* derived */
-  --bg: var(--ink);
-  --grid-dot: #2a3039; /* breadboard dot grid */
-  --wire-ink: #0d0f12; /* text on --wire fills */
-  --focus: var(--data);
+  /* ---- v2 shape and motion */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 18px;
+  --r-pill: 999px;
+  --shadow-float: 0 16px 48px -12px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.25);
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px color-mix(in srgb, var(--fg) 70%, transparent);
+  --dur: 150ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- v1 aliases */
+  --ink: var(--bg-canvas);
+  --bg: var(--bg-canvas);
+  --panel: var(--bg-float);
+  --panel-2: var(--bg-raised);
+  --line: var(--border);
+  --text: var(--fg);
+  --muted: var(--fg-muted);
+  --live: var(--accent);
+  --grid-dot: var(--dot);
+  --wire-ink: #0a0a0a; /* text on --wire fills */
+  --focus: var(--fg);
 
   /* type */
-  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
-  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-ui: "Geist Variable", "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* shape */
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --grid-size: 20px; /* canvas snap + dot pitch (0.1" breadboard pitch at 1:1 = 20px) */
+  /* shape (v1 names) */
+  --radius-sm: var(--r-xs);
+  --radius: var(--r-sm);
+  --radius-lg: var(--r-md);
+  --grid-size: 20px; /* canvas snap pitch (0.1" breadboard pitch at 1:1 = 20px) */
 
-  /* type scale (px at 1x; UI is 14px base). See brand/README.md. */
+  /* type scale */
   --text-xs: 11px; /* pin labels, badges (mono) */
   --text-sm: 12px; /* secondary UI, serial console (mono) */
-  --text-base: 14px; /* UI body */
-  --text-md: 16px; /* panel titles */
-  --text-lg: 20px; /* section headings (display) */
-  --text-xl: 28px; /* page titles (display) */
-  --text-2xl: 44px; /* marketing / empty states (display) */
+  --text-base: 13px; /* UI body */
+  --text-md: 15px; /* project name, panel titles */
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 44px;
   --leading-tight: 1.15;
   --leading: 1.45;
 
@@ -57,34 +91,58 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --ink: #f4f1ea; /* paper */
-  --panel: #ffffff;
-  --panel-2: #faf8f3;
-  --line: #dad5cb;
-  --text: #14171c;
-  --muted: #5f6772;
+  --bg-canvas: #fafafa;
+  --dot: #dcdcdc;
+  --bg-float: #ffffff;
+  --bg-rail: #ffffff;
+  --bg-raised: #f5f5f5;
+  --bg-node: #ffffff;
+  --bg-active: #ececec;
+  --bg-hover: #f3f3f3;
+  --border: #e5e5e5;
+  --border-strong: #d9d9d9;
+  --fg: #0a0a0a;
+  --fg-2: #404040;
+  --fg-muted: #737373;
+  --fg-faint: #a3a3a3;
+  --primary: #0a0a0a;
+  --on-primary: #ffffff;
+  --accent: #0e9f63;
+  --warn: #b7791f;
+  --error: #d93036;
+  --select: #0a0a0a;
   --wire: #e0391b;
-  --live: #14a862;
-  --warn: #c9800f;
   --data: #1f74d1;
-  --grid-dot: #cfc8bb;
   --wire-ink: #ffffff;
+  --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.06);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --ink: #f4f1ea;
-    --panel: #ffffff;
-    --panel-2: #faf8f3;
-    --line: #dad5cb;
-    --text: #14171c;
-    --muted: #5f6772;
+    --bg-canvas: #fafafa;
+    --dot: #dcdcdc;
+    --bg-float: #ffffff;
+    --bg-rail: #ffffff;
+    --bg-raised: #f5f5f5;
+    --bg-node: #ffffff;
+    --bg-active: #ececec;
+    --bg-hover: #f3f3f3;
+    --border: #e5e5e5;
+    --border-strong: #d9d9d9;
+    --fg: #0a0a0a;
+    --fg-2: #404040;
+    --fg-muted: #737373;
+    --fg-faint: #a3a3a3;
+    --primary: #0a0a0a;
+    --on-primary: #ffffff;
+    --accent: #0e9f63;
+    --warn: #b7791f;
+    --error: #d93036;
+    --select: #0a0a0a;
     --wire: #e0391b;
-    --live: #14a862;
-    --warn: #c9800f;
     --data: #1f74d1;
-    --grid-dot: #cfc8bb;
     --wire-ink: #ffffff;
+    --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.06);
   }
 }

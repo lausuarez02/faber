@@ -3,9 +3,7 @@ import { openCanvas, requireParts, shot } from "./helpers.ts";
 
 test("wire: dragging from one pin to another creates a wire", async ({ page }, info) => {
   await openCanvas(page);
-  if (info.project.name === "mobile") await page.getByTestId("dock-parts").click();
   await requireParts(page, ["arduino-uno", "led"]);
-  if (info.project.name === "mobile") await page.getByTestId("dock-parts").click();
 
   const wires = page.locator(".react-flow__edge");
   const before = await wires.count();
@@ -53,8 +51,8 @@ test("wire: dragging from one pin to another creates a wire", async ({ page }, i
   await expect(wires).toHaveCount(before);
 });
 
-test("phone: the dock's Undo and Redo buttons undo a wire by tapping", async ({ page }, info) => {
-  test.skip(info.project.name !== "mobile", "desktop has Undo/Redo in the top bar and on the keyboard");
+test("phone: the bottom rail's Undo and Redo buttons undo a wire by tapping", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile", "desktop has Undo/Redo in the rail's … menu and on the keyboard");
   await openCanvas(page);
   const undo = page.getByTestId("dock-undo");
   const redo = page.getByTestId("dock-redo");

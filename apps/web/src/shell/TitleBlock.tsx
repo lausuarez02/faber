@@ -1,0 +1,116 @@
+import { useRef } from "react";
+import { Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, ListChecks, Pencil, Upload } from "lucide-react";
+import { useJumper } from "../lib/app.ts";
+import { exampleNames } from "../lib/examples.ts";
+import { useUi } from "../lib/ui.ts";
+import { useLive } from "../live/liveStore.ts";
+import { LogoMark } from "../components/Logo.tsx";
+import { MenuItem, Popover, STROKE } from "./primitives.tsx";
+import { boardOf, exportBom, exportNetlist, exportProject, importProjectFile, loadHexFile, newProject, pickFile } from "./actions.ts";
+
+/** Top-left: mark, project name + "…" menu, and the muted subtitle. No container. */
+export function TitleBlock() {
+  const name = useJumper((s) => s.project.name);
+  const subtitle = useSubtitle();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const close = () => useUi.getState().setPopover(null);
+
+  return (
+    <div className="title-block">
+      <div className="title-row">
+        <LogoMark size={22} mono />
+        <input
+          ref={nameRef}
+          className="project-name"
+          aria-label="Project name"
+          defaultValue={name}
+          key={name}
+          onBlur={(e) => useJumper.getState().rename(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              e.currentTarget.value = name;
+              e.currentTarget.blur();
+            }
+          }}
+        />
+        <div className="anchor">
+          <button
+            type="button"
+            className="icon-btn icon-btn-sm title-menu-btn"
+            aria-label="Project menu"
+            title="Project menu"
+            aria-expanded={useUi((s) => s.popover === "project")}
+            data-testid="project-menu"
+            data-popover-trigger="project"
+            onClick={() => useUi.getState().togglePopover("project")}
+          >
+            <Ellipsis size={18} strokeWidth={STROKE} aria-hidden />
+          </button>
+          <Popover id="project" label="Project menu" className="popover-menu popover-below-left">
+            <div role="menu">
+              <MenuItem
+                icon={Pencil}
+                onSelect={() => {
+                  close();
+                  requestAnimationFrame(() => nameRef.current?.select());
+                }}
+              >
+                Rename
+              </MenuItem>
+              <MenuItem
+                icon={FilePlus2}
+                onSelect={() => {
+                  close();
+                  newProject();
+                }}
+                testId="new-project"
+              >
+                New project
+              </MenuItem>
+              <div className="menu-sep" />
+              <MenuItem icon={Download} onSelect={() => (exportProject(), close())} testId="export-project">
+                Export jumper.json
+              </MenuItem>
+              <MenuItem icon={Upload} onSelect={() => (close(), pickFile(".json,application/json", (f) => void importProjectFile(f)))} testId="import-project">
+                Open jumper.json…
+              </MenuItem>
+              <MenuItem icon={Cpu} onSelect={() => (close(), pickFile(".hex,text/plain", (f) => void loadHexFile(f)))}>
+                Load firmware .hex…
+              </MenuItem>
+              <MenuItem icon={ListChecks} onSelect={() => (exportBom(), close())}>
+                Export BOM (.csv)
+              </MenuItem>
+              <MenuItem icon={FileText} onSelect={() => (exportNetlist(), close())}>
+                Export netlist
+              </MenuItem>
+              <div className="menu-sep" />
+              <div className="menu-label">Examples</div>
+              {exampleNames().map((ex) => (
+                <a key={ex} role="menuitem" className="menu-item" href={`?example=${encodeURIComponent(ex)}`} data-testid={`example-${ex}`}>
+                  <span className="menu-item-icon">
+                    <FolderOpen size={16} strokeWidth={STROKE} aria-hidden />
+                  </span>
+                  <span className="menu-item-label">{ex}</span>
+                </a>
+              ))}
+            </div>
+          </Popover>
+        </div>
+      </div>
+      <div className="title-sub" data-testid="project-subtitle">
+        {subtitle}
+      </div>
+    </div>
+  );
+}
+
+function useSubtitle(): string {
+  const mode = useLive((s) => s.mode);
+  const dir = useLive((s) => s.dir);
+  const project = useJumper((s) => s.project);
+  const board = boardOf(project);
+  const n = project.parts.length;
+  const where = mode === "follow" ? `Following ${dir ? dir.split("/").slice(-2).join("/") : "agent session"}` : mode === "replay" ? "Replay" : "Local workspace";
+  return [where, board?.name, `${n} part${n === 1 ? "" : "s"}`].filter(Boolean).join(" · ");
+}

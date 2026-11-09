@@ -35,7 +35,8 @@ test("perf: 200 parts while Blink runs", async ({ page }) => {
   });
   expect(count).toBe(200);
   await expect(page.locator(".react-flow__node")).toHaveCount(200, { timeout: 15_000 });
-  await page.getByRole("button", { name: /fit view/i }).click().catch(() => {});
+  await page.getByTestId("rail-more").click();
+  await page.getByTestId("menu-fit").click();
 
   const gpu = await page.evaluate(() => {
     const gl = document.createElement("canvas").getContext("webgl");

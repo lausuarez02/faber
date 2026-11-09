@@ -6,6 +6,7 @@ import { liveParams, useLive, type LiveStep } from "./liveStore.ts";
 import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, type LogFrame } from "./player.ts";
 import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts";
 import { worldTracker } from "./worldTracker.ts";
+import { useUi } from "../lib/ui.ts";
 import "./live.css";
 
 /**
@@ -81,10 +82,10 @@ function usePort(): CanvasPort {
 type Px = `${number}px`;
 function overlayPadding(): { top: Px; right: Px; bottom: Px; left: Px } {
   // With a World card the caption moves under the replay bar (live.css): keep a band for it.
-  const pad = { top: document.querySelector(".live-world") ? 136 : 64, right: 48, bottom: 56, left: 48 };
+  const pad = { top: document.querySelector(".live-world") ? 200 : 160, right: 48, bottom: 80, left: 92 };
   const canvas = document.querySelector('[data-testid="canvas"]')?.getBoundingClientRect();
   if (!canvas) return { top: "64px", right: "290px", bottom: "56px", left: "48px" };
-  for (const el of document.querySelectorAll(".live-steps, .live-tests, .live-code, .live-world")) {
+  for (const el of document.querySelectorAll(".panel-column > *, .live-bar, .live-tests, .live-code, .live-world, .title-block, .top-actions, .rail")) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     const gap = 16;
@@ -132,6 +133,8 @@ export function LiveLayer() {
     // ?chrome=min hides the parts library (cleaner videos).
     if (new URLSearchParams(location.search).get("chrome") === "min") document.documentElement.dataset.liveChrome = "min";
     engine.setExternal(true);
+    // The agent's steps and the serial output are what a follower watches: open both panels.
+    useUi.setState({ panels: ["agent", "serial"], inspectorAuto: false });
     useJumper.getState().loadProject(EMPTY);
     useJumper.getState().setFirmware({ status: "none" });
     if (params.mode === "follow") return connectFollow(params.url, port);
@@ -159,7 +162,6 @@ export function LiveLayer() {
   return (
     <div className="live-layer" data-testid="live-layer" data-live-mode={mode}>
       <LiveBar />
-      <StepsPanel />
       <AgentCursor />
       <CodeCard />
       <WorldPanel />
@@ -255,16 +257,20 @@ function LiveBar() {
 
 const STATUS_LABEL: Record<LiveStep["status"], string> = { pending: "pending", accepted: "accepted", rejected: "rejected", undone: "undone" };
 
-function StepsPanel() {
+/** The agent's steps with each "why", accept / reject (follow mode). Rendered in the Agent steps panel. */
+export function StepsList() {
   const steps = useLive((s) => s.steps);
   const mode = useLive((s) => s.mode);
-  const shown = steps.slice(-7);
-  if (!shown.length) return null;
+  const shown = steps.slice(-12);
   const pending = steps.filter((s) => s.status === "pending").length;
+  if (!shown.length) return <div className="live-steps" data-testid="live-steps"><p className="panel-empty">Waiting for the agent's first step…</p></div>;
   return (
-    <aside className="live-steps" data-testid="live-steps" aria-label="Agent steps">
+    <div className="live-steps" data-testid="live-steps" aria-label="Agent steps">
       <header>
-        <span>Agent steps</span>
+        <span>
+          {steps.length} step{steps.length === 1 ? "" : "s"}
+          {pending ? ` · ${pending} pending` : ""}
+        </span>
         {mode === "follow" && pending > 0 ? (
           <button className="live-btn small" onClick={() => sendCommand("accept_step", {})}>
             Accept all
@@ -297,7 +303,7 @@ function StepsPanel() {
           </li>
         ))}
       </ol>
-    </aside>
+    </div>
   );
 }
 

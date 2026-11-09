@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openCanvas, requireParts, shot } from "./helpers.ts";
+import { openCanvas, openLibrary, requireParts, shot } from "./helpers.ts";
 
 interface View {
   x: number;
@@ -100,6 +100,7 @@ test("drag a part from the library onto the canvas", async ({ page }, info) => {
   await openCanvas(page);
   await requireParts(page, ["led"]);
   await settle(page);
+  await openLibrary(page);
   const nodes = page.locator(".react-flow__node");
   const before = await nodes.count();
   const ids = await nodes.evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
