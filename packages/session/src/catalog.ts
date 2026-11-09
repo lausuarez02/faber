@@ -1,0 +1,306 @@
+/**
+ * The agent surface: every session op as a tool definition (name, description, JSON Schema).
+ * The MCP server, the CLI help and docs/mcp-tools.md are all generated from this list, so the
+ * three faces cannot drift apart.
+ */
+
+export interface ToolDef {
+  name: string;
+  /** Short title for listings. */
+  title: string;
+  /** When to use it, argument formats with examples, what comes back, common mistakes. */
+  description: string;
+  inputSchema: { type: "object"; properties: Record<string, unknown>; required?: string[]; additionalProperties?: boolean };
+  /** Changes the project (recorded as a step, undoable). */
+  edits?: boolean;
+  /** Read-only (no project or simulation change). */
+  readOnly?: boolean;
+}
+
+const why = { type: "string", description: 'Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step.' };
+const pinRef = (example: string) => ({ type: "string", description: `Pin as "part.pin", e.g. "${example}". Forgiving: "uno.13" → uno.D13, "oled1.gnd" → oled1.GND, "uno.GND" → a free GND pin.` });
+
+export const TOOLS: ToolDef[] = [
+  {
+    name: "new_project",
+    title: "Start a project",
+    description:
+      'Start a project in the server\'s project folder from a template. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop). Refuses to replace an existing project unless overwrite is true. Returns the project summary. Usually the first call; skip it if get_project shows parts already.',
+    inputSchema: { type: "object", properties: { template: { type: "string", enum: ["blank", "uno", "nano", "blink"], description: "Default blank." }, name: { type: "string", description: "Project name (default: folder name)." }, overwrite: { type: "boolean", description: "Replace an existing jumper.json." } } },
+    edits: true,
+  },
+  {
+    name: "get_project",
+    title: "Project summary",
+    description:
+      'Compact summary of the project: parts ("led1 (led) {\\"color\\":\\"red\\"} @440,-210"), wires ("w1: uno.D13 -> r1.1"), nets with 3+ pins, pins in use per part, firmware (board, sketch, libraries, built: fresh|stale|missing|none), files, scenario ids and pending steps. Call it whenever you are unsure of ids; it is cheap.',
+    inputSchema: { type: "object", properties: {} },
+    readOnly: true,
+  },
+  {
+    name: "search_parts",
+    title: "Find parts",
+    description:
+      'Search the parts catalog by words (id, name, tags, description): "oled", "button", "distance sensor", "motor driver". Every word must match. Optional category: board, output, input, passive, sensor, power, display, motor, communication, misc. Returns up to 25 {type, name, category, fidelity, about}. Empty query lists everything. Use the returned `type` with get_part and place_part.',
+    inputSchema: { type: "object", properties: { query: { type: "string", description: 'e.g. "oled" or "push button"' }, category: { type: "string" } } },
+    readOnly: true,
+  },
+  {
+    name: "get_part",
+    title: "Part details",
+    description:
+      'Everything needed to wire and program one part type: pins ("SDA: digital i2c-sda - I2C data. Uno: A4"), props with ranges/options, I2C addresses, state fields you can test (expect_part) or read, fidelity gaps, a wiring hint, typical connections for an Uno, the Arduino libraries it needs, and a minimal Arduino example. Read this before connecting a part you have not used; pin ids are case-sensitive in jumper.json (connect is forgiving).',
+    inputSchema: { type: "object", properties: { type: { type: "string", description: 'Part type id from search_parts, e.g. "ssd1306-oled-i2c".' } }, required: ["type"] },
+    readOnly: true,
+  },
+  {
+    name: "place_part",
+    title: "Place a part",
+    description:
+      'Add a part to the canvas. Omit x/y and Jumper picks a tidy, non-overlapping spot (boards at the origin, parts in a row above the board). Omit id to get a short one: boards "uno"/"nano", then "led1", "btn1", "oled1", "r1", "buzzer1". props sets part properties, e.g. {"resistance": 220} or {"color": "green"} (strings like "10k" work for numbers). Returns {id, pins, wiring hint, typical_connections}. Placing a board when a sketch exists wires up firmware automatically. Common mistake: forgetting the resistor for an LED (check_design catches it).',
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: { type: "string", description: 'Part type, e.g. "arduino-uno", "led", "resistor", "pushbutton", "ssd1306-oled-i2c", "buzzer".' },
+        id: { type: "string", description: "Optional instance id: letter first, then letters/digits/_/- (no dots)." },
+        x: { type: "number", description: "Canvas px (20 px = 0.1 in). Omit for auto-layout." },
+        y: { type: "number" },
+        rotation: { type: "number", enum: [0, 90, 180, 270] },
+        props: { type: "object", description: 'e.g. {"resistance": 220}', additionalProperties: true },
+        why,
+      },
+      required: ["type"],
+    },
+    edits: true,
+  },
+  {
+    name: "move_part",
+    title: "Move or rotate a part",
+    description: 'Move a part to x/y (canvas px) and/or rotate it (0/90/180/270). Wires follow. Only changes the drawing, never the circuit. Example: {"id": "led1", "x": 480, "y": -200}.',
+    inputSchema: { type: "object", properties: { id: { type: "string" }, x: { type: "number" }, y: { type: "number" }, rotation: { type: "number", enum: [0, 90, 180, 270] }, why }, required: ["id"] },
+    edits: true,
+  },
+  {
+    name: "remove",
+    title: "Remove a part or wire",
+    description: 'Remove a part (and every wire touching it) or a single wire, by id: {"id": "led2"} or {"id": "w5"}. Removing the firmware board also removes the firmware link (the files stay). Undoable.',
+    inputSchema: { type: "object", properties: { id: { type: "string" }, why }, required: ["id"] },
+    edits: true,
+  },
+  {
+    name: "connect",
+    title: "Wire two pins",
+    description:
+      'Draw a wire between two pins: {"from": "uno.D13", "to": "r1.1"}. Pin ids come from place_part/get_part ("A"/"C" on an LED, "1"/"2" on a resistor, "1a"/"2a" on a pushbutton, "D0".."D13", "A0".."A5", "5V", "3V3", "GND" on an Uno). Several wires on one pin are fine (that is how you share GND/5V). Returns the wire id, how forgiving names were resolved, and design warnings about this connection (e.g. LED without resistor, I2C on the wrong pins). Refuses a direct 5V-to-GND short. Already-connected pins return the existing wire.',
+    inputSchema: { type: "object", properties: { from: pinRef("uno.D13"), to: pinRef("r1.1"), color: { type: "string", description: 'CSS colour, e.g. "#FF4D2E". Default: red for supply, dark for ground, varied for signals.' }, why }, required: ["from", "to"] },
+    edits: true,
+  },
+  {
+    name: "disconnect",
+    title: "Remove wires",
+    description: 'Remove a wire by id ({"wire": "w3"}) or the wires between two pins ({"from": "uno.D13", "to": "r1.1"}), or every wire on one pin ({"from": "uno.D13"}).',
+    inputSchema: { type: "object", properties: { wire: { type: "string" }, from: pinRef("uno.D13"), to: pinRef("r1.1"), why } },
+    edits: true,
+  },
+  {
+    name: "set_part_property",
+    title: "Change a part property",
+    description: 'Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, {"id": "led1", "prop": "color", "value": "green"}, {"id": "oled1", "prop": "address", "value": "0x3D"}. Validated against the part (ranges, options); a running simulation picks it up live. For temporary sensor readings during a run use set_sensor_value instead.',
+    inputSchema: { type: "object", properties: { id: { type: "string" }, prop: { type: "string" }, value: { type: ["string", "number", "boolean"] }, why }, required: ["id", "prop", "value"] },
+    edits: true,
+  },
+  {
+    name: "set_libraries",
+    title: "Declare Arduino libraries",
+    description:
+      'Set the Arduino libraries the sketch needs (replaces the list): {"libraries": ["Adafruit SSD1306", "Adafruit GFX Library"]}. Names as in the Arduino Library Manager; "Name@1.2.3" pins a version, a bare name gets Jumper\'s pinned version (dependencies such as Adafruit BusIO are added for you). Preinstalled: Adafruit SSD1306, Adafruit GFX Library, Adafruit BusIO, Servo, U8g2, Adafruit BME280/MPU6050/Unified Sensor, RTClib, LiquidCrystal I2C, LiquidCrystal_PCF8574, MPU6050. Wire, SPI, EEPROM and SoftwareSerial are built in (do not list them). Others install on first build (needs network).',
+    inputSchema: { type: "object", properties: { libraries: { type: "array", items: { type: "string" } }, why }, required: ["libraries"] },
+    edits: true,
+  },
+  {
+    name: "set_world",
+    title: "Set the robot's world",
+    description:
+      'Robots only: the physical world the simulation moves the robot in, saved in jumper.json. Rover: {"world": {"arena": {"width": 300, "height": 200}, "obstacles": [{"id": "crate", "shape": "box", "x": 160, "y": 80, "w": 36, "h": 36, "angle": 15}, {"id": "pillar", "shape": "circle", "x": 240, "y": 150, "r": 12}], "robot": {"chassis": "chassis1", "leftMotor": "motor1", "rightMotor": "motor2", "sonar": "sonar1", "start": {"x": 40, "y": 40, "heading": 0}}}} (cm, degrees; robot part ids are filled in when there is exactly one chassis / two motors / one sonar). The rover needs a robot-chassis-2wd part and two dc-motor parts driven by an l298n; the sonar (hc-sr04) then reads real distances to walls and obstacles. Servo arm: {"world": {"arm": {"base": {"x": 0, "y": 5}, "links": [10, 8], "joints": [{"servo": "servo1", "zero": 90, "direction": 1, "offset": 90}, …], "targets": [{"id": "cup", "x": 12, "y": 6, "r": 2}]}}}. After run, the result has world {robot {x, y, heading}, collisions, min_clearance_cm, travelled_cm} (arm: {gripper, reached}); scenarios check them with {"expect_part": "world.collisions", "op": "==", "value": 0} (the chassis part state has the same pose too); screenshot draws the arena / arm next to the circuit. null removes the world.',
+    inputSchema: { type: "object", properties: { world: { type: ["object", "null"], description: "{ arena, obstacles, walls, robot } and/or { arm }" }, why }, required: ["world"] },
+    edits: true,
+  },
+  {
+    name: "write_file",
+    title: "Write firmware source",
+    description:
+      'Create or replace a firmware file under firmware/: {"path": "firmware/main.ino", "content": "void setup() {...}"}. The first .ino you write becomes the main sketch and is linked to the board automatically. Extra .h/.cpp files go in the same folder. Write the whole file every time (no patches). Use Serial.begin(115200) and print what happens: serial output is how you (and scenarios) verify behaviour. Returns notes when something about the sketch layout matters.',
+    inputSchema: { type: "object", properties: { path: { type: "string", description: '"firmware/main.ino", "firmware/pet.h"…' }, content: { type: "string" }, why }, required: ["path", "content"] },
+    edits: true,
+  },
+  {
+    name: "read_file",
+    title: "Read a file",
+    description: 'Read a firmware file ("firmware/main.ino") or "jumper.json". Use it to look at the line a compiler error points at.',
+    inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+    readOnly: true,
+  },
+  {
+    name: "list_files",
+    title: "List firmware files",
+    description: "List files under firmware/ and which one is the main sketch.",
+    inputSchema: { type: "object", properties: {} },
+    readOnly: true,
+  },
+  {
+    name: "build",
+    title: "Compile the firmware",
+    description:
+      'Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sources are served from cache in milliseconds). Returns {ok, size "flash 1992/32256 B (6%), ram …", errors: ["firmware/main.ino:12:5: \'foo\' was not declared in this scope (fix: …)"], warnings}. Each error has file:line and a concrete fix hint. If Docker is not running the error says how to start it. run and run_tests build automatically when sources changed, so you rarely need this except to check errors.',
+    inputSchema: { type: "object", properties: { force: { type: "boolean", description: "Ignore the cache." } } },
+  },
+  {
+    name: "run",
+    title: "Simulate",
+    description:
+      'Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, closest gap; arms: gripper position, targets reached)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.',
+    inputSchema: { type: "object", properties: { ms: { type: "number", description: "Virtual ms to simulate, e.g. 2000 (max 600000)." }, reset: { type: "boolean", description: "Restart from 0 ms first." }, speed: { type: "number", description: "Ignored headless (always as fast as possible); kept for compatibility." } }, required: ["ms"] },
+  },
+  {
+    name: "read_serial",
+    title: "Read serial output",
+    description: 'Everything the firmware printed since a byte offset: {"since": 0} for all. Returns {text, next}; pass next as since to read only new output.',
+    inputSchema: { type: "object", properties: { since: { type: "number" } } },
+    readOnly: true,
+  },
+  {
+    name: "read_pin",
+    title: "Measure a pin",
+    description: 'Voltage, logic level (high/low/undefined) and, for board pins, the firmware pin mode, at the current simulated time: {"pin": "uno.D13"} → {voltage: 5, level: "high", mode: "output", connected_to: ["r1.1"]}.',
+    inputSchema: { type: "object", properties: { pin: pinRef("uno.D13") }, required: ["pin"] },
+    readOnly: true,
+  },
+  {
+    name: "read_display",
+    title: "See a display",
+    description: 'The screen of a display part (e.g. ssd1306-oled-i2c) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something.',
+    inputSchema: { type: "object", properties: { part: { type: "string" }, scale: { type: "number" } }, required: ["part"] },
+    readOnly: true,
+  },
+  {
+    name: "interact",
+    title: "Press / set a control",
+    description: 'Act on a part in the running simulation: {"part": "btn1", "action": "press"}, then run, then {"action": "release"}; "click" = press, hold 200 ms of simulated time (hold_ms to change), release, and returns the serial printed meanwhile; "toggle" for switches; "set" with value for knobs (e.g. {"part": "pot1", "action": "set", "value": 0.8}). Not saved to the project. Run afterwards to let the firmware react.',
+    inputSchema: { type: "object", properties: { part: { type: "string" }, action: { type: "string", enum: ["press", "release", "click", "toggle", "set"] }, value: { type: ["number", "string", "boolean"] }, key: { type: "string", description: "Which control on multi-control parts (keypad key)." }, hold_ms: { type: "number", description: "click only: how long the press lasts (default 200 ms)." } }, required: ["part", "action"] },
+  },
+  {
+    name: "set_sensor_value",
+    title: "Set a sensor reading",
+    description: 'Set what a sensor reads in the running simulation: {"part": "ldr1", "field": "lux", "value": 50}, {"part": "pot1", "field": "position", "value": 0.25}, {"part": "sonar1", "field": "distance", "value": 12}. Fields are the part\'s props (get_part lists them with ranges). Not saved to the project (use set_part_property for that).',
+    inputSchema: { type: "object", properties: { part: { type: "string" }, field: { type: "string" }, value: { type: ["number", "string", "boolean"] } }, required: ["part", "field", "value"] },
+  },
+  {
+    name: "inject_fault",
+    title: "Inject a fault",
+    description:
+      'Break something on purpose to harden the firmware: "disconnect" (module unplugged: no power, gone from the I2C bus), "noisy" (a sensor value jitters ±5% every 10 ms, deterministic; optional field and amplitude), "i2c_nack" (the device NACKs its address: Wire.endTransmission() returns 2, display.begin() fails), "i2c_nack_data", "i2c_garbage" (reads return 0xFF), "clear" (remove faults on that part). Not simulated yet (returns an error saying so): brownout, wifi_drop, clock_drift, flash_full. Example: {"part": "oled1", "kind": "i2c_nack"}, then run and check that the firmware reports it.',
+    inputSchema: { type: "object", properties: { part: { type: "string" }, kind: { type: "string", enum: ["disconnect", "noisy", "i2c_nack", "i2c_nack_data", "i2c_garbage", "clear"] }, field: { type: "string" }, amplitude: { type: "number" } }, required: ["part", "kind"] },
+  },
+  {
+    name: "write_scenario",
+    title: "Write a test scenario",
+    description:
+      'Add or replace a deterministic test in jumper.json. Steps run in order, one action per step: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"), {"expect_serial": "LED on", "within_ms": 1100} (or {"regex": "hunger=\\\\d+"}; "absent": true to forbid), {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}), {"expect_part": "oled1.lit", "op": ">", "value": 0, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"), {"expect_part": "world.collisions", "op": "==", "value": 0} for robots (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached), {"expect_no_errors": true}. within_ms = keep simulating up to that long until it holds; without it the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user\'s goal, one per behaviour.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: 'e.g. "feeds-when-button-pressed"' },
+        name: { type: "string" },
+        description: { type: "string" },
+        steps: { type: "array", items: { type: "object" } },
+        timeout_ms: { type: "number", description: "Virtual-time limit (default 60000)." },
+        why,
+      },
+      required: ["id", "steps"],
+    },
+    edits: true,
+  },
+  {
+    name: "run_tests",
+    title: "Run test scenarios",
+    description: 'Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Builds first if needed. Returns {passed, failed, results}; a failure says which step, what was expected, what was seen instead, every step\'s timing and the serial tail. Fix the firmware or wiring and run again until all pass.',
+    inputSchema: { type: "object", properties: { name: { type: "string" } } },
+  },
+  {
+    name: "check_design",
+    title: "Design rule check",
+    description:
+      "Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch), Serial pins in use, USB power budget, plus live simulator diagnostics (overcurrent, floating inputs) after a run. Each issue says what, why and the fix. Run it after wiring and before trusting a design.",
+    inputSchema: { type: "object", properties: {} },
+    readOnly: true,
+  },
+  {
+    name: "fidelity_report",
+    title: "How far to trust the simulation",
+    description: "Honesty report: per part (exact/behavioral/stub and weakest areas), per area (logic, timing, analog, power, radio: ok/approx/not simulated, with notes) and a 'test on the real device' checklist. Include its summary and checklist in your final answer to the user.",
+    inputSchema: { type: "object", properties: {} },
+    readOnly: true,
+  },
+  {
+    name: "screenshot",
+    title: "Picture of the canvas",
+    description: 'Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires in green; robots also get a panel with the arena from above or the arm from the side) at the current simulated moment: {"path": "shots/pet.png"} (relative to the project; default screenshot.png). Returns the file path. Run first to capture a live state. A .svg path writes SVG.',
+    inputSchema: { type: "object", properties: { path: { type: "string" }, scale: { type: "number", description: "1 = 1 px per canvas px (default)." } } },
+  },
+  {
+    name: "export",
+    title: "Export for the real build",
+    description: "Write export/BOM.md (quantities, values, buy links), export/WIRING.md (wire table and nets), export/firmware.hex (when built) and export/TEST-ON-HARDWARE.md (checklist from the fidelity report). Returns the BOM text and an upload command.",
+    inputSchema: { type: "object", properties: { dir: { type: "string", description: "Default export/ in the project." } } },
+  },
+  {
+    name: "list_steps",
+    title: "Edit history",
+    description: "The recent steps (groups of edits with their why) and their status: pending, accepted, rejected, undone.",
+    inputSchema: { type: "object", properties: {} },
+    readOnly: true,
+  },
+  {
+    name: "undo",
+    title: "Undo the last step",
+    description: "Undo the last applied step (all its edits, including file writes). redo brings it back.",
+    inputSchema: { type: "object", properties: {} },
+    edits: true,
+  },
+  {
+    name: "redo",
+    title: "Redo",
+    description: "Re-apply the last undone step (only possible until the next edit).",
+    inputSchema: { type: "object", properties: {} },
+    edits: true,
+  },
+  {
+    name: "accept_step",
+    title: "Accept steps",
+    description: 'Mark a step (or all pending ones, the default) as accepted by the human: {"step": 3} or {}.',
+    inputSchema: { type: "object", properties: { step: { type: ["number", "string"] } } },
+  },
+  {
+    name: "reject_step",
+    title: "Reject a step",
+    description: 'Revert one step by id, even if it is not the last: {"step": 3}. Entities changed again by later steps are kept (the result lists them); if later steps depend on it (e.g. wires on a part it added) it refuses and says which to reject first.',
+    inputSchema: { type: "object", properties: { step: { type: "number" } }, required: ["step"] },
+    edits: true,
+  },
+];
+
+/** The recommended loop, used as MCP server instructions and in the docs. */
+export const AGENT_LOOP = `Jumper is a hardware sandbox: Arduino boards, parts and wires on a canvas, real compiled firmware, a deterministic simulator. You drive it only through these tools; you never need Jumper's source.
+
+The loop:
+1. get_project (or new_project) to see where you are.
+2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
+3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
+4. check_design and fix every error (LED resistors, power, I2C pins).
+5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
+6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
+7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass.
+8. inject_fault (disconnect, i2c_nack, noisy) to check the firmware copes, if it matters.
+9. fidelity_report: tell the human what was verified and what must be tested on the real device. screenshot and export when done.
+
+Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.`;

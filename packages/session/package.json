@@ -1,0 +1,26 @@
+{
+  "name": "@jumper/session",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Headless project session: every canvas and simulator action as a validated, logged, undoable operation. The engine behind the MCP server, the CLI and live sync.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jumper/parts": "workspace:*",
+    "@jumper/physics": "workspace:*",
+    "@jumper/project-format": "workspace:*",
+    "@jumper/runner": "workspace:*",
+    "@jumper/sim-backends": "workspace:*",
+    "@jumper/sim-core": "workspace:*",
+    "ws": "8.22.2"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}
