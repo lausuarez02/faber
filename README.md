@@ -30,17 +30,37 @@ The Blink example opens by default. Press **Run** (or Space) and the LED on the 
 | `pnpm test:e2e` | Runs the browser tests (Playwright, desktop and phone). |
 | `pnpm gen` | Regenerates the parts registry and the project JSON Schema. |
 
-## Use Jumper from your agent
+## Built by agents
 
-Claude Code, Codex or any MCP client can go from a one-line goal ("a tamagotchi on an OLED with three buttons", "a rover that avoids walls") to a wired, programmed and tested device using only Jumper's tools. Run `pnpm i` once in this repo and keep Docker Desktop running (firmware builds). The device folder can be anywhere.
+The whole point: an AI agent with **only Jumper's tools** goes from a one-line goal to a wired,
+programmed and tested device. These are real, unedited runs (2026-11-09), replayed from the
+session's own action log: parts appearing with the agent's "why" for each step, wires drawing, the
+firmware, the device running, the scenario tests turning green and the fidelity report at the end.
 
-**Claude Code**
+| | |
+| --- | --- |
+| <img src="docs/media/agent-claude-tamagotchi.gif" alt="Claude Code builds a tamagotchi pet: OLED face, three buttons, buzzer; 8 of 8 tests pass" width="420"> | **Tamagotchi pet** by Claude Code: Uno, SSD1306 OLED, 3 buttons, buzzer. 6 minutes, 59 tool calls, 8/8 scenario tests (feed, play, neglect makes it sad and beep, sleep, the frown matches a saved OLED image, OLED unplugged). [Video](docs/media/agent-claude-tamagotchi.mp4) (44 s) · [project and numbers](examples/agent-built/claude-tamagotchi/README.md) |
+| <img src="docs/media/agent-codex-rover.gif" alt="Codex builds an obstacle-avoiding rover that drives 30 s in the arena with zero collisions" width="420"> | **Obstacle-avoiding rover** by Codex (low reasoning effort): Uno, L298N, 2 DC motors, HC-SR04, battery, 2WD chassis. 109 s, 44 tool calls, 0 failed; 30 s in the arena with 0 collisions and a turn at every wall under 20 cm. [Video](docs/media/agent-codex-rover.mp4) (37 s) · [project and numbers](examples/agent-built/codex-rover/README.md) |
+| <img src="docs/media/agent-claude-robot-arm.gif" alt="Claude Code builds a two-servo arm that records poses and plays them back" width="420"> | **Record-and-playback robot arm** by Claude Code: Uno, 2 SG90 servos, 2 knobs, REC and PLAY buttons. 2 minutes, $0.88, 0 failed calls, 6/6 tests (each knob moves its joint, playback visits each recorded pose). [Video](docs/media/agent-claude-robot-arm.mp4) (35 s) · [project and numbers](examples/agent-built/claude-robot-arm/README.md) |
+
+Every run's friction (a wrong hint, a missing fix in an error) went back into the tools; what is
+still open is listed in each project's README and in [STATUS.md](STATUS.md). The hand-written
+reference builds, running in the web app:
+[tamagotchi](docs/media/example-tamagotchi.mp4) · [rover](docs/media/example-rover.mp4) ·
+[robot arm](docs/media/example-robot-arm.mp4) (GIFs next to them in `docs/media/`).
+
+## Use Jumper from Claude Code / Codex
+
+Run `pnpm i` once in this repo and keep Docker Desktop running (firmware builds run in Docker). The
+device folder can be anywhere. These are the exact setups the runs above used.
+
+**Claude Code** (verified with 2.1.319):
 
 ```sh
 claude mcp add jumper -- node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project /path/to/my-device
 ```
 
-or `.mcp.json`:
+or a `.mcp.json` (also `claude --mcp-config .mcp.json`):
 
 ```json
 {
@@ -54,7 +74,15 @@ or `.mcp.json`:
 }
 ```
 
-**Codex** (`~/.codex/config.toml`):
+Headless, with nothing but Jumper's tools (how the tamagotchi was built):
+
+```sh
+claude -p "Build me a tamagotchi-style AI pet on an Arduino Uno with a 128x64 OLED, three buttons and a buzzer. Prove it works with scenario tests." \
+  --mcp-config .mcp.json --strict-mcp-config --tools "" \
+  --allowedTools "mcp__jumper" --disallowedTools "Bash Edit Write Read"
+```
+
+**Codex** (verified with codex-cli 0.163.0), `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.jumper]
@@ -62,10 +90,15 @@ command = "node"
 args = ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--project", "/path/to/my-device"]
 startup_timeout_sec = 30
 tool_timeout_sec = 600
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "approve"   # without it, `codex exec` rejects every tool that edits
 ```
 
-The paths are absolute so they work from any directory; on another machine use your clone's path. Watch the agent build it live with `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project /path/to/my-device`. The full guide (loop, scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents.md); every tool is in [docs/mcp-tools.md](docs/mcp-tools.md). Videos of Claude Code and Codex building a tamagotchi, a rover and a robot arm are in [docs/media/agent-runs](docs/media/agent-runs/README.md).
+then `codex exec --skip-git-repo-check "Build an obstacle-avoiding rover using the jumper tools, with passing tests"`.
+To restrict Codex to Jumper's tools, set `shell_tool`, `unified_exec`, `browser_use` and
+`computer_use` to `false` under `[features]`, but leave `code_mode_host` on: Codex routes MCP calls
+through it ([full config](examples/agent-built/codex-rover/README.md)).
+
+Watch an agent build live with `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project /path/to/my-device`, and record any session with `jumper record <project>/.jumper/actions.jsonl out.mp4 --speed 2 --size 1440x900`. The paths are absolute so they work from any directory; on another machine use your clone's path. The full guide (loop, scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents.md); every tool is in [docs/mcp-tools.md](docs/mcp-tools.md).
 
 ## What works today
 

@@ -10,9 +10,11 @@ using only Jumper's tools. The same operations are exposed three ways with ident
 | CLI | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs <command>` (or `pnpm jumper <command>` inside the repo) | shells, CI, scripts (`--json` for machine output) |
 | Browser | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project <dir>` | a human watching the agent work live, accepting / rejecting its steps |
 
-Proof it works: three unedited runs where Claude Code and Codex built a tamagotchi, a rover and a
-servo arm from a one-line goal, with videos and action logs, are in
-[media/agent-runs](media/agent-runs/README.md).
+Proof it works: Claude Code built a tamagotchi pet (8/8 tests) and a record-and-playback servo arm
+(6/6), and Codex an obstacle-avoiding rover (2/2, 0 failed calls), each from a one-line goal with
+only these tools. The projects, prompts, numbers and videos are in
+[examples/agent-built](../examples/agent-built/README.md); the first round (before the fixes it led
+to) is in [media/agent-runs](media/agent-runs/README.md).
 
 The paths below are absolute paths on the maintainer's machine, so they work from any directory.
 On another machine replace `/Users/lautaritos/Projects/hardware/jumper` with where you cloned
@@ -77,6 +79,22 @@ Then `codex` (interactive) or headless (verified 2026-11-09 with codex-cli 0.163
 ```sh
 codex exec --skip-git-repo-check "Build an obstacle-avoiding rover using the jumper tools, with passing tests"
 ```
+
+For an evaluation where Codex may use nothing but Jumper, give it its own `CODEX_HOME` whose
+`config.toml` has only the `jumper` server and turns off the other tools:
+
+```toml
+[features]
+shell_tool = false
+unified_exec = false
+browser_use = false
+browser_use_external = false
+computer_use = false
+apps = false
+```
+
+Leave `code_mode_host` on: Codex 0.163 sends MCP tool calls through it, and with it off every call
+fails with "code-mode host is disabled".
 
 ### Any other MCP client
 

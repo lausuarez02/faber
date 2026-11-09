@@ -1,4 +1,8 @@
-# Agent runs: one-line goal to tested device
+# Agent runs: one-line goal to tested device (round 1)
+
+> The later runs (round 2, after the fixes below) are in
+> [examples/agent-built](../../../examples/agent-built/README.md), with the projects themselves and
+> 1440x900 videos in `docs/media/agent-*.mp4`.
 
 Three real, unedited runs (2026-11-09). Each agent was started fresh in an empty folder with only
 the Jumper MCP server (no shell, no file tools, no access to Jumper's source) and a one-paragraph goal.

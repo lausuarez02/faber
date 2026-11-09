@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-09. M0 is done (below). This round made Jumper usable by AI agents end to end:
+Last updated 2026-11-09 (third pass: videos and agent-built examples). M0 is done (below). This round made Jumper usable by AI agents end to end:
 an agent (Claude Code, Codex, any MCP client) goes from a one-line goal to a wired, programmed and
 tested device using only Jumper's tools. Target devices work: a tamagotchi-style pet on an SSD1306
 OLED, an obstacle-avoiding rover and a two-joint servo arm.
@@ -23,7 +23,46 @@ OLED, an obstacle-avoiding rover and a two-joint servo arm.
 | Web app | Open any example from the project menu or `?example=tamagotchi` / `rover` / `robot-arm`; OLED and LCD pixels drawn live on the part; a World panel (arena top view or arm side view) for projects with a world; follow mode (`?follow=ws://…`) and replay mode (`?replay=<log>`) | `e2e/robots.spec.ts`, `e2e/follow.spec.ts`, `e2e/live.spec.ts` |
 | Headless screenshot | PNG of the canvas with lit LEDs, OLED pixels and, for robots, the arena / arm panel drawn by the same painters as the web app | `packages/session/test/examples.test.ts` |
 | Examples | `examples/tamagotchi` (6 scenarios), `examples/rover` (2), `examples/robot-arm` (2), each with golden firmware and a video in `media/` | `pnpm jumper test -p examples/<name>` |
-| Agent runs | Claude Code built the tamagotchi (9/9 tests) and the arm (6/6), Codex the rover (5/5, 10 virtual minutes without a collision), each with only the MCP tools; videos and action logs | [docs/media/agent-runs](docs/media/agent-runs/README.md) |
+| Agent runs | Round 2 (after the fixes below): Claude Code built the tamagotchi (8/8 tests, 6 min) and the record-and-playback arm (6/6, 2 min), Codex the rover (2/2, 109 s, 0 failed calls), each with only the MCP tools. The projects are kept as the agents left them, with prompts, numbers and 1440x900 replay videos; round 1 is in `docs/media/agent-runs` | [examples/agent-built](examples/agent-built/README.md), `packages/session/test/examples.test.ts` ("agent-built examples") |
+
+### Videos and agent-built examples (2026-11-09, third pass)
+
+| What | Where |
+| --- | --- |
+| Agent replays, 1440x900 H.264 + GIF: parts appear with the agent's cursor and "why" captions, wires draw, the firmware card, the device running (OLED pet, rover in the arena view, arm side view), tests turning green, ending on a new **fidelity card** (area levels and the first real-device checks) | `docs/media/agent-claude-tamagotchi.mp4` (44 s), `agent-codex-rover.mp4` (37 s), `agent-claude-robot-arm.mp4` (35 s); recorded with `jumper record <log> --speed 2 --size 1440x900` from the agent-only lines of each log, cut at the agent's `fidelity_report` |
+| Reference examples running in the web app (feed / play / sleep / neglect on the OLED; the rover 48 virtual seconds at 2x; both knobs swept and the cup reached) | `docs/media/example-{tamagotchi,rover,robot-arm}.mp4` (32 / 25 / 24 s), re-record with `node apps/web/scripts/record-examples.mjs` while `pnpm dev` runs |
+| The three agent-built projects, unedited, with README (exact prompt, agent and flags, numbers, what a person verified, fidelity, friction) and the agent-only action log | `examples/agent-built/{claude-tamagotchi,codex-rover,claude-robot-arm}` |
+| Replay layout: with a World card the steps list stops above it, the caption moves under the replay bar, and the arena stats line wraps instead of being cut off | `apps/web/src/live/live.css`, `packages/physics/src/paint.ts` (test in `physics.test.tsx`) |
+
+Re-checked on the current `main`: `jumper check`, `test`, `fidelity` on a copy of each agent-built
+folder. Tamagotchi 8/8 (1 false-alarm warning, below), rover 2/2, arm 6/6; the arm now gets the new
+power-budget warning (two servos on the Uno 5V), as intended.
+
+### Open from the round-2 agent runs (all minor; none blocked an agent)
+
+- `place_part` hints: the battery pack says `POS → 5V` (wrong and harmful for an 8.4 V pack; its
+  description is right), and the second DC motor gets the same `OUT1/OUT2` as the first.
+- A `press` step hides reactions shorter than `hold_ms`; the failure message does not say so.
+- The "already held 0 ms after press" warning fires even when an earlier step proved the opposite
+  value (`examples/agent-built/claude-tamagotchi`, `feed-lowers-hunger`).
+- The scenario timeout error has no fix hint; the auto-prototype compile hint says
+  `firmware/<sketch folder>/types.h` instead of the real path.
+- `run` gives collision totals but no `first_collision` (time, pose, wall); the sonar trigger pulse is
+  labelled `(servo-style)`.
+- The action log has no session or source per line, so a person's CLI checks land in the agent's
+  replay (the committed `agent-actions.jsonl` files keep only `actor: mcp` lines).
+- Nothing tells an agent to accept its steps, so replays end with every step "pending".
+- The power-budget fix text for servos suggests "the driver's 12V" as the supply pin.
+- The round-2 runs were not repeated after the round-1 fixes landed in their final form; the arm run
+  listed Claude Code's built-in tools (no `--disallowedTools`) though it called only Jumper's.
+
+### Next (agents)
+
+1. Fix the open round-2 items above (part-specific battery and motor hints first, since one could
+   damage hardware), then run all three evals again in the strict setup and re-record.
+2. Tag every action-log line with its session and source; `jumper record --actor mcp`.
+3. Evaluate a device none of the examples cover (an LCD weather station, a line follower) to find
+   friction the reference builds hide.
 
 ### Agent-eval fixes (2026-11-09, second pass)
 
@@ -51,7 +90,7 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 | --- | --- |
 | `pnpm gen` | 21 parts, schema and `docs/mcp-tools.md` written; running it again changes nothing; `gen:check` reports "registry up to date" |
 | `pnpm typecheck` | 0 errors |
-| `pnpm test` | 52 files, **426 tests passed** (Docker build tests run when Docker is up) |
+| `pnpm test` | 54 files, **452 tests passed** (including the three agent-built projects' own scenarios; Docker build tests run when Docker is up) |
 | `pnpm test:e2e` | **27 passed, 4 skipped** (device-specific tests on the other device): desktop and phone each run the tamagotchi OLED test, the rover World view test, CLI-driven live follow and replay, plus the M0 tests; the 200-part benchmark still holds 60 fps |
 | Outsider smoke test | From a folder outside the repo: `jumper new`, `place`, `connect`, `check`, `write`, `build` (including a compile error with its fix hint), `run`, `test`, `screenshot`; then an MCP SDK client driving a pet build (I2C wired swapped on purpose, fixed from the error text, OLED read back, button click, fault injection, screenshot): 0 failed calls |
 
@@ -73,7 +112,7 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 - **The web app does not build firmware**; it loads the examples' committed hex. Agents build through the CLI / MCP server (Docker).
 - **The browser World panel** shows the local simulation and follow / replay; the screenshot only shows the world after a `run` in the same session.
 - **`ir-obstacle` and `ws2812`** parts were not done.
-- **Agent-run videos** add about 12 MB to the repo (`docs/media/agent-runs`); move them to a release or LFS before publishing if size matters.
+- **Videos** add about 38 MB to the repo (`docs/media/agent-runs` 12 MB, `docs/media/agent-*` and `example-*` 23 MB of MP4 and GIF, the agent-built action logs 3 MB); move them to a release or LFS before publishing if size matters.
 - **CI** has still not run on GitHub (no remote). The Docker build tests skip when Docker is not available.
 
 # M0 Foundations (2026-11-08)
