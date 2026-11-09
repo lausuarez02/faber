@@ -5,6 +5,8 @@ import { Clock } from "./clock.ts";
 import { hashString } from "./hash.ts";
 import { averageSolves, PwmMeter, type PwmReading } from "./pwm.ts";
 import type { BackendFactory, McuBackend, PinState, Unsubscribe } from "./mcu.ts";
+import type { ColorFrame } from "./color.ts";
+import type { SimServices } from "./network.ts";
 import {
   resolveProps,
   type Diagnostic,
@@ -43,6 +45,8 @@ export interface SimulationOptions {
   chunkMs?: number;
   /** Clock frequency when there is no MCU (Hz). Default 1 MHz. */
   frequency?: number;
+  /** Host services handed to part models as ctx.services (e.g. `network`: the sandbox Wi-Fi network). */
+  services?: SimServices;
 }
 
 /** Period of PartModel.tick() and of the stopped-PWM check (virtual ms). */
@@ -135,11 +139,18 @@ export class Simulation {
   private tickArmed = false;
   private tickers: Ticker[] = [];
   private stepping = false;
+  /** Host services for part models (ctx.services). */
+  readonly services: SimServices | undefined;
+  /** Part watchers of MCU GPIO edges (ctx.watch), by MCU pin id. Dropped on reset. */
+  private pinWatchers = new Map<string, Set<(level: 0 | 1, tMs: number) => void>>();
+  /** Node → the firmware board GPIO that drives it directly or through resistors (cached; nets never change). */
+  private driverCache = new Map<NodeId, string | null>();
 
   constructor(opts: SimulationOptions) {
     this.project = opts.project;
     this.registry = opts.registry;
     this.firmware = opts.firmware;
+    this.services = opts.services;
 
     // Every pin of every known part gets a net (single-pin nets for unwired pins).
     const extraPins: { part: string; pin: string }[] = [];
@@ -270,6 +281,7 @@ export class Simulation {
     this.pinOverride.clear();
     this.tickArmed = false;
     for (const t of this.tickers) t.armed = false;
+    this.pinWatchers.clear();
     this.instantiate();
     this.solve();
     this.emit({ type: "reset" });
@@ -339,6 +351,20 @@ export class Simulation {
 
   partState(partId: string): VisualState | undefined {
     return this.slot(partId)?.model.visualState();
+  }
+
+  /** A colour display part's frame (see PartModel.framebuffer), or undefined for other parts. */
+  framebuffer(partId: string): ColorFrame | undefined {
+    return this.slot(partId)?.model.framebuffer?.();
+  }
+
+  /**
+   * Digital level of a part pin's net right now (see PartContext.digital): the live GPIO output
+   * level when the firmware board drives the net (directly or through resistors), else the last
+   * solve against `threshold` volts.
+   */
+  digitalLevel(partId: string, pinId: string, threshold?: number): 0 | 1 {
+    return this.levelOfNode(this.nodeOf(partId, pinId), threshold);
   }
 
   setProp(partId: string, propId: string, value: PropValue): void {
@@ -521,6 +547,9 @@ export class Simulation {
         pwm: (pin) => this.pwmOfNode(this.nodeOf(p.id, pin)),
         setPwm: (pin, r) => this.declarePwm(p.id, this.nodeOf(p.id, pin), r),
         schedule: (delayMs, cb) => this.scheduleIn(delayMs, cb),
+        digital: (pin, threshold) => this.levelOfNode(this.nodeOf(p.id, pin), threshold),
+        watch: (pin, cb) => this.watchNode(this.nodeOf(p.id, pin), cb),
+        ...(this.services ? { services: this.services } : {}),
       };
       this.slots.push({ id: p.id, def, ctx, props, model: def.create(ctx) });
     }
@@ -633,8 +662,15 @@ export class Simulation {
           }
           const vcc = this.mcu.vcc;
           // A CS line nothing drives (not in the circuit, or floating) does not select the device.
+          // A GPIO on the CS net is read live: libraries toggle CS per transaction, fast enough that
+          // the circuit is solved on duty-averaged values (PWM.md), which would blur the level.
+          const driver = this.driverPinOf(csNode);
           selected = () => {
             if (csNode === GROUND) return true;
+            if (driver !== undefined && this.mcu) {
+              const st = this.mcu.readPin(driver);
+              if (st.mode === "output") return st.value === 0;
+            }
             const r = this._lastSolve;
             return r !== undefined && r.voltages.has(csNode) && !r.isFloating(csNode) && r.voltage(csNode) < 0.3 * vcc;
           };
@@ -698,6 +734,11 @@ export class Simulation {
   private handlePinChange(pin: string, state: PinState, cycle: number): void {
     this._trace.push({ cycle, kind: "pin", pin, mode: state.mode, value: state.value });
     this.emit({ type: "pin", pin, state, cycle });
+    const watchers = this.pinWatchers.get(pin);
+    if (watchers && state.mode === "output") {
+      const tMs = this.clock.toMs(cycle);
+      for (const w of [...watchers]) w(state.value, tMs);
+    }
     let meter = this.meters.get(pin);
     if (!meter) {
       meter = new PwmMeter(pin, this.clock.frequency);
@@ -767,6 +808,67 @@ export class Simulation {
       sinceEdgeUs: 0,
       source: partId,
     });
+  }
+
+  /**
+   * The firmware board GPIO driving `node`: on the net itself, or reached through resistor parts
+   * (up to two, e.g. a 1k/2k level-shifting divider; a divider keeps the logic level). undefined if none.
+   */
+  private driverPinOf(node: NodeId): string | undefined {
+    if (node === GROUND) return undefined;
+    const cached = this.driverCache.get(node);
+    if (cached !== undefined) return cached ?? undefined;
+    let found: string | undefined = this.mcuPinOfNode.get(node);
+    if (found === undefined) {
+      const typeOf = new Map(this.project.parts.map((p) => [p.id, p.type]));
+      let frontier = [node];
+      const seen = new Set<NodeId>([node]);
+      for (let hop = 0; hop < 2 && found === undefined; hop++) {
+        const next: NodeId[] = [];
+        for (const n of frontier) {
+          const net = this.nets.find((nt) => nt.pins.some((r) => this.pinNode.get(pinKey(r)) === n));
+          for (const ref of net?.pins ?? []) {
+            if (typeOf.get(ref.part) !== "resistor") continue;
+            const other = this.pinNode.get(pinKey({ part: ref.part, pin: ref.pin === "1" ? "2" : "1" }));
+            if (other === undefined || other === GROUND || seen.has(other)) continue;
+            seen.add(other);
+            const pin = this.mcuPinOfNode.get(other);
+            if (pin !== undefined) {
+              found = pin;
+              break;
+            }
+            next.push(other);
+          }
+          if (found !== undefined) break;
+        }
+        frontier = next;
+      }
+    }
+    this.driverCache.set(node, found ?? null);
+    return found;
+  }
+
+  private levelOfNode(node: NodeId, threshold?: number): 0 | 1 {
+    if (node === GROUND) return 0;
+    const driver = this.driverPinOf(node);
+    if (driver !== undefined && this.mcu) {
+      const st = this.mcu.readPin(driver);
+      if (st.mode === "output") return st.value;
+    }
+    const v = this._lastSolve?.voltage(node) ?? 0;
+    return v >= (threshold ?? (this.mcu?.vcc ?? 5) / 2) ? 1 : 0;
+  }
+
+  private watchNode(node: NodeId, cb: (level: 0 | 1, tMs: number) => void): () => void {
+    const pin = this.driverPinOf(node);
+    if (pin === undefined) return () => {};
+    let set = this.pinWatchers.get(pin);
+    if (!set) {
+      set = new Set();
+      this.pinWatchers.set(pin, set);
+    }
+    set.add(cb);
+    return () => void this.pinWatchers.get(pin)?.delete(cb);
   }
 
   /** A part event `delayMs` from now. Inside an MCU step it also shortens the step so the event lands on its cycle. */

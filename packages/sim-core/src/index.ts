@@ -70,3 +70,6 @@ export { bytesToBase64, base64ToBytes, decodeMonoFrame, monoPixel, monoLitCount,
 export type { MonoFrame } from "./display.ts";
 export { routeWire, routePath } from "./route.ts";
 export type { RoutePoint, RouteBox } from "./route.ts";
+export { DirtyTracker, rgb565ToRgb, rgbToRgb565, colorFrameToRgba, colorFrameStats, colorFrameAverage, colorFrameToPng, encodePng } from "./color.ts";
+export type { ColorFrame, DirtyRect } from "./color.ts";
+export type { SandboxNetwork, SandboxSocket, SandboxAccessPoint, SandboxJoinCode, SimServices } from "./network.ts";

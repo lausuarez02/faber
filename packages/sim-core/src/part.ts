@@ -1,3 +1,5 @@
+import type { ColorFrame } from "./color.ts";
+import type { SimServices } from "./network.ts";
 import { z } from "zod";
 import type { PropValue } from "@jumper/project-format";
 import type { CircuitBuilder, NodeId, SolveResultView } from "./circuit.ts";
@@ -222,6 +224,22 @@ export interface PartContext {
    * cancel function. Events are dropped on reset.
    */
   schedule?(delayMs: number, cb: () => void): () => void;
+  /**
+   * Digital level of the net one of this part's pins is on, right now: the live output level when
+   * a firmware-board GPIO drives that net (directly or through resistors, e.g. a level-shifting
+   * divider), otherwise the last solve's voltage against `threshold` volts (default half the
+   * MCU's VCC). Unlike onSolved voltages it is exact inside fast toggling (SPI D/C, CS, UART),
+   * where the Simulation solves on duty-averaged values. Optional: simple test benches may not provide it.
+   */
+  digital?(pinId: string, threshold?: number): 0 | 1;
+  /**
+   * Edges of the GPIO driving one of this part's pins (same rule as digital()): called inside the
+   * MCU step at the exact cycle, with the new level and the virtual time in ms. For bit-banged
+   * protocols (SoftwareSerial UART). Returns an unsubscribe function; dropped on reset.
+   */
+  watch?(pinId: string, cb: (level: 0 | 1, tMs: number) => void): () => void;
+  /** Host services (e.g. `network`, the sandbox Wi-Fi network) passed to the Simulation. */
+  readonly services?: SimServices;
 }
 
 export interface PartModel {
@@ -248,6 +266,11 @@ export interface PartModel {
   i2c?: I2cDevice;
   /** SPI peripheral behaviour, attached when its MOSI/MISO/SCK pins are wired to the board's. */
   spi?: SpiDevice;
+  /**
+   * Colour display parts: the frame the glass shows (RGB565, viewer orientation). Too big for
+   * visualState(), so renderers and screenshots read it here (Simulation.framebuffer(partId)).
+   */
+  framebuffer?(): ColorFrame;
 }
 
 export type PartModelFactory = (ctx: PartContext) => PartModel;

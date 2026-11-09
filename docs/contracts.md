@@ -384,6 +384,23 @@ interface McuBusPins { i2c?: { sda; scl }; spi?: { mosi; miso; sck; ss } }
 // McuBackend gains optional: stopAt(cycle) so a scheduled event ends the current step at the exact cycle
 ```
 
+### Colour displays and host services (`color.ts`, `network.ts`, 2026-11-09) — see `docs/decisions/0002-ai-pet.md`
+
+```ts
+// PartModel gains optional: framebuffer?(): ColorFrame          // RGB565, viewer orientation, version counter
+// Simulation gains: framebuffer(partId): ColorFrame | undefined; digitalLevel(partId, pinId, threshold?)
+// SimulationOptions gains: services?: SimServices               // { network?: SandboxNetwork, ... } → ctx.services
+// PartContext gains optional: digital?(pin, threshold?): 0 | 1  // live GPIO level when a board pin drives the net (directly or via resistors)
+//                             watch?(pin, cb(level, tMs)): () => void   // cycle-exact GPIO edges (bit-banged UART)
+//                             services?: SimServices
+// SPI chip select reads the live GPIO level (CS toggles too fast for the duty-averaged solve).
+interface ColorFrame { width; height; data: Uint16Array; version: number; on: boolean; inverted: boolean }
+DirtyTracker, rgb565ToRgb, rgbToRgb565, colorFrameToRgba(f, out, rect?, outWidth?), colorFrameStats(f) → { lit, bright },
+colorFrameAverage(f, x, y, w, h) → "#RRGGBB", encodePng(rgba, w, h), colorFrameToPng(f, scale?)
+interface SandboxNetwork { accessPoints(); join(ssid, pwd, tMs, partId) → 0..4; leave?(); linkUp(); resolve(host); open({host, ip, port, tls, tMs, partId}) → SandboxSocket | { error } }
+interface SandboxSocket { connectMs; write(data, tMs); read(tMs) → { data, closed }; close(tMs); pending }
+```
+
 ### Physics (`@jumper/physics`, M1) — full description in `packages/physics/README.md`
 
 ```ts
