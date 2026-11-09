@@ -2,6 +2,7 @@ import type { Project, PropValue } from "@jumper/project-format";
 import {
   Simulation,
   decodeMonoFrame,
+  type ColorFrame,
   type MonoFrame,
   monoToAscii,
   type PartDefinition,
@@ -467,7 +468,9 @@ export class SimHost {
     const width = Number(s.width);
     const height = Number(s.height);
     if (typeof s.pixels !== "string" || !width || !height) {
-      fail("not-a-display", `'${partId}' has no screen`, `its state has no pixels/width/height (keys: ${Object.keys(s).join(", ")})`, "use a display part such as ssd1306-oled-i2c");
+      const color = this.sim.framebuffer(partId);
+      if (color) return colorToMono(color);
+      fail("not-a-display", `'${partId}' has no screen`, `its state has no pixels/width/height (keys: ${Object.keys(s).join(", ")})`, "use a display part such as ssd1306-oled-i2c, lcd1602-i2c or ili9341-tft");
     }
     return decodeMonoFrame(s.pixels, width, height);
   }
@@ -478,13 +481,14 @@ export class SimHost {
     const pixels = s.pixels;
     const width = Number(s.width);
     const height = Number(s.height);
-    if (typeof pixels !== "string" || !width || !height) {
-      fail("not-a-display", `read_display: '${partId}' has no screen`, `its state has no pixels/width/height (keys: ${Object.keys(s).join(", ")})`, "use it on a display part such as ssd1306-oled-i2c");
+    const color = typeof pixels !== "string" ? this.sim.framebuffer(partId) : undefined;
+    if (!color && (typeof pixels !== "string" || !width || !height)) {
+      fail("not-a-display", `read_display: '${partId}' has no screen`, `its state has no pixels/width/height (keys: ${Object.keys(s).join(", ")})`, "use it on a display part such as ssd1306-oled-i2c, lcd1602-i2c or ili9341-tft");
     }
-    const f = decodeMonoFrame(pixels, width, height);
+    const f = color ? colorToMono(color) : decodeMonoFrame(pixels as string, width, height);
     let lit = 0;
     for (const b of f.data) for (let v = b; v; v >>= 1) lit += v & 1;
-    return { width, height, lit, ascii: monoToAscii(f, scale) };
+    return { width: f.width, height: f.height, lit, ascii: monoToAscii(f, scale) };
   }
 
   pin(partId: string, pinId: string): { voltage: number; level: "high" | "low" | "undefined"; mode?: string; floating?: boolean } {
@@ -521,4 +525,22 @@ export function compactState(s: VisualState): Record<string, unknown> {
     o[k] = typeof v === "number" ? round(v) : v;
   }
   return o;
+}
+
+/**
+ * A colour panel (TFT) as a 1-bit frame for display checks: a pixel is lit when it is not black,
+ * the same rule as the panel's `lit` state; a dark panel (off / asleep) is all unlit.
+ */
+export function colorToMono(f: ColorFrame): MonoFrame {
+  const stride = (f.width + 7) >> 3;
+  const data = new Uint8Array(stride * f.height);
+  if (!f.on) return { width: f.width, height: f.height, data };
+  for (let y = 0; y < f.height; y++) {
+    for (let x = 0; x < f.width; x++) {
+      let c = f.data[y * f.width + x]!;
+      if (f.inverted) c = ~c & 0xffff;
+      if (c !== 0) data[y * stride + (x >> 3)]! |= 0x80 >> (x & 7);
+    }
+  }
+  return { width: f.width, height: f.height, data };
 }

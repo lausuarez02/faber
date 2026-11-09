@@ -19,6 +19,8 @@ describe("pet protocol", () => {
     expect(long.text.endsWith(" ")).toBe(false);
     expect(sanitizeReply("no tag at all", { food: 10, joy: 80, energy: 80 })).toEqual({ mood: "hungry", text: "no tag at all" });
     expect(sanitizeReply("\n\n  sad | a|b  \nsecond line", req)).toEqual({ mood: "sad", text: "a/b" });
+    // Agent eval (claude-ai-pet, 2026-11-09): the live gateway answered "happy|..." once.
+    expect(sanitizeReply("happy|\nHi! I missed you so much.", req)).toEqual({ mood: "happy", text: "Hi! I missed you so much." });
   });
 
   it("mock replies are deterministic and fit the protocol", () => {

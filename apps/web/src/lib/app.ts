@@ -1,5 +1,6 @@
 import { Engine } from "./engine.ts";
 import { loadExample, loadExampleFirmware } from "./examples.ts";
+import { safeParseProject } from "@jumper/project-format";
 import { createJumperStore, readTheme } from "./store.ts";
 
 /** App singletons: the project store and the simulation engine. */
@@ -14,6 +15,9 @@ useJumper.setState({ theme: readTheme() });
 
 /** Look for the example's built firmware (tolerant: the hex may not be built yet). */
 export async function loadInitialFirmware(): Promise<void> {
+  if (typeof location !== "undefined" && new URLSearchParams(location.search).has("local") && !requested) {
+    if (await loadServedProject()) return;
+  }
   const s = useJumper.getState();
   if (!s.project.firmware) {
     s.setFirmware({ status: "none" });
@@ -26,6 +30,36 @@ export async function loadInitialFirmware(): Promise<void> {
       status: "missing",
       reason: `examples/${initial.example}/${s.project.firmware.artifact} not found`,
     });
+}
+
+/**
+ * `/?local` on a `jumper serve` server: open the server's project (the one an agent is building)
+ * with its built firmware, so it runs here: screen pixels, buttons, Device view. False when the
+ * page is not served by `jumper serve` (the usual Blink stays open).
+ */
+export async function loadServedProject(fetchFn: typeof fetch = fetch): Promise<boolean> {
+  let res: Response;
+  try {
+    res = await fetchFn("/api/project");
+  } catch {
+    return false;
+  }
+  const body = (await res.json().catch(() => undefined)) as { project?: unknown; hex?: string; dir?: string; warning?: string; error?: string } | undefined;
+  const s = useJumper.getState();
+  if (!res.ok || !body?.project) {
+    if (body?.error) s.toast({ kind: "error", title: "Could not open the server's project", detail: body.error });
+    return false;
+  }
+  const parsed = safeParseProject(JSON.stringify(body.project));
+  if (!parsed.ok) {
+    s.toast({ kind: "error", title: "The server's project is invalid", detail: parsed.issues.map((i) => `${i.path || "(root)"}: ${i.message}`).join("\n") + `\nFix: run \`jumper check -p ${body.dir ?? "<project>"}\`.` });
+    return false;
+  }
+  s.loadProject(parsed.project);
+  if (body.hex) s.setFirmware({ status: "ready", hex: body.hex, name: parsed.project.firmware?.sketch ?? "firmware", source: "upload" });
+  else if (parsed.project.firmware) s.setFirmware({ status: "missing", reason: body.warning ?? "the firmware is not built yet" });
+  else s.setFirmware({ status: "none" });
+  return true;
 }
 
 if (initial.issues) {

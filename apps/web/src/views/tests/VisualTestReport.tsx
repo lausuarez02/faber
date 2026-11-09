@@ -57,8 +57,8 @@ export function VisualTestReport({ report: given }: { report?: VisualReport } = 
   if (!state.report)
     return (
       <div className="vt vt-empty" data-testid="visual-test-report-empty">
-        No visual test report for this project yet. Ask your agent to <code>run_tests</code>, or make one from a terminal:{" "}
-        <code>node --import tsx packages/session/src/visual-report.ts &lt;project dir&gt; apps/web/public/reports/&lt;name&gt;.json</code>
+        No visual test report for this project yet. Ask your agent to <code>run_tests</code>, or run the tests from a terminal:{" "}
+        <code>pnpm jumper test --visual -p &lt;project dir&gt;</code> (the server shows the newest report; reopen this panel)
       </div>
     );
   return <VisualTestReportView report={state.report} project={project} hex={firmware.status === "ready" ? firmware.hex : undefined} {...(state.note ? { sourceNote: state.note } : {})} />;

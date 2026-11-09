@@ -97,7 +97,8 @@ export function eventPrompt(r: PetRequest): string {
 
 /** Make any model output safe for the board: one line, ASCII, <= 60 chars, a known mood. */
 export function sanitizeReply(raw: string, req: Pick<PetRequest, "food" | "joy" | "energy">): PetReply {
-  const line = raw.replace(/\r/g, "").split("\n").map((s) => s.trim()).find((s) => s.length > 0) ?? "";
+  const lines = raw.replace(/\r/g, "").split("\n").map((s) => s.trim()).filter((s) => s.length > 0);
+  const line = lines[0] ?? "";
   let mood: Mood = moodFromStats(req);
   let text = line;
   const bar = line.indexOf("|");
@@ -105,6 +106,8 @@ export function sanitizeReply(raw: string, req: Pick<PetRequest, "food" | "joy" 
     const tag = line.slice(0, bar).trim().toLowerCase().replace(/[^a-z]/g, "");
     if ((MOODS as readonly string[]).includes(tag)) mood = tag as Mood;
     text = line.slice(bar + 1);
+    // "happy|" with the words on the next line (seen from claude-haiku via the CLI): use that line.
+    if (!text.trim() && lines[1]) text = lines[1];
   }
   text = text
     .replace(/[‘’]/g, "'")

@@ -145,3 +145,21 @@ describe("action log: who did what", () => {
     expect(filterActionLog(text, {})).toBe(text);
   });
 });
+
+// Round 4 (live Claude robot run): the agent could not drop the starter template's `boots` test,
+// because `remove` only knew parts and wires.
+describe("remove deletes a test scenario", () => {
+  it("removes the template's placeholder scenario by id, undoably, and lists scenario ids on a miss", async () => {
+    const s = fresh();
+    await call(s, "new_project", { template: "uno" });
+    await call(s, "write_scenario", { id: "drives", steps: [{ run_ms: 10 }] });
+    expect(s.project.scenarios.map((x) => x.id)).toContain("boots");
+    const r = await call(s, "remove", { id: "boots", why: "drop the placeholder test" });
+    expect(r.removed).toBe("boots");
+    expect(r.kind).toBe("scenario");
+    expect(s.project.scenarios.map((x) => x.id)).toEqual(["drives"]);
+    await expect(call(s, "remove", { id: "boot" })).rejects.toThrow(/scenario ids are: .*drives/);
+    await call(s, "undo");
+    expect(s.project.scenarios.map((x) => x.id)).toContain("boots");
+  });
+});

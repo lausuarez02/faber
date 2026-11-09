@@ -158,6 +158,20 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
     expect(report.scenarios[0]!.frames.length).toBeGreaterThan(0);
   });
 
+  // Agent eval (claude-ai-pet, 2026-11-09): following the agent, Run and the Device view could not
+  // run the built pet; /?local loads this project and its hex from here so it runs in the browser.
+  it("serves the project with its built firmware for /?local", async () => {
+    const r = await fetch(`${srv.url}/api/project`);
+    expect(r.status).toBe(200);
+    const body = (await r.json()) as { project: { name: string; parts: unknown[]; firmware?: { artifact?: string } }; hex?: string; dir: string };
+    expect(body.project.name).toBe("blink");
+    expect(body.project.parts.length).toBeGreaterThan(2);
+    expect(body.hex).toBe(readFileSync(join(dir, body.project.firmware!.artifact!), "utf8"));
+    expect(body.hex).toMatch(/^:/);
+    const evil = await fetch(`${srv.url}/api/project`, { headers: { origin: "https://evil.example" } });
+    expect(evil.status).toBe(403);
+  });
+
   it("refuses other hosts and origins (DNS rebinding, other websites)", async () => {
     const bad = await fetch(srv.mcpUrl, { method: "POST", headers: { "content-type": "application/json", origin: "https://evil.example" }, body: "{}" });
     expect(bad.status).toBe(403);

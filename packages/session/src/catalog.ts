@@ -83,8 +83,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "remove",
-    title: "Remove a part or wire",
-    description: 'Remove a part (and every wire touching it) or a single wire, by id: {"id": "led2"} or {"id": "w5"}. Removing the firmware board also removes the firmware link (the files stay). Undoable.',
+    title: "Remove a part, wire or test scenario",
+    description: 'Remove a part (and every wire touching it), a single wire or a test scenario, by id: {"id": "led2"}, {"id": "w5"} or {"id": "boots"} (e.g. the starter template\'s placeholder test). Removing the firmware board also removes the firmware link (the files stay). Undoable.',
     inputSchema: { type: "object", properties: { id: { type: "string" }, why }, required: ["id"] },
     edits: true,
   },
@@ -179,7 +179,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "read_display",
     title: "See a display",
-    description: 'The screen of a display part (e.g. ssd1306-oled-i2c) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something. region [x, y, w, h] crops to exact pixels and counts region_lit (e.g. the face area). save_as "sad-face" saves that frame (or region) as a golden snapshot (snapshots/sad-face.json) that scenarios check with {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}: the way to regression-test what the screen shows.',
+    description: 'The screen of a display part (ssd1306-oled-i2c, lcd1602-i2c, or a colour TFT such as ili9341-tft, where any non-black pixel counts as lit) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something. region [x, y, w, h] crops to exact pixels and counts region_lit (e.g. the face area). save_as "sad-face" saves that frame (or region) as a golden snapshot (snapshots/sad-face.json) that scenarios check with {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}: the way to regression-test what the screen shows.',
     inputSchema: { type: "object", properties: { part: { type: "string" }, scale: { type: "number" }, region: { type: "array", items: { type: "number" }, description: "[x, y, w, h] in screen pixels; exact (scale 1)." }, save_as: { type: "string", description: 'Save this frame as a golden snapshot for expect_display matches, e.g. "sad-face".' } }, required: ["part"] },
   },
   {

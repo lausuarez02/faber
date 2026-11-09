@@ -118,8 +118,8 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
       if (typeof step.expect_display === "string") {
         const part = findPart(project, step.expect_display);
         const spec = specOf(registry, part);
-        if (!spec.bindings?.some((b) => b.key === "pixels") && !/oled|lcd|display/.test(spec.id)) {
-          fail("not-a-display", `expect_display ${part.id}`, `${part.id} is a ${spec.id}, which has no screen`, "point expect_display at a display part (ssd1306-oled-i2c, lcd1602-i2c)");
+        if (!spec.bindings?.some((b) => b.key === "pixels") && !/oled|lcd|display|tft/.test(spec.id)) {
+          fail("not-a-display", `expect_display ${part.id}`, `${part.id} is a ${spec.id}, which has no screen`, "point expect_display at a display part (ssd1306-oled-i2c, lcd1602-i2c, ili9341-tft, st7735-tft)");
         }
         if (typeof step.matches === "string" && opts.snapshot && !opts.snapshot(step.matches)) {
           fail("no-snapshot", `expect_display matches '${step.matches}'`, `there is no snapshot '${step.matches}' (snapshots/${step.matches}.json)`, `run until the screen shows it, then read_display {"part": "${part.id}", "save_as": "${step.matches}"} (optionally with "region": [x, y, w, h]) to save it`);

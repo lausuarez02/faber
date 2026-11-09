@@ -286,7 +286,28 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
       if (!report) return json(res, 404, { error: "No test report yet. Why: run_tests has not run on this server's project. Fix: ask your agent to call run_tests (or run `jumper test --visual -p <project>`), then reopen the Tests panel." });
       return json(res, 200, report);
     }
-    if (p.startsWith("/api/")) return json(res, 404, { error: `No endpoint ${p}. Endpoints: GET /api/info, GET /api/connect, GET /api/visual-report, POST /api/launch/claude-code.` });
+    if (p === "/api/project") {
+      // The followed project with its built firmware, so the browser can run a copy (`/?local`).
+      const problem = localRequestProblem(req);
+      if (problem) return json(res, 403, { error: problem });
+      const file = join(dir, "jumper.json");
+      if (!existsSync(file)) return json(res, 404, { error: `No jumper.json in ${dir}. Why: the agent has not created the project yet. Fix: wait for its first step (new_project / place_part), then reload.` });
+      let project: { firmware?: { artifact?: string; sketch?: string } };
+      try {
+        project = JSON.parse(readFileSync(file, "utf8")) as typeof project;
+      } catch (err) {
+        return json(res, 500, { error: `Could not read ${file}: ${(err as Error).message}. Fix: run \`jumper check -p ${dir}\` to see what is wrong with it.` });
+      }
+      const artifact = project.firmware?.artifact ? join(dir, project.firmware.artifact) : undefined;
+      const hex = artifact && existsSync(artifact) ? readFileSync(artifact, "utf8") : undefined;
+      return json(res, 200, {
+        project,
+        hex,
+        dir,
+        ...(hex ? {} : { warning: `No built firmware${artifact ? ` at ${artifact}` : ""}. Why: the sketch has not been built yet. Fix: ask the agent to call run (it builds first), or run \`jumper build -p ${dir}\`.` }),
+      });
+    }
+    if (p.startsWith("/api/")) return json(res, 404, { error: `No endpoint ${p}. Endpoints: GET /api/info, GET /api/connect, GET /api/project, GET /api/visual-report, POST /api/launch/claude-code.` });
     if (hub.handleRequest(req, res)) return;
     if (web === "none") {
       res.writeHead(200, { "content-type": "text/plain" });

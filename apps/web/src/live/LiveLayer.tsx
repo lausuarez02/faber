@@ -8,6 +8,7 @@ import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts
 import { worldTracker } from "./worldTracker.ts";
 import { useUi } from "../lib/ui.ts";
 import "./live.css";
+import { localCopyUrl } from "../lib/localCopy.ts";
 
 /**
  * Follow mode (?follow=ws://127.0.0.1:7782, started by `jumper serve`) and replay mode
@@ -224,6 +225,11 @@ function LiveBar() {
         <span className={`live-dot ${connected ? "on" : ""}`} />
         <span className="live-bar-title">{connected ? "Live" : "Reconnecting…"}</span>
         <span className="live-bar-dim">following {dir ? dir.split("/").slice(-2).join("/") : "agent session"} · {ops} actions</span>
+        {localCopyUrl() ? (
+          <a className="live-btn live-link" data-testid="run-local-copy" href={localCopyUrl()} target="_blank" rel="noopener" title="Open this project with its built firmware in a new tab, where Run, the buttons and the Device view work">
+            Run a copy ↗
+          </a>
+        ) : null}
       </div>
     );
   }

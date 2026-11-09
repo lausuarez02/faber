@@ -58,5 +58,32 @@ describe("AI pet session", () => {
     expect(t.frame_images).toHaveLength(1);
     expect(existsSync(t.frame_images[0])).toBe(true);
     expect(s.lastVisualReport?.scenarios[0]?.frames.length).toBeGreaterThan(0);
+    // Saved too, so the Tests panel still has it after `jumper serve` restarts.
+    const saved = JSON.parse(readFileSync(join(s.dir, ".jumper", "visual-report.json"), "utf8"));
+    expect(saved).toMatchObject({ format: "jumper-visual-report/1", passed: 1 });
+  }, 60_000);
+
+  // Agent eval (claude-ai-pet, 2026-11-09): expect_display refused the TFT ("has no screen"), so
+  // three write_scenario calls failed and the tests fell back to whole-screen brightness.
+  it("read_display and expect_display work on the colour TFT (a region and a golden frame)", async () => {
+    await call("run", { ms: 4000, reset: true });
+    const d = await call("read_display", { part: "tft", scale: 8 });
+    expect(d.width).toBe(320);
+    expect(d.lit_pixels).toBeGreaterThan(1000);
+    expect(String(d.screen)).toContain("#");
+    const saved = await call("read_display", { part: "tft", region: [0, 0, 320, 24], save_as: "tft-top" });
+    expect(saved.region_lit).toBeGreaterThan(0);
+    await call("write_scenario", {
+      id: "tft-region",
+      why: "test: expect_display on a colour screen",
+      steps: [
+        { run_ms: 4000 },
+        { expect_display: "tft", region: [0, 0, 320, 240], lit: { min: 1000 } },
+        { expect_display: "tft", matches: "tft-top", within_ms: 1000 },
+      ],
+    });
+    const t = await call("run_tests", { name: "tft-region" });
+    expect(t.results[0].reason).toBeUndefined();
+    expect(t.passed).toBe(1);
   }, 60_000);
 });

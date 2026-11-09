@@ -21,7 +21,7 @@ Project
   part <type>                             pins, wiring, example code
   place <type> [--id I] [--x X --y Y] [--rotation R] [--prop k=v]... [--why W]
   move <id> [--x X] [--y Y] [--rotation R]
-  remove <id>                             part or wire
+  remove <id>                             part, wire or test scenario
   connect <from> <to> [--color C]         e.g. jumper connect uno.D13 r1.1
   disconnect <wire> | --from P [--to P]
   set <id> <prop> <value>                 set_part_property
@@ -198,7 +198,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       return { op: "move_part", args: { id: need(p.pos[0], "the part id"), ...(o.x !== undefined ? { x: num(o.x, "x") } : {}), ...(o.y !== undefined ? { y: num(o.y, "y") } : {}), ...(o.rotation !== undefined ? { rotation: num(o.rotation, "rotation") } : {}), ...why } };
     case "remove":
     case "rm":
-      return { op: "remove", args: { id: need(p.pos[0], "the part or wire id"), ...why } };
+      return { op: "remove", args: { id: need(p.pos[0], "the part, wire or scenario id"), ...why } };
     case "connect":
       return { op: "connect", args: { from: need(p.pos[0], "the first pin (part.pin)"), to: need(p.pos[1], "the second pin (part.pin)"), ...(o.color ? { color: o.color } : {}), ...why } };
     case "disconnect":

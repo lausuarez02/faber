@@ -8,6 +8,7 @@ import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
 import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import type { JumperStore } from "./store.ts";
+import { localCopyUrl } from "./localCopy.ts";
 
 /**
  * Runs the Simulation on the main thread (M0; a worker comes later) and pushes its state
@@ -239,7 +240,15 @@ export class Engine {
   run(): void {
     const s = this.store.getState();
     if (this.external) {
-      s.toast({ kind: "info", title: "Following an agent session", detail: "The simulation runs in the session (MCP / CLI); this canvas shows its state. Open the app without ?follow / ?replay to simulate here." });
+      // Following: the sim runs in the agent's session. On a `jumper serve` page, Run opens a copy
+      // of the project with its built firmware (`/?local`) where it really runs.
+      const local = localCopyUrl();
+      if (local) window.open(local, "_blank", "noopener");
+      s.toast(
+        local
+          ? { kind: "info", title: "Opened a copy you can run", detail: `This page follows the agent: the simulation runs in its session, so Run cannot start it here. A copy with the built firmware opened in a new tab (${local}), where Run, the buttons and the Device view work. If no tab opened, allow pop-ups or use "Run a copy" in the Live bar.` }
+          : { kind: "info", title: "Following an agent session", detail: "The simulation runs in the agent's session (MCP / CLI); this canvas only shows its state, so Run does nothing here. Fix: open the app without ?follow / ?replay to simulate here." },
+      );
       return;
     }
     if (s.run === "running") return;

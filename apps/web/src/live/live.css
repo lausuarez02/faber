@@ -540,3 +540,7 @@ html[data-live-chrome="min"] .canvas-minimap {
   background: var(--bg-float);
   box-shadow: var(--shadow-float);
 }
+
+.live-link {
+  text-decoration: none;
+}

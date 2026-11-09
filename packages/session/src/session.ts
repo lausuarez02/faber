@@ -582,9 +582,15 @@ export class ProjectSession {
     const id = args.id;
     const part = this.project.parts.find((p) => p.id === id);
     const wire = this.project.wires.find((w) => w.id === id);
+    const scenario = !part && !wire ? this.project.scenarios.find((s) => s.id === id) : undefined;
+    if (scenario) {
+      const step = this.commit(ctx, `remove scenario ${id}`, { ...this.project, scenarios: this.project.scenarios.filter((s) => s.id !== id) });
+      ctx.summary = `removed test scenario ${id}`;
+      return { removed: id, kind: "scenario", step: { id: step.id, why: step.why } };
+    }
     if (!part && !wire) {
-      const ids = [...this.project.parts.map((p) => p.id), ...this.project.wires.map((w) => w.id)];
-      fail("unknown-id", `Nothing called '${id}' in the project`, `part and wire ids are: ${ids.join(", ") || "none"}`, `pass one of them.${didYouMean(id, ids)}`);
+      const ids = [...this.project.parts.map((p) => p.id), ...this.project.wires.map((w) => w.id), ...this.project.scenarios.map((s) => s.id)];
+      fail("unknown-id", `Nothing called '${id}' in the project`, `part, wire and scenario ids are: ${ids.join(", ") || "none"}`, `pass one of them.${didYouMean(id, ids)}`);
     }
     let next: Project;
     let removedWires: string[] = [];
@@ -1130,6 +1136,13 @@ export class ProjectSession {
     const passed = results.filter((r) => r.passed).length;
     ctx.summary = `${passed}/${results.length} scenarios passed`;
     this.lastVisualReport = { format: "jumper-visual-report/1", project: this.project.name, passed, failed: results.length - passed, scenarios: visuals };
+    // Kept on disk so the web Tests panel still shows it after `jumper serve` restarts.
+    try {
+      mkdirSync(this.metaDir, { recursive: true });
+      writeFileSync(join(this.metaDir, "visual-report.json"), JSON.stringify(this.lastVisualReport));
+    } catch {
+      // A read-only project folder: the report stays in memory only.
+    }
     const frameImages = args.images ? this.writeFrameImages(visuals) : [];
     return {
       passed,

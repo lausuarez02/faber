@@ -33,7 +33,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`get_part`](#get_part) | Part details | no (read-only) |
 | [`place_part`](#place_part) | Place a part | yes (undoable step) |
 | [`move_part`](#move_part) | Move or rotate a part | yes (undoable step) |
-| [`remove`](#remove) | Remove a part or wire | yes (undoable step) |
+| [`remove`](#remove) | Remove a part, wire or test scenario | yes (undoable step) |
 | [`connect`](#connect) | Wire two pins | yes (undoable step) |
 | [`disconnect`](#disconnect) | Remove wires | yes (undoable step) |
 | [`set_part_property`](#set_part_property) | Change a part property | yes (undoable step) |
@@ -126,7 +126,7 @@ Move a part to x/y (canvas px) and/or rotate it (0/90/180/270). Wires follow. On
 
 ### remove
 
-Remove a part (and every wire touching it) or a single wire, by id: {"id": "led2"} or {"id": "w5"}. Removing the firmware board also removes the firmware link (the files stay). Undoable.
+Remove a part (and every wire touching it), a single wire or a test scenario, by id: {"id": "led2"}, {"id": "w5"} or {"id": "boots"} (e.g. the starter template's placeholder test). Removing the firmware board also removes the firmware link (the files stay). Undoable.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -244,7 +244,7 @@ Voltage, logic level (high/low/undefined) and, for board pins, the firmware pin 
 
 ### read_display
 
-The screen of a display part (e.g. ssd1306-oled-i2c) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something. region [x, y, w, h] crops to exact pixels and counts region_lit (e.g. the face area). save_as "sad-face" saves that frame (or region) as a golden snapshot (snapshots/sad-face.json) that scenarios check with {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}: the way to regression-test what the screen shows.
+The screen of a display part (ssd1306-oled-i2c, lcd1602-i2c, or a colour TFT such as ili9341-tft, where any non-black pixel counts as lit) as ASCII art ("#" lit, "." dark), plus lit_pixels. scale 2 (default) shows a 128x64 OLED as 64x32 characters; scale 1 is exact, 4 is a thumbnail. Run first so the firmware has drawn something. region [x, y, w, h] crops to exact pixels and counts region_lit (e.g. the face area). save_as "sad-face" saves that frame (or region) as a golden snapshot (snapshots/sad-face.json) that scenarios check with {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}: the way to regression-test what the screen shows.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
