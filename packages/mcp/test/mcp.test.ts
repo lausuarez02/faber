@@ -59,6 +59,19 @@ describe("jumper MCP server over stdio", () => {
     expect(r.content[0]!.text).toMatch(/No part type 'ledd'.*Fix:.*Did you mean 'led'/);
   });
 
+  it("write_scenario: the regex forms agents guess first work, and a wrong key says how to fix it", async () => {
+    await client.callTool({ name: "new_project", arguments: { template: "uno", overwrite: true } });
+    const ok = (await client.callTool({ name: "write_scenario", arguments: { id: "mood", steps: [{ expect_serial: "MOOD", regex: "MOOD \\w+ -> sad", within_ms: 50000 }] } })) as ToolResult;
+    expect(ok.isError).toBeFalsy();
+    expect(String(json(ok).normalized)).toMatch(/inside expect_serial/);
+    const bad = (await client.callTool({ name: "write_scenario", arguments: { id: "mood2", steps: [{ expect_serial: "MOOD", pattern: "MOOD" }] } })) as ToolResult;
+    expect(bad.isError).toBe(true);
+    expect(bad.content[0]!.text).toMatch(/unknown field\(s\) 'pattern'.*Fix: put the pattern inside expect_serial/);
+    const { tools } = await client.listTools();
+    expect(tools.find((t) => t.name === "write_scenario")!.description).toMatch(/\{"expect_serial": \{"regex": "hunger=/);
+    await client.callTool({ name: "new_project", arguments: { template: "blank", overwrite: true } });
+  });
+
   it.skipIf(!dockerUp)(
     "places, wires, builds and runs Blink end to end",
     async () => {
