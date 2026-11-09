@@ -226,9 +226,12 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
     return sp.pins.filter((x) => x.id !== pin).map((x) => x.id);
   };
   /** Does the path from this net (away from `from`) meet a resistor before a supply, GPIO or ground? */
+  /** A resistor on this net that really is in series: its other end goes on to something. */
+  const seriesR = (net: (typeof nets)[number]) =>
+    net.pins.some((x) => isResistive(x) && x.spec.pins.some((o) => o.id !== x.ref.pin && (netOf.get(`${x.ref.part}.${o.id}`)?.pins.length ?? 0) > 1));
   const resistorAhead = (net: (typeof nets)[number] | undefined, seen: Set<string>): boolean => {
     if (!net) return false;
-    if (net.pins.some(isResistive)) return true;
+    if (seriesR(net)) return true;
     if (net.pins.some((x) => isGpio(x) || isRail(x) || x.pin.type === "ground")) return false;
     for (const x of net.pins) {
       if (!isLed(x.spec) || seen.has(x.ref.part)) continue;
@@ -244,7 +247,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
       const n = netOf.get(`${p.id}.${pin.id}`);
       if (!n) continue;
       const driver = n.pins.filter((x) => isGpio(x) || isRail(x));
-      if (!driver.length || n.pins.some(isResistive)) continue;
+      if (!driver.length || seriesR(n)) continue;
       const seen = new Set([p.id]);
       if (ledPeers(s!, pin.id).some((q) => resistorAhead(netOf.get(`${p.id}.${q}`), seen))) continue;
       add({ severity: "error", code: "led-no-resistor", message: `${p.id}.${pin.id} is wired straight to ${driver.map((d) => key(d.ref)).join(", ")} with no resistor anywhere along the LED's path: about 100 mA would flow (an LED takes 20 mA max) and burn it and the pin. Fix: insert a 220 Ω resistor between ${driver.map((d) => key(d.ref))[0]} and ${p.id}.${pin.id} (place_part resistor, then connect both ends), or on the other leg (either side works).`, parts: [p.id], pins: [`${p.id}.${pin.id}`] });

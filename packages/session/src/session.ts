@@ -47,6 +47,9 @@ import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from ".
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
 import { EXT_OPS, type ExtOpContext } from "./tools/index.ts";
+import { viewerUrlFor } from "./agent-runtime.ts";
+import { chromiumProblem } from "./recorder.ts";
+import { newProjectFolder, projectId, projectSlug, registerProject } from "./projects-registry.ts";
 import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
@@ -117,6 +120,8 @@ export interface CallMeta {
 interface OpCtx {
   seq: number;
   why: string | undefined;
+  /** Who made the call (actor / client), for ops that act on another project (new_project {folder}). */
+  meta?: CallMeta;
   summary?: string;
   target?: { part: string; pin?: string };
   project?: boolean;
@@ -307,7 +312,7 @@ export class ProjectSession {
     }
     this.sync();
     const why = typeof args.why === "string" ? args.why : undefined;
-    const ctx: OpCtx = { seq: ++this.seq, why };
+    const ctx: OpCtx = { seq: ++this.seq, why, meta };
     const t = new Date().toISOString();
     const vt = this.host ? round(this.host.timeMs) : undefined;
     const who = { actor: meta.actor ?? this.actor, sid: this.sid, ...(meta.client ? { client: meta.client } : {}) };
@@ -430,15 +435,17 @@ export class ProjectSession {
 
   // =================================================================== project
 
-  /** new_project: start a project in this folder from a template. */
-  async newProject(args: { template?: string; name?: string; overwrite?: boolean }, ctx: OpCtx): Promise<unknown> {
+  /** new_project: start a project in this folder from a template, or in a new folder ({folder}). */
+  async newProject(args: { template?: string; name?: string; overwrite?: boolean; folder?: boolean | string }, ctx: OpCtx): Promise<unknown> {
     const template = args.template ?? "blank";
     const t = TEMPLATES[template];
     if (!t) fail("unknown-template", `No template '${template}'`, `templates are: ${Object.entries(TEMPLATES).map(([k, v]) => `${k} (${v.description})`).join("; ")}`, `pass one of: ${Object.keys(TEMPLATES).join(", ")}.${didYouMean(template, Object.keys(TEMPLATES))}`);
     const missing = t.needs.filter((n) => !this.registry.get(n));
     if (missing.length) fail("template-unavailable", `Template '${template}' cannot be used`, `the catalog has no ${missing.join(", ")}`, "use template 'blank' and place parts with search_parts / place_part");
+    // Round 5 (decision 0003, C5): a new idea gets its own folder instead of overwriting this one.
+    if (args.folder !== undefined && args.folder !== false) return this.newProjectFolder({ ...args, template, folder: args.folder }, ctx);
     if (this.exists && (this.project.parts.length || this.project.wires.length) && !args.overwrite) {
-      fail("project-exists", `${this.projectFile} already has ${this.project.parts.length} parts`, "new_project would replace it", "pass overwrite: true to replace it, or point the server at another folder (--project <dir>)");
+      fail("project-exists", `${this.projectFile} already has ${this.project.parts.length} parts`, "new_project would replace it", `for a new idea pass folder: true to start it in its own project folder (new_project {"folder": true, "name": "${args.name ?? "my device"}"}); pass overwrite: true only to throw this project away`);
     }
     const name = args.name ?? (basename(this.dir) || "project");
     const next = parseProject(t.project(name));
@@ -447,7 +454,51 @@ export class ProjectSession {
     this.host = undefined;
     this.commit(ctx, `new_project ${template}`, next, files);
     ctx.summary = `new ${template} project '${name}'`;
-    return { ok: true, dir: this.dir, template, ...this.compactProject() };
+    return { ok: true, dir: this.dir, id: projectId(this.dir), template, ...this.compactProject() };
+  }
+
+  /** new_project {folder}: a fresh folder under projectsRoot, registered, then opened by the host when it can. */
+  private async newProjectFolder(args: { template: string; name?: string; folder: true | string }, ctx: OpCtx): Promise<unknown> {
+    if (typeof args.folder === "string" && projectSlug(args.folder) === "project" && !/project/i.test(args.folder)) {
+      fail("bad-arg", `new_project: folder '${args.folder}' has no usable characters`, "the folder name is made of a-z, 0-9 and dashes from what you pass", 'pass folder: true with a name, or a folder name such as "plant-waterer"');
+    }
+    const label = typeof args.folder === "string" ? args.folder : (args.name ?? args.template);
+    const dir = newProjectFolder(this.projectsRoot, label);
+    const name = args.name ?? label;
+    const child = new ProjectSession({ dir, registry: this.registry, builder: this.builder, actor: this.actor, projectsRoot: this.projectsRoot });
+    try {
+      await child.call("new_project", { template: args.template, name, ...(ctx.why ? { why: ctx.why } : {}) }, ctx.meta ?? {});
+    } finally {
+      child.dispose();
+    }
+    registerProject(dir, { name, source: "agent" });
+    const id = projectId(dir);
+    ctx.summary = `new ${args.template} project '${name}' in ${dir}`;
+    let opened = false;
+    let openError: string | undefined;
+    if (this.openProject) {
+      try {
+        await this.openProject(dir);
+        opened = true;
+      } catch (err) {
+        openError = (err as Error).message;
+      }
+    }
+    const viewer = viewerUrlFor(dir);
+    return {
+      ok: true,
+      dir,
+      id,
+      template: args.template,
+      name,
+      opened,
+      ...(opened && viewer ? { viewer_url: viewer } : {}),
+      note: opened
+        ? "This is now the open project: every next call (place_part, connect…) works on it, and the canvas shows it."
+        : openError
+          ? `Created, but the server could not switch to it: ${openError}. Fix: open it from the Projects gallery, or reconnect with --project ${dir}.`
+          : `Created and registered, but this connection stays on ${this.dir}. Fix: reconnect the MCP server with --project ${dir} (jumper mcp --project ${dir}), or open it from the Projects gallery of jumper serve.`,
+    };
   }
 
   private compactProject() {
@@ -1191,10 +1242,12 @@ export class ProjectSession {
       // A read-only project folder: the report stays in memory only.
     }
     const frameImages = args.images ? this.writeFrameImages(visuals) : [];
+    const pendingSteps = this.acceptAfterTests(results.length - passed, args.name, ctx);
     return {
       passed,
       failed: results.length - passed,
       ...(built ? { notes: [built] } : {}),
+      ...pendingSteps,
       results: results.map((r, i) => {
         const visual = visuals[i] ? compactVisual(visuals[i]) : [];
         const v = visual.length ? { visual } : {};
@@ -1204,6 +1257,29 @@ export class ProjectSession {
       }),
       ...(frameImages.length ? { frame_images: frameImages } : {}),
     };
+  }
+
+  /**
+   * Round 5 (decision 0003, C5): when every test passes (all scenarios, a clean design check), the
+   * pending steps are accepted by the tests (accepted_by: "tests"), so replays and the step list do
+   * not end with everything "pending". Otherwise the result says why they stay pending.
+   */
+  private acceptAfterTests(failed: number, only: string | undefined, ctx: OpCtx): Record<string, unknown> {
+    const pending = this.history.steps.filter((s) => s.status === "pending");
+    if (!pending.length) return {};
+    const keep = (why: string) => ({ pending_steps: { count: pending.length, accepted: false, why } });
+    if (failed) return keep(`${failed} test${failed > 1 ? "s" : ""} failed, so the ${pending.length} pending step${pending.length > 1 ? "s stay" : " stays"} pending. Fix and run_tests again; they are accepted when every test passes`);
+    if (only) return keep(`only '${only}' ran; run_tests without a name accepts the ${pending.length} pending step${pending.length > 1 ? "s" : ""} when every test passes`);
+    const errors = checkDesign(this.project, this.registry, this.firmwareSource(), this.checkOptions()).filter((i) => i.severity === "error");
+    if (errors.length) return keep(`every test passed, but check_design reports ${errors.length} error${errors.length > 1 ? "s" : ""} (${errors.map((e) => e.code).join(", ")}). Fix them and run_tests again, or accept_step if the person agrees`);
+    for (const st of pending) {
+      st.status = "accepted";
+      (st as Step & { accepted_by?: string }).accepted_by = "tests";
+    }
+    if (pending.some((st) => st.id === this.history.open)) this.history.open = undefined;
+    this.persist();
+    ctx.steps = true;
+    return { accepted_steps: { ids: pending.map((st) => st.id), by: "tests", note: "every test passed and check_design found no errors, so the pending steps are accepted (undo still works)" } };
   }
 
   /** PNGs of the screen at each scenario's first failing check (or its last check), for run_tests {images: true}. */
@@ -1251,7 +1327,7 @@ export class ProjectSession {
 
   async screenshot(args: { path?: string; scale?: number; svg?: boolean; scenario?: string; at_step?: number; view?: string; ms?: number }, ctx: OpCtx): Promise<unknown> {
     if (args.view !== undefined && args.view !== "canvas" && args.view !== "device") fail("bad-arg", `screenshot: unknown view '${args.view}'`, "views are canvas (the circuit) and device (the physical device in 3D)", 'pass { "view": "device", "ms": 4000 } or leave view out');
-    if (args.view === "device") return this.deviceScreenshot(args, ctx);
+    if (args.view === "device") return this.withViewer(await this.deviceScreenshot(args, ctx));
     let host = this.host;
     let scenarioNote: Record<string, unknown> | undefined;
     let tmpHost: SimHost | undefined;
@@ -1271,16 +1347,25 @@ export class ProjectSession {
       scenarioNote = { scenario: sc.id, at_step: at, step: JSON.stringify(sc.steps[at]), ...(r.passed ? {} : { note: `the scenario failed before step ${at}: ${r.reason}; the picture shows the moment it failed` }) };
     }
     try {
-      return { ...(await this.renderScreenshot(host, args, ctx)), ...scenarioNote };
+      return this.withViewer({ ...(await this.renderScreenshot(host, args, ctx)), ...scenarioNote });
     } finally {
       tmpHost?.dispose();
     }
+  }
+
+  /** Round 5 (C5): pictures carry the live viewer link when Jumper's server runs, so the person can open the real thing. */
+  private withViewer(r: Record<string, unknown>): Record<string, unknown> {
+    const viewer = viewerUrlFor(this.dir);
+    return viewer ? { ...r, viewer_url: viewer } : r;
   }
 
   private async deviceScreenshot(args: { path?: string; scenario?: string; ms?: number }, ctx: OpCtx): Promise<Record<string, unknown>> {
     if (args.scenario) fail("bad-arg", "screenshot: view device does not take scenario", "the device view renders a fresh simulation at a virtual time", 'pass { "view": "device", "ms": 4000 }, or use the canvas view for a scenario step');
     const ms = Math.round(Number(args.ms ?? (this.host && this.host.timeMs > 0 ? this.host.timeMs : 3000)));
     if (!Number.isFinite(ms) || ms < 0 || ms > 120_000) fail("bad-arg", `screenshot: ms ${args.ms} is out of range`, "the device view simulates from 0 to ms in a browser (max 120000)", 'pass e.g. { "view": "device", "ms": 4000 }');
+    // Fail in well under 5 s when Chromium is missing, instead of a 60 s page timeout (persona report, b5).
+    const problem = chromiumProblem();
+    if (problem) fail("device-render-failed", "screenshot: the device view needs a browser that is not installed", problem, "use the canvas view (leave view out) meanwhile; it works without a browser");
     await this.ensureBuilt(ctx);
     const out = resolve(this.dir, args.path ?? "device.png");
     mkdirSync(dirname(out), { recursive: true });
@@ -1336,10 +1421,15 @@ export class ProjectSession {
       files.push("firmware.hex");
     }
     const fid = fidelityReport(this.project, this.registry);
-    writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
+    // Round 5 (C2/C4): stand-ins and agent-made parts are what the simulation trusted least.
+    const flagged = this.project.parts.filter((p) => p.standIn || this.registry.get(p.type)?.fidelity.origin === "agent-made");
+    const flaggedText = flagged.length
+      ? `\n## Stand-ins and agent-made parts (check these first)\n\n${flagged.map((p) => `- [ ] ${p.id}: ${p.standIn ? `the real ${p.standIn} (simulated only as a ${this.registry.get(p.type)?.spec.name ?? p.type})` : `${this.registry.get(p.type)?.spec.name ?? p.type} (agent-made: behavioral, unverified)`}: wire it from its datasheet and re-run the tests' checks by hand`).join("\n")}\n`
+      : "";
+    writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n${flaggedText}\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
     files.push("TEST-ON-HARDWARE.md");
     ctx.summary = `exported to ${out}`;
-    return { dir: out, files, bom, ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: hex ? `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` : undefined };
+    return { dir: out, files, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: hex ? `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` : undefined };
   }
 
   // =================================================================== steps

@@ -63,7 +63,7 @@ function playwright(): { chromium: { launch(o?: object): Promise<Browser> } } {
   throw new Error("Device render needs Playwright, which was not found. Install the web app's dev dependencies (pnpm install at the repo root), then run `pnpm --filter @jumper/web exec playwright install chromium`.");
 }
 
-async function startVite(): Promise<{ url: string; close(): Promise<void> }> {
+export async function startVite(): Promise<{ url: string; close(): Promise<void> }> {
   const req = createRequire(join(WEB_DIR, "package.json"));
   let vite: { createServer(o: object): Promise<{ listen(): Promise<unknown>; resolvedUrls?: { local: string[] } | null; close(): Promise<void> }> };
   try {

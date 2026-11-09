@@ -66,12 +66,20 @@ function projectOfLog(log: string): string {
 }
 
 /** --actor mcp / --client claude / --session <sid> as a query string for the hub's /replay. */
-function logFilter(log: string, opts: Opts): string {
+function logFilter(log: string, opts: Opts, agentByDefault = false): string {
   const q = new URLSearchParams();
-  if (opts.actor) q.set("actor", String(opts.actor));
+  if (opts.actor && opts.actor !== "all") q.set("actor", String(opts.actor));
+  if (!opts.actor && agentByDefault) {
+    // jumper record: the agent's build only, unless asked (persona report: CLI checks leaked into videos).
+    const counts = actorCounts(readFileSync(log, "utf8"));
+    if (counts.mcp && Object.keys(counts).length > 1) {
+      q.set("actor", "mcp");
+      process.stderr.write(`Recording only the agent's calls (actor mcp: ${counts.mcp} of ${Object.values(counts).reduce((a, b) => a + b, 0)} lines); pass --actor all for everything.\n`);
+    }
+  }
   if (opts.client) q.set("client", String(opts.client));
   if (opts.session) q.set("sid", String(opts.session));
-  if (!q.size) {
+  if (!q.size && opts.actor !== "all") {
     // A log with an agent's lines and a person's CLI checks mixed: say how to keep only the agent.
     const counts = actorCounts(readFileSync(log, "utf8"));
     if (Object.keys(counts).length > 1) {
@@ -81,9 +89,9 @@ function logFilter(log: string, opts: Opts): string {
   return q.size ? `&${q}` : "";
 }
 
-async function startReplay(log: string, opts: Opts): Promise<{ hub: LiveHub; web: ViteHandle; url: string }> {
+async function startReplay(log: string, opts: Opts, agentByDefault = false): Promise<{ hub: LiveHub; web: ViteHandle; url: string }> {
   if (!existsSync(log)) throw new Error(`No action log at ${log}. Fix: pass a project's .jumper/actions.jsonl (every MCP/CLI session writes one).`);
-  const filter = logFilter(log, opts);
+  const filter = logFilter(log, opts, agentByDefault);
   const hub = await startLiveHub({ dir: projectOfLog(log), port: Number(opts["live-port"] ?? 0), replayFiles: [log] });
   const web = await startWeb(Number(opts.port ?? 5173));
   const speed = Number(opts.speed ?? 1) || 1;
@@ -162,7 +170,7 @@ async function record(log: string, out: string, opts: Opts): Promise<number> {
   };
   if (!pw) throw new Error("Recording needs Playwright with Chromium. Fix: pnpm --filter @jumper/web exec playwright install chromium");
   const [w, h] = String(opts.size ?? "1600x900").split("x").map(Number) as [number, number];
-  const { hub, web, url } = await startReplay(log, { chrome: "min", ...opts });
+  const { hub, web, url } = await startReplay(log, { chrome: "min", ...opts }, true);
   const videoDir = mkdtempSync(join(tmpdir(), "jumper-video-"));
   const browser = await pw.chromium.launch();
   try {

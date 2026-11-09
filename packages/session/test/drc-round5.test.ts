@@ -13,15 +13,20 @@ function project(parts: [string, string, Record<string, unknown>?][], wires: W[]
     name: "t",
     parts: parts.map(([id, type, o], i) => ({ id, type, x: (o?.x as number) ?? i * 120, y: (o?.y as number) ?? 0, ...(o?.props ? { props: o.props } : {}) })),
     wires: wires.map(([a, b], i) => {
-      const [ap, an] = a.split(".");
-      const [bp, bn] = b.split(".");
+      const cut = (r: string) => [r.slice(0, r.indexOf(".")), r.slice(r.indexOf(".") + 1)];
+      const [ap, an] = cut(a);
+      const [bp, bn] = cut(b);
       return { id: `w${i + 1}`, from: { part: ap!, pin: an! }, to: { part: bp!, pin: bn! } };
     }),
     scenarios: [],
     ...extra,
   } as ProjectInput);
 }
-const codes = (p: ReturnType<typeof project>, reg = registry) => checkDesign(p, reg).map((i) => `${i.severity}:${i.code}`);
+const codes = (p: ReturnType<typeof project>, reg = registry) => {
+  const all = checkDesign(p, reg).map((i) => `${i.severity}:${i.code}`);
+  expect(all).not.toContain("error:bad-pin");
+  return all;
+};
 const msgs = (p: ReturnType<typeof project>, code: string, reg = registry) => checkDesign(p, reg).filter((i) => i.code === code).map((i) => i.message);
 
 // A 3.3 V board (the rp2040 track ships the real ones): an Arduino Nano's drawing with RP2040 numbers.
@@ -51,6 +56,10 @@ describe("led-no-resistor along the whole path", () => {
     expect(codes(ok)).not.toContain("error:led-no-resistor");
     const bad = project([["uno", "arduino-uno"], ["l1", "led"]], [["uno.D13", "l1.A"], ["l1.C", "uno.GND.1"]]);
     expect(msgs(bad, "led-no-resistor").join()).toMatch(/l1\.A is wired straight to uno\.D13.*insert a 220 Ω resistor.*either side works/);
+  });
+  it("a resistor hanging off the LED's net with its other end free does not count", () => {
+    const p = project([["uno", "arduino-uno"], ["l1", "led"], ["r1", "resistor"]], [["uno.D13", "l1.A"], ["uno.D13", "r1.1"], ["l1.C", "uno.GND.1"]]);
+    expect(codes(p)).toContain("error:led-no-resistor");
   });
   it("an RGB LED: a resistor on the common leg covers the colours", () => {
     const p = project([["uno", "arduino-uno"], ["rgb", "rgb-led"], ["r1", "resistor"]], [["uno.D9", "rgb.R"], ["uno.D10", "rgb.G"], ["rgb.COM", "r1.1"], ["r1.2", "uno.GND.1"]]);
