@@ -36,3 +36,12 @@ export {
 } from "./project.ts";
 export type { ProjectIssue, ParseResult, Net, BuildNetsOptions } from "./project.ts";
 export { projectJsonSchema, JSON_SCHEMA_ID } from "./jsonSchema.ts";
+export {
+  ScenarioStepSchema,
+  CompareOpSchema,
+  COMPARE_OPS,
+  STEP_KINDS,
+  STEP_EXAMPLES,
+  parseScenarioStep,
+} from "./scenario.ts";
+export type { ScenarioStep, CompareOp, StepKind, StepIssue } from "./scenario.ts";

@@ -203,6 +203,14 @@
             "tool",
             "fqbn"
           ]
+        },
+        "libraries": {
+          "description": "Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Jumper's pinned version.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "required": [
@@ -218,10 +226,335 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+            "description": "Unique scenario id, e.g. 'blinks'."
           },
           "name": {
             "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "steps": {
+            "default": [],
+            "description": "Steps run in order. See ScenarioStep.",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "run_ms": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Advance virtual time by this many ms."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_ms"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "wait_ms": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Same as run_ms: advance virtual time."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "wait_ms"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "press": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                      "description": "Part to press (button, switch)."
+                    },
+                    "hold_ms": {
+                      "description": "If set: hold this long, then release.",
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "press"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "release": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "release"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "set": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.field': a prop or sensor field, e.g. 'pot1.position', 'sonar1.distance'."
+                    },
+                    "value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "serial_write": {
+                      "type": "string",
+                      "description": "Text sent to the board's serial RX."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "serial_write"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "inject_fault": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "description": "disconnect | noisy | i2c_nack | i2c_nack_data | i2c_garbage | clear"
+                    },
+                    "field": {
+                      "description": "noisy: which numeric field jitters (default: the first).",
+                      "type": "string"
+                    },
+                    "amplitude": {
+                      "description": "noisy: jitter amplitude in the field's unit (default ±5% of its range).",
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "inject_fault",
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_serial": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "Substring the serial output must contain."
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "contains": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "contains"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "regex": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "regex"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: the text must NOT appear (within within_ms, or now).",
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_serial"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_pin": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.pin', e.g. 'uno.D13'."
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "high",
+                        "low"
+                      ]
+                    },
+                    "voltage": {
+                      "description": "Volts range, inclusive.",
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_pin"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_part": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.field' where field is a key of the part's state (see get_part 'state'), or 'world.field' for the robot / arm physics (collisions, min_clearance_cm, travelled_cm, x, y, heading, sonar_cm, gripper_x, gripper_y, reached)."
+                    },
+                    "op": {
+                      "default": "==",
+                      "type": "string",
+                      "enum": [
+                        "==",
+                        "!=",
+                        ">",
+                        ">=",
+                        "<",
+                        "<=",
+                        "contains",
+                        "matches"
+                      ]
+                    },
+                    "value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_part",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_no_errors": {
+                      "type": "boolean",
+                      "const": true,
+                      "description": "Fail if any part reports an error diagnostic (overcurrent…)."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_no_errors"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "timeout_ms": {
+            "description": "Abort when virtual time passes this (default 60000).",
+            "type": "number",
+            "minimum": 0
           }
         },
         "required": [
@@ -229,6 +562,14 @@
         ],
         "additionalProperties": {}
       }
+    },
+    "world": {
+      "description": "Physical world for robots (arena, obstacles, robot / arm binding). Validated by @jumper/physics parseWorld; kept as-is here.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     }
   },
   "required": [

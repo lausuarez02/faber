@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ScenarioSchema } from "./scenario.ts";
 
 /** The only format version this package reads and writes. */
 export const FORMAT_VERSION = "jumper/1" as const;
@@ -50,15 +51,13 @@ export const FirmwareSchema = z.object({
   sketch: z.string().optional().describe("Main source file inside dir, e.g. 'blink.ino'."),
   artifact: z.string().min(1).describe("Built binary (.hex or .bin), relative to jumper.json."),
   build: FirmwareBuildSchema.optional(),
+  libraries: z
+    .array(z.string().min(1))
+    .optional()
+    .describe("Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Jumper's pinned version."),
 });
 
-/** Placeholder for M1 scenario tests. Shape is open on purpose until M1 defines it. */
-export const ScenarioSchema = z
-  .object({
-    id: Id,
-    name: z.string().optional(),
-  })
-  .catchall(z.unknown());
+export { ScenarioSchema };
 
 export const ProjectSchema = z
   .object({
@@ -69,6 +68,10 @@ export const ProjectSchema = z
     wires: z.array(WireSchema).default([]),
     firmware: FirmwareSchema.optional(),
     scenarios: z.array(ScenarioSchema).default([]),
+    world: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe("Physical world for robots (arena, obstacles, robot / arm binding). Validated by @jumper/physics parseWorld; kept as-is here."),
   })
   .superRefine((project, ctx) => {
     const partIds = new Set<string>();

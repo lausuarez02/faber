@@ -141,7 +141,7 @@ export function serializeProject(project: Project): string {
           ...project.firmware,
           build: project.firmware.build ? ordered(project.firmware.build, ["tool", "fqbn"]) : undefined,
         },
-        ["board", "dir", "sketch", "artifact", "build"],
+        ["board", "dir", "sketch", "artifact", "build", "libraries"],
       )
     : undefined;
 
@@ -157,6 +157,9 @@ export function serializeProject(project: Project): string {
     fields.push(`  "firmware": ${fw}`);
   }
   fields.push(`  "scenarios": ${arrayOfLines(project.scenarios.map(deepSorted), "  ")}`);
+  if (project.world !== undefined) {
+    fields.push(`  "world": ${JSON.stringify(project.world as Json, null, 2).replace(/\n/g, "\n  ")}`);
+  }
   lines.push(fields.join(",\n"));
   lines.push("}");
   return lines.join("\n") + "\n";
