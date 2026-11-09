@@ -113,7 +113,7 @@ export function generateVisual(part: CustomPart, layout: Layout, screen?: Screen
   let y = HEADER + 14;
   if (layout.glass && screen) {
     const g = layout.glass;
-    lines.push(`  <text x="${w / 2}" y="${HEADER + 13}" text-anchor="middle" ${FONT} font-size="8" fill="#C9CED6">${esc(wrap(part.name, Math.floor(w / 5.2), 1)[0] ?? id)}</text>`);
+    lines.push(`  <text x="${w / 2}" y="${HEADER + 13}" text-anchor="middle" ${FONT} font-size="8" fill="#C9CED6">${esc(wrap(part.name, Math.floor((w - 2 * PAD) / 4.9), 1)[0] ?? id)}</text>`);
     lines.push(`  <rect x="${g.x - 4}" y="${g.y - 4}" width="${g.w + 8}" height="${g.h + 8}" rx="${screen.round ? (g.w + 8) / 2 : 3}" fill="#0B0F12" stroke="#3A4250"/>`);
     lines.push(`  <rect data-screen="${screen.kind}" x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" fill="#05070A" data-bind="opacity:screenOpacity"/>`);
     if (screen.round) {
@@ -127,7 +127,7 @@ export function generateVisual(part: CustomPart, layout: Layout, screen?: Screen
     }
     y = g.y + g.h + 18;
   } else {
-    const name = wrap(part.name, Math.floor((w - 2 * PAD) / 5.4), 2);
+    const name = wrap(part.name, Math.floor((w - 2 * PAD) / 5.5), 2);
     name.forEach((l, i) => lines.push(`  <text x="${w / 2}" y="${y + i * 11}" text-anchor="middle" ${FONT} font-size="9" fill="#E9EDF2">${esc(l)}</text>`));
     y += name.length * 11 + 8;
     const ind = indicator(part, w, y);

@@ -159,6 +159,11 @@ describe("compileCustomPart", () => {
     const sim = bench([c.def], [{ id: "tft", type: "st7789-240" }], [["tft.VCC", "uno.5V"], ["tft.GND", "uno.GND.1"]]);
     sim.solve();
     expect(sim.framebuffer("tft")).toMatchObject({ width: 240, height: 240 });
+    const ips = compileCustomPart({ id: "st7789-ips", name: "ST7789 IPS", category: "display", description: "IPS.", behavior: { kind: "display", controller: "st7735", resolution: { w: 240, h: 240 }, ram: { w: 240, h: 320 }, offset: { x: 0, y: 80 }, ips: true } });
+    const sim2 = bench([ips.def], [{ id: "tft", type: "st7789-ips" }], [["tft.VCC", "uno.5V"], ["tft.GND", "uno.GND.1"]]);
+    sim2.solve();
+    expect(sim2.framebuffer("tft")).toMatchObject({ width: 240, height: 240, inverted: true });
+    expect(() => compileCustomPart({ id: "x-tft", name: "x", category: "display", description: "x", behavior: { kind: "display", controller: "st7735", resolution: { w: 240, h: 240 }, ram: { w: 240, h: 300 }, offset: { x: 0, y: 80 } } })).toThrow(/does not fit in the 240x300 RAM/);
     const oled = compileCustomPart({ id: "oled-yellow", name: "OLED 0.96 in", category: "display", description: "SSD1306 module.", behavior: { kind: "display", controller: "ssd1306" } });
     expect(oled.def.spec.bus?.i2c?.addresses).toEqual([60, 61]);
     expect(oled.svg).toContain('data-screen="128x64"');

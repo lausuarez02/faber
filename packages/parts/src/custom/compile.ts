@@ -1,7 +1,7 @@
 // compileCustomPart: an agent-made part.json (+ optional SVG) → an ordinary PartDefinition that
 // place_part / connect / run / tests / the web canvas use like a built-in. Validation errors say
 // what is wrong, why it matters and how to fix it. No fs here: Node and the browser share it.
-import type { BindingSpec, Fidelity, PartDefinition, PartModelFactory, PartRegistry, PartSpec, PinSpec, PropSpec } from "@jumper/sim-core";
+import type { BindingSpec, ColorFrame, Fidelity, PartDefinition, PartModelFactory, PartRegistry, PartSpec, PinSpec, PropSpec } from "@jumper/sim-core";
 import { PartSpecSchema } from "@jumper/sim-core";
 import { createTftModule, ILI9341_PANEL } from "../parts/ili9341-tft/model.ts";
 import { ST7735_PANEL } from "../parts/st7735-tft/model.ts";
@@ -207,6 +207,16 @@ export function compileCustomPart(input: unknown, svgInput?: string | null, opts
         const bp = basePins.find((x) => x.id === p.id);
         return bp ? { ...p, type: bp.type, ...(bp.protocols ? { protocols: bp.protocols } : {}) } : p;
       });
+    }
+    if (b.ips && b.controller === "ssd1306") problems.push("behavior.ips only applies to colour TFT controllers (st7735, ili9341, gc9a01)");
+    if (b.ram && !b.resolution) problems.push("behavior.ram needs behavior.resolution (the glass size inside the RAM)");
+    if (b.ram && b.resolution) {
+      const ox = b.offset?.x ?? 0;
+      const oy = b.offset?.y ?? 0;
+      const landscape = b.controller === "ili9341";
+      const [rw, rh] = landscape ? [b.ram.h, b.ram.w] : [b.ram.w, b.ram.h];
+      const [gw, gh] = landscape ? [b.resolution.h, b.resolution.w] : [b.resolution.w, b.resolution.h];
+      if (ox + gw > rw || oy + gh > rh) problems.push(`behavior.offset: a ${gw}x${gh} glass at (${ox}, ${oy}) does not fit in the ${rw}x${rh} RAM frame`);
     }
     if (b.resolution && b.controller !== "st7735" && b.controller !== "ili9341") problems.push(`behavior.resolution only works with st7735 / ili9341 panels; the ${b.controller} model has a fixed size`);
     let kind = screenOfSvg(base.svg) ?? "128x64";
@@ -425,10 +435,49 @@ export function compileCustomPart(input: unknown, svgInput?: string | null, opts
     case "display": {
       const res = b.resolution;
       if (res && (b.controller === "st7735" || b.controller === "ili9341")) {
-        const panel = { ...(b.controller === "ili9341" ? ILI9341_PANEL : ST7735_PANEL), nativeW: res.w, nativeH: res.h };
+        const ram = b.ram ?? res;
+        const panel = { ...(b.controller === "ili9341" ? ILI9341_PANEL : ST7735_PANEL), nativeW: ram.w, nativeH: ram.h };
         const chip = b.controller.toUpperCase();
         create = (ctx) => createTftModule(ctx, { panel, chip });
+        if (b.ram) {
+          // The glass shows a window of the controller's RAM: crop the viewer frame to it.
+          const [gw, gh] = screen!.kind.split("x").map(Number) as [number, number];
+          const ox = b.offset?.x ?? 0;
+          const oy = b.offset?.y ?? 0;
+          const inner = create;
+          create = (ctx) => {
+            const m = inner(ctx);
+            const fb = m.framebuffer!.bind(m);
+            let cache: ColorFrame | undefined;
+            m.framebuffer = () => {
+              const f = fb();
+              if (cache && cache.version === f.version && cache.on === f.on && cache.inverted === f.inverted) return cache;
+              const data = new Uint16Array(gw * gh);
+              for (let y = 0; y < gh; y++) {
+                const row = (y + oy) * f.width + ox;
+                if (y + oy < f.height) data.set(f.data.subarray(row, row + Math.min(gw, f.width - ox)), y * gw);
+              }
+              cache = { width: gw, height: gh, data, version: f.version, on: f.on, inverted: f.inverted };
+              return cache;
+            };
+            return m;
+          };
+        }
       } else create = base!.create;
+      if (b.ips && b.controller !== "ssd1306") {
+        // IPS glass is normally black: the library's INVON gives normal colours, so the frame the
+        // glass shows is the controller's with the inversion flag flipped.
+        const inner = create;
+        create = (ctx) => {
+          const m = inner(ctx);
+          const fb = m.framebuffer?.bind(m);
+          if (fb) m.framebuffer = () => {
+            const f = fb();
+            return { ...f, inverted: !f.inverted };
+          };
+          return m;
+        };
+      }
       break;
     }
   }
@@ -509,8 +558,10 @@ export function fidelityFor(part: CustomPart, base?: PartDefinition): Fidelity {
       break;
     case "display":
       emulates.push(`The ${b.controller.toUpperCase()} controller model of '${base?.spec.id}'${b.resolution ? ` at ${b.resolution.w}x${b.resolution.h}` : ""}`);
-      if (b.resolution) doesNot.push("RAM offsets some libraries use for small panels (e.g. ST7789 240x240 rotations 2-3) are not modelled");
+      if (b.resolution && !b.ram) doesNot.push("Panels whose glass is smaller than the controller RAM (ST7789 240x240: give ram and offset) draw shifted without ram / offset");
+      if (b.ram) doesNot.push(`The glass is a fixed window of the RAM at (${b.offset?.x ?? 0}, ${b.offset?.y ?? 0}); libraries that move the window with rotation (rotations 2-3 on some panels) show a shifted picture`);
       if (b.round) doesNot.push("Pixels outside the round glass are kept in the frame (only the drawing hides them)");
+      if (b.ips) doesNot.push("IPS: colours are the controller's with inversion flipped; the lit / bright counts in the part state still count the controller's view");
       break;
   }
   return {

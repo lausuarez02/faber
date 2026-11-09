@@ -272,7 +272,8 @@
             "kind",
             "output"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "A module whose output pin goes HIGH/LOW when it detects something (PIR, IR obstacle, tilt, reed, hall switch). {kind, output: pin id, field: state name (default \"active\"), active_level: \"high\"|\"low\", drive: \"push-pull\"|\"open-drain\"}. set_sensor_value <part>.<field> true/false (or press / release) triggers it."
         },
         {
           "type": "object",
@@ -394,7 +395,8 @@
             "quantity",
             "curve"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "A sensor with an analog output (soil moisture, gas, flex, force, sound level). {kind, output: pin id, quantity: {id, unit, min, max, default}, curve: [{value, volts}...] (volts at 5 V supply when ratiometric, the default), output_ohms, digital?: {output, threshold, when: \"above\"|\"below\", active_level}}. set_sensor_value <part>.<quantity.id> <number>."
         },
         {
           "type": "object",
@@ -509,7 +511,8 @@
             "kind",
             "drive"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "Something the board drives. drive \"load\": a pump / motor / solenoid / heater between plus and minus pins with rated_v and rated_ma (drive it through a transistor, MOSFET module, relay or driver). drive \"logic\": a module with VCC/GND and a control input (relay board, MOSFET module) with active_level, optional relay contacts {com, no, nc}. Optional effect {id, unit, at_full} and force_n for tests."
         },
         {
           "type": "object",
@@ -670,7 +673,8 @@
             "address",
             "registers"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "An I2C chip read with Wire: {kind, address (7-bit, or a list), registers: [{reg, bytes, endian, value | field: {id, unit, min, max, default, scale, offset, signed}, name, writable}], who_am_i: {reg, value}, auto_increment, pullup_ohms}. Needs pins with protocols [\"i2c-sda\"] and [\"i2c-scl\"] and a power pin."
         },
         {
           "type": "object",
@@ -825,7 +829,8 @@
             "tx",
             "responses"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "A serial module on SoftwareSerial pins (8N1): {kind, rx, tx, baud, newline, responses: [{match, mode: \"exact\"|\"prefix\"|\"contains\", reply, delay_ms}], unknown_reply, greeting, stream: {every_ms, text}, echo, fields: [{id, min, max, default, decimals}] used as {id} in replies}."
         },
         {
           "type": "object",
@@ -863,7 +868,51 @@
               ],
               "additionalProperties": false
             },
+            "ram": {
+              "type": "object",
+              "properties": {
+                "w": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 480
+                },
+                "h": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 480
+                }
+              },
+              "required": [
+                "w",
+                "h"
+              ],
+              "additionalProperties": false
+            },
+            "offset": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 480
+                },
+                "y": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 480
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
             "round": {
+              "default": false,
+              "type": "boolean"
+            },
+            "ips": {
               "default": false,
               "type": "boolean"
             }
@@ -872,9 +921,11 @@
             "kind",
             "controller"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "A screen that reuses a built-in controller model (same commands, same Arduino libraries): {kind, controller: \"ssd1306\"|\"st7735\"|\"ili9341\"|\"gc9a01\", resolution?: {w, h} (st7735 / ili9341 only), round, ips (true for ST7789 / IPS panels)}. Leave \"pins\" out to get the controller module's pins."
         }
-      ]
+      ],
+      "description": "How the part behaves: one template, chosen by kind."
     },
     "usage": {
       "type": "object",

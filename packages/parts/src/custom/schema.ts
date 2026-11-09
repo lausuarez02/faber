@@ -77,7 +77,8 @@ export const DigitalInputBehavior = z
     drive: z.enum(["push-pull", "open-drain"]).default("push-pull"),
     default_active: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .describe('A module whose output pin goes HIGH/LOW when it detects something (PIR, IR obstacle, tilt, reed, hall switch). {kind, output: pin id, field: state name (default "active"), active_level: "high"|"low", drive: "push-pull"|"open-drain"}. set_sensor_value <part>.<field> true/false (or press / release) triggers it.');
 
 export const AnalogSensorBehavior = z
   .object({
@@ -108,7 +109,8 @@ export const AnalogSensorBehavior = z
       .strict()
       .optional(),
   })
-  .strict();
+  .strict()
+  .describe('A sensor with an analog output (soil moisture, gas, flex, force, sound level). {kind, output: pin id, quantity: {id, unit, min, max, default}, curve: [{value, volts}...] (volts at 5 V supply when ratiometric, the default), output_ohms, digital?: {output, threshold, when: "above"|"below", active_level}}. set_sensor_value <part>.<quantity.id> <number>.');
 
 export const ActuatorBehavior = z
   .object({
@@ -138,7 +140,8 @@ export const ActuatorBehavior = z
     /** Force / thrust at full drive in newtons, reported as state `force_n`. Not applied to the robot world's physics. */
     force_n: z.number().nonnegative().max(1000).optional(),
   })
-  .strict();
+  .strict()
+  .describe('Something the board drives. drive "load": a pump / motor / solenoid / heater between plus and minus pins with rated_v and rated_ma (drive it through a transistor, MOSFET module, relay or driver). drive "logic": a module with VCC/GND and a control input (relay board, MOSFET module) with active_level, optional relay contacts {com, no, nc}. Optional effect {id, unit, at_full} and force_n for tests.');
 
 export const I2cRegisterSchema = z
   .object({
@@ -178,7 +181,8 @@ export const I2cDeviceBehavior = z
     /** Unmapped registers read as this byte (default 0x00). */
     default_byte: z.number().int().min(0).max(255).default(0),
   })
-  .strict();
+  .strict()
+  .describe('An I2C chip read with Wire: {kind, address (7-bit, or a list), registers: [{reg, bytes, endian, value | field: {id, unit, min, max, default, scale, offset, signed}, name, writable}], who_am_i: {reg, value}, auto_increment, pullup_ohms}. Needs pins with protocols ["i2c-sda"] and ["i2c-scl"] and a power pin.');
 
 export const UartDeviceBehavior = z
   .object({
@@ -217,7 +221,8 @@ export const UartDeviceBehavior = z
     /** Numbers a reply can include as {id}: settable with set_sensor_value. */
     fields: z.array(NumberField.extend({ decimals: z.number().int().min(0).max(8).default(2) }).strict()).max(16).optional(),
   })
-  .strict();
+  .strict()
+  .describe('A serial module on SoftwareSerial pins (8N1): {kind, rx, tx, baud, newline, responses: [{match, mode: "exact"|"prefix"|"contains", reply, delay_ms}], unknown_reply, greeting, stream: {every_ms, text}, echo, fields: [{id, min, max, default, decimals}] used as {id} in replies}.');
 
 export const DisplayBehavior = z
   .object({
@@ -226,10 +231,20 @@ export const DisplayBehavior = z
     controller: z.enum(DISPLAY_CONTROLLERS),
     /** Native panel size in pixels (portrait, as the datasheet gives it) for st7735 / ili9341 panels, e.g. ST7789 240x240 → {w: 240, h: 240}. */
     resolution: z.object({ w: z.number().int().min(8).max(480), h: z.number().int().min(8).max(480) }).strict().optional(),
+    /**
+     * Controller RAM size (native, portrait) when it is bigger than the glass, with `offset` = where
+     * the glass starts inside it (viewer orientation). ST7789 240x240 with Adafruit_ST7789:
+     * resolution {w: 240, h: 240}, ram {w: 240, h: 320}, offset {x: 0, y: 80}.
+     */
+    ram: z.object({ w: z.number().int().min(8).max(480), h: z.number().int().min(8).max(480) }).strict().optional(),
+    offset: z.object({ x: z.number().int().min(0).max(480), y: z.number().int().min(0).max(480) }).strict().optional(),
     /** Round glass (drawn with a round bezel). */
     round: z.boolean().default(false),
+    /** IPS glass (ST7789 and most round panels): its library turns inversion on to get normal colours. Default false. */
+    ips: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .describe('A screen that reuses a built-in controller model (same commands, same Arduino libraries): {kind, controller: "ssd1306"|"st7735"|"ili9341"|"gc9a01", resolution?: {w, h} (st7735 / ili9341 only), round, ips (true for ST7789 / IPS panels)}. Leave "pins" out to get the controller module\'s pins.');
 
 export const BehaviorSchema = z.discriminatedUnion("kind", [DigitalInputBehavior, AnalogSensorBehavior, ActuatorBehavior, I2cDeviceBehavior, UartDeviceBehavior, DisplayBehavior]);
 export type Behavior = z.infer<typeof BehaviorSchema>;
@@ -250,7 +265,7 @@ export const CustomPartSchema = z
     /** Extra props besides the ones the behaviour adds. */
     props: z.array(PropSpecSchema).max(16).optional(),
     power: PowerSchema.optional(),
-    behavior: BehaviorSchema,
+    behavior: BehaviorSchema.describe("How the part behaves: one template, chosen by kind."),
     /** Shown by get_part. */
     usage: z
       .object({
