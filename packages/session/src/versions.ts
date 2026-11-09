@@ -1,7 +1,7 @@
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Project } from "@jumper/project-format";
-import { projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
+import { applyToProject, projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
 import type { ActionEntry } from "./session.ts";
 import type { VisualState } from "@jumper/sim-core";
 
@@ -35,6 +35,8 @@ export interface VersionSummary {
   changes: VersionChanges;
   /** sha256 of the hex built while this version was current (the last build before the next version). */
   firmwareHash?: string;
+  /** A build happened by this version, though its hash was not recorded (logs from before round 5). */
+  firmwareBuilt?: boolean;
   /** A run / test frame exists for this version (the device as it was). */
   hasFrame: boolean;
 }
@@ -201,6 +203,21 @@ function fileEffects(e: ActionEntry, stepOfSeq: Map<number, Step>, steps: Step[]
   return out;
 }
 
+/**
+ * The project before version 1, when the folder had one before its log started (an example copied
+ * into a project, a jumper.json written by hand): the first step's "before" values applied back.
+ * Undefined for a project the log starts from scratch (new_project), so everything shows as added.
+ */
+function firstBaseline(dir: string, log: ParsedLog): Project | undefined {
+  const first = log.entries[log.versionIdx[0] ?? -1];
+  if (!first?.project || first.op === "new_project") return undefined;
+  const step = readHistory(dir)?.steps.find((s) => s.ops[0] === first.seq);
+  if (!step) return undefined;
+  const before = Object.fromEntries(Object.entries(step.before).filter(([k]) => !k.startsWith("file:")));
+  // The step may hold later ops too; their keys' "before" is still the value before the first op.
+  return applyToProject(first.project, before);
+}
+
 /** Index range [from, to) of log entries that belong to version n (its line up to the next version line). */
 function span(log: ParsedLog, n: number): [number, number] {
   const from = log.versionIdx[n - 1]!;
@@ -208,11 +225,12 @@ function span(log: ParsedLog, n: number): [number, number] {
   return [from, to];
 }
 
-function firmwareHashFor(log: ParsedLog, n: number): string | undefined {
+/** The last build at or before version n's span ends: its hash (logs before round 5 have none). */
+function firmwareFor(log: ParsedLog, n: number): { hash?: string } | undefined {
   const [, to] = span(log, n);
   for (let i = to - 1; i >= 0; i--) {
-    const h = log.entries[i]!.firmware?.hash;
-    if (h) return h;
+    const fw = log.entries[i]!.firmware;
+    if (fw) return fw.hash ? { hash: fw.hash } : {};
   }
   return undefined;
 }
@@ -242,7 +260,7 @@ export function versionCount(dir: string): number {
 export function listVersions(dir: string): VersionSummary[] {
   const log = readLog(dir);
   const out: VersionSummary[] = [];
-  let prev: Project | undefined;
+  let prev: Project | undefined = firstBaseline(dir, log);
   log.versionIdx.forEach((idx, k) => {
     const n = k + 1;
     const e = log.entries[idx]!;
@@ -254,7 +272,7 @@ export function listVersions(dir: string): VersionSummary[] {
     const [from, to] = span(log, n);
     let hasFrame = false;
     for (let i = from; i < to && !hasFrame; i++) hasFrame = !!log.entries[i]!.frames?.length;
-    const fw = firmwareHashFor(log, n);
+    const fw = firmwareFor(log, n);
     out.push({
       version: n,
       seq: e.seq,
@@ -266,7 +284,7 @@ export function listVersions(dir: string): VersionSummary[] {
       ...(e.summary ? { summary: e.summary } : {}),
       ...(e.step ? { step: e.step.id } : {}),
       changes,
-      ...(fw ? { firmwareHash: fw } : {}),
+      ...(fw?.hash ? { firmwareHash: fw.hash } : fw ? { firmwareBuilt: true } : {}),
       hasFrame,
     });
   });
