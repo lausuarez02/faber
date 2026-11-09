@@ -14,8 +14,11 @@ pnpm jumper new ../my-device --template blink   # or drive it from the shell, sa
 pnpm jumper test -p ../my-device
 ```
 
+Plan first: `plan_device` and tell the person the plan in plain words (ask one question if the wish
+is ambiguous); `new_project {"folder": true}` per idea; real parts or `create_part` over stand-ins.
 The loop: `search_parts` → `get_part` → `place_part` → `connect` → `check_design` → `write_file` →
-`run` (builds automatically) → `write_scenario` → `run_tests` → fix → `fidelity_report`.
+`run` (builds automatically) → `write_scenario` → `run_tests` → fix → show it (`screenshot`,
+`record`, `viewer_url`) → `fidelity_report` (say what the simulation cannot check).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 
