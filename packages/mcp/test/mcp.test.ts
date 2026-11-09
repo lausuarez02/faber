@@ -1,0 +1,94 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { TOOLS } from "@jumper/session";
+
+const BIN = fileURLToPath(new URL("../bin/jumper-mcp.mjs", import.meta.url));
+const dockerUp = (() => {
+  try {
+    execFileSync("docker", ["info"], { stdio: "ignore", timeout: 15_000 });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+type ToolResult = { isError?: boolean; content: { type: string; text?: string; data?: string }[] };
+const json = (r: ToolResult) => JSON.parse(r.content[0]!.text!) as Record<string, unknown>;
+
+describe("jumper MCP server over stdio", () => {
+  let dir: string;
+  let client: Client;
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), "jumper-mcp-"));
+    client = new Client({ name: "jumper-test", version: "0.0.0" });
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: [BIN, "--project", dir], stderr: "ignore" }));
+  }, 30_000);
+
+  afterAll(async () => {
+    await client?.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("lists every session op as a tool, with instructions", async () => {
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name).sort()).toEqual(TOOLS.map((t) => t.name).sort());
+    for (const t of tools) {
+      expect(t.description!.length).toBeGreaterThan(40);
+      expect(t.inputSchema.type).toBe("object");
+    }
+    expect(client.getInstructions()).toMatch(/search_parts/);
+  });
+
+  it("serves the agent guide, catalog and project as resources", async () => {
+    const { resources } = await client.listResources();
+    expect(resources.map((r) => r.uri)).toEqual(["jumper://docs/agents", "jumper://parts", "jumper://project"]);
+    const parts = await client.readResource({ uri: "jumper://parts" });
+    expect(String((parts.contents[0] as { text?: string }).text)).toMatch(/arduino-uno \[board/);
+  });
+
+  it("returns errors that say what, why and how to fix", async () => {
+    const r = (await client.callTool({ name: "place_part", arguments: { type: "ledd" } })) as ToolResult;
+    expect(r.isError).toBe(true);
+    expect(r.content[0]!.text).toMatch(/No part type 'ledd'.*Fix:.*Did you mean 'led'/);
+  });
+
+  it.skipIf(!dockerUp)(
+    "places, wires, builds and runs Blink end to end",
+    async () => {
+      const call = async (name: string, args: Record<string, unknown> = {}) => {
+        const r = (await client.callTool({ name, arguments: args })) as ToolResult;
+        if (r.isError) throw new Error(`${name}: ${r.content[0]!.text}`);
+        return r;
+      };
+      await call("new_project", { template: "blank", name: "mcp-blink" });
+      expect(json(await call("place_part", { type: "arduino-uno" })).id).toBe("uno");
+      await call("place_part", { type: "resistor", props: { resistance: 220 } });
+      await call("place_part", { type: "led" });
+      await call("connect", { from: "uno.D13", to: "r1.1", why: "drive the LED from D13" });
+      await call("connect", { from: "r1.2", to: "led1.A" });
+      await call("connect", { from: "led1.C", to: "uno.GND" });
+      expect(json(await call("check_design")).errors).toBe(0);
+      await call("write_file", {
+        path: "firmware/main.ino",
+        content: 'void setup(){Serial.begin(115200);pinMode(13,OUTPUT);}\nvoid loop(){digitalWrite(13,HIGH);Serial.println("LED on");delay(1000);digitalWrite(13,LOW);Serial.println("LED off");delay(1000);}\n',
+      });
+      const build = json(await call("build"));
+      expect(build.ok).toBe(true);
+      const run = json(await call("run", { ms: 1500 }));
+      expect(run.serial).toMatch(/LED on\r\nLED off/);
+      await call("write_scenario", { id: "blinks", steps: [{ expect_serial: "LED on", within_ms: 1100 }, { expect_pin: "uno.D13", level: "high" }] });
+      const tests = json(await call("run_tests"));
+      expect(tests).toMatchObject({ passed: 1, failed: 0 });
+      const shot = (await call("screenshot", { path: "shot.png" })) as ToolResult;
+      expect(shot.content.some((c) => c.type === "image" || /"format":"svg"/.test(c.text ?? ""))).toBe(true);
+    },
+    240_000,
+  );
+});

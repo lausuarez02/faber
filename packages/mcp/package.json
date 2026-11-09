@@ -1,0 +1,26 @@
+{
+  "name": "@jumper/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Jumper as an MCP server (stdio): every canvas and simulator action as a tool for Claude, Codex or any MCP client.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "jumper-mcp": "./bin/jumper-mcp.mjs"
+  },
+  "scripts": {
+    "start": "node bin/jumper-mcp.mjs",
+    "gen:docs": "tsx scripts/gen-tool-docs.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jumper/session": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.2"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}
