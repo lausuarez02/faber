@@ -16,7 +16,7 @@ import {
   type Wire,
   normalizeScenarioStep,
 } from "@jumper/project-format";
-import { AGENT_MADE_LABEL, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
+import { AGENT_MADE_LABEL, boardWiring, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
 import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
@@ -630,6 +630,10 @@ export class ProjectSession {
     const spec = this.spec(type);
     const def = this.registry.get(type)!;
     const usage = usageFor(spec);
+    // Round 6: the wiring for the board this project actually has (a XIAO's SDA is GP6, not the Uno's A4).
+    const boardInst = this.project.parts.find((p) => this.registry.get(p.type)?.spec.category === "board");
+    const boardSpec = boardInst ? this.registry.get(boardInst.type)?.spec : undefined;
+    const onBoard = boardSpec ? boardWiring(spec, boardSpec) : undefined;
     return {
       type: spec.id,
       ...(matched ? { matched } : {}),
@@ -648,6 +652,7 @@ export class ProjectSession {
       ...(spec.limits ? { limits: spec.limits } : {}),
       fidelity: { level: def.fidelity.level, gaps: def.fidelity.doesNotEmulate.slice(0, 5), test_on_real_device: def.fidelity.testOnRealDevice.slice(0, 4) },
       wiring: usage.wiring,
+      ...(onBoard && boardInst ? { wiring_on_this_board: `${onBoard.text}${onBoard.lines.some((l) => l.note) ? ` ${onBoard.lines.filter((l) => l.note).map((l) => `${l.pin}: ${l.note}`).join("; ")}.` : ""} Use "${boardInst.id}.<pin>" in connect; this overrides any Uno pin names in wiring / example.` } : {}),
       ...(usage.connect ? { typical_connections: usage.connect } : {}),
       ...(usage.libraries ? { libraries: usage.libraries } : {}),
       ...(usage.controls ? { controls: usage.controls } : {}),
