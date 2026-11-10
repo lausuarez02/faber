@@ -37,5 +37,18 @@
     { "key": "label", "type": "string", "description": "Angle label, e.g. \"90°\"." },
     { "key": "currentmA", "type": "number", "description": "Supply current in mA." }
   ],
-  "tags": ["servo", "sg90", "micro servo", "9g servo", "hobby servo", "robot arm", "pwm", "motor", "tower pro"]
+  "tags": ["servo", "sg90", "micro servo", "9g servo", "hobby servo", "robot arm", "pwm", "motor", "tower pro"],
+  "mechanical": {
+    "keepout_bottom_mm": 0,
+    "features": [
+      { "id": "horn", "kind": "knob", "face": "+z", "x": 17.5, "y": 6.1, "shape": "round", "d": 5, "protrude_mm": 4, "description": "output spline" }
+    ],
+    "source": "TowerPro SG90 drawing"
+  },
+  "sourcing": {
+    "mpn": "SG90",
+    "manufacturer": "TowerPro",
+    "package": "23 x 12.2 x 29 mm",
+    "generic": "SG90 micro servo 9 g, 4.8 to 6 V"
+  }
 }

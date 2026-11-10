@@ -44,5 +44,25 @@
     { "key": "clicks", "type": "number", "description": "Times the relay switched on since reset." },
     { "key": "label", "type": "string", "description": "e.g. \"ON · 180 mA\"." }
   ],
-  "tags": ["relay", "relay module", "switch", "load", "pump", "lamp", "mains", "srd-05vdc", "optocoupler", "5v relay", "output", "actuator"]
+  "tags": ["relay", "relay module", "switch", "load", "pump", "lamp", "mains", "srd-05vdc", "optocoupler", "5v relay", "output", "actuator"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 2.5, "y": 2.5, "d": 3 },
+      { "x": 47.5, "y": 2.5, "d": 3 },
+      { "x": 2.5, "y": 23.5, "d": 3 },
+      { "x": 47.5, "y": 23.5, "d": 3 }
+    ],
+    "features": [
+      { "id": "terminal", "kind": "connector", "face": "+x", "x": 50, "y": 13, "z": 6, "w": 15, "h": 10, "connector": "screw-terminal-5mm", "plug_clearance_mm": 1 },
+      { "id": "led", "kind": "led", "face": "+z", "x": 37, "y": 17, "shape": "round", "d": 3, "expose": false }
+    ],
+    "source": "typical 1-channel 5 V relay module"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "module 50 x 26 mm",
+    "generic": "1-channel 5 V relay module with optocoupler, 10 A contacts"
+  }
 }

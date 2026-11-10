@@ -53,5 +53,25 @@
     { "key": "pixelsWritten", "type": "number", "description": "Pixels written since power-on." },
     { "key": "screenOpacity", "type": "number", "description": "1 when the glass shows an image (bound in the SVG)." }
   ],
-  "tags": ["tft", "st7735", "1.8", "128x160", "colour display", "color display", "screen", "spi", "adafruit_st7735", "rgb565"]
+  "tags": ["tft", "st7735", "1.8", "128x160", "colour display", "color display", "screen", "spi", "adafruit_st7735", "rgb565"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 3,
+    "mounting_holes": [
+      { "x": 2.2, "y": 2.2, "d": 2.5 },
+      { "x": 31.8, "y": 2.2, "d": 2.5 },
+      { "x": 2.2, "y": 53.8, "d": 2.5 },
+      { "x": 31.8, "y": 53.8, "d": 2.5 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 17, "y": 26, "w": 28, "h": 35, "bezel_mm": 1 }
+    ],
+    "source": "typical 1.8 in module (active area 28 x 35 mm)"
+  },
+  "sourcing": {
+    "mpn": "ST7735S",
+    "manufacturer": "Sitronix (driver IC)",
+    "package": "module 34 x 56 mm, 8-pin header",
+    "generic": "1.8 in TFT 128x160, ST7735, SPI, module"
+  }
 }

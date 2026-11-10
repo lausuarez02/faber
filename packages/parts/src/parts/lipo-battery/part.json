@@ -35,5 +35,13 @@
     { "key": "fillWidth", "type": "number", "description": "Width of the charge bar in the SVG (px)." },
     { "key": "fillColor", "type": "string", "description": "Colour of the charge bar (green, amber, red)." }
   ],
-  "tags": ["lipo", "li-po", "lithium", "battery", "1s", "3.7v", "pouch", "rechargeable", "pocket", "portable", "wearable", "power", "cell", "li-ion"]
+  "tags": ["lipo", "li-po", "lithium", "battery", "1s", "3.7v", "pouch", "rechargeable", "pocket", "portable", "wearable", "power", "cell", "li-ion"],
+  "mechanical": {
+    "soft": true,
+    "source": "503035 pouch cell (35 x 30 x 5 mm, 500 mAh); allow 10 % swell"
+  },
+  "sourcing": {
+    "package": "pouch 503035 with protection PCB and JST-PH 2.0 lead",
+    "generic": "LiPo 3.7 V 1S pouch cell with protection circuit, JST-PH 2.0 lead (503035 for 500 mAh)"
+  }
 }

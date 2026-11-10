@@ -28,5 +28,17 @@
     { "key": "knobAngle", "type": "number", "description": "Knob angle in degrees, −135 (position 0) to +135 (position 1)." },
     { "key": "knobTransform", "type": "string", "description": "SVG transform rotating the knob about its centre: \"rotate(<knobAngle> 40 38)\"." }
   ],
-  "tags": ["potentiometer", "pot", "knob", "variable resistor", "trimmer", "analog", "input"]
+  "tags": ["potentiometer", "pot", "knob", "variable resistor", "trimmer", "analog", "input"],
+  "mechanical": {
+    "keepout_bottom_mm": 3,
+    "features": [
+      { "id": "shaft", "kind": "knob", "face": "+z", "x": 4.9, "y": 5.5, "shape": "round", "d": 6, "protrude_mm": 15, "description": "6 mm shaft; panel hole 7 mm" }
+    ],
+    "source": "typical 9 mm rotary pot with 15 mm shaft"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "9 mm THT rotary, 3 pins 0.1 in",
+    "generic": "Potentiometer 10 kΩ linear, 9 mm, THT, 6 mm shaft"
+  }
 }

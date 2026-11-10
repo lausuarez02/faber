@@ -34,5 +34,12 @@
     { "key": "volts", "type": "number", "description": "Average voltage across A–B." },
     { "key": "label", "type": "string", "description": "Speed label, e.g. \"182 rpm\"." }
   ],
-  "tags": ["dc motor", "gear motor", "tt motor", "yellow motor", "robot", "wheel", "car", "2wd", "rover"]
+  "tags": ["dc motor", "gear motor", "tt motor", "yellow motor", "robot", "wheel", "car", "2wd", "rover"],
+  "mechanical": {
+    "source": "TT gear motor (shaft out of both sides)"
+  },
+  "sourcing": {
+    "package": "70 x 22 x 18 mm",
+    "generic": "TT gear motor 3 to 6 V, 1:48, double shaft"
+  }
 }

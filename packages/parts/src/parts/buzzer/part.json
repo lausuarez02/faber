@@ -24,5 +24,17 @@
     { "key": "volts", "type": "number", "description": "Voltage across the buzzer (+ minus −)." },
     { "key": "currentmA", "type": "number", "description": "Current into the + pin in mA." }
   ],
-  "tags": ["buzzer", "beeper", "piezo", "active buzzer", "sound", "alarm", "output"]
+  "tags": ["buzzer", "beeper", "piezo", "active buzzer", "sound", "alarm", "output"],
+  "mechanical": {
+    "outline": "round",
+    "keepout_bottom_mm": 2,
+    "features": [
+      { "id": "sound", "kind": "grille", "face": "+z", "x": 6, "y": 6, "shape": "round", "d": 2 }
+    ],
+    "source": "12 mm active buzzer (9.5 mm tall)"
+  },
+  "sourcing": {
+    "package": "12 x 9.5 mm THT",
+    "generic": "Active buzzer 5 V, 12 mm, 2.4 to 2.7 kHz"
+  }
 }

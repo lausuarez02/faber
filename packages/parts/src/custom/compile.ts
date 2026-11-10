@@ -400,6 +400,8 @@ export function compileCustomPart(input: unknown, svgInput?: string | null, opts
         : {}),
     ...(supply.vcc ? { limits: { maxVoltage: supply.maxV, minVoltage: supply.minV, ...(part.current_ma ? { maxCurrentmA: part.current_ma.max } : {}) } } : {}),
     ...(part.dimensions_mm ? { dimensions_mm: part.dimensions_mm } : {}),
+    ...(part.mechanical ? { mechanical: part.mechanical } : {}), // round 6 case
+    ...(part.sourcing ? { sourcing: part.sourcing } : {}), // round 6 case
     ...(part.mass_g !== undefined ? { mass_g: part.mass_g } : {}),
     ...(part.current_ma ? { current_ma: part.current_ma } : {}),
     ...(part.price_usd !== undefined ? { price_usd: part.price_usd } : {}),

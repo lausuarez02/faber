@@ -54,5 +54,25 @@
     { "key": "pixelsWritten", "type": "number", "description": "Pixels written since power-on (counts redraws; useful to spot a sketch that repaints the whole screen every loop)." },
     { "key": "screenOpacity", "type": "number", "description": "1 when the glass shows an image, 0 when dark (bound in the SVG)." }
   ],
-  "tags": ["tft", "ili9341", "lcd", "colour display", "color display", "screen", "320x240", "2.8", "spi", "adafruit_ili9341", "rgb565", "tamagotchi", "touchscreen display"]
+  "tags": ["tft", "ili9341", "lcd", "colour display", "color display", "screen", "320x240", "2.8", "spi", "adafruit_ili9341", "rgb565", "tamagotchi", "touchscreen display"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 3,
+    "mounting_holes": [
+      { "x": 2.8, "y": 2.8, "d": 3 },
+      { "x": 83.2, "y": 2.8, "d": 3 },
+      { "x": 2.8, "y": 47.2, "d": 3 },
+      { "x": 83.2, "y": 47.2, "d": 3 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 41, "y": 25, "w": 57.6, "h": 43.2, "bezel_mm": 1.5 }
+    ],
+    "source": "typical 2.8 in SPI module (active area 57.6 x 43.2 mm)"
+  },
+  "sourcing": {
+    "mpn": "ILI9341",
+    "manufacturer": "Ilitek (driver IC)",
+    "package": "module 86 x 50 mm, 9-pin header",
+    "generic": "2.8 in TFT 320x240, ILI9341, SPI, module"
+  }
 }

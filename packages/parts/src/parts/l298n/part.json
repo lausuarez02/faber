@@ -44,5 +44,25 @@
     { "key": "bLabel", "type": "string", "description": "Motor B summary for the SVG." },
     { "key": "vs", "type": "number", "description": "Motor supply voltage at the 12V terminal." }
   ],
-  "tags": ["l298n", "l298", "h-bridge", "motor driver", "dual motor driver", "robot", "dc motor", "car", "rover"]
+  "tags": ["l298n", "l298", "h-bridge", "motor driver", "dual motor driver", "robot", "dc motor", "car", "rover"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 3, "y": 3, "d": 3 },
+      { "x": 40, "y": 3, "d": 3 },
+      { "x": 3, "y": 40, "d": 3 },
+      { "x": 40, "y": 40, "d": 3 }
+    ],
+    "features": [
+      { "id": "heatsink", "kind": "vent", "face": "+z", "x": 21.5, "y": 21.5, "w": 23, "h": 16, "expose": true, "description": "needs airflow when driving more than ~0.5 A" }
+    ],
+    "source": "typical L298N red module (43 x 43 mm)"
+  },
+  "sourcing": {
+    "mpn": "L298N",
+    "manufacturer": "STMicroelectronics (IC)",
+    "package": "module 43 x 43 mm with heatsink",
+    "generic": "L298N dual H-bridge motor driver module with 5 V regulator"
+  }
 }

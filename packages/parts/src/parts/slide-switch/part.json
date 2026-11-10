@@ -26,5 +26,17 @@
     { "key": "position", "type": "number", "description": "0 or 1." },
     { "key": "knobTransform", "type": "string", "description": "SVG transform for the slider: \"translate(0 0)\" or \"translate(16 0)\"." }
   ],
-  "tags": ["switch", "slide", "spdt", "toggle", "input"]
+  "tags": ["switch", "slide", "spdt", "toggle", "input"],
+  "mechanical": {
+    "keepout_bottom_mm": 3,
+    "features": [
+      { "id": "lever", "kind": "switch", "face": "+z", "x": 4.3, "y": 1.8, "w": 1.5, "h": 1.5, "protrude_mm": 4, "travel_mm": 2, "description": "lever slides along x" }
+    ],
+    "source": "SS12D00 class slide switch"
+  },
+  "sourcing": {
+    "mpn": "SS12D00G4",
+    "package": "THT SPDT slide, 3 pins 0.1 in",
+    "generic": "Slide switch SPDT, SS12D00 type, THT"
+  }
 }

@@ -28,5 +28,17 @@
     { "key": "color", "type": "string", "description": "Mixed emitted colour as #RRGGBB (black when off)." },
     { "key": "on", "type": "boolean", "description": "True when any channel is lit." }
   ],
-  "tags": ["rgb", "led", "rgb led", "common cathode", "light", "colour", "pwm", "output"]
+  "tags": ["rgb", "led", "rgb led", "common cathode", "light", "colour", "pwm", "output"],
+  "mechanical": {
+    "outline": "round",
+    "keepout_bottom_mm": 3,
+    "features": [
+      { "id": "dome", "kind": "led", "face": "+z", "x": 2.9, "y": 2.9, "shape": "round", "d": 5, "protrude_mm": 3 }
+    ],
+    "source": "5 mm THT RGB LED"
+  },
+  "sourcing": {
+    "package": "5 mm THT, 4 leads",
+    "generic": "RGB LED 5 mm common cathode, diffused"
+  }
 }

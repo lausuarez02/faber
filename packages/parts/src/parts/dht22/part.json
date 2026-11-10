@@ -30,5 +30,22 @@
     { "key": "reads", "type": "number", "description": "Readings answered since reset." },
     { "key": "sending", "type": "boolean", "description": "The sensor is driving DATA right now." }
   ],
-  "tags": ["dht22", "am2302", "dht", "temperature", "humidity", "thermometer", "hygrometer", "weather", "climate", "sensor"]
+  "tags": ["dht22", "am2302", "dht", "temperature", "humidity", "thermometer", "hygrometer", "weather", "climate", "sensor"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 3, "y": 10, "d": 2.5 }
+    ],
+    "features": [
+      { "id": "grille", "kind": "sensor-window", "face": "+z", "x": 23, "y": 10, "shape": "rect", "w": 14, "h": 12, "description": "the sensor's own grille must see outside air" }
+    ],
+    "source": "typical AM2302 on a 3-pin module"
+  },
+  "sourcing": {
+    "mpn": "AM2302",
+    "manufacturer": "Aosong (sensor)",
+    "package": "module 38 x 20 mm",
+    "generic": "DHT22 / AM2302 temperature and humidity sensor module"
+  }
 }

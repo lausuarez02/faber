@@ -26,5 +26,14 @@
     { "key": "currentmA", "type": "number", "description": "Motor current from VCC (mA)." },
     { "key": "shakeTransform", "type": "string", "description": "SVG transform that jitters the motor while it runs." }
   ],
-  "tags": ["vibration", "vibration motor", "haptic", "buzz", "coin motor", "erm", "1027", "rumble", "pager motor", "motor", "pocket", "wearable"]
+  "tags": ["vibration", "vibration motor", "haptic", "buzz", "coin motor", "erm", "1027", "rumble", "pager motor", "motor", "pocket", "wearable"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2,
+    "source": "typical coin-motor module"
+  },
+  "sourcing": {
+    "package": "module 30 x 21 mm, 10 x 2.7 mm coin motor",
+    "generic": "Vibration motor module (10 mm coin motor, driver transistor)"
+  }
 }

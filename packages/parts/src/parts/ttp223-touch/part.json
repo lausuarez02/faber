@@ -49,5 +49,20 @@
     { "key": "out", "type": "boolean", "description": "I/O is HIGH." },
     { "key": "padOpacity", "type": "number", "description": "Highlight of the pad while touched (0 or 1)." }
   ],
-  "tags": ["ttp223", "touch", "touch sensor", "capacitive touch", "touch button", "touch pad", "button", "input", "pocket"]
+  "tags": ["ttp223", "touch", "touch sensor", "capacitive touch", "touch button", "touch pad", "button", "input", "pocket"],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_top_mm": 0,
+    "keepout_bottom_mm": 1.5,
+    "features": [
+      { "id": "pad", "kind": "button", "face": "+z", "x": 9.6, "y": 5.7, "shape": "round", "d": 11, "travel_mm": 0, "expose": false, "description": "capacitive pad; works through up to ~2 mm of plastic, so no hole is needed" }
+    ],
+    "source": "typical TTP223 module"
+  },
+  "sourcing": {
+    "mpn": "TTP223",
+    "manufacturer": "Tontek (IC)",
+    "package": "module 24 x 15 mm",
+    "generic": "TTP223 capacitive touch button module"
+  }
 }

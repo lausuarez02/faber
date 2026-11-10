@@ -45,5 +45,21 @@
     { "key": "asleep", "type": "boolean", "description": "SLEEP bit of PWR_MGMT_1 (set at power-up until the sketch wakes it)." },
     { "key": "tiltTransform", "type": "string", "description": "Small rotation of the chip drawing from the X acceleration." }
   ],
-  "tags": ["mpu6050", "mpu-6050", "gy-521", "imu", "accelerometer", "gyroscope", "gyro", "tilt", "motion", "balance", "robot", "i2c"]
+  "tags": ["mpu6050", "mpu-6050", "gy-521", "imu", "accelerometer", "gyroscope", "gyro", "tilt", "motion", "balance", "robot", "i2c"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "mounting_holes": [
+      { "x": 3, "y": 13.4, "d": 3 },
+      { "x": 18, "y": 13.4, "d": 3 }
+    ],
+    "source": "typical GY-521 module (21.2 x 16.4 mm)"
+  },
+  "sourcing": {
+    "mpn": "MPU-6050",
+    "manufacturer": "TDK InvenSense (IC)",
+    "package": "module 21 x 16 mm (GY-521)",
+    "generic": "MPU-6050 6-axis accelerometer + gyro module GY-521, I2C"
+  }
 }

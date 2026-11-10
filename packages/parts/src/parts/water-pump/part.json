@@ -33,5 +33,15 @@
     { "key": "label", "type": "string", "description": "e.g. \"118 L/h · 42 ml\"." },
     { "key": "waterOpacity", "type": "number", "description": "Opacity of the water jet (0..1)." }
   ],
-  "tags": ["pump", "water pump", "submersible", "plant", "watering", "irrigation", "garden", "fountain", "motor", "dc load", "aquarium"]
+  "tags": ["pump", "water pump", "submersible", "plant", "watering", "irrigation", "garden", "fountain", "motor", "dc load", "aquarium"],
+  "mechanical": {
+    "features": [
+      { "id": "outlet", "kind": "connector", "face": "+x", "x": 45, "y": 15, "z": 12, "shape": "round", "d": 7.5, "connector": "hose-7.5mm", "plug_clearance_mm": 0.5 }
+    ],
+    "source": "typical 3 to 5 V submersible pump"
+  },
+  "sourcing": {
+    "package": "45 x 30 x 24 mm",
+    "generic": "Mini submersible water pump 3 to 5 V DC, 7.5 mm outlet"
+  }
 }

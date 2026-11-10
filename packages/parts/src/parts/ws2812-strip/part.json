@@ -79,5 +79,20 @@
     { "key": "currentmA", "type": "number", "description": "Supply current for the colours shown (mA)." },
     { "key": "label", "type": "string", "description": "e.g. \"8 LEDs · 124 mA\"." }
   ],
-  "tags": ["ws2812", "ws2812b", "neopixel", "addressable", "rgb", "led strip", "led", "pixel", "strip", "ring", "stick", "fastled", "colour", "color", "light"]
+  "tags": ["ws2812", "ws2812b", "neopixel", "addressable", "rgb", "led strip", "led", "pixel", "strip", "ring", "stick", "fastled", "colour", "color", "light"],
+  "mechanical": {
+    "pcb_mm": 0.3,
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      { "id": "led0", "kind": "led", "face": "+z", "x": 8.35, "y": 5, "w": 5, "h": 5, "expose": false, "description": "5050 LEDs every 16.7 mm; diffuse through a thin wall or set expose true for windows" }
+    ],
+    "source": "60 LED/m WS2812B strip"
+  },
+  "sourcing": {
+    "mpn": "WS2812B",
+    "manufacturer": "Worldsemi (LED)",
+    "package": "5050 on 10 mm flex strip, 60/m",
+    "generic": "WS2812B addressable RGB LED strip 60 LED/m, 5 V"
+  }
 }
