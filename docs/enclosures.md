@@ -25,6 +25,62 @@ picker and settings, **Design case / Update case**, the fit checks, the size and
 downloads (STL, 3MF, STEP, drawing, print notes) and **Factory pack (zip)**. It needs `jumper serve`
 (the CAD runs on the server; the browser only gets meshes).
 
+## Any shape, any size (round 7)
+
+The five shapes below are starting points, not the only choices. A case can be **any outline**:
+`shape: "custom"` with an `outline` the agent or the person draws, at **any size** with `size_mm`.
+There is no preset per object: an egg, a heart, a bean or a guitar pick is a custom outline.
+
+```sh
+# an egg 56 x 73 mm drawn as an SVG path (y DOWN, like any SVG): narrow top, wide bottom
+jumper check_fit '{"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"}' -p …
+# the same kind of egg as points (y UP) through which a smooth closed curve runs, at a fixed size
+jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[24,16],[28,-4],[24,-22],[13,-32],[0,-34],[-13,-32],[-24,-22],[-28,-4],[-24,16],[-14,33]], "smooth": true}, "size_mm": {"w": 64, "h": 84}, "params": {"dome_mm": 2}}' -p …
+```
+
+- **`outline`** is the front view in mm: an SVG path string (`M L H V C S Q T A Z`, absolute or
+  relative; y points down as in any drawing program) or `{"points": [[x, y], ...], "smooth": true}`
+  with y up (the device's top is +y; `smooth: false` = straight lines whose sharp corners are rounded
+  so they print). It must be one closed shape that does not cross itself; errors say where and how
+  to fix it. The outline becomes one periodic cubic B-spline: OpenCascade builds the shell from that
+  curve and the packer tests points against the same curve (a signed distance field), so what is
+  checked is what is printed. Its proportions are kept; its drawn size only matters as a ratio.
+- **`size_mm`** `{w, h, d}` (any of them; the rest auto). With w / h the outline is scaled to exactly
+  that size and the case is that size; with neither the outline grows uniformly to the smallest
+  size that holds the parts (never under 15 mm, at most 250 mm). `d` (or `params.depth_mm`) fixes the
+  thickness. A preset with `size_mm.w` / `h` becomes its own outline at that size (same pipeline).
+- **3D finish, any shape** (`params`, each a number or `"auto"`): `edge_radius_front_mm`,
+  `edge_radius_back_mm` (the rim round-overs; clamped where a side port needs a straight wall, with
+  a warning), `dome_mm` / `dome_back_mm` (how far each face bulges as a sphere cap with a flat print
+  pad; auto is about 1 mm on pebble and custom, flat on the rest), `depth_mm`.
+- **Packing inside the real outline**: the parts are packed straight into the outline, inset by the
+  wall, the wiring gap and the rim round-over at their depth, not into its bounding box, so the
+  narrow end of an egg holds less than its wide end; the screen stays on the centre line but moves
+  up or down to where the outline is wide. A custom outline keeps its silhouette: a port on a curve
+  gets a spot face; only where a plug could not reach at all is a local flat (up to 8 mm deep) cut,
+  and the report says so (a heart's point, a lobe). Ports try other sides first (a heart's bottom is
+  a point), and a layout where a plug would not reach loses to one where it does.
+- **When the parts do not fit** a fixed size, nothing grows and nothing is saved: `design_case` /
+  `update_case` return `fits: false`, `misses` (`{part, type, dimension: "outline" | "depth", short_mm,
+  where, message}`, e.g. "eyes (gc9a01-round-tft) sticks out 3.1 mm at the bottom of the outline")
+  and `suggestions`, each tried with the same layout (`fits`, `size_mm`) and given as the calls that
+  make it (`change: [{tool, args}]`): a smaller part in the same role from the library (a 0.96" SSD1306
+  instead of the GC9A01, a 20 mm speaker instead of a 28 mm one, a smaller board with the same chip),
+  a smaller LiPo cell (the `capacity` prop picks the pouch: 150 mAh 402030, 250 mAh 502030, 500 mAh
+  503035, 1000 mAh 523450), a board stood on its edge (`placements: {"xiao": {"on_edge": true}}`),
+  less rounded rims, or "make it N mm bigger" with the size that holds everything.
+- **`check_fit`** (or `design_case {"dry_run": true}`) answers all of that without CAD in well under a
+  second (the suggestions are tried while a ~1 s budget lasts; untried ones have no `fits`).
+  `check_fit` with no arguments tests the saved case; `preview: true` adds the front-view geometry.
+- **In the Case view**: **Custom** opens the outline editor: start from an ellipse or a preset, drag
+  the points, double-click (or **+ Point**) to add one, **− Point** to remove the selected one; Tab
+  to a point, arrows move it 1 mm (Shift: 5 mm), Delete removes it. **W / H / D** in mm (blank =
+  auto). The parts' footprints are drawn inside the outline at real size as you edit, red where one
+  runs into the wall, with what misses and what would fit under it (**Use N × M mm** takes the size
+  that holds everything). An outline an agent drew opens in the same editor.
+
+<p align="center"><img src="media/round7-egg-front.png" alt="A talking egg: a custom egg outline with a round screen for eyes" width="300"> <img src="media/round7-egg-exploded.png" alt="The egg case exploded: front shell, parts, back shell with the speaker grille" width="300"></p>
+
 ## Shapes and settings
 
 | Shape | What it is |
@@ -34,6 +90,7 @@ downloads (STL, 3MF, STEP, drawing, print notes) and **Factory pack (zip)**. It 
 | `pebble` | Oval plan, sized around the parts, centred on the screen in x; front and back edges rounded in 3D with one large fillet each (up to ~0.44 of the depth), both faces domed about 1 mm with a flat land round the window and a flat pad on the back (what each shell prints on). |
 | `puck` | Round, centred on the screen, edges rounded in 3D (~0.34 of the depth). |
 | `keychain` | Rounded box (7 mm plan corners) with 3D-rounded edges, a tab and a 5 mm lanyard hole. |
+| `custom` | Round 7: any `outline` you draw (SVG path or smoothed points), at any `size_mm` or auto, rounded and domed like a pebble (above). |
 
 `params` (all optional): `wall_mm` (≥ 1.2, default 1.6), `corner_radius_mm` (4), `color`
 (renders + 3MF), `lanyard_hole` (default on for keychain; a small tab on other shapes), `belt_clip`
@@ -44,7 +101,7 @@ notes, materials and tolerances), `gap_mm` (1.5: wiring room around each part).
 
 `front`: the part whose screen faces out (default: the first display). `placements`: per part,
 `{"face": "front" | "back" | "left" | "right" | "top" | "bottom" | "inside", "x_mm", "y_mm",
-"rotation", "layer"}`, faces as seen holding the device with the screen towards you; parts left out
+"rotation", "layer", "on_edge"}`, faces as seen holding the device with the screen towards you; parts left out
 are auto-packed. `exclude`: parts not in the case (an external sensor on a cable).
 
 ## How the layout works
@@ -131,6 +188,18 @@ Node only (`packages/enclosure`, loaded lazily). STL / 3MF are written by Jumper
 fflate, MIT), renders by Jumper's own rasteriser (no browser), the drawing as SVG (PDF printed by
 Playwright's Chromium when present). This OpenCascade build has no IGES writer: the pack ships
 STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
+
+## Honest limits (round 7, custom outlines)
+
+- The packer is a search (packings into the outline at a few sizes and part orders, plus rectangles),
+  not an optimum; a custom outline gets the same search in `check_fit` and `design_case` (about
+  0.3 to 0.6 s), so they agree. Suggestions are each one change, tried alone.
+- A narrow tip or a deep notch is rounded less than the rest (OpenCascade cannot roll a large rim
+  round a tight curve; the report says the radius it made). Outline necks narrower than two walls
+  plus 4 mm are reported, not fixed.
+- LiPo cell sizes by capacity are typical pouch sizes; the real cell can differ by about 1 mm.
+- The editor edits points through which a smooth curve runs; an SVG path an agent drew opens as 14
+  points along its silhouette (saving it from the editor replaces the path with those points).
 
 ## Honest limits (round 6)
 

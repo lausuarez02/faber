@@ -355,7 +355,8 @@ export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout
   if (input.enclosure.shape === "custom" || sz?.w !== undefined || sz?.h !== undefined) opts = { ...opts, quick: true };
   const first = layoutOnce(input, undefined, opts);
   const ids = first.connOrder;
-  if (input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) return first;
+  const polyBad = first.plan.kind === "poly" && ids.length > 0 && first.issues.some((i) => i.severity === "error" && i.id !== "fits");
+  if ((input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) && !polyBad) return first;
   const perms: string[][] = [];
   const permute = (rest: string[], acc: string[]) => {
     if (perms.length >= 4) return;
@@ -365,10 +366,20 @@ export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout
   permute(ids, []);
   let best = first;
   const cost = (L: Layout) => L.issues.filter((i) => i.severity === "error").length * 1e12 + overflow(L) + caseCost(L);
-  for (const perm of perms.slice(1, opts.quick ? 1 : undefined)) {
+  // a quick search tries the other port-to-side orders only when the first one has a problem (a port on the tip of a heart)
+  const firstBad = first.issues.some((i) => i.severity === "error" && i.id !== "fits");
+  for (const perm of perms.slice(1, opts.quick && !firstBad ? 1 : undefined)) {
     const L = layoutOnce(input, perm, opts);
     if (cost(L) < cost(best)) best = L;
   }
+  // a custom outline whose bottom is a point (a heart) or a notch: the ports may start on another side
+  if (best.plan.kind === "poly" && best.issues.some((i) => i.severity === "error" && i.id !== "fits"))
+    for (const cyc of [["left", "right", "bottom", "top"], ["right", "left", "bottom", "top"], ["top", "left", "right", "bottom"]] as CaseFaceName[][])
+      for (const perm of perms.length ? perms : [ids]) {
+        const L = layoutOnce(input, perm, opts, cyc);
+        if (cost(L) < cost(best)) best = L;
+        if (!best.issues.some((i) => i.severity === "error" && i.id !== "fits")) return best;
+      }
   return best;
 }
 
@@ -376,10 +387,10 @@ export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout
 function overflow(L: Layout): number {
   const f = L.fit;
   if (!f) return 0;
-  return Math.max(0, f.scale - 1) * 1e10 + (f.depthMiss ? (f.depthMiss.needed_mm - f.depthMiss.available_mm) * 1e9 : 0);
+  return (f.fixed.w || f.fixed.h ? Math.max(0, f.scale - 1) * 1e10 : 0) + (f.depthMiss ? (f.depthMiss.needed_mm - f.depthMiss.available_mm) * 1e9 : 0);
 }
 
-function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions = {}): Layout & { connOrder: string[] } {
+function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[] } {
   const enc = input.enclosure;
   const shape = enc.shape;
   const params = resolveParams(shape, enc.params);
@@ -440,7 +451,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     const conn = mechs.filter((m) => !enc.placements?.[m.id]?.face && m.id !== frontId && m.features.filter((f) => f.expose).sort((x, y) => priority(y, false) - priority(x, false))[0]?.kind === "connector");
     conn.sort((x, y) => (connPerm ? connPerm.indexOf(x.id) - connPerm.indexOf(y.id) : Number(y.category === "power") - Number(x.category === "power")));
     connOrder.push(...conn.map((m) => m.id));
-    const cycle: CaseFaceName[] = shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"];
+    const cycle: CaseFaceName[] = connCycle ?? (shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"]);
     conn.forEach((m, i) => connFace.set(m.id, cycle[i % cycle.length]!));
   }
   const plans: Plan0[] = mechs.map((m) => {
@@ -534,7 +545,6 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     orders.push([...head, ...[...mid0].sort((a, b) => Number(!!b.bound) - Number(!!a.bound) || vol(a.mech) - vol(b.mech)), ...tail]);
   }
   const packs: Packed[] = [];
-  const T0 = performance.now();
   withFastOutline(() => {
   // a custom outline also packs into the outline itself (below), so fewer rectangles
   const stepWH = polySpec ? (quick ? 7.5 : 6) : quick ? 6 : 3;
@@ -580,7 +590,6 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       }
   }
   });
-  const T1 = performance.now();
   packs.sort((a, b) => a.score - b.score);
   const seen = new Set<string>();
   const shortlist: Packed[] = [];
@@ -625,7 +634,6 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       bestL = Lc;
     }
   }
-  if (process.env.JUMPER_CASE_TIMING) console.log(`layout ${shape}: ${packs.length} packs ${(T1 - T0).toFixed(0)} ms, ${shortlist.length} finished ${(performance.now() - T1).toFixed(0)} ms`);
   return { ...bestL!, connOrder };
 
   function finish(placed: Placed[], issues: FitCheck[]): Layout {
@@ -887,14 +895,14 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   }
   // A connector the curve still keeps away from the wall (a tight end radius bows away from the
   // board's corners) gets a flat on that side after all, so the plug reaches the receptacle.
-  if (curved && kind !== "poly") {
+  if (curved) {
     const late: Flat[] = [];
     for (const p of placed) {
       if (!p.bound || !SIDE_FACES.includes(p.bound.face) || p.bound.feature.kind !== "connector") continue;
       const n = FACE_DIR[p.bound.face];
       const tip = tipCase(p);
       const o = p.bound.offset;
-      if (rayExit(plan, tip[0], tip[1], n[0], n[1]) - o <= 1.2) continue; // a spot face reaches up to here
+      if (rayExit(plan, tip[0], tip[1], n[0], n[1]) - o <= (kind === "poly" ? 1.5 : 1.2)) continue; // a spot face reaches up to here (a drawn outline: as far as a plug can reach at all)
       const side = p.bound.face;
       const f: Flat = side === "right" ? { axis: "x", sign: 1, at: tip[0] + o } : side === "left" ? { axis: "x", sign: -1, at: tip[0] - o } : side === "top" ? { axis: "y", sign: 1, at: tip[1] + o } : { axis: "y", sign: -1, at: tip[1] - o };
       // round 7: the flat never cuts into another part's room (a screen near that side needs its
@@ -908,9 +916,14 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       const pb = planBounds({ ...plan, flats: [] }, 0);
       const cut = f.axis === "x" ? (f.sign > 0 ? pb.maxX - f.at : f.at - pb.minX) : f.sign > 0 ? pb.maxY - f.at : f.at - pb.minY;
       if (cut < 0.6) continue;
+      // a custom outline keeps its drawn silhouette except a local flat (up to 8 mm deep) where a port must reach; the report says so
+      if (kind === "poly" && cut > 8) continue;
       late.push(f);
     }
-    if (late.length) plan = { ...plan, flats: mergeFlats([...plan.flats, ...late]) };
+    if (late.length) {
+      plan = { ...plan, flats: mergeFlats([...plan.flats, ...late]) };
+      if (kind === "poly") issues.push({ id: "outline", ok: true, severity: "warning", message: `The outline gets a flat on the ${late.map((f) => (f.axis === "x" ? (f.sign > 0 ? "right" : "left") : f.sign > 0 ? "top" : "bottom")).join(" and ")} where a port must reach the wall. Why: the drawn curve keeps the port too far in for a plug. Fix: draw that side fuller or straighter, or move the part to another face with placements.` });
+    }
   }
   // A flat on a round shape gets rounded corners as large as the edge fillet needs (OpenCascade
   // cannot roll a fillet round a tighter corner), as far as the parts beside it allow; the edge
@@ -1302,7 +1315,7 @@ export function caseCost(L: Pick<Layout, "outer" | "shape" | "rf" | "rfBack" | "
   let k = 1 + 0.03 * Math.max(0, d - 18) + 0.06 * Math.max(0, d - 22) + 0.02 * Math.max(0, a - 110) + 0.03 * Math.max(0, b - 70);
   // a pebble / pill / puck / keychain with a small edge radius is a slab, not the shape asked for
   const want = EDGE_SHARE[L.shape] * d;
-  if (want > 0) k *= 1 + 0.3 * Math.max(0, 1 - L.rf / want) + 0.15 * Math.max(0, 1 - L.rfBack / want) + 0.25 * L.plan.flats.length;
+  if (want > 0) k *= 1 + 0.3 * Math.max(0, 1 - L.rf / want) + 0.15 * Math.max(0, 1 - L.rfBack / want) + (L.plan.kind === "poly" ? 1.5 : 0.25) * L.plan.flats.length; // a drawn outline keeps its silhouette unless a port needs a flat
   return v * k;
 }
 

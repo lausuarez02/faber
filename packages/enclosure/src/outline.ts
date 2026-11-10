@@ -527,8 +527,8 @@ export function parseOutline(o: CaseOutline | undefined): ParsedOutline {
   if (signedArea(curve) < 0) curve = curve.reverse();
   const size = Math.max(w, h);
   if (!smoothInput) {
-    // keep the drawn corners printable: round each sharp corner (reach ~6 % of the size, at least 2 mm)
-    const rc = roundCorners(curve, Math.max(2, size * 0.06));
+    // keep the drawn corners printable: round each sharp corner (reach ~10 % of the size, at least 2 mm)
+    const rc = roundCorners(curve, Math.max(2, size * 0.1));
     if (rc.count) notes.push(`${rc.count} sharp corner${rc.count > 1 ? "s were" : " was"} rounded so the shell prints and the edge can be rounded.`);
     curve = rc.pts;
   }

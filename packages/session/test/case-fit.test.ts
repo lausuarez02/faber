@@ -74,6 +74,13 @@ describe("check_fit and custom outlines", () => {
     await expect(call("check_fit", { shape: "custom", outline: EGG, size_mm: { w: 5 } })).rejects.toThrow(/The case setting size_mm\.w is not valid: .*Fix:/s);
   });
 
+  it("plan_device turns a named shape into a custom outline, never a preset", async () => {
+    const r = await call("plan_device", { goal: "something like the shape of an egg, with eyes and a speaker to say stuff, in my pocket" });
+    const last = (r.next as string[]).find((n) => n.includes("design_case"))!;
+    expect(last).toMatch(/design_case \{"shape": "custom", "outline": <the egg drawn as an SVG path in mm/);
+    expect(last).toMatch(/there is no "egg" preset: draw it; check_fit first/);
+  });
+
   it("check_fit with nothing to test says so", async () => {
     await expect(call("check_fit", {})).rejects.toThrow(/Nothing to test.*Fix: pass a shape/s);
   });
