@@ -1,5 +1,5 @@
 // Shared model for the RP2040 boards (raspberry-pi-pico, seeed-xiao-rp2040, waveshare-rp2040-zero).
-import { createMcuBoardModel, GROUND, type PartContext, type PartModel, type VisualState } from "@jumper/sim-core";
+import { createMcuBoardModel, GROUND, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@jumper/sim-core";
 
 export interface Rp2040BoardModelOptions {
   /** Power pins → volts. */
@@ -8,6 +8,14 @@ export interface Rp2040BoardModelOptions {
   leds?: readonly { key: string; pin: string; activeLow: boolean }[];
   /** Pins tied to a rail through a resistor (the Pico's ADC_VREF: 3.3 V through 200 Ω). */
   filtered?: readonly { pin: string; volts: number; ohms: number }[];
+  /** Round 6 (power): the board's supply chain (USB → VBUS, regulators, diodes). */
+  supply?: BoardSupply;
+}
+
+/** Numbers from the part's `limits` (round 6), with defaults. */
+export function limit(ctx: PartContext, key: string, dflt: number): number {
+  const v = (ctx.spec.limits as Record<string, number | undefined> | undefined)?.[key];
+  return typeof v === "number" ? v : dflt;
 }
 
 /**
@@ -20,6 +28,7 @@ export const RP2040_PULLUP_OHMS = 50_000;
 export function createRp2040BoardModel(ctx: PartContext, opts: Rp2040BoardModelOptions): PartModel {
   const base = createMcuBoardModel(ctx, {
     rails: opts.rails,
+    ...(opts.supply ? { supply: opts.supply } : {}),
     gpioROut: RP2040_GPIO_R_OUT,
     pullupOhms: RP2040_PULLUP_OHMS,
     visual: (): VisualState => {
@@ -37,6 +46,8 @@ export function createRp2040BoardModel(ctx: PartContext, opts: Rp2040BoardModelO
     ...base,
     stamp(c) {
       base.stamp(c);
+      // ADC_VREF follows the 3.3 V rail: only while the board has power.
+      if (base.powered?.() === false) return;
       for (const f of opts.filtered ?? []) {
         if (specPins.has(f.pin)) c.voltageSource(ctx.node(f.pin), GROUND, f.volts, f.ohms, { id: `filtered:${f.pin}` });
       }

@@ -2,7 +2,7 @@
   "id": "seeed-xiao-rp2040",
   "name": "Seeed XIAO RP2040",
   "category": "board",
-  "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V only.",
+  "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V logic only. Power: USB-C (jumper.json power.usb, default plugged in), or 3.5 to 5.5 V into the 5V pad, e.g. a 1S LiPo through a charger, a switch and a Schottky diode (no BAT pad, no charger on board).",
   "pins": [
     {
       "id": "GP26",
@@ -126,7 +126,7 @@
         "min": 4.75,
         "max": 5.25
       },
-      "description": "Silkscreen 5V: USB 5 V (VBUS). Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+      "description": "Silkscreen 5V: VBUS. With USB plugged (power.usb, the default) the cable puts 5 V here; use it for 5 V parts, never on a GPIO. Without USB it is the board's power input (3.5 to 5.5 V; the on-board LDO makes 3V3 from it): a LiPo goes here through a Schottky diode (stripe towards this pad) so USB never back-feeds the cell. There is no diode on the board between USB and this pad."
     },
     {
       "id": "GND.1",
@@ -146,7 +146,7 @@
         "min": 3.2,
         "max": 3.4
       },
-      "description": "3.3 V output of the on-board regulator. Keep the load modest (Jumper checks against 300 mA). Stamped as a 3.3 V source."
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout): 3.3 V while the input is above about 3.55 V, then it follows the input down. Keep the load modest (Jumper checks against 300 mA). The RP2040 and its flash run down to about 2.7 V."
     },
     {
       "id": "GP3",
@@ -223,7 +223,12 @@
     "recommendedPinCurrentmA": 4,
     "maxTotalCurrentmA": 50,
     "maxVoltage": 3.63,
-    "max3v3mA": 300
+    "max3v3mA": 300,
+    "minSupplyV": 3.5,
+    "vbusInMinV": 3.5,
+    "vbusInMaxV": 5.5,
+    "ldoDropoutV": 0.25,
+    "min3v3V": 2.7
   },
   "footprint": "21 × 17.5 mm castellated module, 2 × 7 pins at 0.1 in, rows 0.6 in apart",
   "dimensions_mm": {
@@ -251,7 +256,7 @@
     {
       "key": "powered",
       "type": "boolean",
-      "description": "Board has power (USB assumed); lights the power LED where the board has one."
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
     },
     {
       "key": "running",

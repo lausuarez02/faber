@@ -80,9 +80,29 @@ export function describeRp2040Board(id: Rp2040BoardType, opts: { gnd: string; le
     it("powers VBUS at 5 V and 3V3 at 3.3 V", () => {
       const b = mount(def);
       const r = b.solve();
-      expect(r.voltage(b.ctx.node("VBUS"))).toBeCloseTo(5, 3);
+      // Round 6: VBUS is the USB cable (0.05 Ω) carrying the board's own ~25 mA, so it sits ~1 mV under 5 V.
+      expect(r.voltage(b.ctx.node("VBUS"))).toBeCloseTo(5, 2);
       expect(r.voltage(b.ctx.node("3V3"))).toBeCloseTo(3.3, 3);
-      expect(b.model.visualState()).toMatchObject({ powered: true, running: false });
+      expect(b.model.visualState()).toMatchObject({ powered: true, running: false, usb: true });
+    });
+
+    it("round 6: with USB unplugged and nothing on its supply pins it has no power", () => {
+      const b = mount(def, { power: { usb: false } });
+      const r = b.solve();
+      expect(r.voltage(b.ctx.node("3V3"))).toBeLessThan(0.1);
+      expect(b.model.powered?.()).toBe(false);
+      expect(b.model.visualState()).toMatchObject({ powered: false, usb: false });
+    });
+
+    it("round 6: a LiPo on its supply input powers it with USB unplugged, and the cell carries the board's current", () => {
+      const supplyPin = def.spec.pins.some((p) => p.id === "VSYS") ? "VSYS" : "VBUS";
+      const b = mount(def, { power: { usb: false }, wiring: { [supplyPin]: "bat" } });
+      const r = b.solve((c) => void c.voltageSource("bat", GROUND, 3.9, 0.15, { id: "cell" }));
+      expect(b.model.powered?.()).toBe(true);
+      expect(r.voltage(b.ctx.node("3V3"))).toBeCloseTo(3.3, 1);
+      // ~25 mA at 3.3 V: the LDO passes it 1:1, the Pico's buck-boost needs less from a 3.9 V cell.
+      expect(r.current("cell") * 1000).toBeGreaterThan(15);
+      expect(r.current("cell") * 1000).toBeLessThan(30);
     });
 
     it("drives an LED + 220 Ω at ~4.5 mA from a 3.3 V pin (50 Ω pad)", () => {

@@ -145,12 +145,22 @@ export class Simulation {
   private pinWatchers = new Map<string, Set<(level: 0 | 1, tMs: number) => void>>();
   /** Node → the firmware board GPIO that drives it directly or through resistors (cached; nets never change). */
   private driverCache = new Map<NodeId, string | null>();
+  // round 6 power
+  /** jumper.json power.usb (live: adoptProps / setPower change it). */
+  private powerState = { usb: true };
+  /** The firmware board had power after the last solve (its model's powered()). */
+  private _boardPowered = true;
+  /** Power changed while the MCU was stepping: apply the reset after the step. */
+  private powerPending = false;
+  /** Global cycle at which the MCU last came out of reset (its own cycle counter restarts at 0 then). */
+  private mcuOffset = 0;
 
   constructor(opts: SimulationOptions) {
     this.project = opts.project;
     this.registry = opts.registry;
     this.firmware = opts.firmware;
     this.services = opts.services;
+    this.powerState.usb = opts.project.power?.usb !== false;
 
     // Every pin of every known part gets a net (single-pin nets for unwired pins).
     const extraPins: { part: string; pin: string }[] = [];
@@ -199,8 +209,8 @@ export class Simulation {
     if (mcu) {
       if (this.firmware !== undefined) mcu.load(this.firmware);
       this.unsubs.push(
-        mcu.onPinChange((pin, state, cycle) => this.handlePinChange(pin, state, cycle)),
-        mcu.onSerial((byte, cycle) => this.handleSerial(byte, cycle)),
+        mcu.onPinChange((pin, state, cycle) => this.handlePinChange(pin, state, cycle + this.mcuOffset)),
+        mcu.onSerial((byte, cycle) => this.handleSerial(byte, cycle + this.mcuOffset)),
       );
     }
     this.instantiate();
@@ -211,7 +221,7 @@ export class Simulation {
 
   /** Current cycle (inside an MCU step this is the MCU's live cycle). */
   get cycles(): number {
-    return this.mcu ? Math.max(this.mcu.cycles, this.clock.cycles) : this.clock.cycles;
+    return this.mcu ? Math.max(this.mcu.cycles + this.mcuOffset, this.clock.cycles) : this.clock.cycles;
   }
 
   get timeMs(): number {
@@ -238,7 +248,8 @@ export class Simulation {
       const nextEvent = this.clock.nextEventCycle();
       let next = Math.min(target, cur + this.chunkCycles);
       if (nextEvent !== undefined && nextEvent > cur && nextEvent < next) next = nextEvent;
-      if (this.mcu) {
+      if (this.powerPending) this.applyPower();
+      if (this.mcu && this._boardPowered) {
         this.stepping = true;
         try {
           this.mcu.step(next - cur);
@@ -246,7 +257,8 @@ export class Simulation {
           this.stepping = false;
         }
         // Normally mcu.cycles >= next; it is less only when a part event stopped the step early (stopAt).
-        this.clock.advanceTo(Math.max(this.clock.cycles, this.mcu.cycles));
+        this.clock.advanceTo(Math.max(this.clock.cycles, this.mcu.cycles + this.mcuOffset));
+        if (this.powerPending) this.applyPower();
       } else {
         this.clock.advanceTo(next);
       }
@@ -275,6 +287,9 @@ export class Simulation {
     this.serialBytes = [];
     this.circuit = new Circuit();
     this.mcu?.reset();
+    this.mcuOffset = 0;
+    this._boardPowered = true;
+    this.powerPending = false;
     this._stopped = false;
     this.meters.clear();
     this.declaredPwm.clear();
@@ -318,8 +333,50 @@ export class Simulation {
       this.solving = false;
     }
     this.updateSpiSelects();
+    this.checkBoardPower();
     this.emit({ type: "solved", tMs: this.timeMs });
     return this._lastSolve!;
+  }
+
+  // round 6 power
+  /** Whether the firmware board has power (USB, or a battery path to its supply pins). */
+  get boardPowered(): boolean {
+    return this._boardPowered;
+  }
+
+  /** jumper.json power.usb as the simulation sees it. */
+  get usb(): boolean {
+    return this.powerState.usb;
+  }
+
+  /** Plug (true) or unplug (false) the board's USB cable while it runs; re-solves. Returns true when it changed. */
+  setPower(p: { usb: boolean }): boolean {
+    if (p.usb === this.powerState.usb) return false;
+    this.powerState.usb = p.usb;
+    this.solve();
+    return true;
+  }
+
+  /** After a solve: a firmware board that lost or regained power is held in reset / restarts from reset (power-on). */
+  private checkBoardPower(): void {
+    if (!this.boardId || !this.mcu) return;
+    const model = this.slot(this.boardId)?.model;
+    const powered = model?.powered ? model.powered() : true;
+    if (powered === this._boardPowered) return;
+    this._boardPowered = powered;
+    if (this.stepping) {
+      this.powerPending = true;
+      this.mcu.stopAt?.(this.cycles - this.mcuOffset);
+    } else this.applyPower();
+  }
+
+  /** Reset the MCU at the current cycle: on power loss its pins let go; on power-on it boots from the start. */
+  private applyPower(): void {
+    this.powerPending = false;
+    if (!this.mcu) return;
+    this.mcuOffset = this.clock.cycles;
+    this.mcu.reset();
+    this.solve();
   }
 
   get lastSolve(): SolveResult | undefined {
@@ -395,6 +452,12 @@ export class Simulation {
         s.model.setProp(k, v);
         changed.push(`${p.id}.${k}`);
       }
+    }
+    // round 6 power: plugging / unplugging USB applies live.
+    const usb = project.power?.usb !== false;
+    if (usb !== this.powerState.usb) {
+      this.powerState.usb = usb;
+      changed.push("power.usb");
     }
     this.project = project;
     if (changed.length) this.solve();
@@ -550,6 +613,7 @@ export class Simulation {
         digital: (pin, threshold) => this.levelOfNode(this.nodeOf(p.id, pin), threshold),
         watch: (pin, cb) => this.watchNode(this.nodeOf(p.id, pin), cb),
         ...(this.services ? { services: this.services } : {}),
+        power: this.powerState, // round 6 power
       };
       this.slots.push({ id: p.id, def, ctx, props, model: def.create(ctx) });
     }
@@ -875,7 +939,7 @@ export class Simulation {
   private scheduleIn(delayMs: number, cb: () => void): () => void {
     const at = this.cycles + Math.max(0, this.clock.fromMs(delayMs));
     const id = this.clock.schedule(at, () => cb());
-    if (this.stepping) this.mcu?.stopAt?.(at);
+    if (this.stepping) this.mcu?.stopAt?.(at - this.mcuOffset);
     return () => void this.clock.cancel(id);
   }
 

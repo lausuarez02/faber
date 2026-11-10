@@ -290,7 +290,7 @@
         "min": 4.75,
         "max": 5.25
       },
-      "description": "USB 5 V (VBUS), straight from the USB connector. Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+      "description": "USB 5 V (VBUS), straight from the USB connector when a cable is plugged in (jumper.json power.usb, the default). Use it for 5 V parts, never on a GPIO. It reaches VSYS through the on-board Schottky diode, so a battery on VSYS never back-feeds USB."
     },
     {
       "id": "VSYS",
@@ -302,7 +302,7 @@
         "min": 1.8,
         "max": 5.5
       },
-      "description": "Main system input (1.8 to 5.5 V) that feeds the 3.3 V buck-boost regulator; from VBUS through a Schottky diode, about 4.7 V on USB. Stamped as 4.7 V. A battery goes here (through a diode if USB is also connected)."
+      "description": "Main system input (1.8 to 5.5 V) into the RT6150 buck-boost that makes 3V3 (about 90 % efficient); from VBUS through the on-board Schottky, about 4.7 V on USB. A 1S LiPo (through a charger's OUT) or 2-3 × AA goes here directly; the board's diode already stops USB back-feeding it."
     },
     {
       "id": "GND.5",
@@ -322,7 +322,7 @@
         "min": 0,
         "max": 5.5
       },
-      "description": "Enable of the 3.3 V regulator, pulled up on the board; tie to GND to switch 3.3 V off. Not simulated (the 3V3 rail is always on)."
+      "description": "Enable of the 3.3 V regulator, pulled up to VSYS on the board (100 kΩ). Tie it to GND to switch the 3.3 V supply (and the RP2040) off."
     },
     {
       "id": "3V3",
@@ -334,7 +334,7 @@
         "min": 3.2,
         "max": 3.4
       },
-      "description": "3.3 V output of the on-board RT6150 buck-boost regulator. Keep the load under 300 mA. Stamped as a 3.3 V source."
+      "description": "3.3 V output of the on-board buck-boost regulator (it regulates from VSYS 1.8 to 5.5 V). Keep the load modest (Jumper checks against 300 mA)."
     },
     {
       "id": "ADC_VREF",
@@ -551,7 +551,12 @@
     "recommendedPinCurrentmA": 4,
     "maxTotalCurrentmA": 50,
     "maxVoltage": 3.63,
-    "max3v3mA": 300
+    "max3v3mA": 300,
+    "minSupplyV": 1.8,
+    "minVsysV": 1.8,
+    "maxVsysV": 5.5,
+    "regEfficiency": 0.9,
+    "min3v3V": 2.7
   },
   "footprint": "51 × 21 mm castellated module, 2 × 20 pins at 0.1 in, rows 0.7 in apart",
   "dimensions_mm": {
@@ -579,7 +584,7 @@
     {
       "key": "powered",
       "type": "boolean",
-      "description": "Board has power (USB assumed); lights the power LED where the board has one."
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
     },
     {
       "key": "running",

@@ -23,6 +23,8 @@ export interface BenchOptions {
   /** pin id → circuit node. Pins not listed get "<id>:<pin>"; ground pins default to "0". */
   wiring?: Record<string, NodeId>;
   mcu?: McuBackend;
+  /** Round 6: the project's power situation (jumper.json power). Default: USB plugged. */
+  power?: { usb: boolean };
 }
 
 export interface Bench {
@@ -55,6 +57,7 @@ export function mount(def: PartDefinition, opts: BenchOptions = {}): Bench {
     },
     internalNode: (name) => `${id}#${name}`,
     ...(opts.mcu ? { mcu: opts.mcu } : {}),
+    power: opts.power ?? { usb: true },
     requestSolve: () => void bench.solve(),
     now: () => 0,
   };

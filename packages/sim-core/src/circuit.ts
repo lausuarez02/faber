@@ -30,6 +30,37 @@ export interface DiodeParams {
   rOff?: number;
 }
 
+/**
+ * Round 6 (power): a voltage regulator between `vin` and `vout`, referenced to ground. Three states,
+ * iterated like the diodes until they settle:
+ *   off        VIN below `minIn` (or the output is held above the set point by something else): nothing stamped
+ *   regulating VOUT is a `volts` source with `rOut`, and VIN supplies the input current: the output
+ *              current + `iq` (linear), or output power / efficiency / VIN + `iq` (switching)
+ *   tracking   linear: VIN too low for the set point, VOUT = VIN − dropout (the LDO in dropout);
+ *              switching (boost): VIN above the set point, VOUT = VIN − dropout (through the inductor and diode)
+ * current(id) is the output current (A, > 0 = into VOUT); current(`${id}:in`) the input current from VIN.
+ */
+export interface RegulatorParams {
+  /** Output set point (V). */
+  volts: number;
+  /** "linear" (LDO, default) or "switching" (boost converter). */
+  kind?: "linear" | "switching";
+  /** Linear: dropout voltage (V, default 0.25). Switching: the pass-through drop when VIN is above the set point (default 0.4). */
+  dropout?: number;
+  /** Output resistance (Ω, default 0.05). */
+  rOut?: number;
+  /** Switching efficiency 0..1 (default 0.9). */
+  efficiency?: number;
+  /** Quiescent current drawn from VIN while on (A, default 0). */
+  iq?: number;
+  /** Input below which the regulator is off (V, default 1.0; a boost's UVLO). */
+  minIn?: number;
+  /** Switching only: false for a buck-boost (it regulates above the set point too, never passes VIN through). Default true (a boost). */
+  passThrough?: boolean;
+}
+
+export type RegulatorState = "off" | "regulating" | "tracking";
+
 export interface ElementOptions {
   /** Explicit element id. Default: auto "e<n>" (scoped builders prefix it with the part id). */
   id?: ElementId;
@@ -53,6 +84,8 @@ export interface CircuitBuilder {
   led(anode: NodeId, cathode: NodeId, params: DiodeParams, opts?: ElementOptions): ElementId;
   /** Switch: SWITCH_R_CLOSED when closed, fully open (nothing stamped) when open. current(id) > 0 = a → b. */
   switch(a: NodeId, b: NodeId, closed: boolean, opts?: ElementOptions): ElementId;
+  /** Round 6: a voltage regulator (LDO or boost) from vin to vout, referenced to ground. See RegulatorParams. Optional so older test builders still type-check. */
+  regulator?(vin: NodeId, vout: NodeId, params: RegulatorParams, opts?: ElementOptions): ElementId;
 }
 
 /** What part models read after a solve. */
@@ -63,8 +96,10 @@ export interface SolveResultView {
   current(id: ElementId): number;
   /** True when the node has no conducting path to ground (open switches and off diodes do not conduct). */
   isFloating(node: NodeId): boolean;
-  /** For diodes/LEDs: whether it ended up conducting. */
+  /** For diodes/LEDs: whether it ended up conducting. For regulators: whether it is not off. */
   isOn(id: ElementId): boolean;
+  /** Round 6: a regulator's state ("off" for unknown ids). Optional on hand-made views. */
+  regulatorState?(id: ElementId): RegulatorState;
 }
 
 export interface SolveResult extends SolveResultView {
@@ -82,7 +117,28 @@ type Element =
   | { kind: "vsource"; id: ElementId; a: NodeId; b: NodeId; v: number; g: number }
   | { kind: "isource"; id: ElementId; a: NodeId; b: NodeId; i: number }
   | { kind: "diode"; id: ElementId; a: NodeId; b: NodeId; vf: number; gOn: number; gOff: number }
-  | { kind: "switch"; id: ElementId; a: NodeId; b: NodeId; closed: boolean };
+  | { kind: "switch"; id: ElementId; a: NodeId; b: NodeId; closed: boolean }
+  | {
+      kind: "regulator";
+      id: ElementId;
+      /** a = VIN, b = VOUT. */
+      a: NodeId;
+      b: NodeId;
+      volts: number;
+      switching: boolean;
+      passThrough: boolean;
+      dropout: number;
+      g: number;
+      eff: number;
+      iq: number;
+      minIn: number;
+    };
+
+interface RegState {
+  state: RegulatorState;
+  /** Input current stamped as a sink on VIN while regulating (A). */
+  iin: number;
+}
 
 function assertFinite(name: string, v: number) {
   if (!Number.isFinite(v)) throw new Error(`${name} must be a finite number, got ${v}`);
@@ -95,6 +151,8 @@ export class Circuit implements CircuitBuilder {
   private nodes = new Set<NodeId>();
   /** Diode states carried between solves (warm start). */
   private diodeState = new Map<ElementId, boolean>();
+  /** Regulator states carried between solves (warm start). */
+  private regState = new Map<ElementId, RegState>();
   /** Max diode-state iterations per solve. */
   maxIterations = 64;
 
@@ -175,6 +233,29 @@ export class Circuit implements CircuitBuilder {
     return id;
   }
 
+  regulator(vin: NodeId, vout: NodeId, params: RegulatorParams, opts?: ElementOptions): ElementId {
+    assertFinite("volts", params.volts);
+    if (!(params.volts > 0)) throw new Error(`regulator volts must be > 0, got ${params.volts}`);
+    const id = this.addId(opts);
+    this.touch(vin, vout);
+    const switching = params.kind === "switching";
+    this.elements.push({
+      kind: "regulator",
+      id,
+      a: vin,
+      b: vout,
+      volts: params.volts,
+      switching,
+      passThrough: params.passThrough ?? true,
+      dropout: Math.max(0, params.dropout ?? (switching ? 0.4 : 0.25)),
+      g: 1 / Math.max(params.rOut ?? 0.05, MIN_R_OUT),
+      eff: Math.min(1, Math.max(0.05, params.efficiency ?? 0.9)),
+      iq: Math.max(0, params.iq ?? 0),
+      minIn: params.minIn ?? 1.0,
+    });
+    return id;
+  }
+
   /** Solve the DC operating point. */
   solve(): SolveResult {
     const nodeList = [...this.nodes].sort();
@@ -185,15 +266,19 @@ export class Circuit implements CircuitBuilder {
     const diodes = this.elements.filter((e) => e.kind === "diode");
     const state = new Map<ElementId, boolean>();
     for (const d of diodes) state.set(d.id, this.diodeState.get(d.id) ?? false);
+    const regs = this.elements.filter((e): e is Extract<Element, { kind: "regulator" }> => e.kind === "regulator");
+    const regState = new Map<ElementId, RegState>();
+    for (const r of regs) regState.set(r.id, { ...(this.regState.get(r.id) ?? { state: "off", iin: 0 }) });
 
     let x: Float64Array = new Float64Array(n);
     let iterations = 0;
     let converged = false;
     while (iterations < this.maxIterations) {
       iterations++;
-      x = this.solveLinear(n, index, state);
+      x = this.solveLinear(n, index, state, regState);
       const v = (node: NodeId) => (node === GROUND ? 0 : x[index.get(node)!]!);
       let changed = false;
+      for (const r of regs) if (this.updateRegulator(r, regState.get(r.id)!, v)) changed = true;
       for (const d of diodes) {
         if (d.kind !== "diode") continue;
         const on = state.get(d.id)!;
@@ -212,6 +297,7 @@ export class Circuit implements CircuitBuilder {
       }
     }
     for (const [k, s] of state) this.diodeState.set(k, s);
+    for (const [k, s] of regState) this.regState.set(k, { ...s });
 
     const voltages = new Map<NodeId, number>();
     voltages.set(GROUND, 0);
@@ -237,10 +323,17 @@ export class Circuit implements CircuitBuilder {
         case "switch":
           currents.set(e.id, e.closed ? vab / SWITCH_R_CLOSED : 0);
           break;
+        case "regulator": {
+          const rs = regState.get(e.id)!;
+          const out = regulatorOut(e, rs.state, v(e.a), v(e.b));
+          currents.set(e.id, out);
+          currents.set(`${e.id}:in`, rs.state === "regulating" ? rs.iin : rs.state === "tracking" ? out + e.iq : 0);
+          break;
+        }
       }
     }
 
-    const floating = this.findFloating(nodeList, state);
+    const floating = this.findFloating(nodeList, state, regState);
     return {
       voltages,
       currents,
@@ -250,11 +343,34 @@ export class Circuit implements CircuitBuilder {
       voltage: (node) => v(node),
       current: (id) => currents.get(id) ?? 0,
       isFloating: (node) => floating.has(node),
-      isOn: (id) => state.get(id) ?? false,
+      isOn: (id) => state.get(id) ?? (regState.has(id) ? regState.get(id)!.state !== "off" : false),
+      regulatorState: (id) => regState.get(id)?.state ?? "off",
     };
   }
 
-  private solveLinear(n: number, index: Map<NodeId, number>, diodeOn: Map<ElementId, boolean>): Float64Array {
+  /** Next state (and input current) of a regulator from this iteration's voltages. Returns true when it changed. */
+  private updateRegulator(r: Extract<Element, { kind: "regulator" }>, rs: RegState, v: (n: NodeId) => number): boolean {
+    const vin = v(r.a);
+    const vout = v(r.b);
+    const out = regulatorOut(r, rs.state, vin, vout);
+    let next: RegulatorState;
+    if (vin < r.minIn) next = "off";
+    else if (rs.state !== "off" && out < -1e-4) next = "off"; // something else holds VOUT above the set point; it cannot sink
+    else if (rs.state === "off" && vout > regulatorTarget(r, vin) - 0.01 && vout > 0.05) next = "off"; // held up by another source: stays off
+    else if (r.switching) next = r.passThrough && vin - r.dropout > r.volts ? "tracking" : "regulating";
+    else next = vin - r.dropout >= r.volts ? "regulating" : "tracking";
+    let iin = 0;
+    if (next === "regulating") {
+      const iout = rs.state === "regulating" ? Math.max(0, out) : 0;
+      iin = (r.switching ? (r.volts * iout) / (r.eff * Math.max(vin, 0.1)) : iout) + r.iq;
+    }
+    const changed = next !== rs.state || Math.abs(iin - rs.iin) > 1e-6 + 1e-4 * Math.abs(iin);
+    rs.state = next;
+    rs.iin = iin;
+    return changed;
+  }
+
+  private solveLinear(n: number, index: Map<NodeId, number>, diodeOn: Map<ElementId, boolean>, regs: Map<ElementId, RegState> = new Map()): Float64Array {
     // Dense augmented matrix [G | I]. Kit-sized circuits have tens of nodes.
     const w = n + 1;
     const m = new Float64Array(n * w);
@@ -304,12 +420,27 @@ export class Circuit implements CircuitBuilder {
         case "switch":
           if (e.closed) stampG(e.a, e.b, 1 / SWITCH_R_CLOSED);
           break;
+        case "regulator": {
+          const rs = regs.get(e.id);
+          if (!rs || rs.state === "off") break;
+          if (rs.state === "regulating") {
+            // VOUT: a `volts` source (Norton); VIN: the input current as a sink to ground.
+            stampG(e.b, GROUND, e.g);
+            stampI(e.b, GROUND, e.volts * e.g);
+            stampI(GROUND, e.a, rs.iin);
+          } else {
+            // Series path VIN → VOUT with a `dropout` drop: V(VOUT) − V(VIN) = −dropout.
+            stampG(e.b, e.a, e.g);
+            stampI(e.b, e.a, -e.dropout * e.g);
+          }
+          break;
+        }
       }
     }
     return gaussianSolve(m, n);
   }
 
-  private findFloating(nodeList: NodeId[], diodeOn: Map<ElementId, boolean>): Set<NodeId> {
+  private findFloating(nodeList: NodeId[], diodeOn: Map<ElementId, boolean>, regs: Map<ElementId, RegState> = new Map()): Set<NodeId> {
     const adj = new Map<NodeId, NodeId[]>();
     const link = (a: NodeId, b: NodeId) => {
       if (!adj.has(a)) adj.set(a, []);
@@ -324,6 +455,11 @@ export class Circuit implements CircuitBuilder {
         (e.kind === "switch" && e.closed) ||
         (e.kind === "diode" && diodeOn.get(e.id));
       if (conducts) link(e.a, e.b);
+      if (e.kind === "regulator") {
+        const st = regs.get(e.id)?.state ?? "off";
+        if (st === "regulating") link(e.b, GROUND);
+        else if (st === "tracking") link(e.a, e.b);
+      }
     }
     const seen = new Set<NodeId>([GROUND]);
     const stack: NodeId[] = [GROUND];
@@ -338,6 +474,19 @@ export class Circuit implements CircuitBuilder {
     }
     return new Set(nodeList.filter((node) => !seen.has(node)));
   }
+}
+
+/** Output voltage a regulator aims for at this input. */
+function regulatorTarget(r: Extract<Element, { kind: "regulator" }>, vin: number): number {
+  if (r.switching) return r.passThrough && vin - r.dropout > r.volts ? vin - r.dropout : r.volts;
+  return Math.min(r.volts, vin - r.dropout);
+}
+
+/** Output current of a regulator in a state (A, > 0 = into VOUT). */
+function regulatorOut(r: Extract<Element, { kind: "regulator" }>, st: RegulatorState, vin: number, vout: number): number {
+  if (st === "regulating") return (r.volts - vout) * r.g;
+  if (st === "tracking") return (vin - vout - r.dropout) * r.g;
+  return 0;
 }
 
 /** Solve the n×(n+1) augmented system in place with partial pivoting. */
@@ -392,5 +541,9 @@ export function scopedBuilder(target: CircuitBuilder, scope: string): CircuitBui
     diode: (a, k, p, opts) => target.diode(a, k, p, id(opts)),
     led: (a, k, p, opts) => target.led(a, k, p, id(opts)),
     switch: (a, b, c, opts) => target.switch(a, b, c, id(opts)),
+    regulator: (vi, vo, p, opts) => {
+      if (!target.regulator) throw new Error("this circuit builder has no regulator()");
+      return target.regulator(vi, vo, p, id(opts));
+    },
   };
 }
