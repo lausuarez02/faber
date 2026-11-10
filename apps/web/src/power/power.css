@@ -1,0 +1,70 @@
+/* Round 6, track power: the board's USB switch and battery reading, bottom centre of the stage. */
+.power-pill {
+  position: absolute;
+  left: 50%;
+  /* above React Flow's attribution, which sits at the bottom centre */
+  bottom: calc(var(--gutter) + 18px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--bg-float);
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-float);
+}
+
+/* Phones: the status pill and the bottom bar own the bottom edge; sit under the title instead. */
+.power-pill.is-phone {
+  top: calc(var(--gutter) + 52px);
+  bottom: auto;
+  height: 36px;
+}
+
+.power-pill.is-off .power-read {
+  color: var(--error);
+}
+
+.power-usb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--bg-hover);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.power-usb[aria-checked="false"] {
+  background: transparent;
+  color: var(--fg-2);
+  outline: 1px dashed var(--border-strong);
+}
+
+.power-usb:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.power-div {
+  width: 1px;
+  height: 16px;
+  background: var(--border-strong);
+}
+
+.power-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
