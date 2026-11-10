@@ -11,7 +11,7 @@ import type { PartSpec } from "@jumper/sim-core";
 import { drawingSvg } from "./drawing.ts";
 import { buildCase, type Body, partColor } from "./geometry.ts";
 import { layoutCase, type Layout, resolveParams } from "./layout.ts";
-import { checkMesh, type Mesh, meshOf, stlBinary, threeMf } from "./mesh.ts";
+import { checkMesh, type Mesh, meshOf, plateLayout, printPose, stlBinary, threeMf } from "./mesh.ts";
 import { contains } from "./plan.ts";
 import { materialFor, printMd } from "./print.ts";
 import { occt } from "./occt.ts";
@@ -109,7 +109,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const c = checkMesh(m);
     if (!c.closed || c.volume <= 0 || (b.kind === "shell" && c.shells !== 1)) watertight.push(`${b.name} (${c.badEdges} open edges, volume ${c.volume.toFixed(1)} mm³, ${c.shells} pieces)`);
     if (b.kind === "shell") overhang.set(b.name, overhangArea(m, b.name === "front" ? [0, 0, 1] : [0, 0, -1]));
-    files.set(`stl/${b.name}.stl`, stlBinary(m, b.name));
+    files.set(`stl/${b.name}.stl`, stlBinary(printPose(m, b.up), b.name));
   }
   checks.push(watertight.length ? { id: "watertight", ok: false, severity: "error", message: `Not every printable file is a closed solid: ${watertight.join("; ")}. Why: a boolean in the CAD kernel left a gap. Fix: change wall_mm or gap_mm a little and design again; report it if it persists.` } : { id: "watertight", ok: true, severity: "info", message: `All ${B.bodies.length} bodies are closed 2-manifolds (every edge shared by two triangles) with volume > 0.` });
 
@@ -195,7 +195,13 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   checks.unshift({ id: "fits", ok: fitsOk, severity: fitsOk ? "info" : "error", message: fitsOk ? `All ${L.placed.length} parts fit in ${L.inner.w} x ${L.inner.h} x ${L.inner.d} mm inside with ${L.params.gap_mm} mm of wiring room around each${L.inline.length ? `; ${L.inline.join(", ")} ride in the wiring (heat-shrink)` : ""}${L.outside.length ? `; outside the case: ${L.outside.map((o) => o.id).join(", ")}` : ""}.` : "Some parts do not fit; see the errors below." });
 
   // ---- 3MF, STEP
-  files.set("case.3mf", threeMf(B.bodies.map((b) => ({ name: b.name, color: b.color, mesh: meshes.get(b.name)! })), `${title} case`));
+  // 3MF: one build plate, every body in its print pose, side by side (6 mm apart)
+  const posed = B.bodies.map((b) => ({ b, mesh: printPose(meshes.get(b.name)!, b.up) }));
+  const spots = plateLayout(posed.map(({ mesh }) => {
+    const bb = checkMesh(mesh).bbox;
+    return { w: bb.max[0] - bb.min[0], h: bb.max[1] - bb.min[1] };
+  }));
+  files.set("case.3mf", threeMf(posed.map(({ b, mesh }, i) => ({ name: b.name, color: b.color, mesh, at: { x: spots[i]!.x + 10, y: spots[i]!.y + 10 } })), `${title} case`));
   const step = async (cfg: { shape: unknown; name: string; color: string }[]) => new Uint8Array(await (r.exportSTEP(cfg, { unit: "MM", modelUnit: "MM" }) as Blob).arrayBuffer());
   files.set("step/assembly.step", await step([...B.bodies.map((b) => ({ shape: b.shape, name: b.name, color: b.color })), ...B.envelopes.map((e) => ({ shape: e.shape, name: `part-${e.id}`, color: e.color }))]));
   files.set("step/front.step", await step([{ shape: B.bodies[0]!.shape, name: "front", color: B.bodies[0]!.color }]));

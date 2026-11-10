@@ -106,11 +106,69 @@ export function checkMesh(m: Mesh): MeshCheck {
   return { triangles: n, closed: bad === 0, badEdges: bad, volume: vol, bbox: { min, max }, shells: roots.size };
 }
 
-export function stlBinary(m: Mesh, name: string): Uint8Array {
+/**
+ * The mesh turned so `up` (case frame) points to +z, then moved so it stands on z = 0 centred on
+ * x = y = 0: how the body goes on the printer's bed (the face down is flat on z = 0).
+ */
+export function printPose(m: Mesh, up: [number, number, number]): Mesh {
+  const l = Math.hypot(up[0], up[1], up[2]) || 1;
+  const n = [up[0] / l, up[1] / l, up[2] / l] as const;
+  let R: number[][];
+  if (n[2] > 1 - 1e-9) R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  else if (n[2] < -1 + 1e-9) R = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]; // half turn about x
+  else {
+    // Rodrigues: axis n x z, angle acos(n . z)
+    const ax = [n[1], -n[0], 0];
+    const s = Math.hypot(ax[0]!, ax[1]!);
+    const k = [ax[0]! / s, ax[1]! / s, 0];
+    const c = n[2];
+    const sn = s;
+    const K = [[0, -k[2]!, k[1]!], [k[2]!, 0, -k[0]!], [-k[1]!, k[0]!, 0]];
+    const K2 = K.map((row, i) => [0, 1, 2].map((j) => row[0]! * K[0]![j]! + row[1]! * K[1]![j]! + row[2]! * K[2]![j]!));
+    R = [0, 1, 2].map((i) => [0, 1, 2].map((j) => (i === j ? 1 : 0) + sn * K[i]![j]! + (1 - c) * K2[i]![j]!));
+  }
+  const P = m.positions;
+  const out = new Float32Array(P.length);
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < P.length; i += 3) {
+    for (let r = 0; r < 3; r++) {
+      const v = R[r]![0]! * P[i]! + R[r]![1]! * P[i + 1]! + R[r]![2]! * P[i + 2]!;
+      out[i + r] = v;
+      min[r] = Math.min(min[r]!, v);
+      max[r] = Math.max(max[r]!, v);
+    }
+  }
+  const sh = [(min[0]! + max[0]!) / 2, (min[1]! + max[1]!) / 2, min[2]!];
+  for (let i = 0; i < out.length; i += 3) for (let r = 0; r < 3; r++) out[i + r] = out[i + r]! - sh[r]!;
+  return { positions: out, indices: m.indices };
+}
+
+/** Build-plate spots for bodies (their print-pose footprints), in rows with a gap, no overlap. */
+export function plateLayout(sizes: { w: number; h: number }[], gap = 6, rowWidth = 200): { x: number; y: number }[] {
+  const order = sizes.map((s, i) => ({ ...s, i })).sort((a, b) => b.h - a.h || b.w - a.w);
+  const at: { x: number; y: number }[] = new Array(sizes.length);
+  let x = 0;
+  let y = 0;
+  let rowH = 0;
+  for (const s of order) {
+    if (x > 0 && x + s.w > rowWidth) {
+      x = 0;
+      y += rowH + gap;
+      rowH = 0;
+    }
+    at[s.i] = { x: x + s.w / 2, y: y + s.h / 2 };
+    x += s.w + gap;
+    rowH = Math.max(rowH, s.h);
+  }
+  return at;
+}
+
+export function stlBinary(m: Mesh, name: string, frame = "print orientation, face down on z = 0"): Uint8Array {
   const n = m.indices.length / 3;
   const buf = new ArrayBuffer(84 + 50 * n);
   const dv = new DataView(buf);
-  const head = new TextEncoder().encode(`Jumper case: ${name} (mm, case frame)`.slice(0, 79));
+  const head = new TextEncoder().encode(`Jumper case: ${name} (mm, ${frame})`.slice(0, 79));
   new Uint8Array(buf, 0, 80).set(head);
   dv.setUint32(80, n, true);
   const P = m.positions;
@@ -156,7 +214,7 @@ export function readStl(bytes: Uint8Array): Mesh {
   return weld(v, t, 1e-3);
 }
 
-export function threeMf(objects: { name: string; color: string; mesh: Mesh }[], title: string): Uint8Array {
+export function threeMf(objects: { name: string; color: string; mesh: Mesh; at?: { x: number; y: number } }[], title: string): Uint8Array {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   const mats = objects.map((o) => `<base name="${esc(o.name)}" displaycolor="${o.color.toUpperCase()}FF"/>`).join("");
   const objs = objects
@@ -170,7 +228,8 @@ export function threeMf(objects: { name: string; color: string; mesh: Mesh }[], 
       return `<object id="${i + 2}" name="${esc(o.name)}" type="model" pid="1" pindex="${i}"><mesh><vertices>${vs.join("")}</vertices><triangles>${ts.join("")}</triangles></mesh></object>`;
     })
     .join("");
-  const items = objects.map((_, i) => `<item objectid="${i + 2}"/>`).join("");
+  // build items carry the plate position (3MF transform: 3 x 3 rotation then translation)
+  const items = objects.map((o, i) => `<item objectid="${i + 2}"${o.at ? ` transform="1 0 0 0 1 0 0 0 1 ${o.at.x.toFixed(3)} ${o.at.y.toFixed(3)} 0"` : ""}/>`).join("");
   const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Title">${esc(title)}</metadata><metadata name="Application">Jumper</metadata><resources><basematerials id="1">${mats}</basematerials>${objs}</resources><build>${items}</build></model>`;
   const ct = `<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`;
   const rels = `<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;

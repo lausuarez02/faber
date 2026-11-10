@@ -20,6 +20,8 @@ export interface Body {
   shape: Solid;
   color: string;
   print: NonNullable<CaseFile["print"]>;
+  /** Case-frame direction that points up (away from the bed) when this body is printed. */
+  up: Vec3;
   /** Direction this body moves in the exploded view (mm). */
   explode: Vec3;
 }
@@ -275,17 +277,17 @@ export async function buildCase(L: Layout): Promise<Built> {
       const ins = o.insert;
       if (ins.kind === "cap") {
         const s = cylAlong(r, ins.flange_d, 0, ins.flange_mm, ins.base, o.n).fuse(cylAlong(r, ins.d, 0, ins.length, ins.base, o.n));
-        bodies.push({ name: `cap-${o.part}`, kind: "cap", shape: s, color: shade(color, -0.25), print: { face_down: "flat", supports: false, note: "print standing on its flange, 0.12 mm layers" }, explode: [o.n[0] * 14, o.n[1] * 14, o.n[2] * 14] });
+        bodies.push({ name: `cap-${o.part}`, kind: "cap", shape: s, color: shade(color, -0.25), print: { face_down: "flat", supports: false, note: "standing on its flange, 0.12 mm layers" }, up: o.n, explode: [o.n[0] * 14, o.n[1] * 14, o.n[2] * 14] });
       } else {
         const s = cylAlong(r, ins.d, 0.3, 0.3 + ins.length, ins.base, o.n).fuse(cylAlong(r, ins.flange_d, o.standoff - 0.85, o.standoff - 0.05, ins.base, o.n));
-        bodies.push({ name: `light-pipe-${o.part}`, kind: "light-pipe", shape: s, color: "#E8F4FF", print: { face_down: "flat", supports: false, note: "clear PETG or clear resin; polish both ends" }, explode: [o.n[0] * 12, o.n[1] * 12, o.n[2] * 12] });
+        bodies.push({ name: `light-pipe-${o.part}`, kind: "light-pipe", shape: s, color: "#E8F4FF", print: { face_down: "flat", supports: false, note: "standing on its flange; clear PETG or clear resin; polish both ends" }, up: o.n, explode: [o.n[0] * 12, o.n[1] * 12, o.n[2] * 12] });
       }
     }
   }
   const sep = Math.max(12, (ob[1][2] - ob[0][2]) * 0.9);
   bodies.unshift(
-    { name: "front", kind: "shell", shape: front, color, print: { face_down: "front", supports: false, note: "front face on the bed (the window side down), open side up" }, explode: [0, 0, sep] },
-    { name: "back", kind: "shell", shape: back, color, print: { face_down: "back", supports: false, note: "back face on the bed, open side up" }, explode: [0, 0, -sep] },
+    { name: "front", kind: "shell", shape: front, color, print: { face_down: "front", supports: false, note: "front face on the bed (the window side down), open side up" }, up: [0, 0, -1], explode: [0, 0, sep] },
+    { name: "back", kind: "shell", shape: back, color, print: { face_down: "back", supports: false, note: "back face on the bed, open side up" }, up: [0, 0, 1], explode: [0, 0, -sep] },
   );
   if (L.params.belt_clip) {
     const H = L.outer.h;
@@ -295,7 +297,7 @@ export async function buildCase(L: Layout): Promise<Built> {
     let clipS = r.makeBox([-9, yTop - 7, zb - 3], [9, yTop, zb]);
     clipS = clipS.fuse(r.makeBox([-9, yTop - lenC, zb - 5], [9, yTop, zb - 3]));
     clipS = clipS.fuse(r.makeBox([-9, yTop - lenC, zb - 5], [9, yTop - lenC + 2, zb - 2.2]));
-    bodies.push({ name: "belt-clip", kind: "clip", shape: clipS, color: shade(color, -0.35), print: { face_down: "flat", supports: false, note: "print on its side (the L profile flat on the bed) so the layers run along the spring; PETG; glue to the back with CA or VHB tape" }, explode: [0, 0, -sep * 1.8] });
+    bodies.push({ name: "belt-clip", kind: "clip", shape: clipS, color: shade(color, -0.35), print: { face_down: "flat", supports: false, note: "print on its side (the L profile flat on the bed) so the layers run along the spring; PETG; glue to the back with CA or VHB tape" }, up: [1, 0, 0], explode: [0, 0, -sep * 1.8] });
     notes.push("The belt clip is a separate PETG part glued to the back (CA glue or 3M VHB). It is not screwed: screws would hit the cell behind the back wall.");
   }
 

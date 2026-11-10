@@ -12,7 +12,7 @@ export function materialFor(process: "fdm" | "resin" | "injection"): { name: str
 export function printSettings(process: "fdm" | "resin" | "injection"): string[] {
   if (process === "resin") return ["Layer 0.05 mm, tough resin, supports only on the inside faces, 30° tilt if the slicer suggests it.", "Clearances in this file: 0.1 mm."];
   if (process === "injection") return ["For a printed prototype of the injection design use the FDM settings: 0.16 mm layers, 4 walls."];
-  return ["Nozzle 0.4 mm, layer 0.16 to 0.2 mm, 4 perimeters (walls print solid), 20 % gyroid infill, 5 top / bottom layers.", "Each shell prints open side up on its outer face: no supports needed except where PRINT.md says.", "Brim 3 mm on rounded shapes (small first-layer footprint). First layer slow (20 mm/s). Clearances in this file: 0.2 mm."];
+  return ["Nozzle 0.4 mm, layer 0.16 to 0.2 mm, 4 perimeters (walls print solid), 20 % gyroid infill, 5 top / bottom layers.", "Each shell prints open side up on its outer face (a domed face stands on its flat land / pad): no supports needed except where this file says.", "Brim 3 mm on rounded shapes (the rounded edge leaves a small first-layer footprint). First layer slow (20 mm/s). Clearances in this file: 0.2 mm."];
 }
 
 export function printMd(L: Layout, title: string, bodies: { name: string; print: { face_down: string; supports: boolean; note?: string }; overhang_mm2?: number }[], screws?: { count: number; size: string; inserts: string }): string {
@@ -22,7 +22,7 @@ export function printMd(L: Layout, title: string, bodies: { name: string; print:
   lines.push(`Shape **${L.shape}**, outer ${L.outer.w} x ${L.outer.h} x ${L.outer.d} mm, wall ${L.params.wall_mm} mm, process **${L.params.process}** (${mat.name}), clearances ${L.params.tolerance_mm} mm.`, "");
   lines.push("## Bodies", "", "| File | Face on the bed | Supports | Notes |", "| --- | --- | --- | --- |");
   for (const b of bodies) lines.push(`| stl/${b.name}.stl | ${b.print.face_down} | ${b.print.supports ? "yes" : "no"} | ${b.print.note ?? ""}${b.overhang_mm2 && b.overhang_mm2 > 1 ? ` (about ${Math.round(b.overhang_mm2)} mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags)` : ""} |`);
-  lines.push("", "`case.3mf` has every body, named and coloured, ready for a slicer (PrusaSlicer, Bambu Studio, Cura). The STL / 3MF / STEP files are in the case frame (origin at the centre of the outer box); the slicer lays each body flat on the face named above.", "");
+  lines.push("", "Every STL is already in its print orientation: the face named above lies flat on z = 0, centred on x = y = 0, so it drops onto the bed as it is (no rotating in the slicer). `case.3mf` is one build plate with every body in that orientation, side by side 6 mm apart, named and coloured (PrusaSlicer, Bambu Studio, Cura). The STEP files stay in the case frame (origin at the centre of the outer box, +z out of the front) and `step/assembly.step` is the assembled case with the parts, for CAD and factories.", "");
   lines.push("## Settings", "", ...printSettings(L.params.process).map((s) => `- ${s}`), "");
   lines.push("## Material and finish", "", ...mat.lines.map((s) => `- ${s}`), "");
   lines.push("## Other processes", "");
