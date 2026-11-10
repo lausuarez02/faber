@@ -31,6 +31,10 @@ describe("person steps", () => {
     expect(own[0]!.status).toBe("accepted");
     expect(agent.some((x) => x.why === "the board" && x.status === "pending")).toBe(true);
     expect(list.filter((x) => x.status === "pending").every((x) => x.actor !== "web")).toBe(true);
+    // the log names the person's own step on the person's entry (History shows its why)
+    const log = readFileSync(join(dir, ".jumper", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { op: string; actor: string; step?: { id: number; why: string } });
+    const w = log.find((e) => e.op === "write_file")!;
+    expect(w.step).toEqual({ id: own[0]!.id, why: "edited in the code editor" });
     // the LED joined the agent's open step, not the person's
     const full = s.history.steps.find((x) => x.why === "the board")!;
     expect(full.labels.some((l) => l.startsWith("place_part led"))).toBe(true);

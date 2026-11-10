@@ -135,6 +135,8 @@ interface OpCtx {
   frames?: Frame[];
   steps?: boolean;
   firmware?: { artifact: string; hash?: string };
+  /** The step this op's changes went into (the person's own step is not the open one). */
+  step?: number;
 }
 
 const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5CF2A1"];
@@ -397,7 +399,8 @@ export class ProjectSession {
     const who = { actor: meta.actor ?? this.actor, sid: this.sid, ...(meta.client ? { client: meta.client } : {}) };
     try {
       const result = await (handler as (a: Record<string, unknown>, c: OpCtx) => unknown).call(this, args, ctx);
-      const step = ctx.project || ctx.file ? this.history.steps.find((s) => s.id === this.history.open) : undefined;
+      const stepId = ctx.step ?? this.history.open;
+      const step = ctx.project || ctx.file ? this.history.steps.find((s) => s.id === stepId) : undefined;
       this.logAction({
         seq: ctx.seq,
         t,
@@ -459,6 +462,7 @@ export class ProjectSession {
     const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString(), ctx.meta?.actor ?? this.actor);
     this.persist();
     ctx.project = true;
+    ctx.step = step.id;
     if (topoChanged) this.liveNote = this.pushPropsOrInvalidate(oldProject);
     return step;
   }
