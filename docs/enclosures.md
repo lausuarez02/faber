@@ -129,6 +129,8 @@ STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
   that side straight (the reference Muse pebble has a 1.1 mm edge round for that reason).
 - Parts without mounting holes are located by ribs (screen) or held with foam tape; standoffs are
   only made where a column to a wall is free.
-- Wire cuts come from straight-line pin distances in the case layout plus slack, not routed paths.
+- Wire cuts (`wireCuts` in `packages/session/src/assembly.ts`, shared with `export`) take the pin
+  distance in the case layout × 1.3 for routing plus 10 mm strip and 15 mm slack, rounded up to 5 mm;
+  without a case they are estimates from the part sizes (the CSV says which). Not routed paths.
 - No PCB layout: the pack is for a hand-wired / perfboard build; `jumper.net` is where a PCB starts.
 - Sourcing has MPNs and plain descriptions; LCSC / JLC numbers are left empty until checked.

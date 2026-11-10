@@ -63,6 +63,31 @@ reference builds, running in the web app:
 [tamagotchi](docs/media/example-tamagotchi.mp4) · [rover](docs/media/example-rover.mp4) ·
 [robot arm](docs/media/example-robot-arm.mp4) (GIFs next to them in `docs/media/`).
 
+## From the simulation to a real device
+
+When the person wants to hold it, the agent finishes with two more calls. `design_case` packs the
+parts into a two-part printable case (rounded box, pill, pebble, puck or keychain; snap or M2
+screws, lanyard tab, belt clip) and measures it: wall thickness, screen window, button travel, USB
+access, overhangs, watertight STLs, and whether it fits a pocket. `export_manufacturing` writes one
+folder and zip a 3D printer or a factory can work from:
+
+- **Case:** STL per body, a coloured 3MF for slicers, STEP (shells plus the parts as named solids),
+  renders, an A3 drawing with sizes and tolerances, and print settings per body.
+- **Electronics:** BOM with MPNs and plain descriptions a supplier can quote from, wiring table,
+  netlist (CSV and KiCad), wire cut lengths from the case layout.
+- **Firmware:** hex / UF2 with the source and flashing steps.
+- **Build and test:** numbered assembly steps with renders, a test plan, a short Chinese summary
+  for suppliers, honest notes on what was only simulated, and a checksum manifest.
+
+<p align="center"><img src="docs/media/case-muse-exploded.png" alt="The Pocket Muse's pebble case, exploded: front shell with the round screen window, the XIAO RP2040, LiPo, charger, slide switch and touch button inside, the switch lever through the top wall" width="560"></p>
+
+The Pocket Muse ([example](examples/agent-built/claude-pocket-muse/)) runs from its LiPo through a
+slide switch and a Schottky diode (USB unplugged, 11/11 tests, 0 design errors), and its pebble case
+measures 65.9 × 73.6 × 24.7 mm ("fits" a pocket); a puck variant (63.1 × 55.2 × 32 mm) sits next
+to it. In the app, the **Case** button shows the case in 3D with see-through and explode sliders,
+the checks, the downloads and **Factory pack (zip)**. The print, the plastic and the hand feel are
+not tested. Guide: [docs/enclosures.md](docs/enclosures.md); power: [docs/power.md](docs/power.md).
+
 ## Use Jumper from your agent
 
 One step: start Jumper, then add it to your agent. The agent's calls appear on the canvas you are
@@ -101,7 +126,7 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 
 - **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone. Open the examples from the project menu (or `?example=tamagotchi`, `ai-pet`, `rover`, `robot-arm`, `pocket-oled`).
 - **Projects and history:** the logo opens a gallery of your projects and the examples (opening an example copies it). Every change is a version you can scrub through and restore: who changed what and why, the code, and how the device looked. A code editor with Save and Build & Run underlines compile errors at the line.
-- **Parts:** 36 parts plus 5 boards, including an SSD1306 OLED, ILI9341, ST7735 and round GC9A01 colour TFTs, a WS2812 strip, an ESP-01 Wi-Fi module, a 16x2 I2C LCD, DS3231, BME280, DHT22, MPU6050, PIR, IR obstacle and bump switches, a capacitive soil probe, relay and water pump, a passive buzzer that plays melodies, a LiPo cell with a TP4056 charger, servo, DC motor, L298N, HC-SR04 and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file, tests and physical data (size, mass, current, price, buy links).
+- **Parts:** 43 parts plus 5 boards, including an SSD1306 OLED, ILI9341, ST7735 and round GC9A01 colour TFTs, a WS2812 strip, an ESP-01 Wi-Fi module, a 16x2 I2C LCD, DS3231, BME280, DHT22, MPU6050, PIR, IR obstacle and bump switches, a capacitive soil probe, relay and water pump, a passive buzzer that plays melodies, a LiPo cell with a TP4056 charger, Schottky and signal diodes, MOSFET and NPN / PNP transistors, an LDO and a boost converter, servo, DC motor, L298N, HC-SR04 and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file, tests, physical data (size, mass, current, price, buy links) and, for the case, mechanical data (footprint, mounting holes, screen, buttons, ports) and sourcing (MPN, plain description).
 - **Parts agents make:** when the catalog lacks a part, an agent describes it with `create_part` (pins, physical facts and a behaviour template: digital input, analog sensor, actuator or relay, I2C register map, UART device, or a display on a known controller). No agent code runs; the part is labelled "agent-made: behavioral, unverified" in every report and export. See [docs/custom-parts.md](docs/custom-parts.md).
 - **Boards:**
 
@@ -116,7 +141,7 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 - **Robots:** a deterministic 2D physics world (Rapier) moves a rover with its simulated motors, feeds its sonar real distances, and moves a servo arm; the canvas shows the arena or the arm next to the circuit.
 - **Device view:** the project as the physical thing in 3D: a handheld with its live screen, the rover driving in its arena, the arm on a table. The Tests panel shows every scenario as a filmstrip of what the device looked like at each check; click a frame to open that exact moment.
 - **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
-- **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 46 operations, scenario tests, design-rule checks (including 3.3 V logic levels and rail budgets), fault injection, a fidelity report, live follow and replay of an agent's session in the browser. `plan_device` turns a wish into a parts list with size, battery life and price before anything is placed; `record` gives the person an MP4 and `viewer_url` a link that opens the project live.
+- **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 52 operations, scenario tests, design-rule checks (including 3.3 V logic levels and rail budgets), fault injection, a fidelity report, live follow and replay of an agent's session in the browser. `plan_device` turns a wish into a parts list with size, battery life and price before anything is placed; `record` gives the person an MP4 and `viewer_url` a link that opens the project live.
 - **Run what the agent built:** the page `pnpm start` opens follows the agent live, and Run runs the project there with the agent's latest firmware (auto-run after each agent build); buttons press, knobs turn and sensors slide while it runs. `/?local` still opens a standalone copy.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's serial output (Serial.print: UART0 on AVR, USB on RP2040) shows up live next to the canvas.
@@ -128,9 +153,9 @@ What is **not** there yet: building firmware without `jumper serve` (Build & Run
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | **M0 Foundations** | Monorepo, brand, project format, canvas (pan/zoom/place/wire), parts spec + 10 parts, avr8js running Blink with a live LED, CI | Done ([STATUS.md](STATUS.md)) |
-| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Mostly done (41 parts; serial input from the browser and the GitHub Action are open) |
+| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Mostly done (48 parts; serial input from the browser and the GitHub Action are open) |
 | **M2 The agent** | MCP server exposing every canvas and sim action, built-in agent panel, prompt-to-passing-tests demo | MCP server, CLI and demos done; built-in panel open |
-| **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | RP2040 boards, 41 parts, fidelity report, DRC and exports done; ESP32 planned (decision 0003), STM32 open |
+| **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | RP2040 boards, 48 parts, fidelity report, DRC and exports done; ESP32 planned (decision 0003), STM32 open |
 | **M4 Robots** | Physics world, motors/servos/IMU/distance sensors, rover and robot-arm demos | Rover and arm done (pulled forward) |
 | **M5 Real hardware** | Device-farm runner, same tests on real boards, sim-vs-real diff | Planned |
 

@@ -19,6 +19,9 @@ is ambiguous); `new_project {"folder": true}` per idea; real parts or `create_pa
 The loop: `search_parts` → `get_part` → `place_part` → `connect` → `check_design` → `write_file` →
 `run` (builds automatically) → `write_scenario` → `run_tests` → fix → show it (`screenshot`,
 `record`, `viewer_url`) → `fidelity_report` (say what the simulation cannot check).
+When the person wants a real device, finish with `design_case` (shape, renders, measured size,
+fit checks) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
+steps: the factory pack).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 

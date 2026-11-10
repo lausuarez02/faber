@@ -26,7 +26,9 @@ The circuit is the agent's, plus the power path it asked for:
 | 3 scenarios | runs-from-the-battery, power-switch-off-and-on (it boots again), charges-while-it-runs |
 
 The firmware (`firmware/main.ino`, `main.hex`) and the agent's 8 scenarios are unchanged.
-`agent-actions.jsonl` is the agent's action log from the round-5 run.
+`agent-actions.jsonl` is the agent's action log from the round-5 run, followed by the round-6 calls
+made with the CLI (tests and a run on battery power, whose frames carry the round screen in colour
+for replays and History, then `design_case` and `export_manufacturing`).
 
 ## What the simulation shows now
 
@@ -45,11 +47,27 @@ Check it: `pnpm jumper check -p examples/agent-built/claude-pocket-muse`,
 `pnpm jumper test -p examples/agent-built/claude-pocket-muse` (11/11),
 `packages/session/test/power-muse.test.ts`.
 
+## Its case (round 6, case track)
+
+`case/` is the pebble case `design_case {"shape": "pebble"}` made for this circuit: **65.9 × 73.6 ×
+24.7 mm, "fits"** a pocket (≤ 110 × 70 × 30 mm by its longest sides), 1.6 mm wall, snap closure, the
+round screen behind a window, a cap for the pet button, the switch lever through the top wall and the
+XIAO's USB-C reachable from outside. Every check passes (watertight, no part touching the shell,
+wall, size, screen window, button travel, connector access, printable). `case/variants/puck/` is a
+round variant to compare (63.1 × 55.2 × 32 mm, "tight": 32 mm deep).
+
+Files: `stl/` (front, back, the button cap), `case.3mf`, `step/`, `renders/`, `drawing/` (A3, SVG
+and PDF), `PRINT.md`. `jumper export_manufacturing -p <a copy>` writes the factory pack (35 files,
+1.7 MB zip). In the app, open this example and press **Case**.
+
+<p align="center"><img src="case/renders/exploded.png" alt="Pebble case, exploded" width="480"></p>
+
 ## What it does not prove
 
 - Battery life: the drain follows the simulated load, but the display's and IMU's currents are
   typical figures; measure the real average current.
 - The LDO's dropout, the diode's drop and the board's 25 mA are typical values, not your parts.
-- Wire lengths in `WIRE-CUTS.csv` are estimated from the part sizes (the case track replaces them
-  with lengths from the case layout); lay the parts in the case before cutting.
+- Wire lengths in `export/WIRE-CUTS.csv` are estimated from the part sizes; the factory pack's
+  `electronics/WIRE-CUTS.csv` takes them from the case layout. Lay the parts in the case before
+  cutting either way.
 - Everything in `export/TEST-ON-HARDWARE.md`.

@@ -200,6 +200,15 @@ The people asking for a device are often beginners. The server instructions say 
 10. `fidelity_report`: tell the human what was verified and what still has to be tested on the real
     device. `export` (BOM with buy links, wiring table, firmware.hex) at the end; `delete_file`
     removes stale screenshots or debug sketches.
+11. **A real device** (round 6, when the person wants to hold it, or asks about size, a case, a 3D
+    printer or a factory). Battery devices: `set_assembly "soldered"`. Then
+    `design_case {"shape": "pebble"}` (or `puck`, `pill`, `rounded-box`, `keychain`; `save: false`
+    for a variant to compare, `update_case` for wall, closure, clip, colour, which face a part sits
+    on). Show the front and exploded renders it returns, the measured size and the checks (pocket
+    verdict, screen window, button travel, USB access). Then `export_manufacturing`: one folder +
+    zip with the case (STL, 3MF, STEP, drawing, print notes), BOM, wiring, netlists, wire cuts,
+    firmware, numbered assembly steps and the test plan, for a 3D printer or a supplier. Say plainly
+    that the print, the plastic and the hand feel were not tested. Guide: [enclosures.md](enclosures.md).
 
 ### check_design codes worth knowing
 
