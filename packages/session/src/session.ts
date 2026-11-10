@@ -34,6 +34,7 @@ import {
   fileChanges,
   planRevert,
   projectEntities,
+  isPersonActor,
   record,
   stepSummary,
   type EntityMap,
@@ -278,6 +279,7 @@ export class ProjectSession {
       } catch {
         this.history = emptyHistory();
       }
+      this.settlePersonSteps();
     }
     if (existsSync(this.actionLogFile)) {
       const text = readFileSync(this.actionLogFile, "utf8").trimEnd();
@@ -289,6 +291,32 @@ export class ProjectSession {
       }
     }
     this.diskStamp = this.stamp();
+  }
+
+  /**
+   * Steps saved before steps carried their actor: a pending one whose ops were all the person's own
+   * (actor "web" in the action log) is accepted, so it never shows as an agent proposal.
+   */
+  private settlePersonSteps(): void {
+    const unknown = this.history.steps.filter((s) => s.status === "pending" && !s.actor);
+    if (!unknown.length || !existsSync(this.actionLogFile)) return;
+    const actorOf = new Map<number, string>();
+    for (const line of readFileSync(this.actionLogFile, "utf8").split("\n")) {
+      if (!line) continue;
+      try {
+        const e = JSON.parse(line) as ActionEntry;
+        if (e.seq !== undefined && e.actor) actorOf.set(e.seq, e.actor);
+      } catch {
+        // a torn line: skip it
+      }
+    }
+    for (const s of unknown) {
+      const actors = s.ops.map((n) => actorOf.get(n));
+      if (!actors.length || !actors.every((a) => isPersonActor(a))) continue;
+      s.actor = "web";
+      s.status = "accepted";
+      if (this.history.open === s.id) this.history.open = undefined;
+    }
   }
 
   private persist(): void {
@@ -428,7 +456,7 @@ export class ProjectSession {
     const oldProject = this.project;
     this.project = res.project;
     for (const [path, content] of Object.entries(files)) this.writeOrDelete(path, content);
-    const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString());
+    const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString(), ctx.meta?.actor ?? this.actor);
     this.persist();
     ctx.project = true;
     if (topoChanged) this.liveNote = this.pushPropsOrInvalidate(oldProject);
@@ -1587,7 +1615,7 @@ export class ProjectSession {
     const step = this.history.steps.find((s) => s.id === id);
     if (!step) fail("nothing-to-redo", "Nothing to redo", "no step was undone since the last change", "undo something first");
     const { conflicts } = this.applyRevert(ctx, step, "forward", "Redo");
-    step.status = "pending";
+    step.status = isPersonActor(step.actor) ? "accepted" : "pending";
     this.history.redo.pop();
     this.persist();
     ctx.summary = `redid step ${step.id}: ${step.why}`;

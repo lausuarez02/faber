@@ -29,3 +29,13 @@ describe("Agent steps", () => {
     expect(agentSteps(steps, noteStepActors([{ step: { id: 2 }, actor: "cli" }], actors), "follow").map((s) => s.id)).toEqual([1, 2, 4]);
   });
 });
+
+describe("Agent steps with the step's own actor", () => {
+  it("never lists a step the server says the person made, even without its log entry", () => {
+    const own: LiveStep[] = [
+      { id: 7, why: "update_case", status: "pending", ops: ["update_case"], actor: "web" },
+      { id: 8, why: "add a buzzer", status: "pending", ops: ["place_part bz"], actor: "mcp" },
+    ];
+    expect(agentSteps(own, {}, "follow").map((s) => s.id)).toEqual([8]);
+  });
+});

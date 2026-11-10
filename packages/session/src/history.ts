@@ -25,7 +25,15 @@ export interface Step {
   after: EntityMap;
   /** Wall time the step started (ISO). */
   t: string;
+  /**
+   * Who made it: "mcp", "cli", "web"… The person's own steps (actor "web": the code editor, a
+   * History restore, Update case) are accepted when made and never wait for Accept / Reject.
+   */
+  actor?: string;
 }
+
+/** The person at the web page made this change themselves (never an agent proposal). */
+export const isPersonActor = (actor: string | undefined): boolean => actor === "web";
 
 export interface HistoryState {
   steps: Step[];
@@ -115,16 +123,27 @@ export function fileChanges(changes: EntityMap): Record<string, string | null> {
  * Record one op's entity changes. A new step starts when `why` is given and differs from the open
  * step's, or when no step is open.
  */
-export function record(h: HistoryState, why: string | undefined, seq: number, label: string, before: EntityMap, after: EntityMap, now: string): Step {
+export function record(h: HistoryState, why: string | undefined, seq: number, label: string, before: EntityMap, after: EntityMap, now: string, actor?: string): Step {
   // Any new change makes redo impossible.
   for (const id of h.redo) {
     const s = h.steps.find((x) => x.id === id);
     if (s && s.status === "undone") s.status = "rejected";
   }
   h.redo = [];
+  if (isPersonActor(actor)) {
+    // The person's own edit: its own step, accepted now (undo still works), and an agent's open
+    // step stays open for the agent's next op.
+    const own: Step = { id: h.nextId++, why: why?.trim() || label, status: "accepted", ops: [seq], labels: [label], before: { ...before }, after: { ...after }, t: now, actor };
+    for (const k of Object.keys(own.after)) if (same(own.before[k], own.after[k])) {
+      delete own.before[k];
+      delete own.after[k];
+    }
+    h.steps.push(own);
+    return own;
+  }
   let step = h.open !== undefined ? h.steps.find((s) => s.id === h.open && s.status === "pending") : undefined;
   if (!step || (why !== undefined && why.trim() !== "" && why !== step.why)) {
-    step = { id: h.nextId++, why: why?.trim() || label, status: "pending", ops: [], labels: [], before: {}, after: {}, t: now };
+    step = { id: h.nextId++, why: why?.trim() || label, status: "pending", ops: [], labels: [], before: {}, after: {}, t: now, ...(actor ? { actor } : {}) };
     h.steps.push(step);
     h.open = step.id;
   }
@@ -157,6 +176,6 @@ export function planRevert(current: EntityMap, from: EntityMap, to: EntityMap): 
 }
 
 /** Compact view of steps for tool results and the live panel. */
-export function stepSummary(s: Step): { id: number; why: string; status: StepStatus; ops: string[] } {
-  return { id: s.id, why: s.why, status: s.status, ops: s.labels };
+export function stepSummary(s: Step): { id: number; why: string; status: StepStatus; ops: string[]; actor?: string } {
+  return { id: s.id, why: s.why, status: s.status, ops: s.labels, ...(s.actor ? { actor: s.actor } : {}) };
 }
