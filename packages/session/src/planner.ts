@@ -96,7 +96,7 @@ const NEEDS: Need[] = [
   { key: "display", match: /screen|display|\bshow|face|\bpet\b|tamagotchi|emoji|\btext\b|\bmenu|oled|\bscore/, label: "0.96 in OLED screen (SSD1306, I2C)", ids: ["ssd1306-oled-i2c"], search: ["oled"], why: "a small, low-power screen for faces, text and numbers (2 data wires)", unless: ["color-display", "round-display"], cannot: "screen brightness and readability in sunlight" },
   { key: "buttons", match: /button|\bpress|\bfeed\b|\bplay\b|\bclick|controls?\b|\bgame\b|\bmenu|\bpet\b|tamagotchi/, label: "6 mm push button", ids: ["pushbutton"], why: "buttons the person presses (feed, play, menu)", qty: (g) => (/\bpet\b|tamagotchi/.test(g) ? countOf(g, /buttons?/, 3) : countOf(g, /buttons?/, 1)), cannot: "how the buttons feel and whether they bounce (the simulation debounces nothing for you, but real contacts chatter more)" },
   { key: "melody", match: /melod|\bsongs?\b|\bmusic|\btunes?\b|\bnotes?\b|\btone\b|chiptune/, label: "passive piezo buzzer (plays notes)", ids: ["passive-buzzer", "piezo-buzzer"], search: ["passive buzzer"], why: "plays notes with tone(), so it can sing", standIn: "buzzer", behavior: "actuator", cannot: "how loud it is and how the notes sound" },
-  { key: "buzzer", match: /sound|\bbeep|\bbuzz|alarm|chirp|squeak|notif|\bpet\b|tamagotchi|alert/, label: "active buzzer", ids: ["buzzer"], why: "beeps to get attention (one pin, no tone() needed)", unless: ["melody"], cannot: "how loud it is" },
+  { key: "buzzer", match: /sound|\bbeep|\bbuzz|alarm|chirp|squeak|notif|\bpet\b|tamagotchi|alert/, label: "active buzzer", ids: ["buzzer"], why: "beeps to get attention (one pin, no tone() needed)", unless: ["melody", "voice"], cannot: "how loud it is" },
   { key: "rgb", match: /rainbow|\brgb\b|colou?r(ed|ful)? lights?|mood light|neopixel|ws2812|led strip/, label: "RGB LED", ids: ["ws2812-strip", "ws2812", "rgb-led"], search: ["neopixel"], why: "mixes any colour for a rainbow or mood light", with: ["resistor3"], cannot: "real colour mixing and brightness" },
   { key: "led", match: /\blights?\b|\bleds?\b|\blamp|\bglow|blink|night ?light|indicator/, label: "5 mm LED", ids: ["led"], why: "a light that shows what the device is doing", qty: (g) => countOf(g, /(leds?|lights?)/, 1), with: ["resistor"], unless: ["rgb"] },
   { key: "climate", match: /temperature|humidity|weather|pressure|thermo|\bclimate/, label: "BME280 temperature / humidity / pressure sensor", ids: ["bme280"], search: ["temperature humidity"], why: "measures temperature, humidity and air pressure (I2C, shares the screen's wires)", cannot: "real sensor accuracy and self-heating inside a closed case" },
@@ -121,12 +121,16 @@ const NEEDS: Need[] = [
   { key: "touch", match: /\btouch|\btap (it|on)|\bpet (it|him|her)\b|stroke/, label: "capacitive touch pad (TTP223)", ids: ["ttp223-touch"], search: ["touch"], why: "a pad that reacts to a finger, no moving parts", behavior: "digital-input", cannot: "real touch sensitivity through a case wall" },
   { key: "bump", match: /\bbump(ers?|s)?\b|collision|whisker|limit switch|end ?stop/, label: "lever micro switch (bump switch)", ids: ["bump-switch"], search: ["bump switch"], why: "tells the robot it touched something", qty: (g) => (/rover|robot|car/.test(g) ? 2 : 1), behavior: "digital-input", cannot: "real lever force and bounce" },
   { key: "ir", match: /line follow|\bcliff|table edge|\binfrared|\bir (sensor|obstacle)|close (by|range) obstacle/, label: "IR obstacle sensor (FC-51)", ids: ["ir-proximity"], search: ["infrared obstacle"], why: "sees a nearby obstacle or a dark line a few cm away", qty: (g) => (/line follow/.test(g) ? 2 : 1), behavior: "digital-input", cannot: "real IR reflectivity of colours and sunlight interference" },
+  // round 7 voice: a device that talks plays text clips through a DFPlayer Mini and a speaker
+  { key: "voice", match: /\btalk(s|ing)?\b|\bspeak(s|ing)?\b|\bspeaker\b|\bsays?\b|\bsaying\b|\bvoice\b|\bspeech\b|\bout loud\b/, label: "MP3 player DFPlayer Mini (microSD) + 8 Ω speaker", ids: ["dfplayer-mini"], search: ["dfplayer"], why: "says words out loud: each clip on its microSD card is a sentence (in Jumper the clips are text)", with: ["speaker", "resistor1k"], cannot: "the real voice and loudness: the simulator shows the words and the browser reads them aloud; the MP3s are made later (sd-card/make-clips.sh)" },
   { key: "vibration", match: /vibrat|haptic|\brumble/, label: "coin vibration motor", ids: ["vibration-motor"], search: ["vibration"], why: "buzzes silently in your hand", behavior: "actuator", standIn: "led", cannot: "how the vibration feels" },
 ];
 const HELPERS: Record<string, Need> = {
   resistor: { key: "resistor", match: /^$/, label: "220 Ω resistor", ids: ["resistor"], why: "limits the LED current so it does not burn out" },
   resistor3: { key: "resistor3", match: /^$/, label: "220 Ω resistor", ids: ["resistor"], why: "one per colour, so each LED leg gets a safe current", qty: () => 3 },
   resistor10k: { key: "resistor10k", match: /^$/, label: "10 kΩ resistor", ids: ["resistor"], why: "forms a divider with the light sensor so the board can read it" },
+  speaker: { key: "speaker", match: /^$/, label: "speaker 8 Ω 0.5 W (28 mm)", ids: ["speaker"], why: "the DFPlayer plays its clips through it (SPK_1 / SPK_2)" }, // round 7 voice
+  resistor1k: { key: "resistor1k", match: /^$/, label: "1 kΩ resistor", ids: ["resistor"], why: "in series with the DFPlayer RX: less hiss and a safe 3.3 V input" }, // round 7 voice
 };
 
 /** Typical batteries (not catalog parts): figures are typical retail values, labelled as assumptions. */
@@ -253,7 +257,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       const cur = currentMa(s);
       const power = s.pins.filter((p) => p.type === "power");
       if (power.length && power.every((p) => (p.voltage?.min ?? 0) >= 4.5)) needs5v.push(s.name);
-      const props = n.key === "resistor10k" ? { resistance: 10000 } : undefined;
+      const props = n.key === "resistor10k" ? { resistance: 10000 } : n.key === "resistor1k" ? { resistance: 1000 } : undefined; // round 7 voice: 1k
       bom.push({
         type: s.id,
         name: HELPERS[n.key] ? n.label : s.name,

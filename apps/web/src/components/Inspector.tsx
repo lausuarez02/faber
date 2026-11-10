@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { PropSpec } from "@jumper/sim-core";
 import type { PropValue } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
@@ -185,8 +186,38 @@ function PartInspector({ partId }: { partId: string }) {
   );
 }
 
+/** Round 7 (voice): free text over several lines (a DFPlayer's clips), saved when the field loses focus. */
+function TextPropField({ prop, value, onChange }: { prop: PropSpec; value: PropValue; onChange: (v: PropValue) => void }) {
+  const id = `prop-${prop.id}`;
+  const [draft, setDraft] = useState(String(value ?? ""));
+  useEffect(() => setDraft(String(value ?? "")), [value]);
+  const commit = () => {
+    if (draft !== String(value ?? "")) onChange(draft);
+  };
+  return (
+    <div className="field">
+      <label htmlFor={id}>{prop.label}</label>
+      <textarea
+        id={id}
+        className="mono field-text"
+        rows={Math.min(8, Math.max(3, draft.split("\n").length + 1))}
+        value={draft}
+        spellCheck={false}
+        data-testid={id}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit();
+        }}
+      />
+      {prop.id === "clips" ? <span className="small muted">One &quot;N: words&quot; line per track. Saved when you leave the box.</span> : null}
+    </div>
+  );
+}
+
 function PropField({ prop, value, onChange }: { prop: PropSpec; value: PropValue; onChange: (v: PropValue) => void }) {
   const id = `prop-${prop.id}`;
+  if (prop.type === "text") return <TextPropField prop={prop} value={value} onChange={onChange} />;
   if (prop.type === "number") {
     const num = Number(value);
     const min = prop.min ?? 0;

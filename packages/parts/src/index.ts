@@ -65,3 +65,4 @@ export function rankParts(defs: readonly PartDefinition[], query: string): PartD
   return scored.sort((a, b) => b.score - a.score || (a.d.spec.id < b.d.spec.id ? -1 : 1)).map((x) => x.d);
 }
 export { boardWiring, descriptionForBoard, type BoardWiring, type WiringLine } from "./wiring.ts"; // round 6 canvas
+export { DF, dfFrame, dfChecksum, DfFrameDecoder, parseClips, formatClips, estimateClipMs, normalizeClipKey, WORDS_PER_SECOND } from "./lib/dfplayer.ts"; // round 7 voice

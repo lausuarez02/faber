@@ -16,7 +16,7 @@ import {
   type Wire,
   normalizeScenarioStep,
 } from "@jumper/project-format";
-import { AGENT_MADE_LABEL, boardWiring, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
+import { AGENT_MADE_LABEL, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
 import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
@@ -143,6 +143,8 @@ const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5C
 const SHORT_IDS: Record<string, string> = {
   "arduino-uno": "uno",
   "arduino-nano": "nano",
+  "dfplayer-mini": "df", // round 7 voice
+  speaker: "spk", // round 7 voice
   "raspberry-pi-pico": "pico",
   "seeed-xiao-rp2040": "xiao",
   "waveshare-rp2040-zero": "zero",
@@ -759,6 +761,14 @@ export class ProjectSession {
         out[ps.id] = String(v);
       } else if (ps.type === "boolean") {
         out[ps.id] = v === true || v === "true" || v === 1 || v === "1";
+      } else if (ps.type === "text") {
+        // round 7 voice: free text; a DFPlayer's clips are kept as "N: words" lines (a JSON object is accepted)
+        const raw = v as unknown;
+        if (ps.id === "clips") {
+          const { clips, problems } = parseClips(raw);
+          if (problems.length) fail("bad-value", `${spec.id}.clips has lines it cannot read`, `${problems.slice(0, 3).join("; ")}: each line must be "N: words" (or "F/N: words" for folder F)`, `pass e.g. "1: hi! I'm Eggy\\n2: whoa, I'm dizzy!" or {"1": "hi! I'm Eggy", "2": "whoa, I'm dizzy!"}`);
+          out[ps.id] = formatClips(clips);
+        } else out[ps.id] = typeof raw === "object" && raw !== null ? JSON.stringify(raw) : String(raw ?? "");
       } else out[ps.id] = v;
     }
     return out;
@@ -1227,7 +1237,10 @@ export class ProjectSession {
     // round 6 switch: plain words, no "ran 3000 ms (now 3000 ms)".
     ctx.summary = runSummary(round(host.timeMs - t0), round(host.timeMs));
     const displays = this.project.parts.filter((p) => typeof host.sim.partState(p.id)?.pixels === "string").map((p) => p.id);
+    // round 7 voice: what the device said during this run
+    const said = host.sim.speech().filter((u) => u.t_ms >= t0 - 1e-6);
     return {
+      ...(said.length ? { said: said.slice(-20).map((u) => `${round(u.t_ms)} ms ${u.partId}: ${JSON.stringify(u.text)}${u.audible ? "" : " (nobody heard it: no speaker wired)"}`) } : {}),
       t_ms: round(host.timeMs),
       ran_ms: round(host.timeMs - t0),
       speed: `${round(ms / Math.max(1, wallMs))}x real time`,
@@ -1720,6 +1733,12 @@ export class ProjectSession {
   }
 
   /** For live sync/tests: the current part states (full, not compacted). */
+  /** Round 7 (voice): what the talking parts said in the simulation (read_speech); starts one at 0 ms when none runs. */
+  async speech(): Promise<{ t_ms: number; said: ReturnType<SimHost["sim"]["speech"]> }> {
+    const { host } = await this.getHost();
+    return { t_ms: round(host.timeMs), said: host.sim.speech() };
+  }
+
   liveStates(): Record<string, Record<string, VisualValue>> | undefined {
     const host = this.host;
     if (!host) return undefined;

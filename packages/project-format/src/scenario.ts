@@ -135,6 +135,22 @@ export const ExpectDisplayStepSchema = z
 export const ExpectNoErrorsStepSchema = z
   .object({ expect_no_errors: z.literal(true).describe("Fail if any part reports an error diagnostic (overcurrent…)."), ...common })
   .strict();
+/** Round 7 (voice): something a part said out loud (a DFPlayer clip's words) with a speaker wired. */
+export const SaidStepSchema = z
+  .object({
+    said: z
+      .union([
+        z.string().describe("Words it must have said (case-insensitive substring of the clip's words)."),
+        z.object({ contains: z.string() }).strict(),
+        z.object({ regex: z.string() }).strict(),
+      ])
+      .describe("Words of a clip played since the previous said step (or the start), e.g. \"dizzy\" or {\"regex\": \"^hi\"}."),
+    part: PartRef.optional().describe("Only this talking part (a DFPlayer id); default any."),
+    within_ms: Ms.optional(),
+    absent: z.boolean().optional().describe("true: it must NOT say it (within within_ms, or so far)."),
+    ...common,
+  })
+  .strict();
 
 export const ScenarioStepSchema = z.union([
   RunStepSchema,
@@ -150,6 +166,7 @@ export const ScenarioStepSchema = z.union([
   ExpectSerialValueStepSchema,
   ExpectDisplayStepSchema,
   ExpectNoErrorsStepSchema,
+  SaidStepSchema,
 ]);
 
 /** Action key → its schema. Used to give one precise error instead of a union dump. */
@@ -167,6 +184,7 @@ export const STEP_KINDS = {
   expect_serial_value: ExpectSerialValueStepSchema,
   expect_display: ExpectDisplayStepSchema,
   expect_no_errors: ExpectNoErrorsStepSchema,
+  said: SaidStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
 
@@ -187,6 +205,7 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   expect_serial_value: `{ "expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500 }`,
   expect_display: `{ "expect_display": "oled1", "region": [40, 16, 48, 32], "lit": { "min": 20 } } or { "expect_display": "oled1", "matches": "sad-face", "within_ms": 2000 }`,
   expect_no_errors: `{ "expect_no_errors": true }`,
+  said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said, with a speaker wired), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
 };
 
 /**
@@ -255,6 +274,16 @@ export function parseScenarioStep(raw: unknown, path = "step"): { ok: true; step
           new RegExp(m.regex);
         } catch (err) {
           return { ok: false, issues: [{ path: `${path}.expect_serial.regex`, message: `invalid regular expression: ${(err as Error).message}` }] };
+        }
+      }
+    }
+    if (kind === "said") {
+      const m = (step as z.infer<typeof SaidStepSchema>).said;
+      if (typeof m === "object" && "regex" in m) {
+        try {
+          new RegExp(m.regex, "i");
+        } catch (err) {
+          return { ok: false, issues: [{ path: `${path}.said.regex`, message: `invalid regular expression: ${(err as Error).message}` }] };
         }
       }
     }

@@ -9,45 +9,47 @@ import { create as create_5 } from "./parts/bump-switch/model.ts";
 import { create as create_6 } from "./parts/buzzer/model.ts";
 import { create as create_7 } from "./parts/capacitive-soil-moisture/model.ts";
 import { create as create_8 } from "./parts/dc-motor/model.ts";
-import { create as create_9 } from "./parts/dht22/model.ts";
-import { create as create_10 } from "./parts/ds3231-rtc/model.ts";
-import { create as create_11 } from "./parts/esp01-wifi/model.ts";
-import { create as create_12 } from "./parts/gc9a01-round-tft/model.ts";
-import { create as create_13 } from "./parts/generic-diode/model.ts";
-import { create as create_14 } from "./parts/hc-sr04/model.ts";
-import { create as create_15 } from "./parts/ili9341-tft/model.ts";
-import { create as create_16 } from "./parts/ir-proximity/model.ts";
-import { create as create_17 } from "./parts/l298n/model.ts";
-import { create as create_18 } from "./parts/lcd1602-i2c/model.ts";
-import { create as create_19 } from "./parts/ldo-regulator/model.ts";
-import { create as create_20 } from "./parts/led/model.ts";
-import { create as create_21 } from "./parts/lipo-battery/model.ts";
-import { create as create_22 } from "./parts/mpu6050/model.ts";
-import { create as create_23 } from "./parts/n-mosfet/model.ts";
-import { create as create_24 } from "./parts/npn-transistor/model.ts";
-import { create as create_25 } from "./parts/passive-buzzer/model.ts";
-import { create as create_26 } from "./parts/photoresistor/model.ts";
-import { create as create_27 } from "./parts/pir-motion/model.ts";
-import { create as create_28 } from "./parts/pnp-transistor/model.ts";
-import { create as create_29 } from "./parts/potentiometer/model.ts";
-import { create as create_30 } from "./parts/pushbutton/model.ts";
-import { create as create_31 } from "./parts/raspberry-pi-pico/model.ts";
-import { create as create_32 } from "./parts/relay-module/model.ts";
-import { create as create_33 } from "./parts/resistor/model.ts";
-import { create as create_34 } from "./parts/rgb-led/model.ts";
-import { create as create_35 } from "./parts/robot-chassis-2wd/model.ts";
-import { create as create_36 } from "./parts/schottky-diode/model.ts";
-import { create as create_37 } from "./parts/seeed-xiao-rp2040/model.ts";
-import { create as create_38 } from "./parts/servo-sg90/model.ts";
-import { create as create_39 } from "./parts/slide-switch/model.ts";
-import { create as create_40 } from "./parts/ssd1306-oled-i2c/model.ts";
-import { create as create_41 } from "./parts/st7735-tft/model.ts";
-import { create as create_42 } from "./parts/tp4056-charger/model.ts";
-import { create as create_43 } from "./parts/ttp223-touch/model.ts";
-import { create as create_44 } from "./parts/vibration-motor/model.ts";
-import { create as create_45 } from "./parts/water-pump/model.ts";
-import { create as create_46 } from "./parts/waveshare-rp2040-zero/model.ts";
-import { create as create_47 } from "./parts/ws2812-strip/model.ts";
+import { create as create_9 } from "./parts/dfplayer-mini/model.ts";
+import { create as create_10 } from "./parts/dht22/model.ts";
+import { create as create_11 } from "./parts/ds3231-rtc/model.ts";
+import { create as create_12 } from "./parts/esp01-wifi/model.ts";
+import { create as create_13 } from "./parts/gc9a01-round-tft/model.ts";
+import { create as create_14 } from "./parts/generic-diode/model.ts";
+import { create as create_15 } from "./parts/hc-sr04/model.ts";
+import { create as create_16 } from "./parts/ili9341-tft/model.ts";
+import { create as create_17 } from "./parts/ir-proximity/model.ts";
+import { create as create_18 } from "./parts/l298n/model.ts";
+import { create as create_19 } from "./parts/lcd1602-i2c/model.ts";
+import { create as create_20 } from "./parts/ldo-regulator/model.ts";
+import { create as create_21 } from "./parts/led/model.ts";
+import { create as create_22 } from "./parts/lipo-battery/model.ts";
+import { create as create_23 } from "./parts/mpu6050/model.ts";
+import { create as create_24 } from "./parts/n-mosfet/model.ts";
+import { create as create_25 } from "./parts/npn-transistor/model.ts";
+import { create as create_26 } from "./parts/passive-buzzer/model.ts";
+import { create as create_27 } from "./parts/photoresistor/model.ts";
+import { create as create_28 } from "./parts/pir-motion/model.ts";
+import { create as create_29 } from "./parts/pnp-transistor/model.ts";
+import { create as create_30 } from "./parts/potentiometer/model.ts";
+import { create as create_31 } from "./parts/pushbutton/model.ts";
+import { create as create_32 } from "./parts/raspberry-pi-pico/model.ts";
+import { create as create_33 } from "./parts/relay-module/model.ts";
+import { create as create_34 } from "./parts/resistor/model.ts";
+import { create as create_35 } from "./parts/rgb-led/model.ts";
+import { create as create_36 } from "./parts/robot-chassis-2wd/model.ts";
+import { create as create_37 } from "./parts/schottky-diode/model.ts";
+import { create as create_38 } from "./parts/seeed-xiao-rp2040/model.ts";
+import { create as create_39 } from "./parts/servo-sg90/model.ts";
+import { create as create_40 } from "./parts/slide-switch/model.ts";
+import { create as create_41 } from "./parts/speaker/model.ts";
+import { create as create_42 } from "./parts/ssd1306-oled-i2c/model.ts";
+import { create as create_43 } from "./parts/st7735-tft/model.ts";
+import { create as create_44 } from "./parts/tp4056-charger/model.ts";
+import { create as create_45 } from "./parts/ttp223-touch/model.ts";
+import { create as create_46 } from "./parts/vibration-motor/model.ts";
+import { create as create_47 } from "./parts/water-pump/model.ts";
+import { create as create_48 } from "./parts/waveshare-rp2040-zero/model.ts";
+import { create as create_49 } from "./parts/ws2812-strip/model.ts";
 
 export const partDefinitions: PartDefinition[] = [
   {
@@ -2693,6 +2695,429 @@ export const partDefinitions: PartDefinition[] = [
   },
   {
     spec: {
+      "id": "dfplayer-mini",
+      "name": "MP3 player DFPlayer Mini (microSD, 3 W amp)",
+      "category": "output",
+      "description": "Plays MP3 clips from a microSD card through a small speaker: the way to make a device talk. The board sends it 10-byte serial commands at 9600 baud. In Jumper the clips are text (the \"clips\" prop: one \"N: words\" line per track) and playing track N says those words. Wiring: VCC → 5V / VBUS, GND → GND, RX ← board TX through 1 kΩ, TX → board RX, SPK_1 / SPK_2 → speaker + / -.",
+      "pins": [
+        {
+          "id": "VCC",
+          "label": "VCC",
+          "x": 10,
+          "y": 30,
+          "type": "power",
+          "voltage": {
+            "min": 3.2,
+            "max": 5
+          },
+          "description": "Supply 3.2 to 5 V. 5 V (VBUS) gives full volume; 3.3 V works but quieter. Draws about 20 mA idle and up to 200 mA on loud clips."
+        },
+        {
+          "id": "RX",
+          "label": "RX",
+          "x": 10,
+          "y": 50,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 5.5
+          },
+          "protocols": [
+            "uart-rx"
+          ],
+          "description": "Serial into the module, 9600 baud 8N1. From the board's TX pin through a 1 kΩ resistor (cuts the hiss and protects the 3.3 V input). Uno/Nano: a SoftwareSerial TX pin such as D11; XIAO RP2040: D6 (Serial1 TX, GP0)."
+        },
+        {
+          "id": "TX",
+          "label": "TX",
+          "x": 10,
+          "y": 70,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "protocols": [
+            "uart-tx"
+          ],
+          "description": "Serial out of the module (3.3 V logic): online / ACK / track finished replies. To the board's RX pin (Uno/Nano: the SoftwareSerial RX pin such as D10; XIAO RP2040: D7 = Serial1 RX, GP1). Optional if the sketch never reads replies."
+        },
+        {
+          "id": "DAC_R",
+          "label": "DAC_R",
+          "x": 10,
+          "y": 90,
+          "type": "passive",
+          "description": "Right line-level output (about 0.7 V RMS) for an external amplifier or headphones. Leave unwired when a speaker is on SPK_1 / SPK_2."
+        },
+        {
+          "id": "DAC_L",
+          "label": "DAC_L",
+          "x": 10,
+          "y": 110,
+          "type": "passive",
+          "description": "Left line-level output, like DAC_R."
+        },
+        {
+          "id": "SPK_1",
+          "label": "SPK_1",
+          "x": 10,
+          "y": 130,
+          "type": "passive",
+          "description": "Speaker output + of the built-in 3 W amplifier (bridged). To the speaker's + lead. Never connect it to GND."
+        },
+        {
+          "id": "GND.1",
+          "label": "GND",
+          "x": 10,
+          "y": 150,
+          "type": "ground",
+          "description": "Ground, shared with the board."
+        },
+        {
+          "id": "SPK_2",
+          "label": "SPK_2",
+          "x": 10,
+          "y": 170,
+          "type": "passive",
+          "description": "Speaker output - (bridged, not ground). To the speaker's - lead."
+        },
+        {
+          "id": "BUSY",
+          "label": "BUSY",
+          "x": 150,
+          "y": 30,
+          "type": "digital",
+          "voltage": {
+            "min": 0,
+            "max": 3.3
+          },
+          "description": "Status output: LOW while a clip plays, HIGH (3.3 V) when idle. Wire it to a free board pin and digitalRead it to know when it finished talking (or wait for the 0x3D reply)."
+        },
+        {
+          "id": "USB-",
+          "label": "USB-",
+          "x": 150,
+          "y": 50,
+          "type": "passive",
+          "description": "USB data - (the module can appear as a USB card reader). Not used in Jumper."
+        },
+        {
+          "id": "USB+",
+          "label": "USB+",
+          "x": 150,
+          "y": 70,
+          "type": "passive",
+          "description": "USB data +. Not used in Jumper."
+        },
+        {
+          "id": "ADKEY_2",
+          "label": "ADKEY2",
+          "x": 150,
+          "y": 90,
+          "type": "analog",
+          "description": "Resistor-ladder key input 2 (plays tracks 6 to 15 by resistor value). Not emulated."
+        },
+        {
+          "id": "ADKEY_1",
+          "label": "ADKEY1",
+          "x": 150,
+          "y": 110,
+          "type": "analog",
+          "description": "Resistor-ladder key input 1 (tracks 1 to 5, play / pause, volume). Not emulated."
+        },
+        {
+          "id": "IO_2",
+          "label": "IO2",
+          "x": 150,
+          "y": 130,
+          "type": "digital",
+          "description": "Button to GND: short press = next track, long press = volume up. Not emulated (send commands over RX)."
+        },
+        {
+          "id": "GND.2",
+          "label": "GND",
+          "x": 150,
+          "y": 150,
+          "type": "ground",
+          "description": "Ground."
+        },
+        {
+          "id": "IO_1",
+          "label": "IO1",
+          "x": 150,
+          "y": 170,
+          "type": "digital",
+          "description": "Button to GND: short press = previous track, long press = volume down. Not emulated."
+        }
+      ],
+      "size": {
+        "w": 160,
+        "h": 190
+      },
+      "props": [
+        {
+          "id": "clips",
+          "label": "What it says (track: words)",
+          "type": "text",
+          "default": "1: hello!",
+          "description": "The words of each clip on the card, one \"N: words\" line per track (\"2/5: words\" for folder 02, file 005). Playing track N says them: speech bubble, the browser's voice, read_speech and the {\"said\": …} test step. export_manufacturing writes them to sd-card/ with a script that turns them into MP3s. JSON {\"1\": \"hi!\"} is accepted too."
+        },
+        {
+          "id": "sd_card",
+          "label": "microSD card inserted",
+          "type": "boolean",
+          "default": true,
+          "description": "Without a card the module answers its error frame at power-up and plays nothing."
+        }
+      ],
+      "limits": {
+        "maxCurrentmA": 250,
+        "maxVoltage": 5.5,
+        "minVoltage": 3.2,
+        "typicalCurrentmA": 20
+      },
+      "footprint": "20 x 20 mm module, 2 x 8 pin 0.1 in header, rows 0.7 in apart",
+      "dimensions_mm": {
+        "w": 20,
+        "h": 20,
+        "d": 8
+      },
+      "mass_g": 2.5,
+      "current_ma": {
+        "typ": 20,
+        "max": 200
+      },
+      "price_usd": 2.5,
+      "buy_links": [
+        {
+          "vendor": "DFRobot",
+          "url": "https://www.dfrobot.com/product-1121.html"
+        },
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-DFPlayer-Mini.html"
+        },
+        {
+          "vendor": "LCSC",
+          "url": "https://www.lcsc.com/search?q=DFPlayer%20Mini"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "powered",
+          "type": "boolean",
+          "description": "3.0 to 5.5 V on VCC."
+        },
+        {
+          "key": "online",
+          "type": "boolean",
+          "description": "Finished starting (about 1 s after power-up or a reset) and sent its 0x3F online frame."
+        },
+        {
+          "key": "playing",
+          "type": "boolean",
+          "description": "A clip is playing (BUSY is LOW)."
+        },
+        {
+          "key": "paused",
+          "type": "boolean",
+          "description": "Paused with 0x0E."
+        },
+        {
+          "key": "track",
+          "type": "number",
+          "description": "Current (or last) track number."
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "description": "Volume 0..30 (0x06 sets it; 30 at power-up)."
+        },
+        {
+          "key": "saying",
+          "type": "string",
+          "description": "The words of the clip playing now, empty when idle. \"(track 7: no words set)\" when its clip has no words."
+        },
+        {
+          "key": "speaking",
+          "type": "boolean",
+          "description": "Playing, audible (a speaker draws current on SPK_1 / SPK_2 or the DAC pins) and volume above 0: a person would hear it. The canvas shows a speech bubble while true."
+        },
+        {
+          "key": "audible",
+          "type": "boolean",
+          "description": "Something is wired to the audio outputs and draws current while it plays."
+        },
+        {
+          "key": "lastSaid",
+          "type": "string",
+          "description": "Words of the last clip it played."
+        },
+        {
+          "key": "saidCount",
+          "type": "number",
+          "description": "Clips played since power-up."
+        },
+        {
+          "key": "clipsSet",
+          "type": "number",
+          "description": "Tracks with words in the clips table."
+        },
+        {
+          "key": "busy",
+          "type": "boolean",
+          "description": "Same as playing: what the BUSY pin says (LOW = busy)."
+        },
+        {
+          "key": "lastCommand",
+          "type": "string",
+          "description": "Last command received, e.g. \"play track 2\" (for debugging a sketch)."
+        },
+        {
+          "key": "frames",
+          "type": "number",
+          "description": "Valid frames received."
+        },
+        {
+          "key": "badFrames",
+          "type": "number",
+          "description": "Malformed frames (wrong checksum, length or end byte) it ignored."
+        },
+        {
+          "key": "rxBytes",
+          "type": "number",
+          "description": "Bytes received from the board."
+        },
+        {
+          "key": "txBytes",
+          "type": "number",
+          "description": "Bytes sent to the board."
+        },
+        {
+          "key": "framingErrors",
+          "type": "number",
+          "description": "Bytes with a bad stop bit: the sketch talks at the wrong baud rate (must be 9600)."
+        },
+        {
+          "key": "spkmA",
+          "type": "number",
+          "description": "RMS current into the speaker (mA)."
+        },
+        {
+          "key": "playOpacity",
+          "type": "number",
+          "description": "Play indicator glow (bound in the SVG)."
+        },
+        {
+          "key": "powerOpacity",
+          "type": "number",
+          "description": "Power indicator (bound in the SVG)."
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "description": "Status shown on the module: off, starting, ready, ▶ 0003."
+        }
+      ],
+      "tags": [
+        "dfplayer",
+        "dfplayer mini",
+        "mp3",
+        "audio",
+        "speaker",
+        "voice",
+        "talk",
+        "speak",
+        "say",
+        "sound",
+        "music",
+        "yx5200",
+        "mh2024k",
+        "microsd",
+        "sd card",
+        "dfr0299",
+        "uart",
+        "serial"
+      ],
+      "mechanical": {
+        "pcb_mm": 1.2,
+        "keepout_top_mm": 1,
+        "keepout_bottom_mm": 2.5,
+        "features": [
+          {
+            "id": "sd",
+            "kind": "connector",
+            "face": "-y",
+            "x": 10,
+            "y": 0,
+            "z": 5.5,
+            "w": 12,
+            "h": 1.5,
+            "plug_clearance_mm": 0.5,
+            "connector": "microsd",
+            "expose": false
+          }
+        ],
+        "source": "typical module (DFRobot DFR0299 drawing: 20 x 20 mm, microSD socket on top; 8 mm with the card)"
+      },
+      "sourcing": {
+        "mpn": "DFR0299",
+        "manufacturer": "DFRobot",
+        "package": "module 20 x 20 mm, 2 x 8 header",
+        "generic": "DFPlayer Mini MP3 module (YX5200 / MH2024K chip), microSD slot, 3 W mono amplifier, UART 9600 baud"
+      }
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "ok",
+          "note": "The serial protocol of the DFPlayer Mini manual: 10-byte frames with the 16-bit checksum (and the 8-byte form without it), play track 0x03, folder 0x0F, mp3 folder 0x12, next / previous, volume 0x06 / up / down, pause 0x0E, resume 0x0D, stop 0x16, reset 0x0C, sleep, queries 0x42 / 0x43 / 0x48 / 0x4C; replies 0x3F online, 0x41 ACK when FEEDBACK is 1, 0x3D track finished. Commands sent during the ~1 s start-up are ignored, as on the module. Malformed frames are dropped and reported. EQ, loop, source and advert commands are accepted without effect; ADKEY and IO buttons are not emulated."
+        },
+        "timing": {
+          "level": "approx",
+          "note": "Bit-exact UART at 9600 baud both ways on the board's pins. A clip's length is estimated from its words (2.6 words per second plus 0.3 s), not from a real MP3; start-up is a typical 1 s and replies come after 20 ms."
+        },
+        "analog": {
+          "level": "approx",
+          "note": "SPK_1-SPK_2 are a bridged source of up to 2 V RMS (0.5 W into 8 Ω at volume 30 on 5 V), scaled by volume and by VCC below 5 V; DAC_L / DAC_R give 0.7 V RMS through 1 kΩ. Levels are RMS values solved as DC: no waveform, no clipping, no hiss."
+        },
+        "power": {
+          "level": "approx",
+          "note": "20 mA idle plus the speaker's power at 80 % efficiency; on at 3.0 V, quieter below 3.2 V. Current peaks that reset the module on a weak supply are not modelled."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "What the firmware sends and reads over serial, including the online / ACK / finished replies a library waits for",
+        "BUSY LOW while a clip plays",
+        "What each clip says, as text from the clips table: the speech bubble, read_speech and the {\"said\": …} test step",
+        "Whether a speaker is wired (no current on SPK_1 / SPK_2 or DAC: nobody hears it)",
+        "Start-up time, ignored early commands, wrong baud rate, bad checksums"
+      ],
+      "doesNotEmulate": [
+        "The real recorded voice: the browser speaks the words with its own text-to-speech voice",
+        "MP3 decoding, file order on the FAT32 card (0x03 plays the Nth file copied; 0x12 plays /mp3/NNNN.mp3 by name)",
+        "ADKEY resistor keys, IO_1 / IO_2 buttons, USB card-reader mode",
+        "Audio quality, hiss from a missing 1 kΩ on RX, pops at power-up"
+      ],
+      "testOnRealDevice": [
+        "Make the MP3s with sd-card/make-clips.sh (export_manufacturing), copy them to a FAT32 microSD as /mp3/0001.mp3, 0002.mp3 … and check every clip plays",
+        "Listen at the volume you set: small speakers distort above volume ~25 on 5 V",
+        "Put 1 kΩ in series with RX; without it some modules hiss or ignore commands",
+        "Power: on a battery the module can reset on loud clips; add 100 µF across VCC-GND",
+        "Clone modules (MH2024K, GD3200B chips) differ slightly: some need checksums, some need a longer start-up delay"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 190\" width=\"160\" height=\"190\">\n  <rect x=\"1\" y=\"14\" width=\"158\" height=\"172\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"2\" width=\"84\" height=\"44\" rx=\"3\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"44\" y=\"6\" width=\"72\" height=\"30\" rx=\"2\" fill=\"#1C2027\"/>\n  <path d=\"M50 12 H110 M50 18 H110 M50 24 H96\" stroke=\"#3A4250\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  <text x=\"80\" y=\"43\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">microSD</text>\n  <rect x=\"56\" y=\"70\" width=\"48\" height=\"40\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"61\" cy=\"75\" r=\"1.4\" fill=\"#3A4250\"/>\n  <path d=\"M60 70 V66 M68 70 V66 M76 70 V66 M84 70 V66 M92 70 V66 M100 70 V66 M60 110 V114 M68 110 V114 M76 110 V114 M84 110 V114 M92 110 V114 M100 110 V114\" stroke=\"#9AA3AF\" stroke-width=\"1.2\"/>\n  <text x=\"80\" y=\"88\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">MP3</text>\n  <text x=\"80\" y=\"100\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" data-bind=\"text:label\">off</text>\n  <rect x=\"62\" y=\"124\" width=\"36\" height=\"16\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <text x=\"80\" y=\"135\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">AMP</text>\n  <circle cx=\"80\" cy=\"156\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"80\" cy=\"156\" r=\"3.5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:playOpacity\"/>\n  <circle cx=\"80\" cy=\"156\" r=\"9\" fill=\"#5CF2A1\" opacity=\"0\" filter=\"url(#dfplayer-mini-glow)\" data-bind=\"opacity:playOpacity\"/>\n  <circle cx=\"132\" cy=\"22\" r=\"2\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:powerOpacity\"/>\n  <text x=\"80\" y=\"176\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">DFPlayer Mini</text>\n  <defs>\n    <filter id=\"dfplayer-mini-glow\" x=\"-1\" y=\"-1\" width=\"3\" height=\"3\"><feGaussianBlur stdDeviation=\"3\"/></filter>\n  </defs>\n  <g font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">\n    <text x=\"18\" y=\"32\">VCC</text>\n    <text x=\"18\" y=\"52\">RX</text>\n    <text x=\"18\" y=\"72\">TX</text>\n    <text x=\"18\" y=\"92\">DAC_R</text>\n    <text x=\"18\" y=\"112\">DAC_L</text>\n    <text x=\"18\" y=\"132\">SPK_1</text>\n    <text x=\"18\" y=\"152\">GND</text>\n    <text x=\"18\" y=\"172\">SPK_2</text>\n    <text x=\"142\" y=\"32\" text-anchor=\"end\">BUSY</text>\n    <text x=\"142\" y=\"52\" text-anchor=\"end\">USB-</text>\n    <text x=\"142\" y=\"72\" text-anchor=\"end\">USB+</text>\n    <text x=\"142\" y=\"92\" text-anchor=\"end\">ADK2</text>\n    <text x=\"142\" y=\"112\" text-anchor=\"end\">ADK1</text>\n    <text x=\"142\" y=\"132\" text-anchor=\"end\">IO2</text>\n    <text x=\"142\" y=\"152\" text-anchor=\"end\">GND</text>\n    <text x=\"142\" y=\"172\" text-anchor=\"end\">IO1</text>\n  </g>\n  <g fill=\"#C9CED6\">\n    <circle data-pin=\"VCC\" cx=\"10\" cy=\"30\" r=\"3\"/>\n    <circle data-pin=\"RX\" cx=\"10\" cy=\"50\" r=\"3\"/>\n    <circle data-pin=\"TX\" cx=\"10\" cy=\"70\" r=\"3\"/>\n    <circle data-pin=\"DAC_R\" cx=\"10\" cy=\"90\" r=\"3\"/>\n    <circle data-pin=\"DAC_L\" cx=\"10\" cy=\"110\" r=\"3\"/>\n    <circle data-pin=\"SPK_1\" cx=\"10\" cy=\"130\" r=\"3\"/>\n    <circle data-pin=\"GND.1\" cx=\"10\" cy=\"150\" r=\"3\"/>\n    <circle data-pin=\"SPK_2\" cx=\"10\" cy=\"170\" r=\"3\"/>\n    <circle data-pin=\"BUSY\" cx=\"150\" cy=\"30\" r=\"3\"/>\n    <circle data-pin=\"USB-\" cx=\"150\" cy=\"50\" r=\"3\"/>\n    <circle data-pin=\"USB+\" cx=\"150\" cy=\"70\" r=\"3\"/>\n    <circle data-pin=\"ADKEY_2\" cx=\"150\" cy=\"90\" r=\"3\"/>\n    <circle data-pin=\"ADKEY_1\" cx=\"150\" cy=\"110\" r=\"3\"/>\n    <circle data-pin=\"IO_2\" cx=\"150\" cy=\"130\" r=\"3\"/>\n    <circle data-pin=\"GND.2\" cx=\"150\" cy=\"150\" r=\"3\"/>\n    <circle data-pin=\"IO_1\" cx=\"150\" cy=\"170\" r=\"3\"/>\n  </g>\n</svg>",
+    create: create_9,
+  },
+  {
+    spec: {
       "id": "dht22",
       "name": "Temperature and humidity sensor DHT22 (AM2302 module)",
       "category": "sensor",
@@ -2898,7 +3323,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 130\" width=\"100\" height=\"130\">\n  <path d=\"M30 110 V126 M50 110 V126 M70 110 V126\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"8\" y=\"80\" width=\"84\" height=\"32\" rx=\"3\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"20\" y=\"4\" width=\"60\" height=\"80\" rx=\"4\" fill=\"#E9EDF2\" stroke=\"#9AA3AF\" stroke-width=\"1.5\"/>\n  <g fill=\"#C9CED6\">\n    <rect x=\"28\" y=\"12\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"40\" y=\"12\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"52\" y=\"12\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"64\" y=\"12\" width=\"9\" height=\"6\" rx=\"1\"/>\n    <rect x=\"28\" y=\"22\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"40\" y=\"22\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"52\" y=\"22\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"64\" y=\"22\" width=\"9\" height=\"6\" rx=\"1\"/>\n    <rect x=\"28\" y=\"32\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"40\" y=\"32\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"52\" y=\"32\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"64\" y=\"32\" width=\"9\" height=\"6\" rx=\"1\"/>\n    <rect x=\"28\" y=\"42\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"40\" y=\"42\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"52\" y=\"42\" width=\"9\" height=\"6\" rx=\"1\"/><rect x=\"64\" y=\"42\" width=\"9\" height=\"6\" rx=\"1\"/>\n  </g>\n  <text x=\"50\" y=\"62\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#15181D\">DHT22</text>\n  <text x=\"50\" y=\"76\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#2B313B\" data-bind=\"text:label\">22.0 °C · 55 %</text>\n  <circle cx=\"84\" cy=\"90\" r=\"2.5\" fill=\"#2B313B\"/>\n  <circle cx=\"84\" cy=\"90\" r=\"2.5\" fill=\"#5CF2A1\" display=\"none\" data-bind=\"visible:sending\"/>\n  <text x=\"30\" y=\"106\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <text x=\"50\" y=\"106\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT</text>\n  <text x=\"70\" y=\"106\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"VCC\" cx=\"30\" cy=\"126\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DATA\" cx=\"50\" cy=\"126\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"70\" cy=\"126\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_9,
+    create: create_10,
   },
   {
     spec: {
@@ -3142,7 +3567,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 160\" width=\"300\" height=\"160\">\n  <rect x=\"2\" y=\"2\" width=\"296\" height=\"156\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"20\" width=\"22\" height=\"120\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"32\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">32K</text>\n  <text x=\"32\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">SQW</text>\n  <text x=\"32\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"32\" y=\"93\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"32\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"32\" y=\"133\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"70\" y=\"22\" width=\"70\" height=\"56\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <text x=\"105\" y=\"54\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DS3231</text>\n  <circle cx=\"225\" cy=\"80\" r=\"58\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <circle cx=\"225\" cy=\"80\" r=\"50\" fill=\"#323944\"/>\n  <text x=\"225\" y=\"76\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"15\" fill=\"#5CF2A1\" data-bind=\"text:clock\">12:00:00</text>\n  <text x=\"225\" y=\"96\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">CR2032</text>\n  <text x=\"70\" y=\"140\" font-family=\"IBM Plex Sans\" font-size=\"9\" fill=\"#8A93A0\">RTC · I2C 0x68</text>\n  <circle data-pin=\"32K\" cx=\"14\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SQW\" cx=\"14\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"14\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"14\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"14\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"14\" cy=\"130\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_10,
+    create: create_11,
   },
   {
     spec: {
@@ -3474,7 +3899,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 120\" width=\"200\" height=\"120\">\n  <rect x=\"2\" y=\"2\" width=\"196\" height=\"116\" rx=\"6\" fill=\"#10202A\" stroke=\"#3A4250\" stroke-width=\"1.25\"/>\n  <rect x=\"6\" y=\"18\" width=\"40\" height=\"84\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"11\" y=\"25\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"25\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"45\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"45\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"65\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"65\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"11\" y=\"85\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"31\" y=\"85\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"54\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">TX  GND</text>\n  <text x=\"54\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">EN  IO2</text>\n  <text x=\"54\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">RST IO0</text>\n  <text x=\"54\" y=\"93\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">3V3 RX</text>\n  <rect x=\"96\" y=\"34\" width=\"40\" height=\"40\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"116\" y=\"57\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">ESP8266</text>\n  <rect x=\"98\" y=\"82\" width=\"26\" height=\"16\" rx=\"1.5\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"111\" y=\"93\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\">FLASH</text>\n  <path d=\"M150 16 V100 H160 V24 H170 V100 H180 V24 H190 V104\" fill=\"none\" stroke=\"#C9A24A\" stroke-width=\"3\" stroke-linejoin=\"round\" opacity=\"0.85\"/>\n  <text x=\"96\" y=\"20\" font-family=\"IBM Plex Sans\" font-size=\"8\" fill=\"#E9EDF2\">ESP-01S</text>\n  <text x=\"96\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">AT 1.7 Wi-Fi</text>\n  <circle cx=\"74\" cy=\"108\" r=\"3\" fill=\"#3A1010\"/>\n  <circle cx=\"74\" cy=\"108\" r=\"3\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:powerOpacity\"/>\n  <circle cx=\"84\" cy=\"108\" r=\"3\" fill=\"#0F1A33\"/>\n  <circle cx=\"84\" cy=\"108\" r=\"3.2\" fill=\"#3FA9F5\" opacity=\"0\" data-bind=\"opacity:ledOpacity\"/>\n  <circle data-pin=\"TX\" cx=\"16\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"36\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"EN\" cx=\"16\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IO2\" cx=\"36\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"16\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IO0\" cx=\"36\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"16\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RX\" cx=\"36\" cy=\"90\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_11,
+    create: create_12,
   },
   {
     spec: {
@@ -3787,7 +4212,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 290\" width=\"240\" height=\"290\">\n  <rect x=\"38\" y=\"4\" width=\"164\" height=\"52\" rx=\"4\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"120\" cy=\"164\" r=\"118\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"44\" y=\"9\" width=\"152\" height=\"14\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"50\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"70\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"90\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"110\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"130\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">RES</text>\n  <text x=\"150\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">DC</text>\n  <text x=\"170\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">CS</text>\n  <text x=\"190\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">BLK</text>\n  <circle cx=\"120\" cy=\"164\" r=\"108\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect data-screen=\"240x240\" data-screen-shape=\"round\" x=\"20\" y=\"64\" width=\"200\" height=\"200\" rx=\"100\" fill=\"#05070A\"/>\n  <circle cx=\"120\" cy=\"164\" r=\"100\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"1\"/>\n  <text x=\"120\" y=\"279\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">GC9A01 1.28in</text>\n  <circle cx=\"214\" cy=\"270\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"VCC\" cx=\"50\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"70\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"90\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"110\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"130\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"150\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"170\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"LED\" cx=\"190\" cy=\"16\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_12,
+    create: create_13,
   },
   {
     spec: {
@@ -3926,7 +4351,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 90 40\" width=\"90\" height=\"40\">\n  <path d=\"M10 20 H26 M64 20 H80\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"26\" y=\"11\" width=\"38\" height=\"18\" rx=\"4\" fill=\"#B9732F\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <rect x=\"54\" y=\"11\" width=\"5\" height=\"18\" fill=\"#14161A\"/>\n  <rect x=\"26\" y=\"11\" width=\"38\" height=\"18\" rx=\"4\" fill=\"#FFB23F\" opacity=\"0\" data-bind=\"opacity:glow\"/>\n  <text x=\"40\" y=\"22.5\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\">4148</text>\n  <text x=\"10\" y=\"35\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">A</text>\n  <text x=\"76\" y=\"35\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">K</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"80\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_13,
+    create: create_14,
   },
   {
     spec: {
@@ -4179,7 +4604,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 100\" width=\"180\" height=\"100\">\n  <rect x=\"2\" y=\"6\" width=\"176\" height=\"80\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"42\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"30\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"138\" cy=\"44\" r=\"22\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <g display=\"none\" data-bind=\"visible:measuring\">\n    <path d=\"M34 36 A12 12 0 0 1 50 36 M30 30 A18 18 0 0 1 54 30\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:echo\">\n    <path d=\"M130 52 A12 12 0 0 0 146 52 M126 58 A18 18 0 0 0 150 58\" fill=\"none\" stroke=\"#FFB23F\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"90\" y=\"20\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"10\" fill=\"#E9EDF2\">HC-SR04</text>\n  <text x=\"90\" y=\"48\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#5CF2A1\" data-bind=\"text:label\">100 cm</text>\n  <text x=\"60\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">VCC</text>\n  <text x=\"80\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">TRIG</text>\n  <text x=\"100\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">ECHO</text>\n  <text x=\"120\" y=\"82\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">GND</text>\n  <path d=\"M60 86 V96 M80 86 V96 M100 86 V96 M120 86 V96\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <circle data-pin=\"VCC\" cx=\"60\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"TRIG\" cx=\"80\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ECHO\" cx=\"100\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"120\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_14,
+    create: create_15,
   },
   {
     spec: {
@@ -4513,7 +4938,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 680 400\" width=\"680\" height=\"400\">\n  <rect x=\"2\" y=\"2\" width=\"676\" height=\"396\" rx=\"10\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"658\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"22\" cy=\"378\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"658\" cy=\"378\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"8\" y=\"106\" width=\"24\" height=\"188\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"14\" y=\"114\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"123\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">VCC</text>\n  <rect x=\"14\" y=\"134\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"143\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"14\" y=\"154\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"163\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">CS</text>\n  <rect x=\"14\" y=\"174\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"183\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">RESET</text>\n  <rect x=\"14\" y=\"194\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"203\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">DC/RS</text>\n  <rect x=\"14\" y=\"214\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"223\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDI(MOSI)</text>\n  <rect x=\"14\" y=\"234\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"243\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SCK</text>\n  <rect x=\"14\" y=\"254\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"263\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">LED</text>\n  <rect x=\"14\" y=\"274\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"283\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDO(MISO)</text>\n  <text x=\"40\" y=\"312\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">ILI9341</text>\n  <text x=\"40\" y=\"324\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">240x320 SPI</text>\n  <rect x=\"118\" y=\"150\" width=\"26\" height=\"100\" rx=\"2\" fill=\"#2A1F0E\" stroke=\"#3A4250\" stroke-width=\"0.75\"/>\n  <path d=\"M122 160 H140 M122 170 H140 M122 180 H140 M122 190 H140 M122 200 H140 M122 210 H140 M122 220 H140 M122 230 H140 M122 240 H140\" stroke=\"#6B5A3A\" stroke-width=\"0.75\"/>\n  <rect x=\"140\" y=\"12\" width=\"500\" height=\"376\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"152\" y=\"21\" width=\"476\" height=\"358\" rx=\"3\" fill=\"#0A0C10\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"320x240\" x=\"162\" y=\"29\" width=\"456\" height=\"342\" fill=\"#05070A\"/>\n  <rect x=\"162\" y=\"29\" width=\"456\" height=\"342\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <path d=\"M170 36 L300 36 L176 160 Z\" fill=\"#FFFFFF\" opacity=\"0.025\"/>\n  <circle cx=\"652\" cy=\"200\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"VCC\" cx=\"20\" cy=\"120\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"20\" cy=\"140\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"20\" cy=\"160\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"20\" cy=\"180\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"20\" cy=\"200\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"20\" cy=\"220\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"20\" cy=\"240\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"LED\" cx=\"20\" cy=\"260\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MISO\" cx=\"20\" cy=\"280\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_15,
+    create: create_16,
   },
   {
     spec: {
@@ -4783,7 +5208,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 150 70\" width=\"150\" height=\"70\">\n  <rect x=\"4\" y=\"4\" width=\"128\" height=\"62\" rx=\"4\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"44\" y=\"12\" width=\"20\" height=\"20\" rx=\"2\" fill=\"#1D3A6E\" stroke=\"#3A4250\"/>\n  <circle cx=\"54\" cy=\"22\" r=\"5\" fill=\"#E9EDF2\" stroke=\"#3A4250\"/>\n  <path d=\"M51 22 H57\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"44\" y=\"40\" width=\"20\" height=\"14\" rx=\"1.5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"54\" y=\"49\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"4.5\" fill=\"#8A93A0\">LM393</text>\n  <rect x=\"74\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"74\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#5CF2A1\" display=\"none\" data-bind=\"visible:powered\"/>\n  <rect x=\"74\" y=\"26\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"74\" y=\"26\" width=\"7\" height=\"5\" rx=\"1\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:obstacle\"/>\n  <path d=\"M120 22 H142 M120 48 H142\" stroke=\"#9AA3AF\" stroke-width=\"1.5\"/>\n  <rect x=\"134\" y=\"14\" width=\"12\" height=\"16\" rx=\"6\" fill=\"#E9EDF2\" fill-opacity=\"0.85\" stroke=\"#3A4250\"/>\n  <rect x=\"134\" y=\"40\" width=\"12\" height=\"16\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <g display=\"none\" data-bind=\"visible:obstacle\">\n    <path d=\"M146 22 Q150 35 146 48\" fill=\"none\" stroke=\"#FF3B2F\" stroke-width=\"1\" stroke-dasharray=\"2 2\"/>\n  </g>\n  <text x=\"98\" y=\"60\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">clear</text>\n  <text x=\"20\" y=\"18\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT</text>\n  <text x=\"20\" y=\"38\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"20\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <circle data-pin=\"OUT\" cx=\"10\" cy=\"15\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"35\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_16,
+    create: create_17,
   },
   {
     spec: {
@@ -5101,7 +5526,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 200\" width=\"240\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"236\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"2\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"212\" y=\"52\" width=\"26\" height=\"76\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"14\" y=\"162\" width=\"92\" height=\"30\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"110\" y=\"182\" width=\"120\" height=\"14\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"78\" y=\"22\" width=\"84\" height=\"64\" rx=\"4\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M84 22 V10 M96 22 V10 M108 22 V10 M120 22 V10 M132 22 V10 M144 22 V10 M156 22 V10\" stroke=\"#3A4250\" stroke-width=\"3\"/>\n  <rect x=\"88\" y=\"96\" width=\"64\" height=\"26\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"120\" y=\"58\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"14\" fill=\"#E9EDF2\">L298N</text>\n  <text x=\"120\" y=\"74\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">DUAL H-BRIDGE</text>\n  <circle cx=\"184\" cy=\"30\" r=\"5\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"184\" cy=\"30\" r=\"3.5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"visible:powered\"/>\n  <text x=\"34\" y=\"140\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:aLabel\">A off</text>\n  <text x=\"206\" y=\"140\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:bLabel\">B off</text>\n  <text x=\"34\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT1</text>\n  <text x=\"34\" y=\"113\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT2</text>\n  <text x=\"206\" y=\"113\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT3</text>\n  <text x=\"206\" y=\"66\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">OUT4</text>\n  <text x=\"30\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">12V</text>\n  <text x=\"60\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"90\" y=\"158\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">5V</text>\n  <text x=\"120\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENA</text>\n  <text x=\"140\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN1</text>\n  <text x=\"160\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN2</text>\n  <text x=\"180\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN3</text>\n  <text x=\"200\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN4</text>\n  <text x=\"220\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">ENB</text>\n  <circle data-pin=\"OUT1\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT2\" cx=\"6\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT3\" cx=\"234\" cy=\"110\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT4\" cx=\"234\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"12V\" cx=\"30\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"60\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"5V\" cx=\"90\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENA\" cx=\"120\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN1\" cx=\"140\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN2\" cx=\"160\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN3\" cx=\"180\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN4\" cx=\"200\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"ENB\" cx=\"220\" cy=\"194\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_17,
+    create: create_18,
   },
   {
     spec: {
@@ -5428,7 +5853,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 290\" width=\"640\" height=\"290\">\n  <rect x=\"2\" y=\"2\" width=\"636\" height=\"286\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"22\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"22\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"618\" cy=\"268\" r=\"9\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"2\" y=\"88\" width=\"30\" height=\"96\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"40\" y=\"108\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"40\" y=\"128\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"148\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"40\" y=\"168\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#E9EDF2\">SCL</text>\n  <rect x=\"64\" y=\"40\" width=\"548\" height=\"210\" rx=\"6\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"#1C2A6B\" opacity=\"0.15\" data-bind=\"opacity:backlightOpacity\"/>\n  <rect data-screen=\"16x2\" x=\"100\" y=\"90\" width=\"476\" height=\"110\" fill=\"#1C2A6B\" opacity=\"0\"/>\n  <rect x=\"82\" y=\"66\" width=\"512\" height=\"158\" rx=\"3\" fill=\"none\" stroke=\"#3A4250\"/>\n  <text x=\"84\" y=\"242\" font-family=\"IBM Plex Mono\" font-size=\"9\" fill=\"#8A93A0\">1602 HD44780 · PCF8574</text>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"105\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"125\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"10\" cy=\"145\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"10\" cy=\"165\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_18,
+    create: create_19,
   },
   {
     spec: {
@@ -5629,7 +6054,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 110 70\" width=\"110\" height=\"70\">\n  <rect x=\"6\" y=\"6\" width=\"98\" height=\"44\" rx=\"4\" fill=\"#1A3A5C\" stroke=\"#E9EDF2\" stroke-opacity=\"0.3\" stroke-width=\"1\"/>\n  <rect x=\"38\" y=\"16\" width=\"34\" height=\"20\" rx=\"2\" fill=\"#20242B\" stroke=\"#5A6474\" stroke-width=\"1\"/>\n  <text x=\"55\" y=\"28.5\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#E9EDF2\" text-anchor=\"middle\">LDO 3V3</text>\n  <circle cx=\"92\" cy=\"14\" r=\"3\" fill=\"#2B3038\" stroke=\"#5A6474\" stroke-width=\"0.8\"/>\n  <circle cx=\"92\" cy=\"14\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:outOn\"/>\n  <text x=\"55\" y=\"45\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#8A93A0\" text-anchor=\"middle\" data-bind=\"text:label\">off</text>\n  <path d=\"M16 50 V62 M42 50 V62 M68 50 V62 M94 50 V62\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <text x=\"16\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\" text-anchor=\"middle\" dx=\"9\">IN</text>\n  <text x=\"42\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\" text-anchor=\"middle\" dx=\"9\">GND</text>\n  <text x=\"68\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\" text-anchor=\"middle\" dx=\"9\">OUT</text>\n  <text x=\"94\" y=\"58\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\" text-anchor=\"middle\" dx=\"-9\">EN</text>\n  <circle data-pin=\"VIN\" cx=\"16\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"42\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VOUT\" cx=\"68\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"EN\" cx=\"94\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_19,
+    create: create_20,
   },
   {
     spec: {
@@ -5819,7 +6244,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"4\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"16\" fill=\"#FF3B2F\" opacity=\"0\" filter=\"url(#led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 48 V62 L10 76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M30 48 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#5A1712\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\" data-bind=\"fill:lens\"/>\n  <path d=\"M8 46 V22 A12 12 0 0 1 32 22 V46 Z\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M12 22 A8 8 0 0 1 18 14\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M6 44 H32 V49 H6 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <line x1=\"32\" y1=\"43\" x2=\"32\" y2=\"50\" stroke=\"#E9EDF2\" stroke-width=\"1.5\"/>\n  <text x=\"4\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_20,
+    create: create_21,
   },
   {
     spec: {
@@ -6037,7 +6462,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 80\" width=\"160\" height=\"80\">\n  <path d=\"M10 30 H30 M10 50 H30\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <path d=\"M10 30 H26\" stroke=\"#E5484D\" stroke-width=\"2\"/>\n  <rect x=\"30\" y=\"20\" width=\"18\" height=\"40\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"48\" y=\"8\" width=\"106\" height=\"64\" rx=\"6\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <text x=\"101\" y=\"24\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"10\" fill=\"#E9EDF2\">LiPo 3.7 V</text>\n  <rect x=\"59\" y=\"30\" width=\"86\" height=\"14\" rx=\"3\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"60\" y=\"31\" width=\"84\" height=\"12\" rx=\"2\" fill=\"#5CF2A1\" data-bind=\"width:fillWidth,fill:fillColor\"/>\n  <text x=\"101\" y=\"60\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">4.20 V · 100 %</text>\n  <text x=\"39\" y=\"44\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" transform=\"rotate(-90 39 40)\">PCM</text>\n  <text x=\"20\" y=\"25\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <text x=\"20\" y=\"62\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"POS\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_21,
+    create: create_22,
   },
   {
     spec: {
@@ -6367,7 +6792,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 180 130\" width=\"180\" height=\"130\">\n  <rect x=\"2\" y=\"2\" width=\"176\" height=\"126\" rx=\"6\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"8\" y=\"5\" width=\"164\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"20\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"40\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"60\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"80\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">SDA</text>\n  <text x=\"100\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XDA</text>\n  <text x=\"120\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">XCL</text>\n  <text x=\"140\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">AD0</text>\n  <text x=\"160\" y=\"33\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">INT</text>\n  <g transform=\"rotate(0 90 80)\" data-bind=\"transform:tiltTransform\">\n    <rect x=\"74\" y=\"64\" width=\"32\" height=\"32\" rx=\"2\" fill=\"#15181D\" stroke=\"#4A5363\"/>\n    <circle cx=\"79\" cy=\"69\" r=\"1.6\" fill=\"#9AA3AF\"/>\n    <path d=\"M90 92 V70 M86 74 L90 70 L94 74\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" fill=\"none\"/>\n  </g>\n  <text x=\"30\" y=\"118\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">GY-521 MPU-6050</text>\n  <circle data-pin=\"VCC\" cx=\"20\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"40\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"60\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XDA\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"XCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"AD0\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"INT\" cx=\"160\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_22,
+    create: create_23,
   },
   {
     spec: {
@@ -6533,7 +6958,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M14 36 V62 M30 36 V62 M46 36 V62\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#20242B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:glow\"/>\n  <text x=\"30\" y=\"22\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#E9EDF2\" text-anchor=\"middle\" data-bind=\"text:label\">AO3400</text>\n  <text x=\"30\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\">N-MOS</text>\n  <text x=\"14\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">G</text>\n  <text x=\"30\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">D</text>\n  <text x=\"46\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">S</text>\n  <circle data-pin=\"G\" cx=\"14\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"D\" cx=\"30\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"S\" cx=\"46\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_23,
+    create: create_24,
   },
   {
     spec: {
@@ -6714,7 +7139,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M14 36 V62 M30 36 V62 M46 36 V62\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#20242B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:glow\"/>\n  <text x=\"30\" y=\"22\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#E9EDF2\" text-anchor=\"middle\" data-bind=\"text:label\">2N2222</text>\n  <text x=\"30\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\">NPN</text>\n  <text x=\"14\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">E</text>\n  <text x=\"30\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">B</text>\n  <text x=\"46\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">C</text>\n  <circle data-pin=\"E\" cx=\"14\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"30\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"46\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_24,
+    create: create_25,
   },
   {
     spec: {
@@ -6902,7 +7327,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 70\" width=\"100\" height=\"70\">\n  <path d=\"M20 46 V66 M40 46 V66\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"22\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"15\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"9\" fill=\"#2B313B\" stroke=\"#4A5363\"/>\n  <circle cx=\"30\" cy=\"28\" r=\"3\" fill=\"#0A0C10\"/>\n  <g display=\"none\" opacity=\"1\" data-bind=\"visible:sounding,opacity:volume\">\n    <path d=\"M54 18 Q59 28 54 38 M58 13 Q65 28 58 43\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"52\" y=\"60\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">silent</text>\n  <text x=\"13\" y=\"60\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <circle data-pin=\"POS\" cx=\"20\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"40\" cy=\"66\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_25,
+    create: create_26,
   },
   {
     spec: {
@@ -7057,7 +7482,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 80\" width=\"40\" height=\"80\">\n  <defs>\n    <filter id=\"photoresistor-glow\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"3\"/>\n    </filter>\n  </defs>\n  <circle cx=\"20\" cy=\"24\" r=\"17\" fill=\"#FFB23F\" opacity=\"0.4\" filter=\"url(#photoresistor-glow)\" data-bind=\"opacity:light\"/>\n  <path d=\"M10 36 V76 M30 36 V76\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"13\" fill=\"#E9EDF2\" fill-opacity=\"0.12\" stroke=\"#E9EDF2\" stroke-opacity=\"0.45\" stroke-width=\"1\"/>\n  <circle cx=\"20\" cy=\"24\" r=\"10\" fill=\"#2B2418\"/>\n  <path d=\"M13 18 H27 M13 22 H27 M13 26 H27 M13 30 H27 M27 18 V22 M13 22 V26 M27 26 V30\" stroke=\"#E07B2E\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"30\" cy=\"76\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_26,
+    create: create_27,
   },
   {
     spec: {
@@ -7290,7 +7715,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\" width=\"120\" height=\"120\">\n  <path d=\"M40 100 V116 M60 100 V116 M80 100 V116\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"6\" y=\"6\" width=\"108\" height=\"96\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"60\" cy=\"50\" r=\"40\" fill=\"#5CF2A1\" opacity=\"0\" fill-opacity=\"0.18\" data-bind=\"opacity:glowOpacity\"/>\n  <circle cx=\"60\" cy=\"50\" r=\"36\" fill=\"#E9EDF2\" fill-opacity=\"0.12\" stroke=\"#C9CED6\" stroke-width=\"1.5\"/>\n  <g fill=\"none\" stroke=\"#C9CED6\" stroke-opacity=\"0.45\" stroke-width=\"1\">\n    <circle cx=\"60\" cy=\"50\" r=\"28\"/>\n    <circle cx=\"60\" cy=\"50\" r=\"20\"/>\n    <circle cx=\"60\" cy=\"50\" r=\"12\"/>\n    <path d=\"M24 50 H96 M60 14 V86 M35 25 L85 75 M85 25 L35 75\"/>\n  </g>\n  <circle cx=\"16\" cy=\"94\" r=\"3\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <circle cx=\"104\" cy=\"94\" r=\"3\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <text x=\"40\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"60\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT</text>\n  <text x=\"80\" y=\"97\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"34\" y=\"44\" width=\"52\" height=\"12\" rx=\"3\" fill=\"#0F1E22\" fill-opacity=\"0.85\"/>\n  <text x=\"60\" y=\"53\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:state\">idle</text>\n  <circle data-pin=\"VCC\" cx=\"40\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT\" cx=\"60\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_27,
+    create: create_28,
   },
   {
     spec: {
@@ -7470,7 +7895,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 70\" width=\"60\" height=\"70\">\n  <path d=\"M14 36 V62 M30 36 V62 M46 36 V62\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#20242B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <path d=\"M10 36 V14 A20 20 0 0 1 50 14 V36 Z\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:glow\"/>\n  <text x=\"30\" y=\"22\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#E9EDF2\" text-anchor=\"middle\" data-bind=\"text:label\">2N2907</text>\n  <text x=\"30\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\">PNP</text>\n  <text x=\"14\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">E</text>\n  <text x=\"30\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">B</text>\n  <text x=\"46\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\">C</text>\n  <circle data-pin=\"E\" cx=\"14\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"30\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"46\" cy=\"62\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_28,
+    create: create_29,
   },
   {
     spec: {
@@ -7646,7 +8071,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <path d=\"M20 66 V84 M40 66 V84 M60 66 V84\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"10\" y=\"10\" width=\"60\" height=\"58\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <path d=\"M24.4 53.6 A22 22 0 1 1 55.6 53.6\" fill=\"none\" stroke=\"#3A4250\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"40\" cy=\"38\" r=\"17\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <g transform=\"rotate(0 40 38)\" data-bind=\"transform:knobTransform\">\n    <circle cx=\"40\" cy=\"38\" r=\"13\" fill=\"#323944\"/>\n    <line x1=\"40\" y1=\"37\" x2=\"40\" y2=\"25\" stroke=\"#E9EDF2\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"14\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"38\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">W</text>\n  <text x=\"62\" y=\"64\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"W\" cx=\"40\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"60\" cy=\"84\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_29,
+    create: create_30,
   },
   {
     spec: {
@@ -7799,7 +8224,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\" width=\"80\" height=\"80\">\n  <path d=\"M10 10 L20 20 M70 10 L60 20 M10 70 L20 60 M70 70 L60 60\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"16\" y=\"16\" width=\"48\" height=\"48\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"22\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"22\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"22\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"58\" cy=\"58\" r=\"2\" fill=\"#262B33\"/>\n  <circle cx=\"40\" cy=\"41.5\" r=\"15\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:capTransform\">\n    <circle cx=\"40\" cy=\"40\" r=\"14\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n    <circle cx=\"40\" cy=\"40\" r=\"10\" fill=\"#323944\"/>\n  </g>\n  <circle cx=\"40\" cy=\"40\" r=\"17\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" display=\"none\" data-bind=\"visible:pressed\"/>\n  <text x=\"4\" y=\"40\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">1</text>\n  <text x=\"4\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">2</text>\n  <circle data-pin=\"1a\" cx=\"10\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"1b\" cx=\"70\" cy=\"10\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2a\" cx=\"10\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2b\" cx=\"70\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_30,
+    create: create_31,
   },
   {
     spec: {
@@ -8557,7 +8982,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 166 402\" width=\"166\" height=\"402\">\n  <defs>\n    <filter id=\"raspberry-pi-pico-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"166\" height=\"402\" rx=\"4\" fill=\"#0F2A1E\" stroke=\"#24533A\" stroke-width=\"2\"/>\n  <rect x=\"7\" y=\"4\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"24\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"44\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"64\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"84\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"104\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"124\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"144\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"164\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"184\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"204\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"224\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"244\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"264\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"284\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"304\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"324\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"344\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"364\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"7\" y=\"384\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"4\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"24\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"44\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"64\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"84\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"104\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"124\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"144\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"164\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"184\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"204\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"224\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"244\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"264\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"284\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"304\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"324\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"344\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"364\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"147\" y=\"384\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"58\" y=\"-1\" width=\"50\" height=\"22\" rx=\"2\" fill=\"#6E7682\" stroke=\"#9AA3AF\" stroke-width=\"1\"/>\n  <rect x=\"64\" y=\"5\" width=\"38\" height=\"9\" rx=\"1\" fill=\"#3A4250\"/>\n  <circle cx=\"83\" cy=\"62\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  <text x=\"83\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOTSEL</text>\n  <rect x=\"108\" y=\"37\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#143A26\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <circle cx=\"112\" cy=\"40\" r=\"7\" fill=\"#5CF2A1\" opacity=\"0\" filter=\"url(#raspberry-pi-pico-glow)\" data-bind=\"opacity:led\"/>\n  <rect x=\"108\" y=\"37\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:led\"/>\n  <text x=\"112\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">LED</text>\n  <rect x=\"56\" y=\"168\" width=\"54\" height=\"54\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"61\" cy=\"173\" r=\"1.6\" fill=\"#3A4250\"/>\n  <rect x=\"61.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"61.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"173.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"173.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"68.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"68.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"180.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"180.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"187.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"187.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"82.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"82.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"194.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"194.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"89.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"89.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"201.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"201.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"96.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"96.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"208.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"208.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"103.0\" y=\"166\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"103.0\" y=\"222\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"54\" y=\"215.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"110\" y=\"215.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <text x=\"83.0\" y=\"195.0\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <rect x=\"64\" y=\"246\" width=\"38\" height=\"22\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <text x=\"83\" y=\"257\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">FLASH 2MB</text>\n  <rect x=\"72\" y=\"128\" width=\"22\" height=\"12\" rx=\"2\" fill=\"#B9BEC6\" stroke=\"#6E7682\" stroke-width=\"0.8\"/>\n  <text x=\"83\" y=\"352\" font-family=\"Bricolage Grotesque\" font-size=\"17\" font-weight=\"800\" fill=\"#E9EDF2\" text-anchor=\"middle\">Pico</text>\n  <text x=\"83\" y=\"370\" font-family=\"IBM Plex Mono\" font-size=\"6.5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040 · 3.3V</text>\n  <text x=\"24\" y=\"11\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP0</text>\n  <text x=\"24\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP1</text>\n  <text x=\"24\" y=\"51\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"71\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP2</text>\n  <text x=\"24\" y=\"91\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP3</text>\n  <text x=\"24\" y=\"111\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP4</text>\n  <text x=\"24\" y=\"131\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP5</text>\n  <text x=\"24\" y=\"151\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"171\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP6</text>\n  <text x=\"24\" y=\"191\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP7</text>\n  <text x=\"24\" y=\"211\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP8</text>\n  <text x=\"24\" y=\"231\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP9</text>\n  <text x=\"24\" y=\"251\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"271\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP10</text>\n  <text x=\"24\" y=\"291\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP11</text>\n  <text x=\"24\" y=\"311\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP12</text>\n  <text x=\"24\" y=\"331\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP13</text>\n  <text x=\"24\" y=\"351\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"24\" y=\"371\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP14</text>\n  <text x=\"24\" y=\"391\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP15</text>\n  <text x=\"142\" y=\"11\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">VBUS</text>\n  <text x=\"142\" y=\"31\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">VSYS</text>\n  <text x=\"142\" y=\"51\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"71\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3_EN</text>\n  <text x=\"142\" y=\"91\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"142\" y=\"111\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">ADC_VREF</text>\n  <text x=\"142\" y=\"131\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP28</text>\n  <text x=\"142\" y=\"151\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">AGND</text>\n  <text x=\"142\" y=\"171\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP27</text>\n  <text x=\"142\" y=\"191\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP26</text>\n  <text x=\"142\" y=\"211\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">RUN</text>\n  <text x=\"142\" y=\"231\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP22</text>\n  <text x=\"142\" y=\"251\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"271\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP21</text>\n  <text x=\"142\" y=\"291\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP20</text>\n  <text x=\"142\" y=\"311\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP19</text>\n  <text x=\"142\" y=\"331\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP18</text>\n  <text x=\"142\" y=\"351\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"142\" y=\"371\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP17</text>\n  <text x=\"142\" y=\"391\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP16</text>\n  <circle data-pin=\"GP0\" cx=\"13\" cy=\"11\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"13\" cy=\"31\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"13\" cy=\"51\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"13\" cy=\"71\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"13\" cy=\"91\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"13\" cy=\"111\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP5\" cx=\"13\" cy=\"131\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.2\" cx=\"13\" cy=\"151\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"13\" cy=\"171\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"13\" cy=\"191\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP8\" cx=\"13\" cy=\"211\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP9\" cx=\"13\" cy=\"231\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.3\" cx=\"13\" cy=\"251\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP10\" cx=\"13\" cy=\"271\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP11\" cx=\"13\" cy=\"291\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP12\" cx=\"13\" cy=\"311\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP13\" cx=\"13\" cy=\"331\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.4\" cx=\"13\" cy=\"351\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP14\" cx=\"13\" cy=\"371\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP15\" cx=\"13\" cy=\"391\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VBUS\" cx=\"153\" cy=\"11\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VSYS\" cx=\"153\" cy=\"31\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.5\" cx=\"153\" cy=\"51\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3_EN\" cx=\"153\" cy=\"71\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"153\" cy=\"91\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"ADC_VREF\" cx=\"153\" cy=\"111\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"153\" cy=\"131\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"AGND\" cx=\"153\" cy=\"151\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"153\" cy=\"171\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP26\" cx=\"153\" cy=\"191\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"RUN\" cx=\"153\" cy=\"211\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP22\" cx=\"153\" cy=\"231\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.6\" cx=\"153\" cy=\"251\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP21\" cx=\"153\" cy=\"271\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP20\" cx=\"153\" cy=\"291\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP19\" cx=\"153\" cy=\"311\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP18\" cx=\"153\" cy=\"331\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.7\" cx=\"153\" cy=\"351\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP17\" cx=\"153\" cy=\"371\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP16\" cx=\"153\" cy=\"391\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
-    create: create_31,
+    create: create_32,
   },
   {
     spec: {
@@ -8826,7 +9251,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 110\" width=\"160\" height=\"110\">\n  <rect x=\"4\" y=\"6\" width=\"152\" height=\"98\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"16\" width=\"64\" height=\"58\" rx=\"3\" fill=\"#1D3A6E\" stroke=\"#3A4250\"/>\n  <text x=\"70\" y=\"38\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">RELAY</text>\n  <text x=\"70\" y=\"50\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#C9CED6\">5VDC · 10A 30VDC</text>\n  <path d=\"M48 60 h6 l3 -5 l4 10 l4 -10 l4 10 l4 -10 l3 5 h6\" fill=\"none\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"126\" y=\"18\" width=\"26\" height=\"76\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"140\" cy=\"43\" r=\"2\" fill=\"#9AA3AF\"/>\n  <circle cx=\"140\" cy=\"67\" r=\"2\" fill=\"#9AA3AF\"/>\n  <path d=\"M140 30 V43 M140 80 V67 M118 55 H140\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <g transform=\"rotate(28 118 55)\" data-bind=\"transform:armTransform\">\n    <path d=\"M118 55 L141 55\" stroke=\"#E9EDF2\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  </g>\n  <circle cx=\"118\" cy=\"55\" r=\"2.5\" fill=\"#E9EDF2\"/>\n  <rect x=\"24\" y=\"80\" width=\"10\" height=\"7\" rx=\"1.5\" fill=\"#2B313B\"/>\n  <rect x=\"24\" y=\"80\" width=\"10\" height=\"7\" rx=\"1.5\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:energized\"/>\n  <text x=\"70\" y=\"94\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">OFF</text>\n  <text x=\"18\" y=\"33\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"18\" y=\"53\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"18\" y=\"73\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN</text>\n  <text x=\"122\" y=\"33\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NO</text>\n  <text x=\"114\" y=\"50\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">COM</text>\n  <text x=\"122\" y=\"83\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">NC</text>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN\" cx=\"10\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NO\" cx=\"150\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"150\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NC\" cx=\"150\" cy=\"80\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_32,
+    create: create_33,
   },
   {
     spec: {
@@ -8984,7 +9409,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 24\" width=\"100\" height=\"24\">\n  <line x1=\"10\" y1=\"12\" x2=\"90\" y2=\"12\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"27\" y=\"4\" width=\"46\" height=\"16\" rx=\"7\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"1\"/>\n  <rect x=\"34\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band1\"/>\n  <rect x=\"42\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#E0321E\" data-bind=\"fill:band2\"/>\n  <rect x=\"50\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#7A4A26\" data-bind=\"fill:band3\"/>\n  <rect x=\"62\" y=\"4.5\" width=\"4\" height=\"15\" fill=\"#C9A43A\"/>\n  <circle data-pin=\"1\" cx=\"10\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"90\" cy=\"12\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_33,
+    create: create_34,
   },
   {
     spec: {
@@ -9163,7 +9588,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 90\" width=\"80\" height=\"90\">\n  <defs>\n    <filter id=\"rgb-led-halo\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\">\n      <feGaussianBlur stdDeviation=\"5\"/>\n    </filter>\n  </defs>\n  <circle cx=\"40\" cy=\"26\" r=\"20\" fill=\"#000000\" opacity=\"0\" filter=\"url(#rgb-led-halo)\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M10 86 V64 L28 52 M30 86 V52 M50 86 V64 L42 52 M70 86 V60 L46 50\" stroke=\"#9AA3AF\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#2E333B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <circle cx=\"35\" cy=\"34\" r=\"5\" fill=\"#FF3B2F\" opacity=\"0\" data-bind=\"opacity:r\"/>\n  <circle cx=\"45\" cy=\"34\" r=\"5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:g\"/>\n  <circle cx=\"40\" cy=\"25\" r=\"5\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:b\"/>\n  <path d=\"M28 50 V24 A12 12 0 0 1 52 24 V50 Z\" fill=\"#000000\" opacity=\"0\" data-bind=\"fill:color,opacity:brightness\"/>\n  <path d=\"M32 24 A8 8 0 0 1 38 16\" stroke=\"#FFFFFF\" stroke-opacity=\"0.45\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n  <path d=\"M26 48 H54 V53 H26 Z\" fill=\"#E9EDF2\" fill-opacity=\"0.18\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <text x=\"4\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">R</text>\n  <text x=\"33\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">−</text>\n  <text x=\"53\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">G</text>\n  <text x=\"73\" y=\"78\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">B</text>\n  <circle data-pin=\"R\" cx=\"10\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"COM\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"G\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"B\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_34,
+    create: create_35,
   },
   {
     spec: {
@@ -9416,7 +9841,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 200\" width=\"160\" height=\"200\">\n  <rect x=\"26\" y=\"14\" width=\"108\" height=\"172\" rx=\"18\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"4\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <rect x=\"136\" y=\"104\" width=\"20\" height=\"56\" rx=\"5\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <path d=\"M8 112 H20 M8 122 H20 M8 132 H20 M8 142 H20 M8 152 H20 M140 112 H152 M140 122 H152 M140 132 H152 M140 142 H152 M140 152 H152\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"30\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <rect x=\"96\" y=\"118\" width=\"34\" height=\"18\" rx=\"2\" fill=\"#C9A227\" opacity=\"0.85\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"9\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"80\" cy=\"38\" r=\"4\" fill=\"#8A93A0\"/>\n  <path d=\"M80 4 L72 16 H88 Z\" fill=\"#5CF2A1\"/>\n  <text x=\"80\" y=\"80\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"11\" fill=\"#E9EDF2\">2WD</text>\n  <text x=\"80\" y=\"176\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" data-bind=\"text:label\">x 0 y 0 cm · 0°</text>\n</svg>",
-    create: create_35,
+    create: create_36,
   },
   {
     spec: {
@@ -9562,7 +9987,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 90 40\" width=\"90\" height=\"40\">\n  <path d=\"M10 20 H26 M64 20 H80\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <rect x=\"26\" y=\"11\" width=\"38\" height=\"18\" rx=\"4\" fill=\"#20242B\" stroke=\"#E9EDF2\" stroke-opacity=\"0.35\" stroke-width=\"1\"/>\n  <rect x=\"54\" y=\"11\" width=\"5\" height=\"18\" fill=\"#C9CED6\"/>\n  <rect x=\"26\" y=\"11\" width=\"38\" height=\"18\" rx=\"4\" fill=\"#FFB23F\" opacity=\"0\" data-bind=\"opacity:glow\"/>\n  <text x=\"40\" y=\"22.5\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\">5817</text>\n  <text x=\"10\" y=\"35\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">A</text>\n  <text x=\"76\" y=\"35\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">K</text>\n  <circle data-pin=\"A\" cx=\"10\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"C\" cx=\"80\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_36,
+    create: create_37,
   },
   {
     spec: {
@@ -9992,7 +10417,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 138 166\" width=\"138\" height=\"166\">\n  <defs>\n    <filter id=\"seeed-xiao-rp2040-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"138\" height=\"166\" rx=\"8\" fill=\"#141A22\" stroke=\"#3A4250\" stroke-width=\"2\"/>\n  <rect x=\"3\" y=\"29\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"49\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"69\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"89\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"109\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"129\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"3\" y=\"149\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"29\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"49\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"69\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"89\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"109\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"129\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"123\" y=\"149\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"45\" y=\"-1\" width=\"48\" height=\"24\" rx=\"5\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"52\" y=\"7\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#3A4250\"/>\n  <rect x=\"52\" y=\"44\" width=\"34\" height=\"88\" rx=\"3\" fill=\"#B9BEC6\" stroke=\"#6E7682\" stroke-width=\"1\"/>\n  <text x=\"69\" y=\"84\" font-family=\"Bricolage Grotesque\" font-size=\"9\" font-weight=\"800\" fill=\"#15181D\" text-anchor=\"middle\">XIAO</text>\n  <text x=\"69\" y=\"98\" font-family=\"IBM Plex Mono\" font-size=\"5.5\" fill=\"#2B313B\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#3A1A14\" stroke=\"#5A4A2A\" stroke-width=\"0.5\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#FF4D2E\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_r\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#FF4D2E\" opacity=\"0\" data-bind=\"opacity:led_r\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#5CF2A1\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_g\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:led_g\"/>\n  <circle cx=\"30\" cy=\"30\" r=\"7\" fill=\"#4DA3FF\" opacity=\"0\" filter=\"url(#seeed-xiao-rp2040-glow)\" data-bind=\"opacity:led_b\"/>\n  <rect x=\"26\" y=\"27\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#4DA3FF\" opacity=\"0\" data-bind=\"opacity:led_b\"/>\n  <text x=\"30\" y=\"21\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RGB</text>\n  <rect x=\"98\" y=\"26\" width=\"10\" height=\"7\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"0.5\"/>\n  <text x=\"103\" y=\"20\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOT</text>\n  <rect x=\"113\" y=\"26\" width=\"10\" height=\"7\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"0.5\"/>\n  <text x=\"118\" y=\"20\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RST</text>\n  <text x=\"18\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D0/A0</text>\n  <text x=\"18\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D1/A1</text>\n  <text x=\"18\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D2/A2</text>\n  <text x=\"18\" y=\"96\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D3/A3</text>\n  <text x=\"18\" y=\"116\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D4/SDA</text>\n  <text x=\"18\" y=\"136\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D5/SCL</text>\n  <text x=\"18\" y=\"156\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">D6/TX</text>\n  <text x=\"120\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">5V</text>\n  <text x=\"120\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GND</text>\n  <text x=\"120\" y=\"76\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"120\" y=\"96\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D10/MOSI</text>\n  <text x=\"120\" y=\"116\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D9/MISO</text>\n  <text x=\"120\" y=\"136\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D8/SCK</text>\n  <text x=\"120\" y=\"156\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">D7/RX</text>\n  <circle data-pin=\"GP26\" cx=\"9\" cy=\"36\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"9\" cy=\"56\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"9\" cy=\"76\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP29\" cx=\"9\" cy=\"96\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"9\" cy=\"116\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"9\" cy=\"136\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP0\" cx=\"9\" cy=\"156\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"VBUS\" cx=\"129\" cy=\"36\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"129\" cy=\"56\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"129\" cy=\"76\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"129\" cy=\"96\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"129\" cy=\"116\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"129\" cy=\"136\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"129\" cy=\"156\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
-    create: create_37,
+    create: create_38,
   },
   {
     spec: {
@@ -10251,7 +10676,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 100\" width=\"160\" height=\"100\">\n  <path d=\"M6 30 H34 M6 50 H34 M6 70 H34\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path d=\"M14 30 H34\" stroke=\"#7A5230\" stroke-width=\"3\"/>\n  <path d=\"M14 50 H34\" stroke=\"#D9473B\" stroke-width=\"3\"/>\n  <path d=\"M14 70 H34\" stroke=\"#F08A2B\" stroke-width=\"3\"/>\n  <rect x=\"34\" y=\"24\" width=\"12\" height=\"52\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"46\" y=\"20\" width=\"96\" height=\"60\" rx=\"6\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"38\" y=\"44\" width=\"112\" height=\"12\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"112\" cy=\"50\" r=\"14\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g transform=\"rotate(0 112 50)\" data-bind=\"transform:hornTransform\">\n    <path d=\"M106 50 L112 8 L118 50 Z\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n    <circle cx=\"112\" cy=\"16\" r=\"2\" fill=\"#15181D\"/>\n    <circle cx=\"112\" cy=\"50\" r=\"7\" fill=\"#E9EDF2\" stroke=\"#8A93A0\"/>\n  </g>\n  <circle cx=\"112\" cy=\"50\" r=\"2\" fill=\"#0D0F12\"/>\n  <text x=\"56\" y=\"34\" font-family=\"Bricolage Grotesque\" font-size=\"9\" fill=\"#E9EDF2\">SG90</text>\n  <text x=\"56\" y=\"74\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">90°</text>\n  <circle data-pin=\"GND\" cx=\"6\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"6\" cy=\"50\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SIG\" cx=\"6\" cy=\"70\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_38,
+    create: create_39,
   },
   {
     spec: {
@@ -10408,7 +10833,189 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 50\" width=\"80\" height=\"50\">\n  <path d=\"M20 30 V44 M40 30 V44 M60 30 V44\" stroke=\"#9AA3AF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n  <rect x=\"8\" y=\"12\" width=\"64\" height=\"20\" rx=\"3\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"18\" y=\"17\" width=\"44\" height=\"10\" rx=\"2\" fill=\"#0D0F12\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:knobTransform\">\n    <rect x=\"20\" y=\"4\" width=\"12\" height=\"22\" rx=\"2\" fill=\"#323944\" stroke=\"#5A6474\" stroke-width=\"1\"/>\n    <path d=\"M23 9 H29 M23 12 H29 M23 15 H29\" stroke=\"#8A93A0\" stroke-width=\"1\"/>\n  </g>\n  <text x=\"10\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">1</text>\n  <text x=\"66\" y=\"9\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3</text>\n  <circle data-pin=\"1\" cx=\"20\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"2\" cx=\"40\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"3\" cx=\"60\" cy=\"44\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_39,
+    create: create_40,
+  },
+  {
+    spec: {
+      "id": "speaker",
+      "name": "Speaker 8 Ω 0.5 W (28 mm round)",
+      "category": "output",
+      "description": "Small round speaker for voice and sounds. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA). Not polarised for sound, but keep + / - the same when you use two.",
+      "pins": [
+        {
+          "id": "+",
+          "label": "+",
+          "x": 40,
+          "y": 116,
+          "type": "passive",
+          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+        },
+        {
+          "id": "-",
+          "label": "-",
+          "x": 80,
+          "y": 116,
+          "type": "passive",
+          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+        }
+      ],
+      "size": {
+        "w": 120,
+        "h": 120
+      },
+      "props": [
+        {
+          "id": "ohms",
+          "label": "Impedance",
+          "type": "enum",
+          "default": "8",
+          "options": [
+            "4",
+            "8"
+          ],
+          "description": "Coil impedance. The DFPlayer drives 4 or 8 Ω; 8 Ω is quieter but kinder to a battery."
+        },
+        {
+          "id": "rated_w",
+          "label": "Rated power",
+          "type": "number",
+          "default": 0.5,
+          "min": 0.25,
+          "max": 3,
+          "unit": "W",
+          "description": "What the speaker takes continuously before it distorts or burns."
+        }
+      ],
+      "limits": {
+        "maxPowerW": 0.5
+      },
+      "footprint": "28 mm round frame, two solder tabs (wires)",
+      "dimensions_mm": {
+        "w": 28,
+        "h": 28,
+        "d": 5
+      },
+      "mass_g": 4,
+      "current_ma": {
+        "typ": 0,
+        "max": 0
+      },
+      "price_usd": 0.9,
+      "buy_links": [
+        {
+          "vendor": "AliExpress",
+          "url": "https://www.aliexpress.com/w/wholesale-28mm-speaker-8-ohm-0.5W.html"
+        },
+        {
+          "vendor": "Adafruit",
+          "url": "https://www.adafruit.com/search?q=mini+metal+speaker"
+        },
+        {
+          "vendor": "LCSC",
+          "url": "https://www.lcsc.com/search?q=speaker%2028mm%208ohm"
+        }
+      ],
+      "bindings": [
+        {
+          "key": "sounding",
+          "type": "boolean",
+          "description": "Something plays through it (more than 1 mW)."
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "description": "Loudness 0..1 against its rated power."
+        },
+        {
+          "key": "powerW",
+          "type": "number",
+          "description": "Electrical power into the coil (W, RMS)."
+        },
+        {
+          "key": "currentmA",
+          "type": "number",
+          "description": "RMS current through the coil (mA)."
+        },
+        {
+          "key": "volts",
+          "type": "number",
+          "description": "RMS voltage across the leads (+ minus -)."
+        }
+      ],
+      "tags": [
+        "speaker",
+        "loudspeaker",
+        "8 ohm",
+        "voice",
+        "talk",
+        "speak",
+        "audio",
+        "sound",
+        "dfplayer",
+        "mp3"
+      ],
+      "mechanical": {
+        "outline": "round",
+        "keepout_top_mm": 0.5,
+        "keepout_bottom_mm": 1,
+        "features": [
+          {
+            "id": "sound",
+            "kind": "grille",
+            "face": "+z",
+            "x": 14,
+            "y": 14,
+            "shape": "round",
+            "d": 18
+          }
+        ],
+        "source": "typical 28 mm 8 Ω 0.5 W mylar speaker, 5 mm deep"
+      },
+      "sourcing": {
+        "package": "28 mm round, 5 mm deep, solder tabs",
+        "generic": "Mini speaker 28 mm, 8 Ω, 0.5 W (mylar cone)"
+      }
+    },
+    fidelity: {
+      "level": "behavioral",
+      "areas": {
+        "logic": {
+          "level": "n/a",
+          "note": ""
+        },
+        "timing": {
+          "level": "n/a",
+          "note": ""
+        },
+        "analog": {
+          "level": "approx",
+          "note": "The coil is a plain 4 or 8 Ω resistor; amplifier levels are RMS values solved as DC, so power is I² · R. No inductance, no resonance, no frequency response."
+        },
+        "power": {
+          "level": "approx",
+          "note": "Power above the rated value is reported (warning above 1.25 ×, error above 3 ×); heating and failure are not simulated."
+        },
+        "radio": {
+          "level": "n/a",
+          "note": ""
+        }
+      },
+      "emulates": [
+        "Whether an amplifier output drives it (sounding, loudness against its rating)",
+        "Overpower from a too-loud amplifier or a wrong connection"
+      ],
+      "doesNotEmulate": [
+        "Sound itself: the browser speaks a DFPlayer clip's words with its own voice",
+        "Frequency response, distortion, enclosure acoustics (a sealed back makes it louder and fuller)"
+      ],
+      "testOnRealDevice": [
+        "Listen to it inside the case: grille holes in front of the cone and a sealed back sound best",
+        "Glue or foam-tape it against the grille so it does not buzz",
+        "Keep it away from a magnetometer (IMU) and from screws it could pull"
+      ]
+    },
+    svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 120\" width=\"120\" height=\"120\">\n  <path d=\"M40 92 V116 M80 92 V116\" stroke=\"#9AA3AF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <circle cx=\"60\" cy=\"54\" r=\"46\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"60\" cy=\"54\" r=\"38\" fill=\"#1C2027\" stroke=\"#2B313B\" stroke-width=\"1\"/>\n  <circle cx=\"60\" cy=\"54\" r=\"28\" fill=\"#15181D\" stroke=\"#2B313B\" stroke-width=\"1\"/>\n  <circle cx=\"60\" cy=\"54\" r=\"12\" fill=\"#0D0F12\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <g stroke=\"#2B313B\" stroke-width=\"1\">\n    <path d=\"M60 16 V26 M60 82 V92 M22 54 H32 M88 54 H98\"/>\n  </g>\n  <text x=\"34\" y=\"106\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">+</text>\n  <text x=\"84\" y=\"106\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#E9EDF2\">-</text>\n  <text x=\"60\" y=\"57\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">8Ω</text>\n  <g display=\"none\" opacity=\"1\" data-bind=\"visible:sounding,opacity:volume\">\n    <circle cx=\"60\" cy=\"54\" r=\"12\" fill=\"#5CF2A1\" opacity=\"0.25\"/>\n    <path d=\"M104 36 A22 22 0 0 1 104 72\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M110 28 A32 32 0 0 1 110 80\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n    <path d=\"M16 36 A22 22 0 0 0 16 72\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n    <path d=\"M10 28 A32 32 0 0 0 10 80\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-opacity=\"0.6\"/>\n  </g>\n  <circle data-pin=\"+\" cx=\"40\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"-\" cx=\"80\" cy=\"116\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
+    create: create_41,
   },
   {
     spec: {
@@ -10698,7 +11305,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 200\" width=\"220\" height=\"200\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"196\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"186\" r=\"5\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"70\" y=\"5\" width=\"80\" height=\"18\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"80\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"100\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"120\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCL</text>\n  <text x=\"140\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"14\" y=\"44\" width=\"192\" height=\"122\" rx=\"3\" fill=\"#15181D\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x64\" x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"#05070A\"/>\n  <rect x=\"24\" y=\"56\" width=\"172\" height=\"86\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <rect x=\"88\" y=\"166\" width=\"44\" height=\"22\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <text x=\"110\" y=\"156\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\">SSD1306 128x64</text>\n  <circle cx=\"190\" cy=\"154\" r=\"2.5\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"GND\" cx=\"80\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"100\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCL\" cx=\"120\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SDA\" cx=\"140\" cy=\"14\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_40,
+    create: create_42,
   },
   {
     spec: {
@@ -11012,7 +11619,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 220 360\" width=\"220\" height=\"360\">\n  <rect x=\"2\" y=\"2\" width=\"216\" height=\"356\" rx=\"8\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"14\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"14\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"14\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <circle cx=\"206\" cy=\"346\" r=\"6\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"28\" y=\"10\" width=\"164\" height=\"20\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <rect x=\"35\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"40\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">LED</text>\n  <rect x=\"55\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"60\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SCK</text>\n  <rect x=\"75\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"80\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">SDA</text>\n  <rect x=\"95\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"100\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">A0</text>\n  <rect x=\"115\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"120\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">RST</text>\n  <rect x=\"135\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"140\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">CS</text>\n  <rect x=\"155\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"160\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">GND</text>\n  <rect x=\"175\" y=\"15\" width=\"10\" height=\"10\" rx=\"1\" fill=\"#2B313B\"/>\n  <text x=\"180\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">VCC</text>\n  <rect x=\"14\" y=\"52\" width=\"192\" height=\"292\" rx=\"4\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <rect x=\"20\" y=\"58\" width=\"180\" height=\"280\" rx=\"2\" fill=\"#0A0C10\" stroke=\"#2B313B\"/>\n  <rect data-screen=\"128x160\" x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"#05070A\"/>\n  <rect x=\"26\" y=\"64\" width=\"168\" height=\"210\" fill=\"none\" stroke=\"#2B313B\" stroke-width=\"0.75\"/>\n  <text x=\"110\" y=\"300\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#8A93A0\">ST7735 1.8in 128x160</text>\n  <circle cx=\"110\" cy=\"320\" r=\"3\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:screenOpacity\"/>\n  <circle data-pin=\"LED\" cx=\"40\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SCK\" cx=\"60\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"MOSI\" cx=\"80\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DC\" cx=\"100\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"RST\" cx=\"120\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"CS\" cx=\"140\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"160\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"180\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_41,
+    create: create_43,
   },
   {
     spec: {
@@ -11274,7 +11881,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 140 100\" width=\"140\" height=\"100\">\n  <rect x=\"4\" y=\"6\" width=\"132\" height=\"88\" rx=\"4\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"0\" y=\"30\" width=\"24\" height=\"40\" rx=\"3\" fill=\"#9AA3AF\" stroke=\"#C9CED6\"/>\n  <rect x=\"4\" y=\"38\" width=\"14\" height=\"24\" rx=\"2\" fill=\"#15181D\"/>\n  <g display=\"none\" data-bind=\"visible:usb\">\n    <rect x=\"-10\" y=\"40\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#2B313B\" stroke=\"#4A5363\"/>\n  </g>\n  <rect x=\"48\" y=\"36\" width=\"34\" height=\"26\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"65\" y=\"52\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">TP4056</text>\n  <rect x=\"88\" y=\"62\" width=\"16\" height=\"10\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"96\" y=\"80\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"4.5\" fill=\"#8A93A0\">DW01</text>\n  <rect x=\"48\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"48\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:charging\"/>\n  <rect x=\"62\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#2B313B\"/>\n  <rect x=\"62\" y=\"16\" width=\"8\" height=\"6\" rx=\"1\" fill=\"#4CB5FF\" display=\"none\" data-bind=\"visible:full\"/>\n  <text x=\"65\" y=\"78\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#5CF2A1\" data-bind=\"text:label\">no input</text>\n  <text x=\"28\" y=\"36\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN+</text>\n  <text x=\"28\" y=\"66\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN−</text>\n  <text x=\"122\" y=\"23\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">B+</text>\n  <text x=\"122\" y=\"43\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">B−</text>\n  <text x=\"122\" y=\"63\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT+</text>\n  <text x=\"122\" y=\"83\" text-anchor=\"end\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">OUT−</text>\n  <circle data-pin=\"VIN\" cx=\"10\" cy=\"40\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.1\" cx=\"10\" cy=\"60\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"BAT\" cx=\"130\" cy=\"20\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.2\" cx=\"130\" cy=\"40\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT\" cx=\"130\" cy=\"60\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND.3\" cx=\"130\" cy=\"80\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_42,
+    create: create_44,
   },
   {
     spec: {
@@ -11481,7 +12088,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 90\" width=\"100\" height=\"90\">\n  <path d=\"M30 70 V86 M50 70 V86 M70 70 V86\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"8\" y=\"4\" width=\"84\" height=\"68\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"22\" fill=\"#1C2027\" stroke=\"#4A5363\" stroke-width=\"1.5\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"15\" fill=\"none\" stroke=\"#3A4250\" stroke-dasharray=\"2 3\"/>\n  <circle cx=\"40\" cy=\"34\" r=\"21\" fill=\"#5CF2A1\" opacity=\"0\" data-bind=\"opacity:padOpacity\" fill-opacity=\"0.18\"/>\n  <rect x=\"70\" y=\"16\" width=\"14\" height=\"10\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"77\" y=\"36\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">A B</text>\n  <circle cx=\"77\" cy=\"48\" r=\"3\" fill=\"#2B313B\"/>\n  <circle cx=\"77\" cy=\"48\" r=\"3\" fill=\"#FF3B2F\" display=\"none\" data-bind=\"visible:active\"/>\n  <text x=\"40\" y=\"37\" text-anchor=\"middle\" font-family=\"IBM Plex Sans\" font-size=\"7\" fill=\"#8A93A0\">TOUCH</text>\n  <text x=\"30\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">I/O</text>\n  <text x=\"50\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"70\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <circle data-pin=\"IO\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_43,
+    create: create_45,
   },
   {
     spec: {
@@ -11642,7 +12249,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 90\" width=\"100\" height=\"90\">\n  <path d=\"M30 70 V86 M50 70 V86 M70 70 V86\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"8\" y=\"6\" width=\"84\" height=\"66\" rx=\"5\" fill=\"#0F1E22\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <g transform=\"translate(0 0)\" data-bind=\"transform:shakeTransform\">\n    <circle cx=\"40\" cy=\"34\" r=\"20\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1.5\"/>\n    <circle cx=\"40\" cy=\"34\" r=\"15\" fill=\"none\" stroke=\"#6B7380\"/>\n    <path d=\"M27 48 L22 58 M33 51 L31 60\" stroke=\"#E5484D\" stroke-width=\"1.5\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:running\">\n    <path d=\"M14 22 Q10 34 14 46 M66 22 Q70 34 66 46\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <rect x=\"72\" y=\"18\" width=\"12\" height=\"8\" rx=\"1\" fill=\"#15181D\" stroke=\"#3A4250\"/>\n  <text x=\"78\" y=\"36\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\">NPN</text>\n  <text x=\"30\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">GND</text>\n  <text x=\"50\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">VCC</text>\n  <text x=\"70\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\">IN</text>\n  <circle data-pin=\"GND\" cx=\"30\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VCC\" cx=\"50\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"IN\" cx=\"70\" cy=\"86\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_44,
+    create: create_46,
   },
   {
     spec: {
@@ -11854,7 +12461,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 150 90\" width=\"150\" height=\"90\">\n  <path d=\"M10 35 H26 M10 55 H26\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <path d=\"M10 35 H24\" stroke=\"#E5484D\" stroke-width=\"2\"/>\n  <rect x=\"26\" y=\"22\" width=\"78\" height=\"46\" rx=\"10\" fill=\"#2B313B\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"34\" y=\"28\" width=\"44\" height=\"34\" rx=\"6\" fill=\"#1C2027\" stroke=\"#3A4250\"/>\n  <circle cx=\"90\" cy=\"45\" r=\"11\" fill=\"#15181D\" stroke=\"#4A5363\"/>\n  <path d=\"M90 37 V53 M82 45 H98\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"104\" y=\"40\" width=\"20\" height=\"10\" rx=\"2\" fill=\"#2B313B\" stroke=\"#3A4250\"/>\n  <g opacity=\"0\" data-bind=\"opacity:waterOpacity\">\n    <path d=\"M124 45 Q136 42 144 30 M124 45 Q138 46 146 40 M124 45 Q136 50 144 58\" fill=\"none\" stroke=\"#4CB5FF\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  </g>\n  <text x=\"56\" y=\"43\" text-anchor=\"middle\" font-family=\"Bricolage Grotesque\" font-size=\"8\" fill=\"#E9EDF2\">PUMP</text>\n  <text x=\"56\" y=\"54\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">3–6 V</text>\n  <text x=\"65\" y=\"84\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"8\" fill=\"#5CF2A1\" data-bind=\"text:label\">0 L/h · 0 ml</text>\n  <text x=\"18\" y=\"30\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">+</text>\n  <text x=\"18\" y=\"66\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">−</text>\n  <circle data-pin=\"POS\" cx=\"10\" cy=\"35\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"NEG\" cx=\"10\" cy=\"55\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_45,
+    create: create_47,
   },
   {
     spec: {
@@ -12381,7 +12988,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 142 206\" width=\"142\" height=\"206\">\n  <defs>\n    <filter id=\"waveshare-rp2040-zero-glow\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\">\n      <feGaussianBlur stdDeviation=\"2.5\"/>\n    </filter>\n  </defs>\n  <rect x=\"0\" y=\"0\" width=\"142\" height=\"206\" rx=\"5\" fill=\"#101820\" stroke=\"#2B3A4A\" stroke-width=\"2\"/>\n  <rect x=\"5\" y=\"5\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"25\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"45\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"65\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"85\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"105\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"125\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"145\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"5\" y=\"165\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"5\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"25\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"45\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"65\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"85\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"105\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"125\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"145\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"125\" y=\"165\" width=\"12\" height=\"14\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"24\" y=\"190\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"44\" y=\"190\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"64\" y=\"190\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"84\" y=\"190\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"104\" y=\"190\" width=\"14\" height=\"12\" rx=\"2\" fill=\"#2B2416\" stroke=\"#8A7A4A\" stroke-width=\"0.8\"/>\n  <rect x=\"47\" y=\"-1\" width=\"48\" height=\"24\" rx=\"5\" fill=\"#9AA3AF\" stroke=\"#C9CED6\" stroke-width=\"1\"/>\n  <rect x=\"54\" y=\"7\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#3A4250\"/>\n  <rect x=\"48\" y=\"66\" width=\"46\" height=\"46\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <circle cx=\"53\" cy=\"71\" r=\"1.6\" fill=\"#3A4250\"/>\n  <rect x=\"53.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"53.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"71.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"71.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"58.7\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"58.7\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"76.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"76.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"64.3\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"64.3\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"82.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"82.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"70.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"70.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"88.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"88.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.7\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"75.7\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"93.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"93.7\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"81.3\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"81.3\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"99.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"99.3\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"87.0\" y=\"64\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"87.0\" y=\"112\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"46\" y=\"105.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <rect x=\"94\" y=\"105.0\" width=\"2\" height=\"2\" fill=\"#6E7682\"/>\n  <text x=\"71.0\" y=\"89.0\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <rect x=\"96\" y=\"32\" width=\"12\" height=\"12\" rx=\"1\" fill=\"#E9EDF2\" stroke=\"#8A93A0\" stroke-width=\"0.8\"/>\n  <circle cx=\"102\" cy=\"38\" r=\"3\" fill=\"#C9CED6\"/>\n  <text x=\"102\" y=\"50\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RGB</text>\n  <rect x=\"50\" y=\"36\" width=\"12\" height=\"9\" rx=\"1\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"0.8\"/>\n  <text x=\"56\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">BOOT</text>\n  <rect x=\"72\" y=\"36\" width=\"12\" height=\"9\" rx=\"1\" fill=\"#2B313B\" stroke=\"#4A5363\" stroke-width=\"0.8\"/>\n  <text x=\"78\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RESET</text>\n  <text x=\"71\" y=\"135\" font-family=\"Bricolage Grotesque\" font-size=\"11\" font-weight=\"800\" fill=\"#E9EDF2\" text-anchor=\"middle\">Zero</text>\n  <text x=\"71\" y=\"148\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\" text-anchor=\"middle\" dominant-baseline=\"central\">RP2040</text>\n  <text x=\"21\" y=\"12\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">5V</text>\n  <text x=\"21\" y=\"32\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GND</text>\n  <text x=\"21\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">3V3</text>\n  <text x=\"21\" y=\"72\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP29</text>\n  <text x=\"21\" y=\"92\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP28</text>\n  <text x=\"21\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP27</text>\n  <text x=\"21\" y=\"132\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP26</text>\n  <text x=\"21\" y=\"152\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP15</text>\n  <text x=\"21\" y=\"172\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"start\" dominant-baseline=\"central\">GP14</text>\n  <text x=\"121\" y=\"12\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP0</text>\n  <text x=\"121\" y=\"32\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP1</text>\n  <text x=\"121\" y=\"52\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP2</text>\n  <text x=\"121\" y=\"72\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP3</text>\n  <text x=\"121\" y=\"92\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP4</text>\n  <text x=\"121\" y=\"112\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP5</text>\n  <text x=\"121\" y=\"132\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP6</text>\n  <text x=\"121\" y=\"152\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP7</text>\n  <text x=\"121\" y=\"172\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"end\" dominant-baseline=\"central\">GP8</text>\n  <text x=\"31\" y=\"184\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">13</text>\n  <text x=\"51\" y=\"184\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">12</text>\n  <text x=\"71\" y=\"184\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">11</text>\n  <text x=\"91\" y=\"184\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">10</text>\n  <text x=\"111\" y=\"184\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#E9EDF2\" text-anchor=\"middle\" dominant-baseline=\"central\">9</text>\n  <circle data-pin=\"VBUS\" cx=\"11\" cy=\"12\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GND.1\" cx=\"11\" cy=\"32\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"3V3\" cx=\"11\" cy=\"52\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP29\" cx=\"11\" cy=\"72\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP28\" cx=\"11\" cy=\"92\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP27\" cx=\"11\" cy=\"112\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP26\" cx=\"11\" cy=\"132\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP15\" cx=\"11\" cy=\"152\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP14\" cx=\"11\" cy=\"172\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP0\" cx=\"131\" cy=\"12\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP1\" cx=\"131\" cy=\"32\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP2\" cx=\"131\" cy=\"52\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP3\" cx=\"131\" cy=\"72\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP4\" cx=\"131\" cy=\"92\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP5\" cx=\"131\" cy=\"112\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP6\" cx=\"131\" cy=\"132\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP7\" cx=\"131\" cy=\"152\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP8\" cx=\"131\" cy=\"172\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP13\" cx=\"31\" cy=\"196\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP12\" cx=\"51\" cy=\"196\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP11\" cx=\"71\" cy=\"196\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP10\" cx=\"91\" cy=\"196\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n  <circle data-pin=\"GP9\" cx=\"111\" cy=\"196\" r=\"4\" fill=\"#C9CED6\" stroke=\"#0B0D10\" stroke-width=\"1\"/>\n</svg>",
-    create: create_46,
+    create: create_48,
   },
   {
     spec: {
@@ -12829,7 +13436,7 @@ export const partDefinitions: PartDefinition[] = [
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 350 60\" width=\"350\" height=\"60\">\n  <defs>\n    <filter id=\"ws2812-strip-glow\" x=\"-1\" y=\"-1\" width=\"3\" height=\"3\"><feGaussianBlur stdDeviation=\"3\"/></filter>\n  </defs>\n  <path d=\"M10 15 H22 M10 30 H22 M10 45 H22\" stroke=\"#9AA3AF\" stroke-width=\"2\"/>\n  <rect x=\"22\" y=\"14\" width=\"174\" height=\"32\" rx=\"2\" fill=\"#15181D\" stroke=\"#3A4250\" data-bind=\"width:tapeWidth\"/>\n  <path d=\"M22 18 H350\" stroke=\"#3A4250\" stroke-width=\"0.75\" stroke-dasharray=\"2 18\" stroke-dashoffset=\"-10\"/>\n  <g data-bind=\"visible:show0\">\n    <circle cx=\"34\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led0,opacity:glow0\"/>\n    <rect x=\"27\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"34\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led0\"/>\n  </g>\n  <g data-bind=\"visible:show1\">\n    <circle cx=\"54\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led1,opacity:glow1\"/>\n    <rect x=\"47\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"54\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led1\"/>\n  </g>\n  <g data-bind=\"visible:show2\">\n    <circle cx=\"74\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led2,opacity:glow2\"/>\n    <rect x=\"67\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"74\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led2\"/>\n  </g>\n  <g data-bind=\"visible:show3\">\n    <circle cx=\"94\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led3,opacity:glow3\"/>\n    <rect x=\"87\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"94\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led3\"/>\n  </g>\n  <g data-bind=\"visible:show4\">\n    <circle cx=\"114\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led4,opacity:glow4\"/>\n    <rect x=\"107\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"114\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led4\"/>\n  </g>\n  <g data-bind=\"visible:show5\">\n    <circle cx=\"134\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led5,opacity:glow5\"/>\n    <rect x=\"127\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"134\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led5\"/>\n  </g>\n  <g data-bind=\"visible:show6\">\n    <circle cx=\"154\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led6,opacity:glow6\"/>\n    <rect x=\"147\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"154\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led6\"/>\n  </g>\n  <g data-bind=\"visible:show7\">\n    <circle cx=\"174\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led7,opacity:glow7\"/>\n    <rect x=\"167\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"174\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led7\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show8\">\n    <circle cx=\"194\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led8,opacity:glow8\"/>\n    <rect x=\"187\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"194\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led8\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show9\">\n    <circle cx=\"214\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led9,opacity:glow9\"/>\n    <rect x=\"207\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"214\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led9\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show10\">\n    <circle cx=\"234\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led10,opacity:glow10\"/>\n    <rect x=\"227\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"234\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led10\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show11\">\n    <circle cx=\"254\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led11,opacity:glow11\"/>\n    <rect x=\"247\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"254\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led11\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show12\">\n    <circle cx=\"274\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led12,opacity:glow12\"/>\n    <rect x=\"267\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"274\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led12\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show13\">\n    <circle cx=\"294\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led13,opacity:glow13\"/>\n    <rect x=\"287\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"294\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led13\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show14\">\n    <circle cx=\"314\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led14,opacity:glow14\"/>\n    <rect x=\"307\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"314\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led14\"/>\n  </g>\n  <g display=\"none\" data-bind=\"visible:show15\">\n    <circle cx=\"334\" cy=\"30\" r=\"9\" fill=\"#2B313B\" opacity=\"0\" filter=\"url(#ws2812-strip-glow)\" data-bind=\"fill:led15,opacity:glow15\"/>\n    <rect x=\"327\" y=\"23\" width=\"14\" height=\"14\" rx=\"1.5\" fill=\"#E9EDF2\" fill-opacity=\"0.9\"/>\n    <circle cx=\"334\" cy=\"30\" r=\"5\" fill=\"#2B313B\" data-bind=\"fill:led15\"/>\n  </g>\n  <text x=\"28\" y=\"10\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">WS2812B · DIN →</text>\n  <text x=\"28\" y=\"56\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#5CF2A1\" data-bind=\"text:label\">8 LEDs · 8 mA</text>\n  <text x=\"16\" y=\"12\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\">5V</text>\n  <text x=\"16\" y=\"27\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\">DIN</text>\n  <text x=\"16\" y=\"42\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#E9EDF2\">GND</text>\n  <circle data-pin=\"VCC\" cx=\"10\" cy=\"15\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DIN\" cx=\"10\" cy=\"30\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"10\" cy=\"45\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
-    create: create_47,
+    create: create_49,
   },
 ];
 

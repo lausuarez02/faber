@@ -144,7 +144,8 @@
               "number",
               "boolean",
               "color",
-              "enum"
+              "enum",
+              "text"
             ]
           },
           "default": {

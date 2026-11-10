@@ -401,7 +401,13 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
       return;
     }
     if (web === "built") return serveStatic(distDir, req, res);
-    vite!.middlewares(req, res, () => {
+    if (!vite) {
+      // The API answers while the dev server still starts; a page request then must not crash the server.
+      res.writeHead(503, { "content-type": "text/plain", "retry-after": "1" });
+      res.end("Jumper's web app is still starting. Why: the dev server (Vite) is not ready yet. Fix: reload in a second.\n");
+      return;
+    }
+    vite.middlewares(req, res, () => {
       res.writeHead(404, { "content-type": "text/plain" });
       res.end(`Not found: ${p}`);
     });

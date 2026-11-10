@@ -89,6 +89,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`check_fit`](#check_fit) | Test a case fit | no (read-only) |
 | [`get_case`](#get_case) | Case report | no (read-only) |
 | [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
+| [`read_speech`](#read_speech) | Read what it said | no (read-only) |
 
 ### new_project
 
@@ -189,7 +190,7 @@ Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, 
 | --- | --- | --- | --- |
 | `id` | string | yes |  |
 | `prop` | string | yes |  |
-| `value` | string \| number \| boolean | yes |  |
+| `value` | string \| number \| boolean \| object | yes | The new value. Text props such as a DFPlayer's clips take "N: words" lines or an object {"1": "hi!"}. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step. |
 
 ### set_libraries
@@ -314,7 +315,7 @@ Break something on purpose to harden the firmware: "disconnect" (module unplugge
 
 ### write_scenario
 
-Add or replace a deterministic test in jumper.json. Steps run in order, one action per step. Inputs: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"). Checks: serial text {"expect_serial": "LED on", "within_ms": 1100}; serial regular expression, with the pattern INSIDE expect_serial: {"expect_serial": {"regex": "hunger=\\d+"}, "within_ms": 1100}; "absent": true forbids the text; a printed number {"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500} (reads the latest "energy=64" / "energy: 64", so tests do not break on tick timing); a pin {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}); a part state {"expect_part": "buzzer1.on", "op": "==", "value": true, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"); a screen {"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}} or against a golden frame saved with read_display {save_as} {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000} (tolerance 0.02 = 2% of pixels may differ; animations: within_ms waits for a matching frame); robots {"expect_part": "world.collisions", "op": "==", "value": 0} (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached). Assert a real safety margin, e.g. world.min_clearance_cm >= 3, not > 0 (any gap counts as no collision). {"expect_no_errors": true}. Timing: within_ms = keep simulating up to that long until it holds, and it passes the moment it holds, so after an input wait for the side the value moves TOWARD (e.g. "<" when it should drop): a condition that was already true before the input passes at 0 ms and tests nothing (run_tests warns). Without within_ms the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user's goal, one per behaviour.
+Add or replace a deterministic test in jumper.json. Steps run in order, one action per step. Inputs: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"). Checks: serial text {"expect_serial": "LED on", "within_ms": 1100}; serial regular expression, with the pattern INSIDE expect_serial: {"expect_serial": {"regex": "hunger=\\d+"}, "within_ms": 1100}; "absent": true forbids the text; a printed number {"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500} (reads the latest "energy=64" / "energy: 64", so tests do not break on tick timing); a pin {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}); a part state {"expect_part": "buzzer1.on", "op": "==", "value": true, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"); a screen {"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}} or against a golden frame saved with read_display {save_as} {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000} (tolerance 0.02 = 2% of pixels may differ; animations: within_ms waits for a matching frame); robots {"expect_part": "world.collisions", "op": "==", "value": 0} (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached). Assert a real safety margin, e.g. world.min_clearance_cm >= 3, not > 0 (any gap counts as no collision). {"expect_no_errors": true}. Words a talking device (DFPlayer Mini + speaker) said: {"said": "dizzy", "within_ms": 500} (case-insensitive part of the clip's words; {"said": {"regex": "^hi"}}; "part": "df1" picks one DFPlayer; "absent": true forbids it; only clips heard through a wired speaker count, and each said step matches clips after the previous match). Timing: within_ms = keep simulating up to that long until it holds, and it passes the moment it holds, so after an input wait for the side the value moves TOWARD (e.g. "<" when it should drop): a condition that was already true before the input passes at 0 ms and tests nothing (run_tests warns). Without within_ms the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user's goal, one per behaviour.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -591,3 +592,12 @@ Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it:
 | `zip` | boolean |  | Default true: also write <name>-v<version>.zip next to the folder. |
 | `zh_cn` | boolean |  | Default true: add README.zh-CN.md. |
 | `why` | string |  | Short reason shown in the step list. |
+
+### read_speech
+
+What the device said out loud in the simulation (DFPlayer Mini clips, whose words are its "clips" prop): {"since": 0} for everything. Returns {t_ms, next, said: [{part, t_ms, dur_ms, track, clip, text, heard, volume, missing_words?}], saying_now}. heard is false when no speaker is wired to SPK_1 / SPK_2 (or DAC), so a person would hear nothing and no speech bubble shows. Pass next as since to read only new ones. Length is estimated (2.6 words per second + 0.3 s). Test it in a scenario with {"said": "dizzy", "within_ms": 500}. Run the simulation first (run / run_tests); with nothing run yet it is empty.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `since` | number |  | Index into the list, from a previous next (default 0). |
+| `part` | string |  | Only this talking part (e.g. df1). |

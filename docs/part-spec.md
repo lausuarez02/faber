@@ -161,8 +161,9 @@ real pin pitch so parts line up on the dot grid and on a future breadboard.
 { "id": "resistance", "label": "Resistance", "type": "number", "default": 220, "min": 0.1, "max": 100000000, "unit": "Ω" }
 ```
 
-`type` is `number`, `boolean`, `color` or `enum` (`options` required; `default` must be one of
-them). Number defaults must sit inside `min`/`max`. The spec test sets every prop to its min,
+`type` is `number`, `boolean`, `color`, `enum` (`options` required; `default` must be one of
+them) or `text` (round 7: free text over several lines, stored as a string, edited in a text box
+saved on blur; e.g. the DFPlayer's `clips`, one "N: words" line per track). Number defaults must sit inside `min`/`max`. The spec test sets every prop to its min,
 default and max (every option for enums) and requires the solve to converge.
 
 ## 2. `fidelity.json`
@@ -382,3 +383,14 @@ The active `buzzer` now reports `buzzer-tone` when it is driven with `tone()`.
 Reference numbers proven by the tests: red LED + 220 Ω at 5 V → 13.3 mA at Vf ≈ 2.07 V;
 blue LED Vf ≈ 3.0 V; pot at 0.5 → 2.50 V; GL5528 15 kΩ at 10 lx, ~950 Ω at 1000 lx, 1 MΩ dark;
 active buzzer ≈ 23 mA on a 5 V GPIO; Uno D13 → 220 Ω → red LED ≈ 12 mA.
+
+## 10. Round 7 parts (voice)
+
+| id | What it adds | Checked with |
+| --- | --- | --- |
+| `dfplayer-mini` | DFPlayer Mini MP3 module: the serial frames (play 0x03 / 0x0F / 0x12, volume, pause, stop, reset, queries; replies 0x3F, 0x41, 0x3D; checksum and the 8-byte form), BUSY low while playing, start-up delay. Clips are text (`clips` prop); a play logs an `Utterance` (`PartModel.speech()`, `Simulation.speech()`) with its estimated length (2.6 words/s + 0.3 s) and whether a speaker draws current (`audible`). SPK_1-SPK_2 is a bridged RMS source, DAC_L / DAC_R line out | `src/lib/dfplayer.test.ts`, its `model.test.ts` (scripted UART), `src/dfplayer.integration.test.ts` (real firmware on the Nano's Serial and the XIAO's Serial1) |
+| `speaker` | 4 / 8 Ω coil as a resistor; sounding, volume against its rating, overpower; a round `grille` feature so the case cuts sound holes | bench |
+
+A UART part hears a board's hardware serial port too: the AVR backend puts its USART on D1 / D0
+once a part watches D1 (`McuBackend.pinWatched`); RP2040 boards already put Serial1 / Serial2 on
+their pins.

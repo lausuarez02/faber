@@ -55,6 +55,13 @@ export interface McuBackend {
    * still runs, but only after the step ends (up to chunkMs late).
    */
   stopAt?(cycle: number): void;
+  /**
+   * Optional (round 7 voice): the Simulation tells the backend that a part listens to the edges of
+   * this pin (ctx.watch). The AVR backend then puts its hardware USART on D1 and reads D0 bit by
+   * bit, so a part wired to the board's TX / RX hears Serial (without a listener the bytes only go
+   * to the serial monitor and no pin toggles, which keeps plain Serial.print cheap).
+   */
+  pinWatched?(pinId: string): void;
 }
 
 /** Creates a backend for a board part. `spec.mcu.backend` says which one (e.g. "avr8js"). */

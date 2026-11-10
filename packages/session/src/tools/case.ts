@@ -9,6 +9,7 @@ import { wiringMarkdown } from "../exporter.ts";
 import { fidelityReport } from "../fidelity.ts";
 import { wireCuts, wireCutsCsv } from "../assembly.ts"; // round 6: one wire-cut model (power track)
 import { bomCsv, bomLines, bomMd, clearDir, copyTree, kicadNetlist, listFiles, netlistCsv, pinPositions, writeText, zipFolder } from "../manufacturing.ts";
+import { sdCardFiles } from "../voice.ts"; // round 7 voice
 import { projectSlug } from "../projects-registry.ts";
 import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
@@ -431,6 +432,10 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   writeText(root, "electronics/netlist.csv", netlistCsv(project));
   writeText(root, "electronics/jumper.net", kicadNetlist(project, reg));
   writeText(root, "electronics/WIRE-CUTS.csv", wireCutsCsv(cuts, !positions));
+  // round 7 voice: the DFPlayer's microSD card (clip texts, a list, and a script that makes the MP3s)
+  const sd = sdCardFiles(project, reg);
+  for (const [p, text] of Object.entries(sd)) writeText(root, `sd-card/${p}`, text);
+  if (Object.keys(sd).length) notes.push("sd-card/ holds the clip texts, not audio: run sd-card/make-clips.sh (needs espeak-ng or piper plus ffmpeg, installed by you) or record the clips, then copy them to a FAT32 microSD card (sd-card/CLIPS.md).");
   if (!positions) notes.push("Wire lengths are estimates from the part sizes (no case layout yet); design_case gives lengths from the real positions.");
 
   // ---- firmware

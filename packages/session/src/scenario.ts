@@ -115,6 +115,16 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         resolvePin(part, specOf(registry, findPart(project, part)), rest);
       }
       if (typeof step.set === "string") findPart(project, splitRef(step.set).part);
+      if ("said" in step) {
+        // Round 7 (voice): only parts with a clip table can say anything.
+        const talkers = project.parts.filter((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips"));
+        if (typeof step.part === "string") {
+          const part = findPart(project, step.part);
+          if (!talkers.includes(part)) fail("cannot-talk", `said … part ${part.id}`, `${part.id} is a ${part.type}, which cannot say anything`, talkers.length ? `use "part": "${talkers[0]!.id}" or leave "part" out` : "place a dfplayer-mini and a speaker first");
+        } else if (!talkers.length) {
+          fail("cannot-talk", "said", "no part in this project can talk (only a dfplayer-mini with its clips says words)", 'place_part dfplayer-mini and a speaker (search_parts "voice"), wire SPK_1 / SPK_2 to the speaker, and set its clips ("1: hello!")');
+        }
+      }
       if (typeof step.expect_display === "string") {
         const part = findPart(project, step.expect_display);
         const spec = specOf(registry, part);
@@ -150,6 +160,7 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
   const warnings: string[] = [];
   const timeout = s.timeout_ms ?? DEFAULT_TIMEOUT_MS;
   let serialCursor = 0;
+  let saidCursor = 0; // round 7 voice: utterances already matched by a said step
   const sim = host.sim;
   const tail = () => sim.serialText().slice(-400);
   const run = (ms: number, until?: () => boolean) => host.run(ms, { ...(until ? { until, stepMs: 1 } : {}), ...(onFrame ? { onFrame, frameMs: 50 } : {}) });
@@ -361,6 +372,50 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         if (!ok) {
           const want = [lit ? `${lit.min ?? 0}..${lit.max ?? "∞"} lit pixels` : "", snap ? `at most ${(tol * 100).toFixed(1)}% different from snapshot '${matches}'` : ""].filter(Boolean).join(" and ");
           detail = `expected ${want} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}; read_display {"part": "${part}"} shows the screen now`;
+        }
+      } else if ("said" in step) {
+        // Round 7 (voice): words a talking part (DFPlayer) played with a speaker wired.
+        const m = step.said as string | { contains?: string; regex?: string };
+        const re = typeof m === "object" && m.regex !== undefined ? new RegExp(m.regex, "i") : undefined;
+        const needle = (typeof m === "string" ? m : (m.contains ?? "")).toLowerCase();
+        const who = step.part as string | undefined;
+        const want = re ? `/${re.source}/i` : JSON.stringify(needle);
+        const all = () => sim.speech();
+        const hits = (u: { text: string }) => (re ? re.test(u.text) : u.text.toLowerCase().includes(needle));
+        const find = (): number => {
+          const l = all();
+          for (let k = saidCursor; k < l.length; k++) {
+            const u = l[k]!;
+            if ((!who || u.partId === who) && u.audible && hits(u)) return k;
+          }
+          return -1;
+        };
+        const t0 = sim.timeMs;
+        let hit = find();
+        if (hit < 0 && typeof step.within_ms === "number") run(step.within_ms, () => (hit = find()) >= 0);
+        const recent = all()
+          .slice(saidCursor)
+          .filter((u) => !who || u.partId === who);
+        const heard = recent.filter((u) => u.audible).map((u) => `${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms`);
+        const unheard = recent.filter((u) => !u.audible);
+        const unheardNote = unheard.length
+          ? `; ${unheard.map((u) => `${u.partId} played ${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms`).join(", ")} but nothing is wired to its speaker outputs (SPK_1 / SPK_2 or DAC), so nobody heard it. Fix: wire a speaker, + to SPK_1 and - to SPK_2`
+          : "";
+        if (step.absent) {
+          ok = hit < 0;
+          if (!ok) {
+            const u = all()[hit]!;
+            detail = `${u.partId} said ${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms but ${want} must not be said`;
+          }
+        } else {
+          ok = hit >= 0;
+          if (ok) {
+            const u = all()[hit]!;
+            saidCursor = hit + 1;
+            detail = `${u.partId} said ${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms (${(u.dur_ms / 1000).toFixed(2)} s), ${Math.round(sim.timeMs - t0)} ms after this step began`;
+          } else {
+            detail = `nothing said matched ${want}${typeof step.within_ms === "number" ? ` within ${step.within_ms} ms` : " (checked once; add within_ms to wait)"}; said since the last match: ${heard.length ? heard.join(", ") : "nothing"}${unheardNote}`;
+          }
         }
       } else if ("expect_no_errors" in step) {
         const errs = sim.diagnostics().filter((d) => d.severity === "error");

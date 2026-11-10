@@ -117,6 +117,15 @@ class AvrBackend implements McuBackend {
   private inputVolts = new Map<string, number>();
   private pinListeners = new Set<PinListener>();
   private serialListeners = new Set<SerialListener>();
+  /**
+   * Round 7 (voice): the hardware USART on its pins. Off until a part listens to D1 (pinWatched),
+   * then every transmitted byte is also put on D1 bit by bit (start, 8 data bits LSB first, stop)
+   * at the USART's baud rate, and edges on D0 are decoded into the receiver. Survives reset (the
+   * wiring does not change).
+   */
+  private uartPins = false;
+  private uartTx: { queue: number[]; bits: number[]; level: 0 | 1; busy: boolean } = { queue: [], bits: [], level: 1, busy: false };
+  private uartRx: { start: number; edges: [number, 0 | 1][] } = { start: -1, edges: [] };
 
   constructor(opts: AvrBackendOptions) {
     if (opts.chip !== undefined && opts.chip !== "atmega328p") {
@@ -178,6 +187,7 @@ class AvrBackend implements McuBackend {
     const prev = this.inputLevel.get(pin.id) ?? false;
     const level = volts >= VIH * this.vcc ? true : volts <= VIL * this.vcc ? false : prev;
     this.inputLevel.set(pin.id, level);
+    if (this.uartPins && pin.id === "D0" && level !== prev) this.uartRxEdge(level ? 1 : 0);
     // setPin only updates the PIN register (and pin-change / external interrupts); it never calls
     // the GPIO listeners, so this does not fire onPinChange (contract).
     this.m.ports[pin.port].setPin(pin.bit, level);
@@ -205,6 +215,90 @@ class AvrBackend implements McuBackend {
     this.m.usart.writeByte(byte & 0xff);
   }
 
+  /** Round 7 (voice): a part listens to D1 (the USART's TX pin), so put Serial on the pins from now on. */
+  pinWatched(pinId: string): void {
+    if (pinId !== "D1" || this.uartPins) return;
+    this.uartPins = true;
+    this.reportPin(this.pin("D1"));
+  }
+
+  // ---------------------------------------------------------------- USART on pins (round 7 voice)
+
+  private uartTxByte(byte: number): void {
+    const tx = this.uartTx;
+    tx.queue.push(byte & 0xff);
+    if (!tx.busy) {
+      tx.busy = true;
+      this.uartNextBit();
+    }
+  }
+
+  private uartNextBit(): void {
+    const m = this.m;
+    const tx = this.uartTx;
+    const baud = m.usart.baudRate;
+    if (tx.bits.length === 0) {
+      const b = tx.queue.shift();
+      if (b === undefined || !Number.isFinite(baud) || baud <= 0) {
+        tx.queue = [];
+        tx.busy = false;
+        return;
+      }
+      tx.bits = [0, ...Array.from({ length: 8 }, (_, i) => (b >> i) & 1), 1];
+    }
+    tx.level = tx.bits.shift() === 1 ? 1 : 0;
+    this.reportPin(this.pin("D1"));
+    m.cpu.addClockEvent(() => {
+      if (this.m === m) this.uartNextBit();
+    }, Math.max(1, Math.round(this.cyclesPerSecond / baud)));
+  }
+
+  private uartRxEdge(level: 0 | 1): void {
+    const m = this.m;
+    const rx = this.uartRx;
+    const now = m.cpu.cycles;
+    if (rx.start >= 0) {
+      rx.edges.push([now, level]);
+      return;
+    }
+    if (level !== 0) return;
+    const baud = m.usart.baudRate;
+    if (!Number.isFinite(baud) || baud <= 0) return;
+    rx.start = now;
+    rx.edges = [];
+    const bit = this.cyclesPerSecond / baud;
+    m.cpu.addClockEvent(() => {
+      if (this.m !== m) return;
+      const at = (t: number): 0 | 1 => {
+        let l: 0 | 1 = 0;
+        for (const [et, v] of rx.edges) {
+          if (et > t) break;
+          l = v;
+        }
+        return l;
+      };
+      let byte = 0;
+      for (let i = 0; i < 8; i++) if (at(rx.start + (1.5 + i) * bit)) byte |= 1 << i;
+      const stopOk = at(rx.start + 9.5 * bit) === 1;
+      const last = rx.edges[rx.edges.length - 1];
+      rx.start = -1;
+      rx.edges = [];
+      if (stopOk && m.usart.rxEnable) m.usart.writeByte(byte, true);
+      // The line fell again inside this frame's stop bit: that edge was the next start bit.
+      if (!stopOk && last && last[1] === 0) this.uartRxEdge(0);
+    }, Math.max(1, Math.round(9.5 * bit)));
+  }
+
+  /** Report a pin's state to the listeners when it changed (outside the port listeners). */
+  private reportPin(pin: BoardPin): void {
+    const state = this.stateOf(pin);
+    const k = key(state);
+    if (this.reported.get(pin.id) === k) return;
+    this.reported.set(pin.id, k);
+    const cycle = this.m.cpu.cycles;
+    for (const cb of this.pinListeners) cb(pin.id, state, cycle);
+  }
+
   // ---------------------------------------------------------------- internals
 
   private pin(pinId: string): BoardPin {
@@ -219,6 +313,8 @@ class AvrBackend implements McuBackend {
       return { mode: "analog", value: 0 };
     }
     const { cpu, ports } = this.m;
+    // Round 7 (voice): with the USART on its pins, D1 is the transmitter's output while TXEN is set.
+    if (this.uartPins && pin.id === "D1" && this.m.usart.txEnable) return { mode: "output", value: this.uartTx.level };
     const cfg = ports[pin.port].portConfig;
     const mask = 1 << pin.bit;
     const ddr = cpu.data[cfg.DDR]! & mask;
@@ -289,6 +385,13 @@ class AvrBackend implements McuBackend {
     usart.onByteTransmit = (byte: number) => {
       const cycle = cpu.cycles;
       for (const cb of this.serialListeners) cb(byte, cycle);
+      if (this.uartPins && this.m.cpu === cpu) this.uartTxByte(byte);
+    };
+    // Round 7 (voice): a fresh chip has an idle line; Serial.begin() sets TXEN, which drives D1 high.
+    this.uartTx = { queue: [], bits: [], level: 1, busy: false };
+    this.uartRx = { start: -1, edges: [] };
+    usart.onConfigurationChange = () => {
+      if (this.uartPins && this.m.cpu === cpu) this.reportPin(this.pin("D1"));
     };
 
     // Re-apply what the outside world drives onto the fresh chip.

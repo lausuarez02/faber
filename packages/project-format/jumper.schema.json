@@ -669,6 +669,65 @@
                     "expect_no_errors"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "said": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "Words it must have said (case-insensitive substring of the clip's words)."
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "contains": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "contains"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "regex": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "regex"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Words of a clip played since the previous said step (or the start), e.g. \"dizzy\" or {\"regex\": \"^hi\"}."
+                    },
+                    "part": {
+                      "description": "Only this talking part (a DFPlayer id); default any.",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: it must NOT say it (within within_ms, or so far).",
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "said"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
