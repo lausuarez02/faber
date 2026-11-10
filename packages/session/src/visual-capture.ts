@@ -103,6 +103,12 @@ export function stepLabel(step: Record<string, unknown>): { kind: string; label:
   if ("expect_serial_value" in step) return { kind: "expect_serial_value", label: `${String(step.expect_serial_value)} ${String(step.op ?? "==")} ${String(step.value)}${within}` };
   if ("expect_display" in step) return { kind: "expect_display", label: `${String(step.expect_display)} ${step.matches ? `matches ${String(step.matches)}` : "lit"}${within}` };
   if ("expect_no_errors" in step) return { kind: "expect_no_errors", label: "no errors" };
+  if ("said" in step) {
+    // round 7 voice: listed with the checks ("expect_said", so the filmstrip counts it as one)
+    const m = step.said as string | { contains?: string; regex?: string };
+    const text = typeof m === "string" ? q(m) : m.regex !== undefined ? `/${m.regex}/` : q(m.contains);
+    return { kind: "expect_said", label: `${step.absent ? "did not say" : "said"} ${text}${within}` };
+  }
   if ("press" in step) return { kind: "press", label: `press ${String(step.press)}${typeof step.hold_ms === "number" ? ` (${step.hold_ms} ms)` : ""}` };
   if ("release" in step) return { kind: "release", label: `release ${String(step.release)}` };
   if ("set" in step) return { kind: "set", label: `set ${String(step.set)} = ${q(step.value)}` };

@@ -168,3 +168,18 @@ library itself.
 
 The web app decodes colour screen frames with fflate 0.8.3 (MIT License,
 Copyright (c) Arjun Barrett), the same package listed above for cases.
+
+Talking devices (round 7, voice). Jumper ships no text-to-speech engine and no
+DFPlayer library. The DFPlayer Mini part implements the module's serial frames
+from its public manual; examples and hints use a ten-line frame helper written
+for Jumper. The common DFRobotDFPlayerMini Arduino library states "GNU Lesser
+General Public License" in its header: Jumper neither ships nor requires it.
+In the browser the words of a clip are read aloud by the browser's own Web
+Speech API voice. The factory pack's sd-card/make-clips.sh calls tools the
+person installs themselves; they are not distributed with Jumper:
+  piper       MIT License for https://github.com/rhasspy/piper (its newer
+              continuation piper1-gpl is GPL-3.0); each voice model has its
+              own licence
+  espeak-ng   GNU General Public License 3.0 or later, run as a separate
+              program (https://github.com/espeak-ng/espeak-ng)
+  ffmpeg      LGPL 2.1 or GPL depending on the build (https://ffmpeg.org)
