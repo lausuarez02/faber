@@ -11,6 +11,9 @@ import type { Usage } from "./hints.ts";
  * pins. Parts with an example.ino in their folder (dht22, passive-buzzer, ws2812-strip,
  * gc9a01-round-tft, water-pump) get that sketch as the example; it is built and tested on a simulated Uno.
  */
+// round 6 power: the parts in a power path need no code; the useful sketch reads the cell and sleeps in time.
+const BATTERY_SLEEP = `// Read the cell through a 100 kΩ / 100 kΩ divider on A0 and go to sleep before it runs flat.\nconst float VREF = 3.3;  // 5.0 on a 5 V board\nvoid setup() { Serial.begin(115200); }\nvoid loop() {\n  float cell = analogRead(A0) * VREF / 1023.0 * 2;\n  Serial.print("cell="); Serial.println(cell, 2);\n  if (cell < 3.4) Serial.println("low battery: sleeping");\n  delay(1000);\n}`;
+
 export const PARTS_R5_HINTS: Record<string, Usage> = {
   // Overrides the core hint, which said tone() works: an active buzzer has its own oscillator.
   buzzer: {
@@ -30,14 +33,14 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
     controls: "read_display(part) / expect_display read the round screen (the corners are always dark); screenshot shows the colours. The example's small GC9A01 class is the driver: Adafruit_GC9A01A and TFT_eSPI are not in Jumper's build image yet.",
   },
   "lipo-battery": {
-    wiring: "1S LiPo, 3.0–4.2 V. Usual pocket setup: LiPo + → tp4056 BAT (B+), − → tp4056 GND.2 (B−); tp4056 OUT → the board's battery input (VSYS on a Pico, BAT on a XIAO), GND.3 → GND. Never on a 5 V pin, and not on an Uno's VIN (it needs 7 V): a 5 V board needs a boost converter.",
+    wiring: "1S LiPo, 3.0–4.2 V. Pocket setup: LiPo + → tp4056 BAT (B+), − → tp4056 GND.2 (B−); tp4056 OUT → slide-switch 2 (COM), slide-switch 1 → schottky-diode A, schottky-diode C (stripe) → the board's 5V (VBUS) on a XIAO RP2040 / RP2040-Zero; on a Pico OUT → VSYS directly (it has its own diode); tp4056 GND.3 → board GND. The diode stops the board's USB from back-feeding the cell. Not on an Uno's VIN (it needs 7 V): a 5 V board needs a boost-converter. Test it unplugged: set_power {\"usb\": false}.",
     connect: ["lipobattery1.POS -> tp4056charger1.BAT", "lipobattery1.NEG -> tp4056charger1.GND.2"],
     example: `// Battery level through a 100 kΩ + 100 kΩ divider (battery + → 100k → A0 → 100k → GND).\nconst float VREF = 5.0;  // 3.3 on a 3.3 V board\nvoid setup() { Serial.begin(115200); }\nvoid loop() {\n  float v = analogRead(A0) * VREF / 1023.0 * 2;\n  Serial.print("battery="); Serial.println(v, 2);\n  if (v < 3.3) Serial.println("low battery: shutting down");\n  delay(1000);\n}`,
     controls: 'Props: capacity (mAh), soc (% at start), speedup (×N drain, for tests). State: volts, soc, currentmA, usedmAh, charging, cutoff. In scenarios: {"set": "lipobattery1.soc", "value": 10}, then expect the low-battery behaviour.',
   },
   "tp4056-charger": {
-    wiring: "BAT (B+) / GND.2 (B−) to the LiPo, OUT (OUT+) / GND.3 (OUT−) to the device. USB plugs into its socket (press the part, or prop usb = true), or 5 V into VIN / GND.1. Set chargeCurrentmA to the cell's capacity or less (1C): the 1000 mA it is sold with is too much for a 500 mAh pocket cell.",
-    connect: ["tp4056charger1.BAT -> lipobattery1.POS", "tp4056charger1.GND.2 -> lipobattery1.NEG"],
+    wiring: "BAT (B+) / GND.2 (B−) to the LiPo; OUT (OUT+) / GND.3 (OUT−) to the device: Pico VSYS directly, XIAO / RP2040-Zero 5V through a slide-switch and a schottky-diode (stripe towards the board). VIN / GND.1 are the USB input: leave them unconnected, the module's own USB-C socket is the charge port (press the part, or prop usb = true, plugs it). Never wire VIN to the board's 5V. Set chargeCurrentmA to the cell's capacity or less (1C): the 1000 mA it is sold with is too much for a 500 mAh pocket cell.",
+    connect: ["tp4056charger1.BAT -> lipobattery1.POS", "tp4056charger1.GND.2 -> lipobattery1.NEG", "tp4056charger1.OUT -> slideswitch1.2", "slideswitch1.1 -> schottkydiode1.A", "schottkydiode1.C -> seeedxiaorp20401.VBUS", "tp4056charger1.GND.3 -> seeedxiaorp20401.GND.1"],
     example: `// Battery level through a 100 kΩ + 100 kΩ divider (battery + → 100k → A0 → 100k → GND).\nconst float VREF = 5.0;  // 3.3 on a 3.3 V board\nvoid setup() { Serial.begin(115200); }\nvoid loop() {\n  float v = analogRead(A0) * VREF / 1023.0 * 2;\n  Serial.print("battery="); Serial.println(v, 2);\n  if (v < 3.3) Serial.println("low battery: shutting down");\n  delay(1000);\n}`,
     controls: 'interact(part, "press") plugs / unplugs USB. State: mode ("off", "trickle", "CC", "CV", "full"), charging, full, chargemA, protected.',
   },
@@ -97,5 +100,48 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
     wiring: "5V (VCC) → 5V, GND → GND, DIN → a digital pin (330 Ω in series is good practice). Set prop count to the number of LEDs (1–16). Full white is 60 mA per LED: more than ~8 bright LEDs need their own 5 V supply with a shared GND.",
     connect: ["ws2812strip1.VCC -> uno.5V", "ws2812strip1.GND -> uno.GND", "ws2812strip1.DIN -> uno.D6"],
     controls: 'State: colors ("#FF0000 #00FF00 …" per LED), lit, frames, currentmA, led0..led15. The example bit-bangs the 800 kHz signal on an AVR; FastLED and Adafruit NeoPixel are not in Jumper\'s build image yet. interact set key "colors" paints the LEDs without firmware.',
+  },
+  // round 6 power: the power-path parts (decision 0004, R2).
+  "schottky-diode": {
+    wiring: "In a battery power path: A (plain end) from the source (a charger's OUT+, after the power switch), C (stripe) to the board's 5V / VBUS. It drops ~0.3 V and blocks the board's USB from pushing current back into the battery. Max 1 A, 20 V.",
+    connect: ["schottkydiode1.A -> slideswitch1.1", "schottkydiode1.C -> seeedxiaorp20401.VBUS"],
+    example: BATTERY_SLEEP,
+    controls: "State: on, currentmA, vf (V across it).",
+  },
+  "generic-diode": {
+    wiring: "1N4148: A → C (stripe) conducts with ~0.7 V drop, up to 200 mA. Flyback across a relay coil or small motor: C to the + side, A to the − side (the transistor's collector). For a battery power path use schottky-diode (lower drop).",
+    connect: ["genericdiode1.C -> uno.5V", "genericdiode1.A -> npntransistor1.C"],
+    example: `// A relay coil (or small motor) switched by an NPN on D9, with the 1N4148 across the coil.\nvoid setup() { pinMode(9, OUTPUT); }\nvoid loop() { digitalWrite(9, HIGH); delay(1000); digitalWrite(9, LOW); delay(1000); }`,
+    controls: "State: on, currentmA, vf.",
+  },
+  "n-mosfet": {
+    wiring: "Low-side switch: load + → supply, load − → D, S → GND, GPIO → 100 Ω → G, 100 kΩ from G to GND (keeps it off while the board boots). Logic level: fully on from 2.5 V, so a 3.3 V GPIO drives it. analogWrite on G dims / slows the load. SOT-23: needs an adapter board for hand wiring.",
+    connect: ["nmosfet1.S -> uno.GND", "nmosfet1.G -> uno.D9"],
+    example: `// Fade a 5 V LED strip / motor through the MOSFET on D9 (PWM).\nvoid setup() { pinMode(9, OUTPUT); }\nvoid loop() {\n  for (int v = 0; v <= 255; v += 5) { analogWrite(9, v); delay(20); }\n  for (int v = 255; v >= 0; v -= 5) { analogWrite(9, v); delay(20); }\n}`,
+    controls: "State: on, vgs, rdsOhms, currentmA.",
+  },
+  "npn-transistor": {
+    wiring: "Low-side switch: load + → supply, load − → C, E → GND, GPIO → 1 kΩ → B. Base current ≈ (3.3 − 0.65) / 1 kΩ ≈ 2.7 mA switches up to ~250 mA (2N2222) fully on. Never wire B straight to a pin or supply. model: 2N2222 (600 mA) or BC547 (100 mA).",
+    connect: ["npntransistor1.E -> uno.GND", "resistor1.1 -> uno.D9", "resistor1.2 -> npntransistor1.B"],
+    example: `// Switch a load on the collector from D9 (through 1 kΩ to the base).\nvoid setup() { pinMode(9, OUTPUT); }\nvoid loop() { digitalWrite(9, HIGH); delay(500); digitalWrite(9, LOW); delay(500); }`,
+    controls: "State: on, saturated, ibmA, icmA. Props: model.",
+  },
+  "pnp-transistor": {
+    wiring: "High-side switch: E → supply +, C → load +, load − → GND, base through 1 kΩ to the driving pin: LOW = on. The pin must reach the emitter's voltage to switch it off, so the supply must not be above the board's logic voltage (use an NPN + PNP pair for higher supplies).",
+    connect: ["pnptransistor1.E -> uno.5V", "resistor1.1 -> uno.D9", "resistor1.2 -> pnptransistor1.B"],
+    example: `// PNP high-side switch: LOW on D9 turns the load on.\nvoid setup() { pinMode(9, OUTPUT); digitalWrite(9, HIGH); }\nvoid loop() { digitalWrite(9, LOW); delay(500); digitalWrite(9, HIGH); delay(500); }`,
+    controls: "State: on, saturated, ibmA, icmA. Props: model.",
+  },
+  "ldo-regulator": {
+    wiring: "VIN ← the source (LiPo through the charger's OUT, or 5 V), GND → GND, VOUT → the 3.3 V parts. 1 µF on VIN and VOUT on the real build. MCP1700 (250 mA, 1.6 µA idle, best for batteries) or AP2112K (600 mA, EN: LOW = off, unconnected = on). From a LiPo it holds 3.3 V down to ~3.5 V, then follows the cell.",
+    connect: ["ldoregulator1.VIN -> tp4056charger1.OUT", "ldoregulator1.GND -> uno.GND"],
+    example: BATTERY_SLEEP,
+    controls: "State: state (regulating / dropout / off), vin, vout, outmA. Props: variant.",
+  },
+  "boost-converter": {
+    wiring: "VIN+ ← the battery (a charger's OUT+), VIN− → GND, VOUT+ → the 5 V board's 5V pin or 5 V parts, VOUT− → GND. Set prop vout to what the trimmer is turned to (5 V). It takes about 1.5 × the load's current from a 3.7 V cell (5 V / 3.7 V / 88 %).",
+    connect: ["boostconverter1.VIN+ -> tp4056charger1.OUT", "boostconverter1.VIN- -> tp4056charger1.GND.3", "boostconverter1.VOUT+ -> uno.5V", "boostconverter1.VOUT- -> uno.GND"],
+    example: BATTERY_SLEEP,
+    controls: "State: state (boosting / pass-through / off), vin, vout, inmA, outmA. Props: vout.",
   },
 };

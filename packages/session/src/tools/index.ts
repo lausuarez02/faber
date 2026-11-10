@@ -1,6 +1,7 @@
 import { agentTools } from "./agent.ts";
 import { agentPartsTools } from "./agentparts.ts";
 import { projectsTools } from "./projects.ts";
+import { powerTools } from "./power.ts";
 import type { ExtOp, ToolModule } from "./types.ts";
 
 export type { ExtOp, ExtOpContext, ToolModule } from "./types.ts";
@@ -10,6 +11,7 @@ export const TOOL_MODULES: ToolModule[] = [
   agentPartsTools,
   agentTools,
   projectsTools,
+  powerTools,
 ];
 
 /** tool name → handler for the module tools (ProjectSession.call routes here after OP_METHODS). */

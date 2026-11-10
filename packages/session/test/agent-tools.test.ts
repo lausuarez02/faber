@@ -68,16 +68,20 @@ describe("plan_device", () => {
       expect(["simulated-exactly", "stand-in", "agent-made", "not-simulated"]).toContain(l.source);
       expect(l.buy_links!.every((b) => b.url.startsWith("https://"))).toBe(true);
     }
-    // The XIAO only takes 5 V on VBUS, so a 1S LiPo needs a boost converter, which Jumper does not simulate.
-    expect(p.bom.find((l) => /boost/.test(l.name))).toMatchObject({ source: "not-simulated" });
-    expect(p.bom.find((l) => /boost/.test(l.name))!.why).toMatch(/5 V the Seeed XIAO RP2040 needs on (VBUS|5V)/);
+    // Round 6 (power): the XIAO's 5V pad takes 3.5 to 5.5 V, so a 1S LiPo goes there through a switch and a
+    // Schottky diode (catalog parts, simulated), no boost converter; the plan says where its regulator runs out.
+    expect(p.bom.some((l) => /boost/i.test(l.name))).toBe(false);
+    expect(p.bom.find((l) => l.type === "schottky-diode")).toMatchObject({ source: "simulated-exactly" });
+    expect(p.bom.find((l) => l.type === "schottky-diode")!.why).toMatch(/back into the battery/);
+    expect(p.bom.find((l) => l.type === "slide-switch")).toMatchObject({ source: "simulated-exactly" });
+    expect(p.warnings.join("\n")).toMatch(/charger OUT → switch → Schottky diode → Seeed XIAO RP2040 5V.*set_power \{"usb": false\}.*about 3\.85 V.*near 3\.25 V/);
     // Battery: 80 % of 500 mAh over the parts' own current_ma.typ (battery and charger not counted).
     const typ = (id: string) => registry.get(id)!.spec.current_ma!.typ;
     const avg = typ("seeed-xiao-rp2040") + typ("ssd1306-oled-i2c") + 3 * typ("pushbutton") + typ("buzzer");
     expect(p.battery).toMatchObject({ capacity_mah: 500, avg_ma: avg, hours: Math.round((400 / avg) * 10) / 10 });
-    // Price: every line's own price_usd × qty, boost $2 as a labelled assumption.
+    // Price: every line's own price_usd × qty.
     const price = (id: string) => registry.get(id)!.spec.price_usd!;
-    const total = price("seeed-xiao-rp2040") + price("ssd1306-oled-i2c") + 3 * price("pushbutton") + price("buzzer") + price("lipo-battery") + price("tp4056-charger") + 2;
+    const total = price("seeed-xiao-rp2040") + price("ssd1306-oled-i2c") + 3 * price("pushbutton") + price("buzzer") + price("lipo-battery") + price("tp4056-charger") + price("slide-switch") + price("schottky-diode");
     expect(p.total_usd).toBeCloseTo(total, 2);
     expect(p.missing_data).toEqual([]);
     expect(p.size_mm.enclosure.w).toBeGreaterThan(p.size_mm.parts.w);
@@ -92,7 +96,8 @@ describe("plan_device", () => {
   it("a board whose VSYS takes a 1S cell needs no boost; 5 V parts steer the board choice", () => {
     const pico = planDevice("a pocket pet", { pocket: true, board: "raspberry-pi-pico" }, registry);
     expect(pico.bom.some((l) => /boost/.test(l.name))).toBe(false);
-    expect(pico.warnings.join("\n")).toMatch(/Raspberry Pi Pico VSYS: it takes 1\.8 to 5\.5 V, so a 1S LiPo needs no boost converter/);
+    expect(pico.warnings.join("\n")).toMatch(/Raspberry Pi Pico VSYS: it takes 1\.8 to 5\.5 V and has its own diode, so a 1S LiPo needs no boost converter/);
+    expect(pico.bom.some((l) => l.type === "schottky-diode")).toBe(false);
     // A PIR needs 4.5 V or more, so the smallest 5 V board wins over the smaller 3.3 V XIAO.
     const pir = planDevice("a pocket alarm that beeps when someone walks by", { pocket: true }, registry);
     expect(pir.bom.map((l) => l.type)).toContain("pir-motion");

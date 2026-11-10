@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-46 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+48 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -20,7 +20,7 @@ The loop:
 1. get_project (or new_project {folder: true}) to see where you are.
 2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
 3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
-4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins).
+4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins). Battery devices: cell → charger BAT, charger OUT → switch → schottky-diode → the board's 5V (a Pico's VSYS directly); set_power {"usb": false} then run to prove it runs from the battery.
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
@@ -81,6 +81,8 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`delete_file`](#delete_file) | Delete a file | yes (undoable step) |
 | [`mark_stand_in`](#mark_stand_in) | Mark a part as a stand-in | yes (undoable step) |
 | [`restore_version`](#restore_version) | Restore an earlier version | yes (undoable step) |
+| [`set_power`](#set_power) | Plug or unplug the board's USB cable | yes (undoable step) |
+| [`set_assembly`](#set_assembly) | Say how the device is built (breadboard or soldered) | yes (undoable step) |
 
 ### new_project
 
@@ -498,3 +500,21 @@ Put the project back the way it was at version N of its history (parts, wires, p
 | --- | --- | --- | --- |
 | `version` | integer | yes | Version number, 1 = the first change in the history. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "back to the working version". |
+
+### set_power
+
+Say whether a USB cable is plugged into the board (jumper.json power.usb; default true, as before). {"usb": false} runs the device only from what is wired to the board's supply pins: check that a pocket device really runs from its battery (cell → charger BAT, charger OUT → switch → schottky-diode → the board's 5V / VBUS, or a Pico's VSYS). Without a battery path the firmware is held in reset (no serial, nothing on the screen) and check_design reports no-power-path. Applies live to a running simulation (unplugging mid-run is a power cut; plugging in boots it from reset). The TP4056 module's own USB socket is separate: set_part_property <charger> usb true plugs a charger into it. Returns {usb, board_powered, supply: {net, volts, from}, battery?: {part, volts, ma, hours_left}} (from the running simulation, or the circuit at 0 ms when nothing ran yet).
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `usb` | boolean | yes | true = a USB cable is plugged into the board; false = it runs from its battery path only. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "check it runs from the battery". |
+
+### set_assembly
+
+How the real device is put together; export follows it. "soldered" = hand-wired point to point (or perfboard) inside a case: export writes WIRE-CUTS.csv (every wire with its length, colour and gauge), ASSEMBLY.md (numbered soldering steps, power path first) and a BOM with hook-up wire and heat-shrink, never breadboards or dupont wires. "breadboard" = a desk prototype with dupont wires. Default: soldered for a project with a case or a pocket board (XIAO, RP2040-Zero), breadboard otherwise. Example: {"style": "soldered", "why": "it goes in a pocket case"}. Returns {style, note}.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `style` | string | yes | one of `breadboard`, `soldered`. breadboard \| soldered |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "check it runs from the battery". |

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 70" width="60" height="70">
+  <path d="M14 36 V62 M30 36 V62 M46 36 V62" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 36 V14 A20 20 0 0 1 50 14 V36 Z" fill="#20242B" stroke="#E9EDF2" stroke-opacity="0.35" stroke-width="1"/>
+  <path d="M10 36 V14 A20 20 0 0 1 50 14 V36 Z" fill="#5CF2A1" opacity="0" data-bind="opacity:glow"/>
+  <text x="30" y="22" font-family="IBM Plex Mono" font-size="6.5" fill="#E9EDF2" text-anchor="middle" data-bind="text:label">2N2907</text>
+  <text x="30" y="31" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">PNP</text>
+  <text x="14" y="50" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle">E</text>
+  <text x="30" y="50" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle">B</text>
+  <text x="46" y="50" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle">C</text>
+  <circle data-pin="E" cx="14" cy="62" r="3" fill="#C9CED6"/>
+  <circle data-pin="B" cx="30" cy="62" r="3" fill="#C9CED6"/>
+  <circle data-pin="C" cx="46" cy="62" r="3" fill="#C9CED6"/>
+</svg>

@@ -1,0 +1,69 @@
+{
+  "format": "jumper/1",
+  "name": "Pocket Muse",
+  "parts": [
+    { "id": "xiao", "type": "seeed-xiao-rp2040", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "eye", "type": "gc9a01-round-tft", "x": 40, "y": -400, "rotation": 0, "props": { "logic": "3v3-only" } },
+    { "id": "imu", "type": "mpu6050", "x": 340, "y": -240, "rotation": 0 },
+    { "id": "pet", "type": "pushbutton", "x": 0, "y": -560, "rotation": 0 },
+    { "id": "squeak", "type": "passive-buzzer", "x": 140, "y": -560, "rotation": 0 },
+    { "id": "bat", "type": "lipo-battery", "x": 300, "y": -580, "rotation": 0, "props": { "capacity": 500 } },
+    { "id": "chg", "type": "tp4056-charger", "x": 0, "y": -760, "rotation": 0, "props": { "chargeCurrentmA": 400 } },
+    { "id": "pwr", "type": "slide-switch", "x": 200, "y": -760, "rotation": 0, "props": { "position": 0 } },
+    { "id": "d1", "type": "schottky-diode", "x": 200, "y": -680, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "eye", "pin": "VCC" }, "to": { "part": "xiao", "pin": "3V3" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "eye", "pin": "GND" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w3", "from": { "part": "eye", "pin": "SCK" }, "to": { "part": "xiao", "pin": "GP2" }, "color": "#F2E14A" },
+    { "id": "w4", "from": { "part": "eye", "pin": "MOSI" }, "to": { "part": "xiao", "pin": "GP3" }, "color": "#B47CFF" },
+    { "id": "w5", "from": { "part": "eye", "pin": "CS" }, "to": { "part": "xiao", "pin": "GP1" }, "color": "#E9EDF2" },
+    { "id": "w6", "from": { "part": "eye", "pin": "DC" }, "to": { "part": "xiao", "pin": "GP29" }, "color": "#5CF2A1" },
+    { "id": "w7", "from": { "part": "eye", "pin": "RST" }, "to": { "part": "xiao", "pin": "GP28" }, "color": "#FFB23F" },
+    { "id": "w9", "from": { "part": "imu", "pin": "VCC" }, "to": { "part": "xiao", "pin": "3V3" }, "color": "#FF4D2E" },
+    { "id": "w10", "from": { "part": "imu", "pin": "GND" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w11", "from": { "part": "imu", "pin": "SDA" }, "to": { "part": "xiao", "pin": "GP6" }, "color": "#E9EDF2" },
+    { "id": "w12", "from": { "part": "imu", "pin": "SCL" }, "to": { "part": "xiao", "pin": "GP7" }, "color": "#5CF2A1" },
+    { "id": "w13", "from": { "part": "pet", "pin": "1a" }, "to": { "part": "xiao", "pin": "GP26" }, "color": "#FFB23F" },
+    { "id": "w14", "from": { "part": "pet", "pin": "2a" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w15", "from": { "part": "squeak", "pin": "POS" }, "to": { "part": "xiao", "pin": "GP27" }, "color": "#F2E14A" },
+    { "id": "w16", "from": { "part": "squeak", "pin": "NEG" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w17", "from": { "part": "bat", "pin": "POS" }, "to": { "part": "chg", "pin": "BAT" }, "color": "#FF4D2E" },
+    { "id": "w18", "from": { "part": "bat", "pin": "NEG" }, "to": { "part": "chg", "pin": "GND.2" }, "color": "#2B3038" },
+    { "id": "w19", "from": { "part": "chg", "pin": "GND.3" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w8", "from": { "part": "eye", "pin": "LED" }, "to": { "part": "xiao", "pin": "GP0" }, "color": "#4DA3FF" },
+    { "id": "w20", "from": { "part": "chg", "pin": "OUT" }, "to": { "part": "pwr", "pin": "2" }, "color": "#FF4D2E" },
+    { "id": "w21", "from": { "part": "pwr", "pin": "1" }, "to": { "part": "d1", "pin": "A" }, "color": "#FF4D2E" },
+    { "id": "w22", "from": { "part": "d1", "pin": "C" }, "to": { "part": "xiao", "pin": "VBUS" }, "color": "#FF4D2E" }
+  ],
+  "power": { "usb": false },
+  "assembly": "soldered",
+  "firmware": {
+    "board": "xiao",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "rp2040:rp2040:seeed_xiao_rp2040"
+    },
+    "libraries": [
+      "Adafruit GFX Library",
+      "Adafruit MPU6050",
+      "Adafruit Unified Sensor"
+    ]
+  },
+  "scenarios": [
+    { "id": "wakes-up-calm", "name": "Wakes up calm with eyes on screen", "steps": [{ "expect_serial": "motion sensor ready", "within_ms": 1500 }, { "expect_serial": "mood=calm", "within_ms": 1500 }, { "expect_display": "eye", "lit": { "min": 3000 }, "region": [40, 60, 160, 120], "within_ms": 1500 }, { "expect_part": "squeak.tones", "op": ">=", "value": 2, "within_ms": 1000 }] },
+    { "id": "pet-makes-happy", "name": "Pet button: happy eyes + chirp, then back to calm", "steps": [{ "run_ms": 1500 }, { "hold_ms": 150, "press": "pet" }, { "expect_serial": "mood=love pets=1", "within_ms": 300 }, { "expect_part": "squeak.sounding", "op": "==", "value": true, "within_ms": 200 }, { "run_ms": 500 }, { "hold_ms": 150, "press": "pet" }, { "expect_serial": "mood=love pets=2", "within_ms": 300 }, { "expect_serial": "mood=calm", "within_ms": 3500 }] },
+    { "id": "jolt-scares-it", "name": "A sudden jolt scares it, then it calms down", "steps": [{ "run_ms": 1500 }, { "set": "imu.accelX", "value": 2.5 }, { "expect_serial": "mood=scared", "within_ms": 200 }, { "expect_part": "squeak.frequency", "op": ">=", "value": 2400, "within_ms": 200 }, { "run_ms": 300 }, { "set": "imu.accelX", "value": 0 }, { "absent": true, "expect_serial": "mood=dizzy", "within_ms": 100 }, { "expect_serial": "mood=calm", "within_ms": 3000 }] },
+    { "id": "shaking-makes-dizzy", "name": "Keep shaking it and it gets dizzy", "steps": [{ "run_ms": 1500 }, { "set": "imu.gyroZ", "value": 500 }, { "set": "imu.accelY", "value": 1.8 }, { "expect_serial": "mood=scared", "within_ms": 200 }, { "expect_serial": "mood=dizzy", "within_ms": 2500 }, { "set": "imu.gyroZ", "value": 0 }, { "set": "imu.accelY", "value": 0 }, { "expect_serial": "mood=calm", "within_ms": 3000 }] },
+    { "id": "drop-scares-it", "name": "Falling (weightless) scares it", "steps": [{ "run_ms": 1500 }, { "set": "imu.accelZ", "value": 0.05 }, { "expect_serial": "mood=scared", "within_ms": 200 }, { "set": "imu.accelZ", "value": 1 }, { "expect_serial": "mood=calm", "within_ms": 3000 }] },
+    { "id": "tilt-moves-eyes", "name": "Tilting slides the eyes", "steps": [{ "run_ms": 1500 }, { "set": "imu.accelX", "value": 0.5 }, { "set": "imu.accelZ", "value": 0.87 }, { "expect_serial_value": "x", "op": "<=", "value": -20, "within_ms": 1500 }, { "set": "imu.accelX", "value": -0.5 }, { "expect_serial_value": "x", "op": ">=", "value": 20, "within_ms": 1500 }, { "absent": true, "expect_serial": "mood=scared" }] },
+    { "id": "sleepy-then-pet-wakes", "name": "Left alone it gets sleepy and dims; a pet wakes it", "steps": [{ "expect_serial": "mood=sleepy", "within_ms": 33000 }, { "expect_part": "eye.backlight", "op": "<", "value": 0.5, "within_ms": 200 }, { "hold_ms": 150, "press": "pet" }, { "expect_serial": "mood=love", "within_ms": 300 }, { "expect_part": "eye.backlight", "op": ">", "value": 0.9, "within_ms": 200 }], "timeout_ms": 60000 },
+    { "id": "runs-from-the-battery", "name": "USB unplugged: the LiPo powers it through the switch and the Schottky diode", "steps": [{ "expect_serial": "motion sensor ready", "within_ms": 1500 }, { "expect_part": "xiao.powered", "op": "==", "value": true }, { "expect_part": "d1.on", "op": "==", "value": true }, { "expect_part": "bat.currentmA", "op": ">=", "value": 20 }, { "expect_part": "bat.volts", "op": "<", "value": 4.2 }] },
+    { "id": "power-switch-off-and-on", "name": "The power switch turns it off; switched back on it boots again", "steps": [{ "expect_serial": "mood=calm", "within_ms": 1500 }, { "set": "pwr.position", "value": 1 }, { "expect_part": "xiao.powered", "op": "==", "value": false, "within_ms": 20 }, { "expect_part": "bat.currentmA", "op": "<", "value": 1 }, { "run_ms": 500 }, { "set": "pwr.position", "value": 0 }, { "expect_part": "xiao.powered", "op": "==", "value": true, "within_ms": 20 }, { "expect_serial": "motion sensor ready", "within_ms": 1500 }] },
+    { "id": "charges-while-it-runs", "name": "A USB charger on the TP4056 charges the cell while it keeps running", "steps": [{ "run_ms": 500 }, { "set": "chg.usb", "value": true }, { "expect_part": "chg.charging", "op": "==", "value": true, "within_ms": 50 }, { "expect_part": "xiao.powered", "op": "==", "value": true }, { "expect_serial": "mood=", "within_ms": 1500 }] },
+    { "id": "pet-calms-scared", "name": "Petting a scared buddy calms it", "steps": [{ "run_ms": 1500 }, { "set": "imu.accelX", "value": 2.5 }, { "expect_serial": "mood=scared", "within_ms": 200 }, { "set": "imu.accelX", "value": 0 }, { "run_ms": 200 }, { "hold_ms": 150, "press": "pet" }, { "expect_serial": "calmed by a pet", "within_ms": 300 }, { "expect_serial": "mood=love", "within_ms": 100 }] }
+  ]
+}

@@ -7,6 +7,17 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 6, power track (branch `round6/power`, before the merge)
+
+The battery really powers the board: boards have a supply chain (USB on VBUS when `power.usb` is not
+false, on-board LDO / Schottky / buck-boost) and the firmware is held in reset without power; 7 new
+parts (Schottky, 1N4148, AO3400, NPN / PNP, MCP1700 / AP2112 LDO, MT3608 boost); check_design
+power-path codes (`usb-backfeed`, `battery-reversed`, `battery-overvoltage`, `ldo-dropout`,
+`no-power-path`); `set_power`, `set_assembly`; soldered exports (WIRE-CUTS.csv, ASSEMBLY.md, no
+breadboard / dupont); search_parts says when nothing fits (create_part template), fuzzy get_part,
+planning calls logged into the project they create; the USB / battery pill in the web app;
+`examples/agent-built/claude-pocket-muse` runs from its LiPo (11/11, 0 errors). [docs/power.md](docs/power.md).
+
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 
 Six tracks merged into main (decision [0003](docs/decisions/0003-round5-see-it-work.md)). Checks

@@ -209,6 +209,10 @@ The people asking for a device are often beginners. The server instructions say 
 | `logic-level` | A pin drives a net above what a receiving pin takes (+0.3 V). 3.3 V into a 5 V input is fine; 5 V into a 3.3 V input is not. |
 | `overvoltage` / `part-needs-5v` | A supply above a module's rating / a 5 V module on a 3.3 V rail. |
 | `parallel-regulators` | Two supply outputs (regulators, a battery) on one net, e.g. an L298N's 5V on the Uno's 5V. |
+| `usb-backfeed` | A battery path reaches a board's USB pin (VBUS / 5V) with no diode: put a `schottky-diode` in it, stripe towards the board (round 6, [power.md](power.md)). |
+| `no-power-path` | Nothing takes the battery to the board's supply pins (an error with `set_power {"usb": false}`). |
+| `ldo-dropout` | The board's 3.3 V regulator runs out of headroom before the cell is empty: says at which cell voltage, so the firmware can sleep in time. |
+| `battery-reversed`, `battery-overvoltage` | A cell wired backwards; a full cell on a 3.3 V pin. |
 | `rail-3v3-budget` | More current on a board's 3V3 pin than it gives (50 mA Uno/Nano, 300 mA RP2040 boards, or `limits.max3v3mA`). |
 | `far-apart` (info) | A part more than 600 px from everything it is wired to: move it closer so the picture is readable. |
 

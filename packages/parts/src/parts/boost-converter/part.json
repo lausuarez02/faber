@@ -1,0 +1,180 @@
+{
+  "id": "boost-converter",
+  "name": "Boost converter module (MT3608, 2 A)",
+  "category": "power",
+  "description": "MT3608 step-up module: raises a battery (2 to 24 V in, e.g. a 3.7 V LiPo) to a higher voltage set with its trimmer (prop vout, 5 V by default) for 5 V boards, servos or LED strips. VIN+ / VIN− from the battery (or a charger's OUT+ / OUT−), VOUT+ / VOUT− to the load. It draws more from the battery than the load takes (about 88 % efficient), and with the input above vout it passes the input through (no buck).",
+  "pins": [
+    {
+      "id": "VIN+",
+      "label": "IN+",
+      "x": 12,
+      "y": 20,
+      "type": "power",
+      "voltage": {
+        "min": 2,
+        "max": 24
+      },
+      "description": "Input + (2 to 24 V): the battery or charger OUT+."
+    },
+    {
+      "id": "VIN-",
+      "label": "IN−",
+      "x": 12,
+      "y": 60,
+      "type": "ground",
+      "description": "Input − (ground)."
+    },
+    {
+      "id": "VOUT+",
+      "label": "OUT+",
+      "x": 138,
+      "y": 20,
+      "type": "power",
+      "voltage": {
+        "min": 4.75,
+        "max": 5.25
+      },
+      "description": "Boosted output + (regulator output, vout, 5 V by default) to the load."
+    },
+    {
+      "id": "VOUT-",
+      "label": "OUT−",
+      "x": 138,
+      "y": 42,
+      "type": "ground",
+      "description": "Output − (ground, same as IN−)."
+    }
+  ],
+  "size": {
+    "w": 150,
+    "h": 80
+  },
+  "props": [
+    {
+      "id": "vout",
+      "label": "Output voltage (trimmer)",
+      "type": "number",
+      "default": 5,
+      "min": 5,
+      "max": 28,
+      "step": 0.1,
+      "unit": "V",
+      "description": "What the trimmer is set to. Turn it before connecting the load: these modules often ship at a higher voltage."
+    }
+  ],
+  "limits": {
+    "maxCurrentmA": 2000,
+    "maxVoltage": 24,
+    "minVoltage": 2,
+    "maxOutputVoltage": 28,
+    "efficiency": 0.88,
+    "noLoadmA": 1,
+    "switchLimitmA": 2000
+  },
+  "footprint": "36 × 17 mm module, 4 solder pads (IN+ IN− OUT+ OUT−), trimmer on top",
+  "dimensions_mm": {
+    "w": 36,
+    "h": 17,
+    "d": 6
+  },
+  "mass_g": 3,
+  "current_ma": {
+    "typ": 1,
+    "max": 2000
+  },
+  "price_usd": 1,
+  "buy_links": [
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-MT3608-boost-module.html"
+    },
+    {
+      "vendor": "Amazon",
+      "url": "https://www.amazon.com/s?k=MT3608%20boost%20converter%20module"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "state",
+      "type": "string",
+      "description": "\"boosting\", \"pass-through\" (input above vout) or \"off\" (input below 2 V)."
+    },
+    {
+      "key": "vin",
+      "type": "number",
+      "description": "Input voltage (V)."
+    },
+    {
+      "key": "vout",
+      "type": "number",
+      "description": "Output voltage (V)."
+    },
+    {
+      "key": "inmA",
+      "type": "number",
+      "description": "Current taken from the input (mA)."
+    },
+    {
+      "key": "outmA",
+      "type": "number",
+      "description": "Current delivered to the load (mA)."
+    },
+    {
+      "key": "outOn",
+      "type": "number",
+      "description": "1 while the output is up (drawing only)."
+    },
+    {
+      "key": "label",
+      "type": "string",
+      "description": "e.g. \"5.00 V · 120 mA\"."
+    }
+  ],
+  "tags": [
+    "boost",
+    "step-up",
+    "dc-dc",
+    "mt3608",
+    "5v",
+    "converter",
+    "regulator",
+    "battery",
+    "power"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 1,
+    "features": [
+      {
+        "id": "trimmer",
+        "kind": "knob",
+        "face": "+z",
+        "x": 21,
+        "y": 8.5,
+        "shape": "round",
+        "d": 3,
+        "expose": false,
+        "description": "Output-voltage trimmer: set it before closing the case."
+      },
+      {
+        "id": "heat",
+        "kind": "vent",
+        "face": "+z",
+        "x": 18,
+        "y": 8.5,
+        "shape": "rect",
+        "w": 10,
+        "h": 8,
+        "description": "Inductor and chip warm up at high load."
+      }
+    ],
+    "source": "typical module"
+  },
+  "sourcing": {
+    "mpn": "MT3608",
+    "manufacturer": "Aerosemi",
+    "package": "module 36 x 17 mm",
+    "generic": "MT3608 DC-DC step-up (boost) module, 2-24 V in, adjustable 5-28 V out, 2 A switch, 36 x 17 mm"
+  }
+}

@@ -1,0 +1,55 @@
+# Pocket Muse: a pocket buddy with eyes, built by Claude Code, re-wired to run from its battery
+
+Claude Code built this in the round-5 check (2026-11-10) from a one-line wish, using only Jumper's
+tools over HTTP MCP: a Seeed XIAO RP2040, a 1.28 in round GC9A01 screen with two animated eyes, an
+MPU-6050 that makes it scared when it falls and dizzy when you shake it, a pet button, a passive
+buzzer that chirps, a 500 mAh LiPo and a TP4056 charger. 90 turns, $2.64, 11 min 22 s; its 8
+scenarios passed.
+
+What it could not do then (its own words): *"put a small 1N5817 diode between the charger's OUT+
+and the board's 5V pin … The simulator has no diode part, so that one wire is left out of the
+simulation."* So the battery powered nothing: in the simulation the board ran from an implied USB
+cable, check_design flagged the battery on the charger as "parallel regulators" and told it to wire
+the charger's USB input to the board's 5 V.
+
+## What changed in round 6 (decision 0004, power track)
+
+The circuit is the agent's, plus the power path it asked for:
+
+| Added | Why |
+| --- | --- |
+| `pwr` slide switch (SS12D00) | turns it off without unplugging the cell (position 0 = on) |
+| `d1` 1N5817 Schottky diode | between the switch and the XIAO's 5V pad (stripe towards the board), so USB on the XIAO never pushes current back into the cell |
+| wires `w20` chg.OUT → pwr.2, `w21` pwr.1 → d1.A, `w22` d1.C → xiao.VBUS | cell → TP4056 BAT, OUT → switch → diode → XIAO 5V |
+| `"power": { "usb": false }` | the simulation runs with no USB cable: the LiPo really powers it |
+| `"assembly": "soldered"` | a pocket device is hand-wired, so the export writes wire cuts, not a breadboard |
+| 3 scenarios | runs-from-the-battery, power-switch-off-and-on (it boots again), charges-while-it-runs |
+
+The firmware (`firmware/main.ino`, `main.hex`) and the agent's 8 scenarios are unchanged.
+`agent-actions.jsonl` is the agent's action log from the round-5 run.
+
+## What the simulation shows now
+
+- USB unplugged, switch on: the cell (4.19 V) delivers about 44 mA through the diode (0.26 V drop);
+  the XIAO's LDO holds 3.3 V; all 11 scenarios pass on battery power.
+- Switch off: the board's 3.3 V rail drops, the firmware is held in reset; switch on: it boots
+  again ("motion sensor ready").
+- `check_design`: 0 errors, one warning, `ldo-dropout`: below a cell voltage of 3.85 V the 3V3 rail
+  falls under 3.3 V and the XIAO stops at about 3.25 V, before the cell is empty (3.0 V). The
+  firmware should read the cell and sleep before that (a 100 k / 100 k divider to an analog pin).
+- `export/`: BOM with hook-up wire, heat-shrink and solder (no breadboard, no dupont),
+  `WIRE-CUTS.csv` (22 wires: length, colour, 24 AWG power / 26 AWG signal), `ASSEMBLY.md`
+  (power path first, measured before any module is connected), `firmware.uf2`, `TEST-ON-HARDWARE.md`.
+
+Check it: `pnpm jumper check -p examples/agent-built/claude-pocket-muse`,
+`pnpm jumper test -p examples/agent-built/claude-pocket-muse` (11/11),
+`packages/session/test/power-muse.test.ts`.
+
+## What it does not prove
+
+- Battery life: the drain follows the simulated load, but the display's and IMU's currents are
+  typical figures; measure the real average current.
+- The LDO's dropout, the diode's drop and the board's 25 mA are typical values, not your parts.
+- Wire lengths in `WIRE-CUTS.csv` are estimated from the part sizes (the case track replaces them
+  with lengths from the case layout); lay the parts in the case before cutting.
+- Everything in `export/TEST-ON-HARDWARE.md`.

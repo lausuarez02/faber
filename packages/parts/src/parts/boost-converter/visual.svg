@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 80" width="150" height="80">
+  <rect x="6" y="6" width="138" height="68" rx="4" fill="#1A3A5C" stroke="#E9EDF2" stroke-opacity="0.3" stroke-width="1"/>
+  <rect x="56" y="16" width="26" height="26" rx="3" fill="#2B3038" stroke="#5A6474" stroke-width="1"/>
+  <circle cx="69" cy="29" r="8" fill="none" stroke="#8A93A0" stroke-width="1.5"/>
+  <rect x="94" y="18" width="16" height="22" rx="2" fill="#2F6FD6" stroke="#E9EDF2" stroke-opacity="0.4" stroke-width="0.8"/>
+  <circle cx="102" cy="29" r="3" fill="#E9EDF2" fill-opacity="0.7"/>
+  <rect x="34" y="22" width="12" height="10" rx="1" fill="#20242B"/>
+  <text x="75" y="54" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle">MT3608 BOOST</text>
+  <text x="75" y="65" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle" data-bind="text:label">off</text>
+  <circle cx="130" cy="58" r="3" fill="#2B3038" stroke="#5A6474" stroke-width="0.8"/>
+  <circle cx="130" cy="58" r="3" fill="#5CF2A1" opacity="0" data-bind="opacity:outOn"/>
+  <text x="18" y="23" font-family="IBM Plex Mono" font-size="5.5" fill="#E9EDF2">IN+</text>
+  <text x="18" y="63" font-family="IBM Plex Mono" font-size="5.5" fill="#E9EDF2">IN−</text>
+  <text x="116" y="23" font-family="IBM Plex Mono" font-size="5.5" fill="#E9EDF2">OUT+</text>
+  <text x="112" y="45" font-family="IBM Plex Mono" font-size="5.5" fill="#E9EDF2">OUT−</text>
+  <circle data-pin="VIN+" cx="12" cy="20" r="3" fill="#C9CED6"/>
+  <circle data-pin="VIN-" cx="12" cy="60" r="3" fill="#C9CED6"/>
+  <circle data-pin="VOUT+" cx="138" cy="20" r="3" fill="#C9CED6"/>
+  <circle data-pin="VOUT-" cx="138" cy="42" r="3" fill="#C9CED6"/>
+</svg>

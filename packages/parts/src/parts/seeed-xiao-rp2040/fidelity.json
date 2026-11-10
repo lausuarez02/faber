@@ -15,7 +15,7 @@
     },
     "power": {
       "level": "approx",
-      "note": "5V (USB VBUS) and 3V3 are stiff sources; per-pin current above 12 mA is flagged. The regulator's limit, battery pads, brownout and sleep current are not simulated."
+      "note": "Round 6: USB (power.usb) is a 5 V source on VBUS; without it the board runs from what is wired to VBUS through its 3.3 V LDO (0.25 V dropout, typical), the board draws its typical 25 mA, and the firmware is held in reset while 3V3 is under 2.7 V (power-on reset when it comes back). Per-pin current above 12 mA is flagged. The LDO's current limit, inrush, sleep current and a gradual brownout (real chips misbehave between 2.7 and 3.0 V) are not simulated."
     },
     "radio": {
       "level": "n/a",

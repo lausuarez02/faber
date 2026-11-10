@@ -367,6 +367,9 @@ export interface PartContext {
   watch?(pinId: string, cb: (level: 0 | 1, tMs: number) => void): () => void;
   /** Host services (e.g. `network`, the sandbox Wi-Fi network) passed to the Simulation. */
   readonly services?: SimServices;
+  // round 6 power
+  /** The project's power situation (jumper.json `power`): `usb` = a USB cable is plugged into the board. Absent = USB plugged (round-5 behaviour). Live: the Simulation updates it. */
+  readonly power?: { readonly usb: boolean };
 }
 
 export interface PartModel {
@@ -380,6 +383,9 @@ export interface PartModel {
   diagnostics?(): Diagnostic[];
   /** Called on sim reset/stop to drop resources (optional). */
   dispose?(): void;
+  // round 6 power
+  /** Boards: whether the MCU has power after the last solve. The Simulation holds the firmware board's MCU in reset while this is false. Absent = always powered. */
+  powered?(): boolean;
   /**
    * Time-stepped behaviour (motor inertia, servo slew). The Simulation calls it every TICK_MS of
    * virtual time, at fixed cycle numbers, so the result does not depend on how runFor is sliced.

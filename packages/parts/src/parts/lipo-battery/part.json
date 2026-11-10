@@ -2,7 +2,7 @@
   "id": "lipo-battery",
   "name": "LiPo battery 1S (3.7 V, with protection)",
   "category": "power",
-  "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to the board's battery input (VSYS / BAT on a 3.3 V board, through a TP4056 charger's B+), − to GND. A 5 V Uno cannot run from it without a boost converter.",
+  "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to a charger's B+ (TP4056 BAT) and − to its B−; the charger's OUT+ then feeds the board (Pico VSYS directly; XIAO / RP2040-Zero 5V through a slide switch and a Schottky diode). A 5 V Uno cannot run from it without a boost converter (boost-converter).",
   "pins": [
     { "id": "POS", "label": "+", "x": 10, "y": 30, "type": "power", "description": "Positive (red wire)." },
     { "id": "NEG", "label": "−", "x": 10, "y": 50, "type": "ground", "description": "Negative (black wire)." }

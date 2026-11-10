@@ -19,6 +19,8 @@ export type {
   CircuitBuilder,
   SolveResultView,
   SolveResult,
+  RegulatorParams,
+  RegulatorState,
 } from "./circuit.ts";
 export {
   PART_CATEGORIES,
@@ -66,8 +68,8 @@ export type {
   PartRegistry,
 } from "./part.ts";
 export type { PinMode, PinState, Unsubscribe, McuBackend, BackendFactory } from "./mcu.ts";
-export { createMcuBoardModel, GPIO_R_OUT, PULLUP_OHMS } from "./board.ts";
-export type { McuBoardOptions } from "./board.ts";
+export { createMcuBoardModel, GPIO_R_OUT, PULLUP_OHMS, USB_VOLTS, defaultBoardSupply } from "./board.ts";
+export type { McuBoardOptions, BoardSupply, BoardSupplyState } from "./board.ts";
 export { Simulation, TICK_MS } from "./simulation.ts";
 export { PwmMeter, averageSolves, PWM_FAST_PERIOD_US, PWM_DUTY_EPSILON, PWM_STALE_PERIODS } from "./pwm.ts";
 export type { PwmReading } from "./pwm.ts";

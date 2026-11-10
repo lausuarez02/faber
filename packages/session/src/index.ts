@@ -43,3 +43,9 @@ export { planDevice } from "./planner.ts";
 export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";
 export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog } from "./versions.ts";
 export type { VersionSummary, VersionDetail, VersionChanges, VersionFrame } from "./versions.ts";
+// Round 6, track power: assembly style and wire cuts (decision 0004, R2), the power report.
+export { assemblyStyle, assemblyReason, wireCuts, wireCutsCsv, wireTotals, colorName } from "./assembly.ts";
+export type { WireCut, AssemblyStyle } from "./assembly.ts";
+export { powerReport } from "./tools/power.ts";
+export type { PowerReport } from "./tools/power.ts";
+export { batteryPathAdvice } from "./drc.ts";

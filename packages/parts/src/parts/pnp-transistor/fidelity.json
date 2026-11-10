@@ -1,0 +1,40 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Off without base current; on (active) with collector current = hFE × base current; saturated (Vce ≈ 0.2 V) when the load cannot take that much."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Instant with each re-solve; no storage time (a saturated BJT turns off a few hundred ns late)."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Emitter-base as a 0.65 V diode (+ ~25 Ω), collector current hFE × Ib in the active region, a 0.2 V emitter-collector drop when saturated. hFE fixed per model (2N2907 150, BC557 290), real parts spread 100 to 800."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Warns above the collector-current rating and reports Vce × Ic heating above 0.6 W (TO-92); the part does not fail."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "Switching a load from a GPIO through a base resistor",
+    "hFE-limited collector current",
+    "Saturation",
+    "Over-current and missing-base-resistor diagnostics"
+  ],
+  "doesNotEmulate": [
+    "Exponential Vbe curve, Early effect, temperature drift",
+    "Small-signal amplification (no capacitances, no AC)",
+    "Storage time and switching speed"
+  ],
+  "testOnRealDevice": [
+    "hFE varies 3× between parts: give the base 2-3× the current you computed",
+    "Heating at your load current"
+  ]
+}
