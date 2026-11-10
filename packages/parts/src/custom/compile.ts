@@ -195,7 +195,7 @@ export function compileCustomPart(input: unknown, svgInput?: string | null, opts
       throw new CustomPartError(
         `Display controller '${b.controller}' is not available yet`,
         "an agent-made display reuses a built-in controller model, and this build has no built-in GC9A01 part",
-        "use ssd1306, st7735 or ili9341 (ST7789 panels: st7735 with a resolution), or wait for the GC9A01 part",
+        "use ssd1306, st7735 or ili9341 (ST7789 panels: st7735 with a resolution); gc9a01 needs the built-in gc9a01-round-tft part in the parts catalog",
       );
     }
     const basePins = base.spec.pins;

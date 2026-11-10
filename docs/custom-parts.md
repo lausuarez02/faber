@@ -160,7 +160,7 @@ libraries work (Adafruit_SSD1306, U8g2, Adafruit_ST7735 / ST7789, Adafruit_ILI93
 (st7735 / ili9341) changes the panel size; `ram` + `offset` model a glass that shows a window of
 a bigger controller RAM (the ST7789 240x240 above, driven by `Adafruit_ST7789 tft.init(240, 240)`);
 `ips` is for IPS glass, whose library turns inversion on to get normal colours; `round` draws a
-round bezel. `gc9a01` works once the built-in GC9A01 part is in the catalog. The window is fixed,
+round bezel. `gc9a01` reuses the built-in `gc9a01-round-tft` (240x240, round). The window is fixed,
 so libraries that move it with rotation (rotations 2-3 on some panels) show a shifted picture.
 The e2e test `apps/web/e2e/agentparts.spec.ts` runs exactly this part with an Adafruit_ST7789
 sketch in the browser.

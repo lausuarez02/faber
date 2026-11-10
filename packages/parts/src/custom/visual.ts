@@ -115,7 +115,7 @@ export function generateVisual(part: CustomPart, layout: Layout, screen?: Screen
     const g = layout.glass;
     lines.push(`  <text x="${w / 2}" y="${HEADER + 13}" text-anchor="middle" ${FONT} font-size="8" fill="#C9CED6">${esc(wrap(part.name, Math.floor((w - 2 * PAD) / 4.9), 1)[0] ?? id)}</text>`);
     lines.push(`  <rect x="${g.x - 4}" y="${g.y - 4}" width="${g.w + 8}" height="${g.h + 8}" rx="${screen.round ? (g.w + 8) / 2 : 3}" fill="#0B0F12" stroke="#3A4250"/>`);
-    lines.push(`  <rect data-screen="${screen.kind}" x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" fill="#05070A" data-bind="opacity:screenOpacity"/>`);
+    lines.push(`  <rect data-screen="${screen.kind}"${screen.round ? ' data-screen-shape="round"' : ""} x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" fill="#05070A" data-bind="opacity:screenOpacity"/>`);
     if (screen.round) {
       // Bezel over the square frame's corners, drawn after the screen so it stays on top.
       const cx = g.x + g.w / 2;

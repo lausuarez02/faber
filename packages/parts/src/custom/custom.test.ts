@@ -206,6 +206,16 @@ describe("compileCustomPart", () => {
     expect(() => compileCustomPart({ id: "round", name: "r", category: "display", description: "r", behavior: { kind: "display", controller: "gc9a01" } }, undefined, { builtins: empty })).toThrow(/not available yet/);
   });
 
+  it("gc9a01 reuses the built-in GC9A01 round TFT once it exists", () => {
+    const c = compileCustomPart({ id: "round-face", name: "Round face", category: "display", description: "1.28 inch round IPS", behavior: { kind: "display", controller: "gc9a01" } });
+    const base = registry.list().find((d) => d.spec.id.startsWith("gc9a01"))!;
+    expect(base).toBeDefined();
+    expect(c.def.spec.pins.map((p) => p.id)).toEqual(base.spec.pins.map((p) => p.id));
+    expect(c.def.svg).toMatch(/data-screen="240x240"/);
+    expect(c.def.svg).toMatch(/data-screen-shape="round"/);
+    expect(c.def.fidelity.origin).toBe("agent-made");
+  });
+
   it("the overlay lets a project part shadow a built-in id with a warning", () => {
     const reg = withProjectParts(registry);
     const c = compileCustomPart({ ...sensor, id: "flex-sensor" });
