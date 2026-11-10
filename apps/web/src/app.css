@@ -2279,3 +2279,17 @@ input[type="range"] {
 .icon-btn.has-tip:focus-visible::after {
   opacity: 1;
 }
+
+/* round 7 voice: multi-line text props (a DFPlayer's clips) */
+.field-text {
+  width: 100%;
+  min-height: 64px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.4;
+  resize: vertical;
+}

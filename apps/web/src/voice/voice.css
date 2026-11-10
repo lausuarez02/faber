@@ -1,0 +1,77 @@
+/* Round 7 (voice): the speech bubble a talking part shows next to its speaker. */
+.speech-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 26px); /* clears the part label */
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 96px;
+  max-width: 240px;
+  width: max-content;
+  padding: 8px 8px 8px 12px;
+  border-radius: 14px;
+  background: #e9edf2;
+  color: #15181d;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  animation: speech-pop 160ms ease-out;
+}
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #e9edf2;
+}
+.speech-bubble[data-missing="true"] {
+  background: #ffb23f;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.speech-bubble[data-missing="true"]::after {
+  border-top-color: #ffb23f;
+}
+.speech-words {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.speech-mute {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -2px 0;
+  padding: 0;
+  border: 1px solid rgba(21, 24, 29, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.speech-mute:hover {
+  background: rgba(21, 24, 29, 0.08);
+}
+.speech-mute:focus-visible {
+  outline: 2px solid #5cf2a1;
+  outline-offset: 1px;
+}
+@keyframes speech-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px) scale(0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .speech-bubble {
+    animation: none;
+  }
+}

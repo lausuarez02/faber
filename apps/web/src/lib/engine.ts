@@ -12,6 +12,7 @@ import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics
 import type { JumperStore } from "./store.ts";
 import { localCopyUrl } from "./localCopy.ts";
 import { useInteract } from "../interact/store.ts";
+import { VoiceLayer } from "../voice/speech.ts"; // round 7 voice
 
 /**
  * Runs the Simulation on the main thread (M0; a worker comes later) and pushes its state
@@ -68,6 +69,11 @@ export class Engine {
   /** Colour TFT canvases (ILI9341, ST7735): pixels come from Simulation.framebuffer, not visualState. */
   // round 6 frames: following an agent or replaying, the screens come from the logged colour frames.
   private tfts = registerTftRenderers((id) => (this.external && !this.localRun ? colorFrameOf(id) : this.sim?.framebuffer(id)));
+  /** Round 7 (voice): speech bubbles next to speakers and the browser's voice for DFPlayer clips. */
+  private voice = new VoiceLayer(
+    () => this.store.getState().project,
+    (id) => this.parts.get(id)?.el,
+  );
   /** The sandbox Wi-Fi + pet AI for projects with a Wi-Fi part (one per simulation). */
   private net: SandboxNet | undefined;
   private netListeners = new Set<() => void>();
@@ -751,9 +757,11 @@ export class Engine {
     this.displays.paint(id, state);
     this.tfts.paint(id, state);
     paintStateAttrs(view.el, state);
+    this.voice.update(id, state); // round 7 voice: speech bubble + the browser's voice
   }
 
   private paintIdle(): void {
+    this.voice.clear(); // round 7 voice
     for (const v of this.parts.values()) {
       v.last = "";
       v.el.dataset.lit = "false";
