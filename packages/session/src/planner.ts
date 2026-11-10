@@ -322,17 +322,38 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       buy_links: searchLinks(kind.buy),
       assumption: `typical ${kind.capacity} mAh, ${kind.dims.w} × ${kind.dims.h} × ${kind.dims.d} mm, $${kind.price} (not a catalog part figure)`,
     });
+    // round 6 power: the real power path, with catalog parts (decision 0004, R2).
     const takesCell = b.pins.find((p) => p.type === "power" && !/^3V3|GND/i.test(p.id) && p.voltage && p.voltage.min <= 3.0 && p.voltage.max >= 4.2);
-    if (kind === BATTERIES.lipo1s && takesCell) warnings.push(`wire the cell (through the charger's OUT) to ${b.name} ${takesCell.label ?? takesCell.id}: it takes ${takesCell.voltage!.min} to ${takesCell.voltage!.max} V, so a 1S LiPo needs no boost converter`);
-    if (kind === BATTERIES.lipo1s && !takesCell) {
+    const blim = (b.limits ?? {}) as Record<string, number | undefined>;
+    const usbPin = b.pins.find((p) => p.type === "power" && /^(VBUS|5V)$/i.test(p.id));
+    const viaDiode = !takesCell && vcc < 4.5 && !!usbPin && (blim.vbusInMinV ?? 99) <= 3.6;
+    const line = (type: string, why: string, qty = 1) => {
+      const d = reg.get(type);
+      if (!d) return;
+      const cur = currentMa(d.spec);
+      bom.push({ type, name: d.spec.name, qty, why, source: "simulated-exactly", fidelity: fidelityOf(d), ...(cur ? { current_ma: cur.ma } : {}), ...(d.spec.price_usd !== undefined ? { price_usd: d.spec.price_usd } : {}), buy_links: d.spec.buy_links?.length ? d.spec.buy_links : searchLinks(d.spec.name) });
+    };
+    if (kind === BATTERIES.lipo1s) line("slide-switch", "turns the device off without unplugging the battery");
+    if (kind === BATTERIES.lipo1s && takesCell) warnings.push(`wire the cell through the charger's OUT and the switch to ${b.name} ${takesCell.label ?? takesCell.id}: it takes ${takesCell.voltage!.min} to ${takesCell.voltage!.max} V and has its own diode, so a 1S LiPo needs no boost converter`);
+    if (kind === BATTERIES.lipo1s && viaDiode) {
+      line("schottky-diode", `stops USB on the ${b.name} from pushing current back into the battery (a 1N5817 between the switch and the board's ${usbPin!.label ?? usbPin!.id} pad)`);
+      const drop = blim.ldoDropoutV ?? 0.25;
+      warnings.push(`power path: cell → charger BAT, charger OUT → switch → Schottky diode → ${b.name} ${usbPin!.label ?? usbPin!.id} (the board has no BAT pad); test it with set_power {"usb": false}. Its 3.3 V regulator gives a full 3.3 V only while the cell is above about ${(3.3 + drop + 0.3).toFixed(2)} V and the board stops near ${((blim.min3v3V ?? 2.7) + drop + 0.3).toFixed(2)} V, so plan a low-battery shutdown`);
+    }
+    if (kind === BATTERIES.lipo1s && !takesCell && !viaDiode) {
       const in5 = b.pins.find((p) => p.type === "power" && p.voltage && p.voltage.min >= 4.5 && p.voltage.max <= 5.5);
-      bom.push({ type: null, name: "5 V boost converter (MT3608 or similar)", qty: 1, why: `a 3.7 V cell is below the 5 V the ${b.name} needs on ${in5 ? (in5.label ?? in5.id) : "its supply pin"}; the boost raises it`, source: "not-simulated", price_usd: 2, buy_links: searchLinks("mt3608 boost converter"), assumption: "typical $2, 22 × 17 mm (not a catalog part)" });
-      cannot.add("the boost converter's efficiency (about 85 %) and its noise on the 5 V rail");
+      if (reg.get("boost-converter")) {
+        line("boost-converter", `a 3.7 V cell is below the 5 V the ${b.name} needs on ${in5 ? (in5.label ?? in5.id) : "its supply pin"}; the boost raises it (about 88 % efficient)`);
+        line("schottky-diode", `between the boost's OUT+ and the ${b.name}'s 5V, so USB on the board never back-feeds the boost`);
+      } else {
+        bom.push({ type: null, name: "5 V boost converter (MT3608 or similar)", qty: 1, why: `a 3.7 V cell is below the 5 V the ${b.name} needs on ${in5 ? (in5.label ?? in5.id) : "its supply pin"}; the boost raises it`, source: "not-simulated", price_usd: 2, buy_links: searchLinks("mt3608 boost converter"), assumption: "typical $2, 22 × 17 mm (not a catalog part)" });
+      }
+      cannot.add("the boost converter's switching noise on the 5 V rail (its efficiency is modelled as a fixed 88 %)");
     }
     let avg = 0;
     const noCurrent: string[] = [];
     for (const l of bom) {
-      if (l.type === "battery-pack" || l.type === "lipo-battery" || l.type === "tp4056-charger" || (l.type === null && l.source === "not-simulated" && /boost/.test(l.name))) continue;
+      if (l.type === "battery-pack" || l.type === "lipo-battery" || l.type === "tp4056-charger" || l.type === "boost-converter" || l.type === "schottky-diode" || l.type === "slide-switch" || (l.type === null && l.source === "not-simulated" && /boost/.test(l.name))) continue;
       if (l.current_ma === undefined) {
         noCurrent.push(l.name);
         continue;
@@ -341,6 +362,8 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       const duty = l.type && ["dc-motor", "servo-sg90"].includes(l.type) ? 0.25 : 1;
       avg += l.current_ma * l.qty * duty;
     }
+    // round 6 power: a boost from a 3.7 V cell to 5 V takes 5 / 3.7 / 0.88 ≈ 1.5 × the load's current from the cell.
+    if (bom.some((l) => l.type === "boost-converter")) avg = avg * (5 / 3.7 / 0.88);
     const usable = kind.capacity * 0.8;
     const hours = avg > 0 ? round1(usable / avg) : 0;
     battery = {
@@ -425,7 +448,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
 
   const simulated = bom.filter((l) => l.source === "simulated-exactly").length;
   const others = bom.filter((l) => l.source !== "simulated-exactly");
-  const listed = bom.slice(1).filter((l) => !/resistor|boost/i.test(l.name)).map((l) => `${l.qty > 1 ? `${l.qty} ` : ""}${l.name.replace(/ \(.*\)$/, "")}`);
+  const listed = bom.slice(1).filter((l) => !/resistor|boost|schottky|slide switch/i.test(l.name)).map((l) => `${l.qty > 1 ? `${l.qty} ` : ""}${l.name.replace(/ \(.*\)$/, "")}`);
   const summary = [
     `${goal.trim().replace(/\.$/, "")}: ${b.name}${listed.length ? ` with ${listed.join(", ")}` : ""}.`,
     `About ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm in a case${battery && battery.hours ? `, about ${battery.hours} h per charge` : ""}, ${total > 0 ? `parts about $${total}${noPrice.length ? ` plus ${noPrice.length} unpriced line${noPrice.length > 1 ? "s" : ""}` : ""}` : "price not known yet (the parts have no price data)"}.`,

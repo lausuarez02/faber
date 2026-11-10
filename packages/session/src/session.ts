@@ -22,7 +22,9 @@ import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
 import { checkDesign, type DesignIssue } from "./drc.ts";
 import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
-import { bomMarkdown, wiringMarkdown } from "./exporter.ts";
+import { bomMarkdown, solderedAssemblyMarkdown, wiringMarkdown } from "./exporter.ts";
+import { assemblyStyle, wireCuts, wireCutsCsv } from "./assembly.ts"; // round 6 power
+import { createPartTemplate, fits, resolvePartType } from "./catalog-fit.ts"; // round 6 power
 import { fidelityReport } from "./fidelity.ts";
 import { suggestConnections, usageFor } from "./hints.ts";
 import {
@@ -164,7 +166,7 @@ const SHORT_IDS: Record<string, string> = {
 const SOURCE_EXT = /\.(ino|pde|h|hpp|hh|c|cc|cpp|cxx|S|s)$/;
 
 function topologyKey(p: Project): string {
-  return JSON.stringify([p.parts.map((x) => [x.id, x.type, x.props ?? {}]), p.wires.map((w) => [w.from.part, w.from.pin, w.to.part, w.to.pin]), p.firmware?.board ?? null]);
+  return JSON.stringify([p.parts.map((x) => [x.id, x.type, x.props ?? {}]), p.wires.map((w) => [w.from.part, w.from.pin, w.to.part, w.to.pin]), p.firmware?.board ?? null, p.power?.usb !== false]); // round 6 power: USB plugged or not
 }
 
 function round(n: number): number {
@@ -296,7 +298,45 @@ export class ProjectSession {
     if (!existsSync(gi)) writeFileSync(gi, "# Jumper session state (undo history, build cache info). The action log is worth keeping for replays.\nhistory.json\nbuild.json\nbuilds/\nthumbs/\n");
   }
 
+  // round 6 power: planning calls (plan_device, search_parts, get_part) before new_project {folder} belong to the
+  // project they lead to, not to the one that happens to be open. They wait here (shown live at once) and are
+  // written to whichever log comes next: the new project's, or this one's on the next other call / dispose.
+  private planBuffer: ActionEntry[] = [];
+
+  private flushPlanning(): void {
+    if (!this.planBuffer.length) return;
+    const lines = this.planBuffer.splice(0).map((e) => JSON.stringify(e) + "\n").join("");
+    try {
+      mkdirSync(this.metaDir, { recursive: true });
+      appendFileSync(this.actionLogFile, lines);
+    } catch {
+      // logging must never break an op
+    }
+    this.diskStamp = this.stamp();
+  }
+
+  /** Hand the waiting planning entries to another project folder's log (new_project {folder}). */
+  private movePlanningTo(dir: string): number {
+    const n = this.planBuffer.length;
+    if (!n) return 0;
+    const lines = this.planBuffer.splice(0).map((e) => JSON.stringify({ ...e, moved_from: this.dir }) + "\n").join("");
+    try {
+      mkdirSync(join(dir, ".jumper"), { recursive: true });
+      appendFileSync(join(dir, ".jumper", "actions.jsonl"), lines);
+    } catch {
+      // logging must never break an op
+    }
+    return n;
+  }
+
   private logAction(entry: ActionEntry): void {
+    if (PLANNING_OPS.has(entry.op)) {
+      this.planBuffer.push(entry);
+      if (this.planBuffer.length > 200) this.flushPlanning();
+      for (const l of this.listeners) l({ type: "action", entry });
+      return;
+    }
+    if (!(entry.op === "new_project" && entry.ok && (entry.args as { folder?: unknown }).folder)) this.flushPlanning();
     try {
       mkdirSync(this.metaDir, { recursive: true });
       appendFileSync(this.actionLogFile, JSON.stringify(entry) + "\n");
@@ -475,6 +515,7 @@ export class ProjectSession {
     const label = typeof args.folder === "string" ? args.folder : (args.name ?? args.template);
     const dir = newProjectFolder(this.projectsRoot, label);
     const name = args.name ?? label;
+    this.movePlanningTo(dir); // round 6 power: the plan and searches that led here go into the new project's log
     const child = new ProjectSession({ dir, registry: this.registry, builder: this.builder, actor: this.actor, projectsRoot: this.projectsRoot });
     try {
       await child.call("new_project", { template: args.template, name, ...(ctx.why ? { why: ctx.why } : {}) }, ctx.meta ?? {});
@@ -548,6 +589,18 @@ export class ProjectSession {
     const base = isProjectPartRegistry(this.registry) ? this.registry.base : this.registry;
     let defs = base === defaultRegistry ? rankParts(this.registry.list(), args.query ?? "") : this.registry.list().filter((d) => !args.query || `${d.spec.id} ${d.spec.name} ${(d.spec.tags ?? []).join(" ")}`.toLowerCase().includes(args.query!.toLowerCase()));
     if (args.category) defs = defs.filter((d) => d.spec.category === args.category);
+    // round 6 power: only description mentions ("diode" in an LED's text) is not a fit: say so and hand a create_part template.
+    const q = (args.query ?? "").trim();
+    if (q && !defs.some((d) => fits(d, q))) {
+      const mentioned = defs.slice(0, 5).map((d) => d.spec.id);
+      return {
+        count: 0,
+        results: [],
+        hint: `Nothing in the catalog is a '${q}'${args.category ? ` in category ${args.category}` : ""}${mentioned.length ? ` (only mentioned in the descriptions of ${mentioned.join(", ")})` : ""}. Fix: if a close built-in really does the job, search a broader word (e.g. "sensor", "display", "switch") or search_parts with no query to list all ${this.registry.list().length} types; otherwise make it with create_part: fill in create_part_template from the real part's datasheet (pins, voltages, behaviour numbers) and send it as {"part": …}. It is marked "${AGENT_MADE_LABEL}"; tell the person.`,
+        create_part_template: createPartTemplate(q, new Set(this.registry.list().map((d) => d.spec.id))),
+        ...(mentioned.length ? { mentioned_in: mentioned } : {}),
+      };
+    }
     const results = defs.slice(0, 25).map((d) => ({ type: d.spec.id, name: d.spec.name, category: d.spec.category, fidelity: d.fidelity.origin === "agent-made" ? AGENT_MADE_LABEL : d.fidelity.level, about: d.spec.description.split(/(?<=\.)\s/)[0] }));
     return {
       count: results.length,
@@ -560,11 +613,25 @@ export class ProjectSession {
 
   async getPart(args: { type: string }): Promise<unknown> {
     if (!args.type) fail("missing-arg", "get_part needs 'type'", "no part type was given", 'pass a type id from search_parts, e.g. { "type": "led" }');
-    const spec = this.spec(args.type);
-    const def = this.registry.get(args.type)!;
+    // round 6 power: forgiving ids ("rp2040-zero" → waveshare-rp2040-zero).
+    let type = args.type;
+    let matched: string | undefined;
+    if (!this.registry.get(type)) {
+      const all = this.registry.list();
+      const res = resolvePartType(type, all.map((d) => d.spec.id), all);
+      if (res.id) {
+        matched = `'${args.type}' is ${res.id}: use that id in place_part`;
+        type = res.id;
+      } else if (res.candidates.length > 1) {
+        fail("ambiguous-part-type", `'${args.type}' matches ${res.candidates.length} part types`, `it fits ${res.candidates.join(", ")}`, `pass one of those ids, e.g. get_part {"type": "${res.candidates[0]}"}`);
+      }
+    }
+    const spec = this.spec(type);
+    const def = this.registry.get(type)!;
     const usage = usageFor(spec);
     return {
       type: spec.id,
+      ...(matched ? { matched } : {}),
       name: spec.name,
       category: spec.category,
       description: spec.description,
@@ -1424,10 +1491,18 @@ export class ProjectSession {
   async export(args: { dir?: string }, ctx: OpCtx): Promise<unknown> {
     const out = resolve(this.dir, args.dir ?? "export");
     mkdirSync(out, { recursive: true });
-    const bom = bomMarkdown(this.project, this.registry);
+    // round 6 power: a soldered (pocket / cased) build gets wire cuts and soldered steps, never breadboard or dupont lines.
+    const style = assemblyStyle(this.project, this.registry);
+    const cuts = style === "soldered" ? wireCuts(this.project, this.registry) : [];
+    const bom = bomMarkdown(this.project, this.registry, style, cuts);
     writeFileSync(join(out, "BOM.md"), bom);
     writeFileSync(join(out, "WIRING.md"), wiringMarkdown(this.project, this.registry));
     const files = ["BOM.md", "WIRING.md"];
+    if (style === "soldered") {
+      writeFileSync(join(out, "WIRE-CUTS.csv"), wireCutsCsv(cuts, true));
+      writeFileSync(join(out, "ASSEMBLY.md"), solderedAssemblyMarkdown(this.project, this.registry, cuts, true));
+      files.push("WIRE-CUTS.csv", "ASSEMBLY.md");
+    }
     const hex = this.loadHex();
     // rp2040 track: RP2040 boards also get a UF2 for the BOOTSEL drive, and their own flash line.
     const boardType = this.project.parts.find((p) => p.id === this.project.firmware?.board)?.type;
@@ -1450,7 +1525,7 @@ export class ProjectSession {
     writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n${flaggedText}\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
     files.push("TEST-ON-HARDWARE.md");
     ctx.summary = `exported to ${out}`;
-    return { dir: out, files, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
+    return { dir: out, files, assembly: style, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
   }
 
   // =================================================================== steps
@@ -1550,6 +1625,7 @@ export class ProjectSession {
   }
 
   dispose(): void {
+    this.flushPlanning(); // round 6 power
     this.host?.dispose();
     this.host = undefined;
   }
@@ -1600,6 +1676,9 @@ export const OP_METHODS: Record<string, string> = {
 export function allOpNames(): string[] {
   return [...Object.keys(OP_METHODS), ...Object.keys(EXT_OPS)];
 }
+
+/** Round 6 power: calls that plan a device (logged into the project they lead to). */
+const PLANNING_OPS = new Set(["plan_device", "search_parts", "get_part"]);
 
 /** Ops whose (compacted) result goes into the action log, for replay captions and the live panel. */
 const LOG_RESULT_OPS = new Set(["build", "run_tests", "check_design", "fidelity_report", "read_display", "run", "export", "screenshot"]);
