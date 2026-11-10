@@ -264,7 +264,7 @@ describe("stand-ins and agent-made parts in exports", () => {
     expect(m.stand_in_for).toBe("capacitive soil moisture sensor");
     const e = await call("export");
     const bom = readFileSync(join(dir, "export/BOM.md"), "utf8");
-    expect(bom).toMatch(/\| 1 \| \*\*capacitive soil moisture sensor\*\* \| see the real part \| soil1 \|.*STAND-IN: Jumper simulated it as a .*Potentiometer/);
+    expect(bom).toMatch(/\| 1 | \*\*capacitive soil moisture sensor\*\* \| – \| see the real part \| soil1 \|.*STAND-IN: Jumper simulated it as a .*Potentiometer/);
     expect(bom).toMatch(/## STAND-IN parts \(not what you buy\)/);
     expect(bom).not.toMatch(/\| Potentiometer/);
     const wiring = readFileSync(join(dir, "export/WIRING.md"), "utf8");

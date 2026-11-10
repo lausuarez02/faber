@@ -10,7 +10,7 @@ import { dirname, join, relative } from "node:path";
 import { zipSync } from "fflate";
 import { buildNets, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec } from "@jumper/sim-core";
-import { partLabel } from "./exporter.ts";
+import { partLabel, partValue } from "./exporter.ts";
 import type { WireCut } from "./assembly.ts"; // round 6: the power track's wire-cut model is the one used
 
 /** Pin positions in the case frame from a placed layout (pins on the part's top face). */
@@ -45,6 +45,8 @@ export interface BomLine {
   refs: string;
   qty: number;
   name: string;
+  /** What is printed on the part / goes in KiCad's value field ("100k", "1uF", "MCP1700-3.3"), "" when none. */
+  value: string;
   mpn: string;
   manufacturer: string;
   lcsc: string;
@@ -70,7 +72,9 @@ export function bomLines(project: Project, registry: PartRegistry, opts: { solde
   const out: BomLine[] = [];
   for (const g of groups.values()) {
     const spec = registry.get(g.type)?.spec;
-    const label = partLabel(project.parts.find((p) => p.id === g.ids[0])!, registry);
+    const first = project.parts.find((p) => p.id === g.ids[0])!;
+    const label = partLabel(first, registry);
+    const value = g.standIn ? "" : (partValue(first, registry) ?? "");
     const s = g.standIn ? undefined : spec?.sourcing;
     const price = !g.standIn && spec?.price_usd !== undefined ? spec.price_usd : "";
     out.push({
@@ -78,6 +82,7 @@ export function bomLines(project: Project, registry: PartRegistry, opts: { solde
       refs: g.ids.join(" "),
       qty: g.ids.length,
       name: label.name,
+      value,
       mpn: s?.mpn ?? "",
       manufacturer: s?.manufacturer ?? "",
       lcsc: s?.lcsc ?? "",
@@ -93,29 +98,35 @@ export function bomLines(project: Project, registry: PartRegistry, opts: { solde
   }
   if (opts.soldered) {
     const total = (awg: number) => opts.cuts.filter((c) => c.gauge_awg === awg).reduce((a, c) => a + c.length_mm, 0);
-    const add = (name: string, generic: string, qty: number, notes: string, unit: number | "" = "") => out.push({ line: out.length + 1, refs: "", qty, name, mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic, unit_usd: unit, ext_usd: unit === "" ? "" : Math.round(unit * qty * 100) / 100, buy_url: "", source: "assembly", notes });
+    const add = (name: string, generic: string, qty: number, notes: string, unit: number | "" = "") => out.push({ line: out.length + 1, refs: "", qty, name, value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic, unit_usd: unit, ext_usd: unit === "" ? "" : Math.round(unit * qty * 100) / 100, buy_url: "", source: "assembly", notes });
     if (total(26)) add("Hook-up wire 26 AWG", "Silicone stranded wire 26 AWG, assorted colours", 1, `${(total(26) / 1000).toFixed(2)} m in ${opts.cuts.filter((c) => c.gauge_awg === 26).length} cuts (WIRE-CUTS.csv)`);
     if (total(24)) add("Hook-up wire 24 AWG", "Silicone stranded wire 24 AWG, red and black", 1, `${(total(24) / 1000).toFixed(2)} m in ${opts.cuts.filter((c) => c.gauge_awg === 24).length} cuts (power)`);
     add("Heat-shrink tube", "Heat-shrink 1.5 mm and 3 mm, 2:1", 1, "over every splice and resistor lead");
     add("Foam tape", "Double-sided foam tape 1 mm", 1, "holds modules without standoffs");
   } else if (project.wires.length) {
-    out.push({ line: out.length + 1, refs: "", qty: project.wires.length, name: "Jumper wires", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: "Dupont jumper wires 20 cm, male-male / male-female", unit_usd: "", ext_usd: "", buy_url: "", source: "assembly", notes: "breadboard build" });
+    out.push({ line: out.length + 1, refs: "", qty: project.wires.length, name: "Jumper wires", value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: "Dupont jumper wires 20 cm, male-male / male-female", unit_usd: "", ext_usd: "", buy_url: "", source: "assembly", notes: "breadboard build" });
   }
   if (opts.screws) {
-    out.push({ line: out.length + 1, refs: "", qty: opts.screws.count, name: "Screw", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: opts.screws.size, unit_usd: "", ext_usd: "", buy_url: "", source: "case", notes: "closes the case" });
-    out.push({ line: out.length + 1, refs: "", qty: opts.screws.count, name: "Heat-set insert", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: opts.screws.inserts, unit_usd: "", ext_usd: "", buy_url: "", source: "case", notes: "" });
+    out.push({ line: out.length + 1, refs: "", qty: opts.screws.count, name: "Screw", value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: opts.screws.size, unit_usd: "", ext_usd: "", buy_url: "", source: "case", notes: "closes the case" });
+    out.push({ line: out.length + 1, refs: "", qty: opts.screws.count, name: "Heat-set insert", value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: opts.screws.inserts, unit_usd: "", ext_usd: "", buy_url: "", source: "case", notes: "" });
   }
   return out;
 }
 
+/** "Resistor 1/4 W ... (value as in the BOM)" → "... 100k" so the description itself names the value. */
+function withValue(generic: string, value: string): string {
+  if (!value) return generic;
+  return /\(value as in the BOM\)/.test(generic) ? generic.replace(/\(value as in the BOM\)/, value) : generic;
+}
+
 export function bomCsv(lines: BomLine[]): string {
-  const cols: (keyof BomLine)[] = ["line", "refs", "qty", "name", "mpn", "manufacturer", "lcsc", "jlc", "package", "generic", "unit_usd", "ext_usd", "buy_url", "source", "notes"];
+  const cols: (keyof BomLine)[] = ["line", "refs", "qty", "name", "value", "mpn", "manufacturer", "lcsc", "jlc", "package", "generic", "unit_usd", "ext_usd", "buy_url", "source", "notes"];
   return [cols.join(","), ...lines.map((l) => cols.map((c) => csvCell(l[c])).join(","))].join("\n") + "\n";
 }
 
 export function bomMd(lines: BomLine[], title: string): string {
   const total = lines.reduce((a, l) => a + (typeof l.ext_usd === "number" ? l.ext_usd : 0), 0);
-  return [`# BOM: ${title}`, "", "| # | Refs | Qty | Part | MPN | What to ask for | Unit USD |", "| --- | --- | --- | --- | --- | --- | --- |", ...lines.map((l) => `| ${l.line} | ${l.refs || "–"} | ${l.qty} | ${l.name} | ${l.mpn || "–"} | ${l.generic || "–"} | ${l.unit_usd === "" ? "–" : l.unit_usd.toFixed(2)} |`), "", `Parts total about **USD ${total.toFixed(2)}** (typical single-unit prices; volume prices are lower).`, "", "LCSC / JLC columns are filled only for numbers checked on lcsc.com; empty means: quote from the MPN or the description."].join("\n") + "\n";
+  return [`# BOM: ${title}`, "", "| # | Refs | Qty | Part | Value | MPN | What to ask for | Unit USD |", "| --- | --- | --- | --- | --- | --- | --- | --- |", ...lines.map((l) => `| ${l.line} | ${l.refs || "–"} | ${l.qty} | ${l.name} | ${l.value || "–"} | ${l.mpn || "–"} | ${withValue(l.generic, l.value) || "–"} | ${l.unit_usd === "" ? "–" : l.unit_usd.toFixed(2)} |`), "", `Parts total about **USD ${total.toFixed(2)}** (typical single-unit prices; volume prices are lower).`, "", "LCSC / JLC columns are filled only for numbers checked on lcsc.com; empty means: quote from the MPN or the description."].join("\n") + "\n";
 }
 
 export function netlistCsv(project: Project): string {
@@ -139,7 +150,8 @@ export function kicadNetlist(project: Project, registry: PartRegistry): string {
   const q = (s: string) => `"${s.replace(/"/g, "'")}"`;
   const comps = project.parts.map((p) => {
     const spec = registry.get(p.type)?.spec;
-    return `    (comp (ref ${q(p.id)})\n      (value ${q(spec?.sourcing?.mpn ?? spec?.name ?? p.type)})\n      (footprint ${q(spec?.sourcing?.package ?? spec?.footprint ?? "")})\n      (libsource (lib "jumper") (part ${q(p.type)}))\n      (fields (field (name "Description") ${q(spec?.sourcing?.generic ?? spec?.name ?? p.type)})))`;
+    const value = p.standIn ? undefined : partValue(p, registry);
+    return `    (comp (ref ${q(p.id)})\n      (value ${q(value ?? spec?.sourcing?.mpn ?? spec?.name ?? p.type)})\n      (footprint ${q(spec?.sourcing?.package ?? spec?.footprint ?? "")})\n      (libsource (lib "jumper") (part ${q(p.type)}))\n      (fields (field (name "Description") ${q(spec?.sourcing?.generic ?? spec?.name ?? p.type)})))`;
   });
   const nets = buildNets(project).map((n, i) => `    (net (code ${i + 1}) (name ${q(netName(n.pins, i))})\n${n.pins.map((p) => `      (node (ref ${q(p.part)}) (pin ${q(p.pin)}))`).join("\n")})`);
   return `(export (version D)\n  (design\n    (source "jumper.json")\n    (tool "Jumper")\n    (comment (number 1) (value ${q(project.name)})))\n  (components\n${comps.join("\n")})\n  (nets\n${nets.join("\n")}))\n`;

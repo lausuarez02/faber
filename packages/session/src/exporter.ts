@@ -18,6 +18,50 @@ function isAgentMade(registry: PartRegistry, type: string): boolean {
   return registry.get(type)?.fidelity.origin === "agent-made";
 }
 
+const UNIT_SCALE: Record<string, number> = { "Ω": 1, ohm: 1, kΩ: 1e3, MΩ: 1e6, F: 1, mF: 1e-3, µF: 1e-6, uF: 1e-6, nF: 1e-9, pF: 1e-12, H: 1, mH: 1e-3, µH: 1e-6, uH: 1e-6, nH: 1e-9 };
+
+/** 100000 → "100k", 4700 → "4.7k", 1e-6 → "1u", 1e-7 → "100n" (the way values are written on parts and in KiCad). */
+export function engValue(v: number): string {
+  const steps: [number, string][] = [[1e9, "G"], [1e6, "M"], [1e3, "k"], [1, ""], [1e-3, "m"], [1e-6, "u"], [1e-9, "n"], [1e-12, "p"]];
+  for (const [k, s] of steps)
+    if (Math.abs(v) >= k * 0.9995) {
+      const n = v / k;
+      return `${Number(n.toPrecision(3))}${s}`;
+    }
+  return String(v);
+}
+
+/**
+ * The value a factory reads off a part (what goes on the reel or in KiCad's value field): a
+ * resistor's "100k", a capacitor's "1uF", an inductor's "10uH", a chip variant ("MCP1700-3.3",
+ * "BC547"), an LED colour, a cell capacity ("500mAh"). Undefined for parts without one.
+ */
+export function partValue(p: PartInstance, registry: PartRegistry): string | undefined {
+  const spec = registry.get(p.type)?.spec;
+  if (!spec?.props) return undefined;
+  const val = (id: string) => {
+    const def = spec.props!.find((d) => d.id === id);
+    if (!def) return undefined;
+    const v = p.props?.[id] ?? def.default;
+    return v === undefined || v === null || v === "" ? undefined : { v, unit: (def as { unit?: string }).unit ?? "" };
+  };
+  for (const [id, suffix] of [["resistance", ""], ["capacitance", "F"], ["inductance", "H"]] as const) {
+    const x = val(id);
+    if (x && typeof x.v === "number") return engValue(x.v * (UNIT_SCALE[x.unit] ?? 1)) + suffix;
+  }
+  for (const id of ["value", "model", "variant", "chip"]) {
+    const x = val(id);
+    if (x && (typeof x.v === "string" || typeof x.v === "number")) return String(x.v);
+  }
+  const cap = val("capacity");
+  if (cap && typeof cap.v === "number" && /mAh/i.test(cap.unit)) return `${cap.v}mAh`;
+  if (spec.id === "led" || spec.id === "rgb-led") {
+    const c = val("color");
+    if (c && typeof c.v === "string") return c.v;
+  }
+  return undefined;
+}
+
 /** How a part instance is described to the person who builds it. */
 export function partLabel(p: PartInstance, registry: PartRegistry): { name: string; note: string } {
   const spec = registry.get(p.type)?.spec;
@@ -39,7 +83,7 @@ export function bomMarkdown(project: Project, registry: PartRegistry, style: Ass
     g.ids.push(p.id);
     groups.set(k, g);
   }
-  const lines = [`# Bill of materials: ${project.name}`, "", "| Qty | Part | Value / options | Ids | Buy | Note |", "| --- | --- | --- | --- | --- | --- |"];
+  const lines = [`# Bill of materials: ${project.name}`, "", "| Qty | Part | Value | Options | Ids | Buy | Note |", "| --- | --- | --- | --- | --- | --- | --- |"];
   const standIns: string[] = [];
   const agentMade: string[] = [];
   for (const g of groups.values()) {
@@ -50,22 +94,23 @@ export function bomMarkdown(project: Project, registry: PartRegistry, style: Ass
     const made = !g.p.standIn && isAgentMade(registry, g.p.type);
     const name = g.p.standIn ? `**${label.name}**` : made ? `${label.name} (${AGENT_MADE_LABEL})` : label.name;
     const note = made ? "made by the agent from a description; check it against the real part's datasheet" : label.note;
-    lines.push(`| ${g.ids.length} | ${name} | ${props} | ${g.ids.join(", ")} | ${links} | ${note || "–"} |`);
+    const value = g.p.standIn ? undefined : partValue(g.p, registry);
+    lines.push(`| ${g.ids.length} | ${name} | ${value ?? "–"} | ${props} | ${g.ids.join(", ")} | ${links} | ${note || "–"} |`);
     if (g.p.standIn) standIns.push(`- **${g.ids.join(", ")}**: buy a ${g.p.standIn}. Jumper had no such part, so a ${spec?.name ?? g.p.type} stood in for it: the tests checked the firmware against the stand-in, not the real part.`);
     else if (isAgentMade(registry, g.p.type)) agentMade.push(`- **${g.ids.join(", ")}** (${spec?.name ?? g.p.type}): ${AGENT_MADE_LABEL}. Its pins and behaviour came from the agent's description; check them against the real part's datasheet before wiring.`);
   }
   const wires = project.wires.length;
   if (style === "soldered") {
     // round 6 power: hand-wired in a case: cut wire per gauge (WIRE-CUTS.csv), no breadboard, no dupont.
-    for (const t of wireTotals(cuts)) lines.push(`| ${(t.total_mm / 1000).toFixed(1)} m | Stranded silicone hook-up wire, ${t.gauge_awg} AWG (${t.gauge_awg <= 24 ? "power and ground" : "signals"}) | ${t.count} pieces, see WIRE-CUTS.csv | – | ${searchLinks(`${t.gauge_awg} AWG silicone wire`)} | lengths include 20 % spare |`);
+    for (const t of wireTotals(cuts)) lines.push(`| ${(t.total_mm / 1000).toFixed(1)} m | Stranded silicone hook-up wire, ${t.gauge_awg} AWG (${t.gauge_awg <= 24 ? "power and ground" : "signals"}) | – | ${t.count} pieces, see WIRE-CUTS.csv | – | ${searchLinks(`${t.gauge_awg} AWG silicone wire`)} | lengths include 20 % spare |`);
     if (wires) {
-      lines.push(`| 1 | Heat-shrink tubing assortment (1.5 to 3 mm) | – | – | ${searchLinks("heat shrink tubing assortment")} | one piece over every soldered joint that could touch another |`);
-      lines.push(`| 1 | Rosin-core solder, 0.5 to 0.8 mm | – | – | ${searchLinks("rosin core solder 0.6mm")} | – |`);
+      lines.push(`| 1 | Heat-shrink tubing assortment (1.5 to 3 mm) | – | – | – | ${searchLinks("heat shrink tubing assortment")} | one piece over every soldered joint that could touch another |`);
+      lines.push(`| 1 | Rosin-core solder, 0.5 to 0.8 mm | – | – | – | ${searchLinks("rosin core solder 0.6mm")} | – |`);
     }
   } else {
-    if (wires) lines.push(`| ${wires} | Jumper wires (dupont, male-male / male-female as needed) | – | – | ${searchLinks("dupont jumper wires")} | – |`);
+    if (wires) lines.push(`| ${wires} | Jumper wires (dupont, male-male / male-female as needed) | – | – | – | ${searchLinks("dupont jumper wires")} | – |`);
     if (project.parts.some((p) => !registry.get(p.type)?.spec || registry.get(p.type)!.spec.category !== "board")) {
-      lines.push(`| 1 | Half-size breadboard | 400 points | – | ${searchLinks("half size breadboard")} | – |`);
+      lines.push(`| 1 | Half-size breadboard | – | 400 points | – | ${searchLinks("half size breadboard")} | – |`);
     }
   }
   if (standIns.length) lines.push("", "## STAND-IN parts (not what you buy)", "", ...standIns);
@@ -123,10 +168,21 @@ export function wiringMarkdown(project: Project, registry: PartRegistry): string
     const p = inst.get(part);
     const spec = p ? registry.get(p.type)?.spec : undefined;
     const ps = spec?.pins.find((x) => x.id === pin);
-    const base = ps && ps.label !== pin ? `${part}.${pin} (${ps.label})` : `${part}.${pin}`;
+    const v = p && !p.standIn ? partValue(p, registry) : undefined;
+    const id = v ? `${part} [${v}]` : part;
+    const base = ps && ps.label !== pin ? `${id}.${pin} (${ps.label})` : `${id}.${pin}`;
     return p?.standIn ? `${base} [STAND-IN for ${p.standIn}]` : base;
   };
   const lines = [`# Wiring: ${project.name}`, ""];
+  const valued = project.parts.flatMap((p) => {
+    const v = p.standIn ? undefined : partValue(p, registry);
+    return v ? [{ p, v }] : [];
+  });
+  if (valued.length) {
+    lines.push("## Values", "", "| Id | Part | Value |", "| --- | --- | --- |");
+    for (const { p, v } of valued) lines.push(`| ${p.id} | ${partLabel(p, registry).name} | ${v} |`);
+    lines.push("");
+  }
   const flagged = project.parts.filter((p) => p.standIn || isAgentMade(registry, p.type));
   if (flagged.length) {
     lines.push("## Parts to check before wiring", "", "| Id | Real part | Note |", "| --- | --- | --- |");

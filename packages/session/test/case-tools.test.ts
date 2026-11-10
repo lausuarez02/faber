@@ -43,7 +43,7 @@ describe("case tools", () => {
     async () => {
       const r = await call("design_case", { shape: "rounded-box", why: "a box first" });
       expect(r.ok).toBe(true);
-      expect(r.pocket).toMatch(/fits|tight/);
+      expect(r.pocket).toMatch(/fits|tight|no/); // thickness first: the Muse in a box is about 24.7 mm thick (bulky)
       expect(r.size_mm.w).toBeGreaterThan(30);
       expect(r.image_files.map((p: string) => p.split("/").slice(-2).join("/"))).toEqual(["renders/front.png", "renders/exploded.png"]);
       for (const f of ["stl/front.stl", "stl/back.stl", "stl/cap-pet.stl", "case.3mf", "step/assembly.step", "step/front.step", "step/back.step", "renders/front.png", "renders/back.png", "renders/exploded.png", "renders/inside.png", "drawing/drawing.svg", "PRINT.md", "report.json", "manifest.json"]) expect(existsSync(join(dir, "case", f)), f).toBe(true);
@@ -104,7 +104,7 @@ describe("case tools", () => {
       // the fixture has no firmware: the pack says so and how to fix it
       expect(r.missing.find((m: { item: string }) => m.item === "firmware/")).toMatchObject({ fix: expect.stringContaining("build") });
       const bom = readFileSync(join(r.dir, "BOM.csv"), "utf8").split("\n");
-      expect(bom[0]).toBe("line,refs,qty,name,mpn,manufacturer,lcsc,jlc,package,generic,unit_usd,ext_usd,buy_url,source,notes");
+      expect(bom[0]).toBe("line,refs,qty,name,value,mpn,manufacturer,lcsc,jlc,package,generic,unit_usd,ext_usd,buy_url,source,notes");
       expect(bom.find((l) => l.startsWith("1,xiao,"))).toContain("102010428");
       expect(bom.some((l) => l.includes("Heat-set insert"))).toBe(true); // screws closure from update_case
       expect(bom.some((l) => /breadboard|Dupont/i.test(l))).toBe(false); // soldered build
