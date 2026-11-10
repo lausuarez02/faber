@@ -70,6 +70,66 @@ missing.
 - **`price_usd`**: one unit from a generic distributor or the maker's shop, not a bulk price.
 - **`buy_links`**: `https://` only; search URLs are fine and age better than product pages.
 
+### Mechanical and sourcing (round 6)
+
+Two optional blocks, always the **last keys** of `part.json` (after `tags`), written by the case
+track (decision 0004, R1; [docs/enclosures.md](enclosures.md)). `src/spec/mechanical.test.ts`
+requires `mechanical` for every part a shipped example uses whose category is board, display,
+input, sensor, power, output or communication, and `sourcing.generic` for every part.
+
+**Part frame** (mm): look down at the part's top face, oriented like its `visual.svg`. Origin = the
+top-left corner of the `dimensions_mm` footprint; **+x right (along w), +y down (along h), +z up out
+of the top face, z = 0 at the bottom of the body**. A part whose drawing is turned a quarter
+(its viewBox aspect is h:w, like the portrait XIAO) still uses `dimensions_mm` for the frame; its
+drawing's top edge is the part's -x edge.
+
+```jsonc
+"mechanical": {
+  "pcb_mm": 1.0,                 // PCB thickness
+  "keepout_top_mm": 1.5,         // room above the top face (wires, solder joints)
+  "keepout_bottom_mm": 0.5,      // room below (leads, header pins)
+  "soft": false,                 // LiPo pouch: a cradle with 10 % swell room, never a boss or screw
+  "outline": "rect",             // or "round" (a disc of diameter w centred in the box)
+  "outline_parts": [             // or the footprint as a union (overrides outline), e.g. the GC9A01:
+    { "shape": "round", "x": 18, "y": 23.2, "d": 35.4 },          //   round PCB (centre, diameter)
+    { "shape": "rect", "x": 5.7, "y": 0.6, "w": 24.6, "h": 7.3 }  //   + header tab (top-left, size)
+  ],
+  "mounting_holes": [{ "x": 2.5, "y": 2.5, "d": 2.2 }],
+  "features": [
+    { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 8.75, "z": 1.9, "w": 9, "h": 3.2,
+      "connector": "usb-c", "plug_clearance_mm": 1.5, "protrude_mm": 1.0 },
+    { "id": "active-area", "kind": "screen", "face": "+z", "x": 18, "y": 23.2, "shape": "round", "d": 32.4, "bezel_mm": 1.2 },
+    { "id": "lever", "kind": "switch", "face": "+z", "x": 4.3, "y": 1.8, "z": 3.5, "w": 1.5, "h": 1.5, "protrude_mm": 4, "travel_mm": 2 }
+  ],
+  "source": "datasheet"          // or "typical module", "measured": printed in the drawing notes
+},
+"sourcing": { "mpn": "102010428", "manufacturer": "Seeed Studio", "package": "module 21 x 17.5 mm", "generic": "Seeed XIAO RP2040 (RP2040, USB-C, castellated pads)" }
+```
+
+- **`face`**: `+z` (top), `-z`, `+x`, `-x`, `+y` (the bottom edge in the drawing), `-y`.
+- **`kind`**: `screen` (window over the active area; `bezel_mm` = how much the window may overlap
+  the frame), `button` (`travel_mm`; the case prints a plunger), `switch` and `knob` (a lever or
+  shaft that pokes through a slot / hole), `connector` (opening of `w + 2 × plug_clearance_mm`;
+  USB-C plugs need about 1.5), `led` (a light pipe for SMD LEDs, a hole for 5 mm domes),
+  `sensor-window` (PIR dome, ultrasonic cans, LDR: an aperture), `grille` (buzzer / mic: sound
+  holes), `vent`, `antenna` (keep thick walls and metal away).
+- **Position**: `x`, `y` = centre on the face. On a side face one of them is the edge itself (0, w
+  or h) and **`z` is required** (height of the centre). On ±z faces `z` defaults to `d` / 0.
+- **`protrude_mm`**: how far the feature stands out *beyond the face point*: a USB receptacle past
+  the PCB edge, or a lever / shaft / dome. When `dimensions_mm.d` already includes the lever (a
+  slide switch is 7.5 mm with its 4 mm lever), give `z` = the body top (3.5) so `z + protrude_mm = d`.
+  Levers, shafts and domes (`switch`, `knob`, `sensor-window`, `led` with `protrude_mm`) go through
+  the wall; buttons stay inside and get a plunger.
+- **Size**: `shape: "rect"` (default) uses `w` (along x on ±z / ±y faces, along y on ±x faces) and
+  `h` (y on ±z faces, z on side faces); `"round"` uses `d`.
+- **`expose`**: default true for screen, button, switch, knob, connector, led, sensor-window,
+  grille. Set `false` for things nobody reaches in the finished device (a board's reset button,
+  its status LED).
+- **`sourcing`**: `mpn` / `manufacturer` only when certain, `generic` always (what a supplier can
+  quote from). **LCSC / JLC numbers only after checking them on lcsc.com / jlcpcb.com**; the spec
+  test keeps a list of checked numbers, so a guessed one fails.
+- Agent-made parts (`create_part`) accept the same two blocks.
+
 ### Pins
 
 ```json

@@ -427,3 +427,28 @@ Shared files and how they are touched:
   parts too, uses `assembly.ts`, regenerates the Muse case on the merged project). After each
   merge: `pnpm gen`, `pnpm typecheck`, `pnpm test`; e2e after the last. A track whose test depends
   on a later track writes it against the contract and lists it in its report.
+
+### Case track: changes to the contracts (round 6, case branch)
+
+- **R1, addition**: `mechanical.outline_parts` (optional): the footprint as a union of rects
+  (top-left x, y, w, h) and discs (centre x, y, d) in the part frame; overrides `outline`. The
+  GC9A01 module is a 35.4 mm round PCB with a header tab off-centre, which neither `rect` nor a
+  centred `round` describes. One line in `packages/sim-core/src/part.ts`, marked `// round 6 case`.
+- **R1, clarification** (docs/part-spec.md): `protrude_mm` is measured beyond the feature's face
+  point; when `dimensions_mm.d` already includes a lever / shaft / dome, the feature gives `z` = the
+  body top so `z + protrude_mm = d`. Parts whose drawing is turned a quarter (XIAO, Nano,
+  RP2040-Zero) still use `dimensions_mm` for the frame; the drawing's top edge is the part's -x.
+- **R2 / R3 fields were not saved**: `serializeProject` (project-format) and the undo entity map
+  (`session/src/history.ts`) did not carry `assembly`, `power` or `enclosure`. The case branch adds
+  all three generically (the same lines the power track needs); if both branches add them, keep one.
+- **R2 wire cuts**: `assembly.ts` is not on the case branch, so the factory pack uses
+  `caseWireCuts` in `packages/session/src/manufacturing.ts` with the same `WireCut` shape and the
+  case layout's pin positions. After power merges, the lead can point the pack at
+  `assembly.wireCuts` (one call in `tools/case.ts`).
+- **R4 CLI**: `jumper <tool> '<json>'` works for every tool (a default branch in
+  `apps/cli/src/main.ts` `toOp`). **MCP**: tools may return `image_files` (absolute PNG paths);
+  `toContent` inlines them (`packages/mcp/src/server.ts`, 7 lines). `custom/compile.ts` passes
+  `mechanical` / `sourcing` through to the compiled spec (2 lines).
+- **IGES**: the replicad-opencascadejs 1.1.0 build has no IGES writer; the pack ships STEP AP214
+  and says how to convert.
+- **Web**: a Case entry in the phone ⋯ menu as well as the desktop button (`shell/TopActions.tsx`).

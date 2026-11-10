@@ -7,6 +7,18 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 6, case track (branch `round6/case`, not merged yet)
+
+Cases and the factory pack ([docs/enclosures.md](docs/enclosures.md)): `design_case` /
+`update_case` / `get_case` / `export_manufacturing` (MCP + CLI), a Case view in the web app, the
+`mechanical` + `sourcing` data in all 41 parts, and the Muse's reference case
+(`examples/agent-built/claude-pocket-muse/case/`: pebble 76.3 × 70.3 × 25 mm "tight", puck variant
+63.1 × 55.2 × 32 mm). Checks: `packages/enclosure/test/*`, `packages/session/test/case-tools.test.ts`,
+`apps/cli/test/case-routes.test.ts`, `packages/parts/src/spec/mechanical.test.ts`,
+`apps/web/e2e/case-view.spec.ts`. Known gaps: pebble edges stay nearly square where a USB port sits
+near the back; no IGES; LCSC numbers empty until checked; wire lengths are straight-line estimates;
+the reference case predates the power track's re-wire (regenerate after the merge).
+
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 
 Six tracks merged into main (decision [0003](docs/decisions/0003-round5-see-it-work.md)). Checks
