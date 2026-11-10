@@ -159,7 +159,17 @@ export function CodeEditor() {
 
   const dirtyPaths = () => [...buffers.current].filter(([, b]) => b.text !== b.saved).map(([p]) => p);
 
-  const save = async (): Promise<boolean> => {
+  /** The save in flight, so closing right after Save waits for it instead of calling the edit unsaved. */
+  const saving = useRef<Promise<boolean> | undefined>(undefined);
+  const save = (): Promise<boolean> => {
+    if (saving.current) return saving.current;
+    const p = saveNow().finally(() => {
+      if (saving.current === p) saving.current = undefined;
+    });
+    saving.current = p;
+    return p;
+  };
+  const saveNow = async (): Promise<boolean> => {
     if (!editable) return false;
     const dirty = dirtyPaths();
     if (!dirty.length) return true;
@@ -217,7 +227,8 @@ export function CodeEditor() {
   buildRef.current = build;
 
   if (!code.open) return null;
-  const close = () => {
+  const close = async () => {
+    if (saving.current) await saving.current;
     if (dirtyPaths().length && !window.confirm("Discard the unsaved changes?")) return;
     useProjectsUi.getState().closeCode();
   };
@@ -248,7 +259,7 @@ export function CodeEditor() {
               <Lock size={13} strokeWidth={STROKE} aria-hidden /> Read-only
             </span>
           )}
-          <button type="button" className="icon-btn" aria-label="Close the code editor" onClick={close} data-testid="code-close">
+          <button type="button" className="icon-btn" aria-label="Close the code editor" onClick={() => void close()} data-testid="code-close">
             <X size={18} strokeWidth={STROKE} aria-hidden />
           </button>
         </div>

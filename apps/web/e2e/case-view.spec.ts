@@ -46,18 +46,6 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
   };
 }
 
-/** A fresh JUMPER_HOME lands on the Projects page (round 6 switch): go back to the canvas. */
-async function dismissProjectsHome(page: Page): Promise<void> {
-  const home = page.getByTestId("projects-home");
-  try {
-    await home.waitFor({ state: "visible", timeout: 6000 });
-  } catch {
-    return;
-  }
-  await home.getByTestId("projects-close").click();
-  await expect(home).toHaveCount(0);
-}
-
 async function openCase(page: Page, info: TestInfo): Promise<void> {
   if (info.project.name === "mobile") {
     await page.getByTestId("phone-menu").click();
@@ -72,7 +60,14 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
   try {
     await page.goto(`${s.url}/`);
     await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
-    await dismissProjectsHome(page);
+    // A new browser lands on the Projects page (round 6); the way back names the project on the canvas.
+    const home = page.getByTestId("projects-home");
+    await expect(home).toBeVisible({ timeout: 30_000 });
+    const back = home.getByTestId("projects-close");
+    await expect(back).toHaveText(/Back to Pocket Muse/);
+    await shot(page, info, "case-landing");
+    await back.click();
+    await expect(home).toHaveCount(0);
     if (info.project.name !== "mobile") {
       // the top toolbar's icons say what they are at once on hover
       await page.getByTestId("toggle-case").hover();
