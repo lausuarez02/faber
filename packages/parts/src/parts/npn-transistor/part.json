@@ -1,0 +1,137 @@
+{
+  "id": "npn-transistor",
+  "name": "NPN transistor (2N2222 / BC547)",
+  "category": "passive",
+  "description": "General-purpose NPN bipolar transistor: a small base current (B) lets up to hFE times more flow from collector (C) to emitter (E). Low-side switch: load between the supply and C, E to GND, GPIO → 1 kΩ → B. 2N2222 for up to 600 mA, BC547 for up to 100 mA. Pinout E-B-C as drawn (check: BC547 is C-B-E seen from the flat face).",
+  "pins": [
+    {
+      "id": "E",
+      "label": "Emitter",
+      "x": 14,
+      "y": 62,
+      "type": "passive",
+      "description": "Emitter: to GND in a low-side switch."
+    },
+    {
+      "id": "B",
+      "label": "Base",
+      "x": 30,
+      "y": 62,
+      "type": "passive",
+      "description": "Base: from the GPIO through a 1 kΩ resistor (never straight to a pin or a supply)."
+    },
+    {
+      "id": "C",
+      "label": "Collector",
+      "x": 46,
+      "y": 62,
+      "type": "passive",
+      "description": "Collector: to the load's − side (the load's + to the supply)."
+    }
+  ],
+  "size": {
+    "w": 60,
+    "h": 70
+  },
+  "props": [
+    {
+      "id": "model",
+      "label": "Model",
+      "type": "enum",
+      "default": "2N2222",
+      "options": [
+        {
+          "value": "2N2222",
+          "label": "2N2222A / PN2222A (600 mA, hFE ~150)"
+        },
+        {
+          "value": "BC547",
+          "label": "BC547B (100 mA, hFE ~290)"
+        }
+      ],
+      "description": "Which transistor: sets the current gain (hFE) and the limits."
+    }
+  ],
+  "limits": {
+    "maxCurrentmA": 600,
+    "maxVoltage": 40,
+    "vceSatV": 0.2,
+    "vbeOnV": 0.65
+  },
+  "footprint": "TO-92 (4.8 × 3.8 mm), legs at 0.1 in (2.54 mm)",
+  "dimensions_mm": {
+    "w": 4.8,
+    "h": 3.8,
+    "d": 4.8
+  },
+  "mass_g": 0.2,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.05,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=2N2222"
+    },
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-2N2222-transistor.html"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Collector current flows (base driven)."
+    },
+    {
+      "key": "saturated",
+      "type": "boolean",
+      "description": "Fully on: Vce at about 0.2 V, current set by the load."
+    },
+    {
+      "key": "ibmA",
+      "type": "number",
+      "description": "Base current (mA)."
+    },
+    {
+      "key": "icmA",
+      "type": "number",
+      "description": "Collector current (mA)."
+    },
+    {
+      "key": "label",
+      "type": "string",
+      "description": "Part marking (the model prop)."
+    },
+    {
+      "key": "glow",
+      "type": "number",
+      "description": "0..0.35 tint while it conducts (drawing only)."
+    }
+  ],
+  "tags": [
+    "transistor",
+    "npn",
+    "bjt",
+    "2n2222",
+    "bc547",
+    "switch",
+    "low side switch",
+    "amplifier"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 1,
+    "features": [],
+    "source": "datasheet"
+  },
+  "sourcing": {
+    "mpn": "PN2222A",
+    "package": "TO-92",
+    "generic": "NPN general-purpose transistor, TO-92 (2N2222 / BC547)"
+  }
+}

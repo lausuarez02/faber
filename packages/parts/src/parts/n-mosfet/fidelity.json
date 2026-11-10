@@ -1,0 +1,40 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Off below the ~1 V threshold, on above it; the body diode conducts S → D when the drain is pulled below the source."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Switches with each re-solve: no gate charge, no switching losses, PWM edges are ideal."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Rds(on) steps with Vgs (5 Ω at 1.0-1.5 V, 0.1 Ω to 2.5 V, 0.04 Ω to 4.5 V, 0.028 Ω above), from the datasheet's typical curves; the linear (saturation) region is not modelled, so a half-on gate looks like a small resistor, not a current limit."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Reports I²R heating above 1.4 W (SOT-23 on a small board) and over-current; the part does not fail."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "Logic-level switching from a 3.3 V GPIO",
+    "Rds(on) vs gate voltage",
+    "Body diode",
+    "Floating-gate, gate over-voltage and heating diagnostics"
+  ],
+  "doesNotEmulate": [
+    "Gate charge, switching speed and losses at high PWM frequency",
+    "Linear-region current limiting",
+    "Thermal runaway"
+  ],
+  "testOnRealDevice": [
+    "How warm it gets at your load current",
+    "PWM above a few kHz: the gate needs a stronger driver"
+  ]
+}

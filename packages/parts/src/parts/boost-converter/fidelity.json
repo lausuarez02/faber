@@ -1,0 +1,41 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Off below 2 V in, boosting to vout, passing the input through (minus ~0.4 V) when the input is above vout."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Settles instantly with each re-solve: no soft-start, no ripple, no transient response."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Output vout with 0.05 Ω output resistance; input current = vout × Iout / (0.88 × VIN) + 1 mA, so a sagging battery draws more. Real efficiency is 80 to 93 % depending on load and input."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Warns when the switch current (about the input current) passes 2 A or the input passes 24 V; no current limit or thermal shutdown."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "5 V (or any vout) from a 1S LiPo",
+    "Battery current from output power and efficiency",
+    "Under-voltage lock-out",
+    "Pass-through above vout"
+  ],
+  "doesNotEmulate": [
+    "Output ripple and switching noise (a problem for ADC readings and audio)",
+    "Efficiency that varies with load",
+    "Start-up inrush and soft-start",
+    "The trimmer's real setting: check it with a meter"
+  ],
+  "testOnRealDevice": [
+    "Set the trimmer to vout with a meter before connecting the load",
+    "Ripple on the 5 V rail if analog readings jump"
+  ]
+}

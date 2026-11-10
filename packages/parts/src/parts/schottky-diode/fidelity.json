@@ -1,0 +1,40 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Conducts A → C above its knee, blocks the other way."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Switches instantly with each re-solve; no reverse-recovery (a Schottky has almost none)."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Piecewise linear: 0.25 V knee + 0.2 Ω, which gives about 0.27 V at 100 mA and 0.45 V at 1 A (datasheet typical 0.32 / 0.45 V at 25 °C). No exponential curve, no temperature drift."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Warns above 1 A average and above 20 V reverse; the part does not fail. Reverse leakage (up to ~1 mA hot) is not modelled."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "Forward drop in a power path",
+    "Reverse blocking (stops USB back-feeding a battery)",
+    "Over-current and reverse-voltage diagnostics"
+  ],
+  "doesNotEmulate": [
+    "Exponential I-V curve below the knee",
+    "Reverse leakage, which grows a lot with temperature",
+    "Self-heating at 1 A",
+    "Surge and avalanche"
+  ],
+  "testOnRealDevice": [
+    "Measure the drop at your real load (VBUS vs the cell)",
+    "That the stripe faces the board: reversed, the device never powers on from the battery"
+  ]
+}

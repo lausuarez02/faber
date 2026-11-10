@@ -1,0 +1,97 @@
+{
+  "id": "generic-diode",
+  "name": "Signal diode (1N4148)",
+  "category": "passive",
+  "description": "1N4148 small-signal silicon diode: current flows from anode A to cathode C (black stripe) with about 0.7 V drop, blocked the other way. For flyback across a relay coil or small motor, OR-ing signals and reverse-polarity protection of small loads (300 mA max, 200 mA average). For a battery power path use the Schottky (schottky-diode): its 0.3 V drop wastes less of the cell.",
+  "pins": [
+    {
+      "id": "A",
+      "label": "Anode",
+      "x": 10,
+      "y": 20,
+      "type": "passive",
+      "description": "Anode (plain end)."
+    },
+    {
+      "id": "C",
+      "label": "Cathode (stripe)",
+      "x": 80,
+      "y": 20,
+      "type": "passive",
+      "description": "Cathode, the end with the black stripe."
+    }
+  ],
+  "size": {
+    "w": 90,
+    "h": 40
+  },
+  "limits": {
+    "maxCurrentmA": 300,
+    "averageCurrentmA": 200,
+    "maxReverseVoltage": 100,
+    "forwardVoltageAt10mA": 0.72
+  },
+  "footprint": "DO-35 glass axial, body 4 × 1.9 mm, leads bent at 0.3 in (7.62 mm)",
+  "dimensions_mm": {
+    "w": 4,
+    "h": 1.9,
+    "d": 1.9
+  },
+  "mass_g": 0.13,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.05,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=1N4148"
+    },
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-1N4148-diode.html"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Conducting (forward biased above its knee)."
+    },
+    {
+      "key": "currentmA",
+      "type": "number",
+      "description": "Forward current A → C in mA (0 when blocking)."
+    },
+    {
+      "key": "vf",
+      "type": "number",
+      "description": "Voltage across it, A minus C (V): about 0.3 V forward for a Schottky, negative while it blocks."
+    },
+    {
+      "key": "glow",
+      "type": "number",
+      "description": "0..0.4 tint while it carries current (drawing only)."
+    }
+  ],
+  "tags": [
+    "diode",
+    "1n4148",
+    "signal diode",
+    "flyback",
+    "rectifier",
+    "silicon"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "features": [],
+    "source": "datasheet"
+  },
+  "sourcing": {
+    "mpn": "1N4148",
+    "package": "DO-35",
+    "generic": "Small-signal switching diode 100 V 200 mA, DO-35 glass axial (1N4148)"
+  }
+}

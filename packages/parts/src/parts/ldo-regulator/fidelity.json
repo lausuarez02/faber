@@ -1,0 +1,40 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Regulating, dropout and off states; the AP2112 EN pin switches it."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Settles instantly with each re-solve: no start-up time, no line or load transients, no capacitors."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Output 3.3 V with 0.05 Ω output resistance; in dropout VOUT = VIN − the full-load dropout (0.178 V MCP1700, 0.25 V AP2112), which overstates the drop at light load. Input current = output current + quiescent current."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Warns above the rated output current, above 6 V in, and when (VIN − VOUT) × I passes 0.3 W (small package). No current limit or thermal shutdown: the output stays up."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "3.3 V from a LiPo, USB or AA cells",
+    "Dropout at a low battery",
+    "Battery current = load + quiescent",
+    "AP2112 enable pin"
+  ],
+  "doesNotEmulate": [
+    "Load and line transients (needs its 1 µF capacitors in real life)",
+    "Current limit and thermal shutdown",
+    "Dropout that shrinks at light load"
+  ],
+  "testOnRealDevice": [
+    "The 3.3 V rail at your lowest battery voltage",
+    "Stability with your capacitors (MCP1700 is happy with 1 µF ceramic)"
+  ]
+}

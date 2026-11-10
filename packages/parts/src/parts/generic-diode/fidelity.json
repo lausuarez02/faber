@@ -1,0 +1,38 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Conducts A → C above its knee, blocks the other way."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Instant with each re-solve; the 4 ns reverse recovery is not modelled."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Piecewise linear: 0.6 V knee + 4 Ω, about 0.64 V at 10 mA and 1.0 V at 100 mA (datasheet ~0.72 V / 1.0 V). No exponential curve, no temperature drift."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Warns above 300 mA and 100 V reverse; the part does not fail."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "Not a radio part."
+    }
+  },
+  "emulates": [
+    "Forward drop",
+    "Reverse blocking",
+    "Over-current and reverse-voltage diagnostics"
+  ],
+  "doesNotEmulate": [
+    "Exponential I-V curve",
+    "Reverse recovery and capacitance",
+    "Inductive kick (the simulator has no inductance), so a flyback diode does nothing visible here"
+  ],
+  "testOnRealDevice": [
+    "A flyback diode across a coil: stripe towards +"
+  ]
+}

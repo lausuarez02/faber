@@ -1,0 +1,157 @@
+{
+  "id": "ldo-regulator",
+  "name": "3.3 V LDO regulator (MCP1700-3.3 / AP2112K-3.3)",
+  "category": "power",
+  "description": "Low-dropout 3.3 V regulator: makes a clean 3.3 V from a higher input (a LiPo, 5 V USB, 3 × AA). VIN from the source, GND to ground, VOUT to the 3.3 V parts; add 1 µF on VIN and VOUT. MCP1700-3.3: 250 mA, 1.6 µA quiescent (best for batteries), ~0.18 V dropout at full load. AP2112K-3.3: 600 mA, ~0.25 V dropout, EN pin (LOW = off; on breakouts it is tied to VIN, so unconnected = on). From a LiPo it holds 3.3 V down to about 3.5 V, then follows the cell down.",
+  "pins": [
+    {
+      "id": "VIN",
+      "label": "VIN",
+      "x": 16,
+      "y": 62,
+      "type": "power",
+      "voltage": {
+        "min": 2.3,
+        "max": 6
+      },
+      "description": "Input, 2.3 to 6 V (AP2112: 2.5 to 6 V): the battery or 5 V. It needs at least 3.3 V + the dropout to give a full 3.3 V."
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 42,
+      "y": 62,
+      "type": "ground",
+      "description": "Ground, shared by input and output."
+    },
+    {
+      "id": "VOUT",
+      "label": "VOUT",
+      "x": 68,
+      "y": 62,
+      "type": "power",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      },
+      "description": "Regulated 3.3 V output (regulator output) for 3.3 V parts."
+    },
+    {
+      "id": "EN",
+      "label": "EN",
+      "x": 94,
+      "y": 62,
+      "type": "passive",
+      "description": "AP2112K only: enable, HIGH = on, LOW = off (unconnected = on, tied to VIN as on breakout boards). The MCP1700 has no EN: leave it unconnected."
+    }
+  ],
+  "size": {
+    "w": 110,
+    "h": 70
+  },
+  "props": [
+    {
+      "id": "variant",
+      "label": "Chip",
+      "type": "enum",
+      "default": "MCP1700-3.3",
+      "options": [
+        {
+          "value": "MCP1700-3.3",
+          "label": "MCP1700-3.3 (250 mA, 1.6 µA)"
+        },
+        {
+          "value": "AP2112K-3.3",
+          "label": "AP2112K-3.3 (600 mA, EN pin)"
+        }
+      ],
+      "description": "Which regulator: sets the current limit, dropout and quiescent current."
+    }
+  ],
+  "limits": {
+    "maxCurrentmA": 250,
+    "maxVoltage": 6,
+    "minVoltage": 2.3,
+    "dropoutV": 0.178,
+    "quiescentuA": 1.6,
+    "maxPowerW": 0.3
+  },
+  "footprint": "MCP1700-3302E/TO in TO-92 (4.8 × 3.8 mm, 0.1 in legs); AP2112K is SOT-23-5 on a small breakout",
+  "dimensions_mm": {
+    "w": 4.8,
+    "h": 3.8,
+    "d": 4.8
+  },
+  "mass_g": 0.2,
+  "current_ma": {
+    "typ": 0.002,
+    "max": 0.055
+  },
+  "price_usd": 0.4,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=MCP1700-3302E%2FTO"
+    },
+    {
+      "vendor": "LCSC",
+      "url": "https://www.lcsc.com/search?q=AP2112K-3.3"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "state",
+      "type": "string",
+      "description": "\"regulating\" (3.3 V), \"dropout\" (input too low: VOUT follows VIN − dropout) or \"off\"."
+    },
+    {
+      "key": "vin",
+      "type": "number",
+      "description": "Input voltage (V)."
+    },
+    {
+      "key": "vout",
+      "type": "number",
+      "description": "Output voltage (V)."
+    },
+    {
+      "key": "outmA",
+      "type": "number",
+      "description": "Output current (mA)."
+    },
+    {
+      "key": "outOn",
+      "type": "number",
+      "description": "1 while the output is up (drawing only)."
+    },
+    {
+      "key": "label",
+      "type": "string",
+      "description": "e.g. \"3.30 V · 42 mA\"."
+    }
+  ],
+  "tags": [
+    "regulator",
+    "ldo",
+    "3.3v",
+    "3v3",
+    "mcp1700",
+    "ap2112",
+    "voltage regulator",
+    "power",
+    "battery"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 1,
+    "features": [],
+    "source": "datasheet"
+  },
+  "sourcing": {
+    "mpn": "MCP1700-3302E/TO",
+    "manufacturer": "Microchip",
+    "package": "TO-92",
+    "generic": "3.3 V low-dropout linear regulator, 250 mA, low quiescent current, TO-92 (MCP1700-3302E/TO); alternative AP2112K-3.3 SOT-23-5, 600 mA"
+  }
+}

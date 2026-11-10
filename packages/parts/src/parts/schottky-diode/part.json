@@ -1,0 +1,102 @@
+{
+  "id": "schottky-diode",
+  "name": "Schottky diode (1N5817, 1 A 20 V)",
+  "category": "power",
+  "description": "1N5817 Schottky rectifier: lets current through one way (anode A → cathode C, the striped end) with a low drop of about 0.3 V, blocks it the other way. Use it in a power path: battery (or a charger's OUT+) → A, C → the board's 5V / VBUS pin, so a USB cable plugged into the board cannot push current back into the battery. 1 A continuous, 20 V reverse.",
+  "pins": [
+    {
+      "id": "A",
+      "label": "Anode",
+      "x": 10,
+      "y": 20,
+      "type": "passive",
+      "description": "Anode (plain end). Towards the source, e.g. the charger's OUT+ or the switch."
+    },
+    {
+      "id": "C",
+      "label": "Cathode (stripe)",
+      "x": 80,
+      "y": 20,
+      "type": "passive",
+      "description": "Cathode, the end with the stripe. Towards the load, e.g. the board's 5V / VBUS."
+    }
+  ],
+  "size": {
+    "w": 90,
+    "h": 40
+  },
+  "limits": {
+    "maxCurrentmA": 1000,
+    "surgeCurrentmA": 25000,
+    "maxReverseVoltage": 20,
+    "forwardVoltageAt100mA": 0.32,
+    "forwardVoltageAt1A": 0.45
+  },
+  "footprint": "DO-41 axial, body 5.2 × 2.7 mm, leads bent at 0.4 in (10.16 mm)",
+  "dimensions_mm": {
+    "w": 5.2,
+    "h": 2.7,
+    "d": 2.7
+  },
+  "mass_g": 0.35,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.1,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=1N5817"
+    },
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-1N5817-schottky.html"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Conducting (forward biased above its knee)."
+    },
+    {
+      "key": "currentmA",
+      "type": "number",
+      "description": "Forward current A → C in mA (0 when blocking)."
+    },
+    {
+      "key": "vf",
+      "type": "number",
+      "description": "Voltage across it, A minus C (V): about 0.3 V forward for a Schottky, negative while it blocks."
+    },
+    {
+      "key": "glow",
+      "type": "number",
+      "description": "0..0.4 tint while it carries current (drawing only)."
+    }
+  ],
+  "tags": [
+    "diode",
+    "schottky",
+    "1n5817",
+    "rectifier",
+    "reverse polarity",
+    "power path",
+    "or-ing",
+    "backfeed",
+    "power"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 0,
+    "features": [],
+    "source": "datasheet"
+  },
+  "sourcing": {
+    "mpn": "1N5817",
+    "package": "DO-41",
+    "generic": "Schottky rectifier diode 1 A 20 V, DO-41 axial (1N5817)"
+  }
+}

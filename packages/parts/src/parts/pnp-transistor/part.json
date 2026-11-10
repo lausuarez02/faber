@@ -1,0 +1,136 @@
+{
+  "id": "pnp-transistor",
+  "name": "PNP transistor (2N2907 / BC557)",
+  "category": "passive",
+  "description": "General-purpose PNP bipolar transistor: current out of the base (B) lets current flow from the emitter (E) to the collector (C). High-side switch: E to the supply, C to the load's + (load − to GND), base through 1 kΩ to a GPIO that pulls it LOW to switch on (the GPIO must swing to the emitter's voltage to switch it off). 2N2907 up to 600 mA, BC557 up to 100 mA.",
+  "pins": [
+    {
+      "id": "E",
+      "label": "Emitter",
+      "x": 14,
+      "y": 62,
+      "type": "passive",
+      "description": "Emitter: to the supply (+) in a high-side switch."
+    },
+    {
+      "id": "B",
+      "label": "Base",
+      "x": 30,
+      "y": 62,
+      "type": "passive",
+      "description": "Base: through ~1 kΩ to the driving pin; LOW = on."
+    },
+    {
+      "id": "C",
+      "label": "Collector",
+      "x": 46,
+      "y": 62,
+      "type": "passive",
+      "description": "Collector: to the load's + side (load − to GND)."
+    }
+  ],
+  "size": {
+    "w": 60,
+    "h": 70
+  },
+  "props": [
+    {
+      "id": "model",
+      "label": "Model",
+      "type": "enum",
+      "default": "2N2907",
+      "options": [
+        {
+          "value": "2N2907",
+          "label": "2N2907A / PN2907A (600 mA, hFE ~150)"
+        },
+        {
+          "value": "BC557",
+          "label": "BC557B (100 mA, hFE ~290)"
+        }
+      ],
+      "description": "Which transistor: sets the current gain (hFE) and the limits."
+    }
+  ],
+  "limits": {
+    "maxCurrentmA": 600,
+    "maxVoltage": 60,
+    "vceSatV": 0.2,
+    "vbeOnV": 0.65
+  },
+  "footprint": "TO-92 (4.8 × 3.8 mm), legs at 0.1 in (2.54 mm)",
+  "dimensions_mm": {
+    "w": 4.8,
+    "h": 3.8,
+    "d": 4.8
+  },
+  "mass_g": 0.2,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.05,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=2N2907"
+    },
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-2N2907-transistor.html"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "on",
+      "type": "boolean",
+      "description": "Collector current flows (base driven)."
+    },
+    {
+      "key": "saturated",
+      "type": "boolean",
+      "description": "Fully on: Vce at about 0.2 V, current set by the load."
+    },
+    {
+      "key": "ibmA",
+      "type": "number",
+      "description": "Base current (mA)."
+    },
+    {
+      "key": "icmA",
+      "type": "number",
+      "description": "Collector current (mA)."
+    },
+    {
+      "key": "label",
+      "type": "string",
+      "description": "Part marking (the model prop)."
+    },
+    {
+      "key": "glow",
+      "type": "number",
+      "description": "0..0.35 tint while it conducts (drawing only)."
+    }
+  ],
+  "tags": [
+    "transistor",
+    "pnp",
+    "bjt",
+    "2n2907",
+    "bc557",
+    "high side switch",
+    "switch"
+  ],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 1,
+    "features": [],
+    "source": "datasheet"
+  },
+  "sourcing": {
+    "mpn": "PN2907A",
+    "package": "TO-92",
+    "generic": "PNP general-purpose transistor, TO-92 (2N2907 / BC557)"
+  }
+}

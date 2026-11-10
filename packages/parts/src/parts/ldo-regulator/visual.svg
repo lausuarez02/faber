@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 70" width="110" height="70">
+  <rect x="6" y="6" width="98" height="44" rx="4" fill="#1A3A5C" stroke="#E9EDF2" stroke-opacity="0.3" stroke-width="1"/>
+  <rect x="38" y="16" width="34" height="20" rx="2" fill="#20242B" stroke="#5A6474" stroke-width="1"/>
+  <text x="55" y="28.5" font-family="IBM Plex Mono" font-size="5.5" fill="#E9EDF2" text-anchor="middle">LDO 3V3</text>
+  <circle cx="92" cy="14" r="3" fill="#2B3038" stroke="#5A6474" stroke-width="0.8"/>
+  <circle cx="92" cy="14" r="3" fill="#5CF2A1" opacity="0" data-bind="opacity:outOn"/>
+  <text x="55" y="45" font-family="IBM Plex Mono" font-size="5.5" fill="#8A93A0" text-anchor="middle" data-bind="text:label">off</text>
+  <path d="M16 50 V62 M42 50 V62 M68 50 V62 M94 50 V62" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"/>
+  <text x="16" y="58" font-family="IBM Plex Mono" font-size="5" fill="#E9EDF2" text-anchor="middle" dx="9">IN</text>
+  <text x="42" y="58" font-family="IBM Plex Mono" font-size="5" fill="#E9EDF2" text-anchor="middle" dx="9">GND</text>
+  <text x="68" y="58" font-family="IBM Plex Mono" font-size="5" fill="#E9EDF2" text-anchor="middle" dx="9">OUT</text>
+  <text x="94" y="58" font-family="IBM Plex Mono" font-size="5" fill="#E9EDF2" text-anchor="middle" dx="-9">EN</text>
+  <circle data-pin="VIN" cx="16" cy="62" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="42" cy="62" r="3" fill="#C9CED6"/>
+  <circle data-pin="VOUT" cx="68" cy="62" r="3" fill="#C9CED6"/>
+  <circle data-pin="EN" cx="94" cy="62" r="3" fill="#C9CED6"/>
+</svg>
