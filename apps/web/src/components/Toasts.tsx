@@ -6,7 +6,7 @@ export function Toasts() {
   return (
     <div className="toasts" aria-live="polite">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast toast-${t.kind}`} role={t.kind === "error" ? "alert" : "status"}>
+        <div key={t.id} className={`toast toast-${t.kind}`} data-testid="toast" data-kind={t.kind} role={t.kind === "error" ? "alert" : "status"}>
           {t.kind === "error" ? <CircleAlert size={16} strokeWidth={1.8} className="toast-icon" aria-hidden /> : <Info size={16} strokeWidth={1.8} className="toast-icon" aria-hidden />}
           <div className="toast-text">
             <strong>{t.title}</strong>

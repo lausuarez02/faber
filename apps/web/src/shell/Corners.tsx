@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { Activity, ChevronRight, Plug, CircleHelp, GraduationCap, Moon, Sun, SunMoon } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { useUi } from "../lib/ui.ts";
-import { useLive } from "../live/liveStore.ts";
+import { useAgentSteps, useLive } from "../live/liveStore.ts";
 import { AgentPresence } from "../connect/AgentPresence.tsx";
 import { agentLabel, useAgentState } from "../live/agentState.ts";
 import { STROKE } from "./primitives.tsx";
@@ -72,7 +72,7 @@ function StatusPill() {
  */
 export function BottomRight() {
   const mode = useLive((s) => s.mode);
-  const steps = useLive((s) => s.steps);
+  const steps = useAgentSteps(); // round 6 switch: the person's own edits are not "to review"
   const replay = useLive((s) => s.replay);
   const agent = useAgentState();
   const open = useUi((s) => s.panels.includes("agent"));

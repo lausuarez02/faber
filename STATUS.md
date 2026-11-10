@@ -28,6 +28,18 @@ Known gaps (frames): the Tests filmstrip already drew colour screens from its ow
 (unchanged); runs logged before this change stay dark in history (no pixels were kept); FastLED's
 RP2040 PIO driver sends a few bits at 0.216 µs, which the strip reports as a timing warning; TFT_eSPI
 is for RP2040 boards only (the library does not target AVR).
+## Round 6, switch track (branch `round6/switch`, not merged yet)
+
+Opening a project resets everything of the old one (one switch event, decision 0004 R8): the sim
+stops, the old hex never loads into the new board (no false "built for another board"; that error
+now says to build again first), the code card shows the new sketch, toasts / captions / test results
+clear, History and the editor close. An opened example is version 1 (restorable); History counts
+file changes after a restore with `+N −M` lines and says "built" only where the code matches. Your
+own edits (actor `web`) are never pending agent steps. Someone new lands on the Projects page.
+Thumbnails are drawn at start ("Drawing the circuit…" meanwhile); "1 test". `run` says "ran the
+device for 3 s" instead of "ran 3000 ms (now 3000 ms)". Checks: `apps/cli/test/switch-history.test.ts`,
+`packages/session/test/switch-run-summary.test.ts`, `apps/web/src/projects/firstRun.test.ts`,
+`apps/web/src/live/steps.test.ts`, `apps/web/e2e/switch-projects.spec.ts`.
 
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 

@@ -219,6 +219,19 @@
   height: 100%;
   object-fit: contain;
   background: #0f1114;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.pj-thumb img.is-loaded {
+  opacity: 1;
+}
+.pj-thumb-loading span {
+  animation: pj-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pj-pulse {
+  50% {
+    opacity: 0.45;
+  }
 }
 .pj-thumb-empty {
   position: absolute;
@@ -763,4 +776,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 560px;
   }
+}
+
+/* Round 6 (switch): +N / -M lines next to a changed file in History. */
+.pj-change-lines {
+  margin-left: auto;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pj-change-lines .is-add {
+  color: var(--accent);
+}
+.pj-change-lines .is-del {
+  color: var(--error);
 }

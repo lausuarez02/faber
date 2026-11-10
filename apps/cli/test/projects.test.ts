@@ -258,7 +258,8 @@ describe("jumper serve: projects, history, files, build", () => {
     await call("set_part_property", { id: "led1", prop: "color", value: "green", why: "green is calmer" });
     expect(JSON.parse(readFileSync(join(made.body.dir, "jumper.json"), "utf8")).parts.find((p: Json) => p.id === "led1").props.color).toBe("green");
     const ver = await waitFor((m) => m.type === "version");
-    expect(ver).toMatchObject({ version: 1, actor: "mcp", why: "green is calmer" });
+    // Version 1 is the example as it came (round 6), so the first change is version 2.
+    expect(ver).toMatchObject({ version: 2, actor: "mcp", why: "green is calmer" });
 
     // Back to the first one through its card.
     const list = (await get("/api/projects")).body;

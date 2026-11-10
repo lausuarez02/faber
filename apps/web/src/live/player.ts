@@ -1,6 +1,6 @@
 import type { Project } from "@jumper/project-format";
 import type { VisualState } from "@jumper/sim-core";
-import { nextCursorN, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
+import { nextCursorN, noteStepActors, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
 import { setColorFrames, type ColorFrameImage } from "../lib/colorFrames.ts"; // round 6 frames
 
 /**
@@ -144,6 +144,7 @@ export function applyEntry(e: LogEntry, port: CanvasPort): LogFrame[] {
     port.fit();
   }
   if (e.steps) patch.steps = e.steps;
+  if (e.step && e.actor) patch.stepActors = noteStepActors([e], live.stepActors);
   if (e.target) patch.cursor = { part: e.target.part, ...(e.target.pin ? { pin: e.target.pin } : {}), label: e.summary ?? e.op, n: nextCursorN() };
   if (e.file?.content) patch.code = { path: e.file.path, content: e.file.content };
   if (e.op === "run_tests" && e.result && typeof e.result === "object") {

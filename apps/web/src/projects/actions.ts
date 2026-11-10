@@ -4,6 +4,7 @@ import { useLive } from "../live/liveStore.ts";
 import { newProject as newLocalProject } from "../shell/actions.ts";
 import { ApiError, api, serverConnection, type ProjectCard } from "./api.ts";
 import { useProjectsUi } from "./store.ts";
+import { markOpened } from "./firstRun.ts";
 
 /**
  * Opening, creating and switching projects. With the local server the server's active project
@@ -16,10 +17,12 @@ function toastError(title: string, e: unknown): void {
 }
 
 /** The canvas follows the server: after a switch its hello reloads the canvas. Elsewhere, go to the server's root (it redirects to follow). */
-function afterSwitch(name: string): void {
+function afterSwitch(_name: string): void {
+  markOpened();
   useProjectsUi.setState({ home: false, history: false, code: { open: false } });
-  if (useLive.getState().mode === "follow") useJumper.getState().toast({ kind: "info", title: `Opened ${name}` });
-  else location.href = "/";
+  // Following: the server's hello for the new folder switches the canvas (projects/switch.ts), which
+  // resets the old project's state and says "Opened <name>".
+  if (useLive.getState().mode !== "follow") location.href = "/";
 }
 
 /** Open a card from the gallery: projects switch, examples are copied first (C3). */

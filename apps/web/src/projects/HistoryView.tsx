@@ -6,6 +6,7 @@ import { NO_SERVER, actorLabel, ago, api, entityLabel, type VersionDetail, type 
 import { useServer } from "./data.ts";
 import { useProjectsUi } from "./store.ts";
 import { hasColorFrames } from "../lib/colorFrames.ts"; // round 6 frames
+import { emitProjectSwitch } from "../lib/projectSwitch.ts";
 import "./projects.css";
 
 /**
@@ -25,6 +26,7 @@ export function HistoryView() {
   const [confirming, setConfirming] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const followLatest = useRef(true);
+  const projectId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!open) {
@@ -51,6 +53,7 @@ export function HistoryView() {
       .history()
       .then((h) => {
         if (!alive) return;
+        projectId.current = h.id;
         setVersions(h.versions);
         setError(undefined);
         setN((cur) => (followLatest.current || cur === undefined || cur > h.versions.length ? h.versions.length || undefined : cur));
@@ -101,6 +104,8 @@ export function HistoryView() {
       const r = await api.restore(n, `restore version ${n}${current?.why ? ` ("${current.why}")` : ""}`);
       followLatest.current = true;
       useProjectsUi.getState().bump();
+      // Round 6 (R8): the same project re-read (view, caches of other tracks follow it).
+      if (r.step !== null) emitProjectSwitch({ id: projectId.current, reason: "reload" });
       useJumper.getState().toast({ kind: "info", title: r.step === null ? `Already at version ${n}` : `Restored version ${n}`, detail: r.step === null ? r.note : "It is a new version at the end of the timeline, so nothing was lost. Undo brings the newer state back." });
     } catch (e) {
       useJumper.getState().toast({ kind: "error", title: `Could not restore version ${n}`, detail: (e as Error).message });
@@ -175,7 +180,7 @@ export function HistoryView() {
                 {current.why ? <blockquote className="pj-v-why">{current.why}</blockquote> : null}
                 {current.summary ? <p className="pj-v-summary mono">{current.summary}</p> : null}
                 <h3>What changed</h3>
-                <Changes changes={current.changes} />
+                <Changes changes={current.changes} lines={current.lines} />
                 <h3>Firmware</h3>
                 <p className="pj-v-fw">
                   <Cpu size={13} strokeWidth={STROKE} aria-hidden />{" "}
@@ -258,9 +263,9 @@ function Ticks({ versions, current, onPick }: { versions: VersionSummary[]; curr
   );
 }
 
-function Changes({ changes }: { changes: VersionSummary["changes"] }) {
+function Changes({ changes, lines }: { changes: VersionSummary["changes"]; lines?: VersionSummary["lines"] }) {
   const rows = [...changes.added.map((k) => ["added", k] as const), ...changes.removed.map((k) => ["removed", k] as const), ...changes.changed.map((k) => ["changed", k] as const)];
-  if (!rows.length) return <p className="muted pj-v-none">Nothing in the circuit or files (a step was accepted, or the change was undone in the same op).</p>;
+  if (!rows.length) return <p className="muted pj-v-none">Nothing in the circuit or the code changed at this version.</p>;
   return (
     <ul className="pj-changes" data-testid="history-changes">
       {rows.slice(0, 40).map(([how, key]) => {
@@ -270,6 +275,11 @@ function Changes({ changes }: { changes: VersionSummary["changes"] }) {
             <span className="pj-change-sign">{how === "added" ? "+" : how === "removed" ? "−" : "~"}</span>
             <span className="pj-change-kind">{kind}</span>
             <span className="mono">{id}</span>
+            {kind === "file" && lines?.[id] ? (
+              <span className="pj-change-lines mono" data-testid="history-change-lines" title={`${lines[id]!.added} line${lines[id]!.added === 1 ? "" : "s"} added, ${lines[id]!.removed} removed`}>
+                <span className="is-add">+{lines[id]!.added}</span> <span className="is-del">−{lines[id]!.removed}</span>
+              </span>
+            ) : null}
           </li>
         );
       })}

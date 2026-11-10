@@ -14,6 +14,7 @@ import {
   listVersions,
   newProjectFolder,
   projectId,
+  recordSnapshot,
   registerProject,
   registryForProjectDir,
   stillKey, // round 6 frames
@@ -288,14 +289,18 @@ async function thumbSvg(dir: string, project: Project, ctx: RouteContext): Promi
   return composeSvg(project, registry, still ? { states: still.states, liveWires: still.live, ...(still.color ? { color: still.color } : {}) } : {});
 }
 
+/** Where a card's PNG is cached: examples (read-only, C3) under $JUMPER_HOME, projects in their .jumper/. */
+function thumbFile(card: ProjectCard, raw: string): string {
+  const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
+  return card.readOnly ? join(jumperHome(), "thumbs", `${card.id}-${hash}.png`) : join(card.dir, ".jumper", "thumbs", `${hash}.png`);
+}
+
 async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Promise<void> {
   const card = findCard(ctx, id);
   if (!card) return ctx.json(res, 404, noProject(id));
   const { project, raw } = readProject(card.dir);
   if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${join(card.dir, "jumper.json")} is missing or invalid`, `run \`jumper check -p ${card.dir}\``));
-  const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
-  // Examples are read-only (C3): their thumbnails are cached under $JUMPER_HOME.
-  const file = card.readOnly ? join(jumperHome(), "thumbs", `${id}-${hash}.png`) : join(card.dir, ".jumper", "thumbs", `${hash}.png`);
+  const file = thumbFile(card, raw);
   const headers = { "cache-control": "max-age=31536000, immutable" };
   if (existsSync(file)) {
     res.writeHead(200, { "content-type": "image/png", ...headers });
@@ -364,6 +369,8 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
       const file = join(dir, "jumper.json");
       const data = JSON.parse(readFileSync(file, "utf8")) as { name?: string };
       if (data.name !== name) writeFileSync(file, JSON.stringify({ ...data, name }, null, 2) + "\n");
+      // Round 6: the copy as it came is a version, so the person can always go back to it.
+      recordSnapshot(dir, { op: "open_example", why: `opened the example ${source.name}`, summary: `the example ${source.name} as it came`, args: { from: source.id } });
     } else {
       // The same path an agent's new_project takes, so the first version is in the log.
       const s = new ProjectSession({ dir, actor: "web" });
@@ -637,5 +644,38 @@ const versionEvents: ServerHook = (ctx) => {
   };
 };
 
+/**
+ * Round 6 (switch): draw the gallery's thumbnails in the background shortly after the server starts,
+ * so the first Projects page shows every card's circuit instead of blank tiles while each render
+ * (about 1 s, one at a time) runs. Off in unit tests and with JUMPER_WARM_THUMBS=0.
+ */
+const warmThumbnails: ServerHook = (ctx) => {
+  if (process.env.VITEST || process.env.JUMPER_WARM_THUMBS === "0" || !ctx.projects) return;
+  let stopped = false;
+  const timer = setTimeout(() => {
+    void (async () => {
+      let cards: ProjectCard[];
+      try {
+        const l = listing(ctx);
+        cards = [...l.projects, ...l.examples];
+      } catch {
+        return;
+      }
+      for (const card of cards) {
+        if (stopped) return;
+        const { project, raw } = readProject(card.dir);
+        if (!project || !raw || !project.parts.length) continue;
+        const file = thumbFile(card, raw);
+        if (existsSync(file)) continue;
+        await renderThumb(file, card.dir, project, ctx).catch(() => undefined);
+      }
+    })();
+  }, 1500);
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+  };
+};
+
 /** Started with the server, stopped on close. */
-export const projectsHooks: ServerHook[] = [versionEvents];
+export const projectsHooks: ServerHook[] = [versionEvents, warmThumbnails];

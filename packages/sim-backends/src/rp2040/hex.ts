@@ -34,10 +34,14 @@ export function parseRp2040Hex(text: string): { image: Uint8Array; used: number 
       minAddr = Math.min(minAddr, abs);
       const off = abs - FLASH_BASE;
       if (off < 0 || off + n > FLASH_BYTES) {
+        // round 6 switch: the fix names the likely cause (an old or another project's hex), not only the FQBN.
+        const avr = abs < 0x10000;
         throw new FirmwareImageError(
           `the firmware writes to address 0x${abs.toString(16).padStart(8, "0")}, outside the RP2040's flash (0x10000000 to 0x101FFFFF). ` +
-            `Why: ${abs < 0x10000 ? "it was built for another board (an AVR hex starts at 0x0000; build the sketch for the RP2040 board instead)" : "the image is larger than the 2 MB flash or not a flash image"}. ` +
-            `Fix: set firmware.build.fqbn to the board's FQBN (e.g. rp2040:rp2040:seeed_xiao_rp2040) and build again.`,
+            (avr
+              ? "Why: this hex is an AVR image (Arduino Uno / Nano / Mega hexes start at 0x0000), not one built for this RP2040 board: usually an older build or another project's firmware. " +
+                "Fix: build this project's sketch again (Build & Run, or ask the agent to build); only if that build still makes an AVR hex, set firmware.build.fqbn to the board's FQBN (e.g. rp2040:rp2040:seeed_xiao_rp2040)."
+              : "Why: the image is larger than the 2 MB flash, or it is not a flash image. Fix: build the sketch for this RP2040 board (Build & Run) and load the .hex or .uf2 that build writes."),
         );
       }
       for (let i = 0; i < n; i++) image[off + i] = parseInt(line.slice(9 + 2 * i, 11 + 2 * i), 16);

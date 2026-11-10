@@ -108,7 +108,7 @@ describe("firmware images", () => {
       err = e;
     }
     expect(err).toBeInstanceOf(FirmwareImageError);
-    expect(String(err)).toMatch(/outside the RP2040's flash.*Why: it was built for another board.*Fix: set firmware.build.fqbn/);
+    expect(String(err)).toMatch(/outside the RP2040's flash.*Why: this hex is an AVR image.*Fix: build this project's sketch again.*firmware\.build\.fqbn/);
   });
 
   it("writes a UF2 for the RPI-RP2 drive (family 0xE48BFF56, 256-byte payloads)", () => {

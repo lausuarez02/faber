@@ -1124,7 +1124,8 @@ export class ProjectSession {
     const wf = host.worldFields();
     const nearMiss = wf && typeof wf.min_clearance_cm === "number" && wf.min_clearance_cm < 2 && wf.collisions === 0 ? `near miss: the closest gap to a wall or obstacle was ${wf.min_clearance_cm} cm (a real rover scrapes at that distance; sensor noise and wheel slip are not simulated). Fix: turn earlier or slow down, and test a margin with {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3}` : undefined;
     const notes = [built, restarted, nearMiss, args.reset && faults ? `restarted from 0 ms with the injected faults still active (${JSON.stringify(host.faults())}); inject_fault kind "clear" removes them` : undefined, !host.hasFirmware && this.project.firmware ? "no firmware loaded: only the passive circuit runs" : undefined].filter(Boolean);
-    ctx.summary = `ran ${ms} ms (now ${round(host.timeMs)} ms)`;
+    // round 6 switch: plain words, no "ran 3000 ms (now 3000 ms)".
+    ctx.summary = runSummary(round(host.timeMs - t0), round(host.timeMs));
     const displays = this.project.parts.filter((p) => typeof host.sim.partState(p.id)?.pixels === "string").map((p) => p.id);
     return {
       t_ms: round(host.timeMs),
@@ -1249,7 +1250,7 @@ export class ProjectSession {
     const r = await runLive(host.network, (slice) => host.run(slice), ms);
     const serial = host.serialSince(serialFrom);
     host.serialCursor = host.sim.serialText().length;
-    ctx.summary = `ran ${ms} ms live (now ${round(host.timeMs)} ms)`;
+    ctx.summary = `${runSummary(round(host.timeMs - t0), round(host.timeMs))} at real time`; // round 6 switch
     ctx.frames = [host.frame() ?? { vt: round(host.timeMs) }];
     const notes = [built, restarted, this.aiMode === "live" ? undefined : "AI mode is mock, so the mock answered; call set_ai_mode live first for a real model"].filter(Boolean);
     return { t_ms: round(host.timeMs), ran_from_ms: round(t0), ...r, serial: serial.length > 2000 ? `…${serial.slice(-2000)}` : serial, parts: host.compactStates(), ...(notes.length ? { notes } : {}), next: "screenshot to see the screen, read_network_log for the full exchange" };
@@ -1745,3 +1746,14 @@ function trimArgs(args: Record<string, unknown>): Record<string, unknown> {
 
 export { JumperError };
 export type { Json };
+
+// round 6 switch: the `run` summary people read in toasts, captions and the step list.
+/** "ran the device for 3 s" from 0 ms, "ran 2 s more (device clock at 5 s)" when it continued. */
+export function runSummary(ranMs: number, nowMs: number): string {
+  const secs = (ms: number) => {
+    const s = ms / 1000;
+    const text = s >= 10 || Number.isInteger(s) ? String(Math.round(s * 10) / 10) : s.toFixed(1);
+    return `${text} s`;
+  };
+  return Math.abs(nowMs - ranMs) < 1 ? `ran the device for ${secs(ranMs)}` : `ran ${secs(ranMs)} more (device clock at ${secs(nowMs)})`;
+}
