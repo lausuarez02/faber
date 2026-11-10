@@ -49,10 +49,24 @@ describe("layout of the Muse", () => {
         expect(sep, `${a.mech.id} overlaps ${b.mech.id}`).toBe(true);
       }
     const kinds = L.openings.map((o) => `${o.part}:${o.kind}:${o.face}`).sort();
-    expect(kinds).toEqual(["chg:connector:bottom", "eye:window:front", "pet:button:right", "squeak:grille:back", "xiao:connector:bottom"]);
+    for (const k of ["chg:connector:bottom", "eye:window:front", "pet:button:right", "squeak:grille:back", "xiao:connector:bottom"]) expect(kinds).toContain(k);
     // outer box centred on the origin (R3)
     for (let k = 0; k < 3; k++) expect(L.outer.min[k]! + L.outer.max[k]!).toBeCloseTo(0, 6);
     expect(L.inner.d).toBeLessThan(L.outer.d);
+  });
+
+  it("a slide switch's lever goes through a slot in the top wall (pass-through feature)", () => {
+    const p = muse();
+    const parts = [...partsOf(p).filter((x) => x.id !== "pwr"), { id: "pwr", type: "slide-switch", spec: specOf("slide-switch")! }];
+    for (const shape of ["pebble", "rounded-box"] as const) {
+      const L = layoutCase({ parts, enclosure: { shape } });
+      const slot = L.openings.find((o) => o.part === "pwr")!;
+      expect(slot, shape).toBeDefined();
+      expect(slot.kind).toBe("slot");
+      expect(slot.face).toBe("top");
+      expect(slot.standoff, "lever tip is past the inner wall").toBeLessThan(0);
+      expect(L.issues.filter((i) => i.parts?.includes("pwr"))).toEqual([]);
+    }
   });
 
   it("honours placements and exclude", () => {

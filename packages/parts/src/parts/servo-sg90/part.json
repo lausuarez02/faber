@@ -41,7 +41,7 @@
   "mechanical": {
     "keepout_bottom_mm": 0,
     "features": [
-      { "id": "horn", "kind": "knob", "face": "+z", "x": 17.5, "y": 6.1, "shape": "round", "d": 5, "protrude_mm": 4, "description": "output spline" }
+      { "id": "horn", "kind": "knob", "face": "+z", "x": 17.5, "y": 6.1, "z": 25, "shape": "round", "d": 5, "protrude_mm": 4, "description": "output spline" }
     ],
     "source": "TowerPro SG90 drawing"
   },

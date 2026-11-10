@@ -33,7 +33,7 @@
     "outline": "round",
     "keepout_bottom_mm": 3,
     "features": [
-      { "id": "dome", "kind": "led", "face": "+z", "x": 2.9, "y": 2.9, "shape": "round", "d": 5, "protrude_mm": 3 }
+      { "id": "dome", "kind": "led", "face": "+z", "x": 2.9, "y": 2.9, "z": 5.7, "shape": "round", "d": 5, "protrude_mm": 3 }
     ],
     "source": "5 mm THT RGB LED"
   },

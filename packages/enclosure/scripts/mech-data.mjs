@@ -73,13 +73,13 @@ export const DATA = {
     sourcing: { mpn: "ESP-01", manufacturer: "Ai-Thinker", package: "module 24.8 x 14.3 mm, 2x4 header", generic: "ESP8266 Wi-Fi module ESP-01 (AT firmware), 3.3 V" } },
   "hc-sr04": {
     mechanical: { pcb_mm: 1.6, keepout_bottom_mm: 2.5, mounting_holes: [{ x: 1.75, y: 1.75, d: 1.8 }, { x: 43.25, y: 1.75, d: 1.8 }, { x: 1.75, y: 18.25, d: 1.8 }, { x: 43.25, y: 18.25, d: 1.8 }],
-      features: [ { id: "tx", kind: "sensor-window", face: "+z", x: 10.5, y: 8.8, shape: "round", d: 16, protrude_mm: 12, description: "transmitter can" },
-        { id: "rx", kind: "sensor-window", face: "+z", x: 34.5, y: 8.8, shape: "round", d: 16, protrude_mm: 12, description: "receiver can" } ],
+      features: [ { id: "tx", kind: "sensor-window", face: "+z", x: 10.5, y: 8.8, z: 3, shape: "round", d: 16, protrude_mm: 12, description: "transmitter can" },
+        { id: "rx", kind: "sensor-window", face: "+z", x: 34.5, y: 8.8, z: 3, shape: "round", d: 16, protrude_mm: 12, description: "receiver can" } ],
       source: "typical HC-SR04 module (16 mm cans, 12 mm tall)" },
     sourcing: { manufacturer: "generic", package: "module 45 x 20 mm, 4-pin header", generic: "HC-SR04 ultrasonic distance sensor module, 5 V" } },
   "pir-motion": {
     mechanical: { pcb_mm: 1.6, keepout_bottom_mm: 4, mounting_holes: [{ x: 2, y: 12, d: 2 }, { x: 30, y: 12, d: 2 }],
-      features: [ { id: "dome", kind: "sensor-window", face: "+z", x: 16, y: 12, shape: "round", d: 23, protrude_mm: 12.5, description: "Fresnel dome" } ],
+      features: [ { id: "dome", kind: "sensor-window", face: "+z", x: 16, y: 12, z: 12.5, shape: "round", d: 23, protrude_mm: 12.5, description: "Fresnel dome" } ],
       source: "typical HC-SR501 (32 x 24 mm, 23 mm dome)" },
     sourcing: { manufacturer: "generic", package: "module 32 x 24 mm, 3-pin header", generic: "HC-SR501 PIR motion sensor module, 5 to 20 V in, 3.3 V out" } },
   "ir-proximity": {
@@ -90,12 +90,12 @@ export const DATA = {
     sourcing: { manufacturer: "generic", package: "module 31 x 14 mm, 3-pin header", generic: "FC-51 IR obstacle avoidance sensor module, 3.3 to 5 V" } },
   "photoresistor": {
     mechanical: { keepout_bottom_mm: 3,
-      features: [ { id: "window", kind: "sensor-window", face: "+z", x: 2.55, y: 2.15, shape: "round", d: 5.1, protrude_mm: 1.5 } ],
+      features: [ { id: "window", kind: "sensor-window", face: "+z", x: 2.55, y: 2.15, z: 0.5, shape: "round", d: 5.1, protrude_mm: 1.5 } ],
       source: "5 mm LDR (GL5528 class)" },
     sourcing: { mpn: "GL5528", package: "5 mm THT LDR", generic: "Light dependent resistor 5 mm, GL5528 class (10 to 20 kΩ at 10 lux)" } },
   "potentiometer": {
     mechanical: { keepout_bottom_mm: 3,
-      features: [ { id: "shaft", kind: "knob", face: "+z", x: 4.9, y: 5.5, shape: "round", d: 6, protrude_mm: 15, description: "6 mm shaft; panel hole 7 mm" } ],
+      features: [ { id: "shaft", kind: "knob", face: "+z", x: 4.9, y: 5.5, z: 6, shape: "round", d: 6, protrude_mm: 15, description: "6 mm shaft; panel hole 7 mm" } ],
       source: "typical 9 mm rotary pot with 15 mm shaft" },
     sourcing: { manufacturer: "generic", package: "9 mm THT rotary, 3 pins 0.1 in", generic: "Potentiometer 10 kΩ linear, 9 mm, THT, 6 mm shaft" } },
   "pushbutton": {
@@ -105,7 +105,7 @@ export const DATA = {
     sourcing: { manufacturer: "generic", package: "6 x 6 mm THT tactile, 5 mm tall", generic: "Tactile push button 6 x 6 x 5 mm, 4-pin THT" } },
   "slide-switch": {
     mechanical: { keepout_bottom_mm: 3,
-      features: [ { id: "lever", kind: "switch", face: "+z", x: 4.3, y: 1.8, w: 1.5, h: 1.5, protrude_mm: 4, travel_mm: 2, description: "lever slides along x" } ],
+      features: [ { id: "lever", kind: "switch", face: "+z", x: 4.3, y: 1.8, z: 3.5, w: 1.5, h: 1.5, protrude_mm: 4, travel_mm: 2, description: "lever slides along x" } ],
       source: "SS12D00 class slide switch" },
     sourcing: { mpn: "SS12D00G4", package: "THT SPDT slide, 3 pins 0.1 in", generic: "Slide switch SPDT, SS12D00 type, THT" } },
   "ttp223-touch": {
@@ -147,12 +147,12 @@ export const DATA = {
     sourcing: { manufacturer: "generic", package: "probe 98 x 23 mm", generic: "Capacitive soil moisture sensor v1.2 (TLC555), analog out" } },
   "led": {
     mechanical: { outline: "round", keepout_bottom_mm: 3,
-      features: [ { id: "dome", kind: "led", face: "+z", x: 2.9, y: 2.9, shape: "round", d: 5, protrude_mm: 3, description: "5 mm dome pokes through a 5.2 mm hole" } ],
+      features: [ { id: "dome", kind: "led", face: "+z", x: 2.9, y: 2.9, z: 5.7, shape: "round", d: 5, protrude_mm: 3, description: "5 mm dome pokes through a 5.2 mm hole" } ],
       source: "5 mm THT LED" },
     sourcing: { package: "5 mm THT", generic: "LED 5 mm diffused, 20 mA" } },
   "rgb-led": {
     mechanical: { outline: "round", keepout_bottom_mm: 3,
-      features: [ { id: "dome", kind: "led", face: "+z", x: 2.9, y: 2.9, shape: "round", d: 5, protrude_mm: 3 } ],
+      features: [ { id: "dome", kind: "led", face: "+z", x: 2.9, y: 2.9, z: 5.7, shape: "round", d: 5, protrude_mm: 3 } ],
       source: "5 mm THT RGB LED" },
     sourcing: { package: "5 mm THT, 4 leads", generic: "RGB LED 5 mm common cathode, diffused" } },
   "buzzer": {
@@ -193,7 +193,7 @@ export const DATA = {
     sourcing: { mpn: "L298N", manufacturer: "STMicroelectronics (IC)", package: "module 43 x 43 mm with heatsink", generic: "L298N dual H-bridge motor driver module with 5 V regulator" } },
   "servo-sg90": {
     mechanical: { keepout_bottom_mm: 0,
-      features: [ { id: "horn", kind: "knob", face: "+z", x: 17.5, y: 6.1, shape: "round", d: 5, protrude_mm: 4, description: "output spline" } ],
+      features: [ { id: "horn", kind: "knob", face: "+z", x: 17.5, y: 6.1, z: 25, shape: "round", d: 5, protrude_mm: 4, description: "output spline" } ],
       source: "TowerPro SG90 drawing" },
     sourcing: { mpn: "SG90", manufacturer: "TowerPro", package: "23 x 12.2 x 29 mm", generic: "SG90 micro servo 9 g, 4.8 to 6 V" } },
   "dc-motor": {

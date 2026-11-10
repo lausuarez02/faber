@@ -32,7 +32,7 @@
   "mechanical": {
     "keepout_bottom_mm": 3,
     "features": [
-      { "id": "shaft", "kind": "knob", "face": "+z", "x": 4.9, "y": 5.5, "shape": "round", "d": 6, "protrude_mm": 15, "description": "6 mm shaft; panel hole 7 mm" }
+      { "id": "shaft", "kind": "knob", "face": "+z", "x": 4.9, "y": 5.5, "z": 6, "shape": "round", "d": 6, "protrude_mm": 15, "description": "6 mm shaft; panel hole 7 mm" }
     ],
     "source": "typical 9 mm rotary pot with 15 mm shaft"
   },

@@ -161,6 +161,9 @@ function priority(f: LocalFeature, isFront: boolean): number {
 
 /** Distance kept between a feature's tip and the inner wall surface, by kind. */
 function tipOffset(f: LocalFeature, tol: number): number {
+  // pass-through features (slide lever, pot shaft, LED / PIR dome): the body sits tol behind the
+  // inner wall and the feature pokes through its opening, so the tip is past the wall (negative).
+  if (f.passThrough) return tol - f.protrude;
   switch (f.kind) {
     case "button":
       return 1.0 + tol; // plunger flange + clearance
@@ -473,16 +476,24 @@ export function layoutCase(input: LayoutInput): Layout {
   // ---- 7. side-bound non-connector parts move out until the body (not just the cap) meets the wall
   for (const p of placed) {
     if (!p.bound || !SIDE_FACES.includes(p.bound.face) || p.bound.feature.kind === "connector") continue;
-    const tip = tipCase(p);
     const n = FACE_DIR[p.bound.face];
-    const room = rayExit(plan, tip[0], tip[1], n[0], n[1]) - p.bound.offset;
+    // measured from where the feature leaves the body (a lever / shaft / dome pokes through the wall)
+    const pt = p.bound.feature.passThrough ? p.bound.feature.protrude : 0;
+    const baseOff = p.bound.offset + pt;
+    const tip0 = tipCase(p);
+    const base0: Vec3 = [tip0[0] - n[0] * pt, tip0[1] - n[1] * pt, tip0[2]];
+    const room = rayExit(plan, base0[0], base0[1], n[0], n[1]) - baseOff;
     const fits = (s: number) => {
       const moved = shift(p, [n[0] * s, n[1] * s, 0]);
       const inset = intrusion(moved.bodyMin[2], moved.bodyMax[2]) + 0.15;
       const t2 = tipCase(moved);
-      if (!contains(plan, t2[0] + n[0] * p.bound!.offset, t2[1] + n[1] * p.bound!.offset, 0)) return false;
-      for (const x of [moved.bodyMin[0], moved.bodyMax[0]]) for (const y of [moved.bodyMin[1], moved.bodyMax[1]]) if (!contains(plan, x, y, inset)) return false;
-      return !placed.some((q) => q !== p && overlap(q, moved, g - 1e-6));
+      if (!contains(plan, t2[0] - n[0] * pt + n[0] * baseOff, t2[1] - n[1] * pt + n[1] * baseOff, 0)) return false;
+      // the body without the part that pokes through the wall
+      const bx: [number, number] = [moved.bodyMin[0] + (n[0] < 0 ? pt : 0), moved.bodyMax[0] - (n[0] > 0 ? pt : 0)];
+      const by: [number, number] = [moved.bodyMin[1] + (n[1] < 0 ? pt : 0), moved.bodyMax[1] - (n[1] > 0 ? pt : 0)];
+      for (const x of bx) for (const y of by) if (!contains(plan, x, y, inset)) return false;
+      const hit = placed.find((q) => q !== p && overlap(q, moved, g - 1e-6));
+      return !hit;
     };
     let lo = 0;
     let hi = Math.max(0, room);
@@ -506,22 +517,24 @@ export function layoutCase(input: LayoutInput): Layout {
       const face = (Object.entries(FACE_DIR).find(([, d]) => eqv(d, n))?.[0] ?? undefined) as CaseFaceName | undefined;
       const tip = toCase(p, f.tip);
       if (!face) continue;
-      // where the inner wall is along n from the tip
-      let wallDist: number;
+      // measured from the feature's base: the tip itself, or for a pass-through feature (lever,
+      // shaft, dome) the point where it leaves the body; wallDist is then negative (past the wall)
+      const base: Vec3 = f.passThrough ? [tip[0] - n[0] * f.protrude, tip[1] - n[1] * f.protrude, tip[2] - n[2] * f.protrude] : tip;
+      let baseDist: number;
       let at: Vec3;
       if (face === "front") {
-        wallDist = zFront - tip[2];
-        at = [tip[0], tip[1], zFront];
+        baseDist = zFront - base[2];
+        at = [base[0], base[1], zFront];
       } else if (face === "back") {
-        wallDist = tip[2] - zBack;
-        at = [tip[0], tip[1], zBack];
+        baseDist = base[2] - zBack;
+        at = [base[0], base[1], zBack];
       } else {
-        wallDist = rayExit(plan, tip[0], tip[1], n[0], n[1]);
-        at = [tip[0] + n[0] * wallDist, tip[1] + n[1] * wallDist, tip[2]];
+        baseDist = rayExit(plan, base[0], base[1], n[0], n[1]);
+        at = [base[0] + n[0] * baseDist, base[1] + n[1] * baseDist, base[2]];
       }
-      const baseDist = f.passThrough ? wallDist + f.protrude : wallDist;
+      const wallDist = f.passThrough ? baseDist - f.protrude : baseDist;
       const reach = f.kind === "button" ? 8 : f.kind === "led" ? 6 : f.kind === "grille" ? 3 : 1.5;
-      if (baseDist < -0.05 - (f.passThrough ? f.protrude : 0) || baseDist > reach + tipOffset(f, tol)) {
+      if (baseDist < -0.05 || baseDist > reach + Math.max(0, tipOffset(f, tol))) {
         issues.push({ id: f.kind === "connector" ? "connector-access" : f.kind === "button" ? "buttons-reachable" : f.kind === "screen" ? "screen-window" : "exposed", ok: false, severity: f.kind === "connector" || f.kind === "button" || f.kind === "screen" ? "error" : "warning", message: `${p.mech.id}'s ${f.kind} "${f.id}" faces the ${face} but is ${baseDist.toFixed(1)} mm from that wall, so the case cannot expose it. Why: ${baseDist > 0 ? "the curved wall or another part keeps it away from the wall" : "it would poke through the wall"}. Fix: put it on another face with placements ({"${p.mech.id}": {"face": "${face === "right" ? "left" : face === "top" ? "right" : "top"}"}}), try the rounded-box shape, or set "expose": false for that feature if it does not need to be reached.`, parts: [p.mech.id] });
         continue;
       }

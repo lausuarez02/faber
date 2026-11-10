@@ -30,7 +30,7 @@
   "mechanical": {
     "keepout_bottom_mm": 3,
     "features": [
-      { "id": "lever", "kind": "switch", "face": "+z", "x": 4.3, "y": 1.8, "w": 1.5, "h": 1.5, "protrude_mm": 4, "travel_mm": 2, "description": "lever slides along x" }
+      { "id": "lever", "kind": "switch", "face": "+z", "x": 4.3, "y": 1.8, "z": 3.5, "w": 1.5, "h": 1.5, "protrude_mm": 4, "travel_mm": 2, "description": "lever slides along x" }
     ],
     "source": "SS12D00 class slide switch"
   },
