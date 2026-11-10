@@ -23,6 +23,8 @@ export interface Plan {
   /** rrect corner radius (cavity). */
   rc: number;
   flats: Flat[];
+  /** Radius rounding the corners where a flat meets a circle / stadium (drawing only), so a large edge fillet can roll round them. */
+  flatCorner?: number;
 }
 
 /** A point that must be inside the cavity, with the extra inset needed at its depth (front / back fillet). */
@@ -34,6 +36,26 @@ export interface Need {
 
 export function contains(p: Plan, x: number, y: number, inset = 0): boolean {
   for (const f of p.flats) if (f.sign * ((f.axis === "x" ? x : y) - f.at) > 1e-6 - (f.sign > 0 ? 0 : 0)) return false;
+  const rc = p.flatCorner ?? 0;
+  if (rc > 0.05 && p.flats.length && (p.kind === "circle" || p.kind === "stadium")) {
+    // the rounded corner where a flat meets the curve (treated as a right-angle corner: conservative for the obtuse ones a flat makes)
+    const dx0 = x - p.cx;
+    const dy0 = y - p.cy;
+    let curve: number;
+    if (p.kind === "circle") curve = p.a - Math.hypot(dx0, dy0);
+    else {
+      const r = Math.min(p.a, p.b);
+      const half = Math.max(p.a, p.b) - r;
+      const along = p.a >= p.b ? Math.abs(dx0) : Math.abs(dy0);
+      const across = p.a >= p.b ? Math.abs(dy0) : Math.abs(dx0);
+      curve = r - Math.hypot(Math.max(0, along - half), across);
+    }
+    curve -= inset;
+    for (const f of p.flats) {
+      const flat = -f.sign * ((f.axis === "x" ? x : y) - f.at) - inset;
+      if (flat < rc && curve < rc && (rc - flat) ** 2 + (rc - curve) ** 2 > rc * rc + 1e-9) return false;
+    }
+  }
   const dx = x - p.cx;
   const dy = y - p.cy;
   switch (p.kind) {
@@ -285,6 +307,16 @@ export function planDrawing(r: any, p: Plan, offset = 0): any {
     // keep the half-plane sign * (coord - at) <= 0
     const keep = f.axis === "x" ? r.drawRectangle(big, big).translate(f.sign > 0 ? f.at - big / 2 : f.at + big / 2, p.cy) : r.drawRectangle(big, big).translate(p.cx, f.sign > 0 ? f.at - big / 2 : f.at + big / 2);
     d = d.intersect(keep);
+    if ((p.flatCorner ?? 0) > 0.05 && (p.kind === "circle" || p.kind === "stadium")) {
+      const lo: [number, number] = f.axis === "x" ? [f.at - 0.05, -1e4] : [-1e4, f.at - 0.05];
+      const hi: [number, number] = f.axis === "x" ? [f.at + 0.05, 1e4] : [1e4, f.at + 0.05];
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        d = d.fillet(p.flatCorner!, (c: any) => c.inBox(lo, hi));
+      } catch {
+        // keep the sharp corner: the edge fillet then falls back to a smaller radius
+      }
+    }
   }
   return Math.abs(offset) > 1e-9 ? d.offset(offset) : d;
 }

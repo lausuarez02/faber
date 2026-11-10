@@ -5,7 +5,7 @@
  */
 export type { CaseFile, CaseMesh, CaseReport, FitCheck, FitCheckId, PlacedPart, Vec3 } from "./types.ts";
 export { CASE_SHAPES } from "@jumper/project-format";
-export { generateCase, caseHash, pocketVerdict, resolveEnclosure, readManifest, readReport, readMeshCache, writeMeshCache, writeCaseFiles, ENGINE_VERSION, type Generated, type GenerateOptions, type CaseManifest } from "./engine.ts";
+export { generateCase, caseHash, pocketVerdict, pocketText, resolveEnclosure, readManifest, readReport, readMeshCache, writeMeshCache, writeCaseFiles, ENGINE_VERSION, type Generated, type GenerateOptions, type CaseManifest } from "./engine.ts";
 export { layoutCase, resolveParams, toCase, type Layout, type Placed, type Opening } from "./layout.ts";
 export { resolveMech, type PartMech } from "./mech.ts";
 export { checkMesh, readStl, stlBinary, weld, type Mesh, type MeshCheck } from "./mesh.ts";

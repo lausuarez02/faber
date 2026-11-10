@@ -10,7 +10,7 @@ import { materialFor, printSettings } from "./print.ts";
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const f1 = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
 
-export function drawingSvg(L: Layout, title: string, extra: { rf: number; wallMeasured: number; screws?: string; massG?: number }): string {
+export function drawingSvg(L: Layout, title: string, extra: { rf: number; rfBack?: number; wallMeasured: number; screws?: string; massG?: number }): string {
   const t = L.params.wall_mm;
   const W = L.outer.w;
   const H = L.outer.h;
@@ -58,7 +58,10 @@ export function drawingSvg(L: Layout, title: string, extra: { rf: number; wallMe
   const ry = fy;
   out.push(`<text class="b" x="${rx}" y="22" text-anchor="middle">RIGHT SIDE</text>`);
   const tr = (z: number, y: number) => [rx - z * scale, ry - y * scale] as const;
-  out.push(profile(tr, L.outer.max[2], L.outer.min[2], L.outer.max[1], L.outer.min[1], extra.rf, scale));
+  const cF = L.dome?.front.crown ?? 0;
+  const cB = L.dome?.back.crown ?? 0;
+  const rB = extra.rfBack ?? extra.rf;
+  out.push(silhouette(tr, L.outer.max[2], L.outer.min[2], L.outer.min[1], L.outer.max[1], extra.rf, rB, cF, cB));
   {
     const [a, b] = tr(L.split, L.outer.max[1] + 2);
     const [, c] = tr(L.split, L.outer.min[1] - 2);
@@ -72,7 +75,7 @@ export function drawingSvg(L: Layout, title: string, extra: { rf: number; wallMe
   const by = fy + (H / 2) * scale + 26 + (D * scale) / 2;
   out.push(`<text class="b" x="${bx}" y="${by - (D / 2) * scale - 4}" text-anchor="middle">BOTTOM</text>`);
   const tb = (x: number, z: number) => [bx + x * scale, by - z * scale] as const;
-  out.push(profileB(tb, L.outer.min[0], L.outer.max[0], L.outer.max[2], L.outer.min[2], extra.rf));
+  out.push(silhouette((z, x) => tb(x, z), L.outer.max[2], L.outer.min[2], L.outer.min[0], L.outer.max[0], extra.rf, rB, cF, cB));
   for (const o of faceOps("bottom")) out.push(openingSide(o, (p) => tb(p[0], p[2]), scale, [1, 0, 0], [0, 0, 1]));
   faceOps("bottom").forEach((o, i) => {
     out.push(`<text class="dt" x="${bx}" y="${by + (D / 2) * scale + 5 + i * 4}" text-anchor="middle">${o.part}.${o.feature}: centre x ${f1(o.at[0])}, z ${f1(o.at[2])}; ${f1(o.u)} x ${f1(o.v)} mm</text>`);
@@ -87,7 +90,7 @@ export function drawingSvg(L: Layout, title: string, extra: { rf: number; wallMe
   };
   line(`${title}`, "b", 7);
   line(`Case: ${L.shape}, ${f1(W)} x ${f1(H)} x ${f1(D)} mm (W x H x D), inner ${L.inner.w} x ${L.inner.h} x ${L.inner.d} mm`);
-  line(`Wall ${f1(t)} mm (measured min ${extra.wallMeasured.toFixed(2)} mm), edge radius ${f1(extra.rf)} mm, split ${f1(L.outer.max[2] - L.split)} mm from the front`);
+  line(`Wall ${f1(t)} mm (measured min ${extra.wallMeasured.toFixed(2)} mm), edge radius ${f1(extra.rf)} mm front${Math.abs(rB - extra.rf) > 0.05 ? `, ${f1(rB)} mm back` : ""} (rounded in 3D all round)${cF || cB ? `, faces domed ${f1(cF)} / ${f1(cB)} mm` : ""}, split ${f1(L.outer.max[2] - L.split)} mm from the front`);
   line(`Closure: ${L.lip ? `snap lip ${f1(L.lip.t)} x ${f1(L.lip.h)} mm${L.lip.groove > 0.05 ? `, bead ${L.lip.bead} mm into a ${L.lip.groove.toFixed(1)} mm groove` : " (friction fit)"}` : extra.screws ?? "screws"}`);
   if (extra.massG) line(`Shell mass about ${extra.massG.toFixed(0)} g (${materialFor(L.params.process).name})`);
   ty += 2;
@@ -140,17 +143,39 @@ function openingSide(o: Opening, tf: (p: [number, number, number]) => readonly [
   return `<rect class="op" x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="${o.corner * scale}"/>`;
 }
 
-function profile(tf: (z: number, y: number) => readonly [number, number], zF: number, zB: number, yT: number, yB: number, rf: number, scale: number): string {
-  const [x0, y0] = tf(zF, yT);
-  const [x1, y1] = tf(zB, yB);
-  const r = Math.min(rf * scale, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2);
-  return `<rect class="o" x="${Math.min(x0, x1)}" y="${Math.min(y0, y1)}" width="${Math.abs(x1 - x0)}" height="${Math.abs(y1 - y0)}" rx="${r}"/>`;
-}
-
-function profileB(tf: (x: number, z: number) => readonly [number, number], xL: number, xR: number, zF: number, zB: number, rf: number): string {
-  const [x0, y0] = tf(xL, zF);
-  const [x1, y1] = tf(xR, zB);
-  const sc = Math.abs(x1 - x0) / (xR - xL);
-  const r = Math.min(rf * sc, Math.abs(y1 - y0) / 2);
-  return `<rect class="o" x="${Math.min(x0, x1)}" y="${Math.min(y0, y1)}" width="${Math.abs(x1 - x0)}" height="${Math.abs(y1 - y0)}" rx="${r}"/>`;
+/**
+ * Side silhouette (model mm → sheet via tf(z, a)): front face at zF (crown cF above its flat wall
+ * plane), back at zB, across a0..a1, front edge radius rF, back edge rB: the true 3D rounding.
+ */
+function silhouette(tf: (z: number, a: number) => readonly [number, number], zF: number, zB: number, a0: number, a1: number, rF: number, rB: number, cF: number, cB: number): string {
+  const pF = zF - cF;
+  const pB = zB + cB;
+  const half = (pF - pB) / 2;
+  const rf = Math.min(rF, half, (a1 - a0) / 2);
+  const rb = Math.min(rB, half, (a1 - a0) / 2);
+  const pts: [number, number][] = [];
+  const arc = (cz: number, ca: number, r: number, t0: number, t1: number) => {
+    for (let i = 0; i <= 10; i++) {
+      const t = t0 + ((t1 - t0) * i) / 10;
+      pts.push([cz + r * Math.cos(t), ca + r * Math.sin(t)]);
+    }
+  };
+  const face = (z: number, c: number, from: number, to: number, dir: 1 | -1) => {
+    for (let i = 1; i < 12; i++) {
+      const a = from + ((to - from) * i) / 12;
+      const u = (2 * (a - from)) / (to - from) - 1;
+      pts.push([z + dir * c * (1 - u * u), a]);
+    }
+  };
+  arc(pF - rf, a0 + rf, rf, -Math.PI / 2, 0); // front-low corner
+  face(pF, cF, a0 + rf, a1 - rf, 1);
+  arc(pF - rf, a1 - rf, rf, 0, Math.PI / 2); // front-high
+  arc(pB + rb, a1 - rb, rb, Math.PI / 2, Math.PI); // back-high
+  face(pB, cB, a1 - rb, a0 + rb, -1);
+  arc(pB + rb, a0 + rb, rb, Math.PI, (3 * Math.PI) / 2); // back-low
+  const d = pts.map(([z, a], i) => {
+    const [x, y] = tf(z, a);
+    return `${i ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`;
+  });
+  return `<path class="o" d="${d.join(" ")} Z"/>`;
 }

@@ -17,7 +17,7 @@
 import type { CasePlacement, CaseShape, Enclosure } from "@jumper/project-format";
 import type { PartSpec } from "@jumper/sim-core";
 import { apply, envelopeZ, FACE_DIR, faceAxes, I3, type LocalFeature, type Mat3, mul, type PartMech, resolveMech, ROTATIONS, rotAbout, eqv } from "./mech.ts";
-import { contains, type Flat, type Need, type Plan, type PlanKind, planBounds, rayExit, sizePlan } from "./plan.ts";
+import { contains, type Flat, type Need, outline, type Plan, type PlanKind, planBounds, rayExit, sizePlan } from "./plan.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
 
 export type CaseFaceName = keyof typeof FACE_DIR;
@@ -37,7 +37,7 @@ export interface ResolvedParams {
 export function resolveParams(shape: CaseShape, p: Enclosure["params"] = {}): ResolvedParams {
   return {
     wall_mm: p.wall_mm ?? 1.6,
-    corner_radius_mm: p.corner_radius_mm ?? 4,
+    corner_radius_mm: p.corner_radius_mm ?? (shape === "keychain" ? 7 : 4),
     color: p.color ?? "#F2EDE4",
     lanyard_hole: p.lanyard_hole ?? shape === "keychain",
     belt_clip: p.belt_clip ?? false,
@@ -91,6 +91,8 @@ export interface Opening {
   insert?: { kind: "cap" | "light-pipe"; d: number; flange_d: number; flange_mm: number; length: number; base: Vec3; travel: number; protrude: number };
   /** Distance from the feature to the inner wall surface along n (mm). */
   standoff: number;
+  /** Spot face: a flat recess this deep (mm) cut into the outer surface round a connector on a curved wall, so the plug reaches. */
+  spot?: number;
 }
 
 export interface Rib {
@@ -134,9 +136,11 @@ export interface Layout {
   /** Cavity z range (front inner plane / back inner plane) and outer faces. */
   zFront: number;
   zBack: number;
-  /** Outer front / back edge fillet and the cavity's (concentric) one. */
+  /** Outer front edge fillet and the cavity's (concentric) one; the back edge's. */
   rf: number;
   ri: number;
+  rfBack: number;
+  riBack: number;
   split: number;
   lip: { t: number; h: number; bead: number; groove: number } | null;
   openings: Opening[];
@@ -144,6 +148,12 @@ export interface Layout {
   posts: Post[];
   bosses: Boss[];
   cradles: { part: string; min: Vec3; max: Vec3; wall: number; h: number }[];
+  /**
+   * Domed front / back faces (pebble): each face rises by up to `crown` mm above its flat wall plane
+   * along a sphere that meets the plane at the rim, with a flat plateau of radius `plateau` around
+   * (x, y) (the window land on the front, the print bed contact on both).
+   */
+  dome: { front: Dome; back: Dome } | null;
   /** Keychain / lanyard tab: centre, size, hole. */
   tab?: { x: number; y: number; w: number; h: number; t: number; hole: number; z0: number };
   outer: { w: number; h: number; d: number; min: Vec3; max: Vec3 };
@@ -152,6 +162,42 @@ export interface Layout {
 }
 
 const SIDE_FACES: CaseFaceName[] = ["right", "left", "top", "bottom"];
+
+/** One domed face: sphere of radius R about the axis (x, y), flat plateau of radius `plateau` at `crown` above the wall plane, meeting the plane at distance S. */
+export interface Dome {
+  x: number;
+  y: number;
+  R: number;
+  S: number;
+  plateau: number;
+  crown: number;
+}
+
+/** Height of a domed face above its flat wall plane at (x, y) (0 outside the dome). */
+export function domeHeight(d: Dome | undefined, x: number, y: number): number {
+  if (!d || d.crown <= 0) return 0;
+  const rho = Math.hypot(x - d.x, y - d.y);
+  if (rho <= d.plateau) return d.crown;
+  if (rho >= d.S) return 0;
+  return Math.max(0, Math.min(d.crown, Math.sqrt(d.R * d.R - rho * rho) - Math.sqrt(d.R * d.R - d.S * d.S)));
+}
+
+/** Sphere radius through the rim (distance S, height 0) and the plateau edge (distance rp, height crown). */
+function domeRadius(S: number, rp: number, crown: number): number {
+  const f = (R: number) => Math.sqrt(R * R - rp * rp) - Math.sqrt(R * R - S * S) - crown;
+  let lo = S + 1e-6;
+  let hi = 1e6;
+  if (f(lo) < 0) return lo; // crown too large for the span: steepest sphere
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (f(mid) > 0) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** Rounded front / back edge radius as a share of the outer depth, per shape (a pebble and a pill are round all over, a puck has soft edges). */
+export const EDGE_SHARE: Record<CaseShape, number> = { pebble: 0.44, pill: 0.44, puck: 0.34, keychain: 0.38, "rounded-box": 0 };
 
 function priority(f: LocalFeature, isFront: boolean): number {
   if (!f.expose) return -1;
@@ -233,7 +279,31 @@ export interface LayoutInput {
   enclosure: Enclosure;
 }
 
+/**
+ * Pack the parts into a case. A curved shape gives each connector its own side; which connector
+ * gets which side is tried both ways (up to 4 orders) and the smallest case kept.
+ */
 export function layoutCase(input: LayoutInput): Layout {
+  const first = layoutOnce(input);
+  const ids = first.connOrder;
+  if (input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) return first;
+  const perms: string[][] = [];
+  const permute = (rest: string[], acc: string[]) => {
+    if (perms.length >= 4) return;
+    if (!rest.length) return void perms.push(acc);
+    for (const x of rest) permute(rest.filter((y) => y !== x), [...acc, x]);
+  };
+  permute(ids, []);
+  let best = first;
+  const cost = (L: Layout) => L.issues.filter((i) => i.severity === "error").length * 1e12 + caseCost(L);
+  for (const perm of perms.slice(1)) {
+    const L = layoutOnce(input, perm);
+    if (cost(L) < cost(best)) best = L;
+  }
+  return best;
+}
+
+function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrder: string[] } {
   const enc = input.enclosure;
   const shape = enc.shape;
   const params = resolveParams(shape, enc.params);
@@ -269,6 +339,17 @@ export function layoutCase(input: LayoutInput): Layout {
   if (enc.front && !mechs.some((m) => m.id === enc.front)) issues.push({ id: "front", ok: false, severity: "error", message: `The front part "${enc.front}" is not in the case. Why: there is no such part, or it is excluded. Fix: pass front with the id of the display (get_project lists ids).`, parts: [enc.front] });
   const sideCycle: CaseFaceName[] = ["right", "left", "top"];
   let buttonN = 0;
+  // A box or a key fob takes every connector on its bottom wall (one flat); a curved shape gives each its own
+  // side (charging port at the bottom, the next on the left, ...) so no wall needs to be cut flat.
+  const connFace = new Map<string, CaseFaceName>();
+  const connOrder: string[] = [];
+  {
+    const conn = mechs.filter((m) => !enc.placements?.[m.id]?.face && m.id !== frontId && m.features.filter((f) => f.expose).sort((x, y) => priority(y, false) - priority(x, false))[0]?.kind === "connector");
+    conn.sort((x, y) => (connPerm ? connPerm.indexOf(x.id) - connPerm.indexOf(y.id) : Number(y.category === "power") - Number(x.category === "power")));
+    connOrder.push(...conn.map((m) => m.id));
+    const cycle: CaseFaceName[] = shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"];
+    conn.forEach((m, i) => connFace.set(m.id, cycle[i % cycle.length]!));
+  }
   const plans: Plan0[] = mechs.map((m) => {
     const placement = enc.placements?.[m.id];
     const isFront = m.id === frontId;
@@ -283,7 +364,7 @@ export function layoutCase(input: LayoutInput): Layout {
     else if (primary && !face) {
       switch (primary.kind) {
         case "connector":
-          face = "bottom";
+          face = connFace.get(m.id) ?? "bottom";
           break;
         case "button":
           face = sideCycle[buttonN++ % sideCycle.length];
@@ -336,17 +417,73 @@ export function layoutCase(input: LayoutInput): Layout {
   });
   const W0 = Math.max(10, ...dims.map((d) => d[0])) + 2 * g;
   const H0 = Math.max(10, ...dims.map((d) => d[1])) + 2 * g;
-  type Packed = { placed: Placed[]; score: number; failed: string[] };
-  let best: Packed | undefined;
-  for (let dw = 0; dw <= 24; dw += 3)
-    for (let dh = 0; dh <= 24; dh += 3) {
-      const r = pack(order, W0 + dw, H0 + dh, g, front, shape);
-      const s = r.failed.length * 1e9 + r.score;
-      if (!best || s < best.score) best = { ...r, score: s };
+  type Packed = { placed: Placed[]; score: number; failed: string[]; key: string };
+  // Many packings (plan rectangles x part orders), the cheapest few finished into real layouts,
+  // the smallest case kept (volume, with thickness weighed for a pocket: <= 18 mm comfortable).
+  const orders: Plan0[][] = [order];
+  const mid0 = order.filter((p) => rank(p) === 1 || rank(p) === 2);
+  if (mid0.length > 1) {
+    const head = order.filter((p) => rank(p) === 0);
+    const tail = order.filter((p) => rank(p) > 2);
+    orders.push([...head, ...[...mid0].reverse(), ...tail]);
+    orders.push([...head, ...[...mid0].sort((a, b) => vol(b.mech) - vol(a.mech)), ...tail]);
+    orders.push([...head, ...[...mid0].sort((a, b) => Number(!!b.bound) - Number(!!a.bound) || vol(a.mech) - vol(b.mech)), ...tail]);
+  }
+  const packs: Packed[] = [];
+  for (const ord of orders)
+    for (let dw = 0; dw <= 30; dw += 3)
+      for (let dh = 0; dh <= 30; dh += 3) {
+        const r = pack(ord, W0 + dw, H0 + dh, g, front, shape);
+        const key = r.placed.map((p) => `${p.mech.id}:${p.min.map((v) => Math.round(v)).join(",")}:${p.rotation}:${p.facing}`).sort().join("|");
+        packs.push({ ...r, score: r.failed.length * 1e9 + r.score, key });
+      }
+  packs.sort((a, b) => a.score - b.score);
+  const seen = new Set<string>();
+  const shortlist: Packed[] = [];
+  for (const pk of packs) {
+    if (seen.has(pk.key)) continue;
+    seen.add(pk.key);
+    shortlist.push(pk);
+    if (shortlist.length >= 14) break;
+  }
+  // also the shallowest packings: a thin case can win on the pocket even with a larger plan
+  const depthOf = (pk: Packed) => -Math.min(...pk.placed.map((q) => q.min[2]));
+  for (const pk of [...packs].filter((x) => !x.failed.length).sort((a, b) => depthOf(a) - depthOf(b) || a.score - b.score)) {
+    if (seen.has(pk.key)) continue;
+    seen.add(pk.key);
+    shortlist.push(pk);
+    if (shortlist.length >= 22) break;
+  }
+  // and the most compact contents (bounding box of the packed parts)
+  const boxVol = (pk: Packed) => {
+    const lo = [0, 1, 2].map((k) => Math.min(...pk.placed.map((q) => q.min[k]!)));
+    const hi = [0, 1, 2].map((k) => Math.max(...pk.placed.map((q) => q.max[k]!)));
+    return (hi[0]! - lo[0]! + 2 * g) * (hi[1]! - lo[1]! + 2 * g) * (hi[2]! - lo[2]! + 1) * (1 + 0.04 * Math.max(0, hi[2]! - lo[2]! - 14));
+  };
+  for (const pk of [...packs].filter((x) => !x.failed.length).sort((a, b) => boxVol(a) - boxVol(b))) {
+    if (seen.has(pk.key)) continue;
+    seen.add(pk.key);
+    shortlist.push(pk);
+    if (shortlist.length >= 30) break;
+  }
+  const baseIssues = issues.splice(0);
+  let bestL: Layout | undefined;
+  let bestCost = Infinity;
+  for (const pk of shortlist) {
+    const clone = pk.placed.map((p) => ({ ...p, min: [...p.min] as Vec3, max: [...p.max] as Vec3, bodyMin: [...p.bodyMin] as Vec3, bodyMax: [...p.bodyMax] as Vec3, T: [...p.T] as Vec3 }));
+    const iss: FitCheck[] = baseIssues.map((i) => ({ ...i }));
+    for (const id of pk.failed) iss.push({ id: "fits", ok: false, severity: "error", message: `${id} could not be packed with the others. Why: its exposed feature is pinned to a face where another part already sits. Fix: move it with placements (e.g. {"${id}": {"face": "left"}}) or exclude it.`, parts: [id] });
+    const Lc = finish(clone, iss);
+    const errs = Lc.issues.filter((i) => i.severity === "error").length;
+    const cost = errs * 1e12 + caseCost(Lc);
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestL = Lc;
     }
-  const placed = best!.placed;
-  for (const id of best!.failed) issues.push({ id: "fits", ok: false, severity: "error", message: `${id} could not be packed with the others. Why: its exposed feature is pinned to a face where another part already sits. Fix: move it with placements (e.g. {"${id}": {"face": "left"}}) or exclude it.`, parts: [id] });
+  }
+  return { ...bestL!, connOrder };
 
+  function finish(placed: Placed[], issues: FitCheck[]): Layout {
   // ---- 3. depth, soft and back-bound parts to the back
   let zBack = Math.min(...placed.map((p) => p.min[2])) - 0.5;
   for (const p of placed) {
@@ -363,6 +500,40 @@ export function layoutCase(input: LayoutInput): Layout {
   zBack = Math.min(zBack, -6);
   const zFront = 0;
   const depth = zFront - zBack;
+  // side connectors slide (in z) towards the middle of the depth where the room allows: the straight
+  // band of the side wall that must hold their openings then sits in the middle, leaving the front
+  // and back edges free to be rounded with a large radius.
+  for (const p of [...placed].sort((a, b) => Number(b.bound?.feature.kind === "connector") - Number(a.bound?.feature.kind === "connector"))) {
+    if (!p.bound || !SIDE_FACES.includes(p.bound.face)) continue;
+    const want = (zFront + zBack) / 2 - tipCase(p)[2];
+    const nn = FACE_DIR[p.bound.face];
+    // it may also step out towards its own wall (where step 7 takes it anyway) to clear a neighbour
+    const outs = [0, 1, 2, 3, 4, 6, 8];
+    const okAt = (dz: number, s: number) => {
+      const m = shift(p, [nn[0] * s, nn[1] * s, dz]);
+      return m.min[2] >= zBack - 1e-6 && m.max[2] <= zFront + 1e-6 && !placed.some((q) => q !== p && overlap(q, m, g - 1e-6));
+    };
+    let bestDz = 0;
+    let bestS = 0;
+    for (const sOut of outs) {
+      let lo = 0;
+      let hi = 1;
+      if (okAt(want, sOut)) lo = 1;
+      else if (okAt(0, sOut))
+        for (let i = 0; i < 24; i++) {
+          const mid = (lo + hi) / 2;
+          if (okAt(want * mid, sOut)) lo = mid;
+          else hi = mid;
+        }
+      else continue;
+      if (Math.abs(want * lo) > Math.abs(bestDz) + 0.5) {
+        bestDz = want * lo;
+        bestS = sOut;
+      }
+      if (lo === 1) break;
+    }
+    if (Math.abs(bestDz) > 0.01) Object.assign(p, shift(p, [nn[0] * bestS, nn[1] * bestS, bestDz]));
+  }
 
   // layers: order of distinct front z
   const zs = [...new Set(placed.map((p) => Math.round(p.max[2] * 10) / 10))].sort((a, b) => b - a);
@@ -376,7 +547,8 @@ export function layoutCase(input: LayoutInput): Layout {
   {
     let bestS = Infinity;
     for (let z = zFront - lipH - 0.5; z >= zBack + 1.5; z -= 0.25) {
-      const s = crossing(z) * 10 + Math.abs(z - (zFront + zBack) / 2) * 0.2;
+      // near the middle (both edges can be rounded), crossing as few parts as possible
+      const s = crossing(z) * 2 + Math.abs(z - (zFront + zBack) / 2);
       if (s < bestS) {
         bestS = s;
         split = z;
@@ -386,28 +558,35 @@ export function layoutCase(input: LayoutInput): Layout {
 
   // ---- 5. front / back edge fillets
   const D = depth + 2 * t;
-  let rf = shape === "pebble" ? 0.42 * D : shape === "pill" ? 0.3 * D : shape === "puck" ? Math.min(2.5, 0.2 * D) : 1.2;
+  let rf = shape === "rounded-box" ? 1.2 : EDGE_SHARE[shape] * D;
+  // a rounded rectangle's edge fillet cannot be larger than its plan corner radius
+  if (shape === "keychain") rf = Math.min(rf, params.corner_radius_mm - 3);
   // straight side band must hold the split lip and every side opening (± 0.6)
   let bandTop = split + 0.6;
   let bandBot = split - lipH - 0.6;
   for (const p of placed)
-    if (p.bound && SIDE_FACES.includes(p.bound.face) && p.bound.feature.kind === "connector") {
+    if (p.bound && SIDE_FACES.includes(p.bound.face)) {
+      const f = p.bound.feature;
       const tip = tipCase(p);
-      const half = (p.bound.feature.kind === "connector" ? p.bound.feature.v + 2 * p.bound.feature.plugClearance : p.bound.feature.v) / 2;
+      // the receptacle must face a straight wall (the plug's overmold clearance may run into the
+      // curve); a plunger, lever or shaft needs its hole on the straight band too
+      const uz = Math.abs(apply(p.R, f.uAxis)[2]);
+      const vz = Math.abs(apply(p.R, f.vAxis)[2]);
+      const ext = f.kind === "button" ? Math.max(3, Math.min(6, f.u)) / 2 + 0.3 : (uz * (f.u + (f.kind === "switch" ? f.travel : 0)) + vz * f.v) / 2;
+      const half = ext + (f.kind === "connector" ? Math.min(0.6, f.plugClearance) : 0.2);
       bandTop = Math.max(bandTop, tip[2] + half + 0.6);
       bandBot = Math.min(bandBot, tip[2] - half - 0.6);
     }
-  rf = Math.max(0.6, Math.min(rf, zFront + t - bandTop, bandBot - (zBack - t)));
-  const ri = Math.max(0, rf - t);
+  // front and back edges are rounded separately: a port near the back keeps the front edge round
+  let rfBack = Math.max(0.6, Math.min(rf, bandBot - (zBack - t)));
+  rf = Math.max(0.6, Math.min(rf, zFront + t - bandTop));
+  let ri = Math.max(0, rf - t);
+  let riBack = Math.max(0, rfBack - t);
 
   // ---- 6. plan sizing
   const kind: PlanKind = shape === "puck" ? "circle" : shape === "pebble" ? "ellipse" : shape === "pill" ? "stadium" : "rrect";
-  const intrusion = (z0: number, z1: number) => {
-    if (ri <= 0) return 0;
-    const delta = Math.max(0, Math.min(zFront - z1, z0 - zBack));
-    if (delta >= ri) return 0;
-    return ri - Math.sqrt(ri * ri - (ri - delta) ** 2);
-  };
+  const arc = (rad: number, delta: number) => (rad <= 0 || delta >= rad ? 0 : rad - Math.sqrt(rad * rad - (rad - Math.max(0, delta)) ** 2));
+  const intrusion = (z0: number, z1: number) => Math.max(arc(ri, zFront - z1), arc(riBack, z0 - zBack));
   const lipIntr = Math.max(0, lip.t + tol - g);
   const needs: Need[] = [];
   const flats: Flat[] = [];
@@ -415,7 +594,8 @@ export function layoutCase(input: LayoutInput): Layout {
     const z0 = p.min[2];
     const z1 = p.max[2];
     // + 0.1: the shrunk-outline test is an approximation of the true inward offset the wall is built with
-    const inset = intrusion(z0, z1) + (z1 > split - lipH && z0 < split ? lipIntr : 0) + 0.1;
+    // the lip hangs lipH below the split and its ledge sits 0.8 mm above it
+    const inset = intrusion(z0, z1) + (z1 > split - lipH && z0 < split + 0.8 ? lipIntr : 0) + 0.1;
     const side = p.bound && SIDE_FACES.includes(p.bound.face) ? p.bound.face : undefined;
     const pad = (dir: CaseFaceName) => (side === dir ? p.bound!.offset : g);
     const flat = Math.abs(apply(p.R, [0, 0, 1])[2]) > 0.5;
@@ -470,12 +650,20 @@ export function layoutCase(input: LayoutInput): Layout {
     if (fp && scr) centerX = toCase(fp, scr.tip)[0];
   }
   let plan = sizePlan(kind, needs, { ...(center ? { center } : {}), ...(centerX !== undefined ? { centerX } : {}), cornerRadius: cornerCavity });
-  plan = { ...plan, flats: mergeFlats(flats) };
+  // A box keeps a flat wall at each connector; a curved shape stays curved all round (the
+  // connector's board moves out to the wall in step 7 and the opening gets a flat spot face).
+  const curved = kind !== "rrect";
+  // Two or more connectors on one side of a curved shape share a flat there (one straight stretch
+  // the plugs reach); a single one goes out to the curve.
+  const perSide = new Map<CaseFaceName, number>();
+  for (const p of placed) if (p.bound && SIDE_FACES.includes(p.bound.face) && p.bound.feature.kind === "connector") perSide.set(p.bound.face, (perSide.get(p.bound.face) ?? 0) + 1);
+  const sideOf = (f: Flat): CaseFaceName => (f.axis === "x" ? (f.sign > 0 ? "right" : "left") : f.sign > 0 ? "top" : "bottom");
+  plan = { ...plan, flats: mergeFlats(curved ? flats.filter((f) => (perSide.get(sideOf(f)) ?? 0) > 1) : flats) };
   // A flat that is outside the curve does nothing; one that cuts too deep is impossible (the parts are inside it by construction).
 
   // ---- 7. side-bound non-connector parts move out until the body (not just the cap) meets the wall
   for (const p of placed) {
-    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || p.bound.feature.kind === "connector") continue;
+    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || (p.bound.feature.kind === "connector" && (!curved || (perSide.get(p.bound.face) ?? 0) > 1))) continue;
     const n = FACE_DIR[p.bound.face];
     // measured from where the feature leaves the body (a lever / shaft / dome pokes through the wall)
     const pt = p.bound.feature.passThrough ? p.bound.feature.protrude : 0;
@@ -505,11 +693,64 @@ export function layoutCase(input: LayoutInput): Layout {
     }
     if (lo > 0.01) Object.assign(p, shift(p, [n[0] * lo, n[1] * lo, 0]));
   }
+  // A connector the curve still keeps away from the wall (a tight end radius bows away from the
+  // board's corners) gets a flat on that side after all, so the plug reaches the receptacle.
+  if (curved) {
+    const late: Flat[] = [];
+    for (const p of placed) {
+      if (!p.bound || !SIDE_FACES.includes(p.bound.face) || p.bound.feature.kind !== "connector") continue;
+      const n = FACE_DIR[p.bound.face];
+      const tip = tipCase(p);
+      const o = p.bound.offset;
+      if (rayExit(plan, tip[0], tip[1], n[0], n[1]) - o <= 1.2) continue; // a spot face reaches up to here
+      const side = p.bound.face;
+      late.push(side === "right" ? { axis: "x", sign: 1, at: tip[0] + o } : side === "left" ? { axis: "x", sign: -1, at: tip[0] - o } : side === "top" ? { axis: "y", sign: 1, at: tip[1] + o } : { axis: "y", sign: -1, at: tip[1] - o });
+    }
+    if (late.length) plan = { ...plan, flats: mergeFlats([...plan.flats, ...late]) };
+  }
+  // A flat on a round shape gets rounded corners as large as the edge fillet needs (OpenCascade
+  // cannot roll a fillet round a tighter corner), as far as the parts beside it allow; the edge
+  // radius shrinks to what the corner allows.
+  if (curved && plan.flats.length && kind !== "ellipse") {
+    const okRc = (rc: number) =>
+      placed.every((p) => {
+        const inset = intrusion(p.bodyMin[2], p.bodyMax[2]);
+        for (const x of [p.bodyMin[0], p.bodyMax[0]]) for (const y of [p.bodyMin[1], p.bodyMax[1]]) if (!contains({ ...plan, flatCorner: rc }, x, y, inset)) return false;
+        return true;
+      });
+    let rc = Math.max(rf, rfBack) - t + 0.15;
+    while (rc > 0.3 && !okRc(rc)) rc *= 0.85;
+    plan = { ...plan, flatCorner: rc };
+    rf = Math.max(0.6, Math.min(rf, rc + t - 0.15));
+    rfBack = Math.max(0.6, Math.min(rfBack, rc + t - 0.15));
+    ri = Math.max(0, rf - t);
+    riBack = Math.max(0, rfBack - t);
+  }
 
   // ---- 8. openings
   const openings: Opening[] = [];
   const grown = (off: number): Plan => ({ ...plan, a: plan.a + off, b: plan.b + off, rc: plan.rc + off, flats: plan.flats.map((f) => ({ ...f, at: f.at + f.sign * off })) });
   const outerPlan = grown(t);
+  // ---- 8a. pebble: domed faces with a flat plateau (window land on the front, bed contact for printing)
+  let dome: Layout["dome"] = null;
+  if (shape === "pebble") {
+    const rim = outline(outerPlan, 0, 180);
+    const mk = (x: number, y: number, want: number): Dome => {
+      const S = Math.max(...rim.map(([px, py]) => Math.hypot(px - x, py - y)));
+      const Smin = Math.min(...rim.map(([px, py]) => Math.hypot(px - x, py - y)));
+      const crown = Math.max(0.5, Math.min(1.0, 0.02 * S));
+      const plateau = Math.min(want, Smin - Math.max(rf, rfBack) - 1.5);
+      if (plateau < 2) return { x, y, R: 0, S, plateau: 0, crown: 0 };
+      return { x, y, R: domeRadius(S, plateau, crown), S, plateau, crown };
+    };
+    const fp = front ? placed.find((p) => p.mech.id === front.mech.id) : undefined;
+    const scr = fp?.mech.features.find((f) => f.kind === "screen" && f.expose);
+    const sc = fp && scr ? toCase(fp, scr.tip) : undefined;
+    const winR = scr ? (scr.shape === "round" ? scr.u / 2 : Math.hypot(scr.u, scr.v) / 2) + 0.3 : 0;
+    const smin = Math.min(...rim.map(([px, py]) => Math.hypot(px - plan.cx, py - plan.cy)));
+    dome = { front: sc ? mk(sc[0], sc[1], winR + 2.5) : mk(plan.cx, plan.cy, 0.45 * smin), back: mk(plan.cx, plan.cy, 0.45 * smin) };
+    if (!dome.front.crown && !dome.back.crown) dome = null;
+  }
   for (const p of placed) {
     for (const f of p.mech.features) {
       if (!f.expose) continue;
@@ -540,7 +781,7 @@ export function layoutCase(input: LayoutInput): Layout {
       }
       const uAxis = apply(p.R, f.uAxis);
       const vAxis = apply(p.R, f.vAxis);
-      const depthAlong = face === "front" || face === "back" ? t : Math.max(t, rayExit(outerPlan, at[0], at[1], n[0], n[1]) + 1e-6);
+      const depthAlong = face === "front" || face === "back" ? t + domeHeight(dome?.[face], at[0], at[1]) : Math.max(t, rayExit(outerPlan, at[0], at[1], n[0], n[1]) + 1e-6);
       const o: Opening = { part: p.mech.id, feature: f.id, kind: "hole", face, n, at, shape: f.shape, u: f.u, v: f.v, uAxis, vAxis, corner: 0, depth: depthAlong, standoff: wallDist };
       switch (f.kind) {
         case "screen": {
@@ -560,12 +801,19 @@ export function layoutCase(input: LayoutInput): Layout {
           o.insert = { kind: "cap", d: stem, flange_d: stem + 3, flange_mm: 1.0, length: wallDist + depthAlong + protrude, base: tip, travel: f.travel, protrude };
           break;
         }
-        case "connector":
+        case "connector": {
           o.kind = "connector";
           o.u = f.u + 2 * f.plugClearance;
           o.v = f.v + 2 * f.plugClearance;
+          // a curved wall holds the receptacle back: thin the wall round the port (never under 1.2 mm)
+          const spot = Math.min(o.depth - 1.2, o.standoff + o.depth - 1.9);
+          if (curved && spot > 0.05) {
+            o.spot = spot;
+            o.depth -= spot;
+          }
           o.corner = Math.min(o.v / 2 - 0.01, f.connector?.startsWith("usb") ? o.v / 2 - 0.01 : 0.8);
           break;
+        }
         case "led":
           if (f.passThrough) {
             o.u = o.v = f.u + 2 * tol;
@@ -724,12 +972,12 @@ export function layoutCase(input: LayoutInput): Layout {
     const tw = shape === "keychain" ? 14 : 10;
     const th = shape === "keychain" ? 12 : 8;
     const tt = Math.min(3.2, Math.max(2.4, (split - zBack) * 0.9));
-    tab = { x: plan.cx, y: ob.maxY + th / 2 - 2, w: tw, h: th, t: tt, hole: shape === "keychain" ? 5 : 3.5, z0: zBack - t };
+    tab = { x: plan.cx, y: ob.maxY + th / 2 - 2, w: tw, h: th, t: tt, hole: shape === "keychain" ? 5 : 3.5, z0: Math.max(zBack - t, split - 0.3 - tt) }; // just under the split, on the straight band of the back shell
   }
 
   // ---- 12. finish: centre the outer box on the origin
-  const outerMin: Vec3 = [ob.minX, ob.minY, zBack - t];
-  const outerMax: Vec3 = [ob.maxX, tab ? Math.max(ob.maxY, tab.y + tab.h / 2) : ob.maxY, zFront + t];
+  const outerMin: Vec3 = [ob.minX, ob.minY, zBack - t - (dome?.back.crown ?? 0)];
+  const outerMax: Vec3 = [ob.maxX, tab ? Math.max(ob.maxY, tab.y + tab.h / 2) : ob.maxY, zFront + t + (dome?.front.crown ?? 0)];
   const c: Vec3 = [(outerMin[0] + outerMax[0]) / 2, (outerMin[1] + outerMax[1]) / 2, (outerMin[2] + outerMax[2]) / 2];
   const mv = (v: Vec3): Vec3 => [v[0] - c[0], v[1] - c[1], v[2] - c[2]];
   for (const p of placed) Object.assign(p, shift(p, [-c[0], -c[1], -c[2]]));
@@ -756,6 +1004,11 @@ export function layoutCase(input: LayoutInput): Layout {
     cr.min = mv(cr.min);
     cr.max = mv(cr.max);
   }
+  if (dome)
+    for (const d of [dome.front, dome.back]) {
+      d.x -= c[0];
+      d.y -= c[1];
+    }
   if (tab) {
     tab.x -= c[0];
     tab.y -= c[1];
@@ -777,6 +1030,8 @@ export function layoutCase(input: LayoutInput): Layout {
     zBack: zBack - c[2],
     rf,
     ri,
+    rfBack,
+    riBack,
     split: split - c[2],
     lip: closure === "snap" ? lip : null,
     openings,
@@ -784,11 +1039,24 @@ export function layoutCase(input: LayoutInput): Layout {
     posts,
     bosses,
     cradles,
+    dome,
     ...(tab ? { tab } : {}),
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },
     inner: { w: r1(ib.maxX - ib.minX), h: r1(ib.maxY - ib.minY), d: r1(zFront - zBack) },
     issues,
   };
+  }
+}
+
+/** What the packer minimises: the outer volume, weighed up when the case is thick for a pocket (> 18 mm, more past 22 mm). */
+export function caseCost(L: Pick<Layout, "outer" | "shape" | "rf" | "rfBack" | "plan">): number {
+  const v = L.outer.w * L.outer.h * L.outer.d;
+  const [a, b, d] = [L.outer.w, L.outer.h, L.outer.d].sort((x, y) => y - x) as [number, number, number];
+  let k = 1 + 0.03 * Math.max(0, d - 18) + 0.06 * Math.max(0, d - 22) + 0.02 * Math.max(0, a - 110) + 0.03 * Math.max(0, b - 70);
+  // a pebble / pill / puck / keychain with a small edge radius is a slab, not the shape asked for
+  const want = EDGE_SHARE[L.shape] * d;
+  if (want > 0) k *= 1 + 0.3 * Math.max(0, 1 - L.rf / want) + 0.15 * Math.max(0, 1 - L.rfBack / want) + 0.25 * L.plan.flats.length;
+  return v * k;
 }
 
 function rank(p: Plan0): number {

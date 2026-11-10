@@ -30,6 +30,7 @@ export interface Built {
   outer: Solid;
   cavity: Solid;
   rf: number;
+  rfBack: number;
   notes: string[];
   screws?: { count: number; size: string; inserts: string };
 }
@@ -77,18 +78,56 @@ function tryFillet(solid: Solid, r: number, z: number): Solid | undefined {
   }
 }
 
-/** Extrude the plan from z0 to z1 and round both perimeter edges with r (falls back to smaller radii). */
-function roundedSlab(r: Replicad, drawing: Solid, z0: number, z1: number, rad: number): { solid: Solid; r: number } {
+/** Extrude the plan from z0 to z1 and round the top perimeter with radTop, the bottom with radBot (falls back to smaller radii). */
+function roundedSlab(r: Replicad, drawing: Solid, z0: number, z1: number, radTop: number, radBot = radTop): { solid: Solid; r: number; rBack: number } {
   const base = drawing.sketchOnPlane("XY", z0).extrude(z1 - z0);
-  if (rad < 0.05) return { solid: base, r: 0 };
   for (const k of [1, 0.75, 0.5, 0.3]) {
-    const rr = rad * k;
-    const a = tryFillet(base, rr, z1);
-    const b = a ? tryFillet(a, rr, z0) : undefined;
-    if (b) return { solid: b, r: rr };
+    const a = radTop * k < 0.05 ? base : tryFillet(base, radTop * k, z1);
+    const b = a && radBot * k >= 0.05 ? tryFillet(a, radBot * k, z0) : a;
+    if (b) return { solid: b, r: radTop * k < 0.05 ? 0 : radTop * k, rBack: radBot * k < 0.05 ? 0 : radBot * k };
   }
   void r;
-  return { solid: base, r: 0 };
+  return { solid: base, r: 0, rBack: 0 };
+}
+
+/**
+ * A curved shape's outer body: the outer plan extruded, domed by a sphere on each face (pebble),
+ * every front / back rim edge rounded in 3D with one large fillet, then the domes cut flat at their
+ * plateau. Falls back to smaller radii when OpenCascade cannot fillet the larger one.
+ */
+export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number): { solid: Solid; r: number; rBack: number } {
+  const d = L.dome;
+  const cf = d?.front.crown ?? 0;
+  const cb = d?.back.crown ?? 0;
+  let base = planDrawing(r, L.plan, L.params.wall_mm).sketchOnPlane("XY", zOutB - cb - 1).extrude(zOutF - zOutB + cf + cb + 2);
+  const sphere = (dm: NonNullable<Layout["dome"]>["front"], z0: number, sign: 1 | -1) => {
+    const zc = z0 - sign * Math.sqrt(dm.R * dm.R - dm.S * dm.S);
+    // turned so the sphere's poles and seam lie far outside the body (a seam on the face would be filleted)
+    return r.makeSphere(dm.R).rotate(90, [0, 0, 0], [1, 0, 0]).translate([dm.x, dm.y, zc]);
+  };
+  if (d && cf > 0) base = base.intersect(sphere(d.front, zOutF, 1));
+  else base = base.intersect(r.makeBox([-1e3, -1e3, -1e3], [1e3, 1e3, zOutF]));
+  if (d && cb > 0) base = base.intersect(sphere(d.back, zOutB, -1));
+  else base = base.intersect(r.makeBox([-1e3, -1e3, zOutB], [1e3, 1e3, 1e3]));
+  const zMid = (zOutF + zOutB) / 2;
+  const span = (zOutF - zOutB) / 2;
+  for (const k of [1, 0.85, 0.7, 0.55, 0.4, 0.25]) {
+    const rT = L.rf * k;
+    const rB = L.rfBack * k;
+    try {
+      // the front and back rim edges only (a seam running front to back is not rounded)
+      let s = base.fillet((e: Solid) => {
+        const bb = e.boundingBox;
+        if (bb.depth > span) return null;
+        return bb.center[2] > zMid ? rT : rB;
+      });
+      s = s.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf]));
+      if (r.measureVolume(s) > 0) return { solid: s, r: rT, rBack: rB };
+    } catch {
+      // try a smaller radius
+    }
+  }
+  return { solid: base.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf])), r: 0, rBack: 0 };
 }
 
 function cutterFor(r: Replicad, o: Opening, len: number): Solid {
@@ -116,12 +155,13 @@ export async function buildCase(L: Layout): Promise<Built> {
   const cav2d = () => planDrawing(r, L.plan, 0);
   const zOutF = L.zFront + t;
   const zOutB = L.zBack - t;
-  const outerR = roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf);
+  const outerR = L.kind === "rrect" ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
   const outer = outerR.solid;
   const rf = outerR.r;
+  const rfBack = outerR.rBack;
   if (rf + 1e-6 < L.rf) notes.push(`The rounded front / back edge is ${rf.toFixed(1)} mm instead of ${L.rf.toFixed(1)} mm (OpenCascade could not fillet the larger radius on this outline).`);
-  const ri = Math.max(0, rf - t);
-  const cavity = roundedSlab(r, cav2d(), L.zBack, L.zFront, ri).solid;
+  if (L.dome) notes.push(`Domed faces: the front rises ${L.dome.front.crown.toFixed(1)} mm and the back ${L.dome.back.crown.toFixed(1)} mm above the flat wall, with a flat ${(2 * L.dome.front.plateau).toFixed(0)} mm land around the window and a flat ${(2 * L.dome.back.plateau).toFixed(0)} mm pad on the back (each shell prints on its flat).`);
+  const cavity = roundedSlab(r, cav2d(), L.zBack, L.zFront, Math.max(0, rf - t), Math.max(0, rfBack - t)).solid;
   let shell = outer.cut(cavity);
 
   // tab (keychain / lanyard), part of the back shell
@@ -129,7 +169,7 @@ export async function buildCase(L: Layout): Promise<Built> {
     const ob = planBounds(L.plan, t);
     const tb = L.tab;
     const top = tb.y + tb.h / 2;
-    const bottom = ob.maxY - Math.max(rf, 1) - 3;
+    const bottom = ob.maxY - t - 1.5; // overlaps the wall
     const h = top - bottom;
     const rr = Math.min(tb.w / 2 - 0.01, 4);
     let tabS = r.drawRoundedRectangle(tb.w, h, rr).translate(tb.x, (top + bottom) / 2).sketchOnPlane("XY", tb.z0).extrude(tb.t);
@@ -148,6 +188,14 @@ export async function buildCase(L: Layout): Promise<Built> {
       const piece = fp.shape === "round" ? r.makeCylinder(fp.r, h, [fp.cx, fp.cy, 0], [0, 0, 1]) : r.makeBox([fp.cx - fp.hw, fp.cy - fp.hh, 0], [fp.cx + fp.hw, fp.cy + fp.hh, h]);
       s = s ? s.fuse(piece) : piece;
     }
+    // mounting holes go through the board: the case's locating pins sit in them
+    for (const hole of m.holes) {
+      try {
+        s = s!.cut(r.makeCylinder(hole.d / 2, h + 2, [hole.x, hole.y, -1], [0, 0, 1]));
+      } catch {
+        // keep the solid board (the intersection check is then stricter there)
+      }
+    }
     for (const f of m.features.filter((x) => x.passThrough && x.n[2] > 0.5)) s = s!.fuse(r.makeCylinder(Math.min(f.u, f.v) / 2, f.protrude, [f.tip[0], f.tip[1], f.tip[2] - f.protrude], [0, 0, 1]));
     envelopes.push({ id: m.id, shape: orient(s, p.R).translate(p.T), color: partColor(m.category) });
   }
@@ -160,7 +208,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   // closure
   if (L.lip) {
     const lip = L.lip;
-    const outRing = (a: number, b: number) => cav2d().offset(a).cut(cav2d().offset(b));
+    const outRing = (a: number, b: number) => planDrawing(r, L.plan, a).cut(planDrawing(r, L.plan, b));
     let lipS = outRing(-tol, -tol - lip.t).sketchOnPlane("XY", L.split - lip.h).extrude(lip.h + 0.01);
     lipS = lipS.fuse(outRing(t * 0.5, -tol - lip.t).sketchOnPlane("XY", L.split).extrude(0.8));
     if (lip.groove > 0.05) {
@@ -212,6 +260,12 @@ export async function buildCase(L: Layout): Promise<Built> {
   const color = L.params.color;
   for (const o of L.openings) {
     const len = o.depth + 0.8;
+    if (o.spot) {
+      // flat recess on the outside round the port: from depth (the thinned wall) outwards
+      const spotTool = orient(r.drawRoundedRectangle(o.u + 4, o.v + 4, Math.min(2, (o.v + 4) / 2 - 0.01)).sketchOnPlane("XY", o.depth).extrude(o.spot + 6), frameR(o.uAxis, o.vAxis, o.n)).translate(o.at);
+      front = front.cut(spotTool);
+      back = back.cut(spotTool);
+    }
     const tools: Solid[] = o.holes ? o.holes.map((h) => cylAlong(r, h.d, -0.8, len, h.at, o.n)) : [cutterFor(r, o, len)];
     for (const tool of tools) {
       front = front.cut(tool);
@@ -246,7 +300,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   }
 
   void apply;
-  return { bodies, envelopes, outer, cavity, rf, notes, ...(screws ? { screws } : {}) };
+  return { bodies, envelopes, outer, cavity, rf, rfBack, notes, ...(screws ? { screws } : {}) };
 }
 
 export function partColor(category: string): string {

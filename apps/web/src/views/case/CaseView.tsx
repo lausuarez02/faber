@@ -311,7 +311,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
 }
 
 function PocketBadge({ pocket }: { pocket: CaseReport["pocket"] }) {
-  const text = pocket === "fits" ? "fits a pocket" : pocket === "tight" ? "tight for a pocket" : "too big for a pocket";
+  const text = pocket === "fits" ? "fits a pocket" : pocket === "tight" ? "tight for a pocket" : "bulky for a pocket";
   return (
     <span className={`cv-pocket is-${pocket}`} data-testid="case-pocket">
       {text}

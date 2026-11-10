@@ -30,10 +30,12 @@ describe("plans", () => {
     const p = sizePlan(kind, needs, { cornerRadius: 2 });
     for (const q of needs) expect(contains(p, q.x, q.y, q.inset)).toBe(true);
   });
-  it("pocket verdict uses the plan_device limit", () => {
+  it("pocket verdict goes by thickness first (18 comfortable, 22 tight, more bulky)", () => {
     expect(pocketVerdict({ w: 46, h: 38, d: 17 })).toBe("fits");
-    expect(pocketVerdict({ w: 76, h: 72, d: 25 })).toBe("tight");
-    expect(pocketVerdict({ w: 140, h: 90, d: 40 })).toBe("no");
+    expect(pocketVerdict({ w: 66, h: 74, d: 17.5 })).toBe("fits");
+    expect(pocketVerdict({ w: 70, h: 94, d: 19.6 })).toBe("tight");
+    expect(pocketVerdict({ w: 66, h: 74, d: 24.7 })).toBe("no");
+    expect(pocketVerdict({ w: 140, h: 90, d: 15 })).toBe("no");
   });
 });
 
@@ -49,7 +51,12 @@ describe("layout of the Muse", () => {
         expect(sep, `${a.mech.id} overlaps ${b.mech.id}`).toBe(true);
       }
     const kinds = L.openings.map((o) => `${o.part}:${o.kind}:${o.face}`).sort();
-    for (const k of ["chg:connector:bottom", "eye:window:front", "pet:button:right", "squeak:grille:back", "xiao:connector:bottom"]) expect(kinds).toContain(k);
+    for (const k of ["eye:window:front", "pet:button:right", "squeak:grille:back"]) expect(kinds).toContain(k);
+    // a box or key fob puts both USB ports on its bottom flat; a curved shape gives each its own side
+    const ports = L.openings.filter((o) => o.kind === "connector");
+    expect(ports.map((o) => o.part).sort()).toEqual(["chg", "xiao"]);
+    if (shape === "rounded-box" || shape === "keychain") expect(ports.every((o) => o.face === "bottom")).toBe(true);
+    else expect(new Set(ports.map((o) => o.face)).size).toBe(2);
     // outer box centred on the origin (R3)
     for (let k = 0; k < 3; k++) expect(L.outer.min[k]! + L.outer.max[k]!).toBeCloseTo(0, 6);
     expect(L.inner.d).toBeLessThan(L.outer.d);

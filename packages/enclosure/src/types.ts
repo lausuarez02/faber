@@ -65,7 +65,9 @@ export interface CaseReport {
   inner_mm: { w: number; h: number; d: number };
   wall_mm: number;
   mass_g?: number; // shell mass at the process's density (PLA 1.24 g/cm³ default)
-  /** "fits": ≤ 110 × 70 × 30 mm (same limit as plan_device's pocket), "tight": ≤ 130 × 80 × 35, otherwise "no". */
+  /** Volume enclosed by the outer surface (cm³): what the packer minimises. */
+  volume_cm3?: number;
+  /** Thickness first: "fits" (comfortable) ≤ 18 mm thick within 110 × 70 mm, "tight" ≤ 22 mm within 130 × 80, otherwise "no" (bulky). */
   pocket: "fits" | "tight" | "no";
   ok: boolean; // no check with severity "error" failed
   checks: FitCheck[];

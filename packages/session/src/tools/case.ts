@@ -51,7 +51,7 @@ export const caseTools: ToolModule = {
     {
       name: "design_case",
       title: "Design a printable case",
-      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body (front, back, button plungers, light pipes), case.3mf (coloured, for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole). Example: {"shape": "pebble"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 63.1 x 55.2 x 32), inner_mm, pocket ("fits" ≤ 110 x 70 x 30 mm, "tight", "no"), ok, checks (fits, screen-window, buttons-reachable, connector-access, min-wall, printable, watertight, no-intersection, size-match), files, plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 20 s (real CAD). ${CANNOT}`,
+      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body (front, back, button plungers, light pipes), case.3mf (coloured, for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole). Example: {"shape": "pebble"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 63.1 x 55.2 x 32), inner_mm, pocket (thickness first: "fits" = comfortable, ≤ 18 mm thick within 110 x 70 mm; "tight" ≤ 22 mm; "no" = bulky), volume_cm3, ok, checks (fits, screen-window, buttons-reachable, connector-access, min-wall, printable, watertight, no-intersection, size-match), files, plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 20 s (real CAD). ${CANNOT}`,
       inputSchema: {
         type: "object",
         properties: {
@@ -237,7 +237,7 @@ function fmtSize(r: CaseReport): string {
 }
 
 function compact(r: CaseReport) {
-  return { shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
+  return { shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
 }
 
 function answer(s: ProjectSession, out: Out, images: boolean, rel: string, next: string) {

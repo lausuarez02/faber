@@ -18,7 +18,7 @@ import { occt } from "./occt.ts";
 import { renderPng, type RenderItem, VIEWS } from "./render.ts";
 import type { CaseFile, CaseMesh, CaseReport, FitCheck, PlacedPart, Vec3 } from "./types.ts";
 
-export const ENGINE_VERSION = "case-1";
+export const ENGINE_VERSION = "case-2";
 export const MIN_WALL = 1.2;
 
 export interface GenerateOptions {
@@ -62,11 +62,25 @@ function sha(b: Uint8Array): string {
   return createHash("sha256").update(b).digest("hex");
 }
 
+/**
+ * Pocket verdict, thickness first (what a pocket feels): "fits" (comfortable) up to 18 mm thick
+ * within 110 x 70 mm, "tight" up to 22 mm within 130 x 80 mm, otherwise "no" (bulky).
+ */
 export function pocketVerdict(s: { w: number; h: number; d: number }): "fits" | "tight" | "no" {
   const [a, b, c] = [s.w, s.h, s.d].sort((x, y) => y - x) as [number, number, number];
-  if (a <= 110 && b <= 70 && c <= 30) return "fits";
-  if (a <= 130 && b <= 80 && c <= 35) return "tight";
+  if (a <= 110 && b <= 70 && c <= 18) return "fits";
+  if (a <= 130 && b <= 80 && c <= 22) return "tight";
   return "no";
+}
+
+/** The pocket verdict in words, with the reason. */
+export function pocketText(s: { w: number; h: number; d: number }): string {
+  const v = pocketVerdict(s);
+  const [a, b, c] = [s.w, s.h, s.d].sort((x, y) => y - x) as [number, number, number];
+  if (v === "fits") return `comfortable in a pocket (${c} mm thick; up to 18 mm feels fine)`;
+  const why = c > 22 ? `${c} mm thick (over 22 mm)` : c > 18 ? `${c} mm thick (18 to 22 mm)` : `${a} x ${b} mm across (a pocket takes about 110 x 70 mm)`;
+  if (v === "tight") return `tight in a pocket: ${why}`;
+  return `bulky for a pocket: ${c > 22 ? why : `${a} x ${b} mm across, ${c} mm thick`}`;
 }
 
 export async function generateCase(project: Project, specOf: SpecOf, opts: GenerateOptions = {}): Promise<Generated> {
@@ -153,9 +167,14 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const recess = o.standoff + o.depth;
     const inward: Vec3 = [-o.n[0], -o.n[1], -o.n[2]];
     const half = o.u / 2;
-    const edgeOk = [-1, 1].every((s) => contains(L.plan, o.at[0] + o.uAxis[0] * half * s + inward[0] * 0.05, o.at[1] + o.uAxis[1] * half * s + inward[1] * 0.05, 0));
-    const band: [number, number] = [L.outer.min[2] + B.rf, L.outer.max[2] - B.rf];
-    const zIn = Math.abs(o.vAxis[2]) > 0.5 ? o.at[2] - o.v / 2 >= band[0] - 0.05 && o.at[2] + o.v / 2 <= band[1] + 0.05 : true;
+    // a curved wall may bow away from the opening's corners by its sagitta (up to ~1 mm over a plug's width)
+    const bow = L.kind === "rrect" ? 0.05 : 1.2;
+    const edgeOk = [-1, 1].every((s) => contains(L.plan, o.at[0] + o.uAxis[0] * half * s + inward[0] * bow, o.at[1] + o.uAxis[1] * half * s + inward[1] * bow, 0));
+    const band: [number, number] = [L.zBack - L.params.wall_mm + B.rfBack, L.zFront + L.params.wall_mm - B.rf];
+    // the receptacle faces the straight band; the plug's overmold clearance may run into the curve
+    const feat = L.placed.find((p) => p.mech.id === o.part)?.mech.features.find((f) => f.id === o.feature);
+    const vHalf = feat ? feat.v / 2 + Math.min(0.6, feat.plugClearance) : o.v / 2;
+    const zIn = Math.abs(o.vAxis[2]) > 0.5 ? o.at[2] - vHalf >= band[0] - 0.05 && o.at[2] + vHalf <= band[1] + 0.05 : true;
     const ok = recess <= 2.5 && edgeOk && zIn;
     checks.push({ id: "connector-access", ok, severity: ok ? "info" : "error", message: ok ? `${o.part}.${o.feature}: ${o.u.toFixed(1)} x ${o.v.toFixed(1)} mm opening on the ${o.face}, receptacle ${recess.toFixed(1)} mm inside the outer surface (plug overmold clearance included).` : `${o.part}.${o.feature}: the plug may not reach (receptacle ${recess.toFixed(1)} mm in${edgeOk ? "" : ", opening wider than the flat"}${zIn ? "" : ", opening runs into the rounded edge"}). Why: the port sits too far from the wall or on a curve. Fix: a rounded-box shape, a smaller corner / edge radius, or wall_mm 1.2.`, parts: [o.part] });
   }
@@ -165,7 +184,13 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   // ---- pocket
   const size = { w: L.outer.w, h: L.outer.h, d: L.outer.d };
   const pocket = pocketVerdict(size);
-  checks.push({ id: "pocket", ok: pocket !== "no", severity: pocket === "no" ? "warning" : "info", message: `${size.w} x ${size.h} x ${size.d} mm: ${pocket === "fits" ? "fits in a pocket" : pocket === "tight" ? "tight for a pocket (limit 110 x 70 x 30 mm)" : "too big for a pocket"}.` });
+  let outerVol = 0;
+  try {
+    outerVol = r.measureVolume(B.outer) / 1000;
+  } catch {
+    outerVol = 0;
+  }
+  checks.push({ id: "pocket", ok: pocket !== "no", severity: pocket === "no" ? "warning" : "info", message: `${size.w} x ${size.h} x ${size.d} mm${outerVol ? `, ${outerVol.toFixed(0)} cm³` : ""}: ${pocketText(size)}.${pocket !== "fits" ? " Thinner: exclude a part that need not be inside, or try another shape (each packs differently)." : ""}` });
   const fitsOk = !L.issues.some((i) => i.id === "fits" && i.severity === "error");
   checks.unshift({ id: "fits", ok: fitsOk, severity: fitsOk ? "info" : "error", message: fitsOk ? `All ${L.placed.length} parts fit in ${L.inner.w} x ${L.inner.h} x ${L.inner.d} mm inside with ${L.params.gap_mm} mm of wiring room around each${L.inline.length ? `; ${L.inline.join(", ")} ride in the wiring (heat-shrink)` : ""}${L.outside.length ? `; outside the case: ${L.outside.map((o) => o.id).join(", ")}` : ""}.` : "Some parts do not fit; see the errors below." });
 
@@ -193,7 +218,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   let shellVol = 0;
   for (const b of B.bodies) shellVol += Math.max(0, checkMesh(meshes.get(b.name)!).volume);
   const massG = (shellVol / 1000) * mat.density;
-  const svg = drawingSvg(L, title, { rf: B.rf, wallMeasured: wall, ...(B.screws ? { screws: `${B.screws.count} x ${B.screws.size} into heat-set inserts` } : {}), massG });
+  const svg = drawingSvg(L, title, { rf: B.rf, rfBack: B.rfBack, wallMeasured: wall, ...(B.screws ? { screws: `${B.screws.count} x ${B.screws.size} into heat-set inserts` } : {}), massG });
   files.set("drawing/drawing.svg", new TextEncoder().encode(svg));
   if (opts.pdf) {
     const p = await opts.pdf(svg);
@@ -222,6 +247,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     inner_mm: L.inner,
     wall_mm: L.params.wall_mm,
     mass_g: Math.round(massG * 10) / 10,
+    ...(outerVol ? { volume_cm3: Math.round(outerVol * 10) / 10 } : {}),
     pocket,
     ok,
     checks,

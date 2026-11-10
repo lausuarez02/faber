@@ -1,6 +1,6 @@
 /**
  * Deterministic software renders of the case (no browser, no GPU): a z-buffered triangle
- * rasteriser with flat Lambert shading and 2x supersampling, written to PNG with sim-core's encoder.
+ * rasteriser with smooth (Gouraud) Lambert shading that keeps creases sharp (> 35°), a soft highlight and 2x supersampling, written to PNG with sim-core's encoder.
  */
 import { zlibSync } from "fflate";
 import type { Mesh } from "./mesh.ts";
@@ -96,6 +96,42 @@ export function renderPng(items: RenderItem[], view: View, width = 960, height =
     const base = hex(it.color);
     const alpha = it.alpha ?? 1;
     const o = it.offset ?? [0, 0, 0];
+    // per-corner normals: the area-weighted sum of the faces round that vertex that bend less than
+    // 35° from this face (curved surfaces shade smoothly, creases stay sharp)
+    const nT = I.length / 3;
+    const fN = new Float32Array(nT * 3);
+    const vF: number[][] = Array.from({ length: P.length / 3 }, () => []);
+    for (let t = 0; t < nT; t++) {
+      const a = I[3 * t]!, b = I[3 * t + 1]!, c = I[3 * t + 2]!;
+      const fn = cross([P[3 * b]! - P[3 * a]!, P[3 * b + 1]! - P[3 * a + 1]!, P[3 * b + 2]! - P[3 * a + 2]!], [P[3 * c]! - P[3 * a]!, P[3 * c + 1]! - P[3 * a + 1]!, P[3 * c + 2]! - P[3 * a + 2]!]);
+      fN[3 * t] = fn[0];
+      fN[3 * t + 1] = fn[1];
+      fN[3 * t + 2] = fn[2];
+      vF[a]!.push(t);
+      vF[b]!.push(t);
+      vF[c]!.push(t);
+    }
+    const unitF = (t: number) => norm([fN[3 * t]!, fN[3 * t + 1]!, fN[3 * t + 2]!]);
+    const cornerNormal = (t: number, v: number): Vec3 => {
+      const n0 = unitF(t);
+      const sum: Vec3 = [0, 0, 0];
+      for (const f of vF[v]!) {
+        const u = unitF(f);
+        if (u[0] * n0[0] + u[1] * n0[1] + u[2] * n0[2] < 0.82) continue;
+        sum[0] += fN[3 * f]!;
+        sum[1] += fN[3 * f + 1]!;
+        sum[2] += fN[3 * f + 2]!;
+      }
+      return norm(sum);
+    };
+    const shadeOf = (nn: Vec3) => {
+      const facing = Math.max(0, -(nn[0] * fwd[0] + nn[1] * fwd[1] + nn[2] * fwd[2]));
+      const lam = Math.max(0, nn[0] * lightV[0] + nn[1] * lightV[1] + nn[2] * lightV[2]);
+      // half-vector highlight (camera at -fwd)
+      const h = norm([lightV[0] - fwd[0], lightV[1] - fwd[1], lightV[2] - fwd[2]]);
+      const spec = Math.pow(Math.max(0, nn[0] * h[0] + nn[1] * h[1] + nn[2] * h[2]), 24);
+      return { k: 0.4 + 0.5 * lam + 0.14 * facing, spec: 0.12 * spec };
+    };
     for (let t = 0; t < I.length; t += 3) {
       const a = I[t]!, b = I[t + 1]!, c = I[t + 2]!;
       // world normal for shading
@@ -104,9 +140,8 @@ export function renderPng(items: RenderItem[], view: View, width = 960, height =
       void ax; void ay; void az;
       const facing = -(n[0] * fwd[0] + n[1] * fwd[1] + n[2] * fwd[2]);
       if (alpha >= 1 && facing <= 0) continue; // back-face cull for solids
-      const lam = Math.max(0, n[0] * lightV[0] + n[1] * lightV[1] + n[2] * lightV[2]);
-      const shadeK = 0.42 + 0.5 * lam + 0.14 * Math.max(0, facing);
-      const col = [base[0] * shadeK, base[1] * shadeK, base[2] * shadeK];
+      const corner = [a, b, c].map((v) => shadeOf(cornerNormal(t / 3, v)));
+      const cols = corner.map((q) => [base[0] * q.k + 255 * q.spec, base[1] * q.k + 255 * q.spec, base[2] * q.k + 255 * q.spec]);
       const X = [(p[3 * a]! - cx) * scale + W / 2, (p[3 * b]! - cx) * scale + W / 2, (p[3 * c]! - cx) * scale + W / 2];
       const Y = [H / 2 - (p[3 * a + 1]! - cy) * scale, H / 2 - (p[3 * b + 1]! - cy) * scale, H / 2 - (p[3 * c + 1]! - cy) * scale];
       const Z = [p[3 * a + 2]!, p[3 * b + 2]!, p[3 * c + 2]!];
@@ -127,6 +162,7 @@ export function renderPng(items: RenderItem[], view: View, width = 960, height =
           const z = w0 * Z[0]! + w1 * Z[1]! + w2 * Z[2]!;
           const k = y * W + x;
           if (z >= zbuf[k]!) continue;
+          const col = [w0 * cols[0]![0]! + w1 * cols[1]![0]! + w2 * cols[2]![0]!, w0 * cols[0]![1]! + w1 * cols[1]![1]! + w2 * cols[2]![1]!, w0 * cols[0]![2]! + w1 * cols[1]![2]! + w2 * cols[2]![2]!];
           if (alpha >= 1) {
             zbuf[k] = z;
             rgb[3 * k] = col[0]!;
