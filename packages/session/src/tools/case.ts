@@ -484,3 +484,15 @@ ${report ? `- Checks at design time: ${report.checks.map((c) => `${c.id} ${c.ok 
 - [ ] Every line of \`test/TEST-PLAN.md\` and \`test/TEST-ON-HARDWARE.md\`.
 `;
 }
+
+/** Meshes for the web Case view (R6 GET /api/case/mesh): from the cache, rebuilt when it is missing or stale. */
+export async function caseMesh(s: ProjectSession): Promise<{ mesh: import("@jumper/enclosure").CaseMesh; regenerated: boolean; report: CaseReport }> {
+  const st = await caseState(s);
+  const { readMeshCache, generateCase, writeMeshCache } = await import("@jumper/enclosure");
+  const file = join(s.dir, ".jumper", "case-mesh.json");
+  const cached = readMeshCache(file, st.report.hash);
+  if (cached) return { mesh: cached, regenerated: st.regenerated, report: st.report };
+  const g = await generateCase(s.project, (t) => s.registry.get(t)?.spec, { renders: false });
+  writeMeshCache(file, g.mesh);
+  return { mesh: g.mesh, regenerated: st.regenerated, report: st.report };
+}

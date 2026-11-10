@@ -1,0 +1,184 @@
+import { existsSync, readFileSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { basename, join, normalize, relative, resolve, sep } from "node:path";
+import { caseIsStale, caseMesh } from "@jumper/session";
+import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
+
+/**
+ * Round 6, track "case" (owner). Decision 0004, R6.
+ *   GET  /api/case                 → { enclosure | null, report?, stale }
+ *   POST /api/case                 → CaseReport (design_case when there is no case, else update_case; actor web)
+ *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
+ *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
+ *   POST /api/manufacturing        → export_manufacturing + url of the zip
+ *   GET  /api/manufacturing/:file  → a zip from <project>/manufacturing/
+ * Local-only like every route; changing routes need x-jumper-token. Errors: { error: "<what>. Why: … Fix: …" }.
+ */
+
+const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
+
+function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
+  if (req.headers["x-jumper-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-jumper-token", "changing the case needs the token from GET /api/connect, which only pages served by this Jumper server can read", "open the Jumper app from the jumper serve URL and try again"));
+  return false;
+}
+
+function cors(req: IncomingMessage): Record<string, string> {
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
+  return origin ? { "access-control-allow-origin": origin, vary: "Origin" } : {};
+}
+
+const TYPES: Record<string, string> = { stl: "model/stl", "3mf": "model/3mf", step: "model/step", png: "image/png", svg: "image/svg+xml", pdf: "application/pdf", json: "application/json", md: "text/markdown; charset=utf-8", zip: "application/zip" };
+
+function sendFile(res: ServerResponse, file: string, download: boolean): void {
+  const ext = file.split(".").pop()!.toLowerCase();
+  res.writeHead(200, { "content-type": TYPES[ext] ?? "application/octet-stream", "cache-control": "no-store", ...(download ? { "content-disposition": `attachment; filename="${basename(file)}"` } : {}) });
+  res.end(readFileSync(file));
+}
+
+/** path inside root (no .., no absolute) or undefined */
+function inside(root: string, p: string): string | undefined {
+  if (!p || p.includes("\0")) return undefined;
+  const abs = resolve(root, normalize(p));
+  const rel = relative(root, abs);
+  if (!rel || rel.startsWith("..") || rel.split(sep).includes("..") || resolve(root, rel) !== abs) return undefined;
+  return abs;
+}
+
+const noCase = (dir: string) => err("No case yet", `${join(dir, "jumper.json")} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
+
+export const caseRoutes: ApiRoute[] = [
+  {
+    method: "GET",
+    path: "/api/case",
+    label: "GET /api/case",
+    async handle(req, res, ctx) {
+      const s = ctx.session();
+      s.sync();
+      const enc = s.project.enclosure ?? null;
+      if (!enc) return ctx.json(res, 200, { enclosure: null, stale: false }, cors(req));
+      const stale = await caseIsStale(s);
+      const file = join(s.dir, "case", "report.json");
+      const report = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : undefined;
+      ctx.json(res, 200, { enclosure: enc, ...(report ? { report } : {}), stale }, cors(req));
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/case",
+    label: "POST /api/case",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      let body: Record<string, unknown>;
+      try {
+        body = await ctx.body(req);
+      } catch (e) {
+        return ctx.json(res, 400, err("The case request is not JSON", (e as Error).message, 'send {"shape": "pebble", "params": {...}}'));
+      }
+      const has = !!ctx.session().project.enclosure;
+      const args: Record<string, unknown> = { images: false };
+      for (const k of ["shape", "params", "front", "placements", "exclude"]) if (body[k] !== undefined) args[k] = body[k];
+      if (!has && !args.shape) return ctx.json(res, 400, err("No case yet", "a new case needs a shape", 'send {"shape": "pebble"} (rounded-box, pill, pebble, puck or keychain)'));
+      try {
+        const r = await ctx.call(has ? "update_case" : "design_case", args, { actor: "web" });
+        ctx.hub.broadcast({ type: "case", hash: (r as { hash?: string }).hash ?? "", ok: !!(r as { ok?: boolean }).ok });
+        ctx.json(res, 200, r);
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `${has ? "Updating" : "Designing"} the case failed. Why: ${m}. Fix: change the setting and try again` });
+      }
+    },
+  },
+  {
+    method: "GET",
+    path: "/api/case/mesh",
+    label: "GET /api/case/mesh",
+    async handle(req, res, ctx) {
+      const s = ctx.session();
+      s.sync();
+      if (!s.project.enclosure) return ctx.json(res, 404, noCase(s.dir), cors(req));
+      try {
+        const { mesh, regenerated, report } = await caseMesh(s);
+        if (regenerated) ctx.hub.broadcast({ type: "case", hash: report.hash, ok: report.ok });
+        ctx.json(res, 200, mesh, cors(req));
+      } catch (e) {
+        ctx.json(res, 500, err("Could not build the case meshes", (e as Error).message, "check get_case for errors, change the case and try again"), cors(req));
+      }
+    },
+  },
+  {
+    method: "GET",
+    path: /^\/api\/case\/file$/,
+    label: "GET /api/case/file?path=",
+    handle(req, res, ctx) {
+      const url = new URL(req.url ?? "/", "http://x");
+      const p = url.searchParams.get("path") ?? "";
+      const root = join(ctx.dir(), "case");
+      const abs = inside(root, p);
+      if (!abs) return ctx.json(res, 400, err(`Refused the path "${p}"`, "only files inside the project's case/ folder can be downloaded", 'pass a path from the case report, e.g. "stl/front.stl"'));
+      if (!existsSync(abs)) return ctx.json(res, 404, err(`No case file ${p}`, "it was not generated (or the case changed since)", "open the Case view or call get_case to regenerate the files"));
+      sendFile(res, abs, url.searchParams.get("inline") !== "1");
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/manufacturing",
+    label: "POST /api/manufacturing",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      let body: Record<string, unknown> = {};
+      try {
+        body = await ctx.body(req);
+      } catch {
+        body = {};
+      }
+      try {
+        const r = (await ctx.call("export_manufacturing", { ...(body.zh_cn === false ? { zh_cn: false } : {}) }, { actor: "web" })) as { zip?: string };
+        ctx.json(res, 200, { ...r, ...(r.zip ? { url: `/api/manufacturing/${encodeURIComponent(basename(r.zip))}` } : {}) });
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `The factory pack failed. Why: ${m}. Fix: check get_case and build, then try again` });
+      }
+    },
+  },
+  {
+    method: "GET",
+    path: /^\/api\/manufacturing\/(?<file>[^/]+\.zip)$/,
+    label: "GET /api/manufacturing/:file",
+    handle(_req, res, ctx, params) {
+      const root = join(ctx.dir(), "manufacturing");
+      const abs = inside(root, decodeURIComponent(params.file ?? ""));
+      if (!abs || !existsSync(abs)) return ctx.json(res, 404, err(`No pack ${params.file}`, "it is not in the project's manufacturing/ folder", "make it with the Factory pack button (POST /api/manufacturing) first"));
+      sendFile(res, abs, true);
+    },
+  },
+];
+
+/** The case live event also follows agent (MCP) calls: after design_case / update_case / get_case regenerate files. */
+export const caseHooks: ServerHook[] = [
+  (ctx) => {
+    let off: (() => void) | undefined;
+    const watch = () => {
+      off?.();
+      off = ctx.session().onEvent((e) => {
+        if (e.type !== "action" || !e.entry.ok || e.entry.actor === "web") return;
+        if (!["design_case", "update_case", "get_case"].includes(e.entry.op)) return;
+        const s = ctx.session();
+        const file = join(s.dir, "case", "report.json");
+        if (!existsSync(file)) return;
+        try {
+          const r = JSON.parse(readFileSync(file, "utf8")) as { hash: string; ok: boolean };
+          ctx.hub.broadcast({ type: "case", hash: r.hash, ok: r.ok });
+        } catch {
+          // a half-written report: the next call sends it
+        }
+      });
+    };
+    watch();
+    const unsub = ctx.projects?.onSessionChange(() => watch());
+    return () => {
+      off?.();
+      unsub?.();
+    };
+  },
+];
