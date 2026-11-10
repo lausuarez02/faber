@@ -131,6 +131,8 @@ describe("assembly and soldered exports", () => {
     expect(csv).toHaveLength(1 + 22);
     const d1 = csv.find((l) => l.startsWith("w22,"))!;
     expect(d1).toMatch(/^w22,d1\.C,xiao\.VBUS,red,\d+,24,/);
+    // switch → diode is part of the power path too
+    expect(csv.find((l) => l.startsWith("w21,"))).toMatch(/^w21,pwr\.1,d1\.A,red,\d+,24,/);
     for (const l of csv.slice(1)) expect(Number(l.split(",")[4]) % 5).toBe(0);
     const asm = readFileSync(join(r.dir, "ASSEMBLY.md"), "utf8");
     expect(asm).toMatch(/stripe \(C\) goes towards xiao/);

@@ -1,0 +1,23 @@
+wire,from,to,color,length_mm,gauge_awg,note
+w1,eye.VCC,xiao.3V3,red,95,24,estimated from part sizes; measure in the case before cutting
+w2,eye.GND,xiao.GND.1,black,95,24,estimated from part sizes; measure in the case before cutting
+w3,eye.SCK,xiao.GP2,yellow,95,26,estimated from part sizes; measure in the case before cutting
+w4,eye.MOSI,xiao.GP3,purple,90,26,estimated from part sizes; measure in the case before cutting
+w5,eye.CS,xiao.GP1,white,95,26,estimated from part sizes; measure in the case before cutting
+w6,eye.DC,xiao.GP29,green,95,26,estimated from part sizes; measure in the case before cutting
+w7,eye.RST,xiao.GP28,orange,90,26,estimated from part sizes; measure in the case before cutting
+w9,imu.VCC,xiao.3V3,red,75,24,estimated from part sizes; measure in the case before cutting
+w10,imu.GND,xiao.GND.1,black,75,24,estimated from part sizes; measure in the case before cutting
+w11,imu.SDA,xiao.GP6,white,70,26,estimated from part sizes; measure in the case before cutting
+w12,imu.SCL,xiao.GP7,green,75,26,estimated from part sizes; measure in the case before cutting
+w13,pet.1a,xiao.GP26,orange,60,26,estimated from part sizes; measure in the case before cutting
+w14,pet.2a,xiao.GND.1,black,60,24,estimated from part sizes; measure in the case before cutting
+w15,squeak.POS,xiao.GP27,yellow,65,26,estimated from part sizes; measure in the case before cutting
+w16,squeak.NEG,xiao.GND.1,black,65,24,estimated from part sizes; measure in the case before cutting
+w17,bat.POS,chg.BAT,red,95,24,estimated from part sizes; measure in the case before cutting
+w18,bat.NEG,chg.GND.2,black,95,24,estimated from part sizes; measure in the case before cutting
+w19,chg.GND.3,xiao.GND.1,black,80,24,estimated from part sizes; measure in the case before cutting
+w8,eye.LED,xiao.GP0,blue,95,26,estimated from part sizes; measure in the case before cutting
+w20,chg.OUT,pwr.2,red,65,24,estimated from part sizes; measure in the case before cutting
+w21,pwr.1,d1.A,red,45,24,estimated from part sizes; measure in the case before cutting
+w22,d1.C,xiao.VBUS,red,60,24,estimated from part sizes; measure in the case before cutting

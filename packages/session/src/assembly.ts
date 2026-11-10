@@ -94,6 +94,19 @@ export function wireCuts(project: Project, registry: PartRegistry, positions?: R
       if (t === "power" || t === "ground") powerNets.add(n.id);
     }
   }
+  // A switch or diode in a power path carries the supply too (cell → switch → diode → VBUS).
+  const PASS = new Set(["slide-switch", "schottky-diode", "generic-diode"]);
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const p of project.parts) {
+      if (!PASS.has(p.type)) continue;
+      const ids = (registry.get(p.type)?.spec.pins ?? []).map((x) => netOf.get(`${p.id}.${x.id}`)).filter((n): n is string => !!n);
+      if (ids.some((n) => powerNets.has(n)) && ids.some((n) => !powerNets.has(n))) {
+        for (const n of ids) powerNets.add(n);
+        changed = true;
+      }
+    }
+  }
   const half = (s: PartSpec | undefined) => (s?.dimensions_mm ? Math.max(s.dimensions_mm.w, s.dimensions_mm.h) / 2 : 10);
   return project.wires.map((w) => {
     const from = `${w.from.part}.${w.from.pin}`;

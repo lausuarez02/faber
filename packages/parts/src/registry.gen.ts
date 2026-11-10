@@ -561,7 +561,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "power": {
           "level": "approx",
-          "note": "5 V / 3.3 V rails are stiff sources. Per-pin current above 40 mA is flagged; total-package (200 mA) and regulator limits, VIN and brownout are not simulated."
+          "note": "Round 6: USB (power.usb, default plugged) is a stiff 5 V source on 5V; VIN goes through a 5 V regulator (~1.1 V dropout) and 3.3 V comes from 5 V through an LDO; with USB unplugged and nothing on VIN / 5V the firmware is held in reset (below 4 V on 5V). Per-pin current above 40 mA is flagged; total-package (200 mA) and regulator limits, the USB / VIN auto-switch and a gradual brownout are not simulated."
         },
         "radio": {
           "level": "n/a",
@@ -1086,7 +1086,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "power": {
           "level": "approx",
-          "note": "5 V / 3.3 V rails are stiff sources. Per-pin current above 40 mA is flagged; total-package (200 mA) and regulator limits, VIN and brownout are not simulated."
+          "note": "Round 6: USB (power.usb, default plugged) is a stiff 5 V source on 5V; VIN goes through a 5 V regulator (~1.1 V dropout) and 3.3 V comes from 5 V through an LDO; with USB unplugged and nothing on VIN / 5V the firmware is held in reset (below 4 V on 5V). Per-pin current above 40 mA is flagged; total-package (200 mA) and regulator limits, the USB / VIN auto-switch and a gradual brownout are not simulated."
         },
         "radio": {
           "level": "n/a",
@@ -7665,7 +7665,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "power": {
           "level": "approx",
-          "note": "VBUS 5 V, VSYS 4.7 V and 3V3 are stiff sources; ADC_VREF is 3.3 V through 200 Ω. Per-pin current above 12 mA is flagged. The regulator's 300 mA limit, battery input on VSYS, 3V3_EN, brownout and sleep current are not simulated."
+          "note": "Round 6: USB (power.usb) is a 5 V source on VBUS, which reaches VSYS through the on-board Schottky (~0.3 V); VSYS (1.8 to 5.5 V, e.g. a LiPo) feeds the buck-boost to 3V3 at a fixed 90 % efficiency; 3V3_EN LOW switches it off; the firmware is held in reset while 3V3 is under 2.7 V. ADC_VREF is 3.3 V through 200 Ω. Per-pin current above 12 mA is flagged. The regulator's 300 mA limit, its light-load PFM mode, sleep current and a gradual brownout are not simulated."
         },
         "radio": {
           "level": "n/a",
@@ -8955,7 +8955,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "power": {
           "level": "approx",
-          "note": "5V (USB VBUS) and 3V3 are stiff sources; per-pin current above 12 mA is flagged. The regulator's limit, battery pads, brownout and sleep current are not simulated."
+          "note": "Round 6: USB (power.usb) is a 5 V source on VBUS; without it the board runs from what is wired to VBUS through its 3.3 V LDO (0.25 V dropout, typical), the board draws its typical 25 mA, and the firmware is held in reset while 3V3 is under 2.7 V (power-on reset when it comes back). Per-pin current above 12 mA is flagged. The LDO's current limit, inrush, sleep current and a gradual brownout (real chips misbehave between 2.7 and 3.0 V) are not simulated."
         },
         "radio": {
           "level": "n/a",
@@ -11065,7 +11065,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "power": {
           "level": "approx",
-          "note": "5V (USB VBUS) and 3V3 are stiff sources; per-pin current above 12 mA is flagged. The LDO's limit, brownout and sleep current are not simulated."
+          "note": "Round 6: USB (power.usb) is a 5 V source on the 5V pin; without it the board runs from what is wired there through its 3.3 V LDO (0.25 V dropout, typical); the firmware is held in reset while 3V3 is under 2.7 V. Per-pin current above 12 mA is flagged. The LDO's limit, sleep current and a gradual brownout are not simulated."
         },
         "radio": {
           "level": "n/a",

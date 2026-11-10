@@ -87,7 +87,11 @@ function isPowerWire(c: WireCut): boolean {
 export function solderedAssemblyMarkdown(project: Project, registry: PartRegistry, cuts: WireCut[], estimated: boolean): string {
   const inst = new Map(project.parts.map((p) => [p.id, p]));
   const name = (id: string) => registry.get(inst.get(id)?.type ?? "")?.spec.name ?? id;
-  const power = cuts.filter(isPowerWire);
+  // The power path (battery, charger, switch, diode, regulators and the wires to the board's supply input) goes first and is tested alone.
+  const PATH = new Set(["lipo-battery", "battery-pack", "tp4056-charger", "slide-switch", "schottky-diode", "generic-diode", "ldo-regulator", "boost-converter"]);
+  const onPath = (ref: string) => PATH.has(inst.get(ref.slice(0, ref.indexOf(".")))?.type ?? "");
+  const power = cuts.filter((c) => isPowerWire(c) && (onPath(c.from) || onPath(c.to)));
+  const modulePower = cuts.filter((c) => isPowerWire(c) && !power.includes(c));
   const signal = cuts.filter((c) => !isPowerWire(c));
   const battery = project.parts.find((p) => p.type === "lipo-battery" || p.type === "battery-pack");
   const diode = project.parts.find((p) => p.type === "schottky-diode" || p.type === "generic-diode");
@@ -97,9 +101,10 @@ export function solderedAssemblyMarkdown(project: Project, registry: PartRegistr
   steps.push(`Cut and strip every wire in WIRE-CUTS.csv (${cuts.length} wires; 5 mm stripped at each end, then tinned). ${estimated ? "The lengths are estimated from the part sizes: lay the parts in the case first and trim them shorter if they fit tighter." : "The lengths come from the case layout."}`);
   if (battery) steps.push(`Leave ${battery.id} (${name(battery.id)}) unplugged until step ${power.length ? 4 : 3}. Never let its two wires touch.`);
   if (power.length) {
-    steps.push(`Solder the power and ground wires first (24 AWG):\n${power.map(line).join("\n")}${diode ? `\n   ${diode.id} (${name(diode.id)}): the end with the stripe (C) goes towards ${board?.id ?? "the board"}. Slide heat-shrink over it.` : ""}`);
-    steps.push(`Test the power path before anything else is connected to it: plug ${battery?.id ?? "the battery"} in, switch on and measure ${board ? `${board.id}'s supply pin` : "the board's supply pin"} with a multimeter (a 1S LiPo through a Schottky diode reads about 3.4 to 3.9 V). Switch off again.`);
+    steps.push(`Solder the power path first (24 AWG):\n${power.map(line).join("\n")}${diode ? `\n   ${diode.id} (${name(diode.id)}): the end with the stripe (C) goes towards ${board?.id ?? "the board"}. Slide heat-shrink over it.` : ""}`);
+    steps.push(`Test the power path before anything else is connected to it: plug ${battery?.id ?? "the battery"} in, switch on and measure ${board ? `${board.id}'s supply pin` : "the board's supply pin"} against GND with a multimeter (a 1S LiPo through a Schottky diode reads about 3.4 to 3.9 V; 0 V means the diode or the cell is the wrong way round). Switch off and unplug the battery again.`);
   }
+  if (modulePower.length) steps.push(`Solder the modules' power and ground (24 AWG):\n${modulePower.map(line).join("\n")}`);
   if (signal.length) steps.push(`Solder the signal wires (26 AWG):\n${signal.map(line).join("\n")}`);
   steps.push("Insulate every joint that could touch another (heat-shrink), and check with a multimeter that the supply and GND are not shorted (more than a few hundred Ω between them with the switch off).");
   if (board) steps.push(`Flash the firmware: ${registry.get(board.type)?.spec.mcu?.backend === "rp2040js" ? "hold BOOT while plugging the board into USB, then copy firmware.uf2 to the drive that appears" : "upload firmware.hex with avrdude or arduino-cli"} (see the export's flash line).`);
