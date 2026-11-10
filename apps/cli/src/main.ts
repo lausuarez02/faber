@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
-import { JumperError, ProjectSession, TOOLS } from "@jumper/session";
+import { JumperError, ProjectSession, registerProject, TOOLS } from "@jumper/session";
 
 /**
  * `jumper`: the same operations as the MCP tools, as subcommands. Human output is YAML; --json prints
@@ -162,6 +163,20 @@ function serveDir(opts: Parsed["opts"]): string {
   return projectDir(opts);
 }
 
+/**
+ * Round 5 (decision 0003, C3): a folder served or opened over MCP with --project joins the Projects
+ * gallery ($JUMPER_HOME/projects.json). Scratch folders under the OS temp dir (tests) are left out.
+ */
+function rememberProject(dir: string, source: "serve" | "cli"): void {
+  const rel = relative(resolve(tmpdir()), dir);
+  if (!rel.startsWith("..") && rel !== dir) return;
+  try {
+    registerProject(dir, { source });
+  } catch {
+    // the gallery list is a convenience; never block a server over it
+  }
+}
+
 function props(list: unknown): Record<string, string | number | boolean> | undefined {
   if (!Array.isArray(list) || !list.length) return undefined;
   const out: Record<string, string | number | boolean> = {};
@@ -319,6 +334,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
   if (["mcp", "serve", "replay", "record", "runner"].includes(p.cmd)) {
     const servers = await import("./servers.ts");
+    if ((p.cmd === "serve" || p.cmd === "mcp") && (p.opts.project || process.env.JUMPER_PROJECT)) rememberProject(projectDir(p.opts), p.cmd === "serve" ? "serve" : "cli");
     return servers.runServerCommand(p.cmd, p.pos, p.opts, p.cmd === "serve" ? serveDir(p.opts) : projectDir(p.opts), BASE);
   }
   if (p.cmd === "render-device") return renderDeviceCommand(p);

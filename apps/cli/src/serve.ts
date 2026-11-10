@@ -4,9 +4,9 @@ import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeF
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { extname, join, resolve, sep } from "node:path";
+import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createLiveHub, ProjectSession, type AgentPresence, type CallMeta, type LiveHubCore } from "@jumper/session";
+import { createLiveHub, ProjectSession, projectId, type AgentPresence, type CallMeta, type LiveHubCore } from "@jumper/session";
 import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@jumper/mcp";
 import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts";
 
@@ -28,6 +28,7 @@ import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts"
 
 export const DEFAULT_PORT = 7780;
 const WEB_DIR = fileURLToPath(new URL("../../web/", import.meta.url));
+const REPO_EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
 const CLI_BIN = fileURLToPath(new URL("../bin/jumper.mjs", import.meta.url));
 
 export type WebMode = "dev" | "built" | "none";
@@ -44,6 +45,10 @@ export interface JumperServerOptions {
   builder?: ConstructorParameters<typeof ProjectSession>[0]["builder"];
   /** Launch override (tests): receives the osascript arguments instead of running them. */
   launcher?: (cmd: string, args: string[]) => Promise<void>;
+  /** Where new projects are created and listed (default: the parent of `dir`; projects/ for pnpm start). */
+  projectsRoot?: string;
+  /** The examples folder shown in the Projects gallery (default: the repo's examples/). */
+  examplesRoot?: string;
 }
 
 export interface JumperServer {
@@ -52,10 +57,14 @@ export interface JumperServer {
   url: string;
   mcpUrl: string;
   wsUrl: string;
-  dir: string;
+  /** The active project folder (changes when the Projects gallery or an agent opens another one). */
+  readonly dir: string;
   web: WebMode;
-  session: ProjectSession;
+  /** The active project's session. */
+  readonly session: ProjectSession;
   hub: LiveHubCore;
+  /** Switch the active project (same MCP endpoint and websocket, new session). */
+  openProject(dir: string): Promise<void>;
   mcp: McpHttpEndpoint;
   /** Install snippets / commands for each agent, with this server's URL in them. */
   info(): ServerInfo;
@@ -185,18 +194,46 @@ function listen(server: Server, port: number, host: string): Promise<number> {
 }
 
 export async function startJumperServer(opts: JumperServerOptions): Promise<JumperServer> {
-  const dir = resolve(opts.dir);
+  // Round 5 (decision 0003, C3): the active project can change (Projects gallery, new_project
+  // {folder}). One MCP endpoint and one hub stay; the session behind them is swapped.
+  let dir = resolve(opts.dir);
   mkdirSync(dir, { recursive: true });
-  const session = new ProjectSession({ dir, actor: "mcp", ...(opts.builder ? { builder: opts.builder } : {}) });
+  const projectsRoot = resolve(opts.projectsRoot ?? dirname(dir));
+  const examplesRoot = resolve(opts.examplesRoot ?? REPO_EXAMPLES);
+  const sessionListeners = new Set<(s: ProjectSession) => void>();
+  const makeSession = (d: string): ProjectSession =>
+    new ProjectSession({ dir: d, actor: "mcp", projectsRoot, openProject: (next) => switchProject(next), ...(opts.builder ? { builder: opts.builder } : {}) });
+  let session = makeSession(dir);
   const queue = makeQueue();
   const call = (op: string, args: Record<string, unknown>, meta: CallMeta) => queue(() => session.call(op, args, meta));
   const hub = createLiveHub({ dir, session, call: (op, args) => call(op, args, { actor: "web" }) });
+  /** Swap the active project. Runs inside a queued call (new_project) or from the queue (open route). */
+  const switchProject = async (next: string): Promise<void> => {
+    const abs = resolve(next);
+    if (abs === dir) return;
+    mkdirSync(abs, { recursive: true });
+    const old = session;
+    session = makeSession(abs);
+    dir = abs;
+    hub.broadcast({ type: "project", dir: abs, id: projectId(abs) });
+    hub.retarget(session);
+    for (const fn of sessionListeners) fn(session);
+    // The old session may still be finishing the call that asked for the switch: dispose after it.
+    setTimeout(() => old.dispose(), 0);
+  };
+  // MCP resources and instructions read the active session through this view.
+  const sessionView = new Proxy({} as ProjectSession, {
+    get: (_t, k) => {
+      const v = Reflect.get(session, k, session) as unknown;
+      return typeof v === "function" ? (v as (...a: unknown[]) => unknown).bind(session) : v;
+    },
+  });
   const token = randomBytes(24).toString("hex");
   let port = 0;
   const base = () => `http://localhost:${port}`;
   const mcp = createMcpHttpEndpoint({
     dir,
-    session,
+    session: sessionView,
     call,
     onPresence: (agents) => hub.setPresence(agents),
     instructionsExtra: "A person is watching this project live on the Jumper canvas: every call you make appears there as you make it, with your \"why\" as the caption. Pass a short \"why\" on every change.",
@@ -268,6 +305,15 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
     call,
     json,
     token,
+    projects: {
+      root: projectsRoot,
+      examplesRoot,
+      open: (next) => queue(() => switchProject(next)),
+      onSessionChange(fn) {
+        sessionListeners.add(fn);
+        return () => sessionListeners.delete(fn);
+      },
+    },
     async body<T>(req: IncomingMessage): Promise<T> {
       let raw = "";
       for await (const c of req) raw += c;
@@ -422,12 +468,17 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
     url: base(),
     mcpUrl: `${base()}/mcp`,
     wsUrl: `ws://localhost:${port}/live`,
-    dir,
+    get dir() {
+      return dir;
+    },
     web,
-    session,
+    get session() {
+      return session;
+    },
     hub,
     mcp,
     info,
+    openProject: (next) => queue(() => switchProject(next)),
     async close() {
       for (const stop of stops.reverse()) await stop();
       await mcp.close();

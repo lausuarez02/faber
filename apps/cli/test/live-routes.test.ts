@@ -156,4 +156,31 @@ describe("jumper serve: live track endpoints and events", () => {
       await client.close();
     }
   });
+
+  it("after new_project {folder} switches to an RP2040 project, its build reaches the page as rp2040js firmware", async () => {
+    const client = new Client({ name: "claude-code", version: "9.9.9" });
+    await client.connect(new StreamableHTTPClientTransport(new URL(srv.mcpUrl)));
+    const f = await follow(srv.wsUrl);
+    try {
+      const call = async (name: string, args: Record<string, unknown> = {}) => {
+        const r = (await client.callTool({ name, arguments: args })) as { isError?: boolean; content: { text?: string }[] };
+        if (r.isError) throw new Error(`${name}: ${r.content[0]!.text}`);
+        return JSON.parse(r.content[0]!.text ?? "{}") as Msg;
+      };
+      const created = await call("new_project", { folder: true, name: "Pocket Pico", template: "pico" });
+      expect(created.opened).toBe(true);
+      await f.waitFor((m) => m.type === "project" && m.id === created.id);
+      await f.waitFor((m) => m.type === "hello" && m.dir === created.dir);
+      expect(srv.session.dir).toBe(created.dir);
+      await call("build", {});
+      const fw = await f.waitFor((m) => m.type === "firmware" && m.board === "raspberry-pi-pico");
+      expect(fw).toMatchObject({ backend: "rp2040js" });
+      await f.waitFor((m) => m.type === "auto-run" && m.after === "build" && m.hash === fw.hash);
+      const r = await get("/api/firmware");
+      expect(r.body).toMatchObject({ board: "raspberry-pi-pico", backend: "rp2040js", hash: fw.hash });
+    } finally {
+      f.close();
+      await client.close();
+    }
+  });
 });

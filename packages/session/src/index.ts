@@ -41,3 +41,5 @@ export { recordProject, chromiumProblem } from "./recorder.ts";
 export type { RecordOptions, RecordResult } from "./recorder.ts";
 export { planDevice } from "./planner.ts";
 export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";
+export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog } from "./versions.ts";
+export type { VersionSummary, VersionDetail, VersionChanges, VersionFrame } from "./versions.ts";

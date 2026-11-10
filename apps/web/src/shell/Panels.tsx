@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Cpu, Eraser, FileCode2, FlaskConical, Gauge, GraduationCap, Keyboard, MessagesSquare, SlidersHorizontal, SquareTerminal, Upload, CircleCheck, CircleDashed } from "lucide-react";
+import { Code2, Cpu, Eraser, FileCode2, FlaskConical, Gauge, GraduationCap, Keyboard, MessagesSquare, SlidersHorizontal, SquareTerminal, Upload, CircleCheck, CircleDashed } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { PANEL_ORDER, useIsPhone, useUi, type PanelId } from "../lib/ui.ts";
@@ -12,6 +12,8 @@ import { VisualTestReport } from "../views/tests/VisualTestReport.tsx";
 import { NetworkPanel } from "../views/network/NetworkPanel.tsx";
 import { FloatingPanel, IconButton } from "./primitives.tsx";
 import { boardOf, loadHexFile, pickFile } from "./actions.ts";
+import { useFirmwareFiles } from "../projects/files.ts";
+import { useProjectsUi } from "../projects/store.ts";
 
 const BODIES: Record<PanelId, () => React.JSX.Element> = {
   agent: AgentPanel,
@@ -125,6 +127,8 @@ function FirmwarePanel() {
   const project = useJumper((s) => s.project);
   const f = project.firmware;
   const board = boardOf(project);
+  const files = useFirmwareFiles();
+  const openCode = (path?: string) => useProjectsUi.getState().openCode(path);
   return (
     <FloatingPanel id="firmware" title="Firmware" icon={FileCode2}>
       <div data-testid="firmware-status" data-status={fw.status}>
@@ -136,7 +140,15 @@ function FirmwarePanel() {
               {board ? <span className="muted"> · {board.name}</span> : null}
             </dd>
             <dt>sketch</dt>
-            <dd className="mono">{f.sketch ?? "—"}</dd>
+            <dd className="mono">
+              {f.sketch ? (
+                <button type="button" className="link-btn mono" onClick={() => openCode(`firmware/${f.sketch}`)} data-testid="firmware-sketch" title="Open the code">
+                  {f.sketch}
+                </button>
+              ) : (
+                "—"
+              )}
+            </dd>
             <dt>artifact</dt>
             <dd className="mono">{f.artifact}</dd>
             <dt>status</dt>
@@ -144,15 +156,32 @@ function FirmwarePanel() {
               <span className={`state-chip state-${fw.status}`}>{fw.status === "ready" ? `loaded · ${fw.name.split("/").pop()}` : fw.status === "loading" ? "loading" : fw.status === "missing" ? "not built" : "none"}</span>
             </dd>
           </dl>
+        ) : board ? (
+          <p className="panel-empty">No sketch yet for {board.name}. Write one in the code editor, ask an agent to write it, or load a .hex.</p>
         ) : (
-          <p className="panel-empty">This project has no firmware block. Place a board, then let an agent write and build the sketch, or load a .hex.</p>
+          <p className="panel-empty">No board yet. Add one (an Arduino Uno is a good start), then write its sketch in the code editor or let an agent do it.</p>
         )}
+        {files.length ? (
+          <ul className="fw-files" data-testid="firmware-files">
+            {files.map((path) => (
+              <li key={path}>
+                <button type="button" className="fw-file" onClick={() => openCode(path)} data-testid={`firmware-file-${path}`}>
+                  <FileCode2 size={14} strokeWidth={1.6} aria-hidden />
+                  <span className="mono">{path.replace(/^firmware\//, "")}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {fw.status === "missing" ? (
           <p className="callout callout-warn">
             {fw.reason}. Fix: build it with <code>jumper run -p &lt;dir&gt;</code> (Docker), or load the .hex below.
           </p>
         ) : null}
         <div className="insp-row">
+          <button type="button" className="btn" onClick={() => openCode()} data-testid="firmware-open-code">
+            <Code2 size={15} strokeWidth={1.6} aria-hidden /> Code
+          </button>
           <button type="button" className="btn" onClick={() => pickFile(".hex,text/plain", (file) => void loadHexFile(file))}>
             <Upload size={15} strokeWidth={1.6} aria-hidden /> Load .hex…
           </button>

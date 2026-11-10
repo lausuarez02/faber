@@ -1,12 +1,14 @@
 import { useRef } from "react";
-import { Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, ListChecks, Pencil, Upload } from "lucide-react";
+import { Code2, Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, History, LayoutGrid, ListChecks, Pencil, Upload } from "lucide-react";
 import { useJumper } from "../lib/app.ts";
 import { exampleNames } from "../lib/examples.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
 import { LogoMark } from "../components/Logo.tsx";
 import { MenuItem, Popover, STROKE } from "./primitives.tsx";
-import { boardOf, exportBom, exportNetlist, exportProject, importProjectFile, loadHexFile, newProject, pickFile } from "./actions.ts";
+import { boardOf, exportBom, exportNetlist, exportProject, importProjectFile, loadHexFile, pickFile } from "./actions.ts";
+import { newProjectAnywhere, openExampleByName } from "../projects/actions.ts";
+import { useProjectsUi } from "../projects/store.ts";
 
 /** Top-left: mark, project name + "…" menu, and the muted subtitle. No container. */
 export function TitleBlock() {
@@ -18,7 +20,9 @@ export function TitleBlock() {
   return (
     <div className="title-block">
       <div className="title-row">
-        <LogoMark size={22} mono />
+        <button type="button" className="title-logo" aria-label="All projects" title="All projects" data-testid="open-projects" onClick={() => useProjectsUi.getState().setHome(true)}>
+          <LogoMark size={22} mono />
+        </button>
         <input
           ref={nameRef}
           className="project-name"
@@ -62,11 +66,20 @@ export function TitleBlock() {
                 icon={FilePlus2}
                 onSelect={() => {
                   close();
-                  newProject();
+                  void newProjectAnywhere();
                 }}
                 testId="new-project"
               >
                 New project
+              </MenuItem>
+              <MenuItem icon={LayoutGrid} onSelect={() => (close(), useProjectsUi.getState().setHome(true))} testId="menu-all-projects">
+                All projects…
+              </MenuItem>
+              <MenuItem icon={History} onSelect={() => (close(), useProjectsUi.getState().setHistory(true))} testId="menu-history">
+                History
+              </MenuItem>
+              <MenuItem icon={Code2} onSelect={() => (close(), useProjectsUi.getState().openCode())} testId="menu-code">
+                Code
               </MenuItem>
               <div className="menu-sep" />
               <MenuItem icon={Download} onSelect={() => (exportProject(), close())} testId="export-project">
@@ -87,7 +100,20 @@ export function TitleBlock() {
               <div className="menu-sep" />
               <div className="menu-label">Examples</div>
               {exampleNames().map((ex) => (
-                <a key={ex} role="menuitem" className="menu-item" href={`?example=${encodeURIComponent(ex)}`} data-testid={`example-${ex}`}>
+                <a
+                  key={ex}
+                  role="menuitem"
+                  className="menu-item"
+                  href={`?example=${encodeURIComponent(ex)}`}
+                  data-testid={`example-${ex}`}
+                  onClick={(e) => {
+                    // Opens as its own project (a copy on the server, a new tab when this canvas has work).
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                    e.preventDefault();
+                    close();
+                    void openExampleByName(ex);
+                  }}
+                >
                   <span className="menu-item-icon">
                     <FolderOpen size={16} strokeWidth={STROKE} aria-hidden />
                   </span>
@@ -97,6 +123,9 @@ export function TitleBlock() {
             </div>
           </Popover>
         </div>
+        <button type="button" className="icon-btn icon-btn-sm title-history-btn" aria-label="History" title="History: every version of this project" data-testid="open-history" onClick={() => useProjectsUi.getState().setHistory(true)}>
+          <History size={16} strokeWidth={STROKE} aria-hidden />
+        </button>
       </div>
       <div className="title-sub" data-testid="project-subtitle">
         {subtitle}

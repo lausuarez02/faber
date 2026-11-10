@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-45 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+46 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -80,6 +80,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`viewer_url`](#viewer_url) | Link to watch and play | no (read-only) |
 | [`delete_file`](#delete_file) | Delete a file | yes (undoable step) |
 | [`mark_stand_in`](#mark_stand_in) | Mark a part as a stand-in | yes (undoable step) |
+| [`restore_version`](#restore_version) | Restore an earlier version | yes (undoable step) |
 
 ### new_project
 
@@ -488,3 +489,12 @@ Say that a placed part stands in for a real part Jumper does not have, so BOM / 
 | `id` | string | yes | Part id, e.g. soil1. |
 | `real` | string \| null | yes | The real part in plain words. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "remove the old test shots". |
+
+### restore_version
+
+Put the project back the way it was at version N of its history (parts, wires, props, scenarios, firmware block and the sketch files). Versions are numbered from 1 in the order changes happened; the web app's History scrubber shows them, and GET /api/history lists them with who made each change and why. Restoring is a new step (undo brings the newer state back), and the firmware is rebuilt on the next run. Example: {"version": 4, "why": "go back to before the buzzer was added"}. Returns {version, step, changes: {added, removed, changed}} (entity keys such as "part:led1", "wire:w3", "file:firmware/main/main.ino").
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes | Version number, 1 = the first change in the history. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "back to the working version". |

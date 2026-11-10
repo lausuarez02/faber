@@ -22,6 +22,8 @@ export interface AgentStateTracker {
   presence(agents: AgentPresence[]): void;
   action(entry: ActionEntry): void;
   state(): AgentState;
+  /** jumper serve switched the active project: lines from the new session are no longer foreign. */
+  setOwnSid(sid: string | undefined): void;
   dispose(): void;
 }
 
@@ -53,6 +55,7 @@ export function createAgentStateTracker(opts: AgentStateTrackerOptions): AgentSt
   let lastName: string | undefined;
   let last = "";
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let ownSid = opts.ownSid;
 
   const touch = (t: number) => {
     firstCall ??= t;
@@ -111,13 +114,16 @@ export function createAgentStateTracker(opts: AgentStateTrackerOptions): AgentSt
       if (entry.actor !== "mcp") return;
       actions++;
       if (!entry.ok) failed++;
-      if (opts.ownSid && entry.sid && entry.sid !== opts.ownSid) foreign = true;
+      if (ownSid && entry.sid && entry.sid !== ownSid) foreign = true;
       const name = agentDisplayName(entry.client);
       if (name) lastName = name;
       touch(now());
       update();
     },
     state: compute,
+    setOwnSid(sid) {
+      ownSid = sid;
+    },
     dispose() {
       clearTimeout(timer);
     },
