@@ -52,6 +52,35 @@ Known gaps (round 6):
 - **Muse example:** its round-6 calls (tests, a run, design_case, export_manufacturing) were made
   with the CLI by the lead, not by the agent, and are in its log as actor `cli`.
 
+### Round 6b (2026-11-10): real-device evidence fixes (case, UI, e2e)
+
+Three tracks from the round-6 evidence (a real Claude case build and a first-timer's think-aloud,
+in `jumper-evals/round6/`) merged into main in the order case, ui, e2e, then e2e hardening. Checks
+after the merge: `pnpm gen` no diff, `pnpm typecheck` 0 errors, `pnpm test` 1246 passed, 2 skipped
+(145 files); full e2e (desktop, mobile and perf, `E2E_PORT=5460`, hub ports from 9900, Playwright's
+own exit code 0) 83 passed, 0 failed, 16 skipped by design, 0 flaky (no retries locally). The
+machine ran at load average 55 to 110 during these runs; four earlier full runs each had 1 to 3
+load-sensitive failures, fixed in the tests (see the last row).
+
+| Area | What changed | Check it with |
+| --- | --- | --- |
+| Case (track case) | Pebble, pill and puck are rounded in 3D (one large fillet per rim, sized from the side openings), the pebble's faces domed ~1 mm with flat print pads; each USB port gets its own side on curved shapes; a packing search (4 part orders × 11×11 plan sizes) keeps the smallest outer volume; pocket verdict by thickness (≤ 18 mm within 110×70 fits, ≤ 22 mm within 130×80 tight, else bulky); `report.volume_cm3`. STLs in print orientation on z=0; `case.3mf` is one laid-out build plate. Part values ("100k", "1uF", "500mAh") in BOM.md / BOM.csv / KiCad netlist / WIRING.md. Case view: instant tooltips, "Designing…" / "Updating…", readable loading text, sticky close, missing items say what to press. Engine `case-2`. Muse pebble now 70.7 × 94.3 × 19.6 mm, 97 cm³, tight; puck 72.7 × 72.7 × 25 mm, bulky | `packages/enclosure/test/*`, `packages/session/test/part-values.test.ts`, `packages/session/test/factory-firmware.test.ts`, `e2e/case-view.spec.ts`, [docs/enclosures.md](docs/enclosures.md) |
+| UI (track ui) | The person's own changes (code edits, restores, Update case, drags) are their own accepted steps, never pending agent steps; old pending ones are settled on load. One firmware freshness answer from the source hash (CRLF / library order ignored); a copied example adopts its shipped hex, so no false "sketch changed". Opening an example again reopens your copy; "New copy" makes "Name (2)". Cards keep their order; End / Home / PageDown scroll Projects. A just-opened project shows the device off at 00:00.000. Serial filter box (words, `-word`). The Muse gets dizzy from Shake (the shake loops with a wrist turn); a keyboard-friendly Shake length picker | `packages/session/test/person-steps.test.ts`, `apps/cli/test/reopen-copies.test.ts`, `e2e/switch-projects.spec.ts`, `e2e/canvas-controls.spec.ts` |
+| e2e (track e2e) | Closing the code editor right after Save waits for the save instead of asking to discard it (a real bug behind the switch-projects failure). Projects page has a labelled "← Back to <project>" button (icon only for "New project" on phones). The determinism unit scenario gets 20 s | `e2e/switch-projects.spec.ts`, `e2e/case-view.spec.ts` |
+| e2e hardening (lead) | power-usb waits for its hub to exit before the next test reuses the port (a dying hub answered the readiness poll: `ERR_EMPTY_RESPONSE`); server-side project switches get 20 s; the canvas-label hover runs on desktop only (phones have no hover and the docked panels can cover the part) | full e2e run above |
+
+Known gaps (round 6b):
+- **Case:** the Muse pebble is 94 mm tall and tight for a pocket (70.7 > 70 mm across); packing is a
+  search, not an optimum; a pebble takes ~27 s; the back edge is rounded only 2.7 mm where the
+  charger port sits off mid-depth; a puck or pill that still needs a flat gets smaller edge radii; a
+  replicad "failed to compute a normal" message prints on keychain generation (harmless); the old
+  round-6 Muse factory pack in `jumper-evals` is not regenerated. Print, plastic, snap strength and
+  hand feel not tested.
+- **UI:** hold-to-shake is measured in simulation time (at 0.5× a 2.4 s hold is a 1.2 s shake); a
+  copied example trusts its shipped hex until its sketch changes; reopening Projects shows the last
+  listing until the new one arrives; the narrow Projects header below iPhone 13 width is not checked;
+  perf numbers not reviewed.
+
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 
 Six tracks merged into main (decision [0003](docs/decisions/0003-round5-see-it-work.md)). Checks
