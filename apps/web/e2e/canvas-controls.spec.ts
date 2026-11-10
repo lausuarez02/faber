@@ -325,8 +325,11 @@ test("canvas labels show the short id only and never overlap; the full name is i
     const label = page.getByTestId("label-btnTalk");
     await expect(label).toHaveText("btnTalk");
     await expect(label).toHaveAttribute("title", "btnTalk · Pushbutton (6 mm tactile)");
-    await page.getByTestId("part-btnTalk").hover();
-    await expect(label).toHaveText("btnTalk"); // hover does not widen it over the neighbour
+    // Phones have no hover (and the docked panels can sit over the part there): hover on desktop only.
+    if (info.project.name !== "mobile") {
+      await page.getByTestId("part-btnTalk").hover();
+      await expect(label).toHaveText("btnTalk"); // hover does not widen it over the neighbour
+    }
     const boxes = await Promise.all(ids.map(async (id) => (await page.getByTestId(`label-${id}`).boundingBox())!));
     for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) expect(overlaps(boxes[i]!, boxes[j]!), `${ids[i]} / ${ids[j]} labels overlap`).toBe(false);
   } finally {

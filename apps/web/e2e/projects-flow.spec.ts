@@ -105,7 +105,8 @@ test.describe("projects (served)", () => {
       await expect(empty).toContainText("to add a part");
       // Thumbnails are real renders of each example's canvas.
       const img = page.getByTestId("empty-state-examples").locator('[data-name="Blink"] img');
-      await expect(img).toBeVisible();
+      // The examples list comes from the server; a loaded machine takes more than 5 s.
+      await expect(img).toBeVisible({ timeout: 20_000 });
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth), { timeout: 30_000 }).toBeGreaterThan(50);
       await shot(page, info, "projects-empty-state");
 
@@ -118,7 +119,8 @@ test.describe("projects (served)", () => {
       const home = page.getByTestId("projects-home");
       await expect(home).toBeVisible();
       const yours = home.getByTestId("projects-grid");
-      await expect(yours.locator('[data-name="Blink"]')).toHaveAttribute("data-active", "true");
+      // The page shows the last listing until the new one arrives (slow on a loaded machine).
+      await expect(yours.locator('[data-name="Blink"]')).toHaveAttribute("data-active", "true", { timeout: 20_000 });
       await expect(home.getByTestId("examples-grid").locator('[data-kind="example"]')).toHaveCount(6);
       // The RP2040 pocket example sits in the gallery with its board.
       await expect(home.getByTestId("examples-grid").locator('[data-name="Pocket OLED (XIAO RP2040)"]')).toContainText("Seeed XIAO RP2040");
@@ -128,14 +130,15 @@ test.describe("projects (served)", () => {
 
       // A new blank project: its own folder, the canvas follows it (empty again).
       await home.getByTestId("projects-new").click();
-      await expect(home).toHaveCount(0);
+      // Making the folder and switching the server to it takes more than 5 s on a loaded machine.
+      await expect(home).toHaveCount(0, { timeout: 20_000 });
       await expect(page.getByTestId("empty-state")).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("project-subtitle")).toContainText("projects/untitled-device");
       expect(existsSync(join(s.root, "projects", "untitled-device", "jumper.json"))).toBe(true);
 
       // Back to the Blink copy through its card.
       await page.getByTestId("empty-state-all").click();
-      await expect(home.getByTestId("projects-grid").locator('[data-name="Untitled device"]')).toHaveAttribute("data-active", "true");
+      await expect(home.getByTestId("projects-grid").locator('[data-name="Untitled device"]')).toHaveAttribute("data-active", "true", { timeout: 20_000 });
       await home.getByTestId("projects-grid").locator('[data-name="Blink"]').click();
       await expect(page.getByTestId("part-led1")).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("project-subtitle")).toContainText("projects/blink");

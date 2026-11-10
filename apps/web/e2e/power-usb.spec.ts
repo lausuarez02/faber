@@ -30,8 +30,13 @@ test.describe("pocket Muse on battery power", () => {
       .toBe(200);
   });
 
-  test.afterEach(() => {
-    hub?.kill();
+  test.afterEach(async () => {
+    // Wait for the hub to exit: the next test reuses this port, and a dying hub still answers its poll.
+    if (hub && hub.exitCode === null) {
+      const exited = new Promise((r) => hub!.once("exit", r));
+      hub.kill();
+      await Promise.race([exited, new Promise((r) => setTimeout(r, 10_000))]);
+    }
     rmSync(dir, { recursive: true, force: true });
     rmSync(home, { recursive: true, force: true });
   });

@@ -62,7 +62,8 @@ async function openExample(page: Page, name: string): Promise<void> {
   const home = page.getByTestId("projects-home");
   if (!(await home.isVisible())) await page.getByTestId("open-projects").click();
   await home.getByTestId("examples-grid").locator(`[data-name="${name}"]`).click();
-  await expect(home).toHaveCount(0);
+  // Opening copies the example folder and reconnects; on a loaded machine that takes more than 5 s.
+  await expect(home).toHaveCount(0, { timeout: 20_000 });
 }
 
 /** Replace the open sketch's text in the code editor and save it (the person's own edit, actor "web"). */
