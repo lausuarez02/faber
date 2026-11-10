@@ -48,6 +48,8 @@ export function projectEntities(p: Project): EntityMap {
   out.firmware = (p.firmware ?? null) as unknown as Json;
   for (const s of p.scenarios) out[`scenario:${s.id}`] = s as unknown as Json;
   out.world = (p.world ?? null) as unknown as Json;
+  // round 6 (decision 0004, R2 / R3): how it is built, powered and housed
+  for (const k of ["assembly", "power", "enclosure"] as const) if (p[k] !== undefined) out[k] = p[k] as unknown as Json;
   return out;
 }
 
@@ -86,6 +88,10 @@ export function applyToProject(p: Project, changes: EntityMap): Project {
     } else if (kind === "world") {
       if (v === null) delete next.world;
       else next.world = v as unknown as Project["world"];
+    } else if (kind === "assembly" || kind === "power" || kind === "enclosure") {
+      // round 6 (decision 0004, R2 / R3)
+      if (v === null) delete next[kind];
+      else (next as Record<string, unknown>)[kind] = v;
     } else if (kind === "part" || kind === "wire" || kind === "scenario") {
       const field = kind === "part" ? "parts" : kind === "wire" ? "wires" : "scenarios";
       const arr = next[field] as { id: string }[];

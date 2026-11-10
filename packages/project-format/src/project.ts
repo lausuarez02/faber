@@ -160,6 +160,8 @@ export function serializeProject(project: Project): string {
   if (project.world !== undefined) {
     fields.push(`  "world": ${JSON.stringify(project.world as Json, null, 2).replace(/\n/g, "\n  ")}`);
   }
+  // round 6 (decision 0004, R2 / R3): how it is built, powered and housed
+  for (const k of ["assembly", "power", "enclosure"] as const) if (project[k] !== undefined) fields.push(`  "${k}": ${JSON.stringify(project[k] as Json, null, 2).replace(/\n/g, "\n  ")}`);
   lines.push(fields.join(",\n"));
   lines.push("}");
   return lines.join("\n") + "\n";
