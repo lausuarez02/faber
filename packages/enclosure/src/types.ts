@@ -32,7 +32,8 @@ export interface PlacedPart {
   max: Vec3;
   /** Rotation applied to the part frame (degrees about the case z axis, then flip: part +z facing case +z or -z). */
   rotation: 0 | 90 | 180 | 270;
-  facing: "front" | "back";
+  /** Case face the part's top (+z) faces: front / back when it lies flat, a side when it stands (a button on the right wall). */
+  facing: "front" | "back" | "left" | "right" | "top" | "bottom";
   layer: number;
 }
 
