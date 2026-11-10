@@ -81,7 +81,9 @@ async function editSketch(page: Page, file: string, edit: (text: string) => stri
   await page.keyboard.insertText(edit(text));
   await editor.getByTestId("code-save").click();
   await expect(editor.getByTestId("code-save")).toBeDisabled({ timeout: 15_000 });
+  // Closing right after Save waits for the save (it never asks to discard an edit being saved).
   await editor.getByTestId("code-close").click();
+  await expect(editor).toHaveCount(0, { timeout: 15_000 });
 }
 
 test.describe("switching projects (served)", () => {
