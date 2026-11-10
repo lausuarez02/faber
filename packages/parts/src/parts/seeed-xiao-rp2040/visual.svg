@@ -21,10 +21,9 @@
   <rect x="123" y="149" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="45" y="-1" width="48" height="24" rx="5" fill="#9AA3AF" stroke="#C9CED6" stroke-width="1"/>
   <rect x="52" y="7" width="34" height="8" rx="4" fill="#3A4250"/>
-  <rect x="36" y="40" width="66" height="96" rx="3" fill="#B9BEC6" stroke="#6E7682" stroke-width="1"/>
-  <text x="69" y="78" font-family="Bricolage Grotesque" font-size="13" font-weight="800" fill="#15181D" text-anchor="middle">XIAO</text>
-  <text x="69" y="94" font-family="IBM Plex Mono" font-size="7" fill="#2B313B" text-anchor="middle" dominant-baseline="central">RP2040</text>
-  <text x="69" y="118" font-family="IBM Plex Mono" font-size="5.5" fill="#2B313B" text-anchor="middle" dominant-baseline="central">shield: chip below</text>
+  <rect x="52" y="44" width="34" height="88" rx="3" fill="#B9BEC6" stroke="#6E7682" stroke-width="1"/>
+  <text x="69" y="84" font-family="Bricolage Grotesque" font-size="9" font-weight="800" fill="#15181D" text-anchor="middle">XIAO</text>
+  <text x="69" y="98" font-family="IBM Plex Mono" font-size="5.5" fill="#2B313B" text-anchor="middle" dominant-baseline="central">RP2040</text>
   <rect x="26" y="27" width="8" height="6" rx="1" fill="#3A1A14" stroke="#5A4A2A" stroke-width="0.5"/>
   <circle cx="30" cy="30" r="7" fill="#FF4D2E" opacity="0" filter="url(#seeed-xiao-rp2040-glow)" data-bind="opacity:led_r"/>
   <rect x="26" y="27" width="8" height="6" rx="1" fill="#FF4D2E" opacity="0" data-bind="opacity:led_r"/>
@@ -33,10 +32,10 @@
   <circle cx="30" cy="30" r="7" fill="#4DA3FF" opacity="0" filter="url(#seeed-xiao-rp2040-glow)" data-bind="opacity:led_b"/>
   <rect x="26" y="27" width="8" height="6" rx="1" fill="#4DA3FF" opacity="0" data-bind="opacity:led_b"/>
   <text x="30" y="21" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RGB</text>
-  <rect x="102" y="26" width="10" height="7" rx="1" fill="#15181D" stroke="#3A4250" stroke-width="0.5"/>
-  <text x="107" y="20" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RST</text>
-  <rect x="102" y="140" width="10" height="7" rx="1" fill="#15181D" stroke="#3A4250" stroke-width="0.5"/>
-  <text x="107" y="153" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">BOOT</text>
+  <rect x="98" y="26" width="10" height="7" rx="1" fill="#15181D" stroke="#3A4250" stroke-width="0.5"/>
+  <text x="103" y="20" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">BOOT</text>
+  <rect x="113" y="26" width="10" height="7" rx="1" fill="#15181D" stroke="#3A4250" stroke-width="0.5"/>
+  <text x="118" y="20" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RST</text>
   <text x="18" y="36" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D0/A0</text>
   <text x="18" y="56" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D1/A1</text>
   <text x="18" y="76" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D2/A2</text>

@@ -277,7 +277,7 @@
       "id": "GP13",
       "label": "GP13",
       "x": 31,
-      "y": 178,
+      "y": 196,
       "type": "digital",
       "voltage": {
         "min": 0,
@@ -292,7 +292,7 @@
       "id": "GP12",
       "label": "GP12",
       "x": 51,
-      "y": 178,
+      "y": 196,
       "type": "digital",
       "voltage": {
         "min": 0,
@@ -307,7 +307,7 @@
       "id": "GP11",
       "label": "GP11",
       "x": 71,
-      "y": 178,
+      "y": 196,
       "type": "digital",
       "voltage": {
         "min": 0,
@@ -322,7 +322,7 @@
       "id": "GP10",
       "label": "GP10",
       "x": 91,
-      "y": 178,
+      "y": 196,
       "type": "digital",
       "voltage": {
         "min": 0,
@@ -337,7 +337,7 @@
       "id": "GP9",
       "label": "GP9",
       "x": 111,
-      "y": 178,
+      "y": 196,
       "type": "digital",
       "voltage": {
         "min": 0,
@@ -351,7 +351,7 @@
   ],
   "size": {
     "w": 142,
-    "h": 186
+    "h": 206
   },
   "limits": {
     "maxCurrentmA": 12,

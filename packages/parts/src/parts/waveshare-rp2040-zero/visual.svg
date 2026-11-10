@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 142 186" width="142" height="186">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 142 206" width="142" height="206">
   <defs>
     <filter id="waveshare-rp2040-zero-glow" x="-100%" y="-100%" width="300%" height="300%">
       <feGaussianBlur stdDeviation="2.5"/>
     </filter>
   </defs>
-  <rect x="0" y="0" width="142" height="186" rx="5" fill="#101820" stroke="#2B3A4A" stroke-width="2"/>
+  <rect x="0" y="0" width="142" height="206" rx="5" fill="#101820" stroke="#2B3A4A" stroke-width="2"/>
   <rect x="5" y="5" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="5" y="25" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="5" y="45" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
@@ -23,11 +23,11 @@
   <rect x="125" y="125" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="125" y="145" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="125" y="165" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
-  <rect x="24" y="172" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
-  <rect x="44" y="172" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
-  <rect x="64" y="172" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
-  <rect x="84" y="172" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
-  <rect x="104" y="172" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <rect x="24" y="190" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <rect x="44" y="190" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <rect x="64" y="190" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <rect x="84" y="190" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <rect x="104" y="190" width="14" height="12" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
   <rect x="47" y="-1" width="48" height="24" rx="5" fill="#9AA3AF" stroke="#C9CED6" stroke-width="1"/>
   <rect x="54" y="7" width="34" height="8" rx="4" fill="#3A4250"/>
   <rect x="48" y="66" width="46" height="46" rx="2" fill="#15181D" stroke="#3A4250" stroke-width="1"/>
@@ -64,10 +64,10 @@
   <rect x="96" y="32" width="12" height="12" rx="1" fill="#E9EDF2" stroke="#8A93A0" stroke-width="0.8"/>
   <circle cx="102" cy="38" r="3" fill="#C9CED6"/>
   <text x="102" y="50" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RGB</text>
-  <rect x="34" y="32" width="12" height="9" rx="1" fill="#2B313B" stroke="#4A5363" stroke-width="0.8"/>
-  <text x="40" y="48" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">BOOT</text>
-  <rect x="34" y="122" width="12" height="9" rx="1" fill="#2B313B" stroke="#4A5363" stroke-width="0.8"/>
-  <text x="40" y="138" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RESET</text>
+  <rect x="50" y="36" width="12" height="9" rx="1" fill="#2B313B" stroke="#4A5363" stroke-width="0.8"/>
+  <text x="56" y="52" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">BOOT</text>
+  <rect x="72" y="36" width="12" height="9" rx="1" fill="#2B313B" stroke="#4A5363" stroke-width="0.8"/>
+  <text x="78" y="52" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RESET</text>
   <text x="71" y="135" font-family="Bricolage Grotesque" font-size="11" font-weight="800" fill="#E9EDF2" text-anchor="middle">Zero</text>
   <text x="71" y="148" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle" dominant-baseline="central">RP2040</text>
   <text x="21" y="12" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">5V</text>
@@ -88,11 +88,11 @@
   <text x="121" y="132" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">GP6</text>
   <text x="121" y="152" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">GP7</text>
   <text x="121" y="172" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">GP8</text>
-  <text x="31" y="166" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">13</text>
-  <text x="51" y="166" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">12</text>
-  <text x="71" y="166" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">11</text>
-  <text x="91" y="166" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">10</text>
-  <text x="111" y="166" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">9</text>
+  <text x="31" y="184" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">13</text>
+  <text x="51" y="184" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">12</text>
+  <text x="71" y="184" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">11</text>
+  <text x="91" y="184" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">10</text>
+  <text x="111" y="184" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">9</text>
   <circle data-pin="VBUS" cx="11" cy="12" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="GND.1" cx="11" cy="32" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="3V3" cx="11" cy="52" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
@@ -111,9 +111,9 @@
   <circle data-pin="GP6" cx="131" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="GP7" cx="131" cy="152" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="GP8" cx="131" cy="172" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
-  <circle data-pin="GP13" cx="31" cy="178" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
-  <circle data-pin="GP12" cx="51" cy="178" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
-  <circle data-pin="GP11" cx="71" cy="178" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
-  <circle data-pin="GP10" cx="91" cy="178" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
-  <circle data-pin="GP9" cx="111" cy="178" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GP13" cx="31" cy="196" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GP12" cx="51" cy="196" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GP11" cx="71" cy="196" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GP10" cx="91" cy="196" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GP9" cx="111" cy="196" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
 </svg>
