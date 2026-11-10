@@ -1,7 +1,7 @@
-/* Round 5, live track: hit areas over running parts and the live controls card. */
+/* Round 5, live track; round 6, canvas track: hit areas over running parts' controls (the cap,
+   knob or lever only; PartControl sets the box) and the docked live controls card. */
 .part-control {
   position: absolute;
-  inset: 0;
   z-index: 2;
   border-radius: 8px;
   outline: none;
@@ -13,6 +13,12 @@
 }
 .part-control.is-knob {
   cursor: ew-resize;
+}
+.part-control.is-imu {
+  cursor: move;
+}
+.part-control.is-button {
+  border-radius: 50%;
 }
 .part-control:hover,
 .part-control:focus-visible {
@@ -42,12 +48,14 @@
 }
 
 .ix-card {
+  /* Docked at the bottom of the right column: the panel column ends above it (see
+     :root[data-ix-dock] below), so Serial, Agent steps and the Inspector never cover it. */
   position: absolute;
-  right: 16px;
-  bottom: 84px;
-  z-index: 30;
-  width: min(340px, calc(100% - 32px));
-  max-height: min(44vh, 380px);
+  right: var(--gutter, 16px);
+  bottom: 80px;
+  z-index: 31;
+  width: 360px;
+  max-height: min(46vh, 400px);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-strong, #2b3038);
@@ -56,6 +64,9 @@
   color: var(--fg, #e9edf2);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
   font-size: 12px;
+}
+:root[data-ix-dock] .panel-column {
+  bottom: calc(80px + var(--ix-dock-h, 0px) + 10px);
 }
 .ix-head {
   display: flex;
@@ -180,12 +191,78 @@
 .ix-btn:hover {
   background: var(--bg-hover, #1d2127);
 }
+/* Use / Arrange: what a click on a running part does. */
+.ix-mode {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--border-strong, #2b3038);
+  border-radius: 999px;
+}
+.ix-mode button {
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted, #8b95a3);
+  font: inherit;
+  cursor: pointer;
+}
+.ix-mode button[aria-pressed="true"] {
+  background: var(--fg, #e9edf2);
+  color: var(--bg-float, #15181d);
+}
+.ix-headrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+}
+.ix-headrow .ix-head {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.ix-hint {
+  padding: 0 14px 10px;
+  color: var(--fg-muted, #8b95a3);
+}
+.ix-btn[aria-pressed="true"],
+.ix-btn.is-playing {
+  background: var(--fg, #e9edf2);
+  color: var(--bg-float, #15181d);
+  border-color: var(--fg, #e9edf2);
+}
+.ix-btn {
+  touch-action: none;
+  user-select: none;
+}
+.ix-dur {
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong, #2b3038);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.ix-paused {
+  color: var(--warn, #ffb23f);
+}
 @media (max-width: 820px) {
   .ix-card {
-    left: 16px;
-    right: 16px;
+    left: 8px;
+    right: 8px;
     width: auto;
-    bottom: 132px;
-    max-height: 34vh;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    max-height: 40dvh;
+    z-index: 45;
   }
+  :root[data-ix-dock] .panel-column {
+    bottom: calc(76px + env(safe-area-inset-bottom) + var(--ix-dock-h, 0px) + 8px);
+  }
+}
+.ix-headrow .ix-chev {
+  margin-left: 0;
 }
