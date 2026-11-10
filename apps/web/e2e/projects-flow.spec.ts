@@ -69,16 +69,18 @@ function jumper(dir: string, home: string, ...args: string[]): string {
   return r.stdout;
 }
 
-/** Open the server's page and wait for the followed (empty) project. */
+/** Open the server's page and wait for the followed (empty) project; someone new lands on Projects (round 6). */
 async function openServed(page: Page, s: Served): Promise<void> {
   await page.goto(`${s.url}/`);
   await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("app")).toHaveAttribute("data-live", "follow");
+  await expect(page.getByTestId("projects-home")).toBeVisible({ timeout: 20_000 });
 }
 
-/** Open the Blink example from the empty state's cards; it becomes projects/blink-copy. */
+/** Open the Blink example from the Projects page (or the empty state's cards); it becomes projects/blink. */
 async function openBlinkCopy(page: Page, s: Served): Promise<string> {
-  const card = page.getByTestId("empty-state-examples").locator('[data-name="Blink"]');
+  const home = page.getByTestId("projects-home");
+  const card = (await home.isVisible()) ? home.getByTestId("examples-grid").locator('[data-name="Blink"]') : page.getByTestId("empty-state-examples").locator('[data-name="Blink"]');
   await expect(card).toBeVisible({ timeout: 20_000 });
   await card.click();
   await expect(page.getByTestId("part-led1")).toBeVisible({ timeout: 20_000 });
@@ -94,6 +96,9 @@ test.describe("projects (served)", () => {
     const s = await serve(info);
     try {
       await openServed(page, s);
+      // Round 6: the first screen is the Projects page with the pitch; back to the canvas shows the empty state.
+      await expect(page.getByTestId("projects-home")).toContainText("Build and simulate Arduino circuits");
+      await page.getByTestId("projects-close").click();
       const empty = page.getByTestId("empty-state");
       await expect(empty).toBeVisible();
       await expect(empty).toContainText("Build and simulate Arduino circuits");
@@ -152,17 +157,18 @@ test.describe("projects (served)", () => {
 
       await page.getByTestId("open-history").click();
       const view = page.getByTestId("history-view");
-      await expect(view).toHaveAttribute("data-versions", "3", { timeout: 15_000 });
-      await expect(view).toHaveAttribute("data-version", "3");
+      // Version 1 is the example as it came (round 6); the three CLI changes are 2 to 4.
+      await expect(view).toHaveAttribute("data-versions", "4", { timeout: 15_000 });
+      await expect(view).toHaveAttribute("data-version", "4");
       const details = page.getByTestId("history-details");
       await expect(details).toContainText("green is calmer");
       await expect(page.getByTestId("history-changes")).toContainText("led1");
       await expect(page.getByTestId("history-preview").locator("img")).toBeVisible();
       await shot(page, info, "history-latest");
 
-      // Scrub back to version 1: the buzzer was just placed, not wired yet.
-      await page.getByTestId("history-scrubber").fill("1");
-      await expect(page.getByTestId("history-version-label")).toHaveText("Version 1 of 3");
+      // Scrub back to version 2: the buzzer was just placed, not wired yet.
+      await page.getByTestId("history-scrubber").fill("2");
+      await expect(page.getByTestId("history-version-label")).toHaveText("Version 2 of 4");
       await expect(details).toContainText("beep on each blink");
       // Only what that change did (the copied example is the baseline, not "everything added").
       await expect(page.getByTestId("history-changes").locator("li")).toHaveCount(1);
@@ -170,11 +176,11 @@ test.describe("projects (served)", () => {
       await expect(details).toContainText("CLI");
       await shot(page, info, "history-scrubbed");
 
-      // Restore version 1: a new version 4 at the end, the wire and the colour gone.
+      // Restore version 2: a new version 5 at the end, the wire and the colour gone.
       await page.getByTestId("history-restore").click();
       await page.getByTestId("history-restore-confirm").click();
-      await expect(view).toHaveAttribute("data-versions", "4", { timeout: 15_000 });
-      await expect(view).toHaveAttribute("data-version", "4");
+      await expect(view).toHaveAttribute("data-versions", "5", { timeout: 15_000 });
+      await expect(view).toHaveAttribute("data-version", "5");
       await expect(details).toContainText("You");
       await page.getByTestId("history-close").click();
       await expect(page.locator('[data-testid^="wire-"]')).toHaveCount(3, { timeout: 15_000 });
