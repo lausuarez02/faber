@@ -6,6 +6,7 @@ import {
   JumperError,
   ProjectSession,
   composeSvg,
+  deviceStill, // round 6 frames
   diskFirmwareFiles,
   jumperHome,
   lastTestsFromLog,
@@ -15,6 +16,7 @@ import {
   projectId,
   registerProject,
   registryForProjectDir,
+  stillKey, // round 6 frames
   svgToPng,
   TEMPLATES,
   versionCount,
@@ -67,6 +69,7 @@ function registryOf(dir: string, ctx: RouteContext): PartRegistry {
 
 /** jumper.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
 function drawingKey(dir: string, raw: string): string {
+  raw += `\nstill:${stillKey(dir)}`; // round 6 frames: a new run redraws the screens in the thumbnail
   const root = join(dir, "parts");
   if (!existsSync(root)) return raw;
   let extra = "";
@@ -255,10 +258,10 @@ let chain: Promise<unknown> = Promise.resolve();
 function renderThumb(file: string, dir: string, project: Project, ctx: RouteContext): Promise<Buffer | undefined> {
   const running = rendering.get(file);
   if (running) return running;
-  const svg = composeSvg(project, registryOf(dir, ctx), {});
-  const w = Number(svg.match(/width="(\d+(?:\.\d+)?)"/)?.[1] ?? 1200);
   const p = chain.then(
     async () => {
+      const svg = await thumbSvg(dir, project, ctx); // round 6 frames: lit screens, colour TFTs
+      const w = Number(svg.match(/width="(\d+(?:\.\d+)?)"/)?.[1] ?? 1200);
       const png = await svgToPng(svg, Math.min(1, 640 / w));
       if (png) {
         try {
@@ -276,6 +279,13 @@ function renderThumb(file: string, dir: string, project: Project, ctx: RouteCont
   rendering.set(file, p);
   void p.finally(() => rendering.delete(file)).catch(() => {});
   return p;
+}
+
+/** Round 6 frames: the canvas with the device as it last ran (or its built firmware run for 2 s). */
+async function thumbSvg(dir: string, project: Project, ctx: RouteContext): Promise<string> {
+  const registry = registryOf(dir, ctx);
+  const still = await deviceStill(dir, project, registry);
+  return composeSvg(project, registry, still ? { states: still.states, liveWires: still.live, ...(still.color ? { color: still.color } : {}) } : {});
 }
 
 async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Promise<void> {
@@ -300,7 +310,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
   }
   // No Chromium for Playwright: the same drawing as SVG (an <img> shows it all the same), not cached.
   res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-jumper-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
-  res.end(composeSvg(project, registryOf(card.dir, ctx), {}));
+  res.end(await thumbSvg(card.dir, project, ctx)); // round 6 frames
 }
 
 // -------------------------------------------------------------------------------- create / open
@@ -531,7 +541,7 @@ export const projectsRoutes: ApiRoute[] = [
       if (n === undefined) return;
       const d = versionDetail(ctx.dir(), n)!;
       const highlight = [...d.changes.added, ...d.changes.changed].filter((k) => k.startsWith("part:")).map((k) => k.slice(5));
-      const svg = composeSvg(d.project, ctx.session().registry, { ...(d.frame ? { states: d.frame.parts, liveWires: d.frame.live ?? [] } : {}), highlight });
+      const svg = composeSvg(d.project, ctx.session().registry, { ...(d.frame ? { states: d.frame.parts, liveWires: d.frame.live ?? [], ...(d.frame.color ? { color: d.frame.color } : {}) } : {}), highlight }); // round 6 frames: colour
       res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store" });
       res.end(svg);
     },

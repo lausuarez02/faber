@@ -43,3 +43,4 @@ export { planDevice } from "./planner.ts";
 export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";
 export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog } from "./versions.ts";
 export type { VersionSummary, VersionDetail, VersionChanges, VersionFrame } from "./versions.ts";
+export { deviceStill, lastLoggedStill, stillKey, type DeviceStill } from "./device-still.ts"; // round 6 frames

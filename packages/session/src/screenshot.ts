@@ -6,6 +6,7 @@ import type { Project, Rotation } from "@jumper/project-format";
 import { drawArm, drawWorld, type WorldSnapshot } from "@jumper/physics";
 import { sizeOf } from "./layout.ts";
 import { SvgCtx } from "./svgCtx.ts";
+import type { ColorFrameImage } from "./sim.ts";
 
 /**
  * Headless screenshot: composes the canvas as one SVG (part visuals with their live states bound,
@@ -124,9 +125,8 @@ function displayOverlay(svg: string, state: VisualState, size: { w: number; h: n
 let roundClips = 0;
 
 /** A colour display's frame (TFT), drawn as an embedded PNG into the part's screen rectangle. */
-function colorOverlay(svg: string, frame: ColorFrame, size: { w: number; h: number }): string {
+function colorOverlay(svg: string, png: string, size: { w: number; h: number }): string {
   const rect = screenRect(svg) ?? { x: size.w * 0.1, y: size.h * 0.1, w: size.w * 0.8, h: size.h * 0.8 };
-  const png = Buffer.from(colorFrameToPng(frame, 1)).toString("base64");
   const image = (extra: string) => `<image x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"${extra} href="data:image/png;base64,${png}"/>`;
   // A round panel (GC9A01, agent-made round glass) shows only the circle of its square frame.
   if (/<rect\b[^>]*data-screen-shape="round"/.test(svg)) {
@@ -140,6 +140,8 @@ export interface ComposeOptions {
   states?: Record<string, VisualState>;
   /** Colour display frames by part id (Simulation.framebuffer), for TFT screens. */
   framebuffers?: Record<string, ColorFrame>;
+  /** Round 6 frames: colour screens as logged PNGs (Frame.color / VersionFrame.color), for history previews and thumbnails. */
+  color?: Record<string, ColorFrameImage>;
   liveWires?: string[];
   title?: string;
   /** Highlight these parts (agent cursor). */
@@ -213,7 +215,8 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     svg = svg.replace(/\bid="([^"]+)"/g, `id="${b.p.id}--$1"`).replace(/url\(#([^)]+)\)/g, `url(#${b.p.id}--$1)`).replace(/href="#([^"]+)"/g, `href="#${b.p.id}--$1"`);
     svg = svg.replace(/<svg\b([^>]*)>/, (_m, attrs: string) => `<svg${attrs.replace(/\s(width|height|x|y)="[^"]*"/g, "")} x="0" y="0" width="${spec.size.w}" height="${spec.size.h}">`);
     const fb = opts.framebuffers?.[b.p.id];
-    const overlay = fb ? colorOverlay(b.def.svg, fb, spec.size) : state ? displayOverlay(b.def.svg, state, spec.size) : "";
+    const png = fb ? Buffer.from(colorFrameToPng(fb, 1)).toString("base64") : opts.color?.[b.p.id]?.png;
+    const overlay = png ? colorOverlay(b.def.svg, png, spec.size) : state ? displayOverlay(b.def.svg, state, spec.size) : "";
     const rot = b.p.rotation ? ` rotate(${b.p.rotation} ${spec.size.w / 2} ${spec.size.h / 2})` : "";
     // Rotation is about the unrotated centre; then shift so the rotated box sits at x,y.
     const shift = b.p.rotation === 90 || b.p.rotation === 270 ? { x: (spec.size.h - spec.size.w) / 2, y: (spec.size.w - spec.size.h) / 2 } : { x: 0, y: 0 };
