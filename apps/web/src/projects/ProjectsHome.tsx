@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Bot, CircuitBoard, FlaskConical, FolderOpen, Plus, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Bot, CircuitBoard, Copy, FlaskConical, FolderOpen, Plus, X } from "lucide-react";
 import { useJumper } from "../lib/app.ts";
 import { exampleInfos, type ExampleInfo } from "../lib/examples.ts";
 import { getDef } from "../lib/parts.ts";
@@ -10,6 +10,7 @@ import { newProjectAnywhere, openCard, openLocalExample } from "./actions.ts";
 import { useProjectsListing, useServer } from "./data.ts";
 import { useProjectsUi } from "./store.ts";
 import { markOpened } from "./firstRun.ts";
+import { stableOrder } from "./order.ts";
 import "./projects.css";
 
 export const PITCH = "Build and simulate Arduino circuits, or let your AI agent build them while you watch.";
@@ -31,11 +32,15 @@ export function ProjectsHome() {
   const server = useServer();
   const { data, error, loading } = useProjectsListing(open);
   const [busy, setBusy] = useState<string | undefined>();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // Round 6b: cards stay where the person saw them (the server sorts by last change).
+  const projects = useMemo(() => (data ? stableOrder(data.projects) : []), [data]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeHome();
+      else scrollByKey(e, bodyRef.current);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -70,7 +75,7 @@ export function ProjectsHome() {
           </button>
         </div>
       </header>
-      <div className="pj-home-body">
+      <div className="pj-home-body" ref={bodyRef} tabIndex={-1} data-testid="projects-body">
         <p className="pj-pitch">{PITCH}</p>
 
         <section className="pj-section" aria-labelledby="pj-yours">
@@ -87,7 +92,7 @@ export function ProjectsHome() {
               </div>
             ) : (
               <div className="pj-grid" data-testid="projects-grid">
-                {data?.projects.map((c) => <Card key={c.id} card={c} active={c.id === data.active} busy={busy === c.id} onOpen={() => (c.id === data.active ? close() : void run(c.id, () => openCard(c)))} />)}
+                {projects.map((c) => <Card key={c.id} card={c} active={c.id === data?.active} busy={busy === c.id} onOpen={() => (c.id === data?.active ? close() : void run(c.id, () => openCard(c)))} />)}
                 <button type="button" className="pj-card pj-card-new" disabled={!!busy} onClick={() => void run("new", () => newProjectAnywhere())}>
                   <Plus size={22} strokeWidth={STROKE} aria-hidden />
                   <span>New blank project</span>
@@ -111,7 +116,7 @@ export function ProjectsHome() {
           <p className="pj-section-note">Opening an example makes your own copy; nothing on your canvas is replaced.</p>
           <div className="pj-grid" data-testid="examples-grid">
             {server === "yes"
-              ? examples.map((c) => <Card key={c.id} card={c} busy={busy === c.id} onOpen={() => void run(c.id, () => openCard(c))} />)
+              ? examples.map((c) => <ExampleCard key={c.id} card={c} busy={busy} onOpen={(copy) => void run(c.id, () => openCard(c, copy))} />)
               : server === "no"
                 ? exampleInfos().map((ex) => <LocalExampleCard key={ex.example} info={ex} onOpen={() => openLocalExample(ex.example)} />)
                 : null}
@@ -124,12 +129,49 @@ export function ProjectsHome() {
             <p className="pj-section-note">Claude Code and Codex built these with only Jumper's tools. Open one to scrub through how it was made.</p>
             <div className="pj-grid">
               {agentBuilt.map((c) => (
-                <Card key={c.id} card={c} busy={busy === c.id} onOpen={() => void run(c.id, () => openCard(c))} />
+                <ExampleCard key={c.id} card={c} busy={busy} onOpen={(copy) => void run(c.id, () => openCard(c, copy))} />
               ))}
             </div>
           </section>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** Home / End / PageUp / PageDown / Space scroll the Projects page wherever the focus is (not in a field). */
+function scrollByKey(e: KeyboardEvent, body: HTMLElement | null): void {
+  if (!body || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+  const t = e.target as HTMLElement | null;
+  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  if (t && t !== document.body && t !== body && body.contains(t) && t.closest("[role=listbox],[role=menu]")) return;
+  const page = Math.max(40, body.clientHeight - 60);
+  const top: Record<string, number | undefined> = {
+    Home: 0,
+    End: body.scrollHeight,
+    PageDown: body.scrollTop + page,
+    PageUp: body.scrollTop - page,
+    ...(t?.tagName === "BUTTON" ? {} : { " ": body.scrollTop + (e.shiftKey ? -page : page) }),
+  };
+  const to = top[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  body.scrollTo({ top: to });
+}
+
+/**
+ * An example or agent-built card: opening it opens the person's copy (made on first open). When a
+ * copy exists, "New copy" beside it makes another one ("Pocket Muse (2)").
+ */
+function ExampleCard({ card, busy, onOpen }: { card: ProjectCard; busy: string | undefined; onOpen(newCopy: boolean): void }) {
+  return (
+    <div className="pj-card-wrap">
+      <Card card={card} busy={busy === card.id} onOpen={() => onOpen(false)} title={card.copy ? `Open your copy of ${card.name}` : undefined} />
+      {card.copy ? (
+        <button type="button" className="pj-newcopy" data-testid={`new-copy-${card.id}`} disabled={!!busy} title={`Make another copy of ${card.name} next to the one you have`} onClick={() => onOpen(true)}>
+          <Copy size={12} strokeWidth={STROKE} aria-hidden /> New copy
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -147,13 +189,13 @@ function testsChip(card: ProjectCard) {
   return null;
 }
 
-export function Card({ card, active, busy, onOpen, compact }: { card: ProjectCard; active?: boolean; busy?: boolean; onOpen(): void; compact?: boolean }) {
+export function Card({ card, active, busy, onOpen, compact, title }: { card: ProjectCard; active?: boolean; busy?: boolean; onOpen(): void; compact?: boolean; title?: string }) {
   const [broken, setBroken] = useState(false);
   // Round 6 (switch): the server draws a thumbnail on first request (about 1 s each, one at a
   // time); until it arrives the tile says so instead of looking blank.
   const [loaded, setLoaded] = useState(false);
   return (
-    <button type="button" className={`pj-card${compact ? " pj-card-compact" : ""}`} data-testid={`project-card-${card.id}`} data-name={card.name} data-kind={card.kind} data-active={active ? "true" : undefined} aria-busy={busy || undefined} onClick={onOpen} title={card.readOnly ? `Open a copy of ${card.name}` : `Open ${card.name}`}>
+    <button type="button" className={`pj-card${compact ? " pj-card-compact" : ""}`} data-testid={`project-card-${card.id}`} data-name={card.name} data-kind={card.kind} data-active={active ? "true" : undefined} aria-busy={busy || undefined} onClick={onOpen} title={title ?? (card.readOnly ? `Open a copy of ${card.name}` : `Open ${card.name}`)}>
       <div className="pj-thumb">
         {card.parts && !broken ? (
           <>

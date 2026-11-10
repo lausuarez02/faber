@@ -22,6 +22,10 @@ export interface ProjectCard {
   versions?: number;
   /** Agent-made part types on its canvas (create_part). */
   agentMade?: number;
+  /** A project: the example it was copied from. */
+  copyOf?: string;
+  /** An example: the person's copy that opening it reopens. */
+  copy?: string;
 }
 
 export interface ProjectsListing {
@@ -140,7 +144,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   projects: () => request<ProjectsListing>("GET", "/api/projects"),
-  create: (body: { name?: string; template?: string; from?: string }) => request<{ id: string; dir: string }>("POST", "/api/projects", body),
+  create: (body: { name?: string; template?: string; from?: string; copy?: boolean }) => request<{ id: string; dir: string; reopened?: boolean }>("POST", "/api/projects", body),
   open: (id: string) => request<{ id: string; dir: string }>("POST", `/api/projects/${id}/open`, {}),
   history: () => request<{ id: string; dir: string; versions: VersionSummary[] }>("GET", "/api/history"),
   version: (n: number) => request<VersionDetail>("GET", `/api/history/${n}`),

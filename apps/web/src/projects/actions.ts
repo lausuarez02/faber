@@ -25,10 +25,13 @@ function afterSwitch(_name: string): void {
   if (useLive.getState().mode !== "follow") location.href = "/";
 }
 
-/** Open a card from the gallery: projects switch, examples are copied first (C3). */
-export async function openCard(card: ProjectCard): Promise<void> {
+/**
+ * Open a card from the gallery: projects switch; an example opens the person's copy of it, made on
+ * first open (C3). `newCopy` makes another copy ("Pocket Muse (2)") when the person asks for one.
+ */
+export async function openCard(card: ProjectCard, newCopy = false): Promise<void> {
   try {
-    if (card.readOnly) await api.create({ from: card.id, name: card.name });
+    if (card.readOnly) await api.create({ from: card.id, name: card.name, ...(newCopy ? { copy: true } : {}) });
     else await api.open(card.id);
     afterSwitch(card.name);
   } catch (e) {
