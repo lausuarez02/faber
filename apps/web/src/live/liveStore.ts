@@ -10,6 +10,8 @@ export interface LiveStep {
   why: string;
   status: "pending" | "accepted" | "rejected" | "undone";
   ops: string[];
+  /** Who made it ("mcp", "cli", "web"); the server accepts the person's own ("web") when made. */
+  actor?: string;
 }
 
 export interface LiveCursor {
@@ -121,6 +123,7 @@ export function noteStepActors(entries: readonly { step?: { id: number }; actor?
 export function agentSteps(steps: readonly LiveStep[], actors: Record<number, string[]>, mode: LiveMode): LiveStep[] {
   if (mode !== "follow") return [...steps];
   return steps.filter((s) => {
+    if (s.actor) return s.actor !== "web";
     const a = actors[s.id];
     return !a || a.some((x) => x !== "web");
   });

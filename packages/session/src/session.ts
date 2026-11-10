@@ -34,6 +34,7 @@ import {
   fileChanges,
   planRevert,
   projectEntities,
+  isPersonActor,
   record,
   stepSummary,
   type EntityMap,
@@ -134,6 +135,8 @@ interface OpCtx {
   frames?: Frame[];
   steps?: boolean;
   firmware?: { artifact: string; hash?: string; source?: string };
+  /** The step this op's changes went into (the person's own step is not the open one). */
+  step?: number;
 }
 
 const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5CF2A1"];
@@ -278,6 +281,7 @@ export class ProjectSession {
       } catch {
         this.history = emptyHistory();
       }
+      this.settlePersonSteps();
     }
     if (existsSync(this.actionLogFile)) {
       const text = readFileSync(this.actionLogFile, "utf8").trimEnd();
@@ -289,6 +293,32 @@ export class ProjectSession {
       }
     }
     this.diskStamp = this.stamp();
+  }
+
+  /**
+   * Steps saved before steps carried their actor: a pending one whose ops were all the person's own
+   * (actor "web" in the action log) is accepted, so it never shows as an agent proposal.
+   */
+  private settlePersonSteps(): void {
+    const unknown = this.history.steps.filter((s) => s.status === "pending" && !s.actor);
+    if (!unknown.length || !existsSync(this.actionLogFile)) return;
+    const actorOf = new Map<number, string>();
+    for (const line of readFileSync(this.actionLogFile, "utf8").split("\n")) {
+      if (!line) continue;
+      try {
+        const e = JSON.parse(line) as ActionEntry;
+        if (e.seq !== undefined && e.actor) actorOf.set(e.seq, e.actor);
+      } catch {
+        // a torn line: skip it
+      }
+    }
+    for (const s of unknown) {
+      const actors = s.ops.map((n) => actorOf.get(n));
+      if (!actors.length || !actors.every((a) => isPersonActor(a))) continue;
+      s.actor = "web";
+      s.status = "accepted";
+      if (this.history.open === s.id) this.history.open = undefined;
+    }
   }
 
   private persist(): void {
@@ -369,7 +399,8 @@ export class ProjectSession {
     const who = { actor: meta.actor ?? this.actor, sid: this.sid, ...(meta.client ? { client: meta.client } : {}) };
     try {
       const result = await (handler as (a: Record<string, unknown>, c: OpCtx) => unknown).call(this, args, ctx);
-      const step = ctx.project || ctx.file ? this.history.steps.find((s) => s.id === this.history.open) : undefined;
+      const stepId = ctx.step ?? this.history.open;
+      const step = ctx.project || ctx.file ? this.history.steps.find((s) => s.id === stepId) : undefined;
       this.logAction({
         seq: ctx.seq,
         t,
@@ -428,9 +459,10 @@ export class ProjectSession {
     const oldProject = this.project;
     this.project = res.project;
     for (const [path, content] of Object.entries(files)) this.writeOrDelete(path, content);
-    const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString());
+    const step = record(this.history, ctx.why, ctx.seq, label, before, after, new Date().toISOString(), ctx.meta?.actor ?? this.actor);
     this.persist();
     ctx.project = true;
+    ctx.step = step.id;
     if (topoChanged) this.liveNote = this.pushPropsOrInvalidate(oldProject);
     return step;
   }
@@ -980,17 +1012,28 @@ export class ProjectSession {
       .join("\n");
   }
 
-  private sourceHash(): string | undefined {
+  /**
+   * What the firmware is built from: board (fqbn), libraries (sorted: their order never changes the
+   * build), the main sketch, and every source file in the sketch folder with line endings made LF
+   * (a CRLF checkout or editor is the same sketch). `legacy` is the round 6 formula, so build
+   * records written before still count.
+   */
+  private sourceHash(legacy = false): string | undefined {
     const info = this.firmwareInfo();
     if (!info?.sketchDir || !existsSync(info.sketchDir)) return undefined;
     const h = createHash("sha256");
-    h.update(`${info.fqbn}|${(info.fw.libraries ?? []).join(",")}|${info.fw.sketch}\n`);
-    for (const f of readdirSync(info.sketchDir).sort()) if (SOURCE_EXT.test(f)) h.update(`${f}\0${readFileSync(join(info.sketchDir, f), "utf8")}\0`);
+    const libs = [...(info.fw.libraries ?? [])];
+    h.update(`${info.fqbn}|${(legacy ? libs : libs.map((l) => l.trim()).sort()).join(",")}|${info.fw.sketch}\n`);
+    for (const f of readdirSync(info.sketchDir).sort()) {
+      if (!SOURCE_EXT.test(f)) continue;
+      const text = readFileSync(join(info.sketchDir, f), "utf8");
+      h.update(`${f}\0${legacy ? text : text.replace(/\r\n?/g, "\n")}\0`);
+    }
     return h.digest("hex").slice(0, 16);
   }
 
   /** "fresh" | "stale" (sources changed since the last build) | "missing" | "none" (no firmware). */
-  private firmwareState(): "fresh" | "stale" | "missing" | "none" {
+  firmwareState(): "fresh" | "stale" | "missing" | "none" {
     const info = this.firmwareInfo();
     if (!info) return "none";
     if (!existsSync(info.artifactAbs)) return info.sketchAbs ? "missing" : "none";
@@ -999,7 +1042,8 @@ export class ProjectSession {
     const bf = join(this.metaDir, "build.json");
     if (existsSync(bf)) {
       try {
-        return (JSON.parse(readFileSync(bf, "utf8")) as { hash: string }).hash === hash ? "fresh" : "stale";
+        const rec = JSON.parse(readFileSync(bf, "utf8")) as { hash: string; artifact?: string };
+        if (rec.artifact === undefined || rec.artifact === info.fw.artifact) return rec.hash === hash || rec.hash === this.sourceHash(true) ? "fresh" : "stale";
       } catch {
         // fall through
       }
@@ -1044,6 +1088,20 @@ export class ProjectSession {
       }
     }
     return undefined;
+  }
+
+  /**
+   * A copied example ships its built firmware next to its sketch (the repo keeps them in step), so
+   * the copy records that build as made from the sources it came with: no false "sketch changed"
+   * because copying gave the files new times. Does nothing without both the hex and the sketch.
+   */
+  adoptShippedBuild(): boolean {
+    const info = this.firmwareInfo();
+    const hash = this.sourceHash();
+    if (!info || !hash || !existsSync(info.artifactAbs)) return false;
+    mkdirSync(this.metaDir, { recursive: true });
+    writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash, artifact: info.fw.artifact, at: new Date().toISOString(), shipped: true }));
+    return true;
   }
 
   async build(args: { force?: boolean } = {}, ctx?: OpCtx): Promise<unknown> {
@@ -1624,7 +1682,7 @@ export class ProjectSession {
     const step = this.history.steps.find((s) => s.id === id);
     if (!step) fail("nothing-to-redo", "Nothing to redo", "no step was undone since the last change", "undo something first");
     const { conflicts } = this.applyRevert(ctx, step, "forward", "Redo");
-    step.status = "pending";
+    step.status = isPersonActor(step.actor) ? "accepted" : "pending";
     this.history.redo.pop();
     this.persist();
     ctx.summary = `redid step ${step.id}: ${step.why}`;

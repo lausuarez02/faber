@@ -5,6 +5,7 @@ import { registry, tftTypeFor } from "./parts.ts";
 import { registerDisplayRenderers } from "../renderers/displays/index.ts";
 import { registerTftRenderers } from "../renderers/tft/index.ts";
 import { colorFrameOf } from "./colorFrames.ts"; // round 6 frames
+import { filterSerial } from "./serialFilter.ts"; // round 6b
 import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
 import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
@@ -22,6 +23,7 @@ const MAX_FRAME_MS = 100; // wall ms per frame we account for (tab switches, hic
 const WALL_BUDGET_MS = 12; // stop simulating this frame after this much wall time
 const SLICE_MS = 2; // virtual ms per runFor slice inside a frame
 const SERIAL_CAP = 64 * 1024;
+
 const HIGH_VOLTS = 1.5;
 /**
  * The flowing dashes on HIGH wires are a stroke-dashoffset animation, which the browser has
@@ -198,7 +200,7 @@ export class Engine {
     this.consoleEl?.removeEventListener("scroll", this.onConsoleScroll);
     this.consoleEl = el;
     if (el) {
-      el.textContent = this.serial;
+      el.textContent = this.shownSerial();
       el.addEventListener("scroll", this.onConsoleScroll, { passive: true });
       this.followSerial();
     }
@@ -215,6 +217,24 @@ export class Engine {
   };
 
   getSerialFollowing = (): boolean => this.serialFollow;
+
+  /** Round 6b: the serial filter ("" = every line; see serialFilter()). */
+  private serialQuery = "";
+
+  /** Show only the serial lines that match `query` (or hide them with a leading "-"); "" shows all. */
+  setSerialFilter(query: string): void {
+    this.serialQuery = query;
+    if (this.consoleEl) this.consoleEl.textContent = this.shownSerial();
+    if (this.serialFollow && this.consoleEl) this.consoleEl.scrollTop = this.consoleEl.scrollHeight;
+  }
+
+  get serialFilterText(): string {
+    return this.serialQuery;
+  }
+
+  private shownSerial(): string {
+    return filterSerial(this.serial, this.serialQuery);
+  }
 
   /** Jump to the newest serial line and follow it again. */
   followSerial(): void {
@@ -691,7 +711,7 @@ export class Engine {
     }
     const el = this.consoleEl;
     if (!el) return;
-    if (trimmed) el.textContent = this.serial;
+    if (trimmed || this.serialQuery.trim()) el.textContent = this.shownSerial();
     else el.append(text);
     // Round 6 (canvas): follow the newest line unless the person scrolled up to read.
     if (this.serialFollow) el.scrollTop = el.scrollHeight;

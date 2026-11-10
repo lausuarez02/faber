@@ -48,6 +48,40 @@
   max-height: 220px;
   min-height: 64px;
 }
+/* Round 6b: the Serial filter box. */
+.serial-filter {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 10px 0;
+  padding: 0 4px 0 8px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-canvas);
+  color: var(--fg-muted);
+}
+.serial-filter:focus-within {
+  border-color: var(--primary);
+}
+.serial-filter input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+}
+.serial-filter input::-webkit-search-cancel-button {
+  display: none;
+}
+.console-out[data-filtered]:empty::before {
+  content: "No line matches the filter yet.";
+}
 .serial-newest {
   position: absolute;
   right: 12px;

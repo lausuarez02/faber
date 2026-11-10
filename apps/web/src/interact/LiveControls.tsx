@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ChevronDown, Move3d } from "lucide-react";
+import { Check, ChevronDown, Move3d } from "lucide-react";
 import type { PropSpec } from "@jumper/sim-core";
 import { engine, useJumper } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
@@ -181,7 +181,7 @@ function ImuPad({ part, paused }: { part: string; paused: boolean }) {
   return (
     <div className="ix-group ix-imu" data-testid={`imu-${part}`}>
       <div className="ix-group-title">
-        <Move3d size={13} strokeWidth={1.8} aria-hidden /> <span className="mono">{part}</span> <span className="ix-dim">drag the pad or the part to tilt</span>
+        <Move3d size={13} strokeWidth={1.8} aria-hidden /> <span className="mono">{part}</span> <span className="ix-dim">drag the pad or the part to tilt; hold Shake to keep shaking</span>
       </div>
       <div className="ix-imu-row">
         <div
@@ -224,7 +224,7 @@ function ImuPad({ part, paused }: { part: string; paused: boolean }) {
               type="button"
               className={`ix-btn ${playing === "shake" ? "is-playing" : ""}`}
               data-testid={`imu-shake-${part}`}
-              title={`Click: shake for ${shakeMs / 1000} s. Hold: shake for as long as you hold. Approximate: a 7 Hz, ±2.2 g side-to-side shake, on simulation time.`}
+              title={`Click: shake for ${shakeMs / 1000} s. Hold: shake for as long as you hold. Approximate: a 7 Hz, ±2.2 g looping shake with the wrist turning, on simulation time.`}
               onPointerDown={(e) => {
                 if (e.button !== 0) return;
                 e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -245,23 +245,14 @@ function ImuPad({ part, paused }: { part: string; paused: boolean }) {
             >
               Shake
             </button>
-            <select
-              className="ix-dur mono"
-              aria-label="Shake duration for a click"
-              data-testid={`imu-shake-ms-${part}`}
+            <DurationPicker
+              part={part}
               value={shakeMs}
-              onChange={(e) => {
-                const v = Number(e.target.value);
+              onChange={(v) => {
                 setShakeMs(v);
                 writePref(DURATION_KEY, String(v));
               }}
-            >
-              {SHAKE_DURATIONS_MS.map((ms) => (
-                <option key={ms} value={ms}>
-                  {ms / 1000} s
-                </option>
-              ))}
-            </select>
+            />
             <button type="button" className={`ix-btn ${playing === "drop" ? "is-playing" : ""}`} data-testid={`imu-drop-${part}`} title="Approximate: 0.4 s of free fall (0 g), then a 6 g bump, on simulation time" onClick={() => motion("drop")}>
               Drop
             </button>
@@ -273,5 +264,100 @@ function ImuPad({ part, paused }: { part: string; paused: boolean }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Round 6b: how long a click on Shake shakes. A button that opens a small list (click, Enter, Space
+ * or Alt+ArrowDown), and ArrowUp / ArrowDown on the closed button step through the lengths, like a
+ * select whose list always shows in the page (the native one did not open for everyone).
+ */
+function DurationPicker({ part, value, onChange }: { part: string; value: number; onChange(v: number): void }) {
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const [at0, setAt0] = useState<{ left: number; bottom: number } | undefined>();
+  const root = useRef<HTMLSpanElement>(null);
+  const list = SHAKE_DURATIONS_MS as readonly number[];
+  const at = Math.max(0, list.indexOf(value));
+  const label = (ms: number) => `${ms / 1000} s`;
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", away, true);
+    return () => document.removeEventListener("pointerdown", away, true);
+  }, [open]);
+  const show = () => {
+    // Fixed to the window, above the button: the card's body scrolls and would clip the list.
+    const r = root.current?.getBoundingClientRect();
+    if (r) setAt0({ left: r.left, bottom: window.innerHeight - r.top + 4 });
+    setHi(at);
+    setOpen(true);
+  };
+  const pick = (i: number) => {
+    onChange(list[i]!);
+    setOpen(false);
+  };
+  const listId = `ix-dur-list-${part}`;
+  return (
+    <span className="ix-dur-wrap" ref={root}>
+      <button
+        type="button"
+        className="ix-dur mono"
+        aria-label={`Shake length for a click: ${label(value)}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        data-testid={`imu-shake-ms-${part}`}
+        data-value={value}
+        onClick={() => (open ? setOpen(false) : show())}
+        onKeyDown={(e) => {
+          if (!open) {
+            if (e.key === "ArrowDown" && e.altKey) show();
+            else if (e.key === "ArrowDown" || e.key === "ArrowRight") onChange(list[Math.min(list.length - 1, at + 1)]!);
+            else if (e.key === "ArrowUp" || e.key === "ArrowLeft") onChange(list[Math.max(0, at - 1)]!);
+            else if (e.key === "Home") onChange(list[0]!);
+            else if (e.key === "End") onChange(list[list.length - 1]!);
+            else return;
+            e.preventDefault();
+            return;
+          }
+          if (e.key === "ArrowDown") setHi((h) => Math.min(list.length - 1, h + 1));
+          else if (e.key === "ArrowUp") setHi((h) => Math.max(0, h - 1));
+          else if (e.key === "Home") setHi(0);
+          else if (e.key === "End") setHi(list.length - 1);
+          else if (e.key === "Enter" || e.key === " ") pick(hi);
+          else if (e.key === "Escape" || e.key === "Tab") {
+            setOpen(false);
+            if (e.key === "Tab") return;
+          } else return;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        {label(value)}
+        <ChevronDown size={12} strokeWidth={1.8} aria-hidden />
+      </button>
+      {open ? (
+        <ul className="ix-dur-list" style={at0} role="listbox" id={listId} aria-label="Shake length for a click" data-testid={`imu-shake-ms-list-${part}`}>
+          {list.map((ms, i) => (
+            <li
+              key={ms}
+              role="option"
+              aria-selected={ms === value}
+              className={i === hi ? "is-hi" : undefined}
+              data-testid={`imu-shake-ms-${part}-${ms}`}
+              onPointerMove={() => i !== hi && setHi(i)}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => pick(i)}
+            >
+              <Check size={12} strokeWidth={2} aria-hidden style={{ visibility: ms === value ? "visible" : "hidden" }} />
+              {label(ms)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </span>
   );
 }

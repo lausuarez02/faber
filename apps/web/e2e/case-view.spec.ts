@@ -93,6 +93,10 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
     await expect(page.getByTestId("case-checks")).toContainText("no-intersection");
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");
+    // Round 6b: the person's own Design case is never an agent step waiting for Accept / Reject.
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId("live-steps").filter({ hasText: "pending" })).toHaveCount(0);
+    await expect(page.getByText("design_case")).toHaveCount(0);
     // jumper.json now holds the case
     expect(JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).enclosure.shape).toBe("rounded-box");
     await page.getByTestId("case-explode").fill("0.8");

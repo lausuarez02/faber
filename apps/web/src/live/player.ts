@@ -122,7 +122,11 @@ function caption(e: LogEntry): { title: string; detail?: string; ok: boolean } {
     const f = fidelityView(e.result);
     return { title: "Fidelity report: what still needs real hardware", ...(f ? { detail: f.summary } : {}), ok: true };
   }
-  const title = e.step?.why && e.op !== "run" && e.op !== "run_tests" ? e.step.why : (e.summary ?? e.op.replace(/_/g, " "));
+  // The person's own change (the page: Design case, a restore…): its step's "why" may be the raw op
+  // label ("design_case rounded-box"), so say what happened instead (round 6b).
+  const own = e.actor === "web";
+  const why = own ? (typeof e.args?.why === "string" && e.args.why.trim() ? e.args.why : undefined) : e.step?.why;
+  const title = why && e.op !== "run" && e.op !== "run_tests" ? why : (e.summary ?? e.op.replace(/_/g, " "));
   return { title, ...(e.summary && e.summary !== title ? { detail: e.summary } : {}), ok: true };
 }
 

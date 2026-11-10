@@ -790,3 +790,39 @@
 .pj-change-lines .is-del {
   color: var(--error);
 }
+
+/* Round 6b: an example the person already has a copy of offers "New copy" beside "open your copy". */
+.pj-card-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.pj-card-wrap > .pj-card {
+  flex: 1;
+}
+.pj-newcopy {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--bg-canvas) 80%, transparent);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.pj-newcopy:hover,
+.pj-newcopy:focus-visible {
+  border-color: var(--primary);
+}
+.pj-home-body:focus {
+  outline: none;
+}
