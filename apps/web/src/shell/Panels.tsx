@@ -85,8 +85,13 @@ function InspectorPanel() {
 }
 
 function SerialPanel() {
+  // arduino-pico's Serial is the USB port (Serial1/Serial2 are the UARTs on pins); AVR's is UART0.
+  const project = useJumper((s) => s.project);
+  const id = boardOf(project)?.id;
+  const type = id ? project.parts.find((p) => p.id === id)?.type : undefined;
+  const usb = !!type && getDef(type)?.spec.mcu?.backend === "rp2040js";
   return (
-    <FloatingPanel id="serial" title="Serial" meta="UART0" icon={SquareTerminal} actions={<IconButton icon={Eraser} iconSize={15} className="icon-btn-sm" label="Clear console" onClick={() => engine.clearSerial()} />}>
+    <FloatingPanel id="serial" title="Serial" meta={usb ? "USB" : "UART0"} icon={SquareTerminal} actions={<IconButton icon={Eraser} iconSize={15} className="icon-btn-sm" label="Clear console" onClick={() => engine.clearSerial()} />}>
       <SerialConsole />
     </FloatingPanel>
   );
