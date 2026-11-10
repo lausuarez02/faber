@@ -9,6 +9,7 @@ import { ago, type ProjectCard } from "./api.ts";
 import { newProjectAnywhere, openCard, openLocalExample } from "./actions.ts";
 import { useProjectsListing, useServer } from "./data.ts";
 import { useProjectsUi } from "./store.ts";
+import { markOpened } from "./firstRun.ts";
 import "./projects.css";
 
 export const PITCH = "Build and simulate Arduino circuits, or let your AI agent build them while you watch.";
@@ -19,6 +20,12 @@ export const PITCH = "Build and simulate Arduino circuits, or let your AI agent 
  * test result and last change. Opened from the logo. Examples open as their own copy, never over
  * the circuit on the canvas.
  */
+/** Back to the canvas: the person chose it, so the server's landing stops opening Projects first (round 6). */
+function closeHome(): void {
+  markOpened();
+  useProjectsUi.getState().setHome(false);
+}
+
 export function ProjectsHome() {
   const open = useProjectsUi((s) => s.home);
   const server = useServer();
@@ -28,14 +35,14 @@ export function ProjectsHome() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") useProjectsUi.getState().setHome(false);
+      if (e.key === "Escape") closeHome();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
   if (!open) return null;
-  const close = () => useProjectsUi.getState().setHome(false);
+  const close = closeHome;
   const run = async (key: string, fn: () => Promise<void> | void) => {
     setBusy(key);
     try {
@@ -136,16 +143,31 @@ function testsChip(card: ProjectCard) {
       </span>
     );
   }
-  if (card.scenarios) return <span className="pj-chip">{card.scenarios} tests</span>;
+  if (card.scenarios) return <span className="pj-chip">{card.scenarios} {card.scenarios === 1 ? "test" : "tests"}</span>;
   return null;
 }
 
 export function Card({ card, active, busy, onOpen, compact }: { card: ProjectCard; active?: boolean; busy?: boolean; onOpen(): void; compact?: boolean }) {
   const [broken, setBroken] = useState(false);
+  // Round 6 (switch): the server draws a thumbnail on first request (about 1 s each, one at a
+  // time); until it arrives the tile says so instead of looking blank.
+  const [loaded, setLoaded] = useState(false);
   return (
     <button type="button" className={`pj-card${compact ? " pj-card-compact" : ""}`} data-testid={`project-card-${card.id}`} data-name={card.name} data-kind={card.kind} data-active={active ? "true" : undefined} aria-busy={busy || undefined} onClick={onOpen} title={card.readOnly ? `Open a copy of ${card.name}` : `Open ${card.name}`}>
       <div className="pj-thumb">
-        {card.parts && !broken ? <img src={card.thumbnail} alt="" loading="lazy" onError={() => setBroken(true)} /> : <EmptyThumb parts={card.parts} />}
+        {card.parts && !broken ? (
+          <>
+            {!loaded ? (
+              <div className="pj-thumb-empty pj-thumb-loading" data-testid="thumb-loading">
+                <CircuitBoard size={28} strokeWidth={1.2} aria-hidden />
+                <span>Drawing the circuit…</span>
+              </div>
+            ) : null}
+            <img src={card.thumbnail} alt="" loading="lazy" className={loaded ? "is-loaded" : undefined} onLoad={() => setLoaded(true)} onError={() => setBroken(true)} />
+          </>
+        ) : (
+          <EmptyThumb parts={card.parts} />
+        )}
         {active ? <span className="pj-badge">Open now</span> : null}
         {card.kind === "agent-built" ? (
           <span className="pj-badge pj-badge-agent">
@@ -197,7 +219,7 @@ export function LocalExampleCard({ info, onOpen, compact }: { info: ExampleInfo;
         <div className="pj-card-meta">
           {board ? <span>{board}</span> : null}
           <span>{info.parts} parts</span>
-          {info.scenarios ? <span className="pj-chip">{info.scenarios} tests</span> : null}
+          {info.scenarios ? <span className="pj-chip">{info.scenarios} {info.scenarios === 1 ? "test" : "tests"}</span> : null}
         </div>
       </div>
     </button>
