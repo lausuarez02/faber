@@ -33,7 +33,7 @@
       "id": "fits",
       "ok": true,
       "severity": "info",
-      "message": "All 7 parts fit in 59.9 x 52 x 28.8 mm inside with 1.5 mm of wiring room around each."
+      "message": "All 9 parts fit in 59.9 x 52 x 28.8 mm inside with 1.5 mm of wiring room around each."
     },
     {
       "id": "watertight",
@@ -45,7 +45,7 @@
       "id": "no-intersection",
       "ok": true,
       "severity": "info",
-      "message": "No part body touches the shell (7 parts checked in OpenCascade, overlap < 0.001 mm³)."
+      "message": "No part body touches the shell (9 parts checked in OpenCascade, overlap < 0.001 mm³)."
     },
     {
       "id": "min-wall",
@@ -99,7 +99,7 @@
       "id": "printable",
       "ok": true,
       "severity": "warning",
-      "message": "Each shell prints on its outer face with no supports; front: 340 mm² of the rounded edge overhangs > 45° near the bed, back: 158 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
+      "message": "Each shell prints on its outer face with no supports; front: 346 mm² of the rounded edge overhangs > 45° near the bed, back: 158 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
     },
     {
       "id": "pocket",
@@ -161,6 +161,23 @@
       "layer": 2
     },
     {
+      "id": "pwr",
+      "type": "slide-switch",
+      "min": [
+        -4.3,
+        19.02,
+        3.3
+      ],
+      "max": [
+        4.3,
+        29.52,
+        6.9
+      ],
+      "rotation": 0,
+      "facing": "top",
+      "layer": 1
+    },
+    {
       "id": "pet",
       "type": "pushbutton",
       "min": [
@@ -193,6 +210,23 @@
       "rotation": 0,
       "facing": "front",
       "layer": 2
+    },
+    {
+      "id": "d1",
+      "type": "schottky-diode",
+      "min": [
+        19.5,
+        -6.58,
+        11.2
+      ],
+      "max": [
+        22.2,
+        -1.38,
+        14.4
+      ],
+      "rotation": 90,
+      "facing": "front",
+      "layer": 0
     },
     {
       "id": "squeak",
@@ -234,8 +268,8 @@
       "path": "stl/front.stl",
       "kind": "stl",
       "body": "front",
-      "bytes": 359784,
-      "sha256": "153079093d692db2aee75af0c750639a3f3b79f2444f75deb26aaac733f6e408",
+      "bytes": 371984,
+      "sha256": "7902ade76fdc8f862d4a63b3fb18eef9fd79cc873c0db17a4bb443b4c975e73d",
       "print": {
         "face_down": "front",
         "supports": false,
@@ -270,81 +304,81 @@
       "path": "case.3mf",
       "kind": "3mf",
       "body": "all",
-      "bytes": 161143,
-      "sha256": "baf7ad3b0f1d4909d63ba4c3957052a007cfdb02404ef148cd88f0c4021dec1b"
+      "bytes": 163627,
+      "sha256": "22139537160933b551f32d4e456ed80e56ddcabcba59818e82b563727d5ed8f4"
     },
     {
       "path": "step/assembly.step",
       "kind": "step",
       "body": "assembly",
-      "bytes": 704135,
-      "sha256": "bc7c4335341d63636206e68ef75cce84f6f5fd8935b9cf3f5ee5f647fc66acf9"
+      "bytes": 812639,
+      "sha256": "cf7c3dd5ca093f4e7e88b22854116692ee59ff89f1c01540f37acfd093cdc81c"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
-      "bytes": 318834,
-      "sha256": "0101cc7d316dd0254095f7d63279e5bb1ede895d1ef2997679fbf2e9f61cecb9"
+      "bytes": 384411,
+      "sha256": "6c9139324c5ac86dbd2271eee2de1f74372addccbb1903d012f5b8fcafb54c44"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
       "bytes": 252492,
-      "sha256": "bd599964a39ae20f7eca894556c89da90587a0f2f721739a56cc88f132ad6c34"
+      "sha256": "31b255762a7cb7e7e459e42f9a653dfc0e7051b42e9927753a624f13e67d82fb"
     },
     {
       "path": "renders/front.png",
       "kind": "png",
       "body": "render-front",
-      "bytes": 52399,
-      "sha256": "887114e40c089f60c2b749631ceee8494f2e1f4a72c24dcdebd69455d9c4968c"
+      "bytes": 52794,
+      "sha256": "40f8f59291ef90c0cab6e56947e7fb2b292ea0733c78cd3888719bda2f76de5d"
     },
     {
       "path": "renders/back.png",
       "kind": "png",
       "body": "render-back",
-      "bytes": 48806,
-      "sha256": "521a7a3371addb58cc120518bed21d13e73c378d018fd007d32327860afdf984"
+      "bytes": 49350,
+      "sha256": "76570b2b851134b4b7a571f234301095be51f472b0a789aa5136c93491852caa"
     },
     {
       "path": "renders/exploded.png",
       "kind": "png",
       "body": "render-exploded",
-      "bytes": 61257,
-      "sha256": "77a76d1097c91db2c276efea472ebcc1e4efa8be5a2b57250d962438b4cdbd7f"
+      "bytes": 62087,
+      "sha256": "8d84d0faa7859e81a41115f0bc01e0c8919480d760a21b02e44777462ad00c78"
     },
     {
       "path": "renders/inside.png",
       "kind": "png",
       "body": "render-inside",
-      "bytes": 92803,
-      "sha256": "e45829f6cfb65fdccc2760d34e92b678193291b6102bacabcf242dffebfdcec3"
+      "bytes": 94542,
+      "sha256": "27a9999de59e956f624e68b2b80af685e61a4628e1a63d4c61df4248a0249c05"
     },
     {
       "path": "drawing/drawing.svg",
       "kind": "svg",
       "body": "drawing",
-      "bytes": 11121,
-      "sha256": "d4b3bf49640724232c692ea99b8bcba3bf0dce36f91013edb4cdcf40ff8790a0"
+      "bytes": 11242,
+      "sha256": "93c1091913444e379f182e1db2a6a2768e030146d1f21443c019d9a5ec8d4214"
     },
     {
       "path": "drawing/drawing.pdf",
       "kind": "pdf",
       "body": "drawing",
-      "bytes": 84912,
-      "sha256": "b234741537b2760d994736ed5801819d1f4abf95b42d442979a545667154368b"
+      "bytes": 85256,
+      "sha256": "d05bb0856df35f05da60738d6f5da3fd967b16d554777650bd84715468d02519"
     },
     {
       "path": "PRINT.md",
       "kind": "md",
       "body": "PRINT",
       "bytes": 2749,
-      "sha256": "c8ea9cd6f910a88a69029206c18dee0473064244dcb5cf308d6a8da5e0b72c71"
+      "sha256": "a8b66adc517949dff26367057a5ab5f84901bded9b9dc30bc5a2db6f84adf54d"
     }
   ],
-  "hash": "959a1b56c5c9b419",
+  "hash": "5659dc0a1c822083",
   "notes": [
     "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
     "Sizes come from the parts' mechanical data (datasheets or typical modules); clone modules can differ by about 1 mm.",

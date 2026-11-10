@@ -6,7 +6,7 @@ Shape **puck**, outer 63.1 x 55.2 x 32 mm, wall 1.6 mm, process **fdm** (PLA), c
 
 | File | Face on the bed | Supports | Notes |
 | --- | --- | --- | --- |
-| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 340 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
+| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 346 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
 | stl/back.stl | back | no | back face on the bed, open side up (about 158 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
 | stl/cap-pet.stl | flat | no | print standing on its flange, 0.12 mm layers |
 

@@ -36,8 +36,6 @@
     { "id": "w21", "from": { "part": "pwr", "pin": "1" }, "to": { "part": "d1", "pin": "A" }, "color": "#FF4D2E" },
     { "id": "w22", "from": { "part": "d1", "pin": "C" }, "to": { "part": "xiao", "pin": "VBUS" }, "color": "#FF4D2E" }
   ],
-  "power": { "usb": false },
-  "assembly": "soldered",
   "firmware": {
     "board": "xiao",
     "dir": "firmware",
@@ -65,5 +63,10 @@
     { "id": "power-switch-off-and-on", "name": "The power switch turns it off; switched back on it boots again", "steps": [{ "expect_serial": "mood=calm", "within_ms": 1500 }, { "set": "pwr.position", "value": 1 }, { "expect_part": "xiao.powered", "op": "==", "value": false, "within_ms": 20 }, { "expect_part": "bat.currentmA", "op": "<", "value": 1 }, { "run_ms": 500 }, { "set": "pwr.position", "value": 0 }, { "expect_part": "xiao.powered", "op": "==", "value": true, "within_ms": 20 }, { "expect_serial": "motion sensor ready", "within_ms": 1500 }] },
     { "id": "charges-while-it-runs", "name": "A USB charger on the TP4056 charges the cell while it keeps running", "steps": [{ "run_ms": 500 }, { "set": "chg.usb", "value": true }, { "expect_part": "chg.charging", "op": "==", "value": true, "within_ms": 50 }, { "expect_part": "xiao.powered", "op": "==", "value": true }, { "expect_serial": "mood=", "within_ms": 1500 }] },
     { "id": "pet-calms-scared", "name": "Petting a scared buddy calms it", "steps": [{ "run_ms": 1500 }, { "set": "imu.accelX", "value": 2.5 }, { "expect_serial": "mood=scared", "within_ms": 200 }, { "set": "imu.accelX", "value": 0 }, { "run_ms": 200 }, { "hold_ms": 150, "press": "pet" }, { "expect_serial": "calmed by a pet", "within_ms": 300 }, { "expect_serial": "mood=love", "within_ms": 100 }] }
-  ]
+  ],
+  "assembly": "soldered",
+  "power": {"usb":false},
+  "enclosure": {
+    "shape": "pebble"
+  }
 }

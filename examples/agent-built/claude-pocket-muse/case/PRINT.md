@@ -1,13 +1,13 @@
 # Printing the case: Pocket Muse
 
-Shape **pebble**, outer 76.3 x 70.3 x 25 mm, wall 1.6 mm, process **fdm** (PLA), clearances 0.2 mm.
+Shape **pebble**, outer 65.9 x 73.6 x 24.7 mm, wall 1.6 mm, process **fdm** (PLA), clearances 0.2 mm.
 
 ## Bodies
 
 | File | Face on the bed | Supports | Notes |
 | --- | --- | --- | --- |
-| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 327 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
-| stl/back.stl | back | no | back face on the bed, open side up (about 110 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
+| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 315 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
+| stl/back.stl | back | no | back face on the bed, open side up (about 105 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
 | stl/cap-pet.stl | flat | no | print standing on its flange, 0.12 mm layers |
 
 `case.3mf` has every body, named and coloured, ready for a slicer (PrusaSlicer, Bambu Studio, Cura). The STL / 3MF / STEP files are in the case frame (origin at the centre of the outer box); the slicer lays each body flat on the face named above.
