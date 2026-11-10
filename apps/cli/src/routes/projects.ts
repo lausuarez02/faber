@@ -13,6 +13,7 @@ import {
   listVersions,
   newProjectFolder,
   projectId,
+  recordSnapshot,
   registerProject,
   registryForProjectDir,
   svgToPng,
@@ -354,6 +355,8 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
       const file = join(dir, "jumper.json");
       const data = JSON.parse(readFileSync(file, "utf8")) as { name?: string };
       if (data.name !== name) writeFileSync(file, JSON.stringify({ ...data, name }, null, 2) + "\n");
+      // Round 6: the copy as it came is a version, so the person can always go back to it.
+      recordSnapshot(dir, { op: "open_example", why: `opened the example ${source.name}`, summary: `the example ${source.name} as it came`, args: { from: source.id } });
     } else {
       // The same path an agent's new_project takes, so the first version is in the log.
       const s = new ProjectSession({ dir, actor: "web" });

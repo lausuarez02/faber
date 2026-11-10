@@ -1,4 +1,5 @@
-import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
+import { safeParseProject } from "@jumper/project-format";
 import { join } from "node:path";
 import type { Project } from "@jumper/project-format";
 import { applyToProject, projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
@@ -34,7 +35,12 @@ export interface VersionSummary {
   step?: number;
   /** Entity keys: "part:led1", "wire:w3", "file:firmware/main.ino", "firmware", "scenario:x", "world", "meta". */
   changes: VersionChanges;
-  /** sha256 of the hex built while this version was current (the last build before the next version). */
+  /** Round 6 (switch): lines added / removed per changed file ("firmware/main.ino" → {added: 3, removed: 1}), when both sides are known. */
+  lines?: Record<string, { added: number; removed: number }>;
+  /**
+   * sha256 of the hex that matches this version: built while it was current, or built earlier with no
+   * code change since (round 6: a sketch edit that was never built has none).
+   */
   firmwareHash?: string;
   /** A build happened by this version, though its hash was not recorded (logs from before round 5). */
   firmwareBuilt?: boolean;
@@ -142,16 +148,8 @@ function replay(dir: string, log: ParsedLog, upTo: number): { project: Project |
   for (const s of steps) for (const seq of s.ops) stepOfSeq.set(seq, s);
 
   // Baseline: the "before" of the earliest step that touched each file; else unknown (taken from disk lazily).
-  const files = new Map<string, string | null>();
+  const files = baselineFiles(steps);
   const approx = new Set<string>();
-  const sortedSteps = [...steps].sort((a, b) => (a.ops[0] ?? 0) - (b.ops[0] ?? 0));
-  for (const s of sortedSteps) {
-    for (const [k, v] of Object.entries(s.before)) {
-      if (!k.startsWith("file:")) continue;
-      const path = k.slice(5);
-      if (!files.has(path)) files.set(path, (v as string | null) ?? null);
-    }
-  }
 
   let project: Project | undefined;
   let prevProject: Project | undefined;
@@ -228,16 +226,6 @@ function span(log: ParsedLog, n: number): [number, number] {
   return [from, to];
 }
 
-/** The last build at or before version n's span ends: its hash (logs before round 5 have none). */
-function firmwareFor(log: ParsedLog, n: number): { hash?: string } | undefined {
-  const [, to] = span(log, n);
-  for (let i = to - 1; i >= 0; i--) {
-    const fw = log.entries[i]!.firmware;
-    if (fw) return fw.hash ? { hash: fw.hash } : {};
-  }
-  return undefined;
-}
-
 function frameFor(log: ParsedLog, n: number): VersionFrame | undefined {
   const [from, to] = span(log, n);
   for (let i = to - 1; i >= from; i--) {
@@ -262,22 +250,70 @@ export function versionCount(dir: string): number {
 /** Every version of the project in `dir`, oldest first. */
 export function listVersions(dir: string): VersionSummary[] {
   const log = readLog(dir);
+  const hf = join(dir, ".jumper", "history.json");
+  const key = `${log.key}|${existsSync(hf) ? statSync(hf).mtimeMs : 0}`;
+  const hit = listCache.get(dir);
+  if (hit && hit.key === key) return hit.versions;
+  const versions = walkVersions(dir, log);
+  listCache.set(dir, { key, versions });
+  if (listCache.size > 32) listCache.delete(listCache.keys().next().value!);
+  return versions;
+}
+
+const listCache = new Map<string, { key: string; versions: VersionSummary[] }>();
+
+/**
+ * One pass over the log: each version's circuit changes, file changes (from the log's file entries
+ * and, for ops that write files without logging them such as restore_version or undo, from the undo
+ * history), line counts, its frame and the firmware that matches it.
+ */
+function walkVersions(dir: string, log: ParsedLog): VersionSummary[] {
+  const history = readHistory(dir);
+  const steps = history?.steps ?? [];
+  const stepOfSeq = new Map<number, Step>();
+  for (const st of steps) for (const seq of st.ops) stepOfSeq.set(seq, st);
+  const files = baselineFiles(steps);
+  const isVersion = new Set(log.versionIdx);
   const out: VersionSummary[] = [];
   let prev: Project | undefined = firstBaseline(dir, log);
-  log.versionIdx.forEach((idx, k) => {
-    const n = k + 1;
-    const e = log.entries[idx]!;
-    const changes = entityDiff(entitiesOf(prev), entitiesOf(e.project ?? prev));
-    if (e.file && !changes.changed.includes(`file:${e.file.path}`)) {
-      (e.file.content === null ? changes.removed : changes.changed).push(`file:${e.file.path}`);
+  /** The newest build and whether the code changed after it. */
+  let build: { hash?: string } | undefined;
+  let dirty = false;
+  let cur: VersionSummary | undefined;
+  const close = () => {
+    if (!cur) return;
+    if (build && !dirty) {
+      if (build.hash) cur.firmwareHash = build.hash;
+      else cur.firmwareBuilt = true;
     }
+  };
+  log.entries.forEach((e, i) => {
+    if (e.ok && e.firmware) {
+      build = e.firmware.hash ? { hash: e.firmware.hash } : {};
+      dirty = false;
+    }
+    if (cur && e.frames?.length) cur.hasFrame = true;
+    if (!isVersion.has(i)) return;
+    close();
+    const changes = entityDiff(entitiesOf(prev), entitiesOf(e.project ?? prev));
     if (e.project) prev = e.project;
-    const [from, to] = span(log, n);
-    let hasFrame = false;
-    for (let i = from; i < to && !hasFrame; i++) hasFrame = !!log.entries[i]!.frames?.length;
-    const fw = firmwareFor(log, n);
-    out.push({
-      version: n,
+    const touched: Record<string, string | null> = e.file ? { [e.file.path]: e.file.content } : fileEffects(e, stepOfSeq, steps);
+    const lines: Record<string, { added: number; removed: number }> = {};
+    for (const [path, content] of Object.entries(touched)) {
+      const known = files.has(path);
+      const before = files.get(path) ?? null;
+      files.set(path, content);
+      if (known && same(before, content)) continue;
+      const k = `file:${path}`;
+      if (content === null) changes.removed.push(k);
+      else if (known && before === null) changes.added.push(k);
+      else changes.changed.push(k);
+      const capped = (typeof before === "string" && before.length >= LOG_FILE_CAP) || (typeof content === "string" && content.length >= LOG_FILE_CAP);
+      if (known && !capped) lines[path] = lineDiff(before ?? "", content ?? "");
+    }
+    if (changes.changed.includes("firmware") || changes.added.includes("firmware") || Object.keys(touched).length) dirty = true;
+    cur = {
+      version: out.length + 1,
       seq: e.seq,
       t: e.t,
       actor: e.actor,
@@ -287,11 +323,64 @@ export function listVersions(dir: string): VersionSummary[] {
       ...(e.summary ? { summary: e.summary } : {}),
       ...(e.step ? { step: e.step.id } : {}),
       changes,
-      ...(fw?.hash ? { firmwareHash: fw.hash } : fw ? { firmwareBuilt: true } : {}),
-      hasFrame,
-    });
+      ...(Object.keys(lines).length ? { lines } : {}),
+      hasFrame: !!e.frames?.length,
+    };
+    out.push(cur);
   });
+  close();
   return out;
+}
+
+/** Each file's content before the first step that touched it (undo history), for diffs and replay. */
+function baselineFiles(steps: Step[]): Map<string, string | null> {
+  const files = new Map<string, string | null>();
+  const sorted = [...steps].sort((a, b) => (a.ops[0] ?? 0) - (b.ops[0] ?? 0));
+  for (const st of sorted) {
+    for (const [k, v] of Object.entries(st.before)) {
+      if (!k.startsWith("file:")) continue;
+      const path = k.slice(5);
+      if (!files.has(path)) files.set(path, (v as string | null) ?? null);
+    }
+  }
+  return files;
+}
+
+/**
+ * Lines added / removed between two texts (round 6, switch): common head and tail trimmed, then a
+ * longest-common-subsequence count on the middle; a middle too big for that counts lines as sets.
+ */
+export function lineDiff(a: string, b: string): { added: number; removed: number } {
+  const x = a === "" ? [] : a.replace(/\n$/, "").split("\n");
+  const y = b === "" ? [] : b.replace(/\n$/, "").split("\n");
+  let head = 0;
+  while (head < x.length && head < y.length && x[head] === y[head]) head++;
+  let tail = 0;
+  while (tail < x.length - head && tail < y.length - head && x[x.length - 1 - tail] === y[y.length - 1 - tail]) tail++;
+  const xs = x.slice(head, x.length - tail);
+  const ys = y.slice(head, y.length - tail);
+  if (!xs.length || !ys.length) return { added: ys.length, removed: xs.length };
+  let common = 0;
+  if (xs.length * ys.length <= 4_000_000) {
+    let row = new Uint32Array(ys.length + 1);
+    for (let i = 1; i <= xs.length; i++) {
+      const next = new Uint32Array(ys.length + 1);
+      for (let j = 1; j <= ys.length; j++) next[j] = xs[i - 1] === ys[j - 1] ? row[j - 1]! + 1 : Math.max(row[j]!, next[j - 1]!);
+      row = next;
+    }
+    common = row[ys.length]!;
+  } else {
+    const count = new Map<string, number>();
+    for (const l of xs) count.set(l, (count.get(l) ?? 0) + 1);
+    for (const l of ys) {
+      const c = count.get(l) ?? 0;
+      if (c > 0) {
+        common++;
+        count.set(l, c - 1);
+      }
+    }
+  }
+  return { added: ys.length - common, removed: xs.length - common };
 }
 
 /** Version n in full: project, files, firmware, the device frame, what changed. Undefined when n is out of range. */
@@ -409,4 +498,32 @@ function testsLine(line: string): { passed: number; total: number; at?: string }
   if (!m) return undefined;
   const t = /"t":"([^"]+)"/.exec(line)?.[1];
   return { passed: Number(m[1]), total: Number(m[2]), ...(t ? { at: t } : {}) };
+}
+
+/**
+ * Round 6 (switch): a version for the project exactly as it is on disk now, written straight to the
+ * action log (not an undoable step: nothing changed). Opening an example calls it on the fresh copy,
+ * so "the example as it came" is a version the person can always restore. Returns the version
+ * number, or undefined when jumper.json is missing or invalid.
+ */
+export function recordSnapshot(dir: string, opts: { op: string; why: string; summary: string; actor?: string; args?: Record<string, unknown> }): number | undefined {
+  const file = join(dir, "jumper.json");
+  if (!existsSync(file)) return undefined;
+  const parsed = safeParseProject(readFileSync(file, "utf8"));
+  if (!parsed.ok) return undefined;
+  const log = readLog(dir);
+  const seq = log.entries.reduce((m, e) => Math.max(m, e.seq ?? 0), 0) + 1;
+  const entry: ActionEntry = {
+    seq,
+    t: new Date().toISOString(),
+    actor: opts.actor ?? "web",
+    op: opts.op,
+    args: { ...(opts.args ?? {}), why: opts.why },
+    ok: true,
+    summary: opts.summary,
+    project: parsed.project,
+  };
+  mkdirSync(join(dir, ".jumper"), { recursive: true });
+  appendFileSync(join(dir, ".jumper", "actions.jsonl"), JSON.stringify(entry) + "\n");
+  return versionCount(dir);
 }
