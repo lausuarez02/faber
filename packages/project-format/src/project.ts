@@ -160,6 +160,10 @@ export function serializeProject(project: Project): string {
   if (project.world !== undefined) {
     fields.push(`  "world": ${JSON.stringify(project.world as Json, null, 2).replace(/\n/g, "\n  ")}`);
   }
+  // round 6 (decision 0004): how it is built and powered, and its case. Written by the power and case tools.
+  if (project.assembly !== undefined) fields.push(`  "assembly": ${JSON.stringify(project.assembly)}`);
+  if (project.power !== undefined) fields.push(`  "power": ${JSON.stringify(project.power as Json)}`);
+  if (project.enclosure !== undefined) fields.push(`  "enclosure": ${JSON.stringify(project.enclosure as Json, null, 2).replace(/\n/g, "\n  ")}`);
   lines.push(fields.join(",\n"));
   lines.push("}");
   return lines.join("\n") + "\n";

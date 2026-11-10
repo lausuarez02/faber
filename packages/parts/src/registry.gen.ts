@@ -5203,7 +5203,7 @@ export const partDefinitions: PartDefinition[] = [
       "id": "lipo-battery",
       "name": "LiPo battery 1S (3.7 V, with protection)",
       "category": "power",
-      "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to the board's battery input (VSYS / BAT on a 3.3 V board, through a TP4056 charger's B+), − to GND. A 5 V Uno cannot run from it without a boost converter.",
+      "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to a charger's B+ (TP4056 BAT) and − to its B−; the charger's OUT+ then feeds the board (Pico VSYS directly; XIAO / RP2040-Zero 5V through a slide switch and a Schottky diode). A 5 V Uno cannot run from it without a boost converter (boost-converter).",
       "pins": [
         {
           "id": "POS",
@@ -9888,7 +9888,7 @@ export const partDefinitions: PartDefinition[] = [
       "id": "tp4056-charger",
       "name": "LiPo charger module (TP4056 with protection, USB-C)",
       "category": "power",
-      "description": "Charges a 1S LiPo from USB 5 V (constant current, then 4.2 V constant voltage) and protects it. BAT (B+) and GND.2 (B−) to the cell, OUT (OUT+) and GND.3 (OUT−) to your circuit (e.g. VSYS of a 3.3 V board). Plug USB with press (or prop usb), or feed 5 V into VIN (IN+). Red LED = charging, blue = full. The charge current is 1 A as sold: for a small cell lower it to 1C (chargeCurrentmA, R_PROG).",
+      "description": "Charges a 1S LiPo from its own USB-C socket (constant current, then 4.2 V constant voltage) and protects it. BAT (B+) and GND.2 (B−) to the cell; OUT (OUT+) and GND.3 (OUT−) feed the device: a Pico's VSYS directly, a XIAO / RP2040-Zero 5V pin through a slide switch and a Schottky diode (stripe towards the board). IN+ / IN− are the USB input: leave them unconnected (the module's USB-C socket is the charge port; plug it with press or prop usb), never wire them to the board's 5V. Red LED = charging, blue = full. The charge current is 1 A as sold: for a small cell lower it to 1C (chargeCurrentmA, R_PROG).",
       "pins": [
         {
           "id": "VIN",
@@ -9900,7 +9900,7 @@ export const partDefinitions: PartDefinition[] = [
             "min": 4.5,
             "max": 8
           },
-          "description": "5 V input (same as the USB socket). 4.5 to 5.5 V; 8 V absolute max."
+          "description": "USB 5 V input, the same node as the module's USB-C socket (4.5 to 5.5 V, 8 V absolute max). Usually left unconnected: the person plugs a USB charger into the socket. Do not wire it to the board's 5V / VBUS: that would only charge while the board itself is on USB, and back-feeds the board from the charger."
         },
         {
           "id": "GND.1",
@@ -9908,7 +9908,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 10,
           "y": 60,
           "type": "ground",
-          "description": "Input ground."
+          "description": "USB input ground (same as the socket's ground). Usually left unconnected."
         },
         {
           "id": "BAT",
@@ -9916,7 +9916,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 130,
           "y": 20,
           "type": "power",
-          "description": "To the LiPo cell's + (red)."
+          "description": "To the LiPo cell's + (red). The cell's connection, not a supply output: power the device from OUT."
         },
         {
           "id": "GND.2",
@@ -9932,7 +9932,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 130,
           "y": 60,
           "type": "power",
-          "description": "Protected battery output (3.0 to 4.2 V) to the load, e.g. VSYS / BAT of a 3.3 V board. Not 5 V: add a boost converter for 5 V boards."
+          "description": "Protected battery output (3.0 to 4.2 V, the cell behind the protection FETs) to the device: Pico VSYS directly; XIAO / RP2040-Zero 5V through a slide switch and a Schottky diode (so USB on the board cannot back-feed the cell). Not 5 V: add a boost converter (boost-converter) for 5 V boards."
         },
         {
           "id": "GND.3",
