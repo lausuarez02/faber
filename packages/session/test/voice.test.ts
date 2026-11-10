@@ -141,6 +141,8 @@ describe("plan_device", () => {
     expect(types).toEqual(expect.arrayContaining(["dfplayer-mini", "speaker", "resistor"]));
     expect(p.bom.find((l) => l.type === "dfplayer-mini")!.why).toMatch(/says words/);
     expect(types).not.toContain("buzzer");
+    // "eyes" means a screen to draw them on (round 7: the user asked for eyes and a voice)
+    expect(types.some((t) => /oled|tft/.test(t))).toBe(true);
     const r = planDevice("a toy that can talk", {}, registry);
     expect(r.bom.map((l) => l.type)).toContain("dfplayer-mini");
   });
