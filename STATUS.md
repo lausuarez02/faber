@@ -1,12 +1,67 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-10 (round 6: the battery really powers the board, colour screens in replays
-and history, clean project switching, canvas controls that work while it runs, a printable case and
-a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
+Last updated 2026-11-10 (round 7: case outlines are fully custom, at any size, and Jumper says
+which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
+board, colour screens in replays and history, clean project switching, canvas controls that work
+while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
 one-line goal to a wired, programmed and tested device using only Jumper's tools, and a person
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 7 (2026-11-10): any case outline, and a part that talks
+
+The person asked for "the shape of an egg, with eyes and a speaker to say stuff", and then made it
+clear that an egg is only an example: a case should be any custom shape at any size, with Jumper
+working out which pieces fit. Two tracks merged into main (shape, then voice; no textual conflicts),
+then the lead's integration. There is no "egg" preset on purpose: `shape: "custom"` takes any outline
+the agent draws.
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Custom outlines (track shape) | `shape: "custom"` + `enclosure.outline` (SVG path, y down, or `{points, smooth}`, y up) + `size_mm {w,h,d}` (each optional, blank = auto). Outline checks (closed, one shape, no self-crossing, ≤ 8:1, ≥ 3 points; narrow-neck warning) say what, why and fix with the position. One periodic B-spline drives both OpenCascade and the packer, so what is checked is what prints. Parts pack inside the real outline, inset by wall, wiring room and rim round-over at their depth. Auto grows the outline to the smallest size that holds the parts (15 to 250 mm); a fixed size stays exactly that size. Finish params (`edge_radius_front_mm`, `edge_radius_back_mm`, `dome_mm`, `dome_back_mm`, `depth_mm`) on every shape; `placements.on_edge`; a LiPo's `capacity` picks a typical pouch. Engine `case-3` (old cases regenerate on their next `get_case`) | `packages/enclosure/test/custom.test.ts`, `custom-cad.test.ts`, [docs/enclosures.md](docs/enclosures.md) |
+| Rethink the pieces (track shape) | A fixed size that is too small: `design_case` / `update_case` return `fits: false`, `saved: false`, `misses` (part, mm short, where) and `suggestions` (a smaller part in the same role, a smaller LiPo cell, a part on its edge, flatter rims, or "make it N mm bigger"), each tried with the same layout and listed as the tool calls that make it. Nothing is saved. New tool `check_fit` (= `design_case {dry_run: true}`, `POST /api/case/fit`) answers in about a second without CAD | `packages/session/test/case-fit.test.ts`, `round7-integration.test.ts` |
+| Outline editor (track shape) | Case view: Custom shape opens an editor (start from ellipse / pebble / puck / pill / box; drag, add, remove points, keyboard too), W / H / D inputs, a live real-size preview with the parts' footprints, red where one hits the wall, and a "Use N × M mm" button | `e2e/case-outline.spec.ts`, `e2e/case-view.spec.ts` |
+| Voice (track voice) | `dfplayer-mini` (all 16 pins, the serial protocol with checksums, online / ACK / track-finished replies, BUSY, start-up timing, bad frames warned) and `speaker` (8 / 4 Ω, overpower, an 18 mm round grille feature the case cuts). Clips are a new `text` prop ("N: words"). A played track is an utterance in virtual time (words / 2.6 per s + 0.3 s), heard only when a speaker is wired. AVR hardware Serial (D0 / D1) now reaches parts that listen; RP2040 Serial1 already did. Scenario step `said`, tool `read_speech`, `run` returns `said`; check_design `dfplayer-no-speaker`, `dfplayer-no-words`, `dfplayer-bad-clips`, `dfplayer-spk-shorted`, `speaker-on-pin`. `plan_device` picks DFPlayer + speaker + 1 kΩ for talk / speak / say / voice goals. The factory pack writes `sd-card/` (clip texts, `make-clips.sh` for espeak-ng or piper + ffmpeg, which the user installs: see NOTICE). Web: a speech bubble on the speaker, the browser's own voice with a remembered mute. Example `examples/talking-egg-demo` (2/2 scenarios) | `packages/parts/src/parts/dfplayer-mini/model.test.ts`, `packages/session/test/voice.test.ts`, `e2e/voice.spec.ts` |
+| Integration (lead) | Merged both; regenerated `docs/mcp-tools.md` (54 tools). Fixed what the merge broke: the Projects home now lists 7 examples (the talking egg among them; `projects-flow.spec.ts` expected 6). `plan_device` maps "eyes" to a screen (the person's own words had picked no display). A load-flaky unit test (`visual-capture` deterministic scrubbing) got 30 s like its neighbour. New `packages/session/test/round7-integration.test.ts`: the person's sentence through `plan_device`, and the REAL voice parts in an egg the agent draws | `packages/session/test/round7-integration.test.ts` |
+
+Checks after the merge (main, local): `pnpm gen` no diff; `pnpm typecheck` 0 errors; `pnpm test`
+1325 passed, 2 skipped, 0 failed (155 files; the first run after the merge had 1 timeout in
+`visual-capture`, fixed above); full e2e (desktop, mobile and perf, `E2E_PORT=5560`, hub ports from
+10100) 89 passed, 16 skipped by design, 0 failed, exit 0. The first full e2e run after the merge had
+86 passed, 2 failed (`projects-flow` desktop + mobile: the new example; a real failure, fixed).
+
+The talking egg, end to end with the merged code (lead, through `ProjectSession`, no server):
+XIAO RP2040 + GC9A01 eyes + DFPlayer Mini + speaker + 1 kΩ + 500 mAh LiPo + TP4056 + slide switch +
+1N5817, in an egg drawn as an SVG path (`dome_mm: 2`, auto size). `check_fit` fits in about 1 s;
+`design_case` (68 s) made 63.9 × 83.4 × 37.3 mm, 143 cm³, `ok: true`, every fit check ok (fits,
+watertight, no-intersection, min-wall 1.6 mm, size-match, screen window Ø33, both USB ports
+reachable, printable with a rim-overhang warning). The speaker grille is a hex field of holes in the
+back shell. Pocket verdict: **no** (37.3 mm thick, bulky). At a fixed 60 × 78 mm the parts do not
+fit (switch 2.6 mm, charger 2.3 mm, screen 1.8 mm over) and the suggestions are: flatter rims (fits
+at 60 × 78), a 150 or 250 mAh cell (61.2 × 79.5), the SSD1306 instead of the GC9A01 (63.3 × 82.3),
+or 64.1 × 83.3 mm. At 44 × 57 only "flatter rims" and "bigger" are offered (no single swap gets
+close). Renders and the full case: `jumper-evals/round7/integ-renders/` (outside the repo).
+
+Known gaps (round 7):
+- **Thickness:** the talking egg is 35 to 37 mm thick at any outline size from auto up to about
+  70 × 91 mm, with any rim radius; only around 90 × 117 mm does the packer lay the parts out in
+  fewer layers (20.8 mm). The packer is a heuristic, not an optimum; suggestions change one thing at
+  a time, and a depth miss on a fixed `d` offers only "bigger" when no part in the library is
+  thinner in that role (there is one speaker and one MP3 module).
+- **Fit preview vs CAD:** presets at auto size keep the round-6 search, so their quick preview can
+  differ slightly from what `design_case` makes; custom outlines and fixed sizes share one search.
+- **Outlines:** ports on curved outlines can need a local flat (≤ 8 mm, warned), never on a fixed
+  size; the heart's rim rounds 2 to 6 mm where OpenCascade cannot fillet the full radius; saving an
+  agent's SVG outline in the editor turns it into points; the "failed to compute a normal" message
+  still prints.
+- **Voice:** not emulated: ADKEY / IO buttons, EQ, loop, adverts, real MP3 length and voice, FAT copy
+  order. `make-clips.sh` has not been run here (no espeak-ng / piper / ffmpeg). No LCSC numbers for
+  the DFPlayer or speaker. The browser voice speaks a clip again on each new utterance in a replay
+  or follow view; the bubble on a followed page and in replays has no e2e. The real browser voice
+  was never heard (tests block it on purpose).
+- **Not done:** decision note for round 7; a live Claude Code run over MCP building the egg (the
+  integration above drives the same tools in-process); the print, plastic and hand feel.
 
 ## Round 6 (2026-11-10): a real device (battery, colour replays, project switch, canvas controls, case and factory pack)
 
