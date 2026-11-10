@@ -245,11 +245,13 @@ function frameFor(log: ParsedLog, n: number): VersionFrame | undefined {
     if (!frames?.length) continue;
     const parts: Record<string, VisualState> = {};
     let live: string[] | undefined;
+    let color: VersionFrame["color"]; // round 6 frames: the last colour image of each screen
     for (const f of frames) {
       Object.assign(parts, f.states ?? {});
       if (f.live) live = f.live;
+      if (f.color) color = { ...color, ...f.color };
     }
-    return { t_ms: frames.at(-1)!.vt, parts, ...(live ? { live } : {}) };
+    return { t_ms: frames.at(-1)!.vt, parts, ...(live ? { live } : {}), ...(color ? { color } : {}) };
   }
   return undefined;
 }
