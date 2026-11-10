@@ -251,7 +251,8 @@ describe("scenarios", () => {
     await call("place_part", { type: "potentiometer" });
     await call("write_scenario", { id: "noise", steps: [{ inject_fault: "pot1", kind: "noisy", field: "position", amplitude: 0.02 }, { run_ms: 50 }] });
     expect((await call("run_tests", { name: "noise" })).passed).toBe(1);
-  });
+    // Two full 2.5 s simulations: ~2 s alone, past vitest's 5 s default when the whole suite shares a busy machine.
+  }, 20_000);
 });
 
 describe("design rules", () => {
