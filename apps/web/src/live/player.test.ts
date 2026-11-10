@@ -102,3 +102,13 @@ describe("fidelityView", () => {
     expect(fidelityView({ nope: 1 })).toBeUndefined();
   });
 });
+
+describe("caption of the person's own change (round 6b)", () => {
+  it("says what happened, never the raw op label", async () => {
+    const { applyEntry } = await import("./player.ts");
+    const { useLive } = await import("./liveStore.ts");
+    const port = { loadProject() {}, getProject: () => ({ parts: [], wires: [] }), highlightNew() {}, resetStates() {}, fit() {}, clearSerial() {}, showStates() {}, appendSerial() {} } as never;
+    applyEntry({ seq: 1, t: "", op: "design_case", actor: "web", ok: true, args: { shape: "rounded-box" }, summary: "case: rounded-box 58.9 x 52.4 x 25 mm, all checks ok", step: { id: 3, why: "design_case rounded-box" } } as never, port);
+    expect(useLive.getState().caption?.title).toBe("case: rounded-box 58.9 x 52.4 x 25 mm, all checks ok");
+  });
+});
