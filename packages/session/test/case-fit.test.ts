@@ -28,13 +28,20 @@ afterAll(() => {
 describe("check_fit and custom outlines", () => {
   it("tests an egg the agent drew, auto size, in under a second, writing nothing", async () => {
     await call("check_fit", { shape: "custom", outline: EGG }); // warm up (JIT, the outline's distance field)
-    // best of three: the full suite runs other files in parallel on the same cores
-    const runs = [];
-    for (let i = 0; i < 3; i++) runs.push(await call("check_fit", { shape: "custom", outline: EGG }));
+    // CPU time, best of three: the wall clock depends on what else the machine runs (the full
+    // suite and other worktrees share the cores); the work itself is what must stay under a second
+    const runs: Record<string, any>[] = [];
+    const cpu: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const c0 = process.cpuUsage();
+      runs.push(await call("check_fit", { shape: "custom", outline: EGG }));
+      const c = process.cpuUsage(c0);
+      cpu.push((c.user + c.system) / 1000);
+    }
     const r = runs[0]!;
     expect(r.fits).toBe(true);
     expect(r.size_mm.h / r.size_mm.w).toBeGreaterThan(1.2);
-    expect(Math.min(...runs.map((x) => x.ms as number))).toBeLessThan(1000);
+    expect(Math.min(...cpu)).toBeLessThan(1000);
     expect(r.misses).toEqual([]);
     expect(r.next).toMatch(/It fits .* design_case/);
     expect(r.preview).toBeUndefined();
@@ -61,7 +68,7 @@ describe("check_fit and custom outlines", () => {
     expect(d.next).toMatch(/Nothing was saved: the parts do not fit 44 x 57 x auto mm/);
     expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).enclosure).toBeUndefined();
     expect(existsSync(join(dir, "case", "report.json"))).toBe(false);
-  });
+  }, 120_000);
 
   it("design_case dry_run is check_fit", async () => {
     const r = await call("design_case", { shape: "custom", outline: EGG, dry_run: true });

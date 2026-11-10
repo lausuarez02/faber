@@ -240,11 +240,12 @@ describe("custom outlines: rethink the pieces", () => {
   it("answers a fit test in under a second without CAD", () => {
     const p = eggProject({ shape: "custom", outline: { points: BEAN_POINTS, smooth: true }, size_mm: { w: 80, h: 60 } });
     checkFit({ parts: partsX(p), enclosure: p.enclosure! }, { suggest: false }); // warm up (JIT, distance field)
-    // best of three: the full suite runs other files in parallel on the same cores
+    // CPU time, best of three: the wall clock depends on what else the machine runs
     const ms = [0, 1, 2].map(() => {
-      const t0 = performance.now();
+      const c0 = process.cpuUsage();
       checkFit({ parts: partsX(p), enclosure: p.enclosure! }, { suggest: false });
-      return performance.now() - t0;
+      const c = process.cpuUsage(c0);
+      return (c.user + c.system) / 1000;
     });
     expect(Math.min(...ms)).toBeLessThan(1000);
   });
