@@ -73,3 +73,12 @@ describe("round 6 integration", () => {
     expect(AGENT_LOOP).toMatch(/design_case[\s\S]*export_manufacturing/);
   });
 });
+
+describe("round 6 integration: errors", () => {
+  it("move_part with 'part' instead of 'id' says which argument to pass (no internal error)", async () => {
+    dir = mkdtempSync(join(tmpdir(), "jumper-r6-"));
+    s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
+    await call("new_project", { template: "blink" });
+    await expect(call("move_part", { part: "led1", x: 10, y: 10 })).rejects.toThrow(/No part id was given/);
+  });
+});

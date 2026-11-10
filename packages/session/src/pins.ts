@@ -14,6 +14,10 @@ export function splitRef(ref: string, what = "pin reference"): { part: string; r
 }
 
 export function findPart(project: Project, id: string): PartInstance {
+  if (typeof id !== "string" || !id) {
+    const ids = project.parts.map((x) => x.id);
+    fail("missing-arg", "No part id was given", "the tool takes the part's id in 'id' (a name like 'part' or a number is not read)", `pass {"id": "${ids[0] ?? "led1"}", …}${ids.length ? `; the parts are: ${ids.join(", ")}` : ""}`);
+  }
   const p = project.parts.find((x) => x.id === id);
   if (!p) {
     const ids = project.parts.map((x) => x.id);
