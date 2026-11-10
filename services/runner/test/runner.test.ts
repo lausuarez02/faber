@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildFirmware, parseCompilerOutput, refineWithSources, resolveLibraries, startRunnerServer } from "../src/index.ts";
+import { buildFirmware, imageFor, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
 
 const dockerUp = (() => {
   try {
@@ -83,5 +83,61 @@ describe.skipIf(!dockerUp)("Docker builds", () => {
       }
     },
     300_000,
+  );
+});
+
+// RP2040 builds use the arduino-pico image. It is ~1 GB, so these run only when it is already built
+// (docker build -t jumper/arduino-pico:6.3.1-r1 toolchains/arduino-pico) or JUMPER_TEST_PICO=1.
+const picoImage = (() => {
+  if (!dockerUp) return false;
+  if (process.env.JUMPER_TEST_PICO === "1") return true;
+  try {
+    execFileSync("docker", ["image", "inspect", PICO_IMAGE], { stdio: "ignore", timeout: 15_000 });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+describe("RP2040 image selection", () => {
+  it("builds rp2040:rp2040:* with the arduino-pico image and AVR boards with the runner image", () => {
+    expect(imageFor("rp2040:rp2040:seeed_xiao_rp2040")).toBe(PICO_IMAGE);
+    expect(imageFor("rp2040:rp2040:rpipico")).toBe(PICO_IMAGE);
+    expect(imageFor("arduino:avr:uno")).toBe(RUNNER_IMAGE);
+    expect(SUPPORTED_FQBNS).toEqual(expect.arrayContaining(["arduino:avr:uno", "rp2040:rp2040:rpipico", "rp2040:rp2040:seeed_xiao_rp2040", "rp2040:rp2040:waveshare_rp2040_zero"]));
+  });
+});
+
+describe.skipIf(!picoImage)("Docker builds for RP2040 (arduino-pico)", () => {
+  it(
+    "builds the XIAO RP2040 blink fixture byte-identical to the golden Intel HEX (flash at 0x10000000)",
+    async () => {
+      const dir = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/xiao_blink", import.meta.url));
+      const golden = readFileSync(fileURLToPath(new URL("../../../packages/sim-backends/fixtures/xiao_blink.hex", import.meta.url)), "utf8");
+      const r = await buildFirmware({ sketchDir: dir, fqbn: "rp2040:rp2040:seeed_xiao_rp2040", cache: false });
+      expect(r.ok, r.logTail).toBe(true);
+      expect(r.hex!.split(/\r?\n/)[0]).toBe(":020000041000EA");
+      expect(createHash("sha256").update(r.hex!).digest("hex")).toBe(createHash("sha256").update(golden).digest("hex"));
+      expect(r.size).toMatchObject({ flashMax: 2093056, ramMax: 262144 });
+    },
+    600_000,
+  );
+
+  it(
+    "reports RP2040 compile errors at the sketch line",
+    async () => {
+      const server = await startRunnerServer(0);
+      const addr = server.address() as { port: number };
+      try {
+        const res = await fetch(`http://127.0.0.1:${addr.port}/build`, { method: "POST", body: JSON.stringify({ fqbn: "rp2040:rp2040:rpipico", files: { "main.ino": "void setup(){ pinMode(25, OUTPUT); nope(); }\nvoid loop(){}\n" } }) });
+        const body = (await res.json()) as { ok: boolean; diagnostics: { file: string; line: number; message: string }[] };
+        expect(body.ok).toBe(false);
+        expect(body.diagnostics[0]).toMatchObject({ file: "main.ino", line: 1 });
+        expect(body.diagnostics[0]!.message).toMatch(/nope/);
+      } finally {
+        server.close();
+      }
+    },
+    600_000,
   );
 });

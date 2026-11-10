@@ -1,0 +1,301 @@
+{
+  "id": "seeed-xiao-rp2040",
+  "name": "Seeed XIAO RP2040",
+  "category": "board",
+  "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V only.",
+  "pins": [
+    {
+      "id": "GP26",
+      "label": "D0/A0",
+      "x": 9,
+      "y": 36,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "adc"
+      ],
+      "description": "RP2040 GPIO26; McuBackend pin \"GP26\" (pinMode(26, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5A, SPI1 SCK, UART1 CTS, I2C1 SDA, PIO, ADC0. Silkscreen D0 / A0: digitalWrite(D0, …) and analogRead(A0) both mean GPIO26."
+    },
+    {
+      "id": "GP27",
+      "label": "D1/A1",
+      "x": 9,
+      "y": 56,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "adc"
+      ],
+      "description": "RP2040 GPIO27; McuBackend pin \"GP27\" (pinMode(27, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM5B, SPI1 TX (MOSI), UART1 RTS, I2C1 SCL, PIO, ADC1. Silkscreen D1 / A1 (GPIO27)."
+    },
+    {
+      "id": "GP28",
+      "label": "D2/A2",
+      "x": 9,
+      "y": 76,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "adc"
+      ],
+      "description": "RP2040 GPIO28; McuBackend pin \"GP28\" (pinMode(28, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6A, SPI1 RX (MISO), UART0 TX, I2C0 SDA, PIO, ADC2. Silkscreen D2 / A2 (GPIO28)."
+    },
+    {
+      "id": "GP29",
+      "label": "D3/A3",
+      "x": 9,
+      "y": 96,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "adc"
+      ],
+      "description": "RP2040 GPIO29; McuBackend pin \"GP29\" (pinMode(29, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM6B, SPI1 CSn, UART0 RX, I2C0 SCL, PIO, ADC3. Silkscreen D3 / A3 (GPIO29)."
+    },
+    {
+      "id": "GP6",
+      "label": "D4/SDA",
+      "x": 9,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "i2c-sda"
+      ],
+      "description": "RP2040 GPIO6; McuBackend pin \"GP6\" (pinMode(6, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3A, SPI0 SCK, UART1 CTS, I2C1 SDA, PIO. Silkscreen D4 / SDA: Wire SDA (I2C1 on this board)."
+    },
+    {
+      "id": "GP7",
+      "label": "D5/SCL",
+      "x": 9,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "i2c-scl"
+      ],
+      "description": "RP2040 GPIO7; McuBackend pin \"GP7\" (pinMode(7, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM3B, SPI0 TX (MOSI), UART1 RTS, I2C1 SCL, PIO. Silkscreen D5 / SCL: Wire SCL (I2C1)."
+    },
+    {
+      "id": "GP0",
+      "label": "D6/TX",
+      "x": 9,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "uart-tx"
+      ],
+      "description": "RP2040 GPIO0; McuBackend pin \"GP0\" (pinMode(0, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0A, SPI0 RX (MISO), UART0 TX, I2C0 SDA, PIO. Silkscreen D6 / TX: Serial1 TX."
+    },
+    {
+      "id": "VBUS",
+      "label": "5V",
+      "x": 129,
+      "y": 36,
+      "type": "power",
+      "voltage": {
+        "min": 4.75,
+        "max": 5.25
+      },
+      "description": "Silkscreen 5V: USB 5 V (VBUS). Stamped as a 5 V source (USB power assumed). Use it for 5 V parts, never on a GPIO."
+    },
+    {
+      "id": "GND.1",
+      "label": "GND",
+      "x": 129,
+      "y": 56,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 129,
+      "y": 76,
+      "type": "power",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      },
+      "description": "3.3 V output of the on-board regulator. Keep the load modest (Jumper checks against 300 mA). Stamped as a 3.3 V source."
+    },
+    {
+      "id": "GP3",
+      "label": "D10/MOSI",
+      "x": 129,
+      "y": 96,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "spi-mosi"
+      ],
+      "description": "RP2040 GPIO3; McuBackend pin \"GP3\" (pinMode(3, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1B, SPI0 TX (MOSI), UART0 RTS, I2C1 SCL, PIO. Silkscreen D10 / MOSI: SPI MOSI."
+    },
+    {
+      "id": "GP4",
+      "label": "D9/MISO",
+      "x": 129,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "spi-miso"
+      ],
+      "description": "RP2040 GPIO4; McuBackend pin \"GP4\" (pinMode(4, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM2A, SPI0 RX (MISO), UART1 TX, I2C0 SDA, PIO. Silkscreen D9 / MISO: SPI MISO."
+    },
+    {
+      "id": "GP2",
+      "label": "D8/SCK",
+      "x": 129,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "spi-sck"
+      ],
+      "description": "RP2040 GPIO2; McuBackend pin \"GP2\" (pinMode(2, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM1A, SPI0 SCK, UART0 CTS, I2C1 SDA, PIO. Silkscreen D8 / SCK: SPI SCK."
+    },
+    {
+      "id": "GP1",
+      "label": "D7/RX",
+      "x": 129,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "uart-rx",
+        "spi-ss"
+      ],
+      "description": "RP2040 GPIO1; McuBackend pin \"GP1\" (pinMode(1, …) in arduino-pico). 3.3 V logic, NOT 5 V tolerant. Functions: SIO, PWM0B, SPI0 CSn, UART0 RX, I2C0 SCL, PIO. Silkscreen D7 / RX / CS: Serial1 RX; also the usual SPI chip select."
+    }
+  ],
+  "size": {
+    "w": 138,
+    "h": 166
+  },
+  "limits": {
+    "maxCurrentmA": 12,
+    "recommendedPinCurrentmA": 4,
+    "maxTotalCurrentmA": 50,
+    "maxVoltage": 3.63,
+    "max3v3mA": 300
+  },
+  "footprint": "21 × 17.5 mm castellated module, 2 × 7 pins at 0.1 in, rows 0.6 in apart",
+  "dimensions_mm": {
+    "w": 21,
+    "h": 17.5,
+    "d": 3.5
+  },
+  "mass_g": 3,
+  "current_ma": {
+    "typ": 25,
+    "max": 60
+  },
+  "price_usd": 5.4,
+  "buy_links": [
+    {
+      "vendor": "Seeed",
+      "url": "https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html"
+    },
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=XIAO%20RP2040"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power (USB assumed); lights the power LED where the board has one."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "led_r",
+      "type": "number",
+      "description": "User LED red (GP17, active low; LED_BUILTIN) brightness 0..1."
+    },
+    {
+      "key": "led_g",
+      "type": "number",
+      "description": "User LED green (GP16, active low) brightness 0..1."
+    },
+    {
+      "key": "led_b",
+      "type": "number",
+      "description": "User LED blue (GP25, active low) brightness 0..1."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_GP25 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "rp2040js",
+    "chip": "rp2040",
+    "clockHz": 125000000,
+    "vcc": 3.3,
+    "fqbn": "rp2040:rp2040:seeed_xiao_rp2040"
+  },
+  "tags": [
+    "seeed",
+    "xiao",
+    "rp2040",
+    "board",
+    "microcontroller",
+    "3.3v",
+    "pocket",
+    "tiny",
+    "usb-c",
+    "arduino-pico"
+  ]
+}

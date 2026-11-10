@@ -23,3 +23,38 @@ Toolchain: arduino-cli 1.5.1, `arduino:avr` 1.8.8 (avr-gcc 7.3.0), FQBN `arduino
 sketches use only the core (`Wire`, `SPI`), so the library set of the image does not matter.
 
 sha256 (first 16 hex digits): `i2c_probe.hex` 4c06f619f6b1cf72, `spi_probe.hex` df5ed51b53c35162.
+
+## RP2040 fixtures (arduino-pico)
+
+`src/rp2040/*.test.ts` and `packages/parts/src/rp2040.integration.test.ts` run these on the
+rp2040js backend. Golden builds, committed; rebuild only on purpose.
+
+| Sketch | Hex | Board (FQBN) | What it does |
+| --- | --- | --- | --- |
+| `xiao_blink/xiao_blink.ino` | `xiao_blink.hex` | Seeed XIAO RP2040 (`rp2040:rp2040:seeed_xiao_rp2040`) | D0 (GP26) and the user LED (GP17, active low) blink 500 ms on / off; USB serial prints `LED on <n>` / `LED off <millis>` |
+| `xiao_oled/xiao_oled.ino` | `xiao_oled.hex` | Seeed XIAO RP2040 | Adafruit SSD1306 128x64 at 0x3C on Wire (I2C1, D4/D5): title, frame counter and a bar of `64 + 20·sinf(frame/4)` px, every 250 ms |
+| `xiao_io_probe/xiao_io_probe.ino` | `xiao_io_probe.hex` | Seeed XIAO RP2040 | Button on D0 (INPUT_PULLUP), `analogWrite(D1, 64)`, `analogRead(A2)`, Serial1 at 115200 sends `AT` and echoes lines as `rx …`, one SPI transfer `9F 00 00` with CS on D3, every 100 ms |
+| `pico_gadget/pico_gadget.ino` | `pico_gadget.hex` | Raspberry Pi Pico (`rp2040:rp2040:rpipico`) | ST7735 TFT on SPI0 (GP17-GP21), Adafruit MPU6050 on Wire (GP4/GP5), button on GP14, `tone(15, 1000)` while pressed |
+
+Build (Docker, the pinned arduino-pico image; the wrapper writes `<sketch>.ino.hex` from the ELF):
+
+```sh
+docker build -t jumper/arduino-pico:6.3.1-r1 toolchains/arduino-pico   # once
+export JUMPER_ARDUINO_IMAGE=jumper/arduino-pico:6.3.1-r1
+for s in xiao_blink xiao_oled xiao_io_probe; do
+  scripts/build-firmware.sh packages/sim-backends/fixtures/$s rp2040:rp2040:seeed_xiao_rp2040 packages/sim-backends/fixtures/$s/build
+  cp packages/sim-backends/fixtures/$s/build/$s.ino.hex packages/sim-backends/fixtures/$s.hex
+  rm -rf packages/sim-backends/fixtures/$s/build
+done
+scripts/build-firmware.sh packages/sim-backends/fixtures/pico_gadget rp2040:rp2040:rpipico packages/sim-backends/fixtures/pico_gadget/build
+cp packages/sim-backends/fixtures/pico_gadget/build/pico_gadget.ino.hex packages/sim-backends/fixtures/pico_gadget.hex
+rm -rf packages/sim-backends/fixtures/pico_gadget/build
+```
+
+Toolchain: arduino-cli 1.5.1, `rp2040:rp2040` 6.3.1 (pqt-gcc 5.0.0-9576866, GCC 14), default board
+options (the CPU speed menu at its default), the library versions of
+`toolchains/arduino/LIBRARIES.md`. The builds are reproducible: `services/runner/test/runner.test.ts`
+rebuilds `xiao_blink` through the runner and compares it byte for byte.
+
+sha256 (first 16 hex digits): `xiao_blink.hex` 5d16935da7297f1d, `xiao_oled.hex` 55f2cf778673ecc6,
+`xiao_io_probe.hex` 7f363c27bb871337, `pico_gadget.hex` b19abe7a89b90c64.

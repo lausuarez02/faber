@@ -18,6 +18,7 @@ import {
 } from "@jumper/project-format";
 import { registry as defaultRegistry, searchParts as searchCatalog } from "@jumper/parts";
 import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
+import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
 import { checkDesign, type DesignIssue } from "./drc.ts";
 import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
@@ -130,6 +131,9 @@ const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5C
 const SHORT_IDS: Record<string, string> = {
   "arduino-uno": "uno",
   "arduino-nano": "nano",
+  "raspberry-pi-pico": "pico",
+  "seeed-xiao-rp2040": "xiao",
+  "waveshare-rp2040-zero": "zero",
   "ssd1306-oled-i2c": "oled",
   pushbutton: "btn",
   potentiometer: "pot",
@@ -1331,15 +1335,23 @@ export class ProjectSession {
     writeFileSync(join(out, "WIRING.md"), wiringMarkdown(this.project, this.registry));
     const files = ["BOM.md", "WIRING.md"];
     const hex = this.loadHex();
+    // rp2040 track: RP2040 boards also get a UF2 for the BOOTSEL drive, and their own flash line.
+    const boardType = this.project.parts.find((p) => p.id === this.project.firmware?.board)?.type;
+    const boardMcu = boardType ? this.registry.get(boardType)?.spec.mcu : undefined;
+    const rp2040 = boardMcu?.backend === "rp2040js";
     if (hex) {
       writeFileSync(join(out, "firmware.hex"), hex);
       files.push("firmware.hex");
+      if (rp2040) {
+        writeFileSync(join(out, "firmware.uf2"), hexToUf2(hex));
+        files.push("firmware.uf2");
+      }
     }
     const fid = fidelityReport(this.project, this.registry);
     writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
     files.push("TEST-ON-HARDWARE.md");
     ctx.summary = `exported to ${out}`;
-    return { dir: out, files, bom, ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: hex ? `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` : undefined };
+    return { dir: out, files, bom, ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
   }
 
   // =================================================================== steps

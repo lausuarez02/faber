@@ -13,7 +13,29 @@ export const BASE_IMAGE = process.env.JUMPER_ARDUINO_IMAGE ?? "jumper/arduino-cl
 /** Runner image = base + the robot libraries (Servo) from services/runner/docker/Dockerfile. */
 export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-runner:1.5.1-avr1.8.8-libs2-r1";
 
+/**
+ * RP2040 image (toolchains/arduino-pico): the runner image + Earle Philhower's arduino-pico core
+ * 6.3.1 (rp2040:rp2040), which writes the firmware as Intel HEX like the AVR builds. Keep the tag in
+ * sync with that Dockerfile (decision 0003, C1 / C9).
+ */
+export const PICO_IMAGE = process.env.JUMPER_PICO_IMAGE ?? "jumper/arduino-pico:6.3.1-r1";
+
+/** arduino-cli platforms the images carry, by FQBN prefix. */
+export const PLATFORMS = [
+  { prefix: "arduino:avr:", image: () => RUNNER_IMAGE, examples: ["arduino:avr:uno", "arduino:avr:nano"] },
+  { prefix: "rp2040:rp2040:", image: () => PICO_IMAGE, examples: ["rp2040:rp2040:rpipico", "rp2040:rp2040:seeed_xiao_rp2040", "rp2040:rp2040:waveshare_rp2040_zero"] },
+] as const;
+
+/** The Docker image that builds a FQBN (the AVR runner image for anything it does not know). */
+export function imageFor(fqbn: string): string {
+  return (PLATFORMS.find((p) => fqbn.startsWith(p.prefix)) ?? PLATFORMS[0]).image();
+}
+
+/** "arduino:avr:uno", "rp2040:rp2040:rpipico", … for error messages. */
+export const SUPPORTED_FQBNS: readonly string[] = PLATFORMS.flatMap((p) => p.examples);
+
 export const BASE_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino");
+export const PICO_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino-pico");
 export const RUNNER_DOCKERFILE_DIR = join(REPO_ROOT, "services/runner/docker");
 
 export const DEFAULT_PORT = 7781;
@@ -48,6 +70,9 @@ export const PINNED_LIBRARIES: Record<string, { version: string; preinstalled: b
 
 /** Headers that come with the Arduino AVR core (no library to declare). */
 export const CORE_HEADERS = ["Arduino.h", "Wire.h", "SPI.h", "EEPROM.h", "SoftwareSerial.h", "avr/pgmspace.h", "avr/io.h", "avr/interrupt.h", "util/delay.h"];
+
+/** Headers that come with arduino-pico (RP2040 boards), on top of the Arduino API ones. */
+export const PICO_CORE_HEADERS = ["Arduino.h", "Wire.h", "SPI.h", "EEPROM.h", "SoftwareSerial.h", "Servo.h", "LittleFS.h", "hardware/gpio.h", "hardware/pwm.h", "hardware/adc.h", "hardware/pio.h", "pico/stdlib.h"];
 
 /** header file name → library name, for "No such file" hints. */
 export function libraryForHeader(header: string): string | undefined {

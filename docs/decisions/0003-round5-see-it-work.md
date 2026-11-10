@@ -69,6 +69,27 @@ then S3. Gaps: no cycle-exact clock (QEMU icount mode gives determinism at about
 no ADC / LEDC PWM / RMT models in upstream QEMU for C3 (would need patches), no BLE, no browser
 run, a 300 MB binary per OS. Until then the ESP-01 AT sandbox stays the Wi-Fi path.
 
+**What the rp2040 track built (and where it deviates).** Details: [docs/rp2040.md](../rp2040.md).
+
+- **No Raspberry Pi boot ROM (deviation from "the bootrom is bundled as a TS module").** The
+  official ROM contains Mark Owen's float library, licensed only for use on an RP2040 chip or under
+  GPL-2.0, so it cannot ship in this Apache-2.0 repo. `sim-backends/src/rp2040/rom.ts` lays out the
+  documented ROM tables (lookup, float/double, mem, bit, flash) with native TypeScript functions
+  behind `BKPT` stubs. Creation stays synchronous, as C1 asks. Fidelity: +, -, *, /, sqrt round
+  like IEEE-754, denormals flush to zero like the ROM, sin/cos/exp/ln may differ in the last bit,
+  cycle costs are typical values. Each board's fidelity.json says so.
+- **PIO on the virtual clock.** rp2040js 1.4.1 runs PIO from `setTimeout` (wall clock, ignores
+  clkdiv). The backend steps the state machines itself at clk_sys/clkdiv; `tone()` (a PIO program
+  in arduino-pico) gives a 1000 Hz edge train to the microsecond.
+- **Bit-level I2C target.** arduino-pico's `Wire` probes addresses (every scanner and
+  `Adafruit_I2CDevice::begin()`) by bit-banging SDA/SCL, so a byte-level bus alone made
+  `mpu.begin()` fail. `soft-i2c.ts` decodes the bits and ACKs like the device.
+- **rp2040js workaround:** an I2C abort never raised TX_EMPTY, so the pico-sdk waited forever
+  after a NACK; the backend raises it.
+- **Firmware is Intel HEX** (C1); the image's wrapper runs `objcopy -O ihex` on the ELF. Export
+  also writes `firmware.uf2` (byte-identical to arduino-pico's) for the BOOTSEL drive.
+- `McuBackend` is unchanged (no optional members were needed); `backendFactory` has one branch.
+
 ### parts: real pocket parts and physical data
 
 Fourteen new parts (C2 list in the track brief) with original SVG art, each a full part folder.

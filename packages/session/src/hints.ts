@@ -131,13 +131,14 @@ function derivedWiring(spec: PartSpec): string {
   const ground = spec.pins.filter((p) => p.type === "ground").map((p) => p.id);
   if (power.length) {
     const max = Math.max(...spec.pins.filter((p) => p.type === "power").map((p) => p.voltage?.max ?? 5));
-    bits.push(max <= 3.6 ? `${power.join("/")} → 3V3 (3.3 V part: 5 V damages it)` : `${power.join("/")} → 5V if the pin's voltage range allows it (check get_part pins)`);
+    bits.push(max <= 3.6 ? `${power.join("/")} → 3V3 (3.3 V part: 5 V damages it)` : `${power.join("/")} → 5V if the pin's voltage range allows it (check get_part pins; on a 3.3 V board such as a Pico, 3V3 when the part accepts 3.3 V)`);
   }
   if (ground.length) bits.push(`${ground.join("/")} → GND`);
   for (const p of spec.pins) {
     const proto = p.protocols ?? [];
-    if (proto.includes("i2c-sda")) bits.push(`${p.id} → A4 (SDA)`);
-    else if (proto.includes("i2c-scl")) bits.push(`${p.id} → A5 (SCL)`);
+    // Board-aware (rp2040 track, C7): name the pin by role; suggestConnections maps it to the real board.
+    if (proto.includes("i2c-sda")) bits.push(`${p.id} → the board's SDA (Uno/Nano A4, Pico GP4, XIAO D4/GP6)`);
+    else if (proto.includes("i2c-scl")) bits.push(`${p.id} → the board's SCL (Uno/Nano A5, Pico GP5, XIAO D5/GP7)`);
     else if (proto.some((x) => x.startsWith("spi-"))) bits.push(`${p.id} → the board's ${proto.find((x) => x.startsWith("spi-"))!.slice(4).toUpperCase()} pin`);
   }
   const signals = spec.pins.filter((p) => (p.type === "digital" || p.type === "analog") && !(p.protocols ?? []).some((x) => x.startsWith("i2c") || x.startsWith("spi")));
@@ -145,8 +146,13 @@ function derivedWiring(spec: PartSpec): string {
   return bits.length ? bits.join("; ") + "." : spec.description;
 }
 
+type PinKind = "pwm" | "analog" | "digital" | "fixed";
+type BoardPin = PartSpec["pins"][number];
+
+const isAnalogPin = (p: { id: string; type?: string; protocols?: string[] }) => /^A\d+$/.test(p.id) || p.type === "analog" || (p.protocols ?? []).includes("adc");
+
 /** Pin kind a suggested board pin needs, from the pin the static hint named. */
-function pinKind(pin: { id: string; protocols?: string[] }): "pwm" | "analog" | "digital" | "fixed" {
+function pinKind(pin: { id: string; type?: string; protocols?: string[] }): PinKind {
   const pr = pin.protocols ?? [];
   if (pr.some((x) => x.startsWith("i2c") || x.startsWith("uart") || x.startsWith("spi-sck") || x.startsWith("spi-miso") || x.startsWith("spi-mosi"))) return "fixed";
   if (/^D\d+$/.test(pin.id)) return pr.includes("pwm") ? "pwm" : "digital";
@@ -154,10 +160,25 @@ function pinKind(pin: { id: string; protocols?: string[] }): "pwm" | "analog" | 
   return "fixed";
 }
 
+/** What an Uno pin in a static hint stands for, so the hint can be moved to another board. */
+const UNO_PWM = new Set(["D3", "D5", "D6", "D9", "D10", "D11"]);
+function unoRole(pin: string): PinKind | "i2c-sda" | "i2c-scl" | "spi-mosi" | "spi-miso" | "spi-sck" | "5V" | "3V3" | "VIN" | "GND" | undefined {
+  if (pin === "A4") return "i2c-sda";
+  if (pin === "A5") return "i2c-scl";
+  if (/^A\d$/.test(pin)) return "analog";
+  if (/^D\d+$/.test(pin)) return UNO_PWM.has(pin) ? "pwm" : "digital";
+  if (pin === "5V" || pin === "3V3" || pin === "VIN") return pin;
+  if (/^GND/.test(pin)) return "GND";
+  return undefined;
+}
+
 /**
  * typical_connections for a newly placed part with real board pins: the static hint ("btn1.1a ->
  * uno.D2") is moved to the next free pin of the same kind when that pin is already wired or was
  * suggested to an earlier part that has no wires yet. Ids are rewritten to the placed part and board.
+ * On a board without the Uno's pin names (RP2040 boards), each Uno pin is translated by its role:
+ * A4/A5 → the board's SDA/SCL, analog → an ADC pin, PWM / digital → a free GPIO, 5V → 3V3 when the
+ * part runs on 3.3 V (VBUS otherwise), so the suggestion is right for that board.
  */
 export function suggestConnections(
   project: { parts: { id: string; type: string }[]; wires: { from: { part: string; pin: string }; to: { part: string; pin: string } }[] },
@@ -169,13 +190,19 @@ export function suggestConnections(
   const bspec = board ? specOf(board.type) : undefined;
   const taken = new Set<string>();
   if (board) for (const w of project.wires) for (const e of [w.from, w.to]) if (e.part === board.id) taken.add(e.pin);
-  taken.add("D0");
-  taken.add("D1");
+  const tagged = (proto: string) => bspec?.pins.filter((x) => x.protocols?.includes(proto)).map((x) => x.id) ?? [];
+  // On an AVR board D0/D1 are the console's serial port; on RP2040 boards the console is USB.
+  if (!bspec?.mcu || bspec.mcu.backend === "avr8js") {
+    taken.add("D0");
+    taken.add("D1");
+  }
   const hasI2c = project.parts.some((p) => specOf(p.type)?.bus?.i2c);
   if (hasI2c) {
     taken.add("A4");
     taken.add("A5");
+    for (const id of [...tagged("i2c-sda"), ...tagged("i2c-scl")]) taken.add(id);
   }
+  const unoNames = !!bspec?.pins.some((x) => /^D\d+$/.test(x.id));
   const wiredParts = new Set(project.wires.flatMap((w) => [w.from.part, w.to.part]));
   let result: string[] | undefined;
   for (const p of project.parts) {
@@ -188,25 +215,59 @@ export function suggestConnections(
     const lines = u.map((line) => {
       let l = line.replace(placeholder, p.id);
       if (board) l = l.replace(/\buno\./g, `${board.id}.`);
-      const m = l.match(new RegExp(`\\b${board?.id ?? "uno"}\\.([A-Z]\\w*)$`)) ?? l.match(new RegExp(`^${board?.id ?? "uno"}\\.([A-Z]\\w*)\\b`));
+      const m = l.match(new RegExp(`\\b${board?.id ?? "uno"}\\.([A-Z0-9]\\w*)$`)) ?? l.match(new RegExp(`^${board?.id ?? "uno"}\\.([A-Z0-9]\\w*)\\b`));
       if (!m || !bspec) return l;
-      const want = bspec.pins.find((x) => x.id === m[1]);
-      if (!want) return l;
-      const kind = pinKind(want);
-      if (kind === "fixed" || (want.type !== "digital" && want.type !== "analog")) return l;
-      let pick = want.id;
-      if (taken.has(pick)) {
-        const pool = bspec.pins.filter((x) => (x.type === "digital" || x.type === "analog") && !taken.has(x.id) && pinKind(x) !== "fixed");
-        const ok = (x: (typeof pool)[number]) => (kind === "pwm" ? (x.protocols ?? []).includes("pwm") : kind === "analog" ? /^A\d+$/.test(x.id) : /^D\d+$/.test(x.id));
-        // Plain digital needs: prefer non-PWM pins first, keep PWM pins for things that need them, then analog pins as digital.
-        const ranked = [...pool.filter((x) => ok(x) && !(kind === "digital" && (x.protocols ?? []).includes("pwm"))), ...pool.filter((x) => ok(x) && kind === "digital" && (x.protocols ?? []).includes("pwm")), ...(kind === "digital" ? pool.filter((x) => /^A\d+$/.test(x.id)) : [])];
-        const sorted = ranked.slice().sort((a, b) => num(a.id) - num(b.id));
-        const after = sorted.filter((x) => num(x.id) > num(want.id) && sameBank(x.id, want.id));
-        const next = (kind === "digital" ? ranked : [...after, ...sorted])[0];
-        if (next) pick = next.id;
+      const named = m[1]!;
+      let want: BoardPin | undefined = bspec.pins.find((x) => x.id === named);
+      let kind: PinKind;
+      if (want) {
+        kind = pinKind(want);
+        if (kind === "fixed" || (want.type !== "digital" && want.type !== "analog")) return l;
+      } else {
+        if (unoNames) return l;
+        // Another board: translate the Uno pin by its role.
+        const partPin = spec.pins.find((x) => l.includes(`${p.id}.${x.id} `) || l.endsWith(`${p.id}.${x.id}`));
+        const role = unoRole(named);
+        const replace = (id: string | undefined) => (id ? l.replace(`${board!.id}.${named}`, `${board!.id}.${id}`) : l);
+        const protoOf = (proto: string) => tagged(proto)[0];
+        const partProto = partPin?.protocols?.find((x) => x.startsWith("i2c-") || x === "spi-mosi" || x === "spi-miso" || x === "spi-sck");
+        if (partProto) return replace(protoOf(partProto));
+        if (role === "i2c-sda" || role === "i2c-scl") return replace(protoOf(role));
+        if (role === "GND") return replace(bspec.pins.find((x) => x.type === "ground" && !taken.has(x.id))?.id ?? bspec.pins.find((x) => x.type === "ground")?.id);
+        if (role === "5V" || role === "VIN" || role === "3V3") {
+          const supply = partPin?.voltage;
+          const has33 = bspec.pins.some((x) => x.id === "3V3");
+          const fits33 = !supply || (supply.min <= 3.3 && supply.max >= 3.3);
+          const prefer = role === "3V3" || ((bspec.mcu?.vcc ?? 5) < 4 && fits33 && has33) ? "3V3" : ["5V", "VBUS", "VSYS", "VIN"].find((id) => bspec.pins.some((x) => x.id === id));
+          return replace(prefer);
+        }
+        if (role !== "pwm" && role !== "digital" && role !== "analog") return l;
+        kind = role;
+        want = undefined;
       }
+      let pick = want?.id;
+      if (!pick || taken.has(pick)) {
+        if (unoNames) {
+          const pool = bspec.pins.filter((x) => (x.type === "digital" || x.type === "analog") && !taken.has(x.id) && pinKind(x) !== "fixed");
+          const ok = (x: BoardPin) => (kind === "pwm" ? (x.protocols ?? []).includes("pwm") : kind === "analog" ? /^A\d+$/.test(x.id) : /^D\d+$/.test(x.id));
+          // Plain digital needs: prefer non-PWM pins first, keep PWM pins for things that need them, then analog pins as digital.
+          const ranked = [...pool.filter((x) => ok(x) && !(kind === "digital" && (x.protocols ?? []).includes("pwm"))), ...pool.filter((x) => ok(x) && kind === "digital" && (x.protocols ?? []).includes("pwm")), ...(kind === "digital" ? pool.filter((x) => /^A\d+$/.test(x.id)) : [])];
+          const sorted = ranked.slice().sort((a, b) => num(a.id) - num(b.id));
+          const after = want ? sorted.filter((x) => num(x.id) > num(want!.id) && sameBank(x.id, want!.id)) : [];
+          const next = (kind === "digital" ? ranked : [...after, ...sorted])[0];
+          if (next) pick = next.id;
+        } else {
+          // RP2040 boards: every GPIO does PWM; ADC on GP26-GP29. Keep the default bus pins
+          // (Wire, SPI, Serial1) for last, and analog pins for analog needs when possible.
+          const pool = bspec.pins.filter((x) => /^GP\d+$/.test(x.id) && !taken.has(x.id)).sort((a, b) => num(a.id) - num(b.id));
+          const busy = (x: BoardPin) => (x.protocols ?? []).some((pr) => /^(i2c|uart|spi)/.test(pr));
+          const tiers = kind === "analog" ? [pool.filter((x) => isAnalogPin(x) && !busy(x)), pool.filter((x) => isAnalogPin(x))] : [pool.filter((x) => !isAnalogPin(x) && !busy(x)), pool.filter((x) => !busy(x)), pool.filter((x) => !(hasI2c && (x.protocols ?? []).some((pr) => pr.startsWith("i2c"))))];
+          pick = tiers.find((t) => t.length > 0)?.[0]?.id;
+        }
+      }
+      if (!pick) return l;
       taken.add(pick);
-      return l.replace(new RegExp(`\\.${want.id}\\b`), `.${pick}`);
+      return unoNames ? l.replace(new RegExp(`\\.${named}\\b`), `.${pick}`) : l.replace(`${board!.id}.${named}`, `${board!.id}.${pick}`);
     });
     if (p.id === partId) result = lines;
   }

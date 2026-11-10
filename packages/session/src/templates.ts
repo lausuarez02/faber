@@ -34,6 +34,36 @@ void loop() {
 }
 `;
 
+/** RP2040 boards: Serial is native USB, so wait for the computer to open the port (decision 0003, C1). */
+const rp2040Ino = (led: string | undefined) => `// ${led ? "Blinks the on-board LED and says" : "Says"} "ready" on USB serial.
+void setup() {
+  Serial.begin(115200);
+  // Serial is the board's own USB port: wait (up to 2 s) for the computer to open it, or the first
+  // lines are lost.
+  while (!Serial && millis() < 2000) delay(10);
+  Serial.println("ready");${led ? `\n  pinMode(LED_BUILTIN, OUTPUT);` : ""}
+}
+
+void loop() {${led ? `\n  digitalWrite(LED_BUILTIN, ${led === "low" ? "LOW" : "HIGH"});  // on${led === "low" ? " (this LED is active low)" : ""}\n  delay(500);\n  digitalWrite(LED_BUILTIN, ${led === "low" ? "HIGH" : "LOW"});\n  delay(500);` : ""}
+}
+`;
+
+function rp2040Template(type: string, id: string, fqbn: string, name: string, led: "high" | "low" | undefined): Template {
+  return {
+    description: `A ${name} (RP2040, 3.3 V) and a sketch (firmware/main.ino) that prints 'ready'${led ? " and blinks the on-board LED" : ""}.`,
+    needs: [type],
+    project: (projectName) => ({
+      format: "jumper/1",
+      name: projectName,
+      parts: [{ id, type, x: 0, y: 0 }],
+      wires: [],
+      firmware: { board: id, dir: "firmware", sketch: "main.ino", artifact: "firmware/main.hex", build: { tool: "arduino-cli", fqbn } },
+      scenarios: [{ id: "boots", name: "Firmware boots", steps: [{ expect_serial: "ready", within_ms: 1000 }] }],
+    }),
+    files: { "firmware/main.ino": rp2040Ino(led) },
+  };
+}
+
 export const TEMPLATES: Record<string, Template> = {
   blank: {
     description: "Empty canvas, no parts, no firmware.",
@@ -67,6 +97,10 @@ export const TEMPLATES: Record<string, Template> = {
     }),
     files: { "firmware/main.ino": EMPTY_INO },
   },
+  // rp2040 track (decision 0003, C1): the pocket boards.
+  pico: rp2040Template("raspberry-pi-pico", "pico", "rp2040:rp2040:rpipico", "Raspberry Pi Pico", "high"),
+  "xiao-rp2040": rp2040Template("seeed-xiao-rp2040", "xiao", "rp2040:rp2040:seeed_xiao_rp2040", "Seeed XIAO RP2040", "low"),
+  "rp2040-zero": rp2040Template("waveshare-rp2040-zero", "zero", "rp2040:rp2040:waveshare_rp2040_zero", "Waveshare RP2040-Zero", undefined),
   blink: {
     description: "Uno + 220 Ω + red LED on D13, the Blink sketch and two passing scenarios.",
     needs: ["arduino-uno", "resistor", "led"],

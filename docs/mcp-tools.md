@@ -71,7 +71,7 @@ Start a project in the server's project folder from a template. Templates: "blan
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `template` | string |  | one of `blank`, `uno`, `nano`, `blink`. Default blank. |
+| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `blink`. Default blank. |
 | `name` | string |  | Project name (default: folder name). |
 | `overwrite` | boolean |  | Replace an existing jumper.json. |
 

@@ -120,7 +120,7 @@ describe("svg reader", () => {
 describe("package API", () => {
   it("lists, gets and searches parts", () => {
     expect(listParts().map((d) => d.spec.id)).toEqual(folders);
-    expect(listParts("board").map((d) => d.spec.id)).toEqual(["arduino-nano", "arduino-uno"]);
+    expect(listParts("board").map((d) => d.spec.id)).toEqual(["arduino-nano", "arduino-uno", "raspberry-pi-pico", "seeed-xiao-rp2040", "waveshare-rp2040-zero"]);
     expect(getPart("led")?.spec.name).toMatch(/LED/);
     expect(getPart("nope")).toBeUndefined();
     expect(parts.resistor?.spec.id).toBe("resistor");
