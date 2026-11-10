@@ -63,7 +63,9 @@ export interface BomLine {
 export function bomLines(project: Project, registry: PartRegistry, opts: { soldered: boolean; cuts: WireCut[]; screws?: { count: number; size: string; inserts: string } }): BomLine[] {
   const groups = new Map<string, { ids: string[]; type: string; props: string; standIn?: string }>();
   for (const p of project.parts) {
-    const props = Object.entries(p.props ?? {}).map(([k, v]) => `${k}=${v}`).join("; ");
+    // round 7 voice: text props (a DFPlayer's clips) go to sd-card/, not into a BOM cell
+    const textProps = new Set((registry.get(p.type)?.spec.props ?? []).filter((x) => x.type === "text").map((x) => x.id));
+    const props = Object.entries(p.props ?? {}).filter(([k]) => !textProps.has(k)).map(([k, v]) => `${k}=${v}`).join("; ");
     const k = `${p.type}|${props}|${p.standIn ?? ""}`;
     const g = groups.get(k) ?? { ids: [], type: p.type, props, ...(p.standIn ? { standIn: p.standIn } : {}) };
     g.ids.push(p.id);
@@ -95,6 +97,11 @@ export function bomLines(project: Project, registry: PartRegistry, opts: { solde
       source: g.standIn ? "stand-in" : registry.get(g.type)?.fidelity.origin === "agent-made" ? "agent-made" : "catalog",
       notes: [g.props, label.note].filter(Boolean).join("; "),
     });
+  }
+  // round 7 voice: a DFPlayer needs its microSD card with the clips on it.
+  const talkers = project.parts.filter((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips"));
+  if (talkers.length) {
+    out.push({ line: out.length + 1, refs: "", qty: talkers.length, name: "microSD card", value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "microSD", generic: "microSD card 1 to 32 GB (any class), FAT32", unit_usd: 3, ext_usd: 3 * talkers.length, buy_url: "", source: "assembly", notes: `for ${talkers.map((t) => t.id).join(", ")}: the clips from sd-card/ (CLIPS.md)` });
   }
   if (opts.soldered) {
     const total = (awg: number) => opts.cuts.filter((c) => c.gauge_awg === awg).reduce((a, c) => a + c.length_mm, 0);

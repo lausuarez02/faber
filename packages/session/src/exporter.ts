@@ -75,7 +75,10 @@ export function partLabel(p: PartInstance, registry: PartRegistry): { name: stri
 export function bomMarkdown(project: Project, registry: PartRegistry, style: AssemblyStyle = assemblyStyle(project, registry), cuts: WireCut[] = []): string {
   const groups = new Map<string, { p: PartInstance; ids: string[]; props: string }>();
   for (const p of project.parts) {
+    // round 7 voice: text props (a DFPlayer's clips) are not BOM options
+    const textProps = new Set((registry.get(p.type)?.spec.props ?? []).filter((x) => x.type === "text").map((x) => x.id));
     const props = Object.entries(p.props ?? {})
+      .filter(([k]) => !textProps.has(k))
       .map(([k, v]) => `${k}=${v}`)
       .join(", ");
     const k = `${p.type}|${props}|${p.standIn ?? ""}`;
@@ -99,6 +102,9 @@ export function bomMarkdown(project: Project, registry: PartRegistry, style: Ass
     if (g.p.standIn) standIns.push(`- **${g.ids.join(", ")}**: buy a ${g.p.standIn}. Jumper had no such part, so a ${spec?.name ?? g.p.type} stood in for it: the tests checked the firmware against the stand-in, not the real part.`);
     else if (isAgentMade(registry, g.p.type)) agentMade.push(`- **${g.ids.join(", ")}** (${spec?.name ?? g.p.type}): ${AGENT_MADE_LABEL}. Its pins and behaviour came from the agent's description; check them against the real part's datasheet before wiring.`);
   }
+  // round 7 voice: the DFPlayer's microSD card
+  const talkers = project.parts.filter((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips"));
+  if (talkers.length) lines.push(`| ${talkers.length} | microSD card, 1 to 32 GB, FAT32 | – | – | ${talkers.map((t) => t.id).join(", ")} | ${searchLinks("microSD card 8GB")} | holds the clips as /mp3/0001.mp3 …; export_manufacturing writes sd-card/ with the texts and make-clips.sh |`);
   const wires = project.wires.length;
   if (style === "soldered") {
     // round 6 power: hand-wired in a case: cut wire per gauge (WIRE-CUTS.csv), no breadboard, no dupont.

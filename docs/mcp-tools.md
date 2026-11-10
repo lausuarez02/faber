@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-52 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+53 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -88,6 +88,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`update_case`](#update_case) | Change the case | yes (undoable step) |
 | [`get_case`](#get_case) | Case report | no (read-only) |
 | [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
+| [`read_speech`](#read_speech) | Read what it said | no (read-only) |
 
 ### new_project
 
@@ -188,7 +189,7 @@ Change a saved part property: {"id": "r1", "prop": "resistance", "value": 330}, 
 | --- | --- | --- | --- |
 | `id` | string | yes |  |
 | `prop` | string | yes |  |
-| `value` | string \| number \| boolean | yes |  |
+| `value` | string \| number \| boolean \| object | yes | The new value. Text props such as a DFPlayer's clips take "N: words" lines or an object {"1": "hi!"}. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step. |
 
 ### set_libraries
@@ -569,3 +570,12 @@ Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it:
 | `zip` | boolean |  | Default true: also write <name>-v<version>.zip next to the folder. |
 | `zh_cn` | boolean |  | Default true: add README.zh-CN.md. |
 | `why` | string |  | Short reason shown in the step list. |
+
+### read_speech
+
+What the device said out loud in the simulation (DFPlayer Mini clips, whose words are its "clips" prop): {"since": 0} for everything. Returns {t_ms, next, said: [{part, t_ms, dur_ms, track, clip, text, heard, volume, missing_words?}], saying_now}. heard is false when no speaker is wired to SPK_1 / SPK_2 (or DAC), so a person would hear nothing and no speech bubble shows. Pass next as since to read only new ones. Length is estimated (2.6 words per second + 0.3 s). Test it in a scenario with {"said": "dizzy", "within_ms": 500}. Run the simulation first (run / run_tests); with nothing run yet it is empty.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `since` | number |  | Index into the list, from a previous next (default 0). |
+| `part` | string |  | Only this talking part (e.g. df1). |

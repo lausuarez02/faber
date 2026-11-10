@@ -1,5 +1,6 @@
 import { buildNets, type PinRef, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
+import { voiceChecks } from "./voice.ts"; // round 7 voice
 
 /** Design rule checks: static (from the wiring) plus whatever the last simulation reported. */
 
@@ -44,7 +45,7 @@ const POWER_ROLES: Record<string, Record<string, SupplyRole>> = {
 /** Battery-like parts: their POS is a cell, their NEG must go to ground. */
 const BATTERIES = new Set(["lipo-battery", "battery-pack"]);
 /** Pins of power parts that may stay unconnected (the TP4056's USB input: its USB-C socket is the charge port). */
-const OPTIONAL_POWER_PINS: Record<string, string[]> = { "tp4056-charger": ["VIN", "GND.1"] };
+const OPTIONAL_POWER_PINS: Record<string, string[]> = { "tp4056-charger": ["VIN", "GND.1"], "dfplayer-mini": ["GND.2"] }; // round 7 voice: its second GND is the same ground
 
 function supplyRole(i: PinInfo): SupplyRole {
   if (i.pin.type !== "power") return "none";
@@ -500,6 +501,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
   }
 
   for (const i of powerPathChecks(project, partSpec, nets, netOf, boardPart)) add(i); // round 6 power
+  for (const i of voiceChecks(project, registry, firmwareSource)) add(i); // round 7 voice
 
   const order = { error: 0, warning: 1, info: 2 };
   return issues.sort((a, b) => order[a.severity] - order[b.severity]);
