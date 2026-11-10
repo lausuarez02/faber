@@ -85,6 +85,22 @@ Known gaps (round 5):
   hit their 5 s timeout once in a full run on a busy machine; they pass alone and in later runs.
 - ESP32-S3 / C3 is planned in the decision note, not built.
 
+## Round 6, canvas track (branch `round6/canvas`, not merged yet)
+
+- A normal click on a running button's cap presses it (pointer down / up, at least 120 ms of wall
+  and virtual time, drawn pressed); the body and the label still drag the part; knobs turn; dragging
+  an IMU tilts it; **Arrange** in Live controls makes every part select / drag as when stopped.
+- Live controls docked at the bottom of the right column (panels end above it), collapsible;
+  Shake = click for a set duration (0.5 to 5 s) or hold; all motions on virtual time.
+- Serial follows the newest line unless scrolled up (**Newest** button); right-column panels shrink
+  before the column scrolls. Canvas labels: short id only, full name in the hover title.
+- The view is the person's once they zoom / pan / fit: automatic refits (run, save, build, cards)
+  skip it until another project opens (R8 "open").
+- Inspector: "Wiring on <board>" from the board's bus pins (`boardWiring` in `@jumper/parts`), Uno
+  sentences dropped from the description on other boards.
+- Checked: `apps/web/e2e/canvas-controls.spec.ts` (6 tests, real pointer events, desktop + phone),
+  unit tests for the hit area, tilt, motions and wiring.
+
 ## Round 4 (2026-11-09): UI review, two live Claude builds, try it yourself
 
 | Area | What works | Check it with |

@@ -102,10 +102,16 @@ What to expect:
 - Firmware builds take 10 to 40 s the first time (Docker). Test runs show in the Tests panel.
 - **Run** runs what it built right on this page, with the latest firmware the agent built. When the
   agent builds, runs or tests again, the page reloads the firmware and starts the device by itself
-  (untick **Auto-run** in the Live bar to stop that). While it runs: click and hold a button to
-  press it, drag a knob to turn it, click a slide switch to flip it; the **Live controls** card
-  (bottom right) tilts, shakes, drops or spins an IMU and has a slider for what each sensor
-  measures. These values only change the running simulation, never `jumper.json`.
+  (untick **Auto-run** in the Live bar to stop that). While it runs: click a button's cap to press
+  it (a quick click holds it at least 120 ms, so the sketch sees it; hold to keep it down), drag a
+  knob to turn it, click a slide switch to flip it, drag the IMU part to tilt it. To move a part
+  while it runs, drag its body away from the cap, or its label, or pick **Arrange** in the **Live
+  controls** card. That card is docked at the bottom right (panels stack above it, never over it,
+  and it collapses): a tilt pad, **Shake** (a click shakes for the set duration, holding shakes for
+  as long as you hold), **Drop**, **Spin**, and a slider for what each sensor measures. Motions run
+  on simulation time, so they wait while paused. These values only change the running simulation,
+  never `jumper.json`. Serial follows the newest line unless you scroll up (then **Newest** jumps
+  back); once you zoom or pan, run, save and build leave your view alone.
 
 Other agents: `codex mcp add jumper --url http://localhost:7780/mcp`; Cursor and Claude Desktop
 snippets are in the **Install MCP** menu (top right).
@@ -117,7 +123,7 @@ snippets are in the **Install MCP** menu (top right).
   (they only reload it). A sketch the agent changed but has not built yet keeps running the last
   build here (the Live bar says "sketch changed, not built yet").
 - **IMU motions are approximate** (a 7 Hz shake, 0.4 s of free fall then a 6 g bump, 360 °/s spin),
-  played in wall-clock time: shapes firmware usually detects, not a model of a hand.
+  played on simulation time: shapes firmware usually detects, not a model of a hand.
 - **An agent on a separate stdio MCP process** (`jumper mcp --project`) shows as "idle" after it
   stops, never "done": the server cannot see that process end. HTTP clients (`claude mcp add
   --transport http`) and `--attach` show "done".

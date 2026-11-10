@@ -6,6 +6,7 @@ import type { ThemeChoice } from "../lib/store.ts";
 import { isPhone } from "../lib/ui.ts";
 import type { PartFlowNode } from "../components/PartNode.tsx";
 import type { WireFlowEdge } from "../components/WireEdge.tsx";
+import { onProjectSwitch } from "../lib/projectSwitch.ts";
 
 /** Shell actions shared by menus, the rail and keyboard shortcuts. */
 
@@ -39,12 +40,44 @@ export function chromePadding(): { top: `${number}px`; right: `${number}px`; bot
   return { top: `${i.top}px`, right: `${i.right}px`, bottom: `${i.bottom}px`, left: `${i.left}px` };
 }
 
+// ---- round 6, canvas track: the view is the person's ------------------------------------------
+//
+// Once the person zoomed or panned (wheel, drag, pinch, minimap, the zoom buttons) or fitted by
+// hand, automatic refits (a card appearing on run, a save, a build, an agent step) leave the view
+// alone until another project opens (R8 "open"; "reload" keeps it). Asked-for fits still work.
+let viewKept = false;
+
+/** The person owns the view (automatic fits are skipped). */
+export function isViewKept(): boolean {
+  return viewKept;
+}
+
+/** Mark the view as the person's (a gesture, a zoom button) or give it back to automatic fits. */
+export function keepView(on: boolean): void {
+  viewKept = on;
+}
+
+onProjectSwitch(({ reason }) => {
+  if (reason === "open") viewKept = false;
+});
+
 /**
  * Fit the parts (or some of them) into the canvas area the floating chrome leaves free.
  * React Flow's own fitView centres the slack axis on the whole viewport, ignoring uneven
  * padding, so the circuit would sit under the panels; this centres it in the free rectangle.
+ *
+ * Round 6: `fitView()` with no duration is the person asking (Shift+1, the menu): it always fits.
+ * A call with an explicit duration is an automatic refit (chrome changed): skipped once the person
+ * owns the view (isViewKept).
  */
-export function fitView(duration = 300, ids?: string[], maxZoom = 1.25): void {
+export function fitView(duration?: number, ids?: string[], maxZoom = 1.25): void {
+  if (duration === undefined && !ids) viewKept = true;
+  else if (viewKept && !ids) return;
+  fitNow(duration ?? 300, ids, maxZoom);
+}
+
+/** Fit without asking whose view it is (project opened, first paint, focus on a part). */
+export function fitNow(duration = 300, ids?: string[], maxZoom = 1.25): void {
   if (!rf) return;
   const nodes = ids ? rf.getNodes().filter((n) => ids.includes(n.id)) : rf.getNodes();
   if (!nodes.length) return;
@@ -62,12 +95,19 @@ export function fitView(duration = 300, ids?: string[], maxZoom = 1.25): void {
   const y = ins.top + labelRoom + (h - labelRoom - b.height * zoom) / 2 - b.y * zoom;
   void rf.setViewport({ x, y, zoom }, { duration });
 }
-export const zoomIn = () => void rf?.zoomIn({ duration: 150 });
-export const zoomOut = () => void rf?.zoomOut({ duration: 150 });
+export const zoomIn = () => {
+  viewKept = true;
+  void rf?.zoomIn({ duration: 150 });
+};
+export const zoomOut = () => {
+  viewKept = true;
+  void rf?.zoomOut({ duration: 150 });
+};
 
 export function focusPart(id: string): void {
   useJumper.getState().select([id], []);
-  fitView(350, [id], 1.6);
+  viewKept = true;
+  fitNow(350, [id], 1.6);
 }
 
 export const THEME_NEXT: Record<ThemeChoice, ThemeChoice> = { system: "dark", dark: "light", light: "system" };
@@ -127,7 +167,8 @@ export function newProject(): void {
   s.setFirmware({ status: "none" });
   s.setSimError(undefined);
   history.replaceState(null, "", location.pathname);
-  requestAnimationFrame(() => fitView(0));
+  viewKept = false;
+  requestAnimationFrame(() => fitNow(0));
 }
 
 export async function importProjectFile(file: File): Promise<void> {
@@ -148,7 +189,8 @@ export async function importProjectFile(file: File): Promise<void> {
     s.setFirmware({ status: "missing", reason: `load ${res.project.firmware.artifact} with “Load firmware .hex”` });
   }
   s.toast({ kind: "info", title: `Opened ${res.project.name}` });
-  requestAnimationFrame(() => fitView(0));
+  viewKept = false;
+  requestAnimationFrame(() => fitNow(0));
 }
 
 export async function loadHexFile(file: File): Promise<void> {

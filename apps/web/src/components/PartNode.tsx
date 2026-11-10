@@ -5,8 +5,9 @@ import type { Rotation } from "@jumper/project-format";
 import { pinSide, rotatedPin, rotatedSize, type Side } from "../lib/parts.ts";
 import { engine } from "../lib/app.ts";
 import { categoryIcon } from "../shell/icons.ts";
-import { PartControl } from "../interact/PartControl.tsx";
-import { controlOf } from "../interact/controls.ts";
+import "./canvas.css";
+import { ImuSurface, PartControl } from "../interact/PartControl.tsx";
+import { controlOf, isImu } from "../interact/controls.ts";
 
 export interface PartNodeData extends Record<string, unknown> {
   def: PartDefinition | undefined;
@@ -55,8 +56,10 @@ function PartNodeImpl({ id, data, selected }: NodeProps<PartFlowNode>) {
   const { spec } = def;
   const box = rotatedSize(spec, rotation);
   const CatIcon = categoryIcon(spec.category);
-  // While the device runs, buttons press, switches flip and knobs turn instead of dragging the part.
+  // While the device runs, button caps press, switches flip, knobs turn and IMUs tilt; the rest of
+  // the part (and its label, a drag handle) still selects and moves it.
   const control = controlOf(def);
+  const imu = !control && isImu(def);
   return (
     <div
       ref={ref}
@@ -68,13 +71,15 @@ function PartNodeImpl({ id, data, selected }: NodeProps<PartFlowNode>) {
       data-lit="false"
       style={{ width: box.w, height: box.h }}
     >
-      <div className="part-label" aria-hidden>
-        <CatIcon size={12} strokeWidth={1.8} />
+      {/* Round 6 (canvas): the canvas shows the short id only, never wider than the part, so labels
+          never overlap; the full name is in the hover title and the Inspector. */}
+      <div className="part-label" data-testid={`label-${id}`} title={`${id} · ${spec.name}`} style={{ maxWidth: Math.max(box.w + 12, 72) }}>
+        <CatIcon size={12} strokeWidth={1.8} aria-hidden />
         <span className="part-label-id">{id}</span>
-        <span className="part-label-type">{spec.name}</span>
       </div>
       <PartSvg svg={def.svg} w={spec.size.w} h={spec.size.h} rotation={rotation} />
-      {control ? <PartControl id={id} kind={control} /> : null}
+      {control ? <PartControl id={id} kind={control} box={box} name={spec.name} /> : null}
+      {imu ? <ImuSurface id={id} name={spec.name} /> : null}
       {spec.pins.map((pin) => {
         const p = rotatedPin(spec, pin, rotation);
         return (

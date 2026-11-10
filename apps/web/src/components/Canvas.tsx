@@ -10,6 +10,7 @@ import {
   type Connection,
   type EdgeChange,
   type NodeChange,
+  type Viewport,
 } from "@xyflow/react";
 import type { PartInstance, Wire } from "@jumper/project-format";
 import { useJumper } from "../lib/app.ts";
@@ -18,7 +19,7 @@ import { PartNode, type PartFlowNode } from "./PartNode.tsx";
 import { RouteObstacles, WireEdge, type WireFlowEdge } from "./WireEdge.tsx";
 import type { RouteBox } from "@jumper/sim-core";
 import { useIsPhone, useUi } from "../lib/ui.ts";
-import { chromePadding, fitView, setFlow } from "../shell/actions.ts";
+import { chromePadding, fitNow, keepView, setFlow } from "../shell/actions.ts";
 
 /** Above this many parts wires stay plain smooth-step curves (routing every wire on every drag frame costs too much). */
 const ROUTE_MAX_PARTS = 60;
@@ -158,6 +159,15 @@ export function Canvas() {
   }, []);
 
   const onNodeDragStart = useCallback(() => useJumper.getState().checkpoint(), []);
+  // A pointer-down on the empty canvas starts a "move" too: only a real change of the view counts.
+  const moveFrom = useRef<Viewport | undefined>(undefined);
+  const onMoveStart = useCallback((_e: MouseEvent | TouchEvent | null, vp: Viewport) => {
+    moveFrom.current = vp;
+  }, []);
+  const onMove = useCallback((event: MouseEvent | TouchEvent | null, vp: Viewport) => {
+    const a = moveFrom.current;
+    if (event && a && (Math.abs(a.x - vp.x) > 1 || Math.abs(a.y - vp.y) > 1 || Math.abs(a.zoom - vp.zoom) > 1e-3)) keepView(true);
+  }, []);
 
   const onDragOver = useCallback((e: DragEvent) => {
     if (e.dataTransfer.types.includes(PART_MIME)) {
@@ -181,7 +191,20 @@ export function Canvas() {
   );
 
   return (
-    <div className="canvas" data-testid="canvas" data-tool={tool} onDragOver={onDragOver} onDrop={onDrop}>
+    <div
+      className="canvas"
+      data-testid="canvas"
+      data-tool={tool}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      // Round 6: the minimap and zoom controls move the view programmatically; they are the person too.
+      onPointerDownCapture={(e) => {
+        if ((e.target as Element).closest?.(".react-flow__minimap, .react-flow__controls")) keepView(true);
+      }}
+      onWheelCapture={(e) => {
+        if ((e.target as Element).closest?.(".react-flow__minimap")) keepView(true);
+      }}
+    >
       <RouteObstacles.Provider value={obstacles}>
         <ReactFlow<PartFlowNode, WireFlowEdge>
           nodes={nodes}
@@ -193,9 +216,14 @@ export function Canvas() {
           onConnect={onConnect}
           onDelete={onDelete}
           onNodeDragStart={onNodeDragStart}
+          // Round 6: a pan / zoom gesture (wheel, drag, pinch) makes the view the person's: automatic
+          // refits on save, build and run leave it alone (shell/actions.ts isViewKept).
+          onMoveStart={onMoveStart}
+          onMove={onMove}
+          nodeDragThreshold={4}
           onInit={(i) => {
             setFlow(i);
-            requestAnimationFrame(() => fitView(0));
+            requestAnimationFrame(() => fitNow(0));
           }}
           nodesDraggable={editable}
           nodesConnectable={tool !== "hand"}

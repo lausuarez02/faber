@@ -88,6 +88,24 @@ export class Engine {
   private localRun = false;
   /** Set by the live layer: fetches the latest built firmware and calls runLocal(). */
   private followRunner: (() => void) | undefined;
+  /**
+   * Round 6 (canvas): callbacks run before every simulated slice with the virtual time, so live
+   * motions (IMU shake / drop / spin) follow the simulation clock, never the wall clock. A callback
+   * returning false is removed.
+   */
+  private tickers = new Set<(timeMs: number) => boolean | void>();
+  /** Round 6 (canvas): the serial console follows the newest line until the person scrolls up. */
+  private serialFollow = true;
+  private serialFollowListeners = new Set<() => void>();
+  private onConsoleScroll = (): void => {
+    const el = this.consoleEl;
+    if (!el) return;
+    const follow = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+    if (follow !== this.serialFollow) {
+      this.serialFollow = follow;
+      for (const fn of this.serialFollowListeners) fn();
+    }
+  };
 
   constructor(private readonly store: JumperStore) {
     store.subscribe((s, prev) => {
@@ -177,10 +195,34 @@ export class Engine {
   }
 
   registerConsole(el: HTMLElement | null): void {
+    this.consoleEl?.removeEventListener("scroll", this.onConsoleScroll);
     this.consoleEl = el;
     if (el) {
       el.textContent = this.serial;
-      el.scrollTop = el.scrollHeight;
+      el.addEventListener("scroll", this.onConsoleScroll, { passive: true });
+      this.followSerial();
+    }
+  }
+
+  /** True while the serial console sticks to the newest line (false after the person scrolled up). */
+  get serialFollowing(): boolean {
+    return this.serialFollow;
+  }
+
+  subscribeSerialFollow = (fn: () => void): (() => void) => {
+    this.serialFollowListeners.add(fn);
+    return () => this.serialFollowListeners.delete(fn);
+  };
+
+  getSerialFollowing = (): boolean => this.serialFollow;
+
+  /** Jump to the newest serial line and follow it again. */
+  followSerial(): void {
+    const el = this.consoleEl;
+    if (el) el.scrollTop = el.scrollHeight;
+    if (!this.serialFollow) {
+      this.serialFollow = true;
+      for (const fn of this.serialFollowListeners) fn();
     }
   }
 
@@ -413,6 +455,55 @@ export class Engine {
     }
   }
 
+  // ------------------------------------------------------------- virtual-time hooks (round 6, canvas)
+
+  /** Virtual time of the local simulation (0 without one). */
+  get simTimeMs(): number {
+    return this.sim?.timeMs ?? 0;
+  }
+
+  /** The local simulation is advancing right now (running, not paused). */
+  get isRunning(): boolean {
+    return !!this.sim && this.store.getState().run === "running";
+  }
+
+  /**
+   * Call `fn(virtualMs)` before every simulated slice (2 virtual ms) until it returns false or the
+   * returned function is called. Nothing runs while the simulation is paused.
+   */
+  addSimTicker(fn: (timeMs: number) => boolean | void): () => void {
+    this.tickers.add(fn);
+    return () => this.tickers.delete(fn);
+  }
+
+  private runTickers(sim: Simulation): void {
+    for (const fn of [...this.tickers]) {
+      let keep: boolean | void;
+      try {
+        keep = fn(sim.timeMs);
+      } catch (err) {
+        keep = false;
+        console.error("live control tick failed", err);
+      }
+      if (keep === false) this.tickers.delete(fn);
+    }
+  }
+
+  /**
+   * Set number props on a running part from a ticker: no store update and no repaint (the frame
+   * repaints). Values the part refuses are skipped; setLiveValue reports them.
+   */
+  setSimValues(partId: string, values: Record<string, number>): void {
+    if (!this.sim) return;
+    for (const [k, v] of Object.entries(values)) {
+      try {
+        this.sim.setProp(partId, k, v);
+      } catch {
+        // out of range for this part: the slider path explains it
+      }
+    }
+  }
+
   // ------------------------------------------------------------- internals
 
   private build(): boolean {
@@ -495,7 +586,8 @@ export class Engine {
     this.unsubSim = undefined;
     this.sim?.dispose();
     this.sim = undefined;
-    if (useInteract.getState().active) useInteract.setState({ active: false, held: {} });
+    this.tickers.clear();
+    if (useInteract.getState().active) useInteract.setState({ active: false, held: {}, motion: {} });
     this.serialPending = [];
     if (this.net) {
       this.net = undefined;
@@ -545,6 +637,7 @@ export class Engine {
     try {
       while (todo > 1e-9) {
         const step = Math.min(SLICE_MS, todo);
+        if (this.tickers.size) this.runTickers(sim);
         sim.runFor(step);
         todo -= step;
         if (performance.now() - t0 > WALL_BUDGET_MS) break; // can't keep up: drop the rest, no spiral
@@ -598,10 +691,10 @@ export class Engine {
     }
     const el = this.consoleEl;
     if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
     if (trimmed) el.textContent = this.serial;
     else el.append(text);
-    if (atBottom) el.scrollTop = el.scrollHeight;
+    // Round 6 (canvas): follow the newest line unless the person scrolled up to read.
+    if (this.serialFollow) el.scrollTop = el.scrollHeight;
   }
 
   clearSerial(): void {

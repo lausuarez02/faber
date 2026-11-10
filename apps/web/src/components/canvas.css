@@ -1,0 +1,83 @@
+/* Round 6, canvas track: part labels and the serial console. Overrides app.css where it must. */
+
+/* The label shows the short id only and never runs wider than its part, so neighbours' labels do
+   not overlap; it is a drag handle (moves the part even while the device runs). */
+.react-flow__node .part-label {
+  pointer-events: auto;
+  cursor: grab;
+  overflow: hidden;
+  padding-right: 2px;
+}
+.react-flow__node .part-label:active {
+  cursor: grabbing;
+}
+.react-flow__node .part-label-id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.react-flow__node .part-label-type {
+  display: none !important;
+}
+
+/* A pressed pushbutton cap reads as pressed at any zoom, also after a quick click. */
+.part[data-state-pressed="true"] .part-svg [data-bind*="transform:capTransform"],
+.part[data-state-pressed="true"] .part-svg [data-bind*="transform:leverTransform"] {
+  filter: brightness(0.72);
+}
+
+/* Panels share the right column: each shrinks (its body scrolls) before the column itself has to
+   scroll, so a long Inspector never pushes Serial out of sight. */
+.panel-column > .float-panel {
+  flex: 0 1 auto;
+  min-height: 96px;
+}
+.panel-column > .float-panel.panel-serial {
+  min-height: 132px;
+}
+.panel-serial .float-panel-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel-serial .console-out {
+  flex: 1 1 220px;
+  height: auto;
+  max-height: 220px;
+  min-height: 64px;
+}
+.serial-newest {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-float);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-float);
+}
+.serial-newest:hover {
+  background: var(--bg-hover);
+}
+@media (max-width: 820px) {
+  .panel-serial .console-out {
+    max-height: 140px;
+  }
+}
+
+/* Inspector: wiring on the project's board. */
+.insp-wiring ul {
+  margin: 4px 0 10px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  font-size: 11.5px;
+}

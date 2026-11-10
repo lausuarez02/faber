@@ -4,6 +4,8 @@ import { engine, useJumper } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { WIRE_COLORS } from "../lib/store.ts";
 import { RotateCw, Trash2 } from "lucide-react";
+import { boardWiring, descriptionForBoard } from "@jumper/parts";
+import { pressPart, releasePart } from "../interact/press.ts";
 
 const NAMED_COLORS: Record<string, string> = {
   red: "#FF3B30",
@@ -71,12 +73,24 @@ function Overview() {
   );
 }
 
+/** The board the project runs on: the firmware's board, else the first board on the canvas. */
+function boardSpecOf(project: { parts: { id: string; type: string }[]; firmware?: { board?: string } }) {
+  const byId = project.firmware?.board ? project.parts.find((p) => p.id === project.firmware!.board) : undefined;
+  const part = byId ?? project.parts.find((p) => getDef(p.type)?.spec.category === "board");
+  return part ? getDef(part.type)?.spec : undefined;
+}
+
 function PartInspector({ partId }: { partId: string }) {
   const part = useJumper((s) => s.project.parts.find((p) => p.id === partId));
+  const project = useJumper((s) => s.project);
   if (!part) return null;
   const def = getDef(part.type);
   if (!def) return <div className="insp-body muted">Unknown part type “{part.type}”.</div>;
   const { spec, fidelity } = def;
+  // Round 6 (canvas): wiring for the project's own board (XIAO GP6 / GP7, not the Uno's A4 / A5).
+  const boardSpec = boardSpecOf(project);
+  const wiring = boardSpec ? boardWiring(spec, boardSpec) : undefined;
+  const description = wiring ? descriptionForBoard(spec.description, boardSpec) : spec.description;
   const interactive = spec.bindings?.some((b) => b.key === "pressed") || /button|switch/.test(spec.id);
   return (
     <div className="insp-body" data-testid="part-inspector">
@@ -91,16 +105,30 @@ function PartInspector({ partId }: { partId: string }) {
           {fidelity.level}
         </span>
       </div>
-      <p className="small muted">{spec.description}</p>
+      <p className="small muted">{description}</p>
+      {wiring ? (
+        <div className="insp-wiring small" data-testid="inspector-wiring">
+          <div className="insp-summary">Wiring on {boardSpec!.name}</div>
+          <ul className="mono">
+            {wiring.lines.map((l) => (
+              <li key={l.pin} title={l.note}>
+                {l.pin} → {l.toLabel}
+                {l.note ? <span className="muted"> · {l.note}</span> : null}
+              </li>
+            ))}
+            {wiring.free.length ? <li className="muted">{wiring.free.join(", ")} → any free GPIO</li> : null}
+          </ul>
+        </div>
+      ) : null}
 
       {interactive && (
         <div className="insp-actions">
           <button
             className="btn btn-press"
             data-testid="press-button"
-            onPointerDown={() => engine.interact(part.id, "press")}
-            onPointerUp={() => engine.interact(part.id, "release")}
-            onPointerLeave={(e) => e.buttons && engine.interact(part.id, "release")}
+            onPointerDown={() => pressPart(part.id)}
+            onPointerUp={() => releasePart(part.id)}
+            onPointerLeave={(e) => e.buttons && releasePart(part.id)}
           >
             Hold to press
           </button>
