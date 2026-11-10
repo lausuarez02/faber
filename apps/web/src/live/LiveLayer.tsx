@@ -8,6 +8,7 @@ import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts
 import { worldTracker } from "./worldTracker.ts";
 import { useUi } from "../lib/ui.ts";
 import { useInteract } from "../interact/store.ts";
+import { isViewKept } from "../shell/actions.ts"; // round 6 canvas
 import "./live.css";
 import { agentLabel, feedAgentState, plural, useAgentState, type AgentState } from "./agentState.ts";
 import { applyFirmwareToStore, autoRunEnabled, autoRunOnOpen, fetchFirmware, onAutoRun, onFirmwareEvent, onSketchWritten, runFollowed, setAutoRun } from "./followRun.ts";
@@ -73,6 +74,7 @@ function usePort(): CanvasPort {
       );
     },
     fit: () => {
+      if (isViewKept()) return; // round 6 canvas: never refit a view the person zoomed / panned
       clearTimeout(fitTimer.current);
       // Fit the circuit into the space the overlays leave free (steps, tests, code, world cards), so
       // no card covers a part, least of all a display.
