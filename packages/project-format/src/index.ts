@@ -18,6 +18,8 @@ export {
   CaseParamsSchema,
   CasePlacementSchema,
   EnclosureSchema,
+  CaseOutlineSchema,
+  CaseSizeSchema,
 } from "./schema.ts";
 export type {
   Point,
@@ -37,6 +39,8 @@ export type {
   CaseParams,
   CasePlacement,
   Enclosure,
+  CaseOutline,
+  CaseSize,
 } from "./schema.ts";
 export {
   ProjectParseError,

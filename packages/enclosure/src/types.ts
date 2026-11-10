@@ -77,6 +77,10 @@ export interface CaseReport {
   hash: string;
   /** What the case cannot promise (e.g. "snap-fit strength depends on the filament"). */
   notes: string[];
+  /** Round 7: a fixed size (size_mm / depth_mm) and how the parts fit it; auto sizes report fits: true. */
+  fit?: { fits: boolean; needed_mm: { w: number; h: number; d: number }; asked_mm?: { w?: number; h?: number; d?: number }; scale: number };
+  /** Round 7: the outer outline seen from the front (case frame, mm): the real silhouette, for previews. */
+  outline_mm?: [number, number][];
 }
 
 /** Meshes for the web Case view (GET /api/case/mesh). Positions are float32 xyz in the case frame, base64. */

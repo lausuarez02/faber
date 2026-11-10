@@ -157,7 +157,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   const cav2d = () => planDrawing(r, L.plan, 0);
   const zOutF = L.zFront + t;
   const zOutB = L.zBack - t;
-  const outerR = L.kind === "rrect" ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
+  const outerR = L.kind === "rrect" && !L.dome ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
   const outer = outerR.solid;
   const rf = outerR.r;
   const rfBack = outerR.rBack;
@@ -297,7 +297,8 @@ export async function buildCase(L: Layout): Promise<Built> {
       front = cutIf(front, spotTool);
       back = cutIf(back, spotTool);
     }
-    const tools: Solid[] = o.holes ? o.holes.map((h) => cylAlong(r, h.d, -0.8, len, h.at, o.n)) : [cutterFor(r, o, len)];
+    // a grille's holes are cut in one boolean (a compound of the cylinders), from inside the cavity to past the outer surface
+    const tools: Solid[] = o.holes ? [r.makeCompound(o.holes.map((h) => cylAlong(r, h.d, -0.8, len + 0.6, h.at, o.n)))] : [cutterFor(r, o, len)];
     for (const tool of tools) {
       front = cutIf(front, tool);
       back = cutIf(back, tool);

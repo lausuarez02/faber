@@ -4,7 +4,9 @@
  * the same thickness everywhere). Flats are straight cuts where a connector needs a flat wall.
  */
 
-export type PlanKind = "rrect" | "stadium" | "circle" | "ellipse";
+import { bsplinePoles, type Pt, signedArea } from "./outline.ts";
+
+export type PlanKind = "rrect" | "stadium" | "circle" | "ellipse" | "poly";
 
 export interface Flat {
   /** Which side: the flat keeps points with sign * (coord - at) <= 0, e.g. bottom = {axis:"y", sign:-1, at:-20} keeps y >= -20. */
@@ -25,6 +27,15 @@ export interface Plan {
   flats: Flat[];
   /** Radius rounding the corners where a flat meets a circle / stadium (drawing only), so a large edge fillet can roll round them. */
   flatCorner?: number;
+  /**
+   * Round 7, kind "poly" (a custom outline): the OUTER outline is the normalised curve (bounding
+   * box [-1, 1]²) scaled to half sizes (a + w0, b + w0) about (cx, cy); this plan is that outline
+   * offset inwards by w0 (the cavity when w0 = the wall). `ctrl` are the Bézier chain's points,
+   * `poly` its dense polygon (both normalised).
+   */
+  poly?: Pt[];
+  ctrl?: Pt[];
+  w0?: number;
 }
 
 /** A point that must be inside the cavity, with the extra inset needed at its depth (front / back fillet). */
@@ -32,6 +43,8 @@ export interface Need {
   x: number;
   y: number;
   inset: number;
+  /** The part that needs it (fit reports). */
+  part?: string;
 }
 
 export function contains(p: Plan, x: number, y: number, inset = 0): boolean {
@@ -75,6 +88,8 @@ export function contains(p: Plan, x: number, y: number, inset = 0): boolean {
       const ex = Math.max(0, along - half);
       return Math.hypot(ex, across) <= r - inset + 1e-6;
     }
+    case "poly":
+      return polyContains(p, x, y, inset);
     case "rrect": {
       const ax = Math.abs(dx);
       const ay = Math.abs(dy);
@@ -103,6 +118,11 @@ export function rayExit(p: Plan, x: number, y: number, ux: number, uy: number): 
 
 /** Sampled outline (counter-clockwise) of the plan grown by `offset` (negative = inward). */
 export function outline(p: Plan, offset = 0, n = 180): [number, number][] {
+  if (p.kind === "poly") {
+    let poly = polyOuter(p, offset - (p.w0 ?? 0));
+    for (const f of p.flats) poly = clip(poly, f.axis, f.sign, f.at + f.sign * offset);
+    return poly;
+  }
   // Sample the base shape by angle, then push each point along the outward normal by offset;
   // flats are applied by clipping the offset polygon.
   const raw: [number, number][] = [];
@@ -200,6 +220,10 @@ function minScale(base: Plan, needs: Need[]): number {
 }
 
 function scale(p: Plan, s: number): Plan {
+  if (p.kind === "poly") {
+    const w0 = p.w0 ?? 0;
+    return { ...p, a: (p.a + w0) * s - w0, b: (p.b + w0) * s - w0 };
+  }
   return { ...p, a: p.a * s, b: p.b * s, rc: p.kind === "rrect" ? Math.min(p.rc, p.a * s, p.b * s) : p.rc };
 }
 
@@ -215,6 +239,8 @@ function area(p: Plan): number {
     }
     case "rrect":
       return 4 * p.a * p.b - (4 - Math.PI) * p.rc * p.rc;
+    case "poly":
+      return Math.abs(signedArea(p.poly!)) * (p.a + (p.w0 ?? 0)) * (p.b + (p.w0 ?? 0));
   }
 }
 
@@ -287,7 +313,11 @@ export function sizePlan(kind: PlanKind, needs: Need[], opts: { center?: [number
 export function planDrawing(r: any, p: Plan, offset = 0): any {
   let d;
   const { a, b } = p;
+  const w0 = p.kind === "poly" ? (p.w0 ?? 0) : 0;
   switch (p.kind) {
+    case "poly":
+      d = polyDrawing(r, p, w0);
+      break;
     case "circle":
       d = r.drawCircle(a);
       break;
@@ -303,7 +333,9 @@ export function planDrawing(r: any, p: Plan, offset = 0): any {
   }
   d = d.translate(p.cx, p.cy);
   const big = 4 * Math.max(a, b) + 40;
-  for (const f of p.flats) {
+  for (const f0 of p.flats) {
+    // a poly plan's base drawing is the outer outline (w0 out): its flats move out with it
+    const f = { ...f0, at: f0.at + f0.sign * w0 };
     // keep the half-plane sign * (coord - at) <= 0
     const keep = f.axis === "x" ? r.drawRectangle(big, big).translate(f.sign > 0 ? f.at - big / 2 : f.at + big / 2, p.cy) : r.drawRectangle(big, big).translate(p.cx, f.sign > 0 ? f.at - big / 2 : f.at + big / 2);
     d = d.intersect(keep);
@@ -318,5 +350,253 @@ export function planDrawing(r: any, p: Plan, offset = 0): any {
       }
     }
   }
-  return Math.abs(offset) > 1e-9 ? d.offset(offset) : d;
+  const off = offset - w0;
+  if (Math.abs(off) <= 1e-9) return d;
+  if (p.kind !== "poly") return d.offset(off);
+  try {
+    const o = d.offset(off);
+    if (o?.innerShape) return o;
+  } catch {
+    // below
+  }
+  // OpenCascade could not offset this curve (an empty result): a chain through the offset polygon instead
+  return polyDrawing(r, p, offset).translate(p.cx, p.cy);
 }
+
+/** Plan grown by `off` (negative = inward): the same shape with the wall moved, flats included. */
+export function growPlan(p: Plan, off: number): Plan {
+  return { ...p, a: p.a + off, b: p.b + off, rc: p.rc + off, flats: p.flats.map((f) => ({ ...f, at: f.at + f.sign * off })), ...(p.kind === "poly" ? { w0: (p.w0 ?? 0) - off } : {}) };
+}
+
+// ---------------------------------------------------------------- custom outlines (kind "poly")
+
+/** The outer outline (mm, case frame), pushed out by `off` along its normals (negative = in). */
+export function polyOuter(p: Plan, off = 0): Pt[] {
+  const w0 = p.w0 ?? 0;
+  const A = p.a + w0;
+  const B = p.b + w0;
+  const P = p.poly!.map(([x, y]) => [p.cx + x * A, p.cy + y * B] as Pt);
+  if (Math.abs(off) < 1e-9) return P;
+  const m = P.length;
+  return P.map((q, i) => {
+    const a = P[(i - 1 + m) % m]!;
+    const b = P[(i + 1) % m]!;
+    const tx = b[0] - a[0];
+    const ty = b[1] - a[1];
+    const l = Math.hypot(tx, ty) || 1;
+    return [q[0] + (ty / l) * off, q[1] - (tx / l) * off] as Pt; // counter-clockwise: (ty, -tx) points out
+  });
+}
+
+/** Replicad drawing of the plan's outline grown to `offset` (centred on the origin; the caller translates). Exact at offset = w0 (the outer outline). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function polyDrawing(r: any, p: Plan, offset: number): any {
+  const w0 = p.w0 ?? 0;
+  const A = p.a + w0;
+  const B = p.b + w0;
+  let ctrl: Pt[] = p.ctrl!.map(([x, y]) => [x * A, y * B]);
+  if (Math.abs(offset - w0) > 1e-9) {
+    const outer = polyOuter({ ...p, cx: 0, cy: 0 }, offset - w0);
+    const step = outer.length / ctrl.length;
+    ctrl = bsplinePoles(Array.from({ length: ctrl.length }, (_, i) => outer[Math.floor(i * step)]!));
+  }
+  // one periodic cubic B-spline edge (uniform knots), exactly the curve sampleBSpline traces
+  const oc = r.getOC();
+  const n = ctrl.length;
+  const poles = new oc.NCollection_Array1_gp_Pnt2d(1, n);
+  ctrl.forEach(([x, y], i) => poles.SetValue(i + 1, new oc.gp_Pnt2d(x, y)));
+  const knots = new oc.NCollection_Array1_double(1, n + 1);
+  const mults = new oc.NCollection_Array1_int(1, n + 1);
+  for (let i = 0; i <= n; i++) {
+    knots.SetValue(i + 1, i);
+    mults.SetValue(i + 1, 1);
+  }
+  const curve = new oc.Geom2d_BSplineCurve(poles, knots, mults, 3, true);
+  return new r.Drawing(new r.Blueprint([new r.Curve2D(curve)]));
+}
+
+interface Sdf {
+  k: number;
+  x0: number;
+  y0: number;
+  step: number;
+  nx: number;
+  ny: number;
+  d: Float32Array;
+  ref: Float64Array; // reference polygon (x, k·y) pairs, half width 1
+}
+const sdfCache = new WeakMap<Pt[], Map<string, Sdf>>();
+
+function refDist(S: Sdf, X: number, Y: number): number {
+  const R = S.ref;
+  const n = R.length / 2;
+  let best = Infinity;
+  let inside = false;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const ax = R[2 * j]!;
+    const ay = R[2 * j + 1]!;
+    const bx = R[2 * i]!;
+    const by = R[2 * i + 1]!;
+    if (by > Y !== ay > Y && X < ((ax - bx) * (Y - by)) / (ay - by) + bx) inside = !inside;
+    const ex = bx - ax;
+    const ey = by - ay;
+    const l2 = ex * ex + ey * ey || 1e-12;
+    const t = Math.max(0, Math.min(1, ((X - ax) * ex + (Y - ay) * ey) / l2));
+    const dx = ax + ex * t - X;
+    const dy = ay + ey * t - Y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < best) best = d2;
+  }
+  const d = Math.sqrt(best);
+  return inside ? d : -d;
+}
+
+/** Signed distance field of the outline at aspect k = B / A, in units of A (positive inside). */
+let lastSdf: { poly: Pt[]; k: number; S: Sdf } | undefined;
+function sdfOf(poly: Pt[], k: number): Sdf {
+  if (lastSdf && lastSdf.poly === poly && Math.abs(lastSdf.k - k) < 1e-9) return lastSdf.S;
+  const S = sdfBuild(poly, k);
+  lastSdf = { poly, k, S };
+  return S;
+}
+
+function sdfBuild(poly: Pt[], k: number): Sdf {
+  const key = k.toFixed(6);
+  let m = sdfCache.get(poly);
+  if (!m) sdfCache.set(poly, (m = new Map()));
+  const hit = m.get(key);
+  if (hit) return hit;
+  const ref = new Float64Array(poly.length * 2);
+  poly.forEach(([x, y], i) => {
+    ref[2 * i] = x;
+    ref[2 * i + 1] = y * k;
+  });
+  const span = Math.max(1, k);
+  const margin = 0.12 * span;
+  const step = (2 * span + 2 * margin) / 150;
+  const x0 = -1 - margin;
+  const y0 = -k - margin;
+  const nx = Math.ceil((2 + 2 * margin) / step) + 1;
+  const ny = Math.ceil((2 * k + 2 * margin) / step) + 1;
+  const S: Sdf = { k, x0, y0, step, nx, ny, d: new Float32Array(nx * ny), ref };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) S.d[j * nx + i] = refDist(S, x0 + i * step, y0 + j * step);
+  if (m.size > 8) m.clear();
+  m.set(key, S);
+  return S;
+}
+
+let FAST = false;
+/** Run f with the outline test on its distance field only (no exact check near the wall): packing searches, which keep their own margin. */
+export function withFastOutline<T>(f: () => T): T {
+  const was = FAST;
+  FAST = true;
+  try {
+    return f();
+  } finally {
+    FAST = was;
+  }
+}
+
+function polyContains(p: Plan, x: number, y: number, inset: number): boolean {
+  const w0 = p.w0 ?? 0;
+  const A = p.a + w0;
+  const B = p.b + w0;
+  if (A <= 0 || B <= 0) return false;
+  const S = sdfOf(p.poly!, B / A);
+  const X = (x - p.cx) / A;
+  const Y = (y - p.cy) / A;
+  const thr = (w0 + inset) / A;
+  const fi = (X - S.x0) / S.step;
+  const fj = (Y - S.y0) / S.step;
+  if (fi < 0 || fj < 0 || fi >= S.nx - 1 || fj >= S.ny - 1) return false;
+  const i = Math.floor(fi);
+  const j = Math.floor(fj);
+  const u = fi - i;
+  const v = fj - j;
+  const d = S.d;
+  const val = (1 - u) * (1 - v) * d[j * S.nx + i]! + u * (1 - v) * d[j * S.nx + i + 1]! + (1 - u) * v * d[(j + 1) * S.nx + i]! + u * v * d[(j + 1) * S.nx + i + 1]!;
+  if (FAST) return val >= thr;
+  if (val - thr > 1.5 * S.step) return true;
+  if (val - thr < -1.5 * S.step) return false;
+  return refDist(S, X, Y) >= thr - 1e-6 / A;
+}
+
+/** Signed distance (mm) from (x, y) to the plan's outer outline, positive inside. */
+export function polyDistance(p: Plan, x: number, y: number): number {
+  const w0 = p.w0 ?? 0;
+  const A = p.a + w0;
+  const S = sdfOf(p.poly!, (p.b + w0) / A);
+  return refDist(S, (x - p.cx) / A, (y - p.cy) / A) * A;
+}
+
+export interface PolySpec {
+  poly: Pt[];
+  ctrl: Pt[];
+  /** Wall: the cavity sits this far inside the outline. */
+  w0: number;
+  /** Outer half sizes of the reference outline (fixed size: the asked size; auto: any, only the aspect counts). */
+  A0: number;
+  B0: number;
+  /** true: the size is fixed (the plan is never scaled; the returned scale says how much it would need). */
+  fixed: boolean;
+  /** Quick search (check_fit, pack scoring): a coarser centre search. */
+  quick?: boolean;
+}
+
+/**
+ * Size (auto) or place (fixed) a custom outline around the needs: the centre giving the smallest
+ * scale is searched; returns the plan and the scale the needs ask for (1 = exactly the reference size).
+ */
+export function sizePoly(needs: Need[], spec: PolySpec): { plan: Plan; scale: number } {
+  const xs = needs.map((q) => q.x);
+  const ys = needs.map((q) => q.y);
+  const bx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const by = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const hx = Math.max(1, (Math.max(...xs) - Math.min(...xs)) / 2);
+  const hy = Math.max(1, (Math.max(...ys) - Math.min(...ys)) / 2);
+  const mk = (cx: number, cy: number, s: number): Plan => ({ kind: "poly", cx, cy, a: spec.A0 * s - spec.w0, b: spec.B0 * s - spec.w0, rc: 0, flats: [], poly: spec.poly, ctrl: spec.ctrl, w0: spec.w0 });
+  const ok = (cx: number, cy: number, q: Need, s: number) => polyContains(mk(cx, cy, s), q.x, q.y, q.inset);
+  const minS = (cx: number, cy: number, cap: number): number => {
+    const order = [...needs].sort((p, q) => Math.hypot(q.x - cx, q.y - cy) + q.inset - (Math.hypot(p.x - cx, p.y - cy) + p.inset));
+    let s = 0.02;
+    for (const q of order) {
+      if (ok(cx, cy, q, s)) continue;
+      let lo = s;
+      let hi = Math.max(s * 1.3, 0.05);
+      while (!ok(cx, cy, q, hi)) {
+        lo = hi;
+        hi *= 1.4;
+        if (hi > cap * 1.4 + 1e-9) return Infinity;
+      }
+      for (let i = 0; i < (spec.quick ? 14 : 22); i++) {
+        const mid = (lo + hi) / 2;
+        if (ok(cx, cy, q, mid)) hi = mid;
+        else lo = mid;
+      }
+      s = hi;
+      if (s > cap) return Infinity;
+    }
+    return s;
+  };
+  let best = { cx: bx, cy: by, s: minS(bx, by, 1e3) };
+  let stepX = (hx * 0.6) / 3;
+  let stepY = (hy * 0.6) / 3;
+  const rounds = spec.quick ? 2 : 3;
+  for (let r = 0; r < rounds; r++) {
+    const c0 = { ...best };
+    const N = r === 0 ? 3 : 2;
+    for (let i = -N; i <= N; i++)
+      for (let j = -N; j <= N; j++) {
+        if (!i && !j) continue;
+        const cx = c0.cx + i * stepX;
+        const cy = c0.cy + j * stepY;
+        const s = minS(cx, cy, best.s);
+        if (s < best.s) best = { cx, cy, s };
+      }
+    stepX /= 2.5;
+    stepY /= 2.5;
+  }
+  const s = best.s * (1 + 1e-4);
+  return { plan: mk(best.cx, best.cy, spec.fixed ? 1 : s), scale: s };
+}
+

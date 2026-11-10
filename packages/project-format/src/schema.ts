@@ -77,8 +77,12 @@ export const PowerOptionsSchema = z.object({
     .describe("A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only."),
 });
 
-/** R3: case shapes. */
-export const CASE_SHAPES = ["rounded-box", "pill", "pebble", "puck", "keychain"] as const;
+/**
+ * R3: case shapes. The five presets are starting points; "custom" takes any outline the agent or
+ * the person draws (enclosure.outline) at any size (enclosure.size_mm). Round 7: there is no
+ * preset per object (no "egg"): an egg, a heart or a bean is a custom outline.
+ */
+export const CASE_SHAPES = ["rounded-box", "pill", "pebble", "puck", "keychain", "custom"] as const;
 export const CaseShapeSchema = z.enum(CASE_SHAPES);
 
 /** R3: case faces, seen from the person holding it with the screen (front) towards them. */
@@ -94,6 +98,12 @@ export const CaseParamsSchema = z.object({
   tolerance_mm: z.number().min(0).max(1).optional().describe("Clearance between mating parts, mm (default 0.2 for FDM)."),
   process: z.enum(["fdm", "resin", "injection"]).optional().describe("Target process for notes and tolerances (default fdm)."),
   gap_mm: z.number().min(0).max(10).optional().describe("Free room around parts for wires, mm (default 1.5)."),
+  // Round 7: 3D finish, for every shape.
+  edge_radius_front_mm: z.union([z.number().min(0).max(40), z.literal("auto")]).optional().describe("Round-over of the front rim, mm, or 'auto' (default: a share of the depth per shape; custom and pebble are round all over). Clamped where a side opening needs a straight wall."),
+  edge_radius_back_mm: z.union([z.number().min(0).max(40), z.literal("auto")]).optional().describe("Round-over of the back rim, mm, or 'auto'."),
+  dome_mm: z.union([z.number().min(0).max(15), z.literal("auto")]).optional().describe("How far the front and back faces bulge out (a sphere cap with a flat print pad), mm, or 'auto' (pebble and custom about 1 mm, the other shapes flat)."),
+  dome_back_mm: z.union([z.number().min(0).max(15), z.literal("auto")]).optional().describe("The back face's bulge when it differs from dome_mm, mm."),
+  depth_mm: z.union([z.number().min(6).max(120), z.literal("auto")]).optional().describe("Overall thickness front to back, mm, or 'auto' (the thinnest that holds the parts). Same as size_mm.d."),
 });
 
 export const CasePlacementSchema = z.object({
@@ -102,6 +112,27 @@ export const CasePlacementSchema = z.object({
   y_mm: z.number().optional(),
   rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]).optional().describe("Turn on that face, degrees."),
   layer: z.number().int().min(0).max(9).optional().describe("Stack layer from the front (0 = right behind the front wall)."),
+  on_edge: z.boolean().optional().describe("Stand the part on its edge (its board plane front to back) instead of lying flat: narrower, thicker."),
+});
+
+/**
+ * Round 7: a custom case outline, the FRONT view of the case in mm. Either an SVG path (M / L / H /
+ * V / C / S / Q / T / A / Z, absolute or relative; SVG's y points DOWN, as in any drawing program)
+ * or a list of points in the case frame (y points UP) with optional smoothing (a closed centripetal
+ * Catmull-Rom spline through the points). One closed shape, not crossing itself.
+ */
+export const CaseOutlineSchema = z.union([
+  z.string().min(2).max(20000).describe("SVG path data of the front outline in mm, e.g. 'M 0 -40 C 24 -40 30 0 30 10 C 30 30 16 40 0 40 C -16 40 -30 30 -30 10 C -30 0 -24 -40 0 -40 Z' (y down, like SVG)."),
+  z.object({
+    points: z.array(z.tuple([z.number(), z.number()])).min(3).max(400).describe("Outline points [x, y] in mm, y UP (the top of the device is +y)."),
+    smooth: z.boolean().optional().describe("true = a smooth closed curve through the points (default true); false = straight lines (corners are rounded to stay printable)."),
+  }),
+]);
+
+export const CaseSizeSchema = z.object({
+  w: z.number().min(15).max(250).optional().describe("Overall width (x), mm."),
+  h: z.number().min(15).max(250).optional().describe("Overall height (y), mm."),
+  d: z.number().min(6).max(120).optional().describe("Overall thickness (z, front to back), mm."),
 });
 
 export const EnclosureSchema = z.object({
@@ -110,6 +141,8 @@ export const EnclosureSchema = z.object({
   front: z.string().optional().describe("Part id whose screen faces out of the front (default: the first display)."),
   placements: z.record(z.string(), CasePlacementSchema).optional().describe("Per part id: where it goes. Parts left out are auto-packed."),
   exclude: z.array(z.string()).optional().describe("Part ids that are not inside the case (e.g. a test resistor, an external sensor on a cable)."),
+  outline: CaseOutlineSchema.optional().describe("Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Jumper fits the parts inside it."),
+  size_mm: CaseSizeSchema.optional().describe("Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit)."),
 });
 
 export type AssemblyStyle = z.infer<typeof AssemblyStyleSchema>;
@@ -118,6 +151,8 @@ export type CaseShape = z.infer<typeof CaseShapeSchema>;
 export type CaseParams = z.infer<typeof CaseParamsSchema>;
 export type CasePlacement = z.infer<typeof CasePlacementSchema>;
 export type Enclosure = z.infer<typeof EnclosureSchema>;
+export type CaseOutline = z.infer<typeof CaseOutlineSchema>;
+export type CaseSize = z.infer<typeof CaseSizeSchema>;
 
 export const ProjectSchema = z
   .object({
