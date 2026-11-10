@@ -59,6 +59,69 @@ export interface ProjectCard {
   versions?: number;
   /** Agent-made part types placed on its canvas (create_part; "agent-made: behavioral, unverified"). */
   agentMade?: number;
+  /** A project: the id of the example it was copied from (round 6b). */
+  copyOf?: string;
+  /** An example: the id of the person's own copy that opening it reopens (round 6b). */
+  copy?: string;
+}
+
+// ------------------------------------------------------------------------------- example copies
+
+const originCache = new Map<string, string | null>();
+
+/**
+ * The example a project folder was copied from: `.jumper/origin.json`, or (copies made before it
+ * existed) the `open_example` entry of its action log, which is then written to origin.json so the
+ * log is read once. Undefined for a project that is not a copy.
+ */
+export function copiedFrom(dir: string): string | undefined {
+  const file = join(dir, ".jumper", "origin.json");
+  const cached = originCache.get(dir);
+  if (cached !== undefined) return cached ?? undefined;
+  let from: string | undefined;
+  try {
+    if (existsSync(file)) from = (JSON.parse(readFileSync(file, "utf8")) as { from?: string }).from;
+    else {
+      const log = join(dir, ".jumper", "actions.jsonl");
+      if (existsSync(log)) {
+        for (const line of readFileSync(log, "utf8").split("\n")) {
+          if (!line.includes('"open_example"')) continue;
+          try {
+            const e = JSON.parse(line) as { op?: string; args?: { from?: unknown } };
+            if (e.op === "open_example" && typeof e.args?.from === "string") from = e.args.from;
+          } catch {
+            // a torn line
+          }
+        }
+        if (from) writeOrigin(dir, from);
+      }
+    }
+  } catch {
+    // unreadable: not a known copy
+  }
+  originCache.set(dir, from ?? null);
+  return from;
+}
+
+function writeOrigin(dir: string, from: string): void {
+  try {
+    mkdirSync(join(dir, ".jumper"), { recursive: true });
+    writeFileSync(join(dir, ".jumper", "origin.json"), JSON.stringify({ from }) + "\n");
+    originCache.set(dir, from);
+  } catch {
+    // read-only folder: the log scan answers next time
+  }
+}
+
+/** "Pocket Muse" → "Pocket Muse (2)" (or the next free number) when a project already has that name. */
+export function freeName(name: string, taken: readonly string[]): string {
+  const have = new Set(taken.map((n) => n.trim().toLowerCase()));
+  if (!have.has(name.trim().toLowerCase())) return name;
+  const base = name.replace(/\s+\(\d+\)$/, "");
+  for (let i = 2; ; i++) {
+    const next = `${base} (${i})`;
+    if (!have.has(next.toLowerCase())) return next;
+  }
 }
 
 /** The registry a folder draws with: the active session's, or built-ins plus that folder's parts/. */
@@ -238,6 +301,18 @@ function listing(ctx: RouteContext): Listing {
   for (const d of childProjects(h.root)) add(d, "project");
   for (const r of listRegisteredProjects()) if (existsSync(join(r.dir, "jumper.json"))) add(r.dir, isInside(r.dir, h.root) ? "project" : "registered");
   projects.sort((a, b) => (a.dir === active ? -1 : b.dir === active ? 1 : b.updatedAt.localeCompare(a.updatedAt)));
+  // Round 6b: which project is the person's copy of which example (the newest copy wins).
+  const copyOfExample = new Map<string, string>();
+  for (const c of projects) {
+    const from = copiedFrom(c.dir);
+    if (!from) continue;
+    c.copyOf = from;
+    if (!copyOfExample.has(from)) copyOfExample.set(from, c.id);
+  }
+  for (const e of [...examples, ...agentBuilt]) {
+    const copy = copyOfExample.get(e.id);
+    if (copy) e.copy = copy;
+  }
   return { active: projectId(active), projects, examples: [...examples, ...agentBuilt] };
 }
 
@@ -327,6 +402,7 @@ const COPY_SKIP_EXT = /\.(mp4|webm|mov|gif)$/i;
 function copyExample(from: string, to: string): void {
   cpSync(from, to, {
     recursive: true,
+    preserveTimestamps: true,
     filter: (src) => {
       const rel = relative(from, src);
       if (!rel) return true;
@@ -344,15 +420,25 @@ function copyExample(from: string, to: string): void {
 async function createProject(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): Promise<void> {
   if (!needToken(req, res, ctx)) return;
   const h = host(ctx);
-  const body = await readBody<{ name?: unknown; template?: unknown; from?: unknown }>(req, res, ctx, '{"name": "My device"}');
+  const body = await readBody<{ name?: unknown; template?: unknown; from?: unknown; copy?: unknown }>(req, res, ctx, '{"name": "My device"}');
   if (!body) return;
   const template = typeof body.template === "string" ? body.template : undefined;
   if (template && !TEMPLATES[template]) return ctx.json(res, 400, err(`No template '${template}'`, `templates are ${Object.keys(TEMPLATES).join(", ")}`, "pass one of those, or leave template out for a blank project"));
   let source: ProjectCard | undefined;
   if (body.from !== undefined) {
     if (typeof body.from !== "string") return ctx.json(res, 400, err("'from' must be an example id", `got ${JSON.stringify(body.from)}`, "pass the id of a card in GET /api/projects examples"));
-    source = findCard(ctx, body.from);
+    const l = listing(ctx);
+    source = l.examples.find((c) => c.id === body.from) ?? l.projects.find((c) => c.id === body.from);
     if (!source) return ctx.json(res, 404, noProject(body.from));
+    // Round 6b: opening an example again reopens the person's copy; a new copy only when asked
+    // ({"copy": true}), named "Pocket Muse (2)" so the cards tell them apart.
+    const existing = body.copy === true ? undefined : l.projects.find((c) => c.id === source!.copy);
+    if (existing) {
+      registerProject(existing.dir, { name: existing.name, source: "web" });
+      await h.open(existing.dir);
+      return ctx.json(res, 200, { id: existing.id, dir: existing.dir, reopened: true });
+    }
+    body.name = freeName(typeof body.name === "string" && body.name.trim() ? body.name.trim() : source.name, l.projects.map((c) => c.name));
   }
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 80) : (source?.name ?? "Untitled device");
   let dir: string;
@@ -371,6 +457,14 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
       if (data.name !== name) writeFileSync(file, JSON.stringify({ ...data, name }, null, 2) + "\n");
       // Round 6: the copy as it came is a version, so the person can always go back to it.
       recordSnapshot(dir, { op: "open_example", why: `opened the example ${source.name}`, summary: `the example ${source.name} as it came`, args: { from: source.id } });
+      writeOrigin(dir, source.id);
+      // Its shipped hex is the build of the sketch it came with (no false "sketch changed").
+      const s = new ProjectSession({ dir, actor: "web" });
+      try {
+        s.adoptShippedBuild();
+      } finally {
+        s.dispose();
+      }
     } else {
       // The same path an agent's new_project takes, so the first version is in the log.
       const s = new ProjectSession({ dir, actor: "web" });
