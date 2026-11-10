@@ -6,7 +6,7 @@
  */
 import { apply, type Mat3, ROTATIONS } from "./mech.ts";
 import type { Layout, Opening } from "./layout.ts";
-import { planBounds, planDrawing } from "./plan.ts";
+import { contains, planBounds, planDrawing } from "./plan.ts";
 import { occt, type Replicad } from "./occt.ts";
 import type { CaseFile, Vec3 } from "./types.ts";
 
@@ -205,7 +205,17 @@ export async function buildCase(L: Layout): Promise<Built> {
   const big = (z0: number, z1: number) => r.makeBox([ob[0][0] - 20, ob[0][1] - 20, z0], [ob[1][0] + 20, ob[1][1] + 20, z1]);
   let front = shell.intersect(big(L.split, ob[1][2] + 5));
   let back = shell.intersect(big(ob[0][2] - 5, L.split));
-  const clip = (s: Solid) => s.intersect(outer);
+  // Clipping to the rounded outer body is the slowest boolean here: skip it for a piece whose box
+  // is well inside the cavity's plan (shrunk by the edge rounds) and within the wall planes.
+  const zIn: [number, number] = [L.zBack - t + 0.05, L.zFront + t - 0.05];
+  const inside = (s: Solid) => {
+    const [lo, hi] = s.boundingBox.bounds as [Vec3, Vec3];
+    if (lo[2] < zIn[0] || hi[2] > zIn[1]) return false;
+    const inset = Math.max(L.ri, L.riBack) + 0.1;
+    for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) if (!contains(L.plan, x, y, inset)) return false;
+    return true;
+  };
+  const clip = (s: Solid) => (inside(s) ? s : s.intersect(outer));
 
   // closure
   if (L.lip) {
@@ -219,7 +229,9 @@ export async function buildCase(L: Layout): Promise<Built> {
     } else notes.push(`The ${t} mm wall is too thin for a snap groove (it would leave less than 1.2 mm), so the lip is a friction fit; use wall_mm 1.8 or more for a snap bead, or closure "screws".`);
     // the lip stops where a part sits against the wall (a USB port, a button)
     for (const p of L.placed) if (p.max[2] > L.split - lip.h - 0.5 && p.min[2] < L.split + 0.8) lipS = lipS.cut(r.makeBox([p.bodyMin[0] - 0.4, p.bodyMin[1] - 0.4, L.split - lip.h - 1], [p.bodyMax[0] + 0.4, p.bodyMax[1] + 0.4, L.split + 1]));
-    front = front.fuse(clip(lipS));
+    // the split and its lip sit on the straight band of the side wall (the layout keeps the edge
+    // rounds off it), where the ledge (half a wall deep) is inside the outer body: no clip needed
+    front = front.fuse(lipS);
   }
   let screws: Built["screws"];
   if (L.bosses.length) {
@@ -235,29 +247,46 @@ export async function buildCase(L: Layout): Promise<Built> {
     const std = [4, 5, 6, 8, 10, 12, 14, 16, 20, 25].find((s) => s >= len - 0.5 && s <= len + 1.5) ?? Math.round(len);
     screws = { count: L.bosses.length, size: `M2 x ${std} mm pan head`, inserts: "M2 x 3 mm brass heat-set inserts (3.2 mm hole), pressed into the front bosses with a soldering iron at ~220 °C" };
   }
+  // ribs, posts and cradles are fused into each shell in one boolean (each fuse with the rounded
+  // shell is slow; fusing the small pieces together first is not)
+  const addF: Solid[] = [];
+  const addB: Solid[] = [];
   for (const rib of L.ribs) {
     const z0 = rib.shell === "front" ? rib.min[2] : rib.min[2] - 0.3;
     const z1 = rib.shell === "front" ? rib.max[2] + 0.3 : rib.max[2];
     const box = clip(r.makeBox([rib.min[0], rib.min[1], z0], [rib.max[0], rib.max[1], z1]));
-    if (rib.shell === "front") front = front.fuse(box);
-    else back = back.fuse(box);
+    (rib.shell === "front" ? addF : addB).push(box);
   }
   for (const p of L.posts) {
     const z0 = p.shell === "back" ? p.z0 - 0.3 : p.z0;
     const z1 = p.shell === "front" ? p.z1 + 0.3 : p.z1;
     let s = r.makeCylinder(p.d / 2, z1 - z0, [p.x, p.y, z0], [0, 0, 1]);
     if (p.pin_d) s = s.fuse(p.shell === "back" ? r.makeCylinder(p.pin_d / 2, 1.5, [p.x, p.y, z1], [0, 0, 1]) : r.makeCylinder(p.pin_d / 2, 1.5, [p.x, p.y, z0 - 1.5], [0, 0, 1]));
-    if (p.shell === "front") front = front.fuse(clip(s));
-    else back = back.fuse(clip(s));
+    (p.shell === "front" ? addF : addB).push(clip(s));
   }
   for (const c of L.cradles) {
     const z0 = L.zBack - 0.3;
     const z1 = L.zBack + c.h;
     const ring = r.makeBox([c.min[0] - c.wall, c.min[1] - c.wall, z0], [c.max[0] + c.wall, c.max[1] + c.wall, z1]).cut(r.makeBox([c.min[0], c.min[1], z0 - 1], [c.max[0], c.max[1], z1 + 1]));
-    back = back.fuse(clip(ring));
+    addB.push(clip(ring));
   }
+  const fuseAll = (shell: Solid, pieces: Solid[]) => {
+    if (!pieces.length) return shell;
+    let all = pieces[0]!;
+    for (const q of pieces.slice(1)) all = all.fuse(q);
+    return shell.fuse(all);
+  };
+  front = fuseAll(front, addF);
+  back = fuseAll(back, addB);
 
-  // openings through whichever shell they cross
+  // openings through whichever shell they cross (a cut whose box misses a shell's box is skipped)
+  const boxOf = (x: Solid) => x.boundingBox.bounds as [Vec3, Vec3];
+  const cutIf = (shell: Solid, tool: Solid) => {
+    const [a0, a1] = boxOf(shell);
+    const [b0, b1] = boxOf(tool);
+    for (let k = 0; k < 3; k++) if (b1[k]! < a0[k]! - 0.01 || b0[k]! > a1[k]! + 0.01) return shell;
+    return shell.cut(tool);
+  };
   const bodies: Body[] = [];
   const color = L.params.color;
   for (const o of L.openings) {
@@ -265,13 +294,13 @@ export async function buildCase(L: Layout): Promise<Built> {
     if (o.spot) {
       // flat recess on the outside round the port: from depth (the thinned wall) outwards
       const spotTool = orient(r.drawRoundedRectangle(o.u + 4, o.v + 4, Math.min(2, (o.v + 4) / 2 - 0.01)).sketchOnPlane("XY", o.depth).extrude(o.spot + 6), frameR(o.uAxis, o.vAxis, o.n)).translate(o.at);
-      front = front.cut(spotTool);
-      back = back.cut(spotTool);
+      front = cutIf(front, spotTool);
+      back = cutIf(back, spotTool);
     }
     const tools: Solid[] = o.holes ? o.holes.map((h) => cylAlong(r, h.d, -0.8, len, h.at, o.n)) : [cutterFor(r, o, len)];
     for (const tool of tools) {
-      front = front.cut(tool);
-      back = back.cut(tool);
+      front = cutIf(front, tool);
+      back = cutIf(back, tool);
     }
     if (o.insert) {
       const ins = o.insert;

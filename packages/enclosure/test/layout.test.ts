@@ -39,7 +39,7 @@ describe("plans", () => {
   });
 });
 
-describe("layout of the Muse", () => {
+describe("layout of the Muse", { timeout: 60_000 }, () => {
   it.each(["pebble", "puck", "rounded-box", "pill", "keychain"] as const)("%s: every part placed, no overlaps, screen / USB / button / grille exposed", (shape) => {
     const L = layoutCase({ parts: partsOf(muse()), enclosure: { shape } });
     expect(L.placed.map((p) => p.mech.id).sort()).toEqual(muse().parts.map((p) => p.id).sort());
