@@ -38,7 +38,7 @@ export function specOf(registry: PartRegistry, part: PartInstance): PartSpec {
 const GROUND_ALIASES = new Set(["gnd", "ground", "-", "0v", "vss"]);
 const POWER_ALIASES: Record<string, string[]> = {
   vcc: ["VCC", "5V", "VIN", "V+", "+", "VDD", "3V3"],
-  "5v": ["5V", "VCC"],
+  "5v": ["5V", "VCC", "VBUS"],
   "3.3v": ["3V3"],
   "3v3": ["3V3"],
   vdd: ["VDD", "VCC"],
@@ -62,11 +62,20 @@ export function resolvePin(partId: string, spec: PartSpec, name: string, used: R
     if (grounds.length) return grounds.find((p) => !used.has(p.id)) ?? grounds[0]!;
   }
   if (spec.category === "board" && /^\d+$/.test(name)) {
-    const d = pins.find((p) => p.id === `D${name}`);
+    const d = pins.find((p) => p.id === `D${name}`) ?? pins.find((p) => p.id === `GP${name}`);
+    if (d) return d;
+  }
+  // RP2040 boards: "GPIO25" → GP25.
+  const gpio = /^gpio(\d+)$/.exec(lower);
+  if (spec.category === "board" && gpio) {
+    const d = pins.find((p) => p.id === `GP${gpio[1]}`);
     if (d) return d;
   }
   const byLabel = pins.filter((p) => p.label.toLowerCase() === lower && p.type !== "ground");
   if (byLabel.length === 1) return byLabel[0]!;
+  // Silkscreen with several names ("D0/A0", "D4/SDA" on a XIAO): any one of them.
+  const byLabelPart = pins.filter((p) => p.type !== "ground" && p.label.includes("/") && p.label.toLowerCase().split("/").includes(lower));
+  if (byLabelPart.length === 1) return byLabelPart[0]!;
   for (const alias of POWER_ALIASES[lower] ?? []) {
     const p = pins.find((x) => x.id === alias);
     if (p) return p;
