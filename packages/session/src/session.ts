@@ -1008,17 +1008,28 @@ export class ProjectSession {
       .join("\n");
   }
 
-  private sourceHash(): string | undefined {
+  /**
+   * What the firmware is built from: board (fqbn), libraries (sorted: their order never changes the
+   * build), the main sketch, and every source file in the sketch folder with line endings made LF
+   * (a CRLF checkout or editor is the same sketch). `legacy` is the round 6 formula, so build
+   * records written before still count.
+   */
+  private sourceHash(legacy = false): string | undefined {
     const info = this.firmwareInfo();
     if (!info?.sketchDir || !existsSync(info.sketchDir)) return undefined;
     const h = createHash("sha256");
-    h.update(`${info.fqbn}|${(info.fw.libraries ?? []).join(",")}|${info.fw.sketch}\n`);
-    for (const f of readdirSync(info.sketchDir).sort()) if (SOURCE_EXT.test(f)) h.update(`${f}\0${readFileSync(join(info.sketchDir, f), "utf8")}\0`);
+    const libs = [...(info.fw.libraries ?? [])];
+    h.update(`${info.fqbn}|${(legacy ? libs : libs.map((l) => l.trim()).sort()).join(",")}|${info.fw.sketch}\n`);
+    for (const f of readdirSync(info.sketchDir).sort()) {
+      if (!SOURCE_EXT.test(f)) continue;
+      const text = readFileSync(join(info.sketchDir, f), "utf8");
+      h.update(`${f}\0${legacy ? text : text.replace(/\r\n?/g, "\n")}\0`);
+    }
     return h.digest("hex").slice(0, 16);
   }
 
   /** "fresh" | "stale" (sources changed since the last build) | "missing" | "none" (no firmware). */
-  private firmwareState(): "fresh" | "stale" | "missing" | "none" {
+  firmwareState(): "fresh" | "stale" | "missing" | "none" {
     const info = this.firmwareInfo();
     if (!info) return "none";
     if (!existsSync(info.artifactAbs)) return info.sketchAbs ? "missing" : "none";
@@ -1027,15 +1038,30 @@ export class ProjectSession {
     const bf = join(this.metaDir, "build.json");
     if (existsSync(bf)) {
       try {
-        return (JSON.parse(readFileSync(bf, "utf8")) as { hash: string }).hash === hash ? "fresh" : "stale";
+        const rec = JSON.parse(readFileSync(bf, "utf8")) as { hash: string; artifact?: string };
+        if (rec.artifact === undefined || rec.artifact === info.fw.artifact) return rec.hash === hash || rec.hash === this.sourceHash(true) ? "fresh" : "stale";
       } catch {
         // fall through
       }
     }
-    // No build record (e.g. a committed example): compare times.
+    // No build record (e.g. a folder built elsewhere): compare times.
     const hexTime = statSync(info.artifactAbs).mtimeMs;
     const newest = readdirSync(info.sketchDir!).filter((f) => SOURCE_EXT.test(f)).reduce((m, f) => Math.max(m, statSync(join(info.sketchDir!, f)).mtimeMs), 0);
-    return newest <= hexTime ? "fresh" : "stale";
+    return newest <= hexTime + 1 ? "fresh" : "stale";
+  }
+
+  /**
+   * A copied example ships its built firmware next to its sketch (the repo keeps them in step), so
+   * the copy records that build as made from the sources it came with: no false "sketch changed"
+   * because copying gave the files new times. Does nothing without both the hex and the sketch.
+   */
+  adoptShippedBuild(): boolean {
+    const info = this.firmwareInfo();
+    const hash = this.sourceHash();
+    if (!info || !hash || !existsSync(info.artifactAbs)) return false;
+    mkdirSync(this.metaDir, { recursive: true });
+    writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash, artifact: info.fw.artifact, at: new Date().toISOString(), shipped: true }));
+    return true;
   }
 
   async build(args: { force?: boolean } = {}, ctx?: OpCtx): Promise<unknown> {

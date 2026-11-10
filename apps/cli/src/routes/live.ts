@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import type { IncomingMessage } from "node:http";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -12,8 +12,6 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  * origin (Vite on its own port in development), so they answer with CORS for local origins (serve
  * has already refused any non-local Host / Origin before a route runs).
  */
-
-const SOURCE_EXT = /\.(ino|pde|c|cc|cpp|h|hpp|S)$/;
 
 function cors(req: IncomingMessage): Record<string, string> {
   const origin = req.headers.origin;
@@ -58,12 +56,13 @@ export function firmwareFor(ctx: RouteContext): { ok: true; info: FirmwareInfo }
   }
   const hex = readFileSync(abs, "utf8");
   const builtMs = statSync(abs).mtimeMs;
+  // The session's own answer (source hash against the last build record), the same one `run` uses to
+  // decide whether to rebuild, so the page and the agent never disagree.
   let stale = false;
   try {
-    const sketchDir = dirname(join(dir, "firmware", p.firmware.sketch));
-    stale = readdirSync(sketchDir).some((f) => SOURCE_EXT.test(f) && statSync(join(sketchDir, f)).mtimeMs > builtMs + 1);
+    stale = session.firmwareState() === "stale";
   } catch {
-    // no sketch folder: nothing newer than the hex
+    // unreadable sketch folder: nothing newer than the hex
   }
   return {
     ok: true,
