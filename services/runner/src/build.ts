@@ -205,6 +205,18 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   return p;
 }
 
+/**
+ * Libraries that read a setup header from the sketch folder with #include <name.h> (TFT_eSPI's
+ * tft_setup.h) only find it when the sketch folder is on the include path of every compile, the
+ * library's own included. Added only when the sketch has such a file, so every other build keeps
+ * the exact same command (and the same bytes).
+ */
+const SKETCH_SETUP_HEADERS = ["tft_setup.h"];
+export function sketchSetupFlags(sources: Map<string, string>): string[] {
+  if (!SKETCH_SETUP_HEADERS.some((h) => sources.has(h))) return [];
+  return ["--build-property", "compiler.cpp.extra_flags=-I/work/sketch", "--build-property", "compiler.c.extra_flags=-I/work/sketch"];
+}
+
 async function compile(
   req: BuildRequest,
   sources: Map<string, string>,
@@ -240,6 +252,7 @@ async function compile(
     image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
+    ...sketchSetupFlags(sources),
     "/work/sketch",
   ];
   const r = await exec("docker", args, { timeoutMs: 5 * 60_000 });

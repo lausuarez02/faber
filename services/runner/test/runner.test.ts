@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildFirmware, imageFor, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
+import { buildFirmware, imageFor, libraryForHeader, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
+import { sketchSetupFlags } from "../src/build.ts";
 
 const dockerUp = (() => {
   try {
@@ -19,6 +20,22 @@ describe("library resolution", () => {
     expect(resolveLibraries(["Adafruit SSD1306"])).toEqual(["Adafruit BusIO@1.17.4", "Adafruit GFX Library@1.13.0", "Adafruit SSD1306@2.5.17"]);
     expect(resolveLibraries(["Servo@1.2.2"])).toEqual(["Servo@1.2.2"]);
     expect(() => resolveLibraries(["Servo@latest"])).toThrow(/invalid version 'latest'.*Fix:/s);
+  });
+});
+
+describe("libs3 (round 6)", () => {
+  it("pins the libraries agents reach for, with their dependencies, on libs3 images", () => {
+    expect(resolveLibraries(["DHT sensor library"])).toEqual(["Adafruit Unified Sensor@1.1.15", "DHT sensor library@1.4.7"]);
+    expect(resolveLibraries(["Adafruit GC9A01A"])).toEqual(["Adafruit BusIO@1.17.4", "Adafruit GC9A01A@1.2.0", "Adafruit GFX Library@1.13.0"]);
+    expect(resolveLibraries(["FastLED", "TFT_eSPI", "Adafruit NeoPixel"])).toEqual(["Adafruit NeoPixel@1.15.5", "FastLED@3.10.8", "TFT_eSPI@2.5.43"]);
+    for (const [h, lib] of [["Adafruit_GC9A01A.h", "Adafruit GC9A01A"], ["DHT.h", "DHT sensor library"], ["FastLED.h", "FastLED"], ["TFT_eSPI.h", "TFT_eSPI"], ["Adafruit_NeoPixel.h", "Adafruit NeoPixel"]]) expect(libraryForHeader(h!)).toBe(lib);
+    expect(RUNNER_IMAGE).toMatch(/-libs3-r1$/);
+    expect(PICO_IMAGE).toMatch(/-libs3-r1$/);
+  });
+
+  it("puts the sketch folder on the include path only when it has a tft_setup.h", () => {
+    expect(sketchSetupFlags(new Map([["main.ino", ""]]))).toEqual([]);
+    expect(sketchSetupFlags(new Map([["main.ino", ""], ["tft_setup.h", "#define GC9A01_DRIVER"]]))).toEqual(["--build-property", "compiler.cpp.extra_flags=-I/work/sketch", "--build-property", "compiler.c.extra_flags=-I/work/sketch"]);
   });
 });
 
@@ -87,7 +104,8 @@ describe.skipIf(!dockerUp)("Docker builds", () => {
 });
 
 // RP2040 builds use the arduino-pico image. It is ~1 GB, so these run only when it is already built
-// (docker build -t jumper/arduino-pico:6.3.1-r1 toolchains/arduino-pico) or JUMPER_TEST_PICO=1.
+// (ensureImage(log, PICO_IMAGE), or the docker build lines in packages/parts/fixtures/libs3/BUILD.md)
+// or JUMPER_TEST_PICO=1. CI builds it.
 const picoImage = (() => {
   if (!dockerUp) return false;
   if (process.env.JUMPER_TEST_PICO === "1") return true;
