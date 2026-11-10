@@ -917,7 +917,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       const cut = f.axis === "x" ? (f.sign > 0 ? pb.maxX - f.at : f.at - pb.minX) : f.sign > 0 ? pb.maxY - f.at : f.at - pb.minY;
       if (cut < 0.6) continue;
       // a custom outline keeps its drawn silhouette except a local flat (up to 8 mm deep) where a port must reach; the report says so
-      if (kind === "poly" && cut > 8) continue;
+      if (kind === "poly" && (cut > 8 || polySpec?.fixed)) continue; // a fixed size stays exactly that size: no flat
       late.push(f);
     }
     if (late.length) {

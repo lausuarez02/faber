@@ -58,7 +58,7 @@ jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[2
   narrow end of an egg holds less than its wide end; the screen stays on the centre line but moves
   up or down to where the outline is wide. A custom outline keeps its silhouette: a port on a curve
   gets a spot face; only where a plug could not reach at all is a local flat (up to 8 mm deep) cut,
-  and the report says so (a heart's point, a lobe). Ports try other sides first (a heart's bottom is
+  and the report says so (a heart's point, a lobe); never on a fixed size, which stays exactly that size. Ports try other sides first (a heart's bottom is
   a point), and a layout where a plug would not reach loses to one where it does.
 - **When the parts do not fit** a fixed size, nothing grows and nothing is saved: `design_case` /
   `update_case` return `fits: false`, `misses` (`{part, type, dimension: "outline" | "depth", short_mm,
