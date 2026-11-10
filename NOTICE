@@ -135,3 +135,36 @@ from https://github.com/Open-Cascade-SAS/OCCT and
 https://github.com/sgenoud/replicad (packages/replicad-opencascadejs).
 The STL, 3MF, STEP, PNG and SVG files Jumper writes for a person's case are
 their own work output and carry no licence from these libraries.
+
+Firmware libraries, set libs3 (round 6, frames track)
+-----------------------------------------------------
+
+The build images jumper/arduino-cli:1.5.1-avr1.8.8-libs3, jumper/arduino-runner:
+1.5.1-avr1.8.8-libs3-r1 and jumper/arduino-pico:6.3.1-libs3-r1 (built by Docker
+from toolchains/arduino/Dockerfile, services/runner/docker/Dockerfile and
+toolchains/arduino-pico/Dockerfile; Jumper's repository and packages contain
+none of these libraries) also preinstall:
+
+  Adafruit GC9A01A 1.2.0           BSD License, Copyright (c) Adafruit Industries
+  DHT sensor library 1.4.7         MIT License, Copyright (c) 2020 Adafruit Industries
+  FastLED 3.10.8                   MIT License, Copyright (c) 2013 FastLED
+  TFT_eSPI 2.5.43                  FreeBSD License, Copyright (c) 2023 Bodmer, with
+                                   parts under the Adafruit BSD / MIT licenses
+                                   (its license.txt; its GFXFF fonts come from
+                                   GNU FreeFont via Adafruit GFX, see LIBRARIES.md)
+  Adafruit NeoPixel 1.15.5         GNU Lesser General Public License 3.0,
+                                   Copyright (c) Adafruit Industries
+
+They are linked only into firmware that includes them. The test sketches in
+packages/parts/fixtures/libs3/ are such firmware: the fastled_* images link
+FastLED, the gc9a01a_* images Adafruit GC9A01A, the dht_* images the DHT sensor
+library, tft_espi_xiao.hex TFT_eSPI. Adafruit NeoPixel is LGPL-3.0: a firmware
+binary that links it and is given to someone else carries LGPL-3.0 duties
+(offer the library's source and let the recipient relink the firmware with a
+modified library, e.g. by providing the sketch's object files or source). So
+Jumper commits no binary that links it: the neopixel_* sketches are built and
+run only by the test, inside the build image, and Jumper never ships the
+library itself.
+
+The web app decodes colour screen frames with fflate 0.8.3 (MIT License,
+Copyright (c) Arjun Barrett), the same package listed above for cases.

@@ -2,8 +2,10 @@
 // the MCU step at the exact cycle): each HIGH pulse is a bit, 0 when it is short (≤ 0.6 µs) and
 // 1 when it is long; 24 bits per LED in G, R, B order, MSB first; the first 24 bits go to the
 // first LED, the next to the second, and so on. A LOW of ≥ 50 µs (reset) latches what was sent;
-// LEDs that got no new bits keep their colour. Pulses outside the datasheet windows
-// (T0H 0.25–0.55 µs, T1H 0.65–1.0 µs) are still decoded but reported.
+// LEDs that got no new bits keep their colour. Pulses outside the datasheet windows (T0H 0.22–0.55
+// µs, T1H 0.58–1.0 µs: the union of the WS2812B datasheet, 0.4 / 0.8 µs ± 150 ns, and the
+// WS2812B-V5 one, T0H 220–380 ns, T1H 580 ns–1 µs, which the RP2040 PIO drivers of FastLED and
+// Adafruit NeoPixel aim for) are still decoded but reported.
 import type { Diagnostic, PartModel, PartModelFactory } from "@jumper/sim-core";
 import { GROUND } from "@jumper/sim-core";
 import { clamp, num, round, str } from "../../lib/props.ts";
@@ -11,8 +13,8 @@ import { clamp, num, round, str } from "../../lib/props.ts";
 export const MAX_LEDS = 16;
 export const BIT_THRESHOLD_US = 0.6;
 export const RESET_US = 50;
-const T0H = [0.25, 0.55];
-const T1H = [0.65, 1.0];
+const T0H = [0.22, 0.55];
+const T1H = [0.58, 1.0];
 const MIN_VCC = 3.5;
 /** Per channel at full brightness, and the idle current of each LED's driver. */
 const CHANNEL_MA = 20;
@@ -78,7 +80,8 @@ export const create: PartModelFactory = (ctx): PartModel => {
       const us = (tMs - riseMs) * 1000;
       const b: 0 | 1 = us > BIT_THRESHOLD_US ? 1 : 0;
       const [lo, hi] = b ? T1H : T0H;
-      if (us < lo! || us > hi!) {
+      // 1 ns of slack: edge times are float ms, and a T0H of exactly 0.22 µs must pass.
+      if (us < lo! - 0.001 || us > hi! + 0.001) {
         badBits++;
         lastBadUs = us;
       }
@@ -170,7 +173,7 @@ export const create: PartModelFactory = (ctx): PartModel => {
           severity: "warning",
           code: "ws2812-timing",
           pin: "DIN",
-          message: `${id}: ${badBits} data bit(s) had a HIGH time outside the WS2812B windows (last ${lastBadUs.toFixed(2)} µs; 0 = 0.25–0.55 µs, 1 = 0.65–1.0 µs). Real LEDs may show wrong colours or flicker. Use a WS2812 library (FastLED, Adafruit NeoPixel) on a 16 MHz board and keep interrupts off while sending.`,
+          message: `${id}: ${badBits} data bit(s) had a HIGH time outside the WS2812B windows (last ${lastBadUs.toFixed(2)} µs; 0 = 0.22–0.55 µs, 1 = 0.58–1.0 µs). Real LEDs may show wrong colours or flicker. Use a WS2812 library (FastLED, Adafruit NeoPixel) on a 16 MHz board and keep interrupts off while sending.`,
         });
       }
       if (ma > 400) {
