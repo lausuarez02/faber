@@ -64,3 +64,4 @@ export function rankParts(defs: readonly PartDefinition[], query: string): PartD
   }
   return scored.sort((a, b) => b.score - a.score || (a.d.spec.id < b.d.spec.id ? -1 : 1)).map((x) => x.d);
 }
+export { boardWiring, descriptionForBoard, type BoardWiring, type WiringLine } from "./wiring.ts"; // round 6 canvas
