@@ -7,13 +7,14 @@ import WebSocket from "ws";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { listRegisteredProjects, projectId } from "@jumper/session";
+import { composeSvg, listRegisteredProjects, ProjectSession, projectId, registryForProjectDir } from "@jumper/session";
 import { parseDiag } from "../src/routes/projects.ts";
 import { startJumperServer, type JumperServer } from "../src/serve.ts";
 
 // Round 5, projects track (decision 0003, C3): the Projects gallery, versions, the code editor's
 // file and build endpoints, and switching the active project behind one MCP endpoint and hub.
 const REPO_EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
+const SOIL = (JSON.parse(readFileSync(fileURLToPath(new URL("../../../packages/session/test/fixtures/agentparts/parts.json", import.meta.url)), "utf8")) as Record<string, Record<string, unknown>>).soil!;
 const GOLDEN = readFileSync(join(REPO_EXAMPLES, "blink/firmware/blink.hex"), "utf8");
 const BLINK = 'void setup(){pinMode(13,OUTPUT);}\nvoid loop(){digitalWrite(13,HIGH);delay(500);digitalWrite(13,LOW);delay(500);}\n';
 
@@ -191,6 +192,30 @@ describe("jumper serve: projects, history, files, build", () => {
       // Second request comes from the cache.
       expect((await fetch(`${srv.url}${examples[0]!.thumbnail}`)).status).toBe(200);
     }
+  }, 60_000);
+
+  it("a pocket RP2040 project with an agent-made part shows up with its board, its parts and their drawing", async () => {
+    // Made by another process (an agent on stdio), not the active project.
+    const dir = join(tmp, "projects", "pocket-sensor");
+    mkdirSync(dir, { recursive: true });
+    const other = new ProjectSession({ dir, builder, actor: "mcp" });
+    try {
+      await other.call("new_project", { template: "xiao-rp2040", name: "Pocket sensor" });
+      await other.call("create_part", { part: SOIL, why: "the agent's own soil probe" });
+      await other.call("place_part", { type: SOIL.id as string, id: "soil" });
+    } finally {
+      other.dispose();
+    }
+    const { body } = await get("/api/projects");
+    const card = (body.projects as Json[]).find((c) => c.dir === dir)!;
+    expect(card).toMatchObject({ name: "Pocket sensor", board: "seeed-xiao-rp2040", boardName: "Seeed XIAO RP2040", agentMade: 1, readOnly: false });
+    // The thumbnail draws with that folder's own parts, not the active project's registry.
+    const project = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+    const svg = composeSvg(project, registryForProjectDir(dir), {});
+    expect(svg).toMatch(/AGENT-MADE/);
+    expect(composeSvg(project, srv.session.registry, {})).not.toMatch(/AGENT-MADE/);
+    const thumb = await fetch(`${srv.url}${card.thumbnail}`);
+    expect(thumb.status).toBe(200);
   }, 60_000);
 
   it("opens an example as its own copy and switches the live canvas and MCP to it", async () => {

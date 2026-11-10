@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { AGENT_MADE_LABEL, compileCustomPart, customPartJsonSchema, CustomPartError, type CompiledCustomPart, type CustomPart, type ProjectPartRegistry } from "@jumper/parts";
+import { AGENT_MADE_LABEL, compileCustomPart, registry as builtinRegistry, withProjectParts, customPartJsonSchema, CustomPartError, type CompiledCustomPart, type CustomPart, type ProjectPartRegistry } from "@jumper/parts";
 import { projectPartsStamp, readProjectParts } from "@jumper/parts/node";
 import type { PartDefinition, PartRegistry } from "@jumper/sim-core";
 import { didYouMean, fail } from "../errors.ts";
@@ -47,6 +47,16 @@ export function refreshProjectParts(dir: string, registry: PartRegistry, force =
   const warnings = registry.setProjectParts(loaded.parts.map((p) => p.def));
   STATE.set(registry, { stamp, errors: loaded.errors, warnings, compiled: new Map(loaded.parts.map((p) => [p.id, p])) });
   return true;
+}
+
+/**
+ * The registry a project folder that is not the active one draws with (gallery thumbnails, cards):
+ * built-ins plus that folder's own agent-made parts. Broken part folders are left out.
+ */
+export function registryForProjectDir(dir: string, base: PartRegistry = builtinRegistry): PartRegistry {
+  const reg = withProjectParts(base);
+  refreshProjectParts(dir, reg, true);
+  return reg;
 }
 
 /** Load problems of the project's parts/ folder (for list_project_parts). */

@@ -20,6 +20,8 @@ export interface ProjectCard {
   thumbnail: string;
   readOnly: boolean;
   versions?: number;
+  /** Agent-made part types on its canvas (create_part). */
+  agentMade?: number;
 }
 
 export interface ProjectsListing {

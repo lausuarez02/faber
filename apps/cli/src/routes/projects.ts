@@ -14,6 +14,7 @@ import {
   newProjectFolder,
   projectId,
   registerProject,
+  registryForProjectDir,
   svgToPng,
   TEMPLATES,
   versionCount,
@@ -22,6 +23,7 @@ import {
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 type Project = ProjectSession["project"];
+type PartRegistry = ProjectSession["registry"];
 
 /**
  * Round 5, track "projects" (owner). Decision 0003, C3.
@@ -52,6 +54,32 @@ export interface ProjectCard {
   readOnly: boolean;
   /** Versions in its history (beyond the contract's fields; not for examples). */
   versions?: number;
+  /** Agent-made part types placed on its canvas (create_part; "agent-made: behavioral, unverified"). */
+  agentMade?: number;
+}
+
+/** The registry a folder draws with: the active session's, or built-ins plus that folder's parts/. */
+function registryOf(dir: string, ctx: RouteContext): PartRegistry {
+  const s = ctx.session();
+  if (resolve(dir) === resolve(ctx.dir())) return s.registry;
+  return existsSync(join(dir, "parts")) ? registryForProjectDir(dir) : s.registry;
+}
+
+/** jumper.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
+function drawingKey(dir: string, raw: string): string {
+  const root = join(dir, "parts");
+  if (!existsSync(root)) return raw;
+  let extra = "";
+  try {
+    for (const id of readdirSync(root).sort())
+      for (const f of ["part.json", "visual.svg"]) {
+        const file = join(root, id, f);
+        if (existsSync(file)) extra += `\n${id}/${f}:${readFileSync(file, "utf8")}`;
+      }
+  } catch {
+    // unreadable parts/: the canvas alone decides
+  }
+  return raw + extra;
 }
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
@@ -126,7 +154,7 @@ function hash12(text: string): string {
 
 function makeCard(dir: string, kind: ProjectCard["kind"], ctx: RouteContext): ProjectCard {
   const { project, raw } = readProject(dir);
-  const registry = ctx.session().registry;
+  const registry = registryOf(dir, ctx);
   const boardId = project?.firmware?.board;
   const boardPart = project?.parts.find((p) => p.id === boardId) ?? project?.parts.find((p) => registry.get(p.type)?.spec.category === "board");
   const readme = join(dir, "README.md");
@@ -137,6 +165,7 @@ function makeCard(dir: string, kind: ProjectCard["kind"], ctx: RouteContext): Pr
   const updated = Math.max(mtime(join(dir, "jumper.json")), mtime(ownLog));
   const id = projectId(dir);
   const readOnly = kind === "example" || kind === "agent-built";
+  const agentMade = new Set((project?.parts ?? []).filter((p) => registry.get(p.type)?.fidelity.origin === "agent-made").map((p) => p.type)).size;
   return {
     id,
     name: project?.name ?? basename(dir),
@@ -148,9 +177,10 @@ function makeCard(dir: string, kind: ProjectCard["kind"], ctx: RouteContext): Pr
     scenarios: project?.scenarios.length ?? 0,
     updatedAt: new Date(updated || Date.now()).toISOString(),
     ...(tests ? { tests } : {}),
-    thumbnail: `/api/projects/${id}/thumbnail.png?v=${hash12(raw ?? "")}`,
+    thumbnail: `/api/projects/${id}/thumbnail.png?v=${hash12(drawingKey(dir, raw ?? ""))}`,
     readOnly,
     ...(readOnly ? {} : { versions: versionCount(dir) }),
+    ...(agentMade ? { agentMade } : {}),
   };
 }
 
@@ -222,10 +252,10 @@ const rendering = new Map<string, Promise<Buffer | undefined>>();
 let chain: Promise<unknown> = Promise.resolve();
 
 /** One render at a time (each launches a headless Chromium); the same file is rendered once. */
-function renderThumb(file: string, project: Project, ctx: RouteContext): Promise<Buffer | undefined> {
+function renderThumb(file: string, dir: string, project: Project, ctx: RouteContext): Promise<Buffer | undefined> {
   const running = rendering.get(file);
   if (running) return running;
-  const svg = composeSvg(project, ctx.session().registry, {});
+  const svg = composeSvg(project, registryOf(dir, ctx), {});
   const w = Number(svg.match(/width="(\d+(?:\.\d+)?)"/)?.[1] ?? 1200);
   const p = chain.then(
     async () => {
@@ -253,7 +283,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
   if (!card) return ctx.json(res, 404, noProject(id));
   const { project, raw } = readProject(card.dir);
   if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${join(card.dir, "jumper.json")} is missing or invalid`, `run \`jumper check -p ${card.dir}\``));
-  const hash = createHash("sha256").update(raw).digest("hex").slice(0, 16);
+  const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
   // Examples are read-only (C3): their thumbnails are cached under $JUMPER_HOME.
   const file = card.readOnly ? join(jumperHome(), "thumbs", `${id}-${hash}.png`) : join(card.dir, ".jumper", "thumbs", `${hash}.png`);
   const headers = { "cache-control": "max-age=31536000, immutable" };
@@ -262,7 +292,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
     res.end(readFileSync(file));
     return;
   }
-  const png = await renderThumb(file, project, ctx);
+  const png = await renderThumb(file, card.dir, project, ctx);
   if (png) {
     res.writeHead(200, { "content-type": "image/png", ...headers });
     res.end(png);
@@ -270,7 +300,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
   }
   // No Chromium for Playwright: the same drawing as SVG (an <img> shows it all the same), not cached.
   res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-jumper-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
-  res.end(composeSvg(project, ctx.session().registry, {}));
+  res.end(composeSvg(project, registryOf(card.dir, ctx), {}));
 }
 
 // -------------------------------------------------------------------------------- create / open

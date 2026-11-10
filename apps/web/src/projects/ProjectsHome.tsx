@@ -161,6 +161,11 @@ export function Card({ card, active, busy, onOpen, compact }: { card: ProjectCar
           <span>
             {card.parts} part{card.parts === 1 ? "" : "s"}
           </span>
+          {card.agentMade ? (
+            <span className="pj-chip pj-made" title={`${card.agentMade} part type${card.agentMade === 1 ? "" : "s"} made by an agent with create_part: agent-made, behavioral, unverified against the real part`}>
+              {card.agentMade} agent-made
+            </span>
+          ) : null}
           {testsChip(card)}
           {!card.readOnly ? <span className="pj-when">{ago(card.updatedAt)}</span> : null}
         </div>
