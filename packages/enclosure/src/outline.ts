@@ -24,9 +24,16 @@ export interface ParsedOutline {
 }
 
 export class OutlineError extends Error {
+  readonly code = "bad-outline";
+  readonly what: string;
+  readonly why: string;
+  readonly fix: string;
   constructor(what: string, why: string, fix: string) {
     super(`${what}. Why: ${why}. Fix: ${fix}.`);
     this.name = "OutlineError";
+    this.what = what;
+    this.why = why;
+    this.fix = fix;
   }
 }
 
@@ -479,6 +486,8 @@ export function parseOutline(o: CaseOutline | undefined): ParsedOutline {
   let raw: Pt[];
   const notes: string[] = [];
   let smoothInput = false;
+  // positions in messages are in the drawing's own coordinates (SVG: y down)
+  const yOut = (y: number) => (typeof o === "string" ? -y : y);
   if (typeof o === "string") {
     const subs = svgPathToPolylines(o).filter((s) => s.pts.length > 1);
     if (!subs.length) throw new OutlineError("The outline path draws nothing", "it has a move-to but no segments", "add segments (L, C, Q, A ...) and end with Z");
@@ -525,7 +534,7 @@ export function parseOutline(o: CaseOutline | undefined): ParsedOutline {
   }
   const dense = resample(curve, 400);
   const x = selfIntersection(dense) ?? xRaw;
-  if (x) throw new OutlineError(`The outline crosses itself near (${f1(x[0])}, ${f1(x[1])}) mm`, "a case wall cannot pass through itself", "move the points so the line goes round the shape once without crossing (list them in order round the edge)");
+  if (x) throw new OutlineError(`The outline crosses itself near (${f1(x[0])}, ${f1(yOut(x[1]))}) mm`, "a case wall cannot pass through itself", "move the points so the line goes round the shape once without crossing (list them in order round the edge)");
   if (Math.abs(signedArea(dense)) < 0.05 * w * h) throw new OutlineError("The outline encloses almost no area", "it is a thin sliver", "draw a fuller shape");
   // the chain: control points evenly spaced, about every 4 % of the length (32 to 72 of them)
   const L = perimeter(dense);
@@ -549,7 +558,7 @@ export function parseOutline(o: CaseOutline | undefined): ParsedOutline {
   const aspect = Math.max(w / h, h / w);
   if (aspect > 8) throw new OutlineError(`The outline is ${f1(w)} x ${f1(h)}, ${f1(aspect)} times longer than it is wide`, "a case thinner than an eighth of its length cannot hold boards and prints badly", "make it fuller (at most 8:1)");
   const x2 = selfIntersection(poly);
-  if (x2) throw new OutlineError(`The smoothed outline crosses itself near (${f1(x2[0] * (w / 2) + cx)}, ${f1(x2[1] * (h / 2) + cy)}) mm`, "two parts of the outline are too close for the smooth curve", "space the points further apart there, or use fewer points");
+  if (x2) throw new OutlineError(`The smoothed outline crosses itself near (${f1(x2[0] * (w / 2) + cx)}, ${f1(yOut(x2[1] * (h / 2) + cy))}) mm`, "two parts of the outline are too close for the smooth curve", "space the points further apart there, or use fewer points");
   return { ctrl, poly, w, h, notes };
 }
 

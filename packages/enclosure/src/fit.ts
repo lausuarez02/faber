@@ -23,7 +23,7 @@ export interface FitMiss {
 }
 
 export interface FitSuggestion {
-  kind: "swap" | "smaller-cell" | "on-edge" | "bigger";
+  kind: "swap" | "smaller-cell" | "on-edge" | "finish" | "bigger";
   part?: string;
   from?: string;
   to?: string;
@@ -77,9 +77,9 @@ export interface FitInput extends LayoutInput {
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
 /** Run the quick layout and turn it into a fit report (suggestions when it does not fit). */
-export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: number } = {}): FitReport {
+export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: number; layout?: Layout } = {}): FitReport {
   const t0 = performance.now();
-  const L = layoutCase(input, { quick: true });
+  const L = opts.layout ?? layoutCase(input, { quick: true });
   const fit = L.fit;
   const fits = fit ? fit.fits : !L.issues.some((i) => i.id === "fits" && i.severity === "error");
   const typeOf = (id: string) => input.parts.find((p) => p.id === id)?.type ?? "";
@@ -181,6 +181,12 @@ function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number
     }
   };
   const cands: FitSuggestion[] = [];
+  // the rounded rims take room from the parts near the front and back: a smaller round-over
+  if (outlineShort && Math.max(L.rf, L.rfBack) > 3) {
+    const f = Math.max(1.5, Math.round(L.rf * 0.45 * 10) / 10);
+    const b = Math.max(1.5, Math.round(L.rfBack * 0.45 * 10) / 10);
+    cands.push({ kind: "finish", message: `Round the rims less: ${f} mm at the front and ${b} mm at the back instead of ${L.rf.toFixed(1)} and ${L.rfBack.toFixed(1)} mm (the round-over eats into the room near the front and back faces).`, change: [{ tool: "update_case", args: { params: { edge_radius_front_mm: f, edge_radius_back_mm: b } } }], tradeoff: "a flatter rim: less pebble-like from the side" });
+  }
   for (const p of focus) {
     const spec = specWithProps(p.spec, p.props);
     const dims = spec.dimensions_mm ?? { w: 10, h: 10, d: 5 };
@@ -215,6 +221,7 @@ function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number
       const s = input.catalog!.find((x) => x.id === c.to)!;
       parts2 = input.parts.map((p) => (p.id === c.part ? { id: p.id, type: s.id, spec: s } : p));
     } else if (c.kind === "on-edge") enc2 = { ...enc, placements: { ...(enc.placements ?? {}), [c.part!]: { ...(enc.placements?.[c.part!] ?? {}), on_edge: true } } };
+    else if (c.kind === "finish") enc2 = { ...enc, params: { ...(enc.params ?? {}), ...((c.change[0]!.args as { params: object }).params) } };
     const r = tryIt(parts2, enc2);
     if (r) {
       c.fits = r.fits;
@@ -226,11 +233,11 @@ function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number
   cands.sort((a, b) => score(a) - score(b));
   const perPart = new Map<string, number>();
   for (const c of cands) {
-    const n = perPart.get(c.part!) ?? 0;
+    const n = perPart.get(c.part ?? c.kind) ?? 0;
     if (n >= 2 || out.length >= 6) continue;
     // keep a suggestion only if it helps (fits, or needs less than now)
     if (c.fits === false && c.size_mm && need && c.size_mm.w * c.size_mm.h * c.size_mm.d >= need.w * need.h * need.d - 1) continue;
-    perPart.set(c.part!, n + 1);
+    perPart.set(c.part ?? c.kind, n + 1);
     out.push(c);
   }
   // or make it bigger

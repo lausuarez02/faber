@@ -1,13 +1,15 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { caseIsStale, caseMesh } from "@jumper/session";
+import { caseIsStale, caseMesh, previewFit } from "@jumper/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
  * Round 6, track "case" (owner). Decision 0004, R6.
  *   GET  /api/case                 → { enclosure | null, report?, stale, variants }
  *   POST /api/case                 → CaseReport (design_case when there is no case, else update_case; actor web)
+ *   POST /api/case/fit             → round 7: check_fit for a draft (shape, outline, size_mm, params, placements) with the
+ *                                    front-view preview; no CAD, nothing written or logged (the Case view's live preview)
  *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
  *   POST /api/manufacturing        → export_manufacturing + url of the zip
@@ -94,7 +96,7 @@ export const caseRoutes: ApiRoute[] = [
       }
       const has = !!ctx.session().project.enclosure;
       const args: Record<string, unknown> = { images: false };
-      for (const k of ["shape", "params", "front", "placements", "exclude"]) if (body[k] !== undefined) args[k] = body[k];
+      for (const k of ["shape", "outline", "size_mm", "params", "front", "placements", "exclude"]) if (body[k] !== undefined) args[k] = body[k];
       if (!has && !args.shape) return ctx.json(res, 400, err("No case yet", "a new case needs a shape", 'send {"shape": "pebble"} (rounded-box, pill, pebble, puck or keychain)'));
       try {
         const r = await ctx.call(has ? "update_case" : "design_case", args, { actor: "web" });
@@ -103,6 +105,28 @@ export const caseRoutes: ApiRoute[] = [
       } catch (e) {
         const m = (e as Error).message;
         ctx.json(res, 400, { error: m.includes("Why:") ? m : `${has ? "Updating" : "Designing"} the case failed. Why: ${m}. Fix: change the setting and try again` });
+      }
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/case/fit",
+    label: "POST /api/case/fit",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      let body: Record<string, unknown>;
+      try {
+        body = await ctx.body(req);
+      } catch (e) {
+        return ctx.json(res, 400, err("The fit request is not JSON", (e as Error).message, 'send {"shape": "custom", "outline": "M ... Z", "size_mm": {"w": 60, "h": 78}}'));
+      }
+      try {
+        const s = ctx.session();
+        s.sync();
+        ctx.json(res, 200, await previewFit(s, body));
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `Testing the fit failed. Why: ${m}. Fix: change the outline or the size and try again` });
       }
     },
   },

@@ -349,6 +349,10 @@ export interface LayoutFit {
  * gets which side is tried both ways (up to 4 orders) and the smallest case kept.
  */
 export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout {
+  // A custom outline (or a preset at a fixed size) always gets the same search, so check_fit's
+  // quick answer is the answer design_case builds; the presets keep their larger round-6 search.
+  const sz = input.enclosure.size_mm;
+  if (input.enclosure.shape === "custom" || sz?.w !== undefined || sz?.h !== undefined) opts = { ...opts, quick: true };
   const first = layoutOnce(input, undefined, opts);
   const ids = first.connOrder;
   if (input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) return first;
@@ -361,7 +365,7 @@ export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout
   permute(ids, []);
   let best = first;
   const cost = (L: Layout) => L.issues.filter((i) => i.severity === "error").length * 1e12 + overflow(L) + caseCost(L);
-  for (const perm of perms.slice(1, opts.quick ? 2 : undefined)) {
+  for (const perm of perms.slice(1, opts.quick ? 1 : undefined)) {
     const L = layoutOnce(input, perm, opts);
     if (cost(L) < cost(best)) best = L;
   }
@@ -532,9 +536,9 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   const packs: Packed[] = [];
   const T0 = performance.now();
   withFastOutline(() => {
-  // a custom outline mostly packs into the outline itself (below): fewer rectangles
-  const stepWH = polySpec ? (quick ? 10 : 6) : quick ? 6 : 3;
-  for (const ord of orders.slice(0, quick ? (polySpec ? 1 : 2) : undefined))
+  // a custom outline also packs into the outline itself (below), so fewer rectangles
+  const stepWH = polySpec ? (quick ? 7.5 : 6) : quick ? 6 : 3;
+  for (const ord of orders.slice(0, quick ? 2 : undefined))
     for (let dw = 0; dw <= 30; dw += stepWH)
       for (let dh = 0; dh <= 30; dh += stepWH) {
         const r = pack(ord, W0 + dw, H0 + dh, g, front, shape, polyScore && polySpec ? { score: polyScore, A0: polySpec.A0, B0: polySpec.B0, area: polyAreaNorm(polySpec.poly) } : undefined);
@@ -546,21 +550,33 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   if (polySpec && polyScore) {
     const ok = packs.filter((x) => !x.failed.length);
     const s0 = ok.length ? Math.min(...ok.slice(0, 40).map((x) => polyScore(x.placed))) : 1;
-    const Dest = depthFixed ?? 18;
-    const eF = typeof params.edge_radius_front_mm === "number" ? params.edge_radius_front_mm : EDGE_SHARE[shape] * Dest;
-    const eB = typeof params.edge_radius_back_mm === "number" ? params.edge_radius_back_mm : EDGE_SHARE[shape] * Dest;
     const arcR = (rad: number, delta: number) => (rad <= 0 || delta >= rad ? 0 : rad - Math.sqrt(rad * rad - (rad - Math.max(0, delta)) ** 2));
-    const insetAt = (z0: number, z1: number, zB?: number) => Math.max(arcR(Math.max(0, eF - t), -z1), zB !== undefined ? arcR(Math.max(0, eB - t), z0 - zB) : 0) + 0.3;
-    const scales = polySpec.fixed ? [1] : (quick ? [0.9, 1.05, 1.25] : [0.8, 0.88, 0.96, 1.05, 1.15, 1.27, 1.4, 1.55]).map((f) => f * s0);
+    // the rims' round-over (a share of the depth) takes room near the front and back faces: the
+    // depth is estimated (fixed, or 18 mm), then the packing is redone once with the depth it came to
+    const insetFor = (Dest: number) => {
+      const eF = typeof params.edge_radius_front_mm === "number" ? params.edge_radius_front_mm : EDGE_SHARE[shape] * Dest;
+      const eB = typeof params.edge_radius_back_mm === "number" ? params.edge_radius_back_mm : EDGE_SHARE[shape] * Dest;
+      return (z0: number, z1: number, zB?: number) => Math.max(arcR(Math.max(0, eF - t), -z1), zB !== undefined ? arcR(Math.max(0, eB - t), z0 - zB) : 0) + 0.3;
+    };
+    // fixed: the asked size, and a little bigger so a miss says how much bigger it must be
+    const scales = polySpec.fixed ? (quick ? [1, 1.05, 1.12] : [1, 1.03, 1.07, 1.12, 1.2]) : (quick ? [0.88, 1, 1.12, 1.27, 1.45] : [0.8, 0.88, 0.96, 1.05, 1.15, 1.27, 1.4, 1.55]).map((f) => f * s0);
     for (const sc of scales)
-      for (const ord of orders.slice(0, quick ? 1 : 4)) {
+      for (const ord of orders.slice(0, quick ? 2 : 4)) {
         const A = polySpec.A0 * sc;
         const B = polySpec.B0 * sc;
         const cav: Plan = { kind: "poly", cx: 0, cy: 0, a: A - t, b: B - t, rc: 0, flats: [], poly: polySpec.poly, ctrl: polySpec.ctrl, w0: t };
-        const r = pack(ord, 2 * (A - t), 2 * (B - t), g, front, shape, { score: polyScore, A0: polySpec.A0, B0: polySpec.B0, area: polyAreaNorm(polySpec.poly) }, { plan: cav, insetAt });
-        const key = "rg" + r.placed.map((p) => `${p.mech.id}:${p.min.map((v) => Math.round(v)).join(",")}:${p.rotation}:${p.facing}`).sort().join("|");
-        packs.push({ ...r, score: r.failed.length * 1e9 + r.score, key });
-        if (process.env.JUMPER_CASE_TIMING) console.log(`  region s=${sc.toFixed(2)} failed=${r.failed.join(",")} depth=${(-Math.min(...r.placed.map((q) => q.min[2]))).toFixed(1)} score=${(r.score / 1000).toFixed(0)}k`);
+        const run = (Dest: number) => pack(ord, 2 * (A - t), 2 * (B - t), g, front, shape, { score: polyScore, A0: polySpec.A0, B0: polySpec.B0, area: polyAreaNorm(polySpec.poly) }, { plan: cav, insetAt: insetFor(Dest) });
+        const D0 = depthFixed ?? 18;
+        // both packings go to the shortlist: the deeper estimate keeps clear of the rims, the first is often thinner
+        const runs = [run(D0)];
+        if (depthFixed === undefined && runs[0]!.placed.length) {
+          const D1 = -Math.min(...runs[0]!.placed.map((q) => q.min[2])) + 2 * t + 1.5;
+          if (D1 > D0 + 1) runs.push(run(D1));
+        }
+        for (const r of runs) {
+          const key = "rg" + r.placed.map((p) => `${p.mech.id}:${p.min.map((v) => Math.round(v)).join(",")}:${p.rotation}:${p.facing}`).sort().join("|");
+          packs.push({ ...r, score: r.failed.length * 1e9 + r.score, key });
+        }
       }
   }
   });
@@ -833,12 +849,13 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   const perSide = new Map<CaseFaceName, number>();
   for (const p of placed) if (p.bound && SIDE_FACES.includes(p.bound.face) && p.bound.feature.kind === "connector") perSide.set(p.bound.face, (perSide.get(p.bound.face) ?? 0) + 1);
   const sideOf = (f: Flat): CaseFaceName => (f.axis === "x" ? (f.sign > 0 ? "right" : "left") : f.sign > 0 ? "top" : "bottom");
-  plan = { ...plan, flats: mergeFlats(curved ? flats.filter((f) => (perSide.get(sideOf(f)) ?? 0) > 1) : flats) };
+  // a custom outline keeps the silhouette that was drawn (no flats): its ports reach through spot faces
+  plan = { ...plan, flats: kind === "poly" ? [] : mergeFlats(curved ? flats.filter((f) => (perSide.get(sideOf(f)) ?? 0) > 1) : flats) };
   // A flat that is outside the curve does nothing; one that cuts too deep is impossible (the parts are inside it by construction).
 
   // ---- 7. side-bound non-connector parts move out until the body (not just the cap) meets the wall
   for (const p of placed) {
-    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || (p.bound.feature.kind === "connector" && (!curved || (perSide.get(p.bound.face) ?? 0) > 1))) continue;
+    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || (p.bound.feature.kind === "connector" && (!curved || (kind !== "poly" && (perSide.get(p.bound.face) ?? 0) > 1)))) continue;
     const n = FACE_DIR[p.bound.face];
     // measured from where the feature leaves the body (a lever / shaft / dome pokes through the wall)
     const pt = p.bound.feature.passThrough ? p.bound.feature.protrude : 0;
@@ -870,7 +887,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   }
   // A connector the curve still keeps away from the wall (a tight end radius bows away from the
   // board's corners) gets a flat on that side after all, so the plug reaches the receptacle.
-  if (curved) {
+  if (curved && kind !== "poly") {
     const late: Flat[] = [];
     for (const p of placed) {
       if (!p.bound || !SIDE_FACES.includes(p.bound.face) || p.bound.feature.kind !== "connector") continue;

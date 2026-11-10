@@ -222,6 +222,9 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const c = constraints;
   const pocket = !!c.pocket || /pocket|keychain|key ?ring|wearable|wrist|smart ?watch|badge|tiny|small enough/.test(g);
   const portable = pocket || c.battery_hours !== undefined || /battery|portable|wireless|on the go|carry|outside|camping/.test(g);
+  // Round 7: a shape the person names ("shaped like an egg") is a custom outline, never a preset
+  const shapeWord = /\b(egg|heart|bean|star|cloud|ghost|cat|bear|frog|fish|leaf|teardrop|guitar pick|kidney|apple|pear|mushroom|shell|blob)\b/.exec(g)?.[1];
+  const shapeWish = shapeWord && /sh\w*pe|like|look|form|case/.test(g) ? shapeWord : undefined;
   const sizeLimit = c.max_size_mm ?? (pocket ? POCKET : undefined);
 
   // Which needs the wish names.
@@ -465,7 +468,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     ...(rover
       ? ["when the person wants to build it for real: export_manufacturing (factory pack: BOM, wiring, wire cuts, firmware, assembly steps; the chassis is the case)"]
       : [
-          `when the person wants to build it for real: ${portable ? 'set_assembly "soldered", ' : ""}design_case {"shape": "${pocket ? "pebble" : "rounded-box"}"} (try a variant with save: false: puck, pill, keychain, rounded-box), show the renders and the measured size, then export_manufacturing (factory pack: STL / 3MF / STEP for a printer or a factory, BOM, wiring, wire cuts, firmware, assembly steps)`,
+          `when the person wants to build it for real: ${portable ? 'set_assembly "soldered", ' : ""}design_case {"shape": "${shapeWish ? "custom" : pocket ? "pebble" : "rounded-box"}"${shapeWish ? `, "outline": <the ${shapeWish} drawn as an SVG path in mm or {"points": [...], "smooth": true}>` : ""}} (${shapeWish ? `there is no "${shapeWish}" preset: draw it; check_fit first, under a second, says what fits and suggests smaller parts when it does not` : "any other shape is custom with an outline you draw; try a variant with save: false: puck, pill, keychain, rounded-box"}), show the renders and the measured size, then export_manufacturing (factory pack: STL / 3MF / STEP for a printer or a factory, BOM, wiring, wire cuts, firmware, assembly steps)`,
         ]),
   ];
 

@@ -4,9 +4,10 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Cases for Jumper devices: packs a project's parts into a printable two-part shell (rounded box, pill, pebble, puck, keychain) and writes STL, 3MF, STEP, renders and a dimensioned drawing. CAD by replicad on OpenCascade (wasm).",
+  "description": "Cases for Jumper devices: packs a project's parts into a printable two-part shell (rounded box, pill, pebble, puck, keychain, or any custom outline at any size) and writes STL, 3MF, STEP, renders and a dimensioned drawing. CAD by replicad on OpenCascade (wasm).",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./outline": "./src/outline.ts"
   },
   "scripts": {
     "test": "vitest run"
