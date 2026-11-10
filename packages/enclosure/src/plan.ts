@@ -50,12 +50,13 @@ export interface Need {
 export function contains(p: Plan, x: number, y: number, inset = 0): boolean {
   for (const f of p.flats) if (f.sign * ((f.axis === "x" ? x : y) - f.at) > 1e-6 - (f.sign > 0 ? 0 : 0)) return false;
   const rc = p.flatCorner ?? 0;
-  if (rc > 0.05 && p.flats.length && (p.kind === "circle" || p.kind === "stadium")) {
+  if (rc > 0.05 && p.flats.length && (p.kind === "circle" || p.kind === "stadium" || p.kind === "poly")) {
     // the rounded corner where a flat meets the curve (treated as a right-angle corner: conservative for the obtuse ones a flat makes)
     const dx0 = x - p.cx;
     const dy0 = y - p.cy;
     let curve: number;
-    if (p.kind === "circle") curve = p.a - Math.hypot(dx0, dy0);
+    if (p.kind === "poly") curve = polyDistance(p, x, y) - (p.w0 ?? 0);
+    else if (p.kind === "circle") curve = p.a - Math.hypot(dx0, dy0);
     else {
       const r = Math.min(p.a, p.b);
       const half = Math.max(p.a, p.b) - r;
@@ -311,6 +312,30 @@ export function sizePlan(kind: PlanKind, needs: Need[], opts: { center?: [number
 /** Replicad drawing of the plan grown by offset (a true 2D offset, so walls stay uniform). `r` is the replicad module. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function planDrawing(r: any, p: Plan, offset = 0): any {
+  if (p.kind === "poly" && p.flats.length) {
+    // a custom outline with a port flat: offset the curve alone (one smooth edge: robust), then cut
+    // the flats at their own offset; offsetting the trimmed curve makes slivers the kernel chokes on
+    let d = planDrawing(r, { ...p, flats: [] }, offset);
+    const big = 4 * Math.max(p.a, p.b) + 40 + 2 * Math.abs(offset);
+    for (const f0 of p.flats) {
+      const at = f0.at + f0.sign * offset;
+      const keep = f0.axis === "x" ? r.drawRectangle(big, big).translate(f0.sign > 0 ? at - big / 2 : at + big / 2, p.cy) : r.drawRectangle(big, big).translate(p.cx, f0.sign > 0 ? at - big / 2 : at + big / 2);
+      d = d.intersect(keep);
+      // round the corners where the flat meets the curve, concentric at every offset (uniform wall)
+      const rc = (p.flatCorner ?? 0) + offset;
+      if ((p.flatCorner ?? 0) > 0.05 && rc > 0.05) {
+        const lo: [number, number] = f0.axis === "x" ? [at - 0.05, -1e4] : [-1e4, at - 0.05];
+        const hi: [number, number] = f0.axis === "x" ? [at + 0.05, 1e4] : [1e4, at + 0.05];
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          d = d.fillet(rc, (c: any) => c.inBox(lo, hi));
+        } catch {
+          // keep the sharp corner: the edge fillet then falls back to a smaller radius
+        }
+      }
+    }
+    return d;
+  }
   let d;
   const { a, b } = p;
   const w0 = p.kind === "poly" ? (p.w0 ?? 0) : 0;

@@ -928,7 +928,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   // A flat on a round shape gets rounded corners as large as the edge fillet needs (OpenCascade
   // cannot roll a fillet round a tighter corner), as far as the parts beside it allow; the edge
   // radius shrinks to what the corner allows.
-  if (curved && plan.flats.length && kind !== "ellipse" && kind !== "poly") {
+  if (curved && plan.flats.length && kind !== "ellipse") {
     const okRc = (rc: number) =>
       placed.every((p) => {
         const inset = intrusion(p.bodyMin[2], p.bodyMax[2]);
