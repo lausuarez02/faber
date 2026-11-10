@@ -692,6 +692,172 @@
         "type": "string"
       },
       "additionalProperties": {}
+    },
+    "assembly": {
+      "description": "How it is built: 'breadboard' (default for Uno / Nano projects) or 'soldered' (hand-wired in a case; default when there is an enclosure or a pocket board).",
+      "type": "string",
+      "enum": [
+        "breadboard",
+        "soldered"
+      ]
+    },
+    "power": {
+      "description": "Power situation for the simulation and check_design (USB plugged in or not).",
+      "type": "object",
+      "properties": {
+        "usb": {
+          "description": "A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only.",
+          "type": "boolean"
+        }
+      }
+    },
+    "enclosure": {
+      "description": "The case: shape, parameters and where parts go. Written by design_case / update_case; files are generated into case/.",
+      "type": "object",
+      "properties": {
+        "shape": {
+          "type": "string",
+          "enum": [
+            "rounded-box",
+            "pill",
+            "pebble",
+            "puck",
+            "keychain"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "wall_mm": {
+              "description": "Wall thickness, mm (default 1.6, min 1.2).",
+              "type": "number",
+              "minimum": 1.2,
+              "maximum": 5
+            },
+            "corner_radius_mm": {
+              "description": "Outer corner radius for rounded-box / keychain, mm (default 4).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "color": {
+              "description": "Shell colour for renders and 3MF, e.g. '#F2EDE4'.",
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "lanyard_hole": {
+              "description": "Add a lanyard / keyring hole (default true for keychain).",
+              "type": "boolean"
+            },
+            "belt_clip": {
+              "description": "Add a belt clip on the back (default false).",
+              "type": "boolean"
+            },
+            "closure": {
+              "description": "snap = snap-fit lip; screws = M2 screws into heat-set inserts (default snap).",
+              "type": "string",
+              "enum": [
+                "snap",
+                "screws"
+              ]
+            },
+            "tolerance_mm": {
+              "description": "Clearance between mating parts, mm (default 0.2 for FDM).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "process": {
+              "description": "Target process for notes and tolerances (default fdm).",
+              "type": "string",
+              "enum": [
+                "fdm",
+                "resin",
+                "injection"
+              ]
+            },
+            "gap_mm": {
+              "description": "Free room around parts for wires, mm (default 1.5).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            }
+          }
+        },
+        "front": {
+          "description": "Part id whose screen faces out of the front (default: the first display).",
+          "type": "string"
+        },
+        "placements": {
+          "description": "Per part id: where it goes. Parts left out are auto-packed.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "face": {
+                "description": "Face the part's exposed feature goes on; 'inside' = no opening.",
+                "type": "string",
+                "enum": [
+                  "front",
+                  "back",
+                  "left",
+                  "right",
+                  "top",
+                  "bottom",
+                  "inside"
+                ]
+              },
+              "x_mm": {
+                "description": "Position on that face from its centre, mm (+x right / +y up as you look at that face).",
+                "type": "number"
+              },
+              "y_mm": {
+                "type": "number"
+              },
+              "rotation": {
+                "description": "Turn on that face, degrees.",
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "const": 0
+                  },
+                  {
+                    "type": "number",
+                    "const": 90
+                  },
+                  {
+                    "type": "number",
+                    "const": 180
+                  },
+                  {
+                    "type": "number",
+                    "const": 270
+                  }
+                ]
+              },
+              "layer": {
+                "description": "Stack layer from the front (0 = right behind the front wall).",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9
+              }
+            }
+          }
+        },
+        "exclude": {
+          "description": "Part ids that are not inside the case (e.g. a test resistor, an external sensor on a cable).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "shape"
+      ]
     }
   },
   "required": [

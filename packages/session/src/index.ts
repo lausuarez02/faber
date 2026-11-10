@@ -9,7 +9,7 @@ export { checkDesign } from "./drc.ts";
 export type { DesignIssue } from "./drc.ts";
 export { fidelityReport } from "./fidelity.ts";
 export { SimHost, FAULT_KINDS, FAULTS_NOT_YET, compactState } from "./sim.ts";
-export type { Frame } from "./sim.ts";
+export type { ColorFrameImage, Frame } from "./sim.ts";
 export { runScenario, validateScenario } from "./scenario.ts";
 export type { ScenarioResult } from "./scenario.ts";
 export { composeSvg, svgToPng, bindSvgString, loadPlaywright } from "./screenshot.ts";

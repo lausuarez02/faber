@@ -517,7 +517,7 @@ export const projectsRoutes: ApiRoute[] = [
         files: d.files,
         ...(d.approxFiles.length ? { approxFiles: d.approxFiles } : {}),
         ...(d.firmware ? { firmware: d.firmware } : {}),
-        ...(d.frame ? { frame: { t_ms: d.frame.t_ms, parts: d.frame.parts } } : {}),
+        ...(d.frame ? { frame: { t_ms: d.frame.t_ms, parts: d.frame.parts, ...(d.frame.color ? { color: d.frame.color } : {}) } } : {}),
         changes: d.changes,
       });
     },

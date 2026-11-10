@@ -10,6 +10,14 @@ export {
   FirmwareSchema,
   ScenarioSchema,
   ProjectSchema,
+  AssemblyStyleSchema,
+  PowerOptionsSchema,
+  CASE_SHAPES,
+  CASE_FACES,
+  CaseShapeSchema,
+  CaseParamsSchema,
+  CasePlacementSchema,
+  EnclosureSchema,
 } from "./schema.ts";
 export type {
   Point,
@@ -23,6 +31,12 @@ export type {
   Scenario,
   Project,
   ProjectInput,
+  AssemblyStyle,
+  PowerOptions,
+  CaseShape,
+  CaseParams,
+  CasePlacement,
+  Enclosure,
 } from "./schema.ts";
 export {
   ProjectParseError,

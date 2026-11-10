@@ -64,6 +64,61 @@ export const FirmwareSchema = z.object({
 
 export { ScenarioSchema };
 
+// --- Round 6 (decision 0004): how the device is built and housed. All optional. -----------------
+
+/** R2: how it is put together. "soldered" = hand-wired / perfboard in a case (wire lengths, no breadboard or dupont in the BOM). */
+export const AssemblyStyleSchema = z.enum(["breadboard", "soldered"]);
+
+/** R2: the project's power situation the simulation and check_design use. */
+export const PowerOptionsSchema = z.object({
+  usb: z
+    .boolean()
+    .optional()
+    .describe("A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only."),
+});
+
+/** R3: case shapes. */
+export const CASE_SHAPES = ["rounded-box", "pill", "pebble", "puck", "keychain"] as const;
+export const CaseShapeSchema = z.enum(CASE_SHAPES);
+
+/** R3: case faces, seen from the person holding it with the screen (front) towards them. */
+export const CASE_FACES = ["front", "back", "left", "right", "top", "bottom"] as const;
+
+export const CaseParamsSchema = z.object({
+  wall_mm: z.number().min(1.2).max(5).optional().describe("Wall thickness, mm (default 1.6, min 1.2)."),
+  corner_radius_mm: z.number().min(0).max(30).optional().describe("Outer corner radius for rounded-box / keychain, mm (default 4)."),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe("Shell colour for renders and 3MF, e.g. '#F2EDE4'."),
+  lanyard_hole: z.boolean().optional().describe("Add a lanyard / keyring hole (default true for keychain)."),
+  belt_clip: z.boolean().optional().describe("Add a belt clip on the back (default false)."),
+  closure: z.enum(["snap", "screws"]).optional().describe("snap = snap-fit lip; screws = M2 screws into heat-set inserts (default snap)."),
+  tolerance_mm: z.number().min(0).max(1).optional().describe("Clearance between mating parts, mm (default 0.2 for FDM)."),
+  process: z.enum(["fdm", "resin", "injection"]).optional().describe("Target process for notes and tolerances (default fdm)."),
+  gap_mm: z.number().min(0).max(10).optional().describe("Free room around parts for wires, mm (default 1.5)."),
+});
+
+export const CasePlacementSchema = z.object({
+  face: z.enum([...CASE_FACES, "inside"]).optional().describe("Face the part's exposed feature goes on; 'inside' = no opening."),
+  x_mm: z.number().optional().describe("Position on that face from its centre, mm (+x right / +y up as you look at that face)."),
+  y_mm: z.number().optional(),
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]).optional().describe("Turn on that face, degrees."),
+  layer: z.number().int().min(0).max(9).optional().describe("Stack layer from the front (0 = right behind the front wall)."),
+});
+
+export const EnclosureSchema = z.object({
+  shape: CaseShapeSchema,
+  params: CaseParamsSchema.optional(),
+  front: z.string().optional().describe("Part id whose screen faces out of the front (default: the first display)."),
+  placements: z.record(z.string(), CasePlacementSchema).optional().describe("Per part id: where it goes. Parts left out are auto-packed."),
+  exclude: z.array(z.string()).optional().describe("Part ids that are not inside the case (e.g. a test resistor, an external sensor on a cable)."),
+});
+
+export type AssemblyStyle = z.infer<typeof AssemblyStyleSchema>;
+export type PowerOptions = z.infer<typeof PowerOptionsSchema>;
+export type CaseShape = z.infer<typeof CaseShapeSchema>;
+export type CaseParams = z.infer<typeof CaseParamsSchema>;
+export type CasePlacement = z.infer<typeof CasePlacementSchema>;
+export type Enclosure = z.infer<typeof EnclosureSchema>;
+
 export const ProjectSchema = z
   .object({
     format: z.literal(FORMAT_VERSION),
@@ -77,6 +132,9 @@ export const ProjectSchema = z
       .record(z.string(), z.unknown())
       .optional()
       .describe("Physical world for robots (arena, obstacles, robot / arm binding). Validated by @jumper/physics parseWorld; kept as-is here."),
+    assembly: AssemblyStyleSchema.optional().describe("How it is built: 'breadboard' (default for Uno / Nano projects) or 'soldered' (hand-wired in a case; default when there is an enclosure or a pocket board)."),
+    power: PowerOptionsSchema.optional().describe("Power situation for the simulation and check_design (USB plugged in or not)."),
+    enclosure: EnclosureSchema.optional().describe("The case: shape, parameters and where parts go. Written by design_case / update_case; files are generated into case/."),
   })
   .superRefine((project, ctx) => {
     const partIds = new Set<string>();

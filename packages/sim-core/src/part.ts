@@ -92,6 +92,102 @@ export const McuSpecSchema = z.object({
 });
 export type McuSpec = z.infer<typeof McuSpecSchema>;
 
+// ---------------------------------------------------------------------------
+// Mechanical data (round 6, decision 0004, contract R1). Everything a case needs to know about a
+// part: where its screen window, button cap, connector opening, LEDs and sensor apertures are, its
+// mounting holes and the room it needs above / below. All lengths in mm.
+//
+// Part frame: looking down at the part's top (component / front) face, oriented exactly like its
+// visual.svg. Origin = the top-left corner of the dimensions_mm footprint, +x to the right (along
+// w), +y DOWN (along h, like SVG), +z up out of the top face; z = 0 is the bottom of the body.
+// dimensions_mm.d is the full height including components. A pin at visual.svg (px, py) sits at
+// (px / size.w * w, py / size.h * h).
+// ---------------------------------------------------------------------------
+
+/** Which side of the part a feature faces out of, as an axis of the part frame (+z = top face). */
+export const MECH_FACES = ["+z", "-z", "+x", "-x", "+y", "-y"] as const;
+export type MechFace = (typeof MECH_FACES)[number];
+
+export const MECH_FEATURE_KINDS = [
+  "screen", // active (lit) area of a display; the case cuts a window over it
+  "button", // a cap / actuator the person presses (tactile switch, touch pad)
+  "switch", // slide / toggle switch lever
+  "knob", // potentiometer / encoder shaft
+  "connector", // USB / JST / header the person (or a cable) must reach
+  "led", // an LED that should be seen (light pipe or hole)
+  "sensor-window", // light sensor, IR, PIR dome, ultrasonic transducers: needs an opening / window
+  "grille", // buzzer / speaker / microphone: needs sound holes
+  "vent", // needs airflow (regulators, chargers)
+  "antenna", // keep metal / thick walls away
+] as const;
+export type MechFeatureKind = (typeof MECH_FEATURE_KINDS)[number];
+
+export const MechFeatureSchema = z.object({
+  /** Unique within the part, e.g. "active-area", "cap", "usb", "dome". */
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+  kind: z.enum(MECH_FEATURE_KINDS),
+  face: z.enum(MECH_FACES),
+  /** Centre of the feature in the part frame (mm). On a ±z face: the point on that face. On a side face: x and y of the point on that edge (one of them is the edge itself: 0 or w / h). */
+  x: z.number(),
+  y: z.number(),
+  /** Height of the centre above the body bottom (mm). Required for side faces; for ±z faces it defaults to d (+z) or 0 (-z). */
+  z: z.number().optional(),
+  shape: z.enum(["rect", "round"]).optional(),
+  /** Size on the face (mm). rect: w along the face's horizontal axis (x for ±z / ±y faces, y for ±x faces), h along the other one (y for ±z, z for side faces). round: d. */
+  w: z.number().positive().optional(),
+  h: z.number().positive().optional(),
+  d: z.number().positive().optional(),
+  /** How far the feature stands out of the face (button plunger, USB receptacle lip, PIR dome), mm. */
+  protrude_mm: z.number().nonnegative().optional(),
+  /** screen: the visible frame around the active area the window may overlap (mm, each side). */
+  bezel_mm: z.number().nonnegative().optional(),
+  /** button / switch: actuation travel (mm). */
+  travel_mm: z.number().nonnegative().optional(),
+  /** connector: extra opening around the receptacle for the plug's overmold (mm, each side). USB-C plugs need about 1.5. */
+  plug_clearance_mm: z.number().nonnegative().optional(),
+  /** connector: "usb-c", "micro-usb", "jst-ph-2", "jst-sh-4", "header-2.54", … */
+  connector: z.string().optional(),
+  /** The case must expose it (window / hole / cap / opening). Default: true for screen, button, switch, knob, connector, led, sensor-window, grille; false for vent, antenna. */
+  expose: z.boolean().optional(),
+  description: z.string().optional(),
+});
+export type MechFeature = z.infer<typeof MechFeatureSchema>;
+
+export const MechanicalSchema = z.object({
+  /** Footprint outline: "rect" (the w × h box, default) or "round" (a disc of diameter w centred in the box, e.g. the GC9A01 module). */
+  outline: z.enum(["rect", "round"]).optional(),
+  /** PCB thickness when the part is a board / module (mm), e.g. 1.0 for a XIAO, 1.6 for most modules. */
+  pcb_mm: z.number().positive().optional(),
+  /** Extra room above the top face (wires, solder joints), mm. Default 0. */
+  keepout_top_mm: z.number().nonnegative().optional(),
+  /** Extra room below the bottom face (header pins, through-hole leads, solder), mm. Default 0. */
+  keepout_bottom_mm: z.number().nonnegative().optional(),
+  /** Soft body that must not be pressed or pierced (LiPo pouch): the case gives it a cradle with ~10 % swell room, never a boss or a screw. */
+  soft: z.boolean().optional(),
+  /** Mounting holes in the part frame (mm): centre and hole diameter (e.g. 2.2 for M2). */
+  mounting_holes: z.array(z.object({ x: z.number(), y: z.number(), d: z.number().positive() })).optional(),
+  features: z.array(MechFeatureSchema).optional(),
+  /** Where the numbers come from ("datasheet", "measured", "typical module"), printed in the drawing notes. */
+  source: z.string().optional(),
+});
+export type Mechanical = z.infer<typeof MechanicalSchema>;
+
+/** Sourcing for a factory BOM (round 6, R1). Only numbers checked against the distributor; unknown = left out, never guessed. */
+export const SourcingSchema = z.object({
+  /** Manufacturer part number of the module or its key chip, e.g. "1N5817". */
+  mpn: z.string().optional(),
+  manufacturer: z.string().optional(),
+  /** LCSC part number, e.g. "C8598". */
+  lcsc: z.string().regex(/^C\d+$/).optional(),
+  /** JLCPCB assembly library class of that LCSC part. */
+  jlc: z.enum(["basic", "extended"]).optional(),
+  /** Package or form factor, e.g. "DO-41", "SOT-23-3", "module 21 x 17.5 mm". */
+  package: z.string().optional(),
+  /** Plain words a supplier can quote from when there is no MPN, e.g. "1.28 in round IPS TFT 240x240, GC9A01, SPI, module". */
+  generic: z.string().optional(),
+});
+export type Sourcing = z.infer<typeof SourcingSchema>;
+
 export const PartSpecSchema = z.object({
   /** Part type id; equals the folder name, kebab-case, e.g. "arduino-uno". */
   id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
@@ -153,6 +249,10 @@ export const PartSpecSchema = z.object({
     })
     .optional(),
   tags: z.array(z.string()).optional(),
+  /** Round 6 (decision 0004, R1): what a case needs. Optional; the case track requires it for every part an example uses. The LAST key of part.json. */
+  mechanical: MechanicalSchema.optional(),
+  /** Round 6 (R1): factory BOM numbers. Optional; written after mechanical. */
+  sourcing: SourcingSchema.optional(),
 });
 export type PartSpec = z.infer<typeof PartSpecSchema>;
 

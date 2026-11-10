@@ -1,0 +1,24 @@
+{
+  "name": "@jumper/enclosure",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Cases for Jumper devices: packs a project's parts into a printable two-part shell (rounded box, pill, pebble, puck, keychain) and writes STL, 3MF, STEP, renders and a dimensioned drawing. CAD by replicad on OpenCascade (wasm).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jumper/project-format": "workspace:*",
+    "@jumper/sim-core": "workspace:*",
+    "fflate": "0.8.3",
+    "replicad": "1.1.0",
+    "replicad-opencascadejs": "1.1.0"
+  },
+  "devDependencies": {
+    "@jumper/parts": "workspace:*"
+  }
+}

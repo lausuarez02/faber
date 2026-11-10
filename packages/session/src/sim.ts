@@ -25,6 +25,13 @@ export type FaultKind = (typeof FAULT_KINDS)[number];
 /** Documented but not simulated yet; inject_fault explains this instead of pretending. */
 export const FAULTS_NOT_YET = ["brownout", "clock_drift", "flash_full", "short", "stuck_pin"] as const;
 
+/** A colour screen's pixels as a PNG (decision 0004, R7): native size, base64 without a data: prefix. */
+export interface ColorFrameImage {
+  w: number;
+  h: number;
+  png: string;
+}
+
 export interface Frame {
   /** Virtual ms. */
   vt: number;
@@ -34,6 +41,8 @@ export interface Frame {
   serial?: string;
   /** Ids of wires carrying a HIGH level (> 1.5 V), when that set changed. */
   live?: string[];
+  /** Round 6 (decision 0004, R7, frames track): colour TFT pixels of parts whose screen changed, keyed by part id. */
+  color?: Record<string, ColorFrameImage>;
 }
 
 interface NoiseSpec {

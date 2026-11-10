@@ -59,4 +59,6 @@ export type LiveServerEvent =
   /** Round 5, projects track: the server's active project changed; reload everything (a hello follows). */
   | { type: "project"; dir: string; id: string }
   /** Round 5, projects track: a new version exists in the active project's history (C3). */
-  | { type: "version"; version: number; at: string; actor: string; why?: string };
+  | { type: "version"; version: number; at: string; actor: string; why?: string }
+  /** Round 6 (decision 0004, R6, case track): the case files were regenerated (design_case / update_case / POST /api/case). */
+  | { type: "case"; hash: string; ok: boolean };

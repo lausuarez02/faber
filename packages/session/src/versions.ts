@@ -4,6 +4,7 @@ import type { Project } from "@jumper/project-format";
 import { applyToProject, projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
 import type { ActionEntry } from "./session.ts";
 import type { VisualState } from "@jumper/sim-core";
+import type { ColorFrameImage } from "./sim.ts";
 
 /**
  * Round 5, projects track (decision 0003, C3): a project's versions, rebuilt from its append-only
@@ -46,6 +47,8 @@ export interface VersionFrame {
   parts: Record<string, VisualState>;
   /** Wires carrying a HIGH level at that moment. */
   live?: string[];
+  /** Round 6 (decision 0004, R7): colour screens at that moment (frames track fills it). */
+  color?: Record<string, ColorFrameImage>;
 }
 
 export interface VersionDetail {
