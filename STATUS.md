@@ -13,7 +13,7 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 Five tracks merged into main in the order power, frames, switch, canvas, case (decision
 [0004](docs/decisions/0004-round6-real-device.md)), then the lead's integration. Checks after the
 merge: `pnpm gen` no diff, `pnpm typecheck` 0 errors, `pnpm test` 1229 passed, 2 skipped (139 files); full e2e (desktop,
-mobile and perf, `E2E_PORT=5360`, hub ports from 9400) 77 passed, 14 skipped by design, 3 flaky (passed on retry: case view desktop + mobile, switch-projects).
+mobile and perf, `E2E_PORT=5360`, hub ports from 9400) 77 passed, 14 skipped by design, 3 failed (case view desktop + mobile, switch-projects; an earlier version of this line wrongly called them flaky). All three were fixed in round 6b, below.
 
 The Pocket Muse (`examples/agent-built/claude-pocket-muse`, Claude Code's round-5 build) now goes
 the whole way: its LiPo really powers it (USB unplugged, switch + 1N5817, 11/11 tests, check_design
