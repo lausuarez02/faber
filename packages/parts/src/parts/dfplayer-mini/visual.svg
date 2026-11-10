@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 190" width="160" height="190">
+  <rect x="1" y="14" width="158" height="172" rx="6" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="38" y="2" width="84" height="44" rx="3" fill="#2B313B" stroke="#3A4250" stroke-width="1"/>
+  <rect x="44" y="6" width="72" height="30" rx="2" fill="#1C2027"/>
+  <path d="M50 12 H110 M50 18 H110 M50 24 H96" stroke="#3A4250" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="80" y="43" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">microSD</text>
+  <rect x="56" y="70" width="48" height="40" rx="3" fill="#15181D" stroke="#3A4250" stroke-width="1"/>
+  <circle cx="61" cy="75" r="1.4" fill="#3A4250"/>
+  <path d="M60 70 V66 M68 70 V66 M76 70 V66 M84 70 V66 M92 70 V66 M100 70 V66 M60 110 V114 M68 110 V114 M76 110 V114 M84 110 V114 M92 110 V114 M100 110 V114" stroke="#9AA3AF" stroke-width="1.2"/>
+  <text x="80" y="88" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">MP3</text>
+  <text x="80" y="100" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" data-bind="text:label">off</text>
+  <rect x="62" y="124" width="36" height="16" rx="2" fill="#1C2027" stroke="#3A4250" stroke-width="1"/>
+  <text x="80" y="135" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">AMP</text>
+  <circle cx="80" cy="156" r="5" fill="#15181D" stroke="#3A4250" stroke-width="1"/>
+  <circle cx="80" cy="156" r="3.5" fill="#5CF2A1" opacity="0" data-bind="opacity:playOpacity"/>
+  <circle cx="80" cy="156" r="9" fill="#5CF2A1" opacity="0" filter="url(#dfplayer-mini-glow)" data-bind="opacity:playOpacity"/>
+  <circle cx="132" cy="22" r="2" fill="#FF3B2F" opacity="0" data-bind="opacity:powerOpacity"/>
+  <text x="80" y="176" text-anchor="middle" font-family="Bricolage Grotesque" font-size="9" fill="#E9EDF2">DFPlayer Mini</text>
+  <defs>
+    <filter id="dfplayer-mini-glow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <g font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">
+    <text x="18" y="32">VCC</text>
+    <text x="18" y="52">RX</text>
+    <text x="18" y="72">TX</text>
+    <text x="18" y="92">DAC_R</text>
+    <text x="18" y="112">DAC_L</text>
+    <text x="18" y="132">SPK_1</text>
+    <text x="18" y="152">GND</text>
+    <text x="18" y="172">SPK_2</text>
+    <text x="142" y="32" text-anchor="end">BUSY</text>
+    <text x="142" y="52" text-anchor="end">USB-</text>
+    <text x="142" y="72" text-anchor="end">USB+</text>
+    <text x="142" y="92" text-anchor="end">ADK2</text>
+    <text x="142" y="112" text-anchor="end">ADK1</text>
+    <text x="142" y="132" text-anchor="end">IO2</text>
+    <text x="142" y="152" text-anchor="end">GND</text>
+    <text x="142" y="172" text-anchor="end">IO1</text>
+  </g>
+  <g fill="#C9CED6">
+    <circle data-pin="VCC" cx="10" cy="30" r="3"/>
+    <circle data-pin="RX" cx="10" cy="50" r="3"/>
+    <circle data-pin="TX" cx="10" cy="70" r="3"/>
+    <circle data-pin="DAC_R" cx="10" cy="90" r="3"/>
+    <circle data-pin="DAC_L" cx="10" cy="110" r="3"/>
+    <circle data-pin="SPK_1" cx="10" cy="130" r="3"/>
+    <circle data-pin="GND.1" cx="10" cy="150" r="3"/>
+    <circle data-pin="SPK_2" cx="10" cy="170" r="3"/>
+    <circle data-pin="BUSY" cx="150" cy="30" r="3"/>
+    <circle data-pin="USB-" cx="150" cy="50" r="3"/>
+    <circle data-pin="USB+" cx="150" cy="70" r="3"/>
+    <circle data-pin="ADKEY_2" cx="150" cy="90" r="3"/>
+    <circle data-pin="ADKEY_1" cx="150" cy="110" r="3"/>
+    <circle data-pin="IO_2" cx="150" cy="130" r="3"/>
+    <circle data-pin="GND.2" cx="150" cy="150" r="3"/>
+    <circle data-pin="IO_1" cx="150" cy="170" r="3"/>
+  </g>
+</svg>

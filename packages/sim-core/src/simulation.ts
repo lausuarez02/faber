@@ -15,6 +15,7 @@ import {
   type PartInteraction,
   type PartModel,
   type PartRegistry,
+  type Utterance,
   type VisualState,
 } from "./part.ts";
 
@@ -408,6 +409,13 @@ export class Simulation {
 
   partState(partId: string): VisualState | undefined {
     return this.slot(partId)?.model.visualState();
+  }
+
+  /** Round 7 (voice): what the parts said (DFPlayer clips), oldest first, with the part id. */
+  speech(): (Utterance & { partId: string })[] {
+    const out: (Utterance & { partId: string })[] = [];
+    for (const s of this.slots) for (const u of s.model.speech?.() ?? []) out.push({ ...u, partId: s.id });
+    return out.sort((a, b) => a.t_ms - b.t_ms);
   }
 
   /** A colour display part's frame (see PartModel.framebuffer), or undefined for other parts. */
@@ -932,6 +940,7 @@ export class Simulation {
       this.pinWatchers.set(pin, set);
     }
     set.add(cb);
+    this.mcu?.pinWatched?.(pin); // round 7 voice: the AVR's hardware UART pins
     return () => void this.pinWatchers.get(pin)?.delete(cb);
   }
 

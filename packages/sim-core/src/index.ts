@@ -60,6 +60,7 @@ export type {
   VisualValue,
   VisualState,
   PartInteraction,
+  Utterance,
   Diagnostic,
   PartContext,
   PartModel,

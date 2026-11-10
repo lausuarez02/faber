@@ -48,7 +48,8 @@ export type PinSpec = z.infer<typeof PinSpecSchema>;
 export const PropSpecSchema = z.object({
   id: z.string().min(1),
   label: z.string(),
-  type: z.enum(["number", "boolean", "color", "enum"]),
+  /** "text" (round 7 voice): free text over several lines (a DFPlayer's clip words), stored as a string. */
+  type: z.enum(["number", "boolean", "color", "enum", "text"]),
   default: z.union([z.number(), z.boolean(), z.string()]),
   min: z.number().optional(),
   max: z.number().optional(),
@@ -306,6 +307,29 @@ export interface PartInteraction {
   value?: VisualValue;
 }
 
+/**
+ * Round 7 (voice): one thing a part said out loud (a DFPlayer playing a clip whose words are
+ * known). Behavioral: the words come from the part's clip table, the timing is estimated.
+ */
+export interface Utterance {
+  /** Virtual ms when playback started. */
+  t_ms: number;
+  /** Estimated playback length in virtual ms. */
+  dur_ms: number;
+  /** Track number the firmware asked for (a folder play keeps the track inside the folder). */
+  track: number;
+  /** Key looked up in the clip table: "12" for a track, "2/5" for folder 2 track 5. */
+  clip: string;
+  /** The words; when the clip has none: "(track 7: no words set)". */
+  text: string;
+  /** True when the clip had no words in the table. */
+  missing?: boolean;
+  /** True when a load is wired to the audio outputs (a speaker on SPK_1/SPK_2 or the DAC pins), so a person would hear it. */
+  audible: boolean;
+  /** Volume 0..30 when it started. */
+  volume: number;
+}
+
 export interface Diagnostic {
   severity: "info" | "warning" | "error";
   message: string;
@@ -407,6 +431,8 @@ export interface PartModel {
    * visualState(), so renderers and screenshots read it here (Simulation.framebuffer(partId)).
    */
   framebuffer?(): ColorFrame;
+  /** Round 7 (voice): everything this part said since the simulation started, oldest first. */
+  speech?(): readonly Utterance[];
 }
 
 export type PartModelFactory = (ctx: PartContext) => PartModel;

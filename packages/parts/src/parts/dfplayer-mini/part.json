@@ -1,0 +1,93 @@
+{
+  "id": "dfplayer-mini",
+  "name": "MP3 player DFPlayer Mini (microSD, 3 W amp)",
+  "category": "output",
+  "description": "Plays MP3 clips from a microSD card through a small speaker: the way to make a device talk. The board sends it 10-byte serial commands at 9600 baud. In Jumper the clips are text (the \"clips\" prop: one \"N: words\" line per track) and playing track N says those words. Wiring: VCC → 5V / VBUS, GND → GND, RX ← board TX through 1 kΩ, TX → board RX, SPK_1 / SPK_2 → speaker + / -.",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 10, "y": 30, "type": "power", "voltage": { "min": 3.2, "max": 5.0 }, "description": "Supply 3.2 to 5 V. 5 V (VBUS) gives full volume; 3.3 V works but quieter. Draws about 20 mA idle and up to 200 mA on loud clips." },
+    { "id": "RX", "label": "RX", "x": 10, "y": 50, "type": "digital", "protocols": ["uart-rx"], "voltage": { "min": 0, "max": 5.5 }, "description": "Serial into the module, 9600 baud 8N1. From the board's TX pin through a 1 kΩ resistor (cuts the hiss and protects the 3.3 V input). Uno/Nano: a SoftwareSerial TX pin such as D11; XIAO RP2040: D6 (Serial1 TX, GP0)." },
+    { "id": "TX", "label": "TX", "x": 10, "y": 70, "type": "digital", "protocols": ["uart-tx"], "voltage": { "min": 0, "max": 3.3 }, "description": "Serial out of the module (3.3 V logic): online / ACK / track finished replies. To the board's RX pin (Uno/Nano: the SoftwareSerial RX pin such as D10; XIAO RP2040: D7 = Serial1 RX, GP1). Optional if the sketch never reads replies." },
+    { "id": "DAC_R", "label": "DAC_R", "x": 10, "y": 90, "type": "passive", "description": "Right line-level output (about 0.7 V RMS) for an external amplifier or headphones. Leave unwired when a speaker is on SPK_1 / SPK_2." },
+    { "id": "DAC_L", "label": "DAC_L", "x": 10, "y": 110, "type": "passive", "description": "Left line-level output, like DAC_R." },
+    { "id": "SPK_1", "label": "SPK_1", "x": 10, "y": 130, "type": "passive", "description": "Speaker output + of the built-in 3 W amplifier (bridged). To the speaker's + lead. Never connect it to GND." },
+    { "id": "GND.1", "label": "GND", "x": 10, "y": 150, "type": "ground", "description": "Ground, shared with the board." },
+    { "id": "SPK_2", "label": "SPK_2", "x": 10, "y": 170, "type": "passive", "description": "Speaker output - (bridged, not ground). To the speaker's - lead." },
+    { "id": "BUSY", "label": "BUSY", "x": 150, "y": 30, "type": "digital", "voltage": { "min": 0, "max": 3.3 }, "description": "Status output: LOW while a clip plays, HIGH (3.3 V) when idle. Wire it to a free board pin and digitalRead it to know when it finished talking (or wait for the 0x3D reply)." },
+    { "id": "USB-", "label": "USB-", "x": 150, "y": 50, "type": "passive", "description": "USB data - (the module can appear as a USB card reader). Not used in Jumper." },
+    { "id": "USB+", "label": "USB+", "x": 150, "y": 70, "type": "passive", "description": "USB data +. Not used in Jumper." },
+    { "id": "ADKEY_2", "label": "ADKEY2", "x": 150, "y": 90, "type": "analog", "description": "Resistor-ladder key input 2 (plays tracks 6 to 15 by resistor value). Not emulated." },
+    { "id": "ADKEY_1", "label": "ADKEY1", "x": 150, "y": 110, "type": "analog", "description": "Resistor-ladder key input 1 (tracks 1 to 5, play / pause, volume). Not emulated." },
+    { "id": "IO_2", "label": "IO2", "x": 150, "y": 130, "type": "digital", "description": "Button to GND: short press = next track, long press = volume up. Not emulated (send commands over RX)." },
+    { "id": "GND.2", "label": "GND", "x": 150, "y": 150, "type": "ground", "description": "Ground." },
+    { "id": "IO_1", "label": "IO1", "x": 150, "y": 170, "type": "digital", "description": "Button to GND: short press = previous track, long press = volume down. Not emulated." }
+  ],
+  "size": { "w": 160, "h": 190 },
+  "props": [
+    {
+      "id": "clips",
+      "label": "What it says (track: words)",
+      "type": "text",
+      "default": "1: hello!",
+      "description": "The words of each clip on the card, one \"N: words\" line per track (\"2/5: words\" for folder 02, file 005). Playing track N says them: speech bubble, the browser's voice, read_speech and the {\"said\": …} test step. export_manufacturing writes them to sd-card/ with a script that turns them into MP3s. JSON {\"1\": \"hi!\"} is accepted too."
+    },
+    {
+      "id": "sd_card",
+      "label": "microSD card inserted",
+      "type": "boolean",
+      "default": true,
+      "description": "Without a card the module answers its error frame at power-up and plays nothing."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.2, "maxCurrentmA": 250, "typicalCurrentmA": 20 },
+  "footprint": "20 x 20 mm module, 2 x 8 pin 0.1 in header, rows 0.7 in apart",
+  "dimensions_mm": { "w": 20, "h": 20, "d": 8 },
+  "mass_g": 2.5,
+  "current_ma": { "typ": 20, "max": 200 },
+  "price_usd": 2.5,
+  "buy_links": [
+    { "vendor": "DFRobot", "url": "https://www.dfrobot.com/product-1121.html" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-DFPlayer-Mini.html" },
+    { "vendor": "LCSC", "url": "https://www.lcsc.com/search?q=DFPlayer%20Mini" }
+  ],
+  "bindings": [
+    { "key": "powered", "type": "boolean", "description": "3.0 to 5.5 V on VCC." },
+    { "key": "online", "type": "boolean", "description": "Finished starting (about 1 s after power-up or a reset) and sent its 0x3F online frame." },
+    { "key": "playing", "type": "boolean", "description": "A clip is playing (BUSY is LOW)." },
+    { "key": "paused", "type": "boolean", "description": "Paused with 0x0E." },
+    { "key": "track", "type": "number", "description": "Current (or last) track number." },
+    { "key": "volume", "type": "number", "description": "Volume 0..30 (0x06 sets it; 30 at power-up)." },
+    { "key": "saying", "type": "string", "description": "The words of the clip playing now, empty when idle. \"(track 7: no words set)\" when its clip has no words." },
+    { "key": "speaking", "type": "boolean", "description": "Playing, audible (a speaker draws current on SPK_1 / SPK_2 or the DAC pins) and volume above 0: a person would hear it. The canvas shows a speech bubble while true." },
+    { "key": "audible", "type": "boolean", "description": "Something is wired to the audio outputs and draws current while it plays." },
+    { "key": "lastSaid", "type": "string", "description": "Words of the last clip it played." },
+    { "key": "saidCount", "type": "number", "description": "Clips played since power-up." },
+    { "key": "clipsSet", "type": "number", "description": "Tracks with words in the clips table." },
+    { "key": "busy", "type": "boolean", "description": "Same as playing: what the BUSY pin says (LOW = busy)." },
+    { "key": "lastCommand", "type": "string", "description": "Last command received, e.g. \"play track 2\" (for debugging a sketch)." },
+    { "key": "frames", "type": "number", "description": "Valid frames received." },
+    { "key": "badFrames", "type": "number", "description": "Malformed frames (wrong checksum, length or end byte) it ignored." },
+    { "key": "rxBytes", "type": "number", "description": "Bytes received from the board." },
+    { "key": "txBytes", "type": "number", "description": "Bytes sent to the board." },
+    { "key": "framingErrors", "type": "number", "description": "Bytes with a bad stop bit: the sketch talks at the wrong baud rate (must be 9600)." },
+    { "key": "spkmA", "type": "number", "description": "RMS current into the speaker (mA)." },
+    { "key": "playOpacity", "type": "number", "description": "Play indicator glow (bound in the SVG)." },
+    { "key": "powerOpacity", "type": "number", "description": "Power indicator (bound in the SVG)." },
+    { "key": "label", "type": "string", "description": "Status shown on the module: off, starting, ready, ▶ 0003." }
+  ],
+  "tags": ["dfplayer", "dfplayer mini", "mp3", "audio", "speaker", "voice", "talk", "speak", "say", "sound", "music", "yx5200", "mh2024k", "microsd", "sd card", "dfr0299", "uart", "serial"],
+  "mechanical": {
+    "pcb_mm": 1.2,
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 2.5,
+    "features": [
+      { "id": "sd", "kind": "connector", "face": "-y", "x": 10, "y": 0, "z": 5.5, "w": 12, "h": 1.5, "connector": "microsd", "plug_clearance_mm": 0.5, "expose": false }
+    ],
+    "source": "typical module (DFRobot DFR0299 drawing: 20 x 20 mm, microSD socket on top; 8 mm with the card)"
+  },
+  "sourcing": {
+    "mpn": "DFR0299",
+    "manufacturer": "DFRobot",
+    "package": "module 20 x 20 mm, 2 x 8 header",
+    "generic": "DFPlayer Mini MP3 module (YX5200 / MH2024K chip), microSD slot, 3 W mono amplifier, UART 9600 baud"
+  }
+}
