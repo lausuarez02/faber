@@ -105,10 +105,10 @@ export const caseTools: ToolModule = {
       name: "check_fit",
       title: "Test a case fit",
       description:
-        'Test whether the project\'s parts fit a case WITHOUT making it (no CAD, nothing written, answers in under a second): any preset or a custom outline, any size. Takes the same arguments as design_case (shape, outline, size_mm, params, placements, exclude, front); with none it tests the saved case. Returns {fits, size_mm (as laid out), needed_mm (what the parts need), asked_mm, misses: [{part, type, dimension: "outline" | "depth", short_mm, where, message}], suggestions: [{kind: "swap" | "smaller-cell" | "on-edge" | "bigger", part, from, to, message, change: [{tool, args}], fits, size_mm, tradeoff}], issues, ms}. Each suggestion is tried with the same quick layout (fits says whether it then fits the asked size). Use it to rethink the pieces before design_case: e.g. {"shape": "custom", "outline": "<egg path>", "size_mm": {"w": 58, "h": 75, "d": 20}}. preview: true adds the front-view geometry (outline, cavity, part footprints with collides) for drawing it.',
+        'Test whether the project\'s parts fit a case WITHOUT making it (no CAD, nothing written, answers in under a second): any preset or a custom outline, any size. Takes the same arguments as design_case (shape, outline, size_mm, params, placements, exclude, front); with none it tests the saved case. Returns {fits, size_mm (as laid out), needed_mm (what the parts need), asked_mm, misses: [{part, type, dimension: "outline" | "depth", short_mm, where, message}], suggestions: [{kind: "swap" | "smaller-cell" | "on-edge" | "bigger", part, from, to, message, change: [{tool, args}], fits, size_mm, tradeoff}], issues, ms}. Each suggestion is tried with the same quick layout while about a second lasts (fits says whether it then fits the asked size; untried ones have no fits; try_suggestions: true tries them all, a few seconds). Use it to rethink the pieces before design_case: e.g. {"shape": "custom", "outline": "<egg path>", "size_mm": {"w": 58, "h": 75, "d": 20}}. preview: true adds the front-view geometry (outline, cavity, part footprints with collides) for drawing it.',
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, preview: { type: "boolean", description: "Add the front-view geometry (default false)." } },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
       },
       readOnly: true,
     },
@@ -201,7 +201,7 @@ export const caseTools: ToolModule = {
       const has = args.shape !== undefined || args.outline !== undefined || args.size_mm !== undefined;
       if (!has && !s.project.enclosure) fail("no-case", "Nothing to test", "check_fit with no shape tests the saved case, and this project has none", 'pass a shape, e.g. {"shape": "custom", "outline": "M 0 -40 C ... Z", "size_mm": {"w": 58, "h": 75}}');
       const enc = has ? validateEnclosure(s, { ...(s.project.enclosure && !args.shape ? s.project.enclosure : {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
-      const r = await fitReport(s, enc, { preview: args.preview === true });
+      const r = await fitReport(s, enc, { preview: args.preview === true, ...(args.try_suggestions === true ? { budgetMs: 10_000 } : {}) });
       x.summary(`fit ${enc.shape}: ${r.fits ? `fits, ${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm` : `${r.misses.length} miss(es), ${r.suggestions.length} suggestion(s)`} (${r.ms} ms)`);
       return r;
     },
@@ -234,12 +234,12 @@ function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Rec
 }
 
 /** The quick fit report (check_fit, dry_run, the Case view's preview) for an enclosure. */
-export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { preview?: boolean; layout?: import("@jumper/enclosure").Layout } = {}) {
+export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { preview?: boolean; layout?: import("@jumper/enclosure").Layout; budgetMs?: number } = {}) {
   const { checkFit, layoutInput } = await import("@jumper/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   let r;
   try {
-    r = checkFit({ ...input, catalog: s.registry.list().map((d) => d.spec) }, { ...(opts.layout ? { layout: opts.layout } : {}) });
+    r = checkFit({ ...input, catalog: s.registry.list().map((d) => d.spec) }, { ...(opts.layout ? { layout: opts.layout } : {}), ...(opts.budgetMs ? { budgetMs: opts.budgetMs } : {}) });
   } catch (e) {
     rethrowOutline(e);
   }
@@ -268,7 +268,8 @@ async function fixedSizeMiss(s: ProjectSession, enc: Enclosure) {
     rethrowOutline(e);
   }
   if (!L.fit || L.fit.fits) return undefined;
-  const r = await fitReport(s, enc, { layout: L });
+  // design_case waits for CAD anyway: every suggestion is tried here
+  const r = await fitReport(s, enc, { layout: L, budgetMs: 6000 });
   return { saved: false, ...r, next: `Nothing was saved: the parts do not fit ${fmtAsked(r.asked_mm)}. ${r.suggestions.length ? `Try: ${r.suggestions.slice(0, 3).map((x) => x.message).join(" ")}` : "Make it bigger or leave a part outside (exclude)."} Then design_case again (check_fit tests each idea in under a second).` };
 }
 

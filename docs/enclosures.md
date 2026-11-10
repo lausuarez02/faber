@@ -70,7 +70,8 @@ jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[2
   503035, 1000 mAh 523450), a board stood on its edge (`placements: {"xiao": {"on_edge": true}}`),
   less rounded rims, or "make it N mm bigger" with the size that holds everything.
 - **`check_fit`** (or `design_case {"dry_run": true}`) answers all of that without CAD in well under a
-  second (the suggestions are tried while a ~1 s budget lasts; untried ones have no `fits`).
+  second (the suggestions are tried while about a second lasts; untried ones have no `fits`;
+  `try_suggestions: true` tries them all; `design_case` with a size that misses tries them all).
   `check_fit` with no arguments tests the saved case; `preview: true` adds the front-view geometry.
 - **In the Case view**: **Custom** opens the outline editor: start from an ellipse or a preset, drag
   the points, double-click (or **+ Point**) to add one, **− Point** to remove the selected one; Tab

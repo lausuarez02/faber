@@ -91,7 +91,7 @@ export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: 
   }
   const suggestions: FitSuggestion[] = [];
   // suggestions are each tried with the quick layout while the time budget lasts (the rest are listed untried)
-  if (!fits && opts.suggest !== false) suggestions.push(...suggest(input, L, misses, t0 + (opts.budgetMs ?? 900)));
+  if (!fits && opts.suggest !== false) suggestions.push(...suggest(input, L, misses, t0 + (opts.budgetMs ?? 900), opts.layout ? 400 : performance.now() - t0));
   return {
     fits,
     shape: L.shape,
@@ -159,7 +159,7 @@ function footArea(s: PartSpec): number {
   return s.mechanical?.outline === "round" ? (Math.PI * d.w * d.w) / 4 : d.w * d.h;
 }
 
-function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number): FitSuggestion[] {
+function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number, layoutMs: number): FitSuggestion[] {
   const out: FitSuggestion[] = [];
   const enc = input.enclosure;
   const asked = L.fit?.asked_mm ?? {};
@@ -171,10 +171,14 @@ function suggest(input: FitInput, L: Layout, misses: FitMiss[], deadline: number
   const missIds = [...new Set(misses.map((m) => m.part))];
   const bySize = [...parts].sort((a, b) => footArea(specWithProps(b.spec, b.props)) - footArea(specWithProps(a.spec, a.props)));
   const focus = [...missIds.map((id) => parts.find((p) => p.id === id)!).filter(Boolean), ...bySize.filter((p) => !missIds.includes(p.id))].slice(0, 5);
+  // a try takes about as long as the last one: start one only if it should end before the deadline
+  let lastMs = layoutMs;
   const tryIt = (parts2: FitInput["parts"], enc2: Enclosure = enc): { fits: boolean; size_mm: { w: number; h: number; d: number } } | undefined => {
-    if (performance.now() > deadline) return undefined;
+    if (performance.now() + lastMs > deadline) return undefined;
+    const t1 = performance.now();
     try {
       const L2 = layoutCase({ parts: parts2, enclosure: enc2 }, { quick: true });
+      lastMs = performance.now() - t1;
       return { fits: L2.fit ? L2.fit.fits : true, size_mm: L2.fit?.fits ? { w: L2.outer.w, h: L2.outer.h, d: L2.outer.d } : (L2.fit?.needed_mm ?? { w: L2.outer.w, h: L2.outer.h, d: L2.outer.d }) };
     } catch {
       return undefined;
