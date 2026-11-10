@@ -1,0 +1,133 @@
+{
+  "hash": "959a1b56c5c9b419",
+  "engine": "case-1",
+  "enclosure": {
+    "shape": "puck",
+    "params": {
+      "wall_mm": 1.6,
+      "corner_radius_mm": 4,
+      "color": "#F2EDE4",
+      "lanyard_hole": false,
+      "belt_clip": false,
+      "closure": "snap",
+      "tolerance_mm": 0.2,
+      "process": "fdm",
+      "gap_mm": 1.5
+    }
+  },
+  "files": [
+    {
+      "path": "stl/front.stl",
+      "kind": "stl",
+      "body": "front",
+      "bytes": 359784,
+      "sha256": "153079093d692db2aee75af0c750639a3f3b79f2444f75deb26aaac733f6e408",
+      "print": {
+        "face_down": "front",
+        "supports": false,
+        "note": "front face on the bed (the window side down), open side up"
+      }
+    },
+    {
+      "path": "stl/back.stl",
+      "kind": "stl",
+      "body": "back",
+      "bytes": 372784,
+      "sha256": "6b9ad3d58ccd1b4f8e6a7bb1063c1a2c18a891cff7481ed2b39baffdc2174642",
+      "print": {
+        "face_down": "back",
+        "supports": false,
+        "note": "back face on the bed, open side up"
+      }
+    },
+    {
+      "path": "stl/cap-pet.stl",
+      "kind": "stl",
+      "body": "cap-pet",
+      "bytes": 16684,
+      "sha256": "dfd13694e2cc7d0cbc5dcb0da6d8048dbfba6ee34e4e3d385610746bcdb6e040",
+      "print": {
+        "face_down": "flat",
+        "supports": false,
+        "note": "print standing on its flange, 0.12 mm layers"
+      }
+    },
+    {
+      "path": "case.3mf",
+      "kind": "3mf",
+      "body": "all",
+      "bytes": 161143,
+      "sha256": "baf7ad3b0f1d4909d63ba4c3957052a007cfdb02404ef148cd88f0c4021dec1b"
+    },
+    {
+      "path": "step/assembly.step",
+      "kind": "step",
+      "body": "assembly",
+      "bytes": 704135,
+      "sha256": "bc7c4335341d63636206e68ef75cce84f6f5fd8935b9cf3f5ee5f647fc66acf9"
+    },
+    {
+      "path": "step/front.step",
+      "kind": "step",
+      "body": "front",
+      "bytes": 318834,
+      "sha256": "0101cc7d316dd0254095f7d63279e5bb1ede895d1ef2997679fbf2e9f61cecb9"
+    },
+    {
+      "path": "step/back.step",
+      "kind": "step",
+      "body": "back",
+      "bytes": 252492,
+      "sha256": "bd599964a39ae20f7eca894556c89da90587a0f2f721739a56cc88f132ad6c34"
+    },
+    {
+      "path": "renders/front.png",
+      "kind": "png",
+      "body": "render-front",
+      "bytes": 52399,
+      "sha256": "887114e40c089f60c2b749631ceee8494f2e1f4a72c24dcdebd69455d9c4968c"
+    },
+    {
+      "path": "renders/back.png",
+      "kind": "png",
+      "body": "render-back",
+      "bytes": 48806,
+      "sha256": "521a7a3371addb58cc120518bed21d13e73c378d018fd007d32327860afdf984"
+    },
+    {
+      "path": "renders/exploded.png",
+      "kind": "png",
+      "body": "render-exploded",
+      "bytes": 61257,
+      "sha256": "77a76d1097c91db2c276efea472ebcc1e4efa8be5a2b57250d962438b4cdbd7f"
+    },
+    {
+      "path": "renders/inside.png",
+      "kind": "png",
+      "body": "render-inside",
+      "bytes": 92803,
+      "sha256": "e45829f6cfb65fdccc2760d34e92b678193291b6102bacabcf242dffebfdcec3"
+    },
+    {
+      "path": "drawing/drawing.svg",
+      "kind": "svg",
+      "body": "drawing",
+      "bytes": 11121,
+      "sha256": "d4b3bf49640724232c692ea99b8bcba3bf0dce36f91013edb4cdcf40ff8790a0"
+    },
+    {
+      "path": "drawing/drawing.pdf",
+      "kind": "pdf",
+      "body": "drawing",
+      "bytes": 84912,
+      "sha256": "b234741537b2760d994736ed5801819d1f4abf95b42d442979a545667154368b"
+    },
+    {
+      "path": "PRINT.md",
+      "kind": "md",
+      "body": "PRINT",
+      "bytes": 2749,
+      "sha256": "c8ea9cd6f910a88a69029206c18dee0473064244dcb5cf308d6a8da5e0b72c71"
+    }
+  ]
+}

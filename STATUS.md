@@ -40,6 +40,17 @@ Thumbnails are drawn at start ("Drawing the circuit…" meanwhile); "1 test". `r
 device for 3 s" instead of "ran 3000 ms (now 3000 ms)". Checks: `apps/cli/test/switch-history.test.ts`,
 `packages/session/test/switch-run-summary.test.ts`, `apps/web/src/projects/firstRun.test.ts`,
 `apps/web/src/live/steps.test.ts`, `apps/web/e2e/switch-projects.spec.ts`.
+## Round 6, case track (branch `round6/case`, not merged yet)
+
+Cases and the factory pack ([docs/enclosures.md](docs/enclosures.md)): `design_case` /
+`update_case` / `get_case` / `export_manufacturing` (MCP + CLI), a Case view in the web app, the
+`mechanical` + `sourcing` data in all 41 parts, and the Muse's reference case
+(`examples/agent-built/claude-pocket-muse/case/`: pebble 76.3 × 70.3 × 25 mm "tight", puck variant
+63.1 × 55.2 × 32 mm). Checks: `packages/enclosure/test/*`, `packages/session/test/case-tools.test.ts`,
+`apps/cli/test/case-routes.test.ts`, `packages/parts/src/spec/mechanical.test.ts`,
+`apps/web/e2e/case-view.spec.ts`. Known gaps: pebble edges stay nearly square where a USB port sits
+near the back; no IGES; LCSC numbers empty until checked; wire lengths are straight-line estimates;
+the reference case predates the power track's re-wire (regenerate after the merge).
 
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 

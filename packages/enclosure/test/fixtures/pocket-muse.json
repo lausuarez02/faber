@@ -1,0 +1,295 @@
+{
+  "format": "jumper/1",
+  "name": "Pocket Muse",
+  "parts": [
+    {
+      "id": "xiao",
+      "type": "seeed-xiao-rp2040",
+      "x": 0,
+      "y": 0,
+      "rotation": 0
+    },
+    {
+      "id": "eye",
+      "type": "gc9a01-round-tft",
+      "x": 40,
+      "y": -400,
+      "rotation": 0,
+      "props": {
+        "logic": "3v3-only"
+      }
+    },
+    {
+      "id": "imu",
+      "type": "mpu6050",
+      "x": 340,
+      "y": -240,
+      "rotation": 0
+    },
+    {
+      "id": "pet",
+      "type": "pushbutton",
+      "x": 0,
+      "y": -560,
+      "rotation": 0
+    },
+    {
+      "id": "squeak",
+      "type": "passive-buzzer",
+      "x": 140,
+      "y": -560,
+      "rotation": 0
+    },
+    {
+      "id": "bat",
+      "type": "lipo-battery",
+      "x": 300,
+      "y": -580,
+      "rotation": 0,
+      "props": {
+        "capacity": 500
+      }
+    },
+    {
+      "id": "chg",
+      "type": "tp4056-charger",
+      "x": 0,
+      "y": -760,
+      "rotation": 0,
+      "props": {
+        "chargeCurrentmA": 400
+      }
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "eye",
+        "pin": "VCC"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "3V3"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "eye",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GND.1"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "eye",
+        "pin": "SCK"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP2"
+      },
+      "color": "#F2E14A"
+    },
+    {
+      "id": "w4",
+      "from": {
+        "part": "eye",
+        "pin": "MOSI"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP3"
+      },
+      "color": "#B47CFF"
+    },
+    {
+      "id": "w5",
+      "from": {
+        "part": "eye",
+        "pin": "CS"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP1"
+      },
+      "color": "#E9EDF2"
+    },
+    {
+      "id": "w6",
+      "from": {
+        "part": "eye",
+        "pin": "DC"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP29"
+      },
+      "color": "#5CF2A1"
+    },
+    {
+      "id": "w7",
+      "from": {
+        "part": "eye",
+        "pin": "RST"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP28"
+      },
+      "color": "#FFB23F"
+    },
+    {
+      "id": "w9",
+      "from": {
+        "part": "imu",
+        "pin": "VCC"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "3V3"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w10",
+      "from": {
+        "part": "imu",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GND.1"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w11",
+      "from": {
+        "part": "imu",
+        "pin": "SDA"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP6"
+      },
+      "color": "#E9EDF2"
+    },
+    {
+      "id": "w12",
+      "from": {
+        "part": "imu",
+        "pin": "SCL"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP7"
+      },
+      "color": "#5CF2A1"
+    },
+    {
+      "id": "w13",
+      "from": {
+        "part": "pet",
+        "pin": "1a"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP26"
+      },
+      "color": "#FFB23F"
+    },
+    {
+      "id": "w14",
+      "from": {
+        "part": "pet",
+        "pin": "2a"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GND.1"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w15",
+      "from": {
+        "part": "squeak",
+        "pin": "POS"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP27"
+      },
+      "color": "#F2E14A"
+    },
+    {
+      "id": "w16",
+      "from": {
+        "part": "squeak",
+        "pin": "NEG"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GND.1"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w17",
+      "from": {
+        "part": "bat",
+        "pin": "POS"
+      },
+      "to": {
+        "part": "chg",
+        "pin": "BAT"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w18",
+      "from": {
+        "part": "bat",
+        "pin": "NEG"
+      },
+      "to": {
+        "part": "chg",
+        "pin": "GND.2"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w19",
+      "from": {
+        "part": "chg",
+        "pin": "GND.3"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GND.1"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w8",
+      "from": {
+        "part": "eye",
+        "pin": "LED"
+      },
+      "to": {
+        "part": "xiao",
+        "pin": "GP0"
+      },
+      "color": "#4DA3FF"
+    }
+  ],
+  "scenarios": []
+}

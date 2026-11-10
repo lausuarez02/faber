@@ -56,5 +56,22 @@
     { "key": "label", "type": "string", "description": "e.g. \"obstacle 6 cm\" or \"clear\"." },
     { "key": "powered", "type": "boolean", "description": "VCC is high enough." }
   ],
-  "tags": ["ir", "infrared", "obstacle", "obstacle sensor", "proximity", "fc-51", "tcrt5000", "line", "avoidance", "robot", "distance", "sensor"]
+  "tags": ["ir", "infrared", "obstacle", "obstacle sensor", "proximity", "fc-51", "tcrt5000", "line", "avoidance", "robot", "distance", "sensor"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2,
+    "mounting_holes": [
+      { "x": 15.5, "y": 7, "d": 3 }
+    ],
+    "features": [
+      { "id": "emitter", "kind": "sensor-window", "face": "+x", "x": 31, "y": 4.5, "z": 4, "shape": "round", "d": 5.2, "protrude_mm": 2 },
+      { "id": "detector", "kind": "sensor-window", "face": "+x", "x": 31, "y": 9.5, "z": 4, "shape": "round", "d": 5.2, "protrude_mm": 2 }
+    ],
+    "source": "typical FC-51 module (LEDs bent forward)"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "module 31 x 14 mm, 3-pin header",
+    "generic": "FC-51 IR obstacle avoidance sensor module, 3.3 to 5 V"
+  }
 }

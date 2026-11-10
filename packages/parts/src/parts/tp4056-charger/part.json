@@ -35,5 +35,22 @@
     { "key": "protected", "type": "boolean", "description": "The protection has cut OUT off (cell below 2.4 V)." },
     { "key": "label", "type": "string", "description": "e.g. \"CC 1000 mA\"." }
   ],
-  "tags": ["tp4056", "charger", "lipo charger", "battery charger", "usb charger", "li-ion", "lithium", "dw01", "protection", "power", "pocket", "usb-c"]
+  "tags": ["tp4056", "charger", "lipo charger", "battery charger", "usb charger", "li-ion", "lithium", "dw01", "protection", "power", "pocket", "usb-c"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 8.75, "z": 3.2, "w": 9, "h": 3.3, "connector": "usb-c", "plug_clearance_mm": 1.5, "protrude_mm": 0.8 },
+      { "id": "chrg-led", "kind": "led", "face": "+z", "x": 10.4, "y": 3.3, "shape": "round", "d": 1.6, "expose": false, "description": "red CHRG LED; set expose true for a light pipe when the module sits against a wall" },
+      { "id": "stdby-led", "kind": "led", "face": "+z", "x": 13.5, "y": 3.3, "shape": "round", "d": 1.6, "expose": false }
+    ],
+    "source": "typical TP4056 + DW01A USB-C module (28 x 17.5 mm)"
+  },
+  "sourcing": {
+    "mpn": "TP4056",
+    "manufacturer": "NanJing Top Power (IC)",
+    "package": "module 28 x 17.5 mm, USB-C",
+    "generic": "TP4056 1S LiPo charger module with DW01A protection, USB-C, 1 A (set R_PROG for small cells)"
+  }
 }

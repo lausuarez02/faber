@@ -53,5 +53,19 @@
     { "key": "powerOpacity", "type": "number", "description": "Red power LED (bound in the SVG)." },
     { "key": "ledOpacity", "type": "number", "description": "Blue activity LED (bound in the SVG)." }
   ],
-  "tags": ["esp8266", "esp-01", "esp01", "esp-01s", "wifi", "wi-fi", "internet", "http", "at commands", "softwareserial", "iot", "ai", "network", "tcp"]
+  "tags": ["esp8266", "esp-01", "esp01", "esp-01s", "wifi", "wi-fi", "internet", "http", "at commands", "softwareserial", "iot", "ai", "network", "tcp"],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_bottom_mm": 1,
+    "features": [
+      { "id": "antenna", "kind": "antenna", "face": "+z", "x": 4, "y": 7.15, "w": 7, "h": 14 }
+    ],
+    "source": "Ai-Thinker ESP-01 drawing, 2x4 header below"
+  },
+  "sourcing": {
+    "mpn": "ESP-01",
+    "manufacturer": "Ai-Thinker",
+    "package": "module 24.8 x 14.3 mm, 2x4 header",
+    "generic": "ESP8266 Wi-Fi module ESP-01 (AT firmware), 3.3 V"
+  }
 }

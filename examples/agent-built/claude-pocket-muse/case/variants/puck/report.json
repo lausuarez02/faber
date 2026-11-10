@@ -1,0 +1,354 @@
+{
+  "shape": "puck",
+  "enclosure": {
+    "shape": "puck",
+    "params": {
+      "wall_mm": 1.6,
+      "corner_radius_mm": 4,
+      "color": "#F2EDE4",
+      "lanyard_hole": false,
+      "belt_clip": false,
+      "closure": "snap",
+      "tolerance_mm": 0.2,
+      "process": "fdm",
+      "gap_mm": 1.5
+    }
+  },
+  "size_mm": {
+    "w": 63.1,
+    "h": 55.2,
+    "d": 32
+  },
+  "inner_mm": {
+    "w": 59.9,
+    "h": 52,
+    "d": 28.8
+  },
+  "wall_mm": 1.6,
+  "mass_g": 20.4,
+  "pocket": "tight",
+  "ok": true,
+  "checks": [
+    {
+      "id": "fits",
+      "ok": true,
+      "severity": "info",
+      "message": "All 7 parts fit in 59.9 x 52 x 28.8 mm inside with 1.5 mm of wiring room around each."
+    },
+    {
+      "id": "watertight",
+      "ok": true,
+      "severity": "info",
+      "message": "All 3 bodies are closed 2-manifolds (every edge shared by two triangles) with volume > 0."
+    },
+    {
+      "id": "no-intersection",
+      "ok": true,
+      "severity": "info",
+      "message": "No part body touches the shell (7 parts checked in OpenCascade, overlap < 0.001 mm³)."
+    },
+    {
+      "id": "min-wall",
+      "ok": true,
+      "severity": "info",
+      "message": "Wall 1.57 mm measured between the outer and inner surfaces, 1.20 mm at the snap groove (minimum 1.2 mm)."
+    },
+    {
+      "id": "size-match",
+      "ok": true,
+      "severity": "info",
+      "message": "Printed bodies match the layout within 0.03 mm (limit 0.1)."
+    },
+    {
+      "id": "screen-window",
+      "ok": true,
+      "severity": "info",
+      "message": "Window Ø33.0 mm centred on the eye active area (Ø32.4), 0.30 mm over its 1.2 mm bezel, glass 0.0 mm behind the wall.",
+      "parts": [
+        "eye"
+      ]
+    },
+    {
+      "id": "buttons-reachable",
+      "ok": true,
+      "severity": "info",
+      "message": "pet: plunger Ø3.5 through a Ø3.9 hole on the right, 3.8 mm long, stands 1.0 mm proud for 0.25 mm of travel.",
+      "parts": [
+        "pet"
+      ]
+    },
+    {
+      "id": "connector-access",
+      "ok": true,
+      "severity": "info",
+      "message": "chg.usb: 12.0 x 6.3 mm opening on the bottom, receptacle 1.8 mm inside the outer surface (plug overmold clearance included).",
+      "parts": [
+        "chg"
+      ]
+    },
+    {
+      "id": "connector-access",
+      "ok": true,
+      "severity": "info",
+      "message": "xiao.usb: 12.0 x 6.2 mm opening on the bottom, receptacle 1.8 mm inside the outer surface (plug overmold clearance included).",
+      "parts": [
+        "xiao"
+      ]
+    },
+    {
+      "id": "printable",
+      "ok": true,
+      "severity": "warning",
+      "message": "Each shell prints on its outer face with no supports; front: 340 mm² of the rounded edge overhangs > 45° near the bed, back: 158 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
+    },
+    {
+      "id": "pocket",
+      "ok": true,
+      "severity": "info",
+      "message": "63.1 x 55.2 x 32 mm: tight for a pocket (limit 110 x 70 x 30 mm)."
+    }
+  ],
+  "placed": [
+    {
+      "id": "eye",
+      "type": "gc9a01-round-tft",
+      "min": [
+        -18,
+        -21.78,
+        8.4
+      ],
+      "max": [
+        18,
+        19.22,
+        14.4
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 0
+    },
+    {
+      "id": "chg",
+      "type": "tp4056-charger",
+      "min": [
+        -8.75,
+        -24.98,
+        0.4
+      ],
+      "max": [
+        8.75,
+        3.02,
+        6.9
+      ],
+      "rotation": 90,
+      "facing": "front",
+      "layer": 1
+    },
+    {
+      "id": "xiao",
+      "type": "seeed-xiao-rp2040",
+      "min": [
+        -8.75,
+        -24.78,
+        -6.6
+      ],
+      "max": [
+        8.75,
+        -3.78,
+        -1.1
+      ],
+      "rotation": 90,
+      "facing": "front",
+      "layer": 2
+    },
+    {
+      "id": "pet",
+      "type": "pushbutton",
+      "min": [
+        22.27,
+        -6.98,
+        0.9
+      ],
+      "max": [
+        28.77,
+        -0.98,
+        6.9
+      ],
+      "rotation": 0,
+      "facing": "right",
+      "layer": 1
+    },
+    {
+      "id": "imu",
+      "type": "mpu6050",
+      "min": [
+        -10.5,
+        -2.28,
+        -6.1
+      ],
+      "max": [
+        10.5,
+        13.72,
+        -1.1
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 2
+    },
+    {
+      "id": "squeak",
+      "type": "passive-buzzer",
+      "min": [
+        10.25,
+        -15.78,
+        -14.2
+      ],
+      "max": [
+        22.25,
+        -3.78,
+        -2.7
+      ],
+      "rotation": 180,
+      "facing": "back",
+      "layer": 3
+    },
+    {
+      "id": "bat",
+      "type": "lipo-battery",
+      "min": [
+        -21.25,
+        -21.48,
+        -14.1
+      ],
+      "max": [
+        8.75,
+        13.52,
+        -8.6
+      ],
+      "rotation": 90,
+      "facing": "front",
+      "layer": 4
+    }
+  ],
+  "files": [
+    {
+      "path": "stl/front.stl",
+      "kind": "stl",
+      "body": "front",
+      "bytes": 359784,
+      "sha256": "153079093d692db2aee75af0c750639a3f3b79f2444f75deb26aaac733f6e408",
+      "print": {
+        "face_down": "front",
+        "supports": false,
+        "note": "front face on the bed (the window side down), open side up"
+      }
+    },
+    {
+      "path": "stl/back.stl",
+      "kind": "stl",
+      "body": "back",
+      "bytes": 372784,
+      "sha256": "6b9ad3d58ccd1b4f8e6a7bb1063c1a2c18a891cff7481ed2b39baffdc2174642",
+      "print": {
+        "face_down": "back",
+        "supports": false,
+        "note": "back face on the bed, open side up"
+      }
+    },
+    {
+      "path": "stl/cap-pet.stl",
+      "kind": "stl",
+      "body": "cap-pet",
+      "bytes": 16684,
+      "sha256": "dfd13694e2cc7d0cbc5dcb0da6d8048dbfba6ee34e4e3d385610746bcdb6e040",
+      "print": {
+        "face_down": "flat",
+        "supports": false,
+        "note": "print standing on its flange, 0.12 mm layers"
+      }
+    },
+    {
+      "path": "case.3mf",
+      "kind": "3mf",
+      "body": "all",
+      "bytes": 161143,
+      "sha256": "baf7ad3b0f1d4909d63ba4c3957052a007cfdb02404ef148cd88f0c4021dec1b"
+    },
+    {
+      "path": "step/assembly.step",
+      "kind": "step",
+      "body": "assembly",
+      "bytes": 704135,
+      "sha256": "bc7c4335341d63636206e68ef75cce84f6f5fd8935b9cf3f5ee5f647fc66acf9"
+    },
+    {
+      "path": "step/front.step",
+      "kind": "step",
+      "body": "front",
+      "bytes": 318834,
+      "sha256": "0101cc7d316dd0254095f7d63279e5bb1ede895d1ef2997679fbf2e9f61cecb9"
+    },
+    {
+      "path": "step/back.step",
+      "kind": "step",
+      "body": "back",
+      "bytes": 252492,
+      "sha256": "bd599964a39ae20f7eca894556c89da90587a0f2f721739a56cc88f132ad6c34"
+    },
+    {
+      "path": "renders/front.png",
+      "kind": "png",
+      "body": "render-front",
+      "bytes": 52399,
+      "sha256": "887114e40c089f60c2b749631ceee8494f2e1f4a72c24dcdebd69455d9c4968c"
+    },
+    {
+      "path": "renders/back.png",
+      "kind": "png",
+      "body": "render-back",
+      "bytes": 48806,
+      "sha256": "521a7a3371addb58cc120518bed21d13e73c378d018fd007d32327860afdf984"
+    },
+    {
+      "path": "renders/exploded.png",
+      "kind": "png",
+      "body": "render-exploded",
+      "bytes": 61257,
+      "sha256": "77a76d1097c91db2c276efea472ebcc1e4efa8be5a2b57250d962438b4cdbd7f"
+    },
+    {
+      "path": "renders/inside.png",
+      "kind": "png",
+      "body": "render-inside",
+      "bytes": 92803,
+      "sha256": "e45829f6cfb65fdccc2760d34e92b678193291b6102bacabcf242dffebfdcec3"
+    },
+    {
+      "path": "drawing/drawing.svg",
+      "kind": "svg",
+      "body": "drawing",
+      "bytes": 11121,
+      "sha256": "d4b3bf49640724232c692ea99b8bcba3bf0dce36f91013edb4cdcf40ff8790a0"
+    },
+    {
+      "path": "drawing/drawing.pdf",
+      "kind": "pdf",
+      "body": "drawing",
+      "bytes": 84912,
+      "sha256": "b234741537b2760d994736ed5801819d1f4abf95b42d442979a545667154368b"
+    },
+    {
+      "path": "PRINT.md",
+      "kind": "md",
+      "body": "PRINT",
+      "bytes": 2749,
+      "sha256": "c8ea9cd6f910a88a69029206c18dee0473064244dcb5cf308d6a8da5e0b72c71"
+    }
+  ],
+  "hash": "959a1b56c5c9b419",
+  "notes": [
+    "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
+    "Sizes come from the parts' mechanical data (datasheets or typical modules); clone modules can differ by about 1 mm.",
+    "Not checked: drop, water, heat, the cell swelling beyond 10 %, wire routing (the gap_mm room is a budget, not a route).",
+    "STEP is AP214 (the OpenCascade build has no IGES writer): factories accept STEP; ask for IGES and convert it in FreeCAD or the factory's CAD."
+  ]
+}

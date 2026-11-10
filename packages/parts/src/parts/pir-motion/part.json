@@ -41,5 +41,22 @@
     { "key": "state", "type": "string", "description": "\"idle\", \"motion\" (OUT high), \"blocked\" (2.5 s after OUT fell), \"warming up\" or \"off\"." },
     { "key": "glowOpacity", "type": "number", "description": "Opacity of the dome glow (1 while OUT is HIGH)." }
   ],
-  "tags": ["pir", "motion", "motion sensor", "hc-sr501", "presence", "infrared", "occupancy", "alarm", "people", "sensor", "body"]
+  "tags": ["pir", "motion", "motion sensor", "hc-sr501", "presence", "infrared", "occupancy", "alarm", "people", "sensor", "body"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 4,
+    "mounting_holes": [
+      { "x": 2, "y": 12, "d": 2 },
+      { "x": 30, "y": 12, "d": 2 }
+    ],
+    "features": [
+      { "id": "dome", "kind": "sensor-window", "face": "+z", "x": 16, "y": 12, "z": 12.5, "shape": "round", "d": 23, "protrude_mm": 12.5, "description": "Fresnel dome" }
+    ],
+    "source": "typical HC-SR501 (32 x 24 mm, 23 mm dome)"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "module 32 x 24 mm, 3-pin header",
+    "generic": "HC-SR501 PIR motion sensor module, 5 to 20 V in, 3.3 V out"
+  }
 }

@@ -1,5 +1,6 @@
 import { agentHooks, agentRoutes } from "./agent.ts";
 import { agentpartsHooks, agentpartsRoutes } from "./agentparts.ts";
+import { caseHooks, caseRoutes } from "./case.ts"; // round 6 case
 import { liveHooks, liveRoutes } from "./live.ts";
 import { projectsHooks, projectsRoutes } from "./projects.ts";
 import type { ApiRoute, ServerHook } from "./types.ts";
@@ -12,6 +13,7 @@ export const ROUTES: ApiRoute[] = [
   ...liveRoutes,
   ...agentRoutes,
   ...agentpartsRoutes,
+  ...caseRoutes, // round 6 case
 ];
 
 /** Every round-5 server hook. Append-only: one line per track. */
@@ -20,6 +22,7 @@ export const HOOKS: ServerHook[] = [
   ...liveHooks,
   ...agentHooks,
   ...agentpartsHooks,
+  ...caseHooks, // round 6 case
 ];
 
 /** The route for this request, with its named groups, or undefined. */

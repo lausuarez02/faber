@@ -92,5 +92,27 @@
     "microcontroller",
     "5v",
     "breadboard"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 2,
+    "keepout_bottom_mm": 1.5,
+    "mounting_holes": [
+      { "x": 1.6, "y": 1.6, "d": 1.8 },
+      { "x": 43.4, "y": 1.6, "d": 1.8 },
+      { "x": 1.6, "y": 16.4, "d": 1.8 },
+      { "x": 43.4, "y": 16.4, "d": 1.8 }
+    ],
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 9, "z": 3.6, "w": 7.7, "h": 4, "connector": "mini-usb", "plug_clearance_mm": 1.5, "protrude_mm": 1.5 },
+      { "id": "reset", "kind": "button", "face": "+z", "x": 39, "y": 9, "shape": "round", "d": 3, "travel_mm": 0.25, "expose": false }
+    ],
+    "source": "Arduino Nano 3.x drawing, connector typical"
+  },
+  "sourcing": {
+    "mpn": "A000005",
+    "manufacturer": "Arduino",
+    "package": "board 45 x 18 mm, 0.6 in DIP-30",
+    "generic": "Arduino Nano 3.x compatible board (ATmega328P, 5 V)"
+  }
 }

@@ -39,5 +39,9 @@
     { "key": "currentmA", "type": "number", "description": "Current from pin 1 to pin 2 in mA (signed)." },
     { "key": "powerW", "type": "number", "description": "Dissipated power in W." }
   ],
-  "tags": ["resistor", "ohm", "passive", "pull-up", "pull-down", "current limiting", "divider"]
+  "tags": ["resistor", "ohm", "passive", "pull-up", "pull-down", "current limiting", "divider"],
+  "sourcing": {
+    "package": "THT axial 1/4 W",
+    "generic": "Resistor 1/4 W THT, 1 % metal film (value as in the BOM)"
+  }
 }

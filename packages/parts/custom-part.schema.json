@@ -1036,6 +1036,249 @@
     "datasheet": {
       "type": "string",
       "pattern": "^https:\\/\\/[^\\s\"'<>]+$"
+    },
+    "mechanical": {
+      "description": "Round 6: screen window, buttons, connectors, mounting holes and keep-outs for the case (docs/part-spec.md, Mechanical).",
+      "type": "object",
+      "properties": {
+        "outline": {
+          "type": "string",
+          "enum": [
+            "rect",
+            "round"
+          ]
+        },
+        "outline_parts": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "shape": {
+                    "type": "string",
+                    "const": "rect"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "w": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "h": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "shape",
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "shape": {
+                    "type": "string",
+                    "const": "round"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "d": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "shape",
+                  "x",
+                  "y",
+                  "d"
+                ]
+              }
+            ]
+          }
+        },
+        "pcb_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "keepout_top_mm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "keepout_bottom_mm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "soft": {
+          "type": "boolean"
+        },
+        "mounting_holes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "d": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "d"
+            ]
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "screen",
+                  "button",
+                  "switch",
+                  "knob",
+                  "connector",
+                  "led",
+                  "sensor-window",
+                  "grille",
+                  "vent",
+                  "antenna"
+                ]
+              },
+              "face": {
+                "type": "string",
+                "enum": [
+                  "+z",
+                  "-z",
+                  "+x",
+                  "-x",
+                  "+y",
+                  "-y"
+                ]
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              },
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "rect",
+                  "round"
+                ]
+              },
+              "w": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "h": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "d": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "protrude_mm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bezel_mm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "travel_mm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "plug_clearance_mm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "connector": {
+                "type": "string"
+              },
+              "expose": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "face",
+              "x",
+              "y"
+            ]
+          }
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "sourcing": {
+      "description": "Round 6: MPN / generic description for a factory BOM; LCSC numbers only when checked.",
+      "type": "object",
+      "properties": {
+        "mpn": {
+          "type": "string"
+        },
+        "manufacturer": {
+          "type": "string"
+        },
+        "lcsc": {
+          "type": "string",
+          "pattern": "^C\\d+$"
+        },
+        "jlc": {
+          "type": "string",
+          "enum": [
+            "basic",
+            "extended"
+          ]
+        },
+        "package": {
+          "type": "string"
+        },
+        "generic": {
+          "type": "string"
+        }
+      }
     }
   },
   "required": [

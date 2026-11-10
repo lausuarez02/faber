@@ -161,5 +161,19 @@
     "zs-042",
     "i2c",
     "alarm"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 2, "y": 11, "d": 2.5 }
+    ],
+    "source": "typical ZS-042 module (CR2032 holder on the back)"
+  },
+  "sourcing": {
+    "mpn": "DS3231",
+    "manufacturer": "Analog Devices / Maxim (IC)",
+    "package": "module 38 x 22 mm",
+    "generic": "DS3231 RTC module ZS-042 with AT24C32 EEPROM, CR2032 holder"
+  }
 }

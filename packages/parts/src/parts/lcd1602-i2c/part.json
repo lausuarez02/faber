@@ -217,5 +217,24 @@
     "liquidcrystal",
     "liquidcrystal_pcf8574",
     "display"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 1,
+    "mounting_holes": [
+      { "x": 2.5, "y": 2.5, "d": 3 },
+      { "x": 77.5, "y": 2.5, "d": 3 },
+      { "x": 2.5, "y": 33.5, "d": 3 },
+      { "x": 77.5, "y": 33.5, "d": 3 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 40, "y": 18, "w": 64.5, "h": 14.5, "bezel_mm": 2 }
+    ],
+    "source": "typical 1602 module (viewing area 64.5 x 14.5 mm)"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "module 80 x 36 mm with PCF8574 I2C backpack",
+    "generic": "LCD 16x2 character display with I2C backpack (PCF8574), 5 V"
+  }
 }

@@ -4,7 +4,7 @@
 // PartDefinition. Stored in the project as parts/<id>/part.json (+ optional visual.svg).
 // JSON Schema: packages/parts/custom-part.schema.json (written by `pnpm gen`).
 import { z } from "zod";
-import { PART_CATEGORIES, PinTypeSchema, PropSpecSchema } from "@jumper/sim-core";
+import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@jumper/sim-core";
 
 export const CUSTOM_PART_FORMAT = "jumper-part/1";
 
@@ -284,6 +284,8 @@ export const CustomPartSchema = z
     tags: z.array(z.string().max(40)).max(20).optional(),
     /** Datasheet the numbers came from (https), shown by get_part and in exports. */
     datasheet: z.string().regex(/^https:\/\/[^\s"'<>]+$/).optional(),
+    mechanical: MechanicalSchema.optional().describe("Round 6: screen window, buttons, connectors, mounting holes and keep-outs for the case (docs/part-spec.md, Mechanical)."), // round 6 case
+    sourcing: SourcingSchema.optional().describe("Round 6: MPN / generic description for a factory BOM; LCSC numbers only when checked."), // round 6 case
   })
   .strict();
 

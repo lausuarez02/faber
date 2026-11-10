@@ -251,6 +251,9 @@ importers:
       '@jumper/ai-gateway':
         specifier: workspace:*
         version: link:../../services/ai-gateway
+      '@jumper/enclosure':
+        specifier: workspace:*
+        version: link:../enclosure
       '@jumper/parts':
         specifier: workspace:*
         version: link:../parts
@@ -269,6 +272,9 @@ importers:
       '@jumper/sim-core':
         specifier: workspace:*
         version: link:../sim-core
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       ws:
         specifier: 8.22.2
         version: 8.22.2

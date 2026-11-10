@@ -90,5 +90,29 @@
     "avr",
     "microcontroller",
     "5v"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 6,
+    "keepout_bottom_mm": 2,
+    "mounting_holes": [
+      { "x": 13.97, "y": 50.8, "d": 3.2 },
+      { "x": 15.24, "y": 2.54, "d": 3.2 },
+      { "x": 66.04, "y": 45.72, "d": 3.2 },
+      { "x": 66.04, "y": 17.78, "d": 3.2 }
+    ],
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 15.24, "z": 7.1, "w": 12.2, "h": 11, "connector": "usb-b", "plug_clearance_mm": 1, "protrude_mm": 6.3 },
+      { "id": "dc-jack", "kind": "connector", "face": "-x", "x": 0, "y": 44.5, "z": 7.1, "w": 9, "h": 11, "connector": "dc-barrel-5.5x2.1", "plug_clearance_mm": 1, "protrude_mm": 1.8 },
+      { "id": "reset", "kind": "button", "face": "+z", "x": 4.8, "y": 3.8, "shape": "round", "d": 3, "travel_mm": 0.25, "expose": false, "description": "reset button; set expose true to get a plunger" },
+      { "id": "led-l", "kind": "led", "face": "+z", "x": 18.5, "y": 9.5, "shape": "round", "d": 1.6, "expose": false }
+    ],
+    "source": "Arduino Uno Rev3 drawing (hole positions), connectors typical"
+  },
+  "sourcing": {
+    "mpn": "A000066",
+    "manufacturer": "Arduino",
+    "package": "board 68.6 x 53.4 mm",
+    "generic": "Arduino Uno R3 compatible board (ATmega328P, USB-B, 5 V)"
+  }
 }

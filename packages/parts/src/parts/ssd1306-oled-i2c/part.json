@@ -176,5 +176,25 @@
     "u8g2",
     "tamagotchi",
     "pixel display"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1.2,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 1.75, "y": 1.75, "d": 2 },
+      { "x": 25.25, "y": 1.75, "d": 2 },
+      { "x": 1.75, "y": 26.05, "d": 2 },
+      { "x": 25.25, "y": 26.05, "d": 2 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 13.5, "y": 13.9, "w": 21.7, "h": 10.9, "bezel_mm": 1 }
+    ],
+    "source": "typical 0.96 in module (active area 21.74 x 10.86 mm)"
+  },
+  "sourcing": {
+    "mpn": "SSD1306",
+    "manufacturer": "Solomon Systech (driver IC)",
+    "package": "module 27 x 27 mm, 4-pin header",
+    "generic": "0.96 in OLED 128x64, SSD1306, I2C, 4-pin module"
+  }
 }

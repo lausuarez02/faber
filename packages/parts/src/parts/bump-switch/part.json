@@ -41,5 +41,21 @@
     { "key": "contact", "type": "string", "description": "Which contact COM is on: \"NO\" (pressed) or \"NC\" (free)." },
     { "key": "leverTransform", "type": "string", "description": "SVG transform of the lever." }
   ],
-  "tags": ["bump switch", "bumper", "micro switch", "microswitch", "limit switch", "lever switch", "end stop", "endstop", "kw12", "collision", "robot", "touch sensor"]
+  "tags": ["bump switch", "bumper", "micro switch", "microswitch", "limit switch", "lever switch", "end stop", "endstop", "kw12", "collision", "robot", "touch sensor"],
+  "mechanical": {
+    "keepout_bottom_mm": 3,
+    "mounting_holes": [
+      { "x": 6.2, "y": 8, "d": 2.2 },
+      { "x": 21.8, "y": 8, "d": 2.2 }
+    ],
+    "features": [
+      { "id": "lever", "kind": "button", "face": "-y", "x": 14, "y": 0, "z": 3.2, "shape": "rect", "w": 20, "h": 4, "travel_mm": 2, "protrude_mm": 6, "description": "hinge lever" }
+    ],
+    "source": "KW12-3 micro switch with lever"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "KW12-3 micro switch 20 x 10 x 6.4 mm",
+    "generic": "Micro limit switch with hinge lever, KW12-3 type"
+  }
 }

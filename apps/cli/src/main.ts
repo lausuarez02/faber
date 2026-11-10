@@ -293,8 +293,20 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       }
       return { op, args };
     }
-    default:
-      return undefined;
+    default: {
+      // round 6 case: any tool by name, `jumper design_case '{"shape":"pebble"}'` (same as jumper call)
+      const op = p.cmd.replace(/-/g, "_");
+      if (!TOOLS.some((t) => t.name === op)) return undefined;
+      let args: Record<string, unknown> = {};
+      if (p.pos[0]) {
+        try {
+          args = JSON.parse(p.pos[0]);
+        } catch (err) {
+          throw new UsageError(`the arguments must be JSON, e.g. jumper ${op} '{"shape":"pebble"}' (${(err as Error).message})`);
+        }
+      }
+      return { op, args };
+    }
   }
 }
 

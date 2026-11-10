@@ -34,5 +34,23 @@
     { "key": "mode", "type": "string", "description": "sleep, forced or normal (ctrl_meas mode bits)." },
     { "key": "label", "type": "string", "description": "Short reading for the drawing, e.g. 22.5°C 45%." }
   ],
-  "tags": ["bme280", "bmp280", "temperature", "humidity", "pressure", "barometer", "altitude", "weather", "environment sensor", "i2c", "adafruit_bme280"]
+  "tags": ["bme280", "bmp280", "temperature", "humidity", "pressure", "barometer", "altitude", "weather", "environment sensor", "i2c", "adafruit_bme280"],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "mounting_holes": [
+      { "x": 10.5, "y": 5.25, "d": 2.5 }
+    ],
+    "features": [
+      { "id": "vent", "kind": "vent", "face": "+z", "x": 5.5, "y": 5, "w": 2.5, "h": 2.5, "expose": true, "description": "needs outside air to read humidity / pressure" }
+    ],
+    "source": "typical GY-BME280 module"
+  },
+  "sourcing": {
+    "mpn": "BME280",
+    "manufacturer": "Bosch Sensortec (IC)",
+    "package": "module 13 x 10.5 mm",
+    "generic": "BME280 temperature / humidity / pressure module, I2C, 3.3 V"
+  }
 }

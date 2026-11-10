@@ -186,5 +186,9 @@
     "wheels",
     "mechanical",
     "obstacle avoiding robot"
-  ]
+  ],
+  "sourcing": {
+    "package": "kit 210 x 150 mm",
+    "generic": "2WD robot car chassis kit (acrylic plate, 2 TT motors, wheels, caster)"
+  }
 }

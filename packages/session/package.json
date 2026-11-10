@@ -13,12 +13,14 @@
   },
   "dependencies": {
     "@jumper/ai-gateway": "workspace:*",
+    "@jumper/enclosure": "workspace:*",
     "@jumper/parts": "workspace:*",
     "@jumper/physics": "workspace:*",
     "@jumper/project-format": "workspace:*",
     "@jumper/runner": "workspace:*",
     "@jumper/sim-backends": "workspace:*",
     "@jumper/sim-core": "workspace:*",
+    "fflate": "0.8.3",
     "ws": "8.22.2"
   },
   "devDependencies": {

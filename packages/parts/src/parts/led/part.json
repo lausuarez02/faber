@@ -41,5 +41,17 @@
     { "key": "on", "type": "boolean", "description": "True when brightness > 0." },
     { "key": "currentmA", "type": "number", "description": "Forward current in mA." }
   ],
-  "tags": ["led", "light", "indicator", "diode", "5mm"]
+  "tags": ["led", "light", "indicator", "diode", "5mm"],
+  "mechanical": {
+    "outline": "round",
+    "keepout_bottom_mm": 3,
+    "features": [
+      { "id": "dome", "kind": "led", "face": "+z", "x": 2.9, "y": 2.9, "z": 5.7, "shape": "round", "d": 5, "protrude_mm": 3, "description": "5 mm dome pokes through a 5.2 mm hole" }
+    ],
+    "source": "5 mm THT LED"
+  },
+  "sourcing": {
+    "package": "5 mm THT",
+    "generic": "LED 5 mm diffused, 20 mA"
+  }
 }

@@ -1,0 +1,345 @@
+/* Case view (round 6, case track): a full-bleed 3D stage with one floating settings panel on the
+   right, same language as the Device view (near-black canvas, hairline borders, one white pill). */
+
+.case-view {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  background: #0d0f12;
+  color: var(--fg, #ededed);
+  font-family: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
+  font-size: 13px;
+  animation: cv-in 160ms ease-out;
+}
+
+@keyframes cv-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cv-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.cv-stage canvas {
+  touch-action: none;
+}
+
+.cv-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--fg-muted, #8a8a8a);
+  padding: 32px;
+  text-align: center;
+}
+
+.cv-empty-title {
+  color: var(--fg, #ededed);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cv-empty-sub {
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+.cv-sliders {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 18px;
+  padding: 10px 14px;
+}
+
+.cv-sliders label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-busy {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--bg-float, #131313);
+  border: 1px solid var(--border, #232323);
+}
+
+.cv-busy .spin {
+  animation: cv-spin 900ms linear infinite;
+}
+
+@keyframes cv-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cv-panel {
+  width: 340px;
+  max-width: 92vw;
+  margin: 12px 12px 12px 0;
+  padding: 14px 14px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cv-title {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.cv-size {
+  margin-top: 2px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.cv-pocket {
+  font-family: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong, #2a2a2a);
+}
+
+.cv-pocket.is-fits { color: var(--accent, #3ddc97); border-color: color-mix(in srgb, var(--accent, #3ddc97) 45%, transparent); }
+.cv-pocket.is-tight { color: var(--warn, #f5a524); border-color: color-mix(in srgb, var(--warn, #f5a524) 45%, transparent); }
+.cv-pocket.is-no { color: #ff6b5e; }
+
+.cv-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint, #5a5a5a);
+  margin-bottom: 6px;
+}
+
+.cv-faint {
+  color: var(--fg-faint, #6a6a6a);
+}
+
+.cv-shapes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.cv-shapes button {
+  padding: 7px 0;
+  border-radius: 8px;
+  border: 1px solid var(--border, #232323);
+  background: transparent;
+  color: var(--fg-muted, #8a8a8a);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cv-shapes button.is-on {
+  color: var(--fg, #ededed);
+  border-color: var(--fg, #ededed);
+  background: var(--bg-raised, #1a1a1a);
+}
+
+.cv-params {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-row {
+  display: grid;
+  grid-template-columns: 112px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-row select,
+.cv-row input[type="color"] {
+  grid-column: 2 / 4;
+  background: var(--bg-raised, #1a1a1a);
+  color: var(--fg, #ededed);
+  border: 1px solid var(--border, #232323);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.cv-row input[type="color"] {
+  height: 26px;
+  padding: 2px;
+}
+
+.cv-row output {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--fg, #ededed);
+  min-width: 52px;
+  text-align: right;
+}
+
+.cv-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-primary,
+.cv-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cv-primary {
+  border: 0;
+  background: var(--primary, #ffffff);
+  color: var(--on-primary, #0a0a0a);
+}
+
+.cv-secondary {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid var(--border-strong, #2a2a2a);
+  background: transparent;
+  color: var(--fg, #ededed);
+}
+
+.cv-primary:disabled,
+.cv-secondary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cv-error {
+  color: #ff8a7e;
+  line-height: 1.45;
+  font-size: 12px;
+}
+
+.cv-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cv-checks li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 6px;
+  line-height: 1.4;
+  font-size: 12px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-checks li svg {
+  margin-top: 2px;
+}
+
+.cv-checks li b {
+  color: var(--fg, #ededed);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.cv-checks .is-ok svg { color: var(--accent, #3ddc97); }
+.cv-checks .is-warn svg { color: var(--warn, #f5a524); }
+.cv-checks .is-bad svg { color: #ff6b5e; }
+
+.cv-files {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.cv-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #232323);
+  color: var(--fg, #ededed);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.cv-file:hover {
+  border-color: var(--border-strong, #3a3a3a);
+}
+
+.cv-file.is-off {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.cv-pack {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-pack ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.cv-note {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .case-view {
+    flex-direction: column;
+  }
+  .cv-stage {
+    min-height: 46vh;
+  }
+  .cv-panel {
+    width: auto;
+    max-width: none;
+    margin: 0 8px 8px;
+    max-height: 52vh;
+  }
+}

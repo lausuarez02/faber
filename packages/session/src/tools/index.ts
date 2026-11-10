@@ -1,4 +1,5 @@
 import { agentTools } from "./agent.ts";
+import { caseTools } from "./case.ts"; // round 6 case
 import { agentPartsTools } from "./agentparts.ts";
 import { projectsTools } from "./projects.ts";
 import { powerTools } from "./power.ts";
@@ -12,6 +13,7 @@ export const TOOL_MODULES: ToolModule[] = [
   agentTools,
   projectsTools,
   powerTools,
+  caseTools, // round 6 case
 ];
 
 /** tool name → handler for the module tools (ProjectSession.call routes here after OP_METHODS). */

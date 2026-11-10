@@ -302,5 +302,23 @@
     "tiny",
     "usb-c",
     "arduino-pico"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 8.75, "z": 1.9, "w": 9, "h": 3.2, "connector": "usb-c", "plug_clearance_mm": 1.5, "protrude_mm": 1 },
+      { "id": "rgb-led", "kind": "led", "face": "+z", "x": 3.8, "y": 13.7, "shape": "round", "d": 1.6, "expose": false, "description": "user RGB LED; set expose true for a light pipe" },
+      { "id": "boot", "kind": "button", "face": "+z", "x": 3.2, "y": 4, "shape": "round", "d": 1.5, "travel_mm": 0.2, "expose": false },
+      { "id": "reset", "kind": "button", "face": "+z", "x": 3.2, "y": 13.5, "shape": "round", "d": 1.5, "travel_mm": 0.2, "expose": false }
+    ],
+    "source": "Seeed XIAO RP2040 drawing (21 x 17.5 mm), USB-C typical"
+  },
+  "sourcing": {
+    "mpn": "102010428",
+    "manufacturer": "Seeed Studio",
+    "package": "module 21 x 17.5 mm, castellated",
+    "generic": "Seeed XIAO RP2040 (RP2040, USB-C, castellated pads)"
+  }
 }

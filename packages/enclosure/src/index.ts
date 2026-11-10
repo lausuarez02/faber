@@ -1,10 +1,15 @@
 /**
  * @jumper/enclosure: printable cases for Jumper projects (round 6, decision 0004).
- * This commit only fixes the shared types; the case track adds the engine (layout, shapes,
- * exporters, validation) behind them.
+ * layout (auto-pack) → OpenCascade bodies (replicad, loaded lazily) → STL / 3MF / STEP / PNG /
+ * SVG drawing / PRINT.md + a CaseReport with fit checks.
  */
 export type { CaseFile, CaseMesh, CaseReport, FitCheck, FitCheckId, PlacedPart, Vec3 } from "./types.ts";
 export { CASE_SHAPES } from "@jumper/project-format";
+export { generateCase, caseHash, pocketVerdict, resolveEnclosure, readManifest, readReport, readMeshCache, writeMeshCache, writeCaseFiles, ENGINE_VERSION, type Generated, type GenerateOptions, type CaseManifest } from "./engine.ts";
+export { layoutCase, resolveParams, toCase, type Layout, type Placed, type Opening } from "./layout.ts";
+export { resolveMech, type PartMech } from "./mech.ts";
+export { checkMesh, readStl, stlBinary, weld, type Mesh, type MeshCheck } from "./mesh.ts";
+export { renderPng } from "./render.ts";
 
 /** Smallest wall the engine generates for FDM (mm). */
 export const MIN_WALL_MM = 1.2;

@@ -422,5 +422,21 @@
     "tiny",
     "usb-c",
     "arduino-pico"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 9, "z": 2.4, "w": 9, "h": 3.2, "connector": "usb-c", "plug_clearance_mm": 1.5, "protrude_mm": 0.6 },
+      { "id": "rgb-led", "kind": "led", "face": "+z", "x": 4.5, "y": 4.4, "shape": "rect", "w": 1.6, "h": 1.6, "expose": false }
+    ],
+    "source": "Waveshare RP2040-Zero drawing (23.5 x 18 mm), USB-C typical"
+  },
+  "sourcing": {
+    "mpn": "RP2040-Zero",
+    "manufacturer": "Waveshare",
+    "package": "module 23.5 x 18 mm, castellated",
+    "generic": "Waveshare RP2040-Zero (RP2040, USB-C, castellated)"
+  }
 }

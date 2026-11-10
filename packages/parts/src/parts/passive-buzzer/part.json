@@ -31,5 +31,17 @@
     { "key": "volume", "type": "number", "description": "Relative loudness 0..1 (drive level and distance from the resonant frequency)." },
     { "key": "label", "type": "string", "description": "e.g. \"A4 · 440 Hz\"." }
   ],
-  "tags": ["passive buzzer", "piezo", "speaker", "tone", "melody", "music", "sound", "beeper", "sounder", "notes", "output"]
+  "tags": ["passive buzzer", "piezo", "speaker", "tone", "melody", "music", "sound", "beeper", "sounder", "notes", "output"],
+  "mechanical": {
+    "outline": "round",
+    "keepout_bottom_mm": 2,
+    "features": [
+      { "id": "sound", "kind": "grille", "face": "+z", "x": 6, "y": 6, "shape": "round", "d": 2 }
+    ],
+    "source": "12 mm passive (magnetic) buzzer, 9.5 mm tall"
+  },
+  "sourcing": {
+    "package": "12 x 9.5 mm THT",
+    "generic": "Passive magnetic buzzer 12 mm, 16 Ω class, driven by PWM"
+  }
 }

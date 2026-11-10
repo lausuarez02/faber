@@ -32,5 +32,25 @@
     { "key": "lastEchoUs", "type": "number", "description": "Width of the last ECHO pulse in µs (0 before the first)." },
     { "key": "pings", "type": "number", "description": "Measurements started since reset." }
   ],
-  "tags": ["hc-sr04", "ultrasonic", "sonar", "distance sensor", "range finder", "obstacle", "robot", "ping"]
+  "tags": ["hc-sr04", "ultrasonic", "sonar", "distance sensor", "range finder", "obstacle", "robot", "ping"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2.5,
+    "mounting_holes": [
+      { "x": 1.75, "y": 1.75, "d": 1.8 },
+      { "x": 43.25, "y": 1.75, "d": 1.8 },
+      { "x": 1.75, "y": 18.25, "d": 1.8 },
+      { "x": 43.25, "y": 18.25, "d": 1.8 }
+    ],
+    "features": [
+      { "id": "tx", "kind": "sensor-window", "face": "+z", "x": 10.5, "y": 8.8, "z": 3, "shape": "round", "d": 16, "protrude_mm": 12, "description": "transmitter can" },
+      { "id": "rx", "kind": "sensor-window", "face": "+z", "x": 34.5, "y": 8.8, "z": 3, "shape": "round", "d": 16, "protrude_mm": 12, "description": "receiver can" }
+    ],
+    "source": "typical HC-SR04 module (16 mm cans, 12 mm tall)"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "module 45 x 20 mm, 4-pin header",
+    "generic": "HC-SR04 ultrasonic distance sensor module, 5 V"
+  }
 }

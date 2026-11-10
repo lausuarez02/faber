@@ -619,5 +619,28 @@
     "pocket",
     "arduino-pico",
     "breadboard"
-  ]
+  ],
+  "mechanical": {
+    "pcb_mm": 1,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "mounting_holes": [
+      { "x": 4.8, "y": 2, "d": 2.1 },
+      { "x": 16.2, "y": 2, "d": 2.1 },
+      { "x": 4.8, "y": 49, "d": 2.1 },
+      { "x": 16.2, "y": 49, "d": 2.1 }
+    ],
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-y", "x": 10.5, "y": 0, "z": 2.5, "w": 8, "h": 3, "connector": "micro-usb", "plug_clearance_mm": 1.5, "protrude_mm": 1.3 },
+      { "id": "bootsel", "kind": "button", "face": "+z", "x": 10.5, "y": 7.8, "shape": "round", "d": 3, "travel_mm": 0.25, "expose": false },
+      { "id": "led", "kind": "led", "face": "+z", "x": 14.2, "y": 5.1, "shape": "round", "d": 1.6, "expose": false }
+    ],
+    "source": "Raspberry Pi Pico datasheet (mechanical drawing)"
+  },
+  "sourcing": {
+    "mpn": "SC0915",
+    "manufacturer": "Raspberry Pi",
+    "package": "module 21 x 51 mm, castellated",
+    "generic": "Raspberry Pi Pico (RP2040, micro-USB)"
+  }
 }

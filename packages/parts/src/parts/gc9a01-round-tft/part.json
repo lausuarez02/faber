@@ -53,5 +53,22 @@
     { "key": "pixelsWritten", "type": "number", "description": "Pixels written since power-on (corners included)." },
     { "key": "screenOpacity", "type": "number", "description": "1 when the glass shows an image (bound in the SVG)." }
   ],
-  "tags": ["gc9a01", "round display", "round lcd", "round tft", "1.28", "240x240", "circular", "watch", "smartwatch", "colour display", "color display", "tft", "spi", "ips", "pocket", "wearable"]
+  "tags": ["gc9a01", "round display", "round lcd", "round tft", "1.28", "240x240", "circular", "watch", "smartwatch", "colour display", "color display", "tft", "spi", "ips", "pocket", "wearable"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 1.5,
+    "outline_parts": [
+      { "shape": "round", "x": 18, "y": 23.2, "d": 35.4 },
+      { "shape": "rect", "x": 5.7, "y": 0.6, "w": 24.6, "h": 7.3 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 18, "y": 23.2, "shape": "round", "d": 32.4, "bezel_mm": 1.2 }
+    ],
+    "source": "typical module: 1.28 in round IPS, 35.4 mm round PCB with a header tab"
+  },
+  "sourcing": {
+    "manufacturer": "GalaxyCore (driver IC)",
+    "package": "module, 35.4 mm round PCB + 7-pin header tab",
+    "generic": "1.28 in round IPS TFT 240x240, GC9A01 driver, SPI, 3.3 V, module"
+  }
 }

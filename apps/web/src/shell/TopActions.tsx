@@ -1,8 +1,9 @@
-import { Bot, ChevronDown, Ellipsis, FlaskConical, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
+import { Bot, Box, ChevronDown, Ellipsis, FlaskConical, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { RELIABLE_SPEED, SPEEDS } from "../lib/store.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
+import { useCase } from "../case/store.ts"; // round 6 case
 import { InstallMcpMenu } from "../connect/InstallMcpMenu.tsx";
 import { OpenInAgentMenu } from "../connect/OpenInAgentMenu.tsx";
 import { IconButton, MenuItem, Popover, STROKE } from "./primitives.tsx";
@@ -22,6 +23,7 @@ export function TopActions() {
         <IconButton icon={SquareTerminal} label="Serial console" active={panels.includes("serial")} onClick={() => ui().togglePanel("serial")} data-testid="toggle-serial" />
         <IconButton icon={FlaskConical} label="Tests" active={panels.includes("tests")} onClick={() => ui().togglePanel("tests")} data-testid="toggle-tests" />
         <IconButton icon={Presentation} label="Device view" active={device} onClick={() => ui().setDevice(!device)} data-testid="toggle-device" />
+        <IconButton icon={Box} label="Case: printable enclosure and factory files" onClick={() => useCase.getState().setOpen(true)} data-testid="toggle-case" /> {/* round 6 case */}
       </div>
       <span className="vsep" aria-hidden />
       <div className="anchor">
@@ -136,6 +138,9 @@ export function PhoneTopActions() {
             </MenuItem>
             <MenuItem icon={Presentation} onSelect={() => ui().setDevice(true)} testId="phone-device">
               Device view
+            </MenuItem>
+            <MenuItem icon={Box} onSelect={() => (close(), useCase.getState().setOpen(true))} testId="phone-case">
+              Case {/* round 6 case */}
             </MenuItem>
             <div className="menu-sep" />
             <MenuItem icon={Plug} onSelect={() => ui().setPopover("mcp")} testId="phone-install-mcp">

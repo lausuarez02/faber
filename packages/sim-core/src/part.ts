@@ -156,6 +156,9 @@ export type MechFeature = z.infer<typeof MechFeatureSchema>;
 export const MechanicalSchema = z.object({
   /** Footprint outline: "rect" (the w × h box, default) or "round" (a disc of diameter w centred in the box, e.g. the GC9A01 module). */
   outline: z.enum(["rect", "round"]).optional(),
+  // round 6 case: footprints that are neither the box nor a centred disc (the GC9A01's round PCB with a header tab).
+  /** The footprint as a union of rects (x, y = top-left, w, h) and discs (x, y = centre, d) in the part frame. Overrides `outline` for packing and fit checks. */
+  outline_parts: z.array(z.union([z.object({ shape: z.literal("rect"), x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() }), z.object({ shape: z.literal("round"), x: z.number(), y: z.number(), d: z.number().positive() })])).optional(),
   /** PCB thickness when the part is a board / module (mm), e.g. 1.0 for a XIAO, 1.6 for most modules. */
   pcb_mm: z.number().positive().optional(),
   /** Extra room above the top face (wires, solder joints), mm. Default 0. */

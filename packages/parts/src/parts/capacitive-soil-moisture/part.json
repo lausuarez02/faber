@@ -29,5 +29,15 @@
     { "key": "wetOpacity", "type": "number", "description": "Opacity of the wet-soil band (0..0.6)." },
     { "key": "powered", "type": "boolean", "description": "VCC is high enough for the oscillator." }
   ],
-  "tags": ["soil", "soil moisture", "moisture", "capacitive", "plant", "garden", "watering", "humidity soil", "hygrometer", "sensor", "analog"]
+  "tags": ["soil", "soil moisture", "moisture", "capacitive", "plant", "garden", "watering", "humidity soil", "hygrometer", "sensor", "analog"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 0,
+    "source": "typical v1.2 probe; only the electronics end goes in a case"
+  },
+  "sourcing": {
+    "manufacturer": "generic",
+    "package": "probe 98 x 23 mm",
+    "generic": "Capacitive soil moisture sensor v1.2 (TLC555), analog out"
+  }
 }
