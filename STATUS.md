@@ -1,56 +1,56 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-10 (round 5: projects and versions, the followed page runs the device, RP2040
-pocket boards, 14 new parts, parts agents can create, plan first). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
+Last updated 2026-11-10 (round 6: the battery really powers the board, colour screens in replays
+and history, clean project switching, canvas controls that work while it runs, a printable case and
+a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
 one-line goal to a wired, programmed and tested device using only Jumper's tools, and a person
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
-## Round 6, power track (branch `round6/power`, before the merge)
+## Round 6 (2026-11-10): a real device (battery, colour replays, project switch, canvas controls, case and factory pack)
 
-The battery really powers the board: boards have a supply chain (USB on VBUS when `power.usb` is not
-false, on-board LDO / Schottky / buck-boost) and the firmware is held in reset without power; 7 new
-parts (Schottky, 1N4148, AO3400, NPN / PNP, MCP1700 / AP2112 LDO, MT3608 boost); check_design
-power-path codes (`usb-backfeed`, `battery-reversed`, `battery-overvoltage`, `ldo-dropout`,
-`no-power-path`); `set_power`, `set_assembly`; soldered exports (WIRE-CUTS.csv, ASSEMBLY.md, no
-breadboard / dupont); search_parts says when nothing fits (create_part template), fuzzy get_part,
-planning calls logged into the project they create; the USB / battery pill in the web app;
-`examples/agent-built/claude-pocket-muse` runs from its LiPo (11/11, 0 errors). [docs/power.md](docs/power.md).
-## Round 6, frames track (2026-11-10, branch round6/frames, before the lead's merge)
+Five tracks merged into main in the order power, frames, switch, canvas, case (decision
+[0004](docs/decisions/0004-round6-real-device.md)), then the lead's integration. Checks after the
+merge: `pnpm gen` no diff, `pnpm typecheck` 0 errors, `pnpm test` 1229 passed, 2 skipped (139 files); full e2e (desktop,
+mobile and perf, `E2E_PORT=5360`, hub ports from 9400) 77 passed, 14 skipped by design, 3 flaky (passed on retry: case view desktop + mobile, switch-projects).
+
+The Pocket Muse (`examples/agent-built/claude-pocket-muse`, Claude Code's round-5 build) now goes
+the whole way: its LiPo really powers it (USB unplugged, switch + 1N5817, 11/11 tests, check_design
+0 errors and one honest `ldo-dropout` warning), its replay and History show the round screen in
+colour, and its pebble case (65.9 × 73.6 × 24.7 mm, fits a pocket, every fit check ok) plus a puck
+variant (63.1 × 55.2 × 32 mm, tight) open in the Case view, from which the factory pack is one click.
 
 | Area | What works | Check it with |
 | --- | --- | --- |
-| Colour screens off the live canvas | `run` / `run_tests` log each changed TFT / round screen as a PNG (`Frame.color`, at most every 100 ms of virtual time, thinned to 120 images / 1.5 MB per entry; the Muse's 4 s run adds 7 KB). `jumper record` videos, replays and a page following an agent paint them; history previews and gallery thumbnails draw them (an example without a log runs its built firmware 2 s for its thumbnail) | `packages/session/test/color-frames.test.ts`, `apps/web/src/lib/colorFrames.test.ts`, `apps/web/e2e/frames-color.spec.ts`; a recorded Muse replay shows the GC9A01 eyes |
-| libs3 images | `jumper/arduino-cli:1.5.1-avr1.8.8-libs3`, `jumper/arduino-runner:…-libs3-r1`, `jumper/arduino-pico:6.3.1-libs3-r1` (FROM the runner) add Adafruit GC9A01A, DHT sensor library, FastLED, TFT_eSPI (with a sketch `tft_setup.h`), Adafruit NeoPixel (LGPL-3.0, user firmware only, no binary committed). `ensureImage` builds all three from the Dockerfiles (checked with `--no-cache`); CI builds the RP2040 image. All 41 golden hexes and the Muse firmware rebuild byte-identical | `packages/parts/src/libs3.integration.test.ts` (sketches run with the round TFT, DHT22, WS2812 strip on Uno and XIAO RP2040; rebuilds compared byte for byte when the images exist), `services/runner/test/runner.test.ts` |
+| Power (track power) | Boards have a supply chain: USB on VBUS / 5V when `power.usb` is not false, their own LDO / Schottky / buck-boost, their own current; firmware is held in reset without power and boots again when it returns. 7 new parts (1N5817, 1N4148, AO3400, 2N2222 / BC547, 2N2907 / BC557, MCP1700 / AP2112, MT3608). check_design: `usb-backfeed`, `battery-reversed`, `battery-overvoltage`, `ldo-dropout`, `no-power-path`, `diode-reversed`. `set_power`, `set_assembly`; soldered exports (WIRE-CUTS.csv, ASSEMBLY.md, no breadboard / dupont). search_parts with no fit returns a `create_part` template; get_part resolves short ids. Web pill: USB switch and the battery reading | `packages/sim-core/src/power.test.ts`, `packages/session/test/power-*.test.ts`, `e2e/power-usb.spec.ts`, [docs/power.md](docs/power.md) |
+| Colour frames (track frames) | `run` / `run_tests` log changed TFT / round screens as PNGs (`Frame.color`, ≤ every 100 ms virtual, thinned to 120 images / 1.5 MB per entry). Replays, live follow, `record` videos, History previews and gallery thumbnails paint them. libs3 toolchain images add Adafruit GC9A01A, DHT, FastLED, TFT_eSPI, NeoPixel (LGPL, user firmware only); all 41 golden hexes rebuild byte-identical | `packages/session/test/color-frames.test.ts`, `e2e/frames-color.spec.ts`, `packages/parts/src/libs3.integration.test.ts` |
+| Project switch and history (track switch) | Opening a project resets the old one (sim, hex, code card, toasts, captions, tests, History, editor): no false "built for another board". An opened example is a restorable version; History shows `+N −M` lines and "built" only where the code matches; the person's own edits are never pending agent steps; a newcomer lands on Projects; thumbnails drawn at start; `run` says "ran the device for 3 s" | `apps/cli/test/switch-history.test.ts`, `e2e/switch-projects.spec.ts`, [docs/projects.md](docs/projects.md) |
+| Canvas controls (track canvas) | Click a running button's cap to press it (≥ 120 ms wall and virtual); body / label still drag; knobs turn; dragging an IMU tilts it; Shake held or timed on virtual time; docked Live controls card with Use / Arrange; serial follows the newest line; the view stays where the person put it; short-id labels; Inspector wiring follows the board (XIAO SDA → GP6) | `e2e/canvas-controls.spec.ts`, [docs/try-it.md](docs/try-it.md) |
+| Case and factory pack (track case) | `design_case` / `update_case` / `get_case` / `export_manufacturing` (MCP, CLI by name, HTTP): five shapes, snap or M2 screws, lanyard tab, belt clip; STL, coloured 3MF, STEP, renders, A3 drawing, print notes; fit checks (watertight, no intersection, wall, size, screen window, button travel, USB access, overhangs, pocket). Factory pack: supplier README + zh-CN summary, BOM with MPNs, wiring, netlist, KiCad netlist, wire cuts, firmware with flashing steps, case files, assembly steps with renders, test plan, checksums, zip. Web Case view with see-through / explode, settings, checks, downloads, factory pack. `mechanical` + `sourcing` data on the parts | `packages/enclosure/test/*`, `packages/session/test/case-tools.test.ts`, `apps/cli/test/case-routes.test.ts`, `e2e/case-view.spec.ts`, [docs/enclosures.md](docs/enclosures.md) |
+| Integration (lead) | The factory pack's wire cuts use the power track's `wireCuts` with pin positions from the case layout (×1.3 routing + strip + slack); the Muse re-cased after its re-wire and run again so its log has colour frames; the Case view lists `save: false` variants with downloads; `get_part` adds `wiring_on_this_board` for the project's board; `plan_device`'s last step and the agent loop (MCP instructions, AGENTS.md, docs/agents.md) end with `design_case` → `export_manufacturing` when the person wants a real device; a tool called without a part id says to pass `id` (was an internal error) | `packages/session/test/round6-integration.test.ts`, `apps/cli/test/case-routes.test.ts` |
 
-Known gaps (frames): the Tests filmstrip already drew colour screens from its own 80 px thumbnails
-(unchanged); runs logged before this change stay dark in history (no pixels were kept); FastLED's
-RP2040 PIO driver sends a few bits at 0.216 µs, which the strip reports as a timing warning; TFT_eSPI
-is for RP2040 boards only (the library does not target AVR).
-## Round 6, switch track (branch `round6/switch`, not merged yet)
-
-Opening a project resets everything of the old one (one switch event, decision 0004 R8): the sim
-stops, the old hex never loads into the new board (no false "built for another board"; that error
-now says to build again first), the code card shows the new sketch, toasts / captions / test results
-clear, History and the editor close. An opened example is version 1 (restorable); History counts
-file changes after a restore with `+N −M` lines and says "built" only where the code matches. Your
-own edits (actor `web`) are never pending agent steps. Someone new lands on the Projects page.
-Thumbnails are drawn at start ("Drawing the circuit…" meanwhile); "1 test". `run` says "ran the
-device for 3 s" instead of "ran 3000 ms (now 3000 ms)". Checks: `apps/cli/test/switch-history.test.ts`,
-`packages/session/test/switch-run-summary.test.ts`, `apps/web/src/projects/firstRun.test.ts`,
-`apps/web/src/live/steps.test.ts`, `apps/web/e2e/switch-projects.spec.ts`.
-## Round 6, case track (branch `round6/case`, not merged yet)
-
-Cases and the factory pack ([docs/enclosures.md](docs/enclosures.md)): `design_case` /
-`update_case` / `get_case` / `export_manufacturing` (MCP + CLI), a Case view in the web app, the
-`mechanical` + `sourcing` data in all 41 parts, and the Muse's reference case
-(`examples/agent-built/claude-pocket-muse/case/`: pebble 76.3 × 70.3 × 25 mm "tight", puck variant
-63.1 × 55.2 × 32 mm). Checks: `packages/enclosure/test/*`, `packages/session/test/case-tools.test.ts`,
-`apps/cli/test/case-routes.test.ts`, `packages/parts/src/spec/mechanical.test.ts`,
-`apps/web/e2e/case-view.spec.ts`. Known gaps: pebble edges stay nearly square where a USB port sits
-near the back; no IGES; LCSC numbers empty until checked; wire lengths are straight-line estimates;
-the reference case predates the power track's re-wire (regenerate after the merge).
+Known gaps (round 6):
+- **Power:** not modelled: regulator current limits and thermal shutdown, inrush, gradual brownout;
+  diodes and transistors are piecewise-linear; the Uno does not switch between USB and VIN by
+  itself; the web USB toggle changes only the local project and the running sim (a followed page
+  says to ask the agent; no route for `set_power`); the `run` summary does not say "no power" (the
+  `board-unpowered` diagnostic does). Battery figures are typical values.
+- **Case:** packing is a heuristic, not optimal; parts without mounting holes are held by ribs or
+  foam tape; the pebble keeps a near-square edge where a USB port sits near the back; no IGES (STEP
+  AP214 only); wire cuts are straight-line distances × 1.3, not routed; LCSC / JLC numbers empty
+  until checked; 3 to 20 s per case; the factory pack holds the saved case only (variants stay in
+  `case/variants/`); the Case view needs `jumper serve`. The print, the plastic, snap strength and
+  the hand feel are not tested. The resistor and the robot chassis have no `mechanical` block (not
+  needed by any shipped case).
+- **Colour frames:** runs logged before round 6 stay dark in History; FastLED on RP2040 sends a few
+  bits at 0.216 µs (the strip reports it); TFT_eSPI is RP2040 only; a replay's clock shows the time
+  of the last change, not the end of the run; NeoPixel has no committed binary (LGPL).
+- **Switch / canvas:** a Projects page open at first load still renders the canvas under it; copying
+  an example does not tell an open live page about its new version 1 until History opens; on phones
+  the panel column can show more than one panel.
+- **Muse example:** its round-6 calls (tests, a run, design_case, export_manufacturing) were made
+  with the CLI by the lead, not by the agent, and are in its log as actor `cli`.
 
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 
@@ -76,7 +76,7 @@ Known gaps (round 5):
   UART formats other than 8N1, flash across a reset, an MCU's own TX wired to its RX. The
   `jumper/arduino-pico:6.3.1-r1` image is built locally only; without it RP2040 sketches don't build
   (golden hexes run). In the browser it runs at about 0.8 to 1x real time.
-- **Libraries:** sketches using Adafruit_GC9A01A, TFT_eSPI, the DHT library, FastLED or Adafruit
+- **Libraries** (fixed in round 6, libs3 images): sketches using Adafruit_GC9A01A, TFT_eSPI, the DHT library, FastLED or Adafruit
   NeoPixel do not compile yet (no `-libs3` image; NeoPixel is LGPL-3.0 and needs a decision). The
   examples and hints use library-free code.
 - **Parts:** WS2812 capped at 16 LEDs, no DOUT, no 3.3 V data check; the vibration motor is the
@@ -86,7 +86,7 @@ Known gaps (round 5):
 - **Live:** an agent writing a file without building does not rebuild the page (it says "sketch
   changed, not built yet"); auto-run only follows agent (MCP) calls; an agent on a separate stdio
   process ends as "idle", never "done"; IMU Shake / Drop / Spin are approximate (wall clock).
-- **Projects:** history previews show colour TFTs dark; old logs have builds without a hash;
+- **Projects:** history previews show colour TFTs dark (fixed in round 6); old logs have builds without a hash;
   files over 50 000 characters cannot be restored; the first gallery load renders thumbnails at
   about 1 s each (cached after); `/v/:id` for a project that is not open says how to open it rather
   than switching (switching would move the agent too).
@@ -95,22 +95,6 @@ Known gaps (round 5):
 - **Flaky under load:** `visual-capture.test.ts` and `session.test.ts` "is deterministic" have each
   hit their 5 s timeout once in a full run on a busy machine; they pass alone and in later runs.
 - ESP32-S3 / C3 is planned in the decision note, not built.
-
-## Round 6, canvas track (branch `round6/canvas`, not merged yet)
-
-- A normal click on a running button's cap presses it (pointer down / up, at least 120 ms of wall
-  and virtual time, drawn pressed); the body and the label still drag the part; knobs turn; dragging
-  an IMU tilts it; **Arrange** in Live controls makes every part select / drag as when stopped.
-- Live controls docked at the bottom of the right column (panels end above it), collapsible;
-  Shake = click for a set duration (0.5 to 5 s) or hold; all motions on virtual time.
-- Serial follows the newest line unless scrolled up (**Newest** button); right-column panels shrink
-  before the column scrolls. Canvas labels: short id only, full name in the hover title.
-- The view is the person's once they zoom / pan / fit: automatic refits (run, save, build, cards)
-  skip it until another project opens (R8 "open").
-- Inspector: "Wiring on <board>" from the board's bus pins (`boardWiring` in `@jumper/parts`), Uno
-  sentences dropped from the description on other boards.
-- Checked: `apps/web/e2e/canvas-controls.spec.ts` (6 tests, real pointer events, desktop + phone),
-  unit tests for the hit area, tilt, motions and wiring.
 
 ## Round 4 (2026-11-09): UI review, two live Claude builds, try it yourself
 
