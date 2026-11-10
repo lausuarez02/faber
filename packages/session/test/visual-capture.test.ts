@@ -50,7 +50,7 @@ describe("visual capture", () => {
     expect(again.displays?.oled?.state.pixels).toBe(frame.state.displays?.oled?.state.pixels);
     expect(again.buzzers).toEqual(frame.state.buzzers);
     expect(again.serial).toBe(frame.state.serial);
-  });
+  }, 30_000); // runs the scenario twice; under a loaded full run it has passed the 5 s default
 
   it("captures the robot pose and sonar for a rover scenario, with keyframes", async () => {
     const report = await buildVisualReport(EX("rover"), { scenario: "drives-without-crashing" });
