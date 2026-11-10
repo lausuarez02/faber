@@ -38,7 +38,10 @@ start) for everything:
 | --- | --- |
 | `http://localhost:7780/` | the web app, following the project live (redirects to `?follow=ws://localhost:7780/live`) |
 | `http://localhost:7780/mcp` | MCP over Streamable HTTP, bound to the **same session** the canvas shows |
-| `ws://localhost:7780/live` | live events: `hello`, `action`, `presence` (connected agents, what each is running) |
+| `ws://localhost:7780/live` | live events: `hello`, `action`, `presence` (connected agents, what each is running), `agent-state` (none / building / idle / done), `firmware` (a new hex, the page reloads it), `auto-run` (after your build / run / run_tests the page starts the device itself), `project` (the active project changed; a `hello` follows), `version` (a new history version) |
+| `GET /api/agent-state`, `GET /api/firmware` | the one agent state; the newest built hex with its board and backend (`avr8js` or `rp2040js`) |
+| `GET /api/projects`, `GET /api/history` | the Projects gallery and the active project's versions ([projects.md](projects.md)) |
+| `GET /v/:id` | the shareable local viewer link (`viewer_url`): opens the project live and runs it |
 | `GET /api/info` | URLs, install snippets for each agent, starter prompt, connected agents |
 | `POST /api/launch/claude-code` | the app's "Launch Claude Code here" (needs the page's token; macOS Terminal) |
 
