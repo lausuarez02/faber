@@ -44,7 +44,7 @@ describe("round 7 integration: the talking egg", () => {
     const p = planDevice("ok so i want something like of the shape of an egg, that will have eyes, it should fit there and i want it to have eyes and a speaker to say stuff", {}, registry);
     const types = p.bom.map((l) => l.type);
     expect(types).toEqual(expect.arrayContaining(["dfplayer-mini", "speaker"]));
-    expect(types.some((t) => /oled|tft/.test(t))).toBe(true);
+    expect(types.some((t) => /oled|tft/.test(t ?? ""))).toBe(true);
     expect(p.next.join("\n")).toMatch(/"shape": "custom", "outline"/);
     expect(p.next.join("\n")).toMatch(/there is no "egg" preset: draw it/);
   });
