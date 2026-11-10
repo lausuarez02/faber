@@ -121,7 +121,9 @@ test.describe("projects (served)", () => {
       const yours = home.getByTestId("projects-grid");
       // The page shows the last listing until the new one arrives (slow on a loaded machine).
       await expect(yours.locator('[data-name="Blink"]')).toHaveAttribute("data-active", "true", { timeout: 20_000 });
-      await expect(home.getByTestId("examples-grid").locator('[data-kind="example"]')).toHaveCount(6);
+      await expect(home.getByTestId("examples-grid").locator('[data-kind="example"]')).toHaveCount(7);
+      // Round 7's talking egg (DFPlayer + speaker) is one of them.
+      await expect(home.getByTestId("examples-grid").locator('[data-name="Talking egg (Nano + DFPlayer)"]')).toContainText("Arduino Nano");
       // The RP2040 pocket example sits in the gallery with its board.
       await expect(home.getByTestId("examples-grid").locator('[data-name="Pocket OLED (XIAO RP2040)"]')).toContainText("Seeed XIAO RP2040");
       await expect(home.locator('[data-kind="agent-built"]').first()).toBeVisible();
