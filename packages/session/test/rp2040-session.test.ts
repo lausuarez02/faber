@@ -164,4 +164,13 @@ describe("check_design on a 3.3 V board (agent track's C5 codes)", () => {
     const text = (await call(s, "check_design")).issues.join("\n");
     expect(text).not.toMatch(/logic-level|part-needs-5v/);
   });
+
+  it("an unwired I2C part's fix names the board's own Wire pins, not the Uno's A4/A5", async () => {
+    const s = fresh();
+    await call(s, "new_project", { template: "xiao-rp2040" });
+    await call(s, "place_part", { type: "ssd1306-oled-i2c" });
+    const text = (await call(s, "check_design")).issues.join("\n");
+    expect(text).toMatch(/\[i2c-unwired\].*Fix: connect oled1\.SDA → xiao\.GP6 \(D4\/SDA\)/);
+    expect(text).not.toMatch(/A4|Uno\/Nano/);
+  });
 });

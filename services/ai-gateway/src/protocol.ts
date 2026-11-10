@@ -1,11 +1,13 @@
 // The pet protocol: what a 2 KB-RAM board sends and gets back. Designed so a sketch can build the
 // request with a few Serial.print calls and parse the reply with strchr():
 //
-//   GET /v1/pet?a=talk&f=40&j=70&e=80&n=Pip HTTP/1.0\r\nHost: ai.jumper\r\n\r\n
+//   GET /v1/pet?a=talk&f=40&j=70&e=80&n=Pip&m=what%20do%20you%20eat HTTP/1.0\r\nHost: ai.jumper\r\n\r\n
 //   HTTP/1.0 200 OK\r\nContent-Length: 28\r\nConnection: close\r\n\r\nhappy|Yum! That hit the spot
 //
 // Query: a = action (talk | feed | play | sleep | lonely | hello), f = food, j = joy, e = energy
-// (0..100), n = the pet's name (optional, max 10 chars), s = a seed the board may pass (optional).
+// (0..100), n = the pet's name (optional, max 10 chars), s = a seed the board may pass (optional),
+// m = what the person said to the pet (optional, URL-encoded, max 60 characters; round 5): the
+// model answers it in character. Longer messages are cut at 60, non-ASCII is dropped.
 // Reply body: <mood>|<text>, mood in MOODS, text <= 60 printable ASCII characters, no '|'.
 
 export const MOODS = ["happy", "hungry", "sleepy", "sad", "excited"] as const;
@@ -13,6 +15,8 @@ export type Mood = (typeof MOODS)[number];
 export const ACTIONS = ["talk", "feed", "play", "sleep", "lonely", "hello"] as const;
 export type PetAction = (typeof ACTIONS)[number];
 export const MAX_TEXT = 60;
+/** Longest person message (m=) the gateway passes on. */
+export const MAX_MESSAGE = 60;
 
 export interface PetRequest {
   action: PetAction;
@@ -21,6 +25,8 @@ export interface PetRequest {
   energy: number;
   name: string;
   seed: number;
+  /** What the person said (m=), sanitized: printable ASCII, at most MAX_MESSAGE characters. */
+  message?: string;
 }
 
 export interface PetReply {
@@ -52,6 +58,7 @@ export function parsePetQuery(query: string): PetRequest {
     throw new PetRequestError(`unknown action a=${a}`, `use one of ${ACTIONS.join(", ")}`);
   }
   const name = (q.get("n") ?? "Pip").replace(/[^A-Za-z0-9 _-]/g, "").slice(0, 10) || "Pip";
+  const message = cleanMessage(q.get("m"));
   return {
     action: a as PetAction,
     food: clampStat(q.get("f"), "f"),
@@ -59,7 +66,28 @@ export function parsePetQuery(query: string): PetRequest {
     energy: clampStat(q.get("e"), "e"),
     name,
     seed: Number(q.get("s") ?? 0) | 0,
+    ...(message ? { message } : {}),
   };
+}
+
+/** m= as the model sees it: one line of printable ASCII, at most MAX_MESSAGE characters; "" when empty. */
+export function cleanMessage(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return raw
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_MESSAGE)
+    .trim();
+}
+
+/** The query string for a request (what a board, or the browser's remote provider, sends). */
+export function petQuery(r: PetRequest): string {
+  const q = new URLSearchParams({ a: r.action, f: String(r.food), j: String(r.joy), e: String(r.energy), n: r.name });
+  if (r.message) q.set("m", r.message);
+  return q.toString();
 }
 
 /** The mood the stats suggest (used when a model forgets the tag, and by the mock). */
@@ -92,7 +120,8 @@ export function eventPrompt(r: PetRequest): string {
     lonely: "Nobody has paid attention to you for a while.",
     hello: "You just woke up in your toy.",
   };
-  return `${what[r.action]} Food ${r.food}/100, joy ${r.joy}/100, energy ${r.energy}/100.`;
+  const said = r.message ? ` Your owner says to you: "${r.message}". Answer that, in character.` : "";
+  return `${what[r.action]}${said} Food ${r.food}/100, joy ${r.joy}/100, energy ${r.energy}/100.`;
 }
 
 /** Make any model output safe for the board: one line, ASCII, <= 60 chars, a known mood. */

@@ -151,24 +151,63 @@ as its instructions and offers three resources: `jumper://docs/agents` (this gui
 back as an image too, so a model with vision can look at the circuit, the OLED and the robot's world.
 `packages/mcp/bin/jumper-mcp.mjs --project <dir>` is the same server without the CLI wrapper.
 
+## Talk to the person first
+
+The people asking for a device are often beginners. The server instructions say the same:
+
+- **Plan first.** For a new wish call `plan_device {"goal": "…", "constraints": {"pocket": true,
+  "budget_usd": 30, "battery_hours": 8}}` and tell the person the plan in plain words before
+  placing anything: what it will do, the board and why, each part and why, the rough size of the
+  case, the battery life, the price, and which parts are simulated as themselves, with a stand-in,
+  agent-made or not at all. Figures a part does not have are listed in `missing_data`, not guessed.
+- **Ask one question** when the wish leaves a real choice open (`plan_device` returns `question`,
+  e.g. "should it only tell you the plant is thirsty, or also water it?"), then wait.
+- **No jargon** unless the person uses it: "the screen", "a resistor that protects the light".
+- **One project per idea:** `new_project {"folder": true, "name": "Plant waterer"}` makes a new
+  folder, registers it in the Projects gallery and (on `jumper serve`) switches to it. Never
+  overwrite the playground or another project.
+- **Real parts first.** If the catalog lacks a part, make it with `create_part` (agent-made,
+  behavioral) when that tool exists, rather than a stand-in. If you do use a stand-in, call
+  `mark_stand_in {"id": "soil1", "real": "capacitive soil moisture sensor"}`: BOM, WIRING and
+  TEST-ON-HARDWARE then print the real part with a STAND-IN note.
+- **Say what the simulation cannot check** (`plan_device`'s `cannot_check`, `fidelity_report`):
+  feel, sound, real battery life, stand-ins.
+
 ## The loop
 
-1. `get_project` (or `new_project`) to see where you are.
+1. `plan_device`, then `get_project` (or `new_project {"folder": true}`) to see where you are.
 2. `search_parts` for each thing the device needs, then `get_part` for its pins, wiring hint,
    libraries and a minimal Arduino example.
 3. `place_part` (leave out x/y: Jumper lays parts out tidily) and `connect` pins written as
    `"part.pin"`. Pass a short `why` with your edits: the human sees it in the step list.
-4. `check_design` and fix every error (LED resistors, power, I2C pins, shorts…).
+4. `check_design` and fix every error (LED resistors, power, voltage levels, I2C pins, shorts…).
 5. `write_file` the sketch (`firmware/main.ino`). Print what happens with `Serial.begin(115200)`:
    serial output is how you and the tests check behaviour. `set_libraries` for library includes.
 6. `run {"ms": 3000}`: builds if needed, then simulates and returns serial output, pin levels, part
    states and diagnostics. `read_display` shows a screen as ASCII art. `interact` presses buttons,
    `set_sensor_value` changes what a sensor reads; run again to see the firmware react.
 7. `write_scenario` for each behaviour of the goal, then `run_tests`. Fix the firmware or wiring
-   until every scenario passes.
+   until every scenario passes. When all pass (and `check_design` has no errors) your pending steps
+   are accepted (`accepted_by: "tests"`); otherwise the result's `pending_steps.why` says why not.
 8. `inject_fault` (`disconnect`, `i2c_nack`, `noisy`) to see the firmware cope with a broken world.
-9. `fidelity_report`: tell the human what was verified and what still has to be tested on the real
-   device. `screenshot` and `export` (BOM with buy links, wiring table, firmware.hex) at the end.
+9. **Show it.** `screenshot` returns the picture inline (show it to the person) plus its absolute
+   path; `record` makes an MP4 of your build and the device running (your calls only; returns
+   `path` and a `url`); `viewer_url` gives a link that opens the project live, running, with
+   buttons the person can press. Give paths and links, not terminal commands.
+10. `fidelity_report`: tell the human what was verified and what still has to be tested on the real
+    device. `export` (BOM with buy links, wiring table, firmware.hex) at the end; `delete_file`
+    removes stale screenshots or debug sketches.
+
+### check_design codes worth knowing
+
+| Code | Meaning |
+| --- | --- |
+| `led-no-resistor` | No resistor anywhere along the LED's path (either leg, or past another LED in series). |
+| `logic-level` | A pin drives a net above what a receiving pin takes (+0.3 V). 3.3 V into a 5 V input is fine; 5 V into a 3.3 V input is not. |
+| `overvoltage` / `part-needs-5v` | A supply above a module's rating / a 5 V module on a 3.3 V rail. |
+| `parallel-regulators` | Two supply outputs (regulators, a battery) on one net, e.g. an L298N's 5V on the Uno's 5V. |
+| `rail-3v3-budget` | More current on a board's 3V3 pin than it gives (50 mA Uno/Nano, 300 mA RP2040 boards, or `limits.max3v3mA`). |
+| `far-apart` (info) | A part more than 600 px from everything it is wired to: move it closer so the picture is readable. |
 
 ## Conventions
 
@@ -312,8 +351,13 @@ ILI9341 colour TFT and shows the reply in a speech bubble.
 | Tool | Use |
 | --- | --- |
 | `read_network_log` | What the device did: Wi-Fi joins, DNS, TCP and every HTTP request with status, latency, provider and body. Empty means the module never joined (check TX/RX wiring and the divider on its RX). |
+| `&m=<what the person said>` | Optional, URL-encoded, 60 characters max: the model answers the person's words in character (the mock says it heard them). In the web app, the Network panel's **Say something to the pet** box attaches the typed text to the pet's next request, so a sketch with only TALK / FEED buttons still hears it. |
 | `set_ai_mode {"mode": "live"}` | A real model (claude-haiku-5-5 through `ANTHROPIC_API_KEY`, else the logged-in `claude` CLI) answers. Fails with the reason when neither exists. |
 | `run_live {"ms": 8000}` | Runs at real time so the live answer arrives while the firmware waits. Not deterministic. `run` and `run_tests` always use the deterministic mock. |
+
+`jumper serve` starts the gateway for the web app's Live mode itself (port `JUMPER_AI_GATEWAY_PORT`,
+default 8787, the next free port when taken; `JUMPER_AI_GATEWAY=off` skips it; the page finds it at
+`GET /api/ai-gateway`).
 
 Screenshots draw colour TFT screens with their real pixels. `screenshot {"view": "device", "ms": 6000}`
 renders the project as a physical device in 3D instead (the pet as a handheld, a rover in its
@@ -366,7 +410,11 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
   out), `--client claude` one client, `--session <sid>` one server process; a mixed log prints the
   counts per actor.
 - `pnpm jumper record <dir>/.jumper/actions.jsonl out.mp4 --speed 2` renders that replay to a video
-  (Playwright Chromium + ffmpeg).
+  (Playwright Chromium + ffmpeg). It keeps only the agent's calls when the log is mixed
+  (`--actor all` for everything). Agents call the `record` tool instead: the MP4 lands in
+  `<project>/.jumper/media/`, served at `http://localhost:7780/api/media/<file>`.
+- `viewer_url` / `GET /v/<project id>` on `jumper serve`: the shareable local link that opens the
+  project live and starts it running (`?follow=…&autorun=1`).
 
 ## Troubleshooting
 
@@ -385,6 +433,9 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
 | `timed out: … Fix: raise the scenario's "timeout_ms"` | Raise it in `write_scenario`, or shorten the waits. |
 | `run_tests` failed and you want to see the screen | `run_tests {"images": true}` attaches the screen at each scenario's first failing check; every result also has `visual`, one line per check with what the device looked like then. |
 | `read_network_log` is empty | The ESP-01 never joined: TX → the board's RX pin, RX ← the board's TX pin through a divider, CH_PD high, and run at least 3 s. |
+| `record: cannot record a video here … playwright install chromium` | Run the command it names once (`pnpm --filter @jumper/web exec playwright install chromium`); meanwhile use `screenshot`. |
+| `viewer_url: no Jumper server is running` | The agent is on a stdio server: start `pnpm start` and connect to `http://localhost:7780/mcp`. |
+| `new_project: … already has N parts` | Pass `folder: true` for a new idea; `overwrite: true` only to throw the project away. |
 | A picture of a test's key moment | `screenshot {"path": "shots/x.png", "scenario": "<id>", "at_step": N}` (CLI: `jumper screenshot x.png --scenario <id> --at-step N`). |
 
 ## Limits (honest)

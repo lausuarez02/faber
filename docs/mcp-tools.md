@@ -2,23 +2,31 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-40 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+45 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
 ```text
 Jumper is a hardware sandbox: Arduino boards, parts and wires on a canvas, real compiled firmware, a deterministic simulator. You drive it only through these tools; you never need Jumper's source.
 
+Talk to the person first:
+- Plan first. For a new wish call plan_device {goal, constraints} and tell the person the plan in plain words (what it will do, the board, the parts and why, size, battery life, price, and what is simulated exactly, with a stand-in, agent-made or not at all) before placing anything.
+- If the wish is ambiguous (plan_device returns a question, or you would have to guess), ask ONE clarifying question and wait.
+- Many people are beginners: no jargon unless they use it first (say "the screen", not "SSD1306 over I2C"; explain a resistor as "protects the light"). Answer in the person's language.
+- One project per idea: new_project {"folder": true, "name": …} creates a new project folder (or the person opens one with --project); never overwrite the playground or someone's other project.
+- Prefer real catalog parts. If one is missing, make it with create_part (agent-made, behavioral) when that tool exists, rather than a stand-in; if you must use a stand-in, call mark_stand_in so exports name the real part.
+
 The loop:
-1. get_project (or new_project) to see where you are.
+1. get_project (or new_project {folder: true}) to see where you are.
 2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
 3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
-4. check_design and fix every error (LED resistors, power, I2C pins).
+4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins).
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
-7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass.
-8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet: read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
-9. fidelity_report: tell the human what was verified and what must be tested on the real device. screenshot and export when done.
+7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
+8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
+9. Show it: screenshot returns the picture inline (show it) plus its path; record makes an MP4 of your build and the device running; viewer_url gives a link where the person runs it and presses its buttons. Give links and paths, never a terminal command, to people who did not ask for one.
+10. fidelity_report: tell the person what was verified and, honestly, what the simulation cannot check (plan_device's cannot_check: real feel, sound, battery life, stand-ins). export when done; delete_file removes stale shots or debug sketches.
 
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.
 ```
@@ -67,16 +75,22 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`create_part`](#create_part) | Make a missing part | yes (undoable step) |
 | [`update_part`](#update_part) | Change a made part | yes (undoable step) |
 | [`list_project_parts`](#list_project_parts) | Made parts | no (read-only) |
+| [`plan_device`](#plan_device) | Plan a device before building it | no (read-only) |
+| [`record`](#record) | Video of the build | simulation only |
+| [`viewer_url`](#viewer_url) | Link to watch and play | no (read-only) |
+| [`delete_file`](#delete_file) | Delete a file | yes (undoable step) |
+| [`mark_stand_in`](#mark_stand_in) | Mark a part as a stand-in | yes (undoable step) |
 
 ### new_project
 
-Start a project in the server's project folder from a template. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop). Refuses to replace an existing project unless overwrite is true. Returns the project summary. Usually the first call; skip it if get_project shows parts already.
+Start a project from a template. For a new idea pass folder: true (or a folder name): Jumper makes a NEW project folder for it, registers it in the Projects gallery and switches to it, so the person's other projects (and the playground) are never overwritten: {"folder": true, "name": "Plant waterer", "template": "uno"}. Without folder it starts the project in the current folder and refuses to replace existing parts unless overwrite is true. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop), plus any board templates listed in the enum. Returns {dir, id, viewer_url (when Jumper's server runs), opened, …project summary}. Skip it if get_project shows the person already started this device.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `blink`. Default blank. |
 | `name` | string |  | Project name (default: folder name). |
-| `overwrite` | boolean |  | Replace an existing jumper.json. |
+| `folder` | boolean \| string |  | true: a new folder named after name; a string: that folder name (slugged, e.g. "plant-waterer"). Created under the server's projects folder; a taken name gets -2, -3… |
+| `overwrite` | boolean |  | Replace an existing jumper.json in the current folder (throws the old project away). |
 
 ### get_project
 
@@ -429,3 +443,48 @@ Change an agent-made part of this project: pass the whole new definition as part
 The agent-made parts of this project (parts/<id>/part.json): {type, name, behavior, pins, placed}, plus problems when a part file cannot be loaded. Built-in parts are listed by search_parts.
 
 No arguments.
+
+### plan_device
+
+Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Jumper simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part's current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `goal` | string | yes | The wish in the person's words, e.g. "a night light that plays a song". |
+| `constraints` | object |  | Optional limits. |
+
+### record
+
+Record an MP4 the person can watch: your build replayed from the action log (parts appearing with your "why" captions, wires, the sketch, the device running in each run / run_tests, tests turning green). Only your calls by default (actor "mcp"); "all" adds the person's and the CLI's. Takes about as long as the video (speed is picked for about a minute unless given). Returns {path (absolute), url (open it in a browser), viewer_url (the live project, when Jumper's server runs), duration_s}. Give the person the path or url, not a terminal command. Fails within seconds, saying how to install it, when Chromium is missing. Example: {} or {"speed": 3, "size": "1280x720"}.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `actor` | string |  | one of `mcp`, `all`. Whose calls to show (default "mcp", the agent). |
+| `ms` | number |  | Longest video in wall-clock ms (default: long enough for the whole replay). |
+| `speed` | number |  | Replay speed-up (default: about a one-minute video). |
+| `size` | string |  | Video size, default "1280x720". |
+
+### viewer_url
+
+A link the person opens in their browser on this computer: the project live on the canvas, the device running with its real firmware, buttons and knobs they can press, following every change you make. Needs Jumper's local server (jumper serve / pnpm start); over plain stdio it says how to start one. Returns {url, note}. Give it to the person whenever they ask to see or try the device.
+
+No arguments.
+
+### delete_file
+
+Delete a file inside the project, e.g. a stale screenshot or a debug sketch: {"path": "shots/old.png"} or {"path": "firmware/probe.ino"}. Text files are an undoable step (undo brings them back); images, videos and other binary files are moved to .jumper/trash/ (the result says where). Refuses jumper.json, Jumper's own .jumper/ state and the board's main sketch (overwrite it with write_file instead).
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `path` | string | yes | Relative to the project folder. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "remove the old test shots". |
+
+### mark_stand_in
+
+Say that a placed part stands in for a real part Jumper does not have, so BOM / WIRING exports print the real part with a STAND-IN note instead of the stand-in: {"id": "soil1", "real": "capacitive soil moisture sensor"}. plan_device lists stand-ins in its bom (source "stand-in"). Prefer a real part, or create_part, over a stand-in. {"id": "soil1", "real": null} clears it.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes | Part id, e.g. soil1. |
+| `real` | string \| null | yes | The real part in plain words. |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "remove the old test shots". |

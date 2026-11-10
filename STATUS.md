@@ -7,6 +7,20 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 5, track agent (2026-11-10): plan first, show me, safer checks
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Plan first | `plan_device {goal, constraints}`: board and why, BOM with a why per line and simulated-exactly / stand-in / agent-made / not-simulated, size (parts and case), battery life from `current_ma`, price, buy links, one clarifying question, `cannot_check`; missing figures are named, never guessed. Server instructions: plan first, one question, no jargon, a project per idea (`new_project {folder}`), real parts or `create_part` over stand-ins | `packages/session/test/agent-tools.test.ts` |
+| Show me | `record` (MP4 of the agent's build replayed from the log, agent-only by default; under 5 s failure when Chromium is missing), `viewer_url` + `GET /v/:id` (opens the project live with autorun), screenshots inline with their absolute path and the viewer link, `GET /api/media/:file` | `agent-tools.test.ts` (real MP4 when Chromium is installed), `apps/cli/test/agent-routes.test.ts` |
+| check_design | LED resistor along the whole path, `logic-level` by direction, `part-needs-5v`, `parallel-regulators`, `rail-3v3-budget`, `far-apart` (info); L298N 5V output may stay unwired | `packages/session/test/drc-round5.test.ts` |
+| Exports | stand-ins (`mark_stand_in`) and agent-made parts labelled in BOM / WIRING / TEST-ON-HARDWARE; `run_tests` accepts pending steps when all pass or says why not; `delete_file` | `agent-tools.test.ts` |
+| AI pet | `m=` message to the model; `jumper serve` starts the gateway (`GET /api/ai-gateway`); "Say something to the pet" box in the Network panel | `services/ai-gateway/test/pet-message.test.ts`, `e2e/devices.spec.ts` (talk box) |
+
+Known gaps: plan_device numbers depend on the parts track's C2 data (until merged, most prices and
+currents are listed as missing); the battery and boost converter figures are typical values,
+labelled as assumptions; the recorded video does not show colour TFT pixels (replay limitation).
+
 ## Round 4 (2026-11-09): UI review, two live Claude builds, try it yourself
 
 | Area | What works | Check it with |

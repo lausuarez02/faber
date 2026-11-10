@@ -142,6 +142,41 @@ test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble
   await shot(page, info, "ai-pet-bubble");
 });
 
+test("AI pet: the person types to the pet and the reply answers it (talk box)", async ({ page }, info) => {
+  test.skip(isPhone(page), "the Network panel (and its talk box) is desktop-only");
+  test.setTimeout(SLOW_TEST_MS);
+  await openExample(page, "ai-pet");
+  await setSpeed(page, 2);
+  await page.getByTestId("run-button").click();
+  await expectWithinSimTime(page, 80_000, async () => (await serial(page)).includes("wifi: online"), "serial should print \"wifi: online\"");
+  const net = page.getByTestId("network-panel");
+  await expect(net).toBeVisible();
+  await net.getByLabel("Say something to the pet").fill("do you like pizza");
+  await net.getByRole("button", { name: "Send to the pet" }).click();
+  await expect(net.getByRole("status")).toContainText('"do you like pizza" goes with the pet\'s next question');
+  // Same timing trick as the TALK test above: press right after a status tick.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const engine = (window as unknown as W).jumper.engine;
+        const ticks = () => (engine.simulation?.serialText().match(/^t=\d+/gm) ?? []).length;
+        const n0 = ticks();
+        const watch = () => {
+          if (ticks() > n0) {
+            engine.interact("btnTalk", "press");
+            resolve();
+          } else requestAnimationFrame(watch);
+        };
+        watch();
+      }),
+  );
+  await waitForSimTime(page, 250);
+  await page.evaluate(() => (window as unknown as W).jumper.engine.interact("btnTalk", "release"));
+  await expectWithinSimTime(page, 60_000, async () => /reply 200 \w+\|[^\r\n]*do you like/.test(await serial(page)), "the reply should answer the typed message");
+  await expect(net).toContainText("with the person's message");
+  await shot(page, info, "ai-pet-talk-box");
+});
+
 test("Device view smoke: the overlay opens with the handheld and the rover arena HUD", async ({ page }) => {
   // CI-safe: no screenshots of the 3D scene and no frame-rate dependent checks, so it holds with
   // software WebGL. The @gpu tests below measure the scene itself.

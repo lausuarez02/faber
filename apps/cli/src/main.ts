@@ -63,7 +63,7 @@ Servers
   mcp --attach http://localhost:7780      stdio MCP that drives a running serve (live canvas)
   replay <actions.jsonl> [--speed 2] [--actor mcp] [--client claude] [--session SID]
                                           play an action log back in the browser (filters: whose lines)
-  record <actions.jsonl> <out.mp4> [--speed 2] [--size 1280x720] [--actor mcp]   record a replay to video
+  record <actions.jsonl> <out.mp4> [--speed 2] [--size 1280x720] [--actor all]   record a replay to video (the agent's calls only unless --actor all)
   runner [--port 7781]                    local firmware build service (HTTP)
 
 --project defaults to $JUMPER_PROJECT, then the current folder.`;

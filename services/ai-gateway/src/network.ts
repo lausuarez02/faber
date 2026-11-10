@@ -6,7 +6,7 @@
 // Structurally implements SandboxNetwork from @jumper/sim-core (no import, so this package has
 // no workspace dependency and runs in the browser too).
 import { parseHttpRequest, httpResponse, type HttpRequest } from "./http.ts";
-import { PetRequestError, parsePetQuery } from "./protocol.ts";
+import { cleanMessage, PetRequestError, parsePetQuery } from "./protocol.ts";
 import { PetAi, PROVIDER_LABELS, type PetAnswer, type ProviderId } from "./petAi.ts";
 
 export interface AccessPoint {
@@ -98,6 +98,8 @@ export class SandboxNet {
   private readonly logLimit: number;
   /** Virtual time of the last event (DNS lookups carry no time of their own). */
   private lastT = 0;
+  /** What the person typed to the pet (say()), sent with the next pet request that has no m= of its own. */
+  private said: string | undefined;
 
   constructor(opts: SandboxNetworkOptions = {}) {
     this.ai = opts.ai ?? new PetAi();
@@ -377,6 +379,22 @@ export class SandboxNet {
 
   // ------------------------------------------------------------------ ai.jumper
 
+  /**
+   * The person talks to the running pet (the canvas text box): the next request to /v1/pet that has
+   * no m= of its own carries this message to the model, so a pet sketch that only knows TALK / FEED
+   * still "hears" what was typed. Returns the cleaned message ("" clears a waiting one).
+   */
+  say(text: string): string {
+    const m = cleanMessage(text);
+    this.said = m || undefined;
+    return m;
+  }
+
+  /** The message waiting for the pet's next request, if any. */
+  get waitingMessage(): string | undefined {
+    return this.said;
+  }
+
   private petHandler(req: HttpRequest, ctx: HostContext): HostResult {
     if (req.path === "/" || req.path === "/health") return { status: 200, body: "ok|ai.jumper pet gateway", latencyMs: 15 };
     if (req.path !== "/v1/pet") return { status: 404, body: `error|no ${req.path}; use GET /v1/pet?a=talk&f=50&j=50&e=50`, latencyMs: 15 };
@@ -389,10 +407,18 @@ export class SandboxNet {
       return { status: 400, body: `error|${err.message}; ${err.fix}`.slice(0, 120), latencyMs: 15 };
     }
     void ctx;
+    let carried: string | undefined;
+    if (!pet.message && this.said) {
+      pet = { ...pet, message: this.said };
+      carried = this.said;
+      this.said = undefined;
+    }
     const allowed = this.liveAllowed();
     const r = this.ai.answer(pet, { liveAllowed: allowed, why: "live AI paused: the simulation runs faster than real time or in a test, so the mock answered (deterministic)" });
-    if (r.kind === "later") return { later: r.promise, provider: r.provider };
-    return { status: r.answer.status, body: r.answer.body, latencyMs: r.latencyMs, provider: r.answer.provider, ...(r.answer.note ? { note: r.answer.note } : {}) };
+    const heard = carried ? `with the person's message "${carried}"` : undefined;
+    if (r.kind === "later") return { later: heard ? r.promise.then((a) => ({ ...a, note: a.note ? `${heard}; ${a.note}` : heard })) : r.promise, provider: r.provider };
+    const note = [heard, r.answer.note].filter(Boolean).join("; ");
+    return { status: r.answer.status, body: r.answer.body, latencyMs: r.latencyMs, provider: r.answer.provider, ...(note ? { note } : {}) };
   }
 }
 

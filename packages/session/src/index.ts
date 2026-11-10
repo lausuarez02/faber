@@ -34,3 +34,10 @@ export { jumperHome, listRegisteredProjects, newProjectFolder, projectId, projec
 export type { ProjectsRegistryFile, RegisteredProject } from "./projects-registry.ts";
 export type { AgentState, AgentStateEvent, LiveServerEvent } from "./live-events.ts";
 export { projectPartProblems, projectPartsWithSvg, refreshProjectParts } from "./tools/agentparts.ts";
+// Round 5, track agent: server URL for viewer links, the pet gateway serve starts, recordings, plans.
+export { setServerBase, serverBase, viewerUrlFor, projectDirById, startPetGateway } from "./agent-runtime.ts";
+export type { PetGateway } from "./agent-runtime.ts";
+export { recordProject, chromiumProblem } from "./recorder.ts";
+export type { RecordOptions, RecordResult } from "./recorder.ts";
+export { planDevice } from "./planner.ts";
+export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";

@@ -1,10 +1,10 @@
 // Floating "Network" panel: the sandbox Wi-Fi the simulated device joined, every request it made
 // (method, path, status, latency, who answered, the body), and the Mock / Live switch for the AI.
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { Bot, Globe, Radio, Wifi, WifiOff, X } from "lucide-react";
+import { Bot, Globe, Radio, Send, Wifi, WifiOff, X } from "lucide-react";
 import type { SandboxNet } from "@jumper/ai-gateway";
 import { toRows } from "./model.ts";
-import { DEFAULT_GATEWAY, GATEWAY_COMMAND, probeGateway } from "./webNetwork.ts";
+import { DEFAULT_GATEWAY, discoverGateway, GATEWAY_COMMAND, probeGateway, useGateway } from "./webNetwork.ts";
 import "./network.css";
 
 export interface NetworkPanelProps {
@@ -15,7 +15,36 @@ export interface NetworkPanelProps {
   showEvents?: boolean;
 }
 
-export function NetworkPanel({ net, gatewayUrl = DEFAULT_GATEWAY, onClose, showEvents = true }: NetworkPanelProps) {
+/** The person's message to the pet; it rides on the pet's next question to the AI (SandboxNet.say). */
+export function PetTalkBox({ net, onSent }: { net: SandboxNet; onSent?: () => void }) {
+  const [text, setText] = useState("");
+  const waiting = net.waitingMessage;
+  const send = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    net.say(text);
+    setText("");
+    onSent?.();
+  };
+  return (
+    <form className="netp-talk" onSubmit={send} aria-label="Talk to the pet">
+      <label className="netp-talk-label" htmlFor="netp-talk-input">
+        Say something to the pet
+      </label>
+      <div className="netp-talk-row">
+        <input id="netp-talk-input" value={text} maxLength={60} placeholder="What is your favourite food?" onChange={(e) => setText(e.target.value)} />
+        <button type="submit" disabled={!text.trim()} aria-label="Send to the pet">
+          <Send size={14} aria-hidden /> Send
+        </button>
+      </div>
+      <p className="netp-talk-hint" role="status">
+        {waiting ? `"${waiting}" goes with the pet's next question to the AI. Press TALK on the device.` : "It goes with the pet's next question to the AI (press TALK). Mock answers are canned; Live asks Claude."}
+      </p>
+    </form>
+  );
+}
+
+export function NetworkPanel({ net, gatewayUrl, onClose, showEvents = true }: NetworkPanelProps) {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   const [liveError, setLiveError] = useState<string | undefined>();
   const [checking, setChecking] = useState(false);
@@ -45,12 +74,14 @@ export function NetworkPanel({ net, gatewayUrl = DEFAULT_GATEWAY, onClose, showE
       return;
     }
     setChecking(true);
-    const p = await probeGateway(gatewayUrl);
+    const url = gatewayUrl ?? (await discoverGateway(DEFAULT_GATEWAY));
+    const p = await probeGateway(url);
     setChecking(false);
     if (!p.ok) {
-      setLiveError(`${p.error}. Start it in a terminal: ${GATEWAY_COMMAND}`);
+      setLiveError(`${p.error}. Fix: ${GATEWAY_COMMAND}`);
       return;
     }
+    useGateway(net, url);
     net.setMode("live");
     bump();
   };
@@ -94,6 +125,8 @@ export function NetworkPanel({ net, gatewayUrl = DEFAULT_GATEWAY, onClose, showE
           Live AI is not available: {liveError}
         </p>
       )}
+
+      <PetTalkBox net={net} onSent={bump} />
 
       <div className="netp-list-head">
         <span>Requests</span>

@@ -118,3 +118,13 @@ In `fidelity.json` of each part, summarised:
 5. A 2.8in module with 3.3 V logic needs a level shifter on CS/DC/RST/MOSI/SCK (the Adafruit
    breakout has one).
 6. Check `AT+GMR`: AT 1.7.x firmware answers like the sandbox; very old 0.9.x answers differently.
+
+## Update 2026-11-10 (round 5, decision 0003)
+
+The persona test (`jumper-evals/personas/REPORT.md`, b1, u3) showed the pet could not hear the
+person: the protocol had no message field and Live needed a terminal. Now `m=` (URL-encoded, 60
+characters max) carries what the person said to the model, the web app's Network panel has a
+"Say something to the pet" box that attaches it to the pet's next request (no firmware change), and
+`jumper serve` starts the gateway itself. The mock stays deterministic: it quotes the message in a
+canned line, so tests can see the words arrived without a model.
+

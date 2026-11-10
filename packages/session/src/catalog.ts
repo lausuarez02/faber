@@ -28,8 +28,16 @@ export const TOOLS: ToolDef[] = [
     name: "new_project",
     title: "Start a project",
     description:
-      'Start a project in the server\'s project folder from a template. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop). Refuses to replace an existing project unless overwrite is true. Returns the project summary. Usually the first call; skip it if get_project shows parts already.',
-    inputSchema: { type: "object", properties: { template: { type: "string", enum: Object.keys(TEMPLATES), description: "Default blank." }, name: { type: "string", description: "Project name (default: folder name)." }, overwrite: { type: "boolean", description: "Replace an existing jumper.json." } } },
+      'Start a project from a template. For a new idea pass folder: true (or a folder name): Jumper makes a NEW project folder for it, registers it in the Projects gallery and switches to it, so the person\'s other projects (and the playground) are never overwritten: {"folder": true, "name": "Plant waterer", "template": "uno"}. Without folder it starts the project in the current folder and refuses to replace existing parts unless overwrite is true. Templates: "blank" (empty), "uno" (Arduino Uno + empty sketch), "nano", "blink" (Uno + resistor + LED + Blink sketch + passing tests; good to learn the loop), plus any board templates listed in the enum. Returns {dir, id, viewer_url (when Jumper\'s server runs), opened, …project summary}. Skip it if get_project shows the person already started this device.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        template: { type: "string", enum: Object.keys(TEMPLATES), description: "Default blank." },
+        name: { type: "string", description: "Project name (default: folder name)." },
+        folder: { type: ["boolean", "string"], description: 'true: a new folder named after name; a string: that folder name (slugged, e.g. "plant-waterer"). Created under the server\'s projects folder; a taken name gets -2, -3…' },
+        overwrite: { type: "boolean", description: "Replace an existing jumper.json in the current folder (throws the old project away)." },
+      },
+    },
     edits: true,
   },
   {
@@ -297,15 +305,23 @@ export const TOOLS: ToolDef[] = [
 /** The recommended loop, used as MCP server instructions and in the docs. */
 export const AGENT_LOOP = `Jumper is a hardware sandbox: Arduino boards, parts and wires on a canvas, real compiled firmware, a deterministic simulator. You drive it only through these tools; you never need Jumper's source.
 
+Talk to the person first:
+- Plan first. For a new wish call plan_device {goal, constraints} and tell the person the plan in plain words (what it will do, the board, the parts and why, size, battery life, price, and what is simulated exactly, with a stand-in, agent-made or not at all) before placing anything.
+- If the wish is ambiguous (plan_device returns a question, or you would have to guess), ask ONE clarifying question and wait.
+- Many people are beginners: no jargon unless they use it first (say "the screen", not "SSD1306 over I2C"; explain a resistor as "protects the light"). Answer in the person's language.
+- One project per idea: new_project {"folder": true, "name": …} creates a new project folder (or the person opens one with --project); never overwrite the playground or someone's other project.
+- Prefer real catalog parts. If one is missing, make it with create_part (agent-made, behavioral) when that tool exists, rather than a stand-in; if you must use a stand-in, call mark_stand_in so exports name the real part.
+
 The loop:
-1. get_project (or new_project) to see where you are.
+1. get_project (or new_project {folder: true}) to see where you are.
 2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
 3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
-4. check_design and fix every error (LED resistors, power, I2C pins).
+4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins).
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
-7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass.
-8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet: read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
-9. fidelity_report: tell the human what was verified and what must be tested on the real device. screenshot and export when done.
+7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
+8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
+9. Show it: screenshot returns the picture inline (show it) plus its path; record makes an MP4 of your build and the device running; viewer_url gives a link where the person runs it and presses its buttons. Give links and paths, never a terminal command, to people who did not ask for one.
+10. fidelity_report: tell the person what was verified and, honestly, what the simulation cannot check (plan_device's cannot_check: real feel, sound, battery life, stand-ins). export when done; delete_file removes stale shots or debug sketches.
 
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.`;

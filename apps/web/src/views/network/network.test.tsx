@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createSandboxNetwork } from "@jumper/ai-gateway";
-import { NetworkPanel, probeGateway, toRows } from "./index.ts";
+import { discoverGateway, NetworkPanel, probeGateway, toRows } from "./index.ts";
 
 function traffic() {
   const net = createSandboxNetwork();
@@ -48,5 +48,29 @@ describe("NetworkPanel", () => {
     }) as unknown as typeof fetch);
     expect(p.ok).toBe(false);
     expect(p.error).toContain("no AI gateway");
+  });
+
+  it("the person can talk to the running pet: the message waits for its next question", async () => {
+    cleanup();
+    const net = createSandboxNetwork();
+    render(<NetworkPanel net={net} />);
+    const input = screen.getByLabelText("Say something to the pet") as HTMLInputElement;
+    expect(input.maxLength).toBe(60);
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "what is your favourite food?" } });
+      fireEvent.click(screen.getByRole("button", { name: "Send to the pet" }));
+    });
+    expect(net.waitingMessage).toBe("what is your favourite food?");
+    expect(input.value).toBe("");
+    expect(screen.getByRole("status").textContent).toMatch(/"what is your favourite food\?" goes with the pet's next question/);
+  });
+
+  it("finds the gateway jumper serve started, or falls back to the default", async () => {
+    const served = (async () => new Response(JSON.stringify({ url: "http://127.0.0.1:8790" }), { status: 200 })) as unknown as typeof fetch;
+    expect(await discoverGateway("http://127.0.0.1:8787", served)).toBe("http://127.0.0.1:8790");
+    const none = (async () => new Response("{}", { status: 404 })) as unknown as typeof fetch;
+    expect(await discoverGateway("http://127.0.0.1:8787", none)).toBe("http://127.0.0.1:8787");
+    const evil = (async () => new Response(JSON.stringify({ url: "http://evil.example:80" }), { status: 200 })) as unknown as typeof fetch;
+    expect(await discoverGateway("http://127.0.0.1:8787", evil)).toBe("http://127.0.0.1:8787");
   });
 });
