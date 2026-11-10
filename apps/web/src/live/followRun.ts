@@ -59,6 +59,12 @@ export function currentFirmware(): FollowFirmware | undefined {
   return firmware;
 }
 
+/** Round 6 (switch): another project opened, so the hex fetched for the old one must never load into it. */
+export function forgetFirmware(): void {
+  firmware = undefined;
+  fetching = undefined;
+}
+
 /** Put the known firmware in the app store, if it belongs to this project (called on every project load). */
 export function applyFirmwareToStore(): void {
   const s = useJumper.getState();

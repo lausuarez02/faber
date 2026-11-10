@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 
 /** UI state of follow / replay mode (the project itself lives in the main store). */
@@ -58,6 +59,8 @@ export interface LiveState {
   firmwareHash: string | undefined;
   /** The agent changed the sketch after that build. */
   firmwareStale: boolean;
+  /** Round 6 (switch): who made each step (step id → actors of its ops), from the action log. */
+  stepActors: Record<number, string[]>;
   set(p: Partial<LiveState>): void;
 }
 
@@ -82,6 +85,7 @@ export const useLive = create<LiveState>()((set) => ({
   autoRun: true,
   firmwareHash: undefined,
   firmwareStale: false,
+  stepActors: {},
   set: (p) => set(p),
 }));
 
@@ -94,4 +98,38 @@ export function liveParams(search = typeof location !== "undefined" ? location.s
   if (follow) return { mode: "follow", url: follow, speed, autoplay: true };
   if (replay) return { mode: "replay", url: replay, speed, autoplay: q.get("autoplay") !== "0" };
   return { mode: "off", url: "", speed, autoplay: false };
+}
+
+/** Round 6 (switch): remember which actor made a step's ops (entries carry step id and actor). */
+export function noteStepActors(entries: readonly { step?: { id: number }; actor?: string }[], base: Record<number, string[]> = useLive.getState().stepActors): Record<number, string[]> {
+  let out = base;
+  for (const e of entries) {
+    if (!e.step || !e.actor) continue;
+    const have = out[e.step.id] ?? [];
+    if (have.includes(e.actor)) continue;
+    if (out === base) out = { ...base };
+    out[e.step.id] = [...have, e.actor];
+  }
+  return out;
+}
+
+/**
+ * Steps the Agent steps panel lists: on a followed page, never the person's own edits (actor "web":
+ * the code editor, History restore); agents' steps (MCP, or an agent driving the CLI) and steps of
+ * unknown origin stay. A replay shows every step of the recording.
+ */
+export function agentSteps(steps: readonly LiveStep[], actors: Record<number, string[]>, mode: LiveMode): LiveStep[] {
+  if (mode !== "follow") return [...steps];
+  return steps.filter((s) => {
+    const a = actors[s.id];
+    return !a || a.some((x) => x !== "web");
+  });
+}
+
+/** The steps the Agent steps panel and the agent pill count (agentSteps of the store). */
+export function useAgentSteps(): LiveStep[] {
+  const steps = useLive((s) => s.steps);
+  const actors = useLive((s) => s.stepActors);
+  const mode = useLive((s) => s.mode);
+  return useMemo(() => agentSteps(steps, actors, mode), [steps, actors, mode]);
 }

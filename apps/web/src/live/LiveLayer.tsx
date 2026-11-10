@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import type { Project } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
-import { liveParams, useLive, type LiveStep } from "./liveStore.ts";
+import { liveParams, noteStepActors, useAgentSteps, useLive, type LiveStep } from "./liveStore.ts";
+import { expectProject, loadMainSketch, refreshCodeCard, switchProject } from "../projects/switch.ts";
 import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, type LogFrame } from "./player.ts";
 import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts";
 import { worldTracker } from "./worldTracker.ts";
@@ -21,6 +22,8 @@ import { applyFirmwareToStore, autoRunEnabled, autoRunOnOpen, fetchFirmware, onA
 
 const EMPTY: Project = { format: "jumper/1", name: "Waiting for the agent…", parts: [], wires: [], scenarios: [] };
 const SPEEDS = [0.5, 1, 2, 4, 8];
+/** Ops that change sketch files without logging their content (round 6: the code card re-reads). */
+const FILE_REWRITING_OPS = new Set(["restore_version", "undo", "redo", "reject_step"]);
 
 let replayPlayer: ReplayPlayer | undefined;
 let socket: WebSocket | undefined;
@@ -210,21 +213,31 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         return;
       }
       if (msg.type === "hello") {
+        // Round 6 (switch): a hello for another folder is a project switch; every track resets its
+        // per-project state (R8) and the old firmware never reaches the new board.
+        let reason: "open" | "reload" = "reload";
         if (msg.project) {
-          port.loadProject(msg.project);
+          const project = msg.project;
+          reason = switchProject(project, msg.dir ?? "", (p) => port.loadProject(p));
           port.fit();
         }
-        useLive.getState().set({ steps: msg.steps ?? [], dir: msg.dir ?? "" });
-        const last = [...(msg.entries ?? [])].reverse().find((e) => e.frames?.length);
+        const entries = msg.entries ?? [];
+        useLive.getState().set({ steps: msg.steps ?? [], dir: msg.dir ?? "", stepActors: noteStepActors(entries, reason === "open" ? {} : useLive.getState().stepActors) });
+        const last = [...entries].reverse().find((e) => e.frames?.length);
         const f: LogFrame | undefined = last?.frames?.at(-1);
         if (f) port.showStates(f.states, f.live, f.vt);
-        const code = [...(msg.entries ?? [])].reverse().find((e) => e.file?.content);
+        const code = [...entries].reverse().find((e) => e.file?.content);
         if (code?.file?.content) useLive.getState().set({ code: { path: code.file.path, content: code.file.content } });
+        else if (reason === "open" && msg.project?.firmware) void loadMainSketch(msg.dir ?? "");
         // Ready to run here: the latest built hex (quietly; Run says why when there is none).
         void fetchFirmware().then(() => autoRunOnOpen());
+      } else if (msg.type === "project") {
+        // Sent just before the new project's hello (jumper serve switched projects).
+        expectProject((msg as { id?: string }).id);
       } else if (msg.type === "action" && msg.entry) {
         player.apply(msg.entry);
         if (msg.entry.ok && msg.entry.op === "write_file") onSketchWritten();
+        if (msg.entry.ok && FILE_REWRITING_OPS.has(msg.entry.op)) void refreshCodeCard();
       } else if (msg.type === "agent-state" && msg.state) {
         feedAgentState(msg.state);
       } else if (msg.type === "firmware" && msg.hash) {
@@ -309,8 +322,9 @@ const STATUS_LABEL: Record<LiveStep["status"], string> = { pending: "pending", a
 
 /** The agent's steps with each "why", accept / reject (follow mode). Rendered in the Agent steps panel. */
 export function StepsList() {
-  const steps = useLive((s) => s.steps);
   const mode = useLive((s) => s.mode);
+  // Round 6 (switch): the person's own edits are not agent steps to accept.
+  const steps = useAgentSteps();
   const shown = steps.slice(-12);
   const pending = steps.filter((s) => s.status === "pending").length;
   const agent = useAgentState();
@@ -334,7 +348,7 @@ export function StepsList() {
           {pending ? ` · ${pending} pending` : ""}
         </span>
         {mode === "follow" && pending > 0 ? (
-          <button className="live-btn small" onClick={() => sendCommand("accept_step", {})}>
+          <button className="live-btn small" onClick={() => steps.filter((s) => s.status === "pending").forEach((s) => sendCommand("accept_step", { step: s.id }))}>
             Accept all
           </button>
         ) : null}
