@@ -47,6 +47,8 @@ export interface VersionSummary {
   summary?: string;
   step?: number;
   changes: VersionChanges;
+  /** Round 6: lines added / removed per changed file path. */
+  lines?: Record<string, { added: number; removed: number }>;
   firmwareHash?: string;
   firmwareBuilt?: boolean;
   hasFrame: boolean;
