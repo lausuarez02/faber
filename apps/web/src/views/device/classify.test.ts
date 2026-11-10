@@ -21,6 +21,19 @@ describe("device view: classifyProject", () => {
     expect(b.leds).toHaveLength(1);
   });
 
+  it("a pocket RP2040 board with a round TFT and a passive buzzer is a handheld with a colour screen", () => {
+    const p = parseProject(JSON.stringify({ format: "jumper/1", name: "watch", parts: [
+      { id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0 },
+      { id: "face", type: "gc9a01-round-tft", x: 200, y: 0 },
+      { id: "btn", type: "pushbutton", x: 0, y: 200 },
+      { id: "bz", type: "passive-buzzer", x: 100, y: 200 },
+    ], wires: [] }));
+    const l = classifyProject(p);
+    expect(l).toMatchObject({ kind: "handheld", screen: { id: "face", type: "gc9a01-round-tft" }, board: { id: "xiao", type: "seeed-xiao-rp2040" } });
+    expect(l.why).toBe("TFT + 1 button → handheld");
+    expect(l.buzzers).toEqual([{ id: "bz" }]);
+  });
+
   it("reads stats and the last line from serial (ignores the line still printing)", () => {
     const text = "boot\r\nt=1 food=78 happy=79\r\nfeed food=100\r\nt=2 fo";
     expect(serialStats(text)).toEqual([

@@ -118,8 +118,11 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
       if (typeof step.expect_display === "string") {
         const part = findPart(project, step.expect_display);
         const spec = specOf(registry, part);
-        if (!spec.bindings?.some((b) => b.key === "pixels") && !/oled|lcd|display|tft/.test(spec.id)) {
-          fail("not-a-display", `expect_display ${part.id}`, `${part.id} is a ${spec.id}, which has no screen`, "point expect_display at a display part (ssd1306-oled-i2c, lcd1602-i2c, ili9341-tft, st7735-tft)");
+        const hasScreen = (t: string) => /data-screen="/.test(registry.get(t)?.svg ?? "");
+        if (!spec.bindings?.some((b) => b.key === "pixels") && !/oled|lcd|display|tft/.test(spec.id) && !hasScreen(part.type)) {
+          const displays = [...new Set(project.parts.map((p) => p.type).filter((t) => hasScreen(t)))];
+          const catalog = registry.list().filter((d) => d.spec.category !== "board" && /data-screen="/.test(d.svg)).map((d) => d.spec.id);
+          fail("not-a-display", `expect_display ${part.id}`, `${part.id} is a ${spec.id}, which has no screen`, displays.length ? `point expect_display at a display on this canvas: ${project.parts.filter((p) => displays.includes(p.type)).map((p) => p.id).join(", ")}` : `place a display part first (${catalog.join(", ")}) and point expect_display at it`);
         }
         if (typeof step.matches === "string" && opts.snapshot && !opts.snapshot(step.matches)) {
           fail("no-snapshot", `expect_display matches '${step.matches}'`, `there is no snapshot '${step.matches}' (snapshots/${step.matches}.json)`, `run until the screen shows it, then read_display {"part": "${part.id}", "save_as": "${step.matches}"} (optionally with "region": [x, y, w, h]) to save it`);

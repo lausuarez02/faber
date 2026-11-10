@@ -121,11 +121,19 @@ function displayOverlay(svg: string, state: VisualState, size: { w: number; h: n
   return `<rect x="${ox}" y="${oy}" width="${px * frame.width}" height="${px * frame.height}" fill="#05070A"/>` + (on ? `<path d="${d}" fill="${state.color === "yellow-blue" ? "#7FC8FF" : color}"/>${dy ? `<path d="${dy}" fill="#FFD43B"/>` : ""}` : "");
 }
 
+let roundClips = 0;
+
 /** A colour display's frame (TFT), drawn as an embedded PNG into the part's screen rectangle. */
 function colorOverlay(svg: string, frame: ColorFrame, size: { w: number; h: number }): string {
   const rect = screenRect(svg) ?? { x: size.w * 0.1, y: size.h * 0.1, w: size.w * 0.8, h: size.h * 0.8 };
   const png = Buffer.from(colorFrameToPng(frame, 1)).toString("base64");
-  return `<image x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated" href="data:image/png;base64,${png}"/>`;
+  const image = (extra: string) => `<image x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"${extra} href="data:image/png;base64,${png}"/>`;
+  // A round panel (GC9A01, agent-made round glass) shows only the circle of its square frame.
+  if (/<rect\b[^>]*data-screen-shape="round"/.test(svg)) {
+    const id = `jumper-round-${++roundClips}`;
+    return `<clipPath id="${id}"><ellipse cx="${rect.x + rect.w / 2}" cy="${rect.y + rect.h / 2}" rx="${rect.w / 2}" ry="${rect.h / 2}"/></clipPath>${image(` clip-path="url(#${id})"`)}`;
+  }
+  return image("");
 }
 
 export interface ComposeOptions {

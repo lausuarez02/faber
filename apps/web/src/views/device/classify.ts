@@ -9,10 +9,14 @@ export const SCREEN_TYPES: Record<string, { kind: "oled" | "lcd" | "tft"; screen
   "lcd1602-i2c": { kind: "lcd", screen: "16x2", aspect: 80 / 35 },
   // Colour panels: pixels come from Simulation.framebuffer(partId), not the visual state.
   "ili9341-tft": { kind: "tft", screen: "320x240", aspect: 4 / 3 },
+  "st7735-tft": { kind: "tft", screen: "128x160", aspect: 128 / 160 },
+  // Round panel: the square framebuffer is shown; the glass circle is the part's own drawing.
+  "gc9a01-round-tft": { kind: "tft", screen: "240x240", aspect: 1 },
 };
 
 const BUTTON_TYPES = new Set(["pushbutton"]);
 const LED_TYPES = new Set(["led", "rgb-led"]);
+const BOARD_TYPES = new Set(["arduino-uno", "arduino-nano", "raspberry-pi-pico", "seeed-xiao-rp2040", "waveshare-rp2040-zero"]);
 
 export interface DeviceLayout {
   kind: DeviceKind;
@@ -32,8 +36,8 @@ export function classifyProject(project: Project): DeviceLayout {
   const screenPart = parts.find((p) => SCREEN_TYPES[p.type]);
   const buttons = parts.filter((p) => BUTTON_TYPES.has(p.type)).sort((a, b) => a.x - b.x || a.y - b.y).map((p) => ({ id: p.id }));
   const leds = parts.filter((p) => LED_TYPES.has(p.type)).map((p) => ({ id: p.id, color: String(p.props?.color ?? "red") }));
-  const buzzers = parts.filter((p) => p.type === "buzzer").map((p) => ({ id: p.id }));
-  const boardPart = parts.find((p) => p.type === "arduino-uno" || p.type === "arduino-nano");
+  const buzzers = parts.filter((p) => p.type === "buzzer" || p.type === "passive-buzzer").map((p) => ({ id: p.id }));
+  const boardPart = parts.find((p) => BOARD_TYPES.has(p.type));
   const base = {
     buttons,
     leds,

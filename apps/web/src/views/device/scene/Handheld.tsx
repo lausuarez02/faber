@@ -65,8 +65,12 @@ export function Handheld({ layout, finish, onPressKey }: { layout: DeviceLayout;
   const shell = SHELLS[finish];
   const group = useRef<THREE.Group>(null);
   const screenType = layout.screen ? SCREEN_TYPES[layout.screen.type] : undefined;
-  const screenW = 3.9;
-  const screenH = screenType ? screenW / screenType.aspect : 1.95;
+  // Wide screens span the face; tall or square ones (ST7735, round GC9A01) are capped in height so
+  // they stay above the buttons.
+  const SCREEN_MAX_H = 2.9;
+  const wideH = screenType ? 3.9 / screenType.aspect : 1.95;
+  const screenH = Math.min(wideH, SCREEN_MAX_H);
+  const screenW = screenType && wideH > SCREEN_MAX_H ? SCREEN_MAX_H * screenType.aspect : 3.9;
 
   // Buttons: up to 3 in a row, more wrap to a second row.
   const buttons = layout.buttons.slice(0, 8);
