@@ -204,7 +204,12 @@ The people asking for a device are often beginners. The server instructions say 
     printer or a factory). Battery devices: `set_assembly "soldered"`. Then
     `design_case {"shape": "pebble"}` (or `puck`, `pill`, `rounded-box`, `keychain`; `save: false`
     for a variant to compare, `update_case` for wall, closure, clip, colour, which face a part sits
-    on). Show the front and exploded renders it returns, the measured size and the checks (pocket
+    on). Round 7: any other shape the person asks for (an egg, a heart, a bean, a character) is
+    `{"shape": "custom", "outline": <SVG path in mm, or {"points": [...], "smooth": true}>}`, at a
+    `size_mm` if they gave one; there is no preset per object. Test it first with `check_fit` (no CAD,
+    under a second): when the parts do not fit the size it lists each miss in mm and tried
+    suggestions (a smaller screen, speaker or LiPo cell, a board on its edge, less rounded rims, or
+    "make it N mm bigger"); tell the person the trade-off and let them pick. Show the front and exploded renders it returns, the measured size and the checks (pocket
     verdict, screen window, button travel, USB access). Then `export_manufacturing`: one folder +
     zip with the case (STL, 3MF, STEP, drawing, print notes), BOM, wiring, netlists, wire cuts,
     firmware, numbered assembly steps and the test plan, for a 3D printer or a supplier. Say plainly

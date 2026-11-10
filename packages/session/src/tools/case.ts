@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { CASE_SHAPES, EnclosureSchema, type Enclosure, type Project } from "@jumper/project-format";
 import type { CaseReport } from "@jumper/enclosure";
+import { parseOutline as parseOutlineSync } from "@jumper/enclosure/outline";
 import { hexToUf2 } from "@jumper/sim-backends";
 import { fail } from "../errors.ts";
 import { wiringMarkdown } from "../exporter.ts";
@@ -23,9 +24,10 @@ import type { ToolModule } from "./types.ts";
 
 const CANNOT = "What the case cannot check: snap strength and fit on your printer (print the two shells first and test), real tolerances of clone modules (about ±1 mm), drop / water / heat, the route of each wire.";
 
+const autoNum = (min: number, max: number, d: string) => ({ anyOf: [{ type: "number", minimum: min, maximum: max }, { type: "string", enum: ["auto"] }], description: d });
 const params = {
   type: "object",
-  description: "Case parameters (all optional): wall_mm (≥ 1.2, default 1.6), corner_radius_mm (rounded-box / keychain, default 4), color ('#F2EDE4'), lanyard_hole (default true for keychain), belt_clip, closure ('snap' | 'screws' = M2 into heat-set inserts), tolerance_mm (default 0.2 FDM), process ('fdm' | 'resin' | 'injection'), gap_mm (wiring room around parts, default 1.5).",
+  description: "Case parameters (all optional): wall_mm (≥ 1.2, default 1.6), corner_radius_mm (rounded-box / keychain, default 4), color ('#F2EDE4'), lanyard_hole (default true for keychain), belt_clip, closure ('snap' | 'screws' = M2 into heat-set inserts), tolerance_mm (default 0.2 FDM), process ('fdm' | 'resin' | 'injection'), gap_mm (wiring room around parts, default 1.5). 3D finish, any shape (number or \"auto\"): edge_radius_front_mm / edge_radius_back_mm (round-over of each rim), dome_mm / dome_back_mm (how far the faces bulge, e.g. 3 for a rounder egg), depth_mm (overall thickness).",
   properties: {
     wall_mm: { type: "number", minimum: 1.2, maximum: 5 },
     corner_radius_mm: { type: "number", minimum: 0, maximum: 30 },
@@ -36,11 +38,29 @@ const params = {
     tolerance_mm: { type: "number", minimum: 0, maximum: 1 },
     process: { type: "string", enum: ["fdm", "resin", "injection"] },
     gap_mm: { type: "number", minimum: 0, maximum: 10 },
+    edge_radius_front_mm: autoNum(0, 40, "Front rim round-over, mm."),
+    edge_radius_back_mm: autoNum(0, 40, "Back rim round-over, mm."),
+    dome_mm: autoNum(0, 15, "Front (and back) face bulge, mm."),
+    dome_back_mm: autoNum(0, 15, "Back face bulge when it differs, mm."),
+    depth_mm: autoNum(6, 120, "Overall thickness, mm (same as size_mm.d)."),
   },
+};
+const outlineArg = {
+  description:
+    'Shape "custom" only: the FRONT outline of the case in mm, drawn however you like. Either an SVG path string (M L H V C S Q T A Z, absolute or relative; y points DOWN like any SVG) e.g. an egg 56 x 73 mm: "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z", or {"points": [[x, y], ...], "smooth": true} with y UP (the top of the device is +y; smooth = a closed curve through the points). One closed shape that does not cross itself; sharp corners are rounded so they print. Only the proportions matter unless size_mm is given.',
+  anyOf: [
+    { type: "string" },
+    { type: "object", properties: { points: { type: "array", items: { type: "array", items: { type: "number" }, minItems: 2, maxItems: 2 }, minItems: 3, maxItems: 400 }, smooth: { type: "boolean" } }, required: ["points"] },
+  ],
+};
+const sizeArg = {
+  type: "object",
+  description: 'Fixed overall size in mm: {"w": 58, "h": 75, "d": 22} (any of them; the rest auto). The outline is scaled to w x h and the case is exactly that size; parts that do not fit come back as misses with smaller swaps instead of the case growing. Leave it out for auto (the smallest that holds the parts).',
+  properties: { w: { type: "number", minimum: 15, maximum: 250 }, h: { type: "number", minimum: 15, maximum: 250 }, d: { type: "number", minimum: 6, maximum: 120 } },
 };
 const placements = {
   type: "object",
-  description: 'Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}}. face: front | back | left | right | top | bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270. Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer grille at the back).',
+  description: 'Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front | back | left | right | top | bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}).',
   additionalProperties: true,
 };
 const why = { type: "string", description: "Short reason shown in the step list." };
@@ -51,15 +71,18 @@ export const caseTools: ToolModule = {
     {
       name: "design_case",
       title: "Design a printable case",
-      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body in print orientation (front, back, button plungers, light pipes), case.3mf (a coloured build plate for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole). Example: {"shape": "pebble"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 70.7 x 94.3 x 19.6), inner_mm, pocket (thickness first: "fits" = comfortable, ≤ 18 mm thick within 110 x 70 mm; "tight" ≤ 22 mm; "no" = bulky), volume_cm3, ok, checks (fits, screen-window, buttons-reachable, connector-access, min-wall, printable, watertight, no-intersection, size-match), files, plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 30 s (real CAD; a pebble with domed faces is the slowest). ${CANNOT}`,
+      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body in print orientation (front, back, button plungers, light pipes), case.3mf (a coloured build plate for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole) are starting points; "custom" is ANY outline you draw (an egg, a heart, a bean, a guitar pick ...) with outline, at any size with size_mm: Jumper packs the parts inside that real outline (a narrow end holds less) and, when they do not fit a fixed size, says what misses by how much and which smaller parts would fit (fits: false, misses, suggestions; nothing is saved). Check a fit first in under a second with check_fit (or dry_run: true). Example: {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z", "size_mm": {"w": 60, "h": 78}, "params": {"dome_mm": 3}} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 70.7 x 94.3 x 19.6), inner_mm, pocket (thickness first: "fits" = comfortable, ≤ 18 mm thick within 110 x 70 mm; "tight" ≤ 22 mm; "no" = bulky), volume_cm3, ok, checks (fits, screen-window, buttons-reachable, connector-access, min-wall, printable, watertight, no-intersection, size-match), files, plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 30 s (real CAD; a pebble with domed faces is the slowest). ${CANNOT}`,
       inputSchema: {
         type: "object",
         properties: {
           shape: { type: "string", enum: [...CASE_SHAPES] },
+          outline: outlineArg,
+          size_mm: sizeArg,
           params,
           front: { type: "string", description: "Part id whose screen faces out of the front (default: the first display)." },
           placements,
           exclude: { type: "array", items: { type: "string" }, description: "Part ids that are not inside the case." },
+          dry_run: { type: "boolean", description: "true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit." },
           save: { type: "boolean", description: "Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
           images: { type: "boolean", description: "Default true: return the front and exploded renders inline." },
           why,
@@ -71,12 +94,23 @@ export const caseTools: ToolModule = {
     {
       name: "update_case",
       title: "Change the case",
-      description: `Change the existing case: any of shape, params, front, placements, exclude. params and placements are merged into what is there; a placement set to null is removed (back to auto-pack). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"}. Regenerates every file in case/ and returns the CaseReport like design_case. Fails when there is no case yet (use design_case). ${CANNOT}`,
+      description: `Change the existing case: any of shape, outline, size_mm, params, front, placements, exclude. params, size_mm and placements are merged into what is there; a placement or a size value set to null is removed (back to auto). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"} or {"size_mm": {"w": 64, "h": 84}} or {"outline": {"points": [[0, 40], [24, 16], [28, -4], [13, -32], [-13, -32], [-28, -4], [-24, 16]], "smooth": true}}. Regenerates every file in case/ and returns the CaseReport like design_case (or fits: false with misses and suggestions when a fixed size cannot hold the parts; nothing changes then). Fails when there is no case yet (use design_case). ${CANNOT}`,
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, images: { type: "boolean" }, why },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, images: { type: "boolean" }, why },
       },
       edits: true,
+    },
+    {
+      name: "check_fit",
+      title: "Test a case fit",
+      description:
+        'Test whether the project\'s parts fit a case WITHOUT making it (no CAD, nothing written, answers in under a second): any preset or a custom outline, any size. Takes the same arguments as design_case (shape, outline, size_mm, params, placements, exclude, front); with none it tests the saved case. Returns {fits, size_mm (as laid out), needed_mm (what the parts need), asked_mm, misses: [{part, type, dimension: "outline" | "depth", short_mm, where, message}], suggestions: [{kind: "swap" | "smaller-cell" | "on-edge" | "bigger", part, from, to, message, change: [{tool, args}], fits, size_mm, tradeoff}], issues, ms}. Each suggestion is tried with the same quick layout while about a second lasts (fits says whether it then fits the asked size; untried ones have no fits; try_suggestions: true tries them all, a few seconds). Use it to rethink the pieces before design_case: e.g. {"shape": "custom", "outline": "<egg path>", "size_mm": {"w": 58, "h": 75, "d": 20}}. preview: true adds the front-view geometry (outline, cavity, part footprints with collides) for drawing it.',
+      inputSchema: {
+        type: "object",
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
+      },
+      readOnly: true,
     },
     {
       name: "get_case",
@@ -103,14 +137,19 @@ export const caseTools: ToolModule = {
   ops: {
     async design_case(args, x) {
       const s = x.session;
-      const enc = validateEnclosure(s, {
-        shape: args.shape,
-        ...(args.params ? { params: args.params } : {}),
-        ...(args.front ? { front: args.front } : {}),
-        ...(args.placements ? { placements: stripNulls(args.placements as Record<string, unknown>) } : {}),
-        ...(args.exclude ? { exclude: args.exclude } : {}),
-      });
+      const enc = validateEnclosure(s, encFromArgs(args));
+      if (args.dry_run === true) {
+        const r = await fitReport(s, enc, { preview: false });
+        x.summary(`fit ${enc.shape}: ${r.fits ? "fits" : `${r.misses.length} miss(es)`} (${r.ms} ms)`);
+        return r;
+      }
       const save = args.save !== false;
+      // a fixed size that cannot hold the parts: say what misses and what would fit, change nothing
+      const miss = await fixedSizeMiss(s, enc);
+      if (miss) {
+        x.summary(`case ${enc.shape}: does not fit the asked size (${miss.misses.length} miss(es)), nothing saved`);
+        return miss;
+      }
       if (!save) {
         const out = await generateInto(s, { ...s.project, enclosure: enc }, join(s.dir, "case", "variants", enc.shape));
         x.summary(`case variant ${enc.shape}: ${fmtSize(out.report)} (${out.report.pocket})`);
@@ -127,6 +166,14 @@ export const caseTools: ToolModule = {
       if (!cur) fail("no-case", "No case yet", "update_case changes an existing case and this project has none (jumper.json has no enclosure)", 'design_case {"shape": "pebble"}');
       const merged: Record<string, unknown> = { ...cur };
       if (args.shape) merged.shape = args.shape;
+      if (args.outline !== undefined) merged.outline = args.outline;
+      if (args.shape && args.shape !== "custom" && args.outline === undefined) delete merged.outline;
+      if (args.size_mm !== undefined) {
+        const sz = args.size_mm === null ? {} : { ...(cur.size_mm ?? {}), ...(args.size_mm as object) };
+        for (const [k, v] of Object.entries(sz)) if (v === null) delete (sz as Record<string, unknown>)[k];
+        if (Object.keys(sz).length) merged.size_mm = sz;
+        else delete merged.size_mm;
+      }
       if (args.params) merged.params = { ...(cur.params ?? {}), ...(args.params as object) };
       if (args.front !== undefined) merged.front = args.front;
       if (args.exclude !== undefined) merged.exclude = args.exclude;
@@ -139,10 +186,24 @@ export const caseTools: ToolModule = {
         merged.placements = pl;
       }
       const enc = validateEnclosure(s, merged);
+      const miss = await fixedSizeMiss(s, enc);
+      if (miss) {
+        x.summary(`case ${enc.shape}: does not fit the asked size (${miss.misses.length} miss(es)), nothing changed`);
+        return miss;
+      }
       const step = x.commit(`update_case`, { ...s.project, enclosure: enc });
       const out = await generateInto(s, s.project, join(s.dir, "case"));
       x.summary(`case: ${enc.shape} ${fmtSize(out.report)}, ${out.report.ok ? "all checks ok" : "has problems"}`);
       return { step: step.id, ...answer(s, out, args.images !== false, "case", nextAfter(out.report)) };
+    },
+    async check_fit(args, x) {
+      const s = x.session;
+      const has = args.shape !== undefined || args.outline !== undefined || args.size_mm !== undefined;
+      if (!has && !s.project.enclosure) fail("no-case", "Nothing to test", "check_fit with no shape tests the saved case, and this project has none", 'pass a shape, e.g. {"shape": "custom", "outline": "M 0 -40 C ... Z", "size_mm": {"w": 58, "h": 75}}');
+      const enc = has ? validateEnclosure(s, { ...(s.project.enclosure && !args.shape ? s.project.enclosure : {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
+      const r = await fitReport(s, enc, { preview: args.preview === true, ...(args.try_suggestions === true ? { budgetMs: 10_000 } : {}) });
+      x.summary(`fit ${enc.shape}: ${r.fits ? `fits, ${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm` : `${r.misses.length} miss(es), ${r.suggestions.length} suggestion(s)`} (${r.ms} ms)`);
+      return r;
     },
     async get_case(_args, x) {
       const s = x.session;
@@ -159,19 +220,93 @@ export const caseTools: ToolModule = {
   },
 };
 
+/** The enclosure fields of a design_case / check_fit call. */
+function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Record<string, unknown> {
+  return {
+    shape: args.shape ?? (args.outline !== undefined ? "custom" : fallbackShape),
+    ...(args.outline !== undefined ? { outline: args.outline } : {}),
+    ...(args.size_mm ? { size_mm: stripNulls(args.size_mm as Record<string, unknown>) } : {}),
+    ...(args.params ? { params: args.params } : {}),
+    ...(args.front ? { front: args.front } : {}),
+    ...(args.placements ? { placements: stripNulls(args.placements as Record<string, unknown>) } : {}),
+    ...(args.exclude ? { exclude: args.exclude } : {}),
+  };
+}
+
+/** The quick fit report (check_fit, dry_run, the Case view's preview) for an enclosure. */
+export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { preview?: boolean; layout?: import("@jumper/enclosure").Layout; budgetMs?: number } = {}) {
+  const { checkFit, layoutInput } = await import("@jumper/enclosure");
+  const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
+  let r;
+  try {
+    r = checkFit({ ...input, catalog: s.registry.list().map((d) => d.spec) }, { ...(opts.layout ? { layout: opts.layout } : {}), ...(opts.budgetMs ? { budgetMs: opts.budgetMs } : {}) });
+  } catch (e) {
+    rethrowOutline(e);
+  }
+  const { preview, ...rest } = r;
+  const next = r.fits
+    ? `It fits (${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm). Make it with design_case and the same arguments.`
+    : `It does not fit. Pick a suggestion (each change is listed as tool calls; fits says whether it then fits), or change size_mm / the outline, then check_fit again.`;
+  return { ...rest, ...(opts.preview ? { preview } : {}), next };
+}
+
+/** The Case view's live preview (POST /api/case/fit): validate the draft enclosure and test it, nothing logged or written. */
+export async function previewFit(s: ProjectSession, body: Record<string, unknown>) {
+  const enc = validateEnclosure(s, encFromArgs(body, s.project.enclosure?.shape));
+  return fitReport(s, enc, { preview: true });
+}
+
+/** A fixed size (size_mm / depth_mm) that the parts do not fit: the fit report, nothing saved. Undefined when it fits or the size is auto. */
+async function fixedSizeMiss(s: ProjectSession, enc: Enclosure) {
+  const fixed = enc.size_mm && Object.keys(enc.size_mm).length ? true : typeof enc.params?.depth_mm === "number";
+  if (!fixed) return undefined;
+  const { layoutCase, layoutInput } = await import("@jumper/enclosure");
+  let L;
+  try {
+    L = layoutCase(layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec));
+  } catch (e) {
+    rethrowOutline(e);
+  }
+  if (!L.fit || L.fit.fits) return undefined;
+  // design_case waits for CAD anyway: every suggestion is tried here
+  const r = await fitReport(s, enc, { layout: L, budgetMs: 6000 });
+  return { saved: false, ...r, next: `Nothing was saved: the parts do not fit ${fmtAsked(r.asked_mm)}. ${r.suggestions.length ? `Try: ${r.suggestions.slice(0, 3).map((x) => x.message).join(" ")}` : "Make it bigger or leave a part outside (exclude)."} Then design_case again (check_fit tests each idea in under a second).` };
+}
+
+function fmtAsked(a?: { w?: number; h?: number; d?: number }): string {
+  if (!a) return "the asked size";
+  return `${a.w ?? "auto"} x ${a.h ?? "auto"} x ${a.d ?? "auto"} mm`;
+}
+
+function rethrowOutline(e: unknown): never {
+  const o = e as { name?: string; what?: string; why?: string; fix?: string };
+  if (o?.name === "OutlineError") fail("bad-outline", o.what!, o.why!, o.fix!);
+  throw e;
+}
+
 function stripNulls(o: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null));
 }
 
 function validateEnclosure(s: ProjectSession, raw: Record<string, unknown>): Enclosure {
-  if (!raw.shape || !CASE_SHAPES.includes(raw.shape as never)) fail("bad-arg", `Unknown case shape ${JSON.stringify(raw.shape)}`, `shapes are ${CASE_SHAPES.join(", ")}`, `pass one of them, e.g. {"shape": "pebble"}`);
+  if (!raw.shape || !CASE_SHAPES.includes(raw.shape as never)) fail("bad-arg", `Unknown case shape ${JSON.stringify(raw.shape)}`, `shapes are ${CASE_SHAPES.join(", ")} ("custom" = any outline you draw: there is no preset per object, so an egg or a heart is a custom outline)`, `pass one of them, e.g. {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"}`);
+  if (raw.shape === "custom" && raw.outline === undefined) fail("bad-outline", 'Shape "custom" needs an outline', "a custom case is the front outline you draw, and none was given", 'pass outline: an SVG path in mm ("M 0 -40 C ... Z", y down) or {"points": [[x, y], ...], "smooth": true} (y up)');
+  if (raw.shape !== "custom" && raw.outline !== undefined) fail("bad-outline", `An outline was given with shape "${String(raw.shape)}"`, "only shape \"custom\" uses an outline (the presets have their own)", 'pass shape "custom" with the outline, or leave the outline out');
   const r = EnclosureSchema.safeParse(raw);
   if (!r.success) {
     const i = r.error.issues[0]!;
     const path = i.path.join(".");
-    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : `check ${path} against design_case's input schema (get it with jumper tools --json)`);
+    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : path.startsWith("size_mm") ? "size_mm.w and .h are 15 to 250 mm and .d is 6 to 120 mm (leave one out for auto)" : path.startsWith("outline") ? "outline is an SVG path string or {\"points\": [[x, y], ...], \"smooth\": true} with 3 to 400 points" : `check ${path} against design_case's input schema (get it with jumper tools --json)`);
   }
   const enc = r.data;
+  if (enc.shape === "custom") {
+    // the outline's own checks (closed, one shape, not crossing itself), with what / why / fix
+    try {
+      parseOutlineSync(enc.outline);
+    } catch (e) {
+      rethrowOutline(e);
+    }
+  }
   const ids = new Set(s.project.parts.map((p) => p.id));
   const bad = [...(enc.front ? [enc.front] : []), ...Object.keys(enc.placements ?? {}), ...(enc.exclude ?? [])].filter((id) => !ids.has(id));
   if (bad.length) fail("unknown-part", `The case names ${bad.map((b) => `"${b}"`).join(", ")}, which ${bad.length > 1 ? "are" : "is"} not in the project`, `the parts are ${[...ids].join(", ")}`, "use those ids (get_project lists them)");
@@ -237,7 +372,7 @@ function fmtSize(r: CaseReport): string {
 }
 
 function compact(r: CaseReport) {
-  return { shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
+  return { ...(r.fit ? { fits: r.fit.fits, fit: r.fit } : {}), shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
 }
 
 function answer(s: ProjectSession, out: Out, images: boolean, rel: string, next: string) {

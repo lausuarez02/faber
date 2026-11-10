@@ -10,15 +10,15 @@ import type { Enclosure, Project } from "@jumper/project-format";
 import type { PartSpec } from "@jumper/sim-core";
 import { drawingSvg } from "./drawing.ts";
 import { buildCase, type Body, partColor } from "./geometry.ts";
-import { layoutCase, type Layout, resolveParams } from "./layout.ts";
+import { layoutCase, type Layout, type LayoutInput, resolveParams } from "./layout.ts";
 import { checkMesh, type Mesh, meshOf, plateLayout, printPose, stlBinary, threeMf } from "./mesh.ts";
-import { contains } from "./plan.ts";
+import { contains, outline } from "./plan.ts";
 import { materialFor, printMd } from "./print.ts";
 import { occt } from "./occt.ts";
 import { renderPng, type RenderItem, VIEWS } from "./render.ts";
 import type { CaseFile, CaseMesh, CaseReport, FitCheck, PlacedPart, Vec3 } from "./types.ts";
 
-export const ENGINE_VERSION = "case-2";
+export const ENGINE_VERSION = "case-3";
 export const MIN_WALL = 1.2;
 
 export interface GenerateOptions {
@@ -30,6 +30,8 @@ export interface GenerateOptions {
   pdf?: (svg: string) => Promise<{ pdf?: Uint8Array; why?: string }>;
   /** Mesh tolerance for STL / 3MF (mm, default 0.05). */
   tolerance?: number;
+  /** A layout already made for this project and enclosure (design_case checks the fit first). */
+  layout?: Layout;
 }
 
 export interface Generated {
@@ -53,7 +55,9 @@ export function caseHash(project: Project, specOf: SpecOf): string {
   if (!project.enclosure) return "";
   const parts = project.parts.map((p) => {
     const s = specOf(p.type);
-    return { id: p.id, type: p.type, dim: s?.dimensions_mm, mech: s?.mechanical, cat: s?.category };
+    // a LiPo's capacity picks its cell size (round 7), so it is part of the hash
+    const cap = s?.mechanical?.soft ? p.props?.capacity : undefined;
+    return { id: p.id, type: p.type, dim: s?.dimensions_mm, mech: s?.mechanical, cat: s?.category, ...(cap !== undefined ? { cap } : {}) };
   });
   return createHash("sha256").update(JSON.stringify({ v: ENGINE_VERSION, enc: resolveEnclosure(project.enclosure), parts })).digest("hex").slice(0, 16);
 }
@@ -89,11 +93,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   if (!project.enclosure) throw new Error("No case yet. Why: jumper.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
   const enc = project.enclosure;
   const title = opts.title ?? project.name;
-  const parts = project.parts.flatMap((p) => {
-    const spec = specOf(p.type);
-    return spec ? [{ id: p.id, type: p.type, spec }] : [];
-  });
-  const L = layoutCase({ parts, enclosure: enc });
+  const L = opts.layout ?? layoutCase(layoutInput(project, specOf));
   const r = await occt();
   const B = await buildCase(L);
   const missing: Generated["missing"] = [];
@@ -164,7 +164,8 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const ok = ins.protrude >= ins.travel + 0.3 && ins.length <= 14;
     checks.push({ id: "buttons-reachable", ok, severity: ok ? "info" : "warning", message: ok ? `${o.part}: plunger Ø${ins.d.toFixed(1)} through a Ø${o.u.toFixed(1)} hole on the ${o.face}, ${ins.length.toFixed(1)} mm long, stands ${ins.protrude.toFixed(1)} mm proud for ${ins.travel} mm of travel.` : `${o.part}: the plunger is ${ins.length.toFixed(1)} mm long${ins.length > 14 ? " and may wobble" : ""}. Why: the switch sits ${o.standoff.toFixed(1)} mm from the wall. Fix: move it to a face with placements, or accept a longer plunger.`, parts: [o.part] });
   }
-  // ---- connectors
+  // ---- connectors (the layout's own estimate is replaced by this check on the real bodies)
+  for (let i = checks.length - 1; i >= 0; i--) if (checks[i]!.id === "connector-access" && L.openings.some((o) => o.kind === "connector" && checks[i]!.parts?.includes(o.part))) checks.splice(i, 1);
   for (const o of L.openings.filter((x) => x.kind === "connector")) {
     const recess = o.standoff + o.depth;
     const inward: Vec3 = [-o.n[0], -o.n[1], -o.n[2]];
@@ -194,6 +195,13 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   }
   checks.push({ id: "pocket", ok: pocket !== "no", severity: pocket === "no" ? "warning" : "info", message: `${size.w} x ${size.h} x ${size.d} mm${outerVol ? `, ${outerVol.toFixed(0)} cm³` : ""}: ${pocketText(size)}.${pocket !== "fits" ? " Thinner: exclude a part that need not be inside, or try another shape (each packs differently)." : ""}` });
   const fitsOk = !L.issues.some((i) => i.id === "fits" && i.severity === "error");
+  // round 7: a fixed size is kept exactly
+  if (L.fit?.asked_mm) {
+    const a = L.fit.asked_mm;
+    const off = [a.w !== undefined ? Math.abs(L.outer.w - a.w) : 0, a.h !== undefined && !L.tab ? Math.abs(L.outer.h - a.h) : 0, a.d !== undefined ? Math.abs(L.outer.d - a.d) : 0];
+    const ok = Math.max(...off) <= 0.1 + 1e-6;
+    checks.push({ id: "size-asked", ok, severity: ok ? "info" : "warning", message: ok ? `The case is the size asked: ${[a.w !== undefined ? `${a.w} wide` : "", a.h !== undefined ? `${a.h} tall` : "", a.d !== undefined ? `${a.d} thick` : ""].filter(Boolean).join(", ")} (mm).` : `The case is ${L.outer.w} x ${L.outer.h} x ${L.outer.d} mm, not the ${a.w ?? "auto"} x ${a.h ?? "auto"} x ${a.d ?? "auto"} mm asked. Why: a dome or an edge could not be made as planned. Fix: set dome_mm and the edge radii explicitly, or accept the size.` });
+  }
   checks.unshift({ id: "fits", ok: fitsOk, severity: fitsOk ? "info" : "error", message: fitsOk ? `All ${L.placed.length} parts fit in ${L.inner.w} x ${L.inner.h} x ${L.inner.d} mm inside with ${L.params.gap_mm} mm of wiring room around each${L.inline.length ? `; ${L.inline.join(", ")} ride in the wiring (heat-shrink)` : ""}${L.outside.length ? `; outside the case: ${L.outside.map((o) => o.id).join(", ")}` : ""}.` : "Some parts do not fit; see the errors below." });
 
   // ---- 3MF, STEP
@@ -262,7 +270,9 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     placed,
     files: caseFiles,
     hash,
-    notes,
+    notes: [...(L.outlineNotes ?? []), ...notes],
+    ...(L.fit ? { fit: { fits: L.fit.fits, needed_mm: L.fit.needed_mm, ...(L.fit.asked_mm ? { asked_mm: L.fit.asked_mm } : {}), scale: L.fit.scale } } : {}),
+    outline_mm: frontOutline(L),
   };
   const reportBytes = new TextEncoder().encode(JSON.stringify(report, null, 2) + "\n");
   files.set("report.json", reportBytes);
@@ -278,6 +288,23 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     ],
   };
   return { report, files, mesh, layout: L, missing };
+}
+
+/** The parts of a project as the layout takes them (spec + props). */
+export function layoutInput(project: Project, specOf: SpecOf): LayoutInput {
+  if (!project.enclosure) throw new Error("No case yet. Why: jumper.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
+  const parts = project.parts.flatMap((p) => {
+    const spec = specOf(p.type);
+    return spec ? [{ id: p.id, type: p.type, spec, ...(p.props ? { props: p.props as Record<string, unknown> } : {}) }] : [];
+  });
+  return { parts, enclosure: project.enclosure };
+}
+
+/** The outer outline seen from the front (case frame, mm, ~120 points), for drawings and the Case view. */
+export function frontOutline(L: Layout): [number, number][] {
+  const P = outline(L.plan, L.params.wall_mm, 120);
+  const step = Math.max(1, Math.floor(P.length / 120));
+  return P.filter((_, i) => i % step === 0).map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100]);
 }
 
 function r2(v: number): number {

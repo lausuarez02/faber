@@ -722,7 +722,8 @@
             "pill",
             "pebble",
             "puck",
-            "keychain"
+            "keychain",
+            "custom"
           ]
         },
         "params": {
@@ -781,6 +782,76 @@
               "type": "number",
               "minimum": 0,
               "maximum": 10
+            },
+            "edge_radius_front_mm": {
+              "description": "Round-over of the front rim, mm, or 'auto' (default: a share of the depth per shape; custom and pebble are round all over). Clamped where a side opening needs a straight wall.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "edge_radius_back_mm": {
+              "description": "Round-over of the back rim, mm, or 'auto'.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "dome_mm": {
+              "description": "How far the front and back faces bulge out (a sphere cap with a flat print pad), mm, or 'auto' (pebble and custom about 1 mm, the other shapes flat).",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "dome_back_mm": {
+              "description": "The back face's bulge when it differs from dome_mm, mm.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "depth_mm": {
+              "description": "Overall thickness front to back, mm, or 'auto' (the thinnest that holds the parts). Same as size_mm.d.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 6,
+                  "maximum": 120
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
             }
           }
         },
@@ -843,6 +914,10 @@
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9
+              },
+              "on_edge": {
+                "description": "Stand the part on its edge (its board plane front to back) instead of lying flat: narrower, thicker.",
+                "type": "boolean"
               }
             }
           }
@@ -852,6 +927,73 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "outline": {
+          "description": "Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Jumper fits the parts inside it.",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 20000,
+              "description": "SVG path data of the front outline in mm, e.g. 'M 0 -40 C 24 -40 30 0 30 10 C 30 30 16 40 0 40 C -16 40 -30 30 -30 10 C -30 0 -24 -40 0 -40 Z' (y down, like SVG)."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "points": {
+                  "minItems": 3,
+                  "maxItems": 400,
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "description": "Outline points [x, y] in mm, y UP (the top of the device is +y)."
+                },
+                "smooth": {
+                  "description": "true = a smooth closed curve through the points (default true); false = straight lines (corners are rounded to stay printable).",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "points"
+              ]
+            }
+          ]
+        },
+        "size_mm": {
+          "description": "Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit).",
+          "type": "object",
+          "properties": {
+            "w": {
+              "description": "Overall width (x), mm.",
+              "type": "number",
+              "minimum": 15,
+              "maximum": 250
+            },
+            "h": {
+              "description": "Overall height (y), mm.",
+              "type": "number",
+              "minimum": 15,
+              "maximum": 250
+            },
+            "d": {
+              "description": "Overall thickness (z, front to back), mm.",
+              "type": "number",
+              "minimum": 6,
+              "maximum": 120
+            }
           }
         }
       },

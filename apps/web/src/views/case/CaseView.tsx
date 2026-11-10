@@ -12,8 +12,10 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { AlertTriangle, Box, CheckCircle2, Download, Loader2, Package, X, XCircle } from "lucide-react";
 import type { Enclosure } from "@jumper/project-format";
-import { caseApi, decodeF32, decodeU32, type CaseMesh, type CaseReport, type CaseState } from "../../case/api.ts";
+import { caseApi, decodeF32, decodeU32, type CaseMesh, type CaseReport, type CaseState, type FitResult } from "../../case/api.ts";
+import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
+import { OutlineEditor, type SizeDraft } from "./OutlineEditor.tsx";
 
 const SHAPES: { id: Enclosure["shape"]; label: string; hint: string }[] = [
   { id: "pebble", label: "Pebble", hint: "organic oval, rounded all over" },
@@ -21,6 +23,7 @@ const SHAPES: { id: Enclosure["shape"]; label: string; hint: string }[] = [
   { id: "rounded-box", label: "Box", hint: "rounded rectangle, the most compact" },
   { id: "pill", label: "Pill", hint: "capsule" },
   { id: "keychain", label: "Keychain", hint: "box with a lanyard tab" },
+  { id: "custom", label: "Custom", hint: "any outline you draw (an egg, a heart, a bean ...) at any size" },
 ];
 
 type Params = NonNullable<Enclosure["params"]>;
@@ -36,6 +39,13 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [opacity, setOpacity] = useState(0.35);
   const [explode, setExplode] = useState(0);
   const [pack, setPack] = useState<{ url?: string; missing: { item: string; why: string; fix: string; say?: string }[] } | undefined>();
+  // round 7: the custom outline being drawn (mm, y up), its size (blank = auto) and the live fit
+  const [points, setPoints] = useState<Pt[]>(() => startPoints("ellipse"));
+  const [size, setSize] = useState<SizeDraft>({});
+  const [fit, setFit] = useState<FitResult | undefined>();
+  const [fitBusy, setFitBusy] = useState(false);
+  const [fitError, setFitError] = useState<string | undefined>();
+  const fitSeq = useRef(0);
   const report = state?.report;
   const hashRef = useRef<string | undefined>(undefined);
 
@@ -47,6 +57,11 @@ export function CaseView({ onClose }: { onClose(): void }) {
       if (st.enclosure && hashRef.current === undefined) {
         setShape(st.enclosure.shape);
         setParams(st.enclosure.params ?? {});
+        // a custom outline (the person's points, or the silhouette of one an agent drew) opens in the editor
+        const o = st.enclosure.outline;
+        if (o && typeof o === "object" && "points" in o) setPoints(o.points as Pt[]);
+        else if (st.enclosure.shape === "custom" && st.report?.outline_mm?.length) setPoints(resampleClosed(st.report.outline_mm, 14));
+        setSize({ ...(st.enclosure.size_mm ?? {}) });
       }
       const h = st.report?.hash;
       if (st.enclosure && (withMesh || st.stale || h !== hashRef.current)) {
@@ -83,13 +98,61 @@ export function CaseView({ onClose }: { onClose(): void }) {
   }, [onClose]);
 
   const saved = state?.enclosure;
-  const dirty = !saved || saved.shape !== shape || JSON.stringify(saved.params ?? {}) !== JSON.stringify(params);
+  const draft = (): Record<string, unknown> => ({ shape, params, ...(shape === "custom" ? { outline: toOutline(points), size_mm: { w: size.w ?? null, h: size.h ?? null, d: size.d ?? null } } : { size_mm: null }) });
+  const sizeKey = JSON.stringify({ w: size.w, h: size.h, d: size.d });
+  const savedSizeKey = JSON.stringify({ w: saved?.size_mm?.w, h: saved?.size_mm?.h, d: saved?.size_mm?.d });
+  const dirty = !saved || saved.shape !== shape || JSON.stringify(saved.params ?? {}) !== JSON.stringify(params) || (shape === "custom" && (JSON.stringify(saved.outline ?? null) !== JSON.stringify(toOutline(points)) || sizeKey !== savedSizeKey));
+
+  // the live fit while drawing (no CAD on the server, under a second), the newest answer wins
+  useEffect(() => {
+    if (shape !== "custom") {
+      setFit(undefined);
+      setFitError(undefined);
+      return;
+    }
+    const seq = ++fitSeq.current;
+    setFitBusy(true);
+    const t = setTimeout(() => {
+      caseApi
+        .fit(draft())
+        .then((r) => {
+          if (seq !== fitSeq.current) return;
+          setFit(r);
+          setFitError(undefined);
+        })
+        .catch((e: Error) => {
+          if (seq !== fitSeq.current) return;
+          setFit(undefined);
+          setFitError(e.message);
+        })
+        .finally(() => seq === fitSeq.current && setFitBusy(false));
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shape, JSON.stringify(points), sizeKey, JSON.stringify(params), epoch]);
+
+  const pickShape = (id: Enclosure["shape"]) => {
+    if (id === "custom" && shape !== "custom") {
+      // start from the shape the case is now, at its size
+      const w = report?.size_mm.w ?? 60;
+      const h = report?.size_mm.h ?? 76;
+      setPoints(report?.outline_mm?.length ? resampleClosed(report.outline_mm, 14) : startPoints(shape, w, h));
+    }
+    setShape(id);
+  };
 
   const apply = async () => {
     setBusy(saved ? "Updating the case…" : "Designing the case…");
     setPack(undefined);
     try {
-      await caseApi.save({ shape, params });
+      const r = (await caseApi.save(draft() as Partial<Enclosure>)) as CaseReport & { fits?: boolean; saved?: boolean };
+      if (r.fits === false && r.saved === false) {
+        // a fixed size that cannot hold the parts: nothing was saved; the fit panel says what to change
+        setFit(r as unknown as FitResult);
+        setError("The parts do not fit that size, so nothing was saved. Why: the size is fixed (W x H x D). Fix: pick a change under What would fit, or clear a size to make it auto.");
+        return;
+      }
+      setError(undefined);
       hashRef.current = "";
       await load(true);
     } catch (e) {
@@ -182,12 +245,33 @@ export function CaseView({ onClose }: { onClose(): void }) {
           <div className="cv-label">Shape</div>
           <div className="cv-shapes" role="radiogroup" aria-label="Shape">
             {SHAPES.map((s) => (
-              <button key={s.id} type="button" role="radio" aria-checked={shape === s.id} title={s.hint} className={shape === s.id ? "is-on" : ""} data-testid={`case-shape-${s.id}`} onClick={() => setShape(s.id)}>
+              <button key={s.id} type="button" role="radio" aria-checked={shape === s.id} title={s.hint} className={shape === s.id ? "is-on" : ""} data-testid={`case-shape-${s.id}`} onClick={() => pickShape(s.id)}>
                 {s.label}
               </button>
             ))}
           </div>
         </section>
+
+        {shape === "custom" ? (
+          <OutlineEditor
+            points={points}
+            onPoints={setPoints}
+            size={size}
+            onSize={(s) => {
+              // typing W / H scales the drawing to that size (blank = auto keeps it as drawn)
+              if ((s.w !== size.w || s.h !== size.h) && (s.w !== undefined || s.h !== undefined)) setPoints(fitTo(points, s.w, s.h));
+              setSize(s);
+            }}
+            fit={fit}
+            fitBusy={fitBusy}
+            fitError={fitError}
+            onStart={(k) => setPoints(startPoints(k, size.w ?? fit?.size_mm.w ?? 60, size.h ?? fit?.size_mm.h ?? 76))}
+            onUseSize={(s) => {
+              setPoints(fitTo(points, s.w, s.h));
+              setSize({ ...size, ...s });
+            }}
+          />
+        ) : null}
 
         <section className="cv-params">
           <Range label="Wall" unit="mm" min={1.2} max={3} step={0.1} value={params.wall_mm ?? 1.6} onChange={(v) => set("wall_mm", v)} testId="case-wall" />
@@ -223,7 +307,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
         <button type="button" className="cv-primary" disabled={!!busy || (!!saved && !dirty)} data-testid="case-update" onClick={() => void apply()}>
           {busy && busy !== "Writing the factory pack…" ? (saved ? "Updating…" : "Designing…") : saved ? (dirty ? "Update case" : "Case is up to date") : "Design case"}
         </button>
-        {error && mesh ? (
+        {error && (mesh || shape === "custom") ? (
           <div className="cv-error" role="alert" data-testid="case-error">
             {error}
           </div>

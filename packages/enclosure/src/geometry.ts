@@ -132,14 +132,15 @@ export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number
   return { solid: base.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf])), r: 0, rBack: 0 };
 }
 
-function cutterFor(r: Replicad, o: Opening, len: number): Solid {
-  const z0 = -0.8;
+/** The cutting tool of an opening; `jitter` (mm) nudges its size and start when OpenCascade fails on the exact one. */
+function cutterFor(r: Replicad, o: Opening, len: number, jitter = 0): Solid {
+  const z0 = -0.8 - Math.abs(jitter);
   let tool: Solid;
-  if (o.shape === "round") tool = r.makeCylinder(o.u / 2, len - z0, [0, 0, z0], [0, 0, 1]);
+  if (o.shape === "round") tool = r.makeCylinder(o.u / 2 + jitter, len + 0.3 * Math.abs(jitter) - z0, [0, 0, z0], [0, 0, 1]);
   else {
     const c = Math.min(o.corner, Math.min(o.u, o.v) / 2 - 0.01);
-    const d = c > 0.05 ? r.drawRoundedRectangle(o.u, o.v, c) : r.drawRectangle(o.u, o.v);
-    tool = d.sketchOnPlane("XY", z0).extrude(len - z0);
+    const d = c > 0.05 ? r.drawRoundedRectangle(o.u + jitter, o.v + jitter, c) : r.drawRectangle(o.u + jitter, o.v + jitter);
+    tool = d.sketchOnPlane("XY", z0).extrude(len + 0.3 * Math.abs(jitter) - z0);
   }
   return orient(tool, frameR(o.uAxis, o.vAxis, o.n)).translate(o.at);
 }
@@ -157,7 +158,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   const cav2d = () => planDrawing(r, L.plan, 0);
   const zOutF = L.zFront + t;
   const zOutB = L.zBack - t;
-  const outerR = L.kind === "rrect" ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
+  const outerR = L.kind === "rrect" && !L.dome ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
   const outer = outerR.solid;
   const rf = outerR.r;
   const rfBack = outerR.rBack;
@@ -287,6 +288,26 @@ export async function buildCase(L: Layout): Promise<Built> {
     for (let k = 0; k < 3; k++) if (b1[k]! < a0[k]! - 0.01 || b0[k]! > a1[k]! + 0.01) return shell;
     return shell.cut(tool);
   };
+  // OpenCascade sometimes throws on a boolean between curved faces (a window through a domed,
+  // filleted custom outline): the same cut is retried with the tool nudged by a few hundredths of a
+  // millimetre (well inside the tolerances), then reported with what to change
+  const cutOpening = (o: Opening, make: (jitter: number) => Solid) => {
+    let last: unknown;
+    for (const j of [0, 0.03, -0.03, 0.07]) {
+      try {
+        const tool = make(j);
+        const f2 = cutIf(front, tool);
+        const b2 = cutIf(back, tool);
+        front = f2;
+        back = b2;
+        if (j) notes.push(`The ${o.kind} for ${o.part} was cut ${Math.abs(j)} mm ${j > 0 ? "larger" : "smaller"} (OpenCascade failed on the exact size; within the print tolerance).`);
+        return;
+      } catch (e) {
+        last = e;
+      }
+    }
+    throw new Error(`OpenCascade could not cut the ${o.kind} for ${o.part} on the ${o.face}. Why: the boolean between that opening and this curved outline failed (${last instanceof Error ? last.message : "a kernel exception"}). Fix: change dome_mm or edge_radius_front_mm a little, or nudge the outline, and design again`);
+  };
   const bodies: Body[] = [];
   const color = L.params.color;
   for (const o of L.openings) {
@@ -297,11 +318,8 @@ export async function buildCase(L: Layout): Promise<Built> {
       front = cutIf(front, spotTool);
       back = cutIf(back, spotTool);
     }
-    const tools: Solid[] = o.holes ? o.holes.map((h) => cylAlong(r, h.d, -0.8, len, h.at, o.n)) : [cutterFor(r, o, len)];
-    for (const tool of tools) {
-      front = cutIf(front, tool);
-      back = cutIf(back, tool);
-    }
+    // a grille's holes are cut in one boolean (a compound of the cylinders), from inside the cavity to past the outer surface
+    cutOpening(o, (j) => (o.holes ? r.makeCompound(o.holes.map((h) => cylAlong(r, h.d + j, -0.8 - Math.abs(j), len + 0.6, h.at, o.n))) : cutterFor(r, o, len, j)));
     if (o.insert) {
       const ins = o.insert;
       if (ins.kind === "cap") {

@@ -75,7 +75,7 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
       await expect.poll(() => page.getByTestId("toggle-case").evaluate((el) => getComputedStyle(el, "::after").opacity), { timeout: 3000 }).toBe("1");
     }
     await openCase(page, info);
-    await expect(page.getByTestId("case-empty")).toContainText("No case yet");
+    await expect(page.getByTestId("case-empty")).toContainText("No case yet", { timeout: 30_000 }); // GET /api/case is slow while another server runs CAD
     // readable on the dark stage
     const titleColor = await page.locator(".cv-empty-title").evaluate((el) => getComputedStyle(el).color);
     expect(titleColor).toBe("rgb(241, 243, 245)");
@@ -84,7 +84,7 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     await expect(page.getByTestId("case-update")).toHaveText("Designing…");
     await expect(page.getByTestId("case-size")).toContainText(/\d+(\.\d)? × \d+(\.\d)? × \d+(\.\d)? mm/, { timeout: 120_000 });
     await expect(page.getByTestId("case-pocket")).toHaveText(/fits a pocket|tight for a pocket|bulky for a pocket/);
-    await expect(page.getByTestId("case-view").locator("canvas")).toBeVisible();
+    await expect(page.getByTestId("case-view").locator("canvas")).toBeVisible({ timeout: 30_000 }); // the meshes follow the report
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
     await expect(page.getByTestId("case-checks")).toContainText("no-intersection");
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");

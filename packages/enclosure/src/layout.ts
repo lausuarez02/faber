@@ -17,7 +17,8 @@
 import type { CasePlacement, CaseShape, Enclosure } from "@jumper/project-format";
 import type { PartSpec } from "@jumper/sim-core";
 import { apply, envelopeZ, FACE_DIR, faceAxes, I3, type LocalFeature, type Mat3, mul, type PartMech, resolveMech, ROTATIONS, rotAbout, eqv } from "./mech.ts";
-import { contains, type Flat, type Need, outline, type Plan, type PlanKind, planBounds, rayExit, sizePlan } from "./plan.ts";
+import { contains, type Flat, growPlan, withFastOutline, type Need, outline, type Plan, type PlanKind, planBounds, polyDistance, polyOuter, rayExit, sizePlan, sizePoly } from "./plan.ts";
+import { outlineFeatureIssues, parseOutline, presetOutline, type ParsedOutline } from "./outline.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
 
 export type CaseFaceName = keyof typeof FACE_DIR;
@@ -32,6 +33,12 @@ export interface ResolvedParams {
   tolerance_mm: number;
   process: "fdm" | "resin" | "injection";
   gap_mm: number;
+  // round 7: 3D finish ("auto" = the shape's default)
+  edge_radius_front_mm: number | "auto";
+  edge_radius_back_mm: number | "auto";
+  dome_mm: number | "auto";
+  dome_back_mm: number | "auto";
+  depth_mm: number | "auto";
 }
 
 export function resolveParams(shape: CaseShape, p: Enclosure["params"] = {}): ResolvedParams {
@@ -45,7 +52,33 @@ export function resolveParams(shape: CaseShape, p: Enclosure["params"] = {}): Re
     tolerance_mm: p.tolerance_mm ?? (p.process === "resin" ? 0.1 : p.process === "injection" ? 0.05 : 0.2),
     process: p.process ?? "fdm",
     gap_mm: p.gap_mm ?? 1.5,
+    edge_radius_front_mm: p.edge_radius_front_mm ?? "auto",
+    edge_radius_back_mm: p.edge_radius_back_mm ?? "auto",
+    dome_mm: p.dome_mm ?? "auto",
+    dome_back_mm: p.dome_back_mm ?? p.dome_mm ?? "auto",
+    depth_mm: p.depth_mm ?? "auto",
   };
+}
+
+/**
+ * Common 1S LiPo pouch cells by capacity (typical sizes; the case packs the cell the project asks
+ * for with the part's `capacity` prop). code = thickness·width·length (e.g. 503035 = 5 x 30 x 35 mm).
+ */
+export const LIPO_CELLS = [
+  { mAh: 100, code: "401730", w: 30, h: 17, d: 4 },
+  { mAh: 150, code: "402030", w: 30, h: 20, d: 4 },
+  { mAh: 250, code: "502030", w: 30, h: 20, d: 5 },
+  { mAh: 500, code: "503035", w: 35, h: 30, d: 5 },
+  { mAh: 1000, code: "523450", w: 50, h: 34, d: 5.2 },
+] as const;
+
+/** The spec with the cell size of its capacity (LiPo pouch cells only; anything else unchanged). */
+export function specWithProps(spec: PartSpec, props?: Record<string, unknown>): PartSpec {
+  const cap = typeof props?.capacity === "number" ? props.capacity : undefined;
+  if (cap === undefined || !spec.mechanical?.soft || !(spec.tags ?? []).includes("lipo")) return spec;
+  const cell = LIPO_CELLS.find((c) => c.mAh >= cap);
+  if (!cell) return spec;
+  return { ...spec, dimensions_mm: { w: cell.w, h: cell.h, d: cell.d }, mechanical: { ...spec.mechanical, source: `${cell.code} pouch cell (${cell.w} x ${cell.h} x ${cell.d} mm, ${cell.mAh} mAh, typical); allow 10 % swell` } };
 }
 
 export interface Placed {
@@ -159,6 +192,10 @@ export interface Layout {
   outer: { w: number; h: number; d: number; min: Vec3; max: Vec3 };
   inner: { w: number; h: number; d: number };
   issues: FitCheck[];
+  /** Round 7: how the parts fit a fixed size (custom outlines and size_mm). */
+  fit?: LayoutFit;
+  /** What parsing the outline changed (corners rounded). */
+  outlineNotes?: string[];
 }
 
 const SIDE_FACES: CaseFaceName[] = ["right", "left", "top", "bottom"];
@@ -197,7 +234,12 @@ function domeRadius(S: number, rp: number, crown: number): number {
 }
 
 /** Rounded front / back edge radius as a share of the outer depth, per shape (a pebble and a pill are round all over, a puck has soft edges). */
-export const EDGE_SHARE: Record<CaseShape, number> = { pebble: 0.44, pill: 0.44, puck: 0.34, keychain: 0.38, "rounded-box": 0 };
+export const EDGE_SHARE: Record<CaseShape, number> = { pebble: 0.44, pill: 0.44, puck: 0.34, keychain: 0.38, "rounded-box": 0, custom: 0.44 };
+
+/** Default dome per shape (mm): pebble and custom bulge ~2 % of their span (0.5 to 1 mm), the others are flat. */
+function autoCrown(shape: CaseShape, S: number): number {
+  return shape === "pebble" || shape === "custom" ? Math.max(0.5, Math.min(1.0, 0.02 * S)) : 0;
+}
 
 function priority(f: LocalFeature, isFront: boolean): number {
   if (!f.expose) return -1;
@@ -275,18 +317,46 @@ interface Plan0 {
 }
 
 export interface LayoutInput {
-  parts: { id: string; type: string; spec: PartSpec }[];
+  parts: { id: string; type: string; spec: PartSpec; props?: Record<string, unknown> }[];
   enclosure: Enclosure;
+}
+
+export interface LayoutOptions {
+  /** A quicker, coarser search (check_fit / dry runs: well under a second). */
+  quick?: boolean;
+}
+
+/** How the parts fit a fixed size (and what an auto size came to). */
+export interface LayoutFit {
+  /** Every part inside the outline and the depth. */
+  fits: boolean;
+  /** The size was given (size_mm / depth_mm): w / h / d each fixed or not. */
+  fixed: { w: boolean; h: boolean; d: boolean };
+  /** Overall size the parts need (mm, before a lanyard tab). */
+  needed_mm: { w: number; h: number; d: number };
+  /** The asked size (fixed values only). */
+  asked_mm?: { w?: number; h?: number; d?: number };
+  /** How much the outline must grow for the parts (1 = as asked; custom outlines). */
+  scale: number;
+  /** Parts that stick out of the outline, with how far (mm) and where. */
+  outlineMisses: { part: string; short_mm: number; side: string }[];
+  /** The stack is deeper than the asked depth. */
+  depthMiss?: { needed_mm: number; available_mm: number; parts: string[] };
 }
 
 /**
  * Pack the parts into a case. A curved shape gives each connector its own side; which connector
  * gets which side is tried both ways (up to 4 orders) and the smallest case kept.
  */
-export function layoutCase(input: LayoutInput): Layout {
-  const first = layoutOnce(input);
+export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout {
+  // A custom outline (or a preset at a fixed size) always gets the same search, so check_fit's
+  // quick answer is the answer design_case builds; the presets keep their larger round-6 search.
+  const sz = input.enclosure.size_mm;
+  if (input.enclosure.shape === "custom" || sz?.w !== undefined || sz?.h !== undefined) opts = { ...opts, quick: true };
+  const first = layoutOnce(input, undefined, opts);
   const ids = first.connOrder;
-  if (input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) return first;
+  const polyBad = first.plan.kind === "poly" && ids.length > 0 && first.issues.some((i) => i.severity === "error" && i.id !== "fits");
+  if ((input.enclosure.shape === "rounded-box" || input.enclosure.shape === "keychain" || ids.length < 2) && !polyBad) return first;
   const perms: string[][] = [];
   const permute = (rest: string[], acc: string[]) => {
     if (perms.length >= 4) return;
@@ -295,21 +365,55 @@ export function layoutCase(input: LayoutInput): Layout {
   };
   permute(ids, []);
   let best = first;
-  const cost = (L: Layout) => L.issues.filter((i) => i.severity === "error").length * 1e12 + caseCost(L);
-  for (const perm of perms.slice(1)) {
-    const L = layoutOnce(input, perm);
+  const cost = (L: Layout) => L.issues.filter((i) => i.severity === "error").length * 1e12 + overflow(L) + caseCost(L);
+  // a quick search tries the other port-to-side orders only when the first one has a problem (a port on the tip of a heart)
+  const firstBad = first.issues.some((i) => i.severity === "error" && i.id !== "fits");
+  for (const perm of perms.slice(1, opts.quick && !firstBad ? 1 : undefined)) {
+    const L = layoutOnce(input, perm, opts);
     if (cost(L) < cost(best)) best = L;
   }
+  // a custom outline whose bottom is a point (a heart) or a notch: the ports may start on another side
+  if (best.plan.kind === "poly" && best.issues.some((i) => i.severity === "error" && i.id !== "fits"))
+    for (const cyc of [["left", "right", "bottom", "top"], ["right", "left", "bottom", "top"], ["top", "left", "right", "bottom"]] as CaseFaceName[][])
+      for (const perm of perms.length ? perms : [ids]) {
+        const L = layoutOnce(input, perm, opts, cyc);
+        if (cost(L) < cost(best)) best = L;
+        if (!best.issues.some((i) => i.severity === "error" && i.id !== "fits")) return best;
+      }
   return best;
 }
 
-function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrder: string[] } {
+/** How far a fixed size is from holding the parts (0 = fits): the packer keeps the layout closest to fitting. */
+function overflow(L: Layout): number {
+  const f = L.fit;
+  if (!f) return 0;
+  return (f.fixed.w || f.fixed.h ? Math.max(0, f.scale - 1) * 1e10 : 0) + (f.depthMiss ? (f.depthMiss.needed_mm - f.depthMiss.available_mm) * 1e9 : 0);
+}
+
+function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[] } {
   const enc = input.enclosure;
   const shape = enc.shape;
   const params = resolveParams(shape, enc.params);
   const g = params.gap_mm;
   const tol = params.tolerance_mm;
   const t = params.wall_mm;
+  const quick = !!opts.quick;
+  // ---- round 7: the outline (custom, or a preset at a fixed size) and the fixed size
+  const sz = enc.size_mm ?? {};
+  const depthFixed = sz.d ?? (typeof params.depth_mm === "number" ? params.depth_mm : undefined);
+  const fixedWH = sz.w !== undefined || sz.h !== undefined;
+  let po: ParsedOutline | undefined;
+  if (shape === "custom") po = parseOutline(enc.outline);
+  else if (fixedWH) po = presetOutline(shape, sz.w ?? sz.h!, sz.h ?? sz.w!, params.corner_radius_mm);
+  let A0 = 0;
+  let B0 = 0;
+  if (po) {
+    if (sz.w !== undefined && sz.h !== undefined) [A0, B0] = [sz.w / 2, sz.h / 2];
+    else if (sz.w !== undefined) [A0, B0] = [sz.w / 2, (sz.w / 2) * (po.h / po.w)];
+    else if (sz.h !== undefined) [A0, B0] = [(sz.h / 2) * (po.w / po.h), sz.h / 2];
+    else [A0, B0] = [po.w / 2, po.h / 2];
+  }
+  const polySpec = po ? { poly: po.poly, ctrl: po.ctrl, w0: t, A0, B0, fixed: fixedWH, quick } : undefined;
   const issues: FitCheck[] = [];
   const exclude = new Set(enc.exclude ?? []);
   const outside: Layout["outside"] = [];
@@ -328,7 +432,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
       inline.push(p.id);
       continue;
     }
-    mechs.push(resolveMech(p.id, p.spec));
+    mechs.push(resolveMech(p.id, specWithProps(p.spec, p.props)));
   }
   for (const m of mechs)
     if (!m.hasData)
@@ -347,7 +451,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     const conn = mechs.filter((m) => !enc.placements?.[m.id]?.face && m.id !== frontId && m.features.filter((f) => f.expose).sort((x, y) => priority(y, false) - priority(x, false))[0]?.kind === "connector");
     conn.sort((x, y) => (connPerm ? connPerm.indexOf(x.id) - connPerm.indexOf(y.id) : Number(y.category === "power") - Number(x.category === "power")));
     connOrder.push(...conn.map((m) => m.id));
-    const cycle: CaseFaceName[] = shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"];
+    const cycle: CaseFaceName[] = connCycle ?? (shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"]);
     conn.forEach((m, i) => connFace.set(m.id, cycle[i % cycle.length]!));
   }
   const plans: Plan0[] = mechs.map((m) => {
@@ -386,9 +490,13 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
       // a face for a part with nothing exposed: put its top face against that wall
       primary = { id: "top", kind: "vent", n: [0, 0, 1], tip: [0, 0, m.d], shape: "rect", u: m.w, v: m.h, uAxis: [1, 0, 0], vAxis: [0, 1, 0], protrude: 0, bezel: 0, travel: 0, plugClearance: 0, expose: false, passThrough: false };
     }
-    if (!primary || !face || face === "inside") return { mech: m, ...(placement ? { placement } : {}), Rs: flatRotations(), isFront };
+    if (!primary || !face || face === "inside") return { mech: m, ...(placement ? { placement } : {}), Rs: placement?.on_edge ? edgeRotations(m) : flatRotations(), isFront };
     const target = FACE_DIR[face];
     let cands = ROTATIONS.filter((R) => eqv(apply(R, primary!.n), target));
+    if (placement?.on_edge) {
+      const edge = cands.filter((R) => Math.abs(apply(R, [0, 0, 1])[2]) < 0.5);
+      if (edge.length) cands = edge;
+    }
     const score = (R: Mat3) => {
       const z = apply(R, [0, 0, 1]);
       const y = apply(R, [0, 1, 0]);
@@ -422,6 +530,13 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
   // the smallest case kept (volume, with thickness weighed for a pocket: <= 18 mm comfortable).
   const orders: Plan0[][] = [order];
   const mid0 = order.filter((p) => rank(p) === 1 || rank(p) === 2);
+  // a custom outline scores each packing by the outline it needs (the narrow end of an egg holds less)
+  const polyScore = polySpec ? (placed: Placed[]) => {
+    const needs: Need[] = [];
+    for (const q of placed) for (const x of [q.min[0] - g, q.max[0] + g]) for (const y of [q.min[1] - g, q.max[1] + g]) needs.push({ x, y, inset: 0 });
+    if (!needs.length) return 1;
+    return sizePoly(needs, { ...polySpec, quick: true }).scale;
+  } : undefined;
   if (mid0.length > 1) {
     const head = order.filter((p) => rank(p) === 0);
     const tail = order.filter((p) => rank(p) > 2);
@@ -430,13 +545,51 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     orders.push([...head, ...[...mid0].sort((a, b) => Number(!!b.bound) - Number(!!a.bound) || vol(a.mech) - vol(b.mech)), ...tail]);
   }
   const packs: Packed[] = [];
-  for (const ord of orders)
-    for (let dw = 0; dw <= 30; dw += 3)
-      for (let dh = 0; dh <= 30; dh += 3) {
-        const r = pack(ord, W0 + dw, H0 + dh, g, front, shape);
+  withFastOutline(() => {
+  // a custom outline also packs into the outline itself (below), so fewer rectangles
+  const stepWH = polySpec ? (quick ? 7.5 : 6) : quick ? 6 : 3;
+  for (const ord of orders.slice(0, quick ? 2 : undefined))
+    for (let dw = 0; dw <= 30; dw += stepWH)
+      for (let dh = 0; dh <= 30; dh += stepWH) {
+        const r = pack(ord, W0 + dw, H0 + dh, g, front, shape, polyScore && polySpec ? { score: polyScore, A0: polySpec.A0, B0: polySpec.B0, area: polyAreaNorm(polySpec.poly) } : undefined);
         const key = r.placed.map((p) => `${p.mech.id}:${p.min.map((v) => Math.round(v)).join(",")}:${p.rotation}:${p.facing}`).sort().join("|");
         packs.push({ ...r, score: r.failed.length * 1e9 + r.score, key });
       }
+  // round 7: a custom outline also packs straight into the outline at a few sizes (fixed: the asked
+  // size only), so the parts follow its shape instead of a rectangle
+  if (polySpec && polyScore) {
+    const ok = packs.filter((x) => !x.failed.length);
+    const s0 = ok.length ? Math.min(...ok.slice(0, 40).map((x) => polyScore(x.placed))) : 1;
+    const arcR = (rad: number, delta: number) => (rad <= 0 || delta >= rad ? 0 : rad - Math.sqrt(rad * rad - (rad - Math.max(0, delta)) ** 2));
+    // the rims' round-over (a share of the depth) takes room near the front and back faces: the
+    // depth is estimated (fixed, or 18 mm), then the packing is redone once with the depth it came to
+    const insetFor = (Dest: number) => {
+      const eF = typeof params.edge_radius_front_mm === "number" ? params.edge_radius_front_mm : EDGE_SHARE[shape] * Dest;
+      const eB = typeof params.edge_radius_back_mm === "number" ? params.edge_radius_back_mm : EDGE_SHARE[shape] * Dest;
+      return (z0: number, z1: number, zB?: number) => Math.max(arcR(Math.max(0, eF - t), -z1), zB !== undefined ? arcR(Math.max(0, eB - t), z0 - zB) : 0) + 0.3;
+    };
+    // fixed: the asked size, and a little bigger so a miss says how much bigger it must be
+    const scales = polySpec.fixed ? (quick ? [1, 1.05, 1.12] : [1, 1.03, 1.07, 1.12, 1.2]) : (quick ? [0.88, 1, 1.12, 1.27, 1.45] : [0.8, 0.88, 0.96, 1.05, 1.15, 1.27, 1.4, 1.55]).map((f) => f * s0);
+    for (const sc of scales)
+      for (const ord of orders.slice(0, quick ? 2 : 4)) {
+        const A = polySpec.A0 * sc;
+        const B = polySpec.B0 * sc;
+        const cav: Plan = { kind: "poly", cx: 0, cy: 0, a: A - t, b: B - t, rc: 0, flats: [], poly: polySpec.poly, ctrl: polySpec.ctrl, w0: t };
+        const run = (Dest: number) => pack(ord, 2 * (A - t), 2 * (B - t), g, front, shape, { score: polyScore, A0: polySpec.A0, B0: polySpec.B0, area: polyAreaNorm(polySpec.poly) }, { plan: cav, insetAt: insetFor(Dest) });
+        const D0 = depthFixed ?? 18;
+        // both packings go to the shortlist: the deeper estimate keeps clear of the rims, the first is often thinner
+        const runs = [run(D0)];
+        if (depthFixed === undefined && runs[0]!.placed.length) {
+          const D1 = -Math.min(...runs[0]!.placed.map((q) => q.min[2])) + 2 * t + 1.5;
+          if (D1 > D0 + 1) runs.push(run(D1));
+        }
+        for (const r of runs) {
+          const key = "rg" + r.placed.map((p) => `${p.mech.id}:${p.min.map((v) => Math.round(v)).join(",")}:${p.rotation}:${p.facing}`).sort().join("|");
+          packs.push({ ...r, score: r.failed.length * 1e9 + r.score, key });
+        }
+      }
+  }
+  });
   packs.sort((a, b) => a.score - b.score);
   const seen = new Set<string>();
   const shortlist: Packed[] = [];
@@ -444,7 +597,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     if (seen.has(pk.key)) continue;
     seen.add(pk.key);
     shortlist.push(pk);
-    if (shortlist.length >= 14) break;
+    if (shortlist.length >= (quick ? 6 : 14)) break;
   }
   // also the shallowest packings: a thin case can win on the pocket even with a larger plan
   const depthOf = (pk: Packed) => -Math.min(...pk.placed.map((q) => q.min[2]));
@@ -452,7 +605,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     if (seen.has(pk.key)) continue;
     seen.add(pk.key);
     shortlist.push(pk);
-    if (shortlist.length >= 22) break;
+    if (shortlist.length >= (quick ? 9 : 22)) break;
   }
   // and the most compact contents (bounding box of the packed parts)
   const boxVol = (pk: Packed) => {
@@ -464,7 +617,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     if (seen.has(pk.key)) continue;
     seen.add(pk.key);
     shortlist.push(pk);
-    if (shortlist.length >= 30) break;
+    if (shortlist.length >= (quick ? 12 : 30)) break;
   }
   const baseIssues = issues.splice(0);
   let bestL: Layout | undefined;
@@ -475,7 +628,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     for (const id of pk.failed) iss.push({ id: "fits", ok: false, severity: "error", message: `${id} could not be packed with the others. Why: its exposed feature is pinned to a face where another part already sits. Fix: move it with placements (e.g. {"${id}": {"face": "left"}}) or exclude it.`, parts: [id] });
     const Lc = finish(clone, iss);
     const errs = Lc.issues.filter((i) => i.severity === "error").length;
-    const cost = errs * 1e12 + caseCost(Lc);
+    const cost = errs * 1e12 + overflow(Lc) + caseCost(Lc);
     if (cost < bestCost) {
       bestCost = cost;
       bestL = Lc;
@@ -499,6 +652,22 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
   for (const p of placed) if (p.bound?.face === "back") zBack = Math.min(zBack, tipCase(p)[2] - p.bound.offset);
   zBack = Math.min(zBack, -6);
   const zFront = 0;
+  // ---- round 7: a fixed depth (size_mm.d / depth_mm): the case is exactly that thick, or the stack is reported
+  let fixedCrown: { front: number; back: number } | undefined;
+  let depthMiss: LayoutFit["depthMiss"];
+  if (depthFixed !== undefined) {
+    const lo = [0, 1].map((k) => Math.min(...placed.map((q) => q.min[k]!)));
+    const hi = [0, 1].map((k) => Math.max(...placed.map((q) => q.max[k]!)));
+    const S = polySpec?.fixed ? Math.hypot(polySpec.A0, polySpec.B0) * 0.9 : Math.hypot(hi[0]! - lo[0]!, hi[1]! - lo[1]!) / 2 + g + t;
+    const want = (v: number | "auto") => (v === "auto" ? autoCrown(shape, S) : v);
+    fixedCrown = { front: want(params.dome_mm), back: want(params.dome_back_mm) };
+    const avail = depthFixed - 2 * t - fixedCrown.front - fixedCrown.back;
+    const need = zFront - zBack;
+    if (need > avail + 1e-6) {
+      const deep = [...placed].sort((a, b) => b.max[2] - b.min[2] - (a.max[2] - a.min[2]));
+      depthMiss = { needed_mm: r1(need + 2 * t + fixedCrown.front + fixedCrown.back), available_mm: r1(depthFixed), parts: deep.slice(0, 3).map((q) => q.mech.id) };
+    } else zBack = zFront - avail;
+  }
   const depth = zFront - zBack;
   // side connectors slide (in z) towards the middle of the depth where the room allows: the straight
   // band of the side wall that must hold their openings then sits in the middle, leaving the front
@@ -561,6 +730,10 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
   let rf = shape === "rounded-box" ? 1.2 : EDGE_SHARE[shape] * D;
   // a rounded rectangle's edge fillet cannot be larger than its plan corner radius
   if (shape === "keychain") rf = Math.min(rf, params.corner_radius_mm - 3);
+  let rfB = rf;
+  if (typeof params.edge_radius_front_mm === "number") rf = params.edge_radius_front_mm;
+  if (typeof params.edge_radius_back_mm === "number") rfB = params.edge_radius_back_mm;
+  else if (typeof params.edge_radius_front_mm === "number" && shape === "rounded-box") rfB = rf;
   // straight side band must hold the split lip and every side opening (± 0.6)
   let bandTop = split + 0.6;
   let bandBot = split - lipH - 0.6;
@@ -578,13 +751,16 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
       bandBot = Math.min(bandBot, tip[2] - half - 0.6);
     }
   // front and back edges are rounded separately: a port near the back keeps the front edge round
-  let rfBack = Math.max(0.6, Math.min(rf, bandBot - (zBack - t)));
-  rf = Math.max(0.6, Math.min(rf, zFront + t - bandTop));
+  const asked = { front: rf, back: rfB };
+  let rfBack = rfB < 0.05 ? 0 : Math.max(0.6, Math.min(rfB, bandBot - (zBack - t)));
+  rf = rf < 0.05 ? 0 : Math.max(0.6, Math.min(rf, zFront + t - bandTop));
+  for (const [face, got, want, key] of [["front", rf, asked.front, params.edge_radius_front_mm], ["back", rfBack, asked.back, params.edge_radius_back_mm]] as const)
+    if (typeof key === "number" && got + 0.05 < want) issues.push({ id: "edge-radius", ok: true, severity: "warning", message: `The ${face} edge is rounded ${got.toFixed(1)} mm, not the ${want} mm asked. Why: a side opening (USB, button) or the closure lip needs a straight band of wall there. Fix: move that part to another face with placements, or accept the smaller round-over.` });
   let ri = Math.max(0, rf - t);
   let riBack = Math.max(0, rfBack - t);
 
   // ---- 6. plan sizing
-  const kind: PlanKind = shape === "puck" ? "circle" : shape === "pebble" ? "ellipse" : shape === "pill" ? "stadium" : "rrect";
+  const kind: PlanKind = polySpec ? "poly" : shape === "puck" ? "circle" : shape === "pebble" ? "ellipse" : shape === "pill" ? "stadium" : "rrect";
   const arc = (rad: number, delta: number) => (rad <= 0 || delta >= rad ? 0 : rad - Math.sqrt(rad * rad - (rad - Math.max(0, delta)) ** 2));
   const intrusion = (z0: number, z1: number) => Math.max(arc(ri, zFront - z1), arc(riBack, z0 - zBack));
   const lipIntr = Math.max(0, lip.t + tol - g);
@@ -607,17 +783,17 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
         if (fp.shape === "round") {
           for (let i = 0; i < 32; i++) {
             const a = (i / 32) * Math.PI * 2;
-            needs.push({ x: cx + Math.cos(a) * (fp.r + g), y: cy + Math.sin(a) * (fp.r + g), inset });
+            needs.push({ x: cx + Math.cos(a) * (fp.r + g), y: cy + Math.sin(a) * (fp.r + g), inset, part: p.mech.id });
           }
         } else {
           const e = apply(p.R, [fp.hw, fp.hh, 0]);
           const hx = Math.abs(e[0]);
           const hy = Math.abs(e[1]);
-          for (const sx of [-1, 1]) for (const sy of [-1, 1]) needs.push({ x: cx + sx * hx + sx * (sx > 0 ? pad("right") : pad("left")), y: cy + sy * hy + sy * (sy > 0 ? pad("top") : pad("bottom")), inset });
+          for (const sx of [-1, 1]) for (const sy of [-1, 1]) needs.push({ x: cx + sx * hx + sx * (sx > 0 ? pad("right") : pad("left")), y: cy + sy * hy + sy * (sy > 0 ? pad("top") : pad("bottom")), inset, part: p.mech.id });
         }
       }
     } else {
-      for (const sx of [0, 1]) for (const sy of [0, 1]) needs.push({ x: sx ? p.max[0] + pad("right") : p.min[0] - pad("left"), y: sy ? p.max[1] + pad("top") : p.min[1] - pad("bottom"), inset });
+      for (const sx of [0, 1]) for (const sy of [0, 1]) needs.push({ x: sx ? p.max[0] + pad("right") : p.min[0] - pad("left"), y: sy ? p.max[1] + pad("top") : p.min[1] - pad("bottom"), inset, part: p.mech.id });
     }
     if (side) {
       const tip = tipCase(p);
@@ -629,7 +805,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
         if (side === "bottom") flats.push({ axis: "y", sign: -1, at: tip[1] - o });
       }
       // the feature itself must reach the wall (curved walls: shifted outward below)
-      needs.push({ x: tip[0] + FACE_DIR[side][0] * o, y: tip[1] + FACE_DIR[side][1] * o, inset: 0 });
+      needs.push({ x: tip[0] + FACE_DIR[side][0] * o, y: tip[1] + FACE_DIR[side][1] * o, inset: 0, part: p.mech.id });
     }
   }
   // The flats are the wall there: points on a flat's line must not push the curve past it.
@@ -649,7 +825,30 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     const scr = fp?.mech.features.find((f) => f.kind === "screen");
     if (fp && scr) centerX = toCase(fp, scr.tip)[0];
   }
-  let plan = sizePlan(kind, needs, { ...(center ? { center } : {}), ...(centerX !== undefined ? { centerX } : {}), cornerRadius: cornerCavity });
+  let plan: Plan;
+  let fitScale = 1;
+  const outlineMisses: LayoutFit["outlineMisses"] = [];
+  if (polySpec) {
+    const sp = sizePoly(needs, polySpec);
+    plan = sp.plan;
+    fitScale = sp.scale;
+    if (!polySpec.fixed) {
+      // auto: never under 15 mm across (the smallest case that prints well)
+      const minHalf = Math.min(plan.a, plan.b) + t;
+      if (minHalf < 7.5) plan = { ...plan, a: (plan.a + t) * (7.5 / minHalf) - t, b: (plan.b + t) * (7.5 / minHalf) - t };
+    } else if (fitScale > 1 + 1e-3) {
+      // fixed size: which parts stick out, by how much, and where
+      const by = new Map<string, { short: number; x: number; y: number }>();
+      for (const q of needs) {
+        if (!q.part || contains(plan, q.x, q.y, q.inset)) continue;
+        const short = t + q.inset - polyDistance(plan, q.x, q.y);
+        const cur = by.get(q.part);
+        if (!cur || short > cur.short) by.set(q.part, { short, x: q.x, y: q.y });
+      }
+      for (const [part, m] of by) outlineMisses.push({ part, short_mm: r1(Math.max(0.1, m.short)), side: sideName(m.x - plan.cx, m.y - plan.cy, plan.a, plan.b) });
+      outlineMisses.sort((a, b) => b.short_mm - a.short_mm);
+    }
+  } else plan = sizePlan(kind, needs, { ...(center ? { center } : {}), ...(centerX !== undefined ? { centerX } : {}), cornerRadius: cornerCavity });
   // A box keeps a flat wall at each connector; a curved shape stays curved all round (the
   // connector's board moves out to the wall in step 7 and the opening gets a flat spot face).
   const curved = kind !== "rrect";
@@ -658,12 +857,13 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
   const perSide = new Map<CaseFaceName, number>();
   for (const p of placed) if (p.bound && SIDE_FACES.includes(p.bound.face) && p.bound.feature.kind === "connector") perSide.set(p.bound.face, (perSide.get(p.bound.face) ?? 0) + 1);
   const sideOf = (f: Flat): CaseFaceName => (f.axis === "x" ? (f.sign > 0 ? "right" : "left") : f.sign > 0 ? "top" : "bottom");
-  plan = { ...plan, flats: mergeFlats(curved ? flats.filter((f) => (perSide.get(sideOf(f)) ?? 0) > 1) : flats) };
+  // a custom outline keeps the silhouette that was drawn (no flats): its ports reach through spot faces
+  plan = { ...plan, flats: kind === "poly" ? [] : mergeFlats(curved ? flats.filter((f) => (perSide.get(sideOf(f)) ?? 0) > 1) : flats) };
   // A flat that is outside the curve does nothing; one that cuts too deep is impossible (the parts are inside it by construction).
 
   // ---- 7. side-bound non-connector parts move out until the body (not just the cap) meets the wall
   for (const p of placed) {
-    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || (p.bound.feature.kind === "connector" && (!curved || (perSide.get(p.bound.face) ?? 0) > 1))) continue;
+    if (!p.bound || !SIDE_FACES.includes(p.bound.face) || (p.bound.feature.kind === "connector" && (!curved || (kind !== "poly" && (perSide.get(p.bound.face) ?? 0) > 1)))) continue;
     const n = FACE_DIR[p.bound.face];
     // measured from where the feature leaves the body (a lever / shaft / dome pokes through the wall)
     const pt = p.bound.feature.passThrough ? p.bound.feature.protrude : 0;
@@ -702,11 +902,28 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
       const n = FACE_DIR[p.bound.face];
       const tip = tipCase(p);
       const o = p.bound.offset;
-      if (rayExit(plan, tip[0], tip[1], n[0], n[1]) - o <= 1.2) continue; // a spot face reaches up to here
+      if (rayExit(plan, tip[0], tip[1], n[0], n[1]) - o <= (kind === "poly" ? 1.5 : 1.2)) continue; // a spot face reaches up to here (a drawn outline: as far as a plug can reach at all)
       const side = p.bound.face;
-      late.push(side === "right" ? { axis: "x", sign: 1, at: tip[0] + o } : side === "left" ? { axis: "x", sign: -1, at: tip[0] - o } : side === "top" ? { axis: "y", sign: 1, at: tip[1] + o } : { axis: "y", sign: -1, at: tip[1] - o });
+      const f: Flat = side === "right" ? { axis: "x", sign: 1, at: tip[0] + o } : side === "left" ? { axis: "x", sign: -1, at: tip[0] - o } : side === "top" ? { axis: "y", sign: 1, at: tip[1] + o } : { axis: "y", sign: -1, at: tip[1] - o };
+      // round 7: the flat never cuts into another part's room (a screen near that side needs its
+      // edge round-over clearance); the plug then reaches through a spot face instead
+      for (const q of needs) {
+        if (q.part === p.mech.id) continue;
+        const c = f.axis === "x" ? q.x : q.y;
+        f.at = f.sign > 0 ? Math.max(f.at, c + q.inset) : Math.min(f.at, c - q.inset);
+      }
+      // a flat that would only graze the curve (under 0.6 mm deep) is left out: it makes a sliver the CAD kernel cannot offset
+      const pb = planBounds({ ...plan, flats: [] }, 0);
+      const cut = f.axis === "x" ? (f.sign > 0 ? pb.maxX - f.at : f.at - pb.minX) : f.sign > 0 ? pb.maxY - f.at : f.at - pb.minY;
+      if (cut < 0.6) continue;
+      // a custom outline keeps its drawn silhouette except a local flat (up to 8 mm deep) where a port must reach; the report says so
+      if (kind === "poly" && (cut > 8 || polySpec?.fixed)) continue; // a fixed size stays exactly that size: no flat
+      late.push(f);
     }
-    if (late.length) plan = { ...plan, flats: mergeFlats([...plan.flats, ...late]) };
+    if (late.length) {
+      plan = { ...plan, flats: mergeFlats([...plan.flats, ...late]) };
+      if (kind === "poly") issues.push({ id: "outline", ok: true, severity: "warning", message: `The outline gets a flat on the ${late.map((f) => (f.axis === "x" ? (f.sign > 0 ? "right" : "left") : f.sign > 0 ? "top" : "bottom")).join(" and ")} where a port must reach the wall. Why: the drawn curve keeps the port too far in for a plug. Fix: draw that side fuller or straighter, or move the part to another face with placements.` });
+    }
   }
   // A flat on a round shape gets rounded corners as large as the edge fillet needs (OpenCascade
   // cannot roll a fillet round a tighter corner), as far as the parts beside it allow; the edge
@@ -729,16 +946,18 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
 
   // ---- 8. openings
   const openings: Opening[] = [];
-  const grown = (off: number): Plan => ({ ...plan, a: plan.a + off, b: plan.b + off, rc: plan.rc + off, flats: plan.flats.map((f) => ({ ...f, at: f.at + f.sign * off })) });
-  const outerPlan = grown(t);
+  const outerPlan = growPlan(plan, t);
   // ---- 8a. pebble: domed faces with a flat plateau (window land on the front, bed contact for printing)
   let dome: Layout["dome"] = null;
-  if (shape === "pebble") {
+  const domeAsked = (v: number | "auto") => v === "auto" ? shape === "pebble" || shape === "custom" : v > 0;
+  if (domeAsked(params.dome_mm) || domeAsked(params.dome_back_mm) || (fixedCrown && (fixedCrown.front > 0 || fixedCrown.back > 0))) {
     const rim = outline(outerPlan, 0, 180);
-    const mk = (x: number, y: number, want: number): Dome => {
+    const mk = (x: number, y: number, want: number, face: "front" | "back"): Dome => {
       const S = Math.max(...rim.map(([px, py]) => Math.hypot(px - x, py - y)));
       const Smin = Math.min(...rim.map(([px, py]) => Math.hypot(px - x, py - y)));
-      const crown = Math.max(0.5, Math.min(1.0, 0.02 * S));
+      const v = face === "front" ? params.dome_mm : params.dome_back_mm;
+      const crown = fixedCrown ? fixedCrown[face] : v === "auto" ? autoCrown(shape, S) : v;
+      if (crown <= 0) return { x, y, R: 0, S, plateau: 0, crown: 0 };
       const plateau = Math.min(want, Smin - Math.max(rf, rfBack) - 1.5);
       if (plateau < 2) return { x, y, R: 0, S, plateau: 0, crown: 0 };
       return { x, y, R: domeRadius(S, plateau, crown), S, plateau, crown };
@@ -748,7 +967,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     const sc = fp && scr ? toCase(fp, scr.tip) : undefined;
     const winR = scr ? (scr.shape === "round" ? scr.u / 2 : Math.hypot(scr.u, scr.v) / 2) + 0.3 : 0;
     const smin = Math.min(...rim.map(([px, py]) => Math.hypot(px - plan.cx, py - plan.cy)));
-    dome = { front: sc ? mk(sc[0], sc[1], winR + 2.5) : mk(plan.cx, plan.cy, 0.45 * smin), back: mk(plan.cx, plan.cy, 0.45 * smin) };
+    dome = { front: sc ? mk(sc[0], sc[1], winR + 2.5, "front") : mk(plan.cx, plan.cy, 0.45 * smin, "front"), back: mk(plan.cx, plan.cy, 0.45 * smin, "back") };
     if (!dome.front.crown && !dome.back.crown) dome = null;
   }
   for (const p of placed) {
@@ -826,17 +1045,26 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
           }
           break;
         case "grille": {
+          // a hexagonal field of round holes over the grille's area (a buzzer's 8 mm, a speaker's ~18 mm)
           o.kind = "grille";
           const gd = Math.max(8, f.u);
-          const holes: { at: Vec3; d: number }[] = [{ at, d: 1.5 }];
-          for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * Math.PI * 2;
-            const r = gd / 2 - 1.2;
-            holes.push({ at: [at[0] + (uAxis[0] * Math.cos(a) + vAxis[0] * Math.sin(a)) * r, at[1] + (uAxis[1] * Math.cos(a) + vAxis[1] * Math.sin(a)) * r, at[2] + (uAxis[2] * Math.cos(a) + vAxis[2] * Math.sin(a)) * r], d: 1.5 });
-          }
+          const hd = gd >= 14 ? 1.8 : 1.5;
+          const pitch = hd + 1.3;
+          const rMax = gd / 2 - hd / 2 - 0.2;
+          const holes: { at: Vec3; d: number }[] = [];
+          for (let row = -10; row <= 10; row++)
+            for (let col = -10; col <= 10; col++) {
+              const pu = (col + (row % 2 ? 0.5 : 0)) * pitch;
+              const pv = row * pitch * 0.866;
+              if (Math.hypot(pu, pv) > rMax + 1e-9) continue;
+              holes.push({ at: [at[0] + uAxis[0] * pu + vAxis[0] * pv, at[1] + uAxis[1] * pu + vAxis[1] * pv, at[2] + uAxis[2] * pu + vAxis[2] * pv], d: hd });
+            }
           o.holes = holes;
           o.u = o.v = gd;
           o.shape = "round";
+          // the cut reaches the outer surface over every hole (a domed or curved face is higher off-centre)
+          const depthAt = (h: Vec3) => (face === "front" || face === "back" ? t + domeHeight(dome?.[face], h[0], h[1]) : Math.max(t, rayExit(outerPlan, h[0], h[1], n[0], n[1]) + 1e-6));
+          o.depth = Math.max(o.depth, ...holes.map((h) => depthAt(h.at)));
           break;
         }
         case "switch":
@@ -852,6 +1080,12 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
       openings.push(o);
     }
   }
+
+  // a connector whose plug would not reach (recessed past 2.5 mm) counts against this layout, so
+  // the packer keeps one where it does (the engine re-checks it on the real bodies)
+  for (const o of openings)
+    if (o.kind === "connector" && o.standoff + o.depth > 2.5)
+      issues.push({ id: "connector-access", ok: false, severity: "error", message: `${o.part}.${o.feature}: the plug may not reach (receptacle ${(o.standoff + o.depth).toFixed(1)} mm in). Why: the port sits too far from the ${o.face} wall here. Fix: put it on another face with placements ({"${o.part}": {"face": "${o.face === "bottom" ? "left" : "bottom"}"}}), or a fuller outline on that side.`, parts: [o.part] });
 
   // ---- 9. retention: screen ribs, standoffs, cradle
   const ribs: Rib[] = [];
@@ -972,7 +1206,8 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     const tw = shape === "keychain" ? 14 : 10;
     const th = shape === "keychain" ? 12 : 8;
     const tt = Math.min(3.2, Math.max(2.4, (split - zBack) * 0.9));
-    tab = { x: plan.cx, y: ob.maxY + th / 2 - 2, w: tw, h: th, t: tt, hole: shape === "keychain" ? 5 : 3.5, z0: Math.max(zBack - t, split - 0.3 - tt) }; // just under the split, on the straight band of the back shell
+    const topX = plan.kind === "poly" ? polyOuter(plan, 0).reduce((a, q) => (q[1] > a[1] ? q : a))[0] : plan.cx;
+    tab = { x: topX, y: ob.maxY + th / 2 - 2, w: tw, h: th, t: tt, hole: shape === "keychain" ? 5 : 3.5, z0: Math.max(zBack - t, split - 0.3 - tt) }; // just under the split, on the straight band of the back shell
   }
 
   // ---- 12. finish: centre the outer box on the origin
@@ -1015,8 +1250,31 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     tab.z0 -= c[2];
   }
   const finalPlan: Plan = { ...plan, cx: plan.cx - c[0], cy: plan.cy - c[1], flats: plan.flats.map((f) => ({ ...f, at: f.at - (f.axis === "x" ? c[0] : c[1]) })) };
+  // ---- 13. round 7: the fit report (fixed sizes) and the outline's printability at its real size
+  const fixedFlags = { w: polySpec?.fixed ? sz.w !== undefined || sz.h !== undefined : false, h: polySpec?.fixed ? sz.w !== undefined || sz.h !== undefined : false, d: depthFixed !== undefined };
+  const outerW = outerMax[0] - outerMin[0];
+  const outerH = ob.maxY - ob.minY;
+  const outerD = outerMax[2] - outerMin[2];
+  const grow = Math.max(1, polySpec?.fixed ? fitScale : 1);
+  const fit: LayoutFit = {
+    fits: !outlineMisses.length && !depthMiss && !(polySpec?.fixed && fitScale > 1 + 1e-3),
+    fixed: fixedFlags,
+    needed_mm: { w: r1(outerW * grow), h: r1(outerH * grow), d: r1(depthMiss ? depthMiss.needed_mm : outerD) },
+    ...(fixedFlags.w || fixedFlags.d ? { asked_mm: { ...(fixedFlags.w ? { w: r1(2 * polySpec!.A0), h: r1(2 * polySpec!.B0) } : {}), ...(depthFixed !== undefined ? { d: depthFixed } : {}) } } : {}),
+    scale: Math.round(fitScale * 1e4) / 1e4,
+    outlineMisses,
+    ...(depthMiss ? { depthMiss } : {}),
+  };
+  if (!fit.fits) {
+    const parts = [...outlineMisses.map((m) => m.part), ...(depthMiss?.parts ?? [])];
+    const what: string[] = [];
+    if (outlineMisses.length) what.push(`${outlineMisses.map((m) => `${m.part} sticks out ${m.short_mm} mm at the ${m.side}`).join(", ")} (the outline would have to be ${fit.needed_mm.w} x ${fit.needed_mm.h} mm)`);
+    if (depthMiss) what.push(`the stack is ${depthMiss.needed_mm} mm deep for a ${depthMiss.available_mm} mm case (${depthMiss.parts.join(", ")} are the thickest)`);
+    issues.push({ id: "fits", ok: false, severity: "error", message: `The parts do not fit the asked size: ${what.join("; ")}. Why: the size is fixed (size_mm), so the case does not grow. Fix: swap a part for a smaller one, stand a board on its edge, leave a part outside, or make it bigger (check_fit lists each with the size it gives).`, parts: [...new Set(parts)] });
+  }
+  if (plan.kind === "poly") for (const m of outlineFeatureIssues(polyOuter(finalPlan, 0), t)) issues.push({ id: "outline", ok: false, severity: "warning", message: m });
+  if (plan.kind === "poly" && !polySpec?.fixed && (outerW > 250 || outerH > 250)) issues.push({ id: "size", ok: false, severity: "error", message: `The case would be ${r1(outerW)} x ${r1(outerH)} mm, over 250 mm. Why: this outline is narrow where the parts need room, so it grows a lot to hold them. Fix: draw a fuller outline, or fewer / smaller parts.` });
   const ib = planBounds(finalPlan, 0);
-  const r1 = (v: number) => Math.round(v * 10) / 10;
   return {
     shape,
     params: { ...params, closure },
@@ -1044,6 +1302,8 @@ function layoutOnce(input: LayoutInput, connPerm?: string[]): Layout & { connOrd
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },
     inner: { w: r1(ib.maxX - ib.minX), h: r1(ib.maxY - ib.minY), d: r1(zFront - zBack) },
     issues,
+    fit,
+    ...(po?.notes.length ? { outlineNotes: po.notes } : {}),
   };
   }
 }
@@ -1055,7 +1315,7 @@ export function caseCost(L: Pick<Layout, "outer" | "shape" | "rf" | "rfBack" | "
   let k = 1 + 0.03 * Math.max(0, d - 18) + 0.06 * Math.max(0, d - 22) + 0.02 * Math.max(0, a - 110) + 0.03 * Math.max(0, b - 70);
   // a pebble / pill / puck / keychain with a small edge radius is a slab, not the shape asked for
   const want = EDGE_SHARE[L.shape] * d;
-  if (want > 0) k *= 1 + 0.3 * Math.max(0, 1 - L.rf / want) + 0.15 * Math.max(0, 1 - L.rfBack / want) + 0.25 * L.plan.flats.length;
+  if (want > 0) k *= 1 + 0.3 * Math.max(0, 1 - L.rf / want) + 0.15 * Math.max(0, 1 - L.rfBack / want) + (L.plan.kind === "poly" ? 1.5 : 0.25) * L.plan.flats.length; // a drawn outline keeps its silhouette unless a port needs a flat
   return v * k;
 }
 
@@ -1069,6 +1329,44 @@ function rank(p: Plan0): number {
 
 function vol(m: PartMech): number {
   return m.w * m.h * (m.d + m.keepTop + m.keepBottom);
+}
+
+/** Where a point sits on the outline, in words ("top", "bottom left", ...). */
+function sideName(dx: number, dy: number, a: number, b: number): string {
+  const nx = dx / Math.max(1, a);
+  const ny = dy / Math.max(1, b);
+  const v = ny > 0.4 ? "top" : ny < -0.4 ? "bottom" : "";
+  const h = nx > 0.4 ? "right" : nx < -0.4 ? "left" : "";
+  return [v, h].filter(Boolean).join(" ") || (Math.abs(nx) > Math.abs(ny) ? (nx > 0 ? "right" : "left") : ny > 0 ? "top" : "bottom");
+}
+
+function r1(v: number): number {
+  return Math.round(v * 10) / 10;
+}
+
+function polyAreaNorm(P: [number, number][]): number {
+  let a = 0;
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i]!;
+    const q = P[(i + 1) % P.length]!;
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return Math.abs(a / 2);
+}
+
+/** A part stood on its edge (its board plane front to back): the distinct ways, by box shape. */
+function edgeRotations(m: PartMech): Mat3[] {
+  const out: Mat3[] = [];
+  const seen = new Set<string>();
+  for (const R of ROTATIONS) {
+    if (Math.abs(apply(R, [0, 0, 1])[2]) > 0.5) continue;
+    const b = rotatedBox(m, R);
+    const key = [0, 1, 2].map((k) => (b.max[k]! - b.min[k]!).toFixed(2)).join(",");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(R);
+  }
+  return out.slice(0, 4);
 }
 
 function flatRotations(): Mat3[] {
@@ -1113,7 +1411,79 @@ function isBackGroup(p: Plan0): boolean {
 }
 
 /** Best spot for one part. mode "front": stacks back from the front plane z = 0; "back": stacks up from the back plane zB. */
-function placeOne(pl: Plan0, placed: Placed[], hw: number, hh: number, g: number, mode: "front" | "back", zB = 0): Placed | undefined {
+/**
+ * Round 7: packing inside a real outline (a custom shape). Every candidate box must sit inside the
+ * cavity (the outline inset by the wall, by `g` for wires and by the estimated edge round-over at
+ * its depth), so the narrow end of an egg holds less than its wide end.
+ */
+interface Region {
+  plan: Plan;
+  /** Extra inset at this depth range (front / back edge round-over), mm. */
+  insetAt: (z0: number, z1: number, zB?: number) => number;
+}
+
+/** Outline points of a part's footprint (front view), relative to its box's min corner: rect edges every ~4 mm, discs every 22.5°. */
+function footprintPts(m: PartMech, R: Mat3, bx: Box): [number, number][] {
+  const pts: [number, number][] = [];
+  const edge = (a: [number, number], b: [number, number]) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 4));
+    for (let i = 0; i < n; i++) pts.push([a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n]);
+  };
+  if (Math.abs(apply(R, [0, 0, 1])[2]) > 0.5) {
+    for (const fp of m.footprint) {
+      const c = apply(R, [fp.cx, fp.cy, 0]);
+      const cx = c[0] - bx.min[0];
+      const cy = c[1] - bx.min[1];
+      if (fp.shape === "round") for (let i = 0; i < 16; i++) pts.push([cx + Math.cos((i / 16) * Math.PI * 2) * fp.r, cy + Math.sin((i / 16) * Math.PI * 2) * fp.r]);
+      else {
+        const e = apply(R, [fp.hw, fp.hh, 0]);
+        const hx = Math.abs(e[0]);
+        const hy = Math.abs(e[1]);
+        const q: [number, number][] = [[cx - hx, cy - hy], [cx + hx, cy - hy], [cx + hx, cy + hy], [cx - hx, cy + hy]];
+        for (let i = 0; i < 4; i++) edge(q[i]!, q[(i + 1) % 4]!);
+      }
+    }
+  } else {
+    const sx = bx.max[0] - bx.min[0];
+    const sy = bx.max[1] - bx.min[1];
+    const q: [number, number][] = [[0, 0], [sx, 0], [sx, sy], [0, sy]];
+    for (let i = 0; i < 4; i++) edge(q[i]!, q[(i + 1) % 4]!);
+  }
+  return pts;
+}
+
+function regionHolds(rg: Region, pts: [number, number][], x0: number, y0: number, inset: number): boolean {
+  for (const [px, py] of pts) if (!contains(rg.plan, x0 + px, y0 + py, inset)) return false;
+  return true;
+}
+
+/** Snug position along one axis: the coordinate nearest to the `dir` side where the part fits (or undefined). */
+function snug(rg: Region, pts: [number, number][], axis: 0 | 1, dir: -1 | 1, other: number, sx: number, sy: number, lo: number, hi: number, inset: number): number | undefined {
+  const fits = (v: number) => (axis === 0 ? regionHolds(rg, pts, v, other, inset) : regionHolds(rg, pts, other, v, inset));
+  const span = axis === 0 ? sx : sy;
+  const from = dir < 0 ? lo : hi - span;
+  const to = dir < 0 ? hi - span : lo;
+  const step = (to - from) / Math.max(1, Math.ceil(Math.abs(to - from) / 1.0));
+  if (!Number.isFinite(step) || Math.abs(to - from) < 1e-9) return fits(from) ? from : undefined;
+  let prev = from;
+  for (let v = from, i = 0; i <= Math.ceil(Math.abs(to - from) / 1.0) + 1; i++, v += step) {
+    if (fits(v)) {
+      if (i === 0) return v;
+      let a = prev;
+      let b = v;
+      for (let k = 0; k < 8; k++) {
+        const m = (a + b) / 2;
+        if (fits(m)) b = m;
+        else a = m;
+      }
+      return b;
+    }
+    prev = v;
+  }
+  return undefined;
+}
+
+function placeOne(pl: Plan0, placed: Placed[], hw: number, hh: number, g: number, mode: "front" | "back", zB = 0, rg?: Region): Placed | undefined {
   let bestP: Placed | undefined;
   let bestS = Infinity;
   for (const R of pl.Rs) {
@@ -1122,6 +1492,7 @@ function placeOne(pl: Plan0, placed: Placed[], hw: number, hh: number, g: number
     const sx = bx.max[0] - bx.min[0];
     const sy = bx.max[1] - bx.min[1];
     const sz = bx.max[2] - bx.min[2];
+    const fpts = rg ? footprintPts(pl.mech, R, bx) : [];
     // free coordinates keep a gap to the plan rectangle (the wall, or a connector's flat)
     let xs: number[] = [-hw + g, hw - g - sx, -sx / 2];
     let ys: number[] = [-hh + g, hh - g - sy, -sy / 2];
@@ -1158,19 +1529,49 @@ function placeOne(pl: Plan0, placed: Placed[], hw: number, hh: number, g: number
         if (offY !== undefined) pinned.y = along(1, offY);
       } else if (offX !== undefined) pinned.x = along(0, offX);
     }
+    // inside an outline a side-bound part is not pinned to the bounding box: it goes as far towards
+    // its side as the outline allows (step 7 then takes it out to the wall)
+    const sideDir = rg && bound && SIDE_FACES.includes(bound.face) ? bound.face : undefined;
+    if (sideDir === "left" || sideDir === "right") delete pinned.x;
+    if (sideDir === "top" || sideDir === "bottom") delete pinned.y;
+    // the screen of a custom outline stays on the centre line but may move up or down to where the outline is wide
+    if (rg && pl.isFront && pl.placement?.y_mm === undefined) delete pinned.y;
     if (pinned.x !== undefined) xs = [pinned.x];
     if (pinned.y !== undefined) ys = [pinned.y];
     if (pinned.z !== undefined) zs = [pinned.z];
-    for (const x0 of xs)
-      for (const y0 of ys)
-        for (const z of zs) {
-          if (pinned.x === undefined && (x0 < -hw + g - 1e-6 || x0 + sx > hw - g + 1e-6)) continue;
-          if (pinned.y === undefined && (y0 < -hh + g - 1e-6 || y0 + sy > hh - g + 1e-6)) continue;
+    for (const z of zs) {
+      const zr: [number, number] = mode === "front" ? [z - sz, z] : [z, z + sz];
+      const inset = rg ? g + rg.insetAt(zr[0], zr[1], mode === "back" ? zB : undefined) : 0;
+      let pairs: [number, number][] = [];
+      if (!rg) for (const x0 of xs) for (const y0 of ys) pairs.push([x0, y0]);
+      else if (sideDir === "bottom" || sideDir === "top") for (const x0 of xs) {
+        const y = snug(rg, fpts, 1, sideDir === "bottom" ? -1 : 1, x0, sx, sy, -hh, hh, inset);
+        if (y !== undefined) pairs.push([x0, y]);
+      }
+      else if (sideDir === "left" || sideDir === "right") for (const y0 of ys) {
+        const x = snug(rg, fpts, 0, sideDir === "left" ? -1 : 1, y0, sx, sy, -hw, hw, inset);
+        if (x !== undefined) pairs.push([x, y0]);
+      }
+      else {
+        for (const x0 of xs) for (const y0 of ys) pairs.push([x0, y0]);
+        if (pinned.x === undefined) for (const y0 of ys) for (const d of [-1, 1] as const) {
+          const x = snug(rg, fpts, 0, d, y0, sx, sy, -hw, hw, inset);
+          if (x !== undefined) pairs.push([x, y0]);
+        }
+        if (pinned.y === undefined) for (const x0 of xs) for (const d of [-1, 1] as const) {
+          const y = snug(rg, fpts, 1, d, x0, sx, sy, -hh, hh, inset);
+          if (y !== undefined) pairs.push([x0, y]);
+        }
+      }
+      for (const [x0, y0] of pairs) {
+          if (!rg && pinned.x === undefined && (x0 < -hw + g - 1e-6 || x0 + sx > hw - g + 1e-6)) continue;
+          if (!rg && pinned.y === undefined && (y0 < -hh + g - 1e-6 || y0 + sy > hh - g + 1e-6)) continue;
           const min: Vec3 = mode === "front" ? [x0, y0, z - sz] : [x0, y0, z];
           const max: Vec3 = mode === "front" ? [x0 + sx, y0 + sy, z] : [x0 + sx, y0 + sy, z + sz];
           if (mode === "back" && max[2] > 0) continue;
           const cand: Box = { min, max };
           if (placed.some((q) => overlap(q, cand, g - 1e-6))) continue;
+          if (rg && !regionHolds(rg, fpts, x0, y0, inset)) continue;
           const s = mode === "front" ? -Math.min(min[2], ...placed.map((q) => q.min[2])) * 1000 - max[2] * 10 + Math.abs(x0 + sx / 2) * 0.1 + Math.abs(y0 + sy / 2) * 0.1 : max[2] * 100 + Math.abs(x0 + sx / 2) * 0.1 + Math.abs(y0 + sy / 2) * 0.1;
           if (s < bestS) {
             bestS = s;
@@ -1179,18 +1580,19 @@ function placeOne(pl: Plan0, placed: Placed[], hw: number, hh: number, g: number
             bestP = { mech: pl.mech, R, T, facing: facingOf(R), rotation: rotationDeg(R), layer: 0, min, max, bodyMin: add(body.min), bodyMax: add(body.max), ...(bound ? { bound } : {}) };
           }
         }
+    }
   }
   return bestP;
 }
 
 /** Front stack (screen, boards, side parts) from the front plane, then the back group (cells, back grilles) from the back wall, as shallow as both allow. */
-function pack(order: Plan0[], W: number, H: number, g: number, front: Plan0 | undefined, shape: CaseShape): { placed: Placed[]; score: number; failed: string[] } {
+function pack(order: Plan0[], W: number, H: number, g: number, front: Plan0 | undefined, shape: CaseShape, poly?: { score: (placed: Placed[]) => number; A0: number; B0: number; area: number }, rg?: Region): { placed: Placed[]; score: number; failed: string[] } {
   const placed: Placed[] = [];
   const failed: string[] = [];
   const hw = W / 2;
   const hh = H / 2;
   for (const pl of order.filter((p) => !isBackGroup(p))) {
-    const p = placeOne(pl, placed, hw, hh, g, "front");
+    const p = placeOne(pl, placed, hw, hh, g, "front", 0, rg);
     if (p) placed.push(p);
     else failed.push(pl.mech.id);
   }
@@ -1198,11 +1600,17 @@ function pack(order: Plan0[], W: number, H: number, g: number, front: Plan0 | un
   if (back.length) {
     const depthA = placed.length ? -Math.min(...placed.map((q) => q.min[2])) : 0;
     let done = false;
-    for (let D = Math.max(depthA, 4); D <= depthA + 60 && !done; D += 0.5) {
+    // inside an outline a back part that does not fit even alone behind everything fails at once
+    if (rg) for (const pl of back) if (!placeOne(pl, [], hw, hh, g, "back", -(depthA + 60), rg)) done = true;
+    if (done) {
+      failed.push(...back.map((p) => p.mech.id));
+      back.length = 0;
+    }
+    for (let D = Math.max(depthA, 4); D <= depthA + 60 && !done; D += rg ? 1 : 0.5) {
       const trial: Placed[] = [];
       let ok = true;
       for (const pl of back) {
-        const p = placeOne(pl, [...placed, ...trial], hw, hh, g, "back", -D);
+        const p = placeOne(pl, [...placed, ...trial], hw, hh, g, "back", -D, rg);
         if (!p) {
           ok = false;
           break;
@@ -1232,12 +1640,18 @@ function pack(order: Plan0[], W: number, H: number, g: number, front: Plan0 | un
   const h = maxV[1] - minV[1] + 2 * g;
   const d = maxV[2] - minV[2] + 2;
   const hx = Math.max(Math.abs(minV[0]), Math.abs(maxV[0])) + g;
-  const area = shape === "puck" ? Math.PI * rMax * rMax : shape === "pebble" ? 2 * Math.PI * hx * (h / 2) * 0.8 : shape === "pill" ? w * h * 0.95 : w * h;
+  const ps = poly && placed.length ? poly.score(placed) : 1;
+  const area = poly ? poly.area * poly.A0 * poly.B0 * ps * ps : shape === "puck" ? Math.PI * rMax * rMax : shape === "pebble" ? 2 * Math.PI * hx * (h / 2) * 0.8 : shape === "pill" ? w * h * 0.95 : w * h;
   // estimated outer size, to prefer layouts that fit a pocket (110 x 70 x 30 mm)
-  const ow = (shape === "puck" ? 2 * rMax : shape === "pebble" ? 2 * hx * 1.2 : w) + 3.2;
-  const oh = (shape === "puck" ? 2 * rMax : shape === "pebble" ? h * 1.2 : h) + 3.2;
+  const ow = (poly ? 2 * poly.A0 * ps : shape === "puck" ? 2 * rMax : shape === "pebble" ? 2 * hx * 1.2 : w) + 3.2;
+  const oh = (poly ? 2 * poly.B0 * ps : shape === "puck" ? 2 * rMax : shape === "pebble" ? h * 1.2 : h) + 3.2;
   const od = d + 3.2;
   const pocket = Math.max(Math.min(ow, oh) / 70, Math.max(ow, oh) / 110, od / 30);
-  const score = area * d * (pocket > 1 ? pocket : 1) + Math.max(w, h) * 5;
+  let score = area * d * (pocket > 1 ? pocket : 1) + Math.max(w, h) * 5;
+  if (poly) {
+    // a custom outline: weigh thickness like caseCost (a thinner, larger egg can beat a thick one)
+    const [a, b, c] = [ow, oh, od + 2].sort((x, y) => y - x) as [number, number, number];
+    score = area * (od + 2) * (1 + 0.03 * Math.max(0, c - 18) + 0.06 * Math.max(0, c - 22) + 0.02 * Math.max(0, a - 110) + 0.03 * Math.max(0, b - 70));
+  }
   return { placed, score, failed };
 }
