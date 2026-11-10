@@ -1,22 +1,22 @@
 # Printing the case: Pocket Muse
 
-Shape **puck**, outer 63.1 x 55.2 x 32 mm, wall 1.6 mm, process **fdm** (PLA), clearances 0.2 mm.
+Shape **puck**, outer 72.7 x 72.7 x 25 mm, wall 1.6 mm, process **fdm** (PLA), clearances 0.2 mm.
 
 ## Bodies
 
 | File | Face on the bed | Supports | Notes |
 | --- | --- | --- | --- |
-| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 346 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
-| stl/back.stl | back | no | back face on the bed, open side up (about 158 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
-| stl/cap-pet.stl | flat | no | print standing on its flange, 0.12 mm layers |
+| stl/front.stl | front | no | front face on the bed (the window side down), open side up (about 1333 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
+| stl/back.stl | back | no | back face on the bed, open side up (about 493 mm² of the rounded edge overhangs more than 45° near the bed: use a brim; supports only if the edge sags) |
+| stl/cap-pet.stl | flat | no | standing on its flange, 0.12 mm layers |
 
-`case.3mf` has every body, named and coloured, ready for a slicer (PrusaSlicer, Bambu Studio, Cura). The STL / 3MF / STEP files are in the case frame (origin at the centre of the outer box); the slicer lays each body flat on the face named above.
+Every STL is already in its print orientation: the face named above lies flat on z = 0, centred on x = y = 0, so it drops onto the bed as it is (no rotating in the slicer). `case.3mf` is one build plate with every body in that orientation, side by side 6 mm apart, named and coloured (PrusaSlicer, Bambu Studio, Cura). The STEP files stay in the case frame (origin at the centre of the outer box, +z out of the front) and `step/assembly.step` is the assembled case with the parts, for CAD and factories.
 
 ## Settings
 
 - Nozzle 0.4 mm, layer 0.16 to 0.2 mm, 4 perimeters (walls print solid), 20 % gyroid infill, 5 top / bottom layers.
-- Each shell prints open side up on its outer face: no supports needed except where PRINT.md says.
-- Brim 3 mm on rounded shapes (small first-layer footprint). First layer slow (20 mm/s). Clearances in this file: 0.2 mm.
+- Each shell prints open side up on its outer face (a domed face stands on its flat land / pad): no supports needed except where this file says.
+- Brim 3 mm on rounded shapes (the rounded edge leaves a small first-layer footprint). First layer slow (20 mm/s). Clearances in this file: 0.2 mm.
 
 ## Material and finish
 

@@ -49,12 +49,16 @@ Check it: `pnpm jumper check -p examples/agent-built/claude-pocket-muse`,
 
 ## Its case (round 6, case track)
 
-`case/` is the pebble case `design_case {"shape": "pebble"}` made for this circuit: **65.9 × 73.6 ×
-24.7 mm, "fits"** a pocket (≤ 110 × 70 × 30 mm by its longest sides), 1.6 mm wall, snap closure, the
-round screen behind a window, a cap for the pet button, the switch lever through the top wall and the
-XIAO's USB-C reachable from outside. Every check passes (watertight, no part touching the shell,
-wall, size, screen window, button travel, connector access, printable). `case/variants/puck/` is a
-round variant to compare (63.1 × 55.2 × 32 mm, "tight": 32 mm deep).
+`case/` is the pebble case `design_case {"shape": "pebble"}` made for this circuit (regenerated in
+round 6b): **70.7 × 94.3 × 19.6 mm, 97 cm³, "tight"** for a pocket (19.6 mm thick: up to 18 mm is
+comfortable, up to 22 tight). It is rounded in 3D all round (6 mm front edge, 2.7 mm back edge),
+both faces domed about 1 mm with a flat land round the window and a flat pad on the back. The
+charger's USB-C is on the bottom, the XIAO's on the left, the pet button's cap on the right, the
+switch lever through the top, the buzzer grille on the back. Every check passes (watertight, no
+part touching the shell, wall, size, screen window, button travel, connector access, printable).
+`case/variants/puck/` is a round variant to compare (72.7 × 72.7 × 25 mm, "bulky": 25 mm thick).
+The STLs come in print orientation (each shell on its flat face) and `case.3mf` is a laid-out
+build plate.
 
 Files: `stl/` (front, back, the button cap), `case.3mf`, `step/`, `renders/`, `drawing/` (A3, SVG
 and PDF), `PRINT.md`. `jumper export_manufacturing -p <a copy>` writes the factory pack (35 files,

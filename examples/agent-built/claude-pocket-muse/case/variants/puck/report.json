@@ -15,25 +15,26 @@
     }
   },
   "size_mm": {
-    "w": 63.1,
-    "h": 55.2,
-    "d": 32
+    "w": 72.7,
+    "h": 72.7,
+    "d": 25
   },
   "inner_mm": {
-    "w": 59.9,
-    "h": 52,
-    "d": 28.8
+    "w": 69.5,
+    "h": 69.5,
+    "d": 21.8
   },
   "wall_mm": 1.6,
-  "mass_g": 20.4,
-  "pocket": "tight",
+  "mass_g": 22.2,
+  "volume_cm3": 98.4,
+  "pocket": "no",
   "ok": true,
   "checks": [
     {
       "id": "fits",
       "ok": true,
       "severity": "info",
-      "message": "All 9 parts fit in 59.9 x 52 x 28.8 mm inside with 1.5 mm of wiring room around each."
+      "message": "All 9 parts fit in 69.5 x 69.5 x 21.8 mm inside with 1.5 mm of wiring room around each."
     },
     {
       "id": "watertight",
@@ -51,13 +52,13 @@
       "id": "min-wall",
       "ok": true,
       "severity": "info",
-      "message": "Wall 1.57 mm measured between the outer and inner surfaces, 1.20 mm at the snap groove (minimum 1.2 mm)."
+      "message": "Wall 1.60 mm measured between the outer and inner surfaces, 1.20 mm at the snap groove (minimum 1.2 mm)."
     },
     {
       "id": "size-match",
       "ok": true,
       "severity": "info",
-      "message": "Printed bodies match the layout within 0.03 mm (limit 0.1)."
+      "message": "Printed bodies match the layout within 0.04 mm (limit 0.1)."
     },
     {
       "id": "screen-window",
@@ -81,31 +82,31 @@
       "id": "connector-access",
       "ok": true,
       "severity": "info",
-      "message": "chg.usb: 12.0 x 6.3 mm opening on the bottom, receptacle 1.8 mm inside the outer surface (plug overmold clearance included).",
+      "message": "xiao.usb: 12.0 x 6.2 mm opening on the bottom, receptacle 1.9 mm inside the outer surface (plug overmold clearance included).",
       "parts": [
-        "chg"
+        "xiao"
       ]
     },
     {
       "id": "connector-access",
       "ok": true,
       "severity": "info",
-      "message": "xiao.usb: 12.0 x 6.2 mm opening on the bottom, receptacle 1.8 mm inside the outer surface (plug overmold clearance included).",
+      "message": "chg.usb: 12.0 x 6.3 mm opening on the left, receptacle 2.5 mm inside the outer surface (plug overmold clearance included).",
       "parts": [
-        "xiao"
+        "chg"
       ]
     },
     {
       "id": "printable",
       "ok": true,
       "severity": "warning",
-      "message": "Each shell prints on its outer face with no supports; front: 346 mm² of the rounded edge overhangs > 45° near the bed, back: 158 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
+      "message": "Each shell prints on its outer face with no supports; front: 1333 mm² of the rounded edge overhangs > 45° near the bed, back: 493 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
     },
     {
       "id": "pocket",
-      "ok": true,
-      "severity": "info",
-      "message": "63.1 x 55.2 x 32 mm: tight for a pocket (limit 110 x 70 x 30 mm)."
+      "ok": false,
+      "severity": "warning",
+      "message": "72.7 x 72.7 x 25 mm, 98 cm³: bulky for a pocket: 25 mm thick (over 22 mm) and 72.7 x 72.7 mm across (a pocket takes about 110 x 70 mm). Thinner: exclude a part that need not be inside, or try another shape (each packs differently)."
     }
   ],
   "placed": [
@@ -114,50 +115,33 @@
       "type": "gc9a01-round-tft",
       "min": [
         -18,
-        -21.78,
-        8.4
+        -17.8,
+        4.9
       ],
       "max": [
         18,
-        19.22,
-        14.4
+        23.2,
+        10.9
       ],
       "rotation": 0,
       "facing": "front",
       "layer": 0
     },
     {
-      "id": "chg",
-      "type": "tp4056-charger",
+      "id": "pet",
+      "type": "pushbutton",
       "min": [
-        -8.75,
-        -24.98,
-        0.4
+        27.07,
+        -3,
+        -3
       ],
       "max": [
-        8.75,
-        3.02,
-        6.9
+        33.57,
+        3,
+        3
       ],
-      "rotation": 90,
-      "facing": "front",
-      "layer": 1
-    },
-    {
-      "id": "xiao",
-      "type": "seeed-xiao-rp2040",
-      "min": [
-        -8.75,
-        -24.78,
-        -6.6
-      ],
-      "max": [
-        8.75,
-        -3.78,
-        -1.1
-      ],
-      "rotation": 90,
-      "facing": "front",
+      "rotation": 0,
+      "facing": "right",
       "layer": 2
     },
     {
@@ -165,102 +149,119 @@
       "type": "slide-switch",
       "min": [
         -4.3,
-        19.02,
-        3.3
+        27.85,
+        -1.8
       ],
       "max": [
         4.3,
-        29.52,
-        6.9
+        38.35,
+        1.8
       ],
       "rotation": 0,
       "facing": "top",
+      "layer": 4
+    },
+    {
+      "id": "xiao",
+      "type": "seeed-xiao-rp2040",
+      "min": [
+        -8.75,
+        -33.5,
+        -2.1
+      ],
+      "max": [
+        8.75,
+        -12.5,
+        3.4
+      ],
+      "rotation": 90,
+      "facing": "front",
       "layer": 1
     },
     {
-      "id": "pet",
-      "type": "pushbutton",
+      "id": "chg",
+      "type": "tp4056-charger",
       "min": [
-        22.27,
-        -6.98,
-        0.9
+        -32.58,
+        -5.8,
+        -3.6
       ],
       "max": [
-        28.77,
-        -0.98,
-        6.9
-      ],
-      "rotation": 0,
-      "facing": "right",
-      "layer": 1
-    },
-    {
-      "id": "imu",
-      "type": "mpu6050",
-      "min": [
-        -10.5,
-        -2.28,
-        -6.1
-      ],
-      "max": [
-        10.5,
-        13.72,
-        -1.1
+        -4.58,
+        11.7,
+        2.9
       ],
       "rotation": 0,
       "facing": "front",
-      "layer": 2
+      "layer": 3
     },
     {
       "id": "d1",
       "type": "schottky-diode",
       "min": [
-        19.5,
-        -6.58,
-        11.2
+        -2.6,
+        -22,
+        7.7
       ],
       "max": [
-        22.2,
-        -1.38,
-        14.4
+        2.6,
+        -19.3,
+        10.9
       ],
-      "rotation": 90,
+      "rotation": 0,
       "facing": "front",
       "layer": 0
+    },
+    {
+      "id": "imu",
+      "type": "mpu6050",
+      "min": [
+        2,
+        -5.8,
+        -1.6
+      ],
+      "max": [
+        23,
+        10.2,
+        3.4
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 1
     },
     {
       "id": "squeak",
       "type": "passive-buzzer",
       "min": [
-        10.25,
-        -15.78,
-        -14.2
+        5.8,
+        11.7,
+        -10.7
       ],
       "max": [
-        22.25,
-        -3.78,
-        -2.7
+        17.8,
+        23.7,
+        0.8
       ],
       "rotation": 180,
       "facing": "back",
-      "layer": 3
+      "layer": 5
     },
     {
       "id": "bat",
       "type": "lipo-battery",
       "min": [
-        -21.25,
-        -21.48,
-        -14.1
+        -17.5,
+        -19.8,
+        -10.6
       ],
       "max": [
-        8.75,
-        13.52,
-        -8.6
+        17.5,
+        10.2,
+        -5.1
       ],
-      "rotation": 90,
+      "rotation": 0,
       "facing": "front",
-      "layer": 4
+      "layer": 6
     }
   ],
   "files": [
@@ -268,8 +269,8 @@
       "path": "stl/front.stl",
       "kind": "stl",
       "body": "front",
-      "bytes": 371984,
-      "sha256": "7902ade76fdc8f862d4a63b3fb18eef9fd79cc873c0db17a4bb443b4c975e73d",
+      "bytes": 426084,
+      "sha256": "12971b6c8c258c1ab0b98068aa2d2c027c283a96d4201bf82c3a9375571f80ec",
       "print": {
         "face_down": "front",
         "supports": false,
@@ -280,8 +281,8 @@
       "path": "stl/back.stl",
       "kind": "stl",
       "body": "back",
-      "bytes": 372784,
-      "sha256": "6b9ad3d58ccd1b4f8e6a7bb1063c1a2c18a891cff7481ed2b39baffdc2174642",
+      "bytes": 388784,
+      "sha256": "2bafe0cc5447d4d19d872d3621d73adb6096c7d511b29561cbc3ead8c31b7326",
       "print": {
         "face_down": "back",
         "supports": false,
@@ -293,92 +294,92 @@
       "kind": "stl",
       "body": "cap-pet",
       "bytes": 16684,
-      "sha256": "dfd13694e2cc7d0cbc5dcb0da6d8048dbfba6ee34e4e3d385610746bcdb6e040",
+      "sha256": "3248a1f25c6b65701cf108e4ad144df52eb3856eaee476ce6df55cdbef31a912",
       "print": {
         "face_down": "flat",
         "supports": false,
-        "note": "print standing on its flange, 0.12 mm layers"
+        "note": "standing on its flange, 0.12 mm layers"
       }
     },
     {
       "path": "case.3mf",
       "kind": "3mf",
       "body": "all",
-      "bytes": 163627,
-      "sha256": "22139537160933b551f32d4e456ed80e56ddcabcba59818e82b563727d5ed8f4"
+      "bytes": 183379,
+      "sha256": "d22a35328622d0e5b78c15cdf9f11007848cd11b9ef303a40ed872c1f7596352"
     },
     {
       "path": "step/assembly.step",
       "kind": "step",
       "body": "assembly",
-      "bytes": 812639,
-      "sha256": "cf7c3dd5ca093f4e7e88b22854116692ee59ff89f1c01540f37acfd093cdc81c"
+      "bytes": 737121,
+      "sha256": "60db60daa27aa503307bf09dcc210b3be49dccdaa009e6fa42de890196b2e61c"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
-      "bytes": 384411,
-      "sha256": "6c9139324c5ac86dbd2271eee2de1f74372addccbb1903d012f5b8fcafb54c44"
+      "bytes": 417947,
+      "sha256": "d84018a1b233ff5d694ad63a5935eb1e79b463cf9518a294d0c6aa5d0f96c8b0"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
-      "bytes": 252492,
-      "sha256": "31b255762a7cb7e7e459e42f9a653dfc0e7051b42e9927753a624f13e67d82fb"
+      "bytes": 140192,
+      "sha256": "6797b7d31b428bf61718deea005d9b38e3628ea9c40a6a60c425faae6e38e810"
     },
     {
       "path": "renders/front.png",
       "kind": "png",
       "body": "render-front",
-      "bytes": 52794,
-      "sha256": "40f8f59291ef90c0cab6e56947e7fb2b292ea0733c78cd3888719bda2f76de5d"
+      "bytes": 88578,
+      "sha256": "7e76abe7eed20ca32576cdd7e1c7075ceddefce61d2bcd012564adf9faa2b013"
     },
     {
       "path": "renders/back.png",
       "kind": "png",
       "body": "render-back",
-      "bytes": 49350,
-      "sha256": "76570b2b851134b4b7a571f234301095be51f472b0a789aa5136c93491852caa"
+      "bytes": 83436,
+      "sha256": "589a192655b4b46d0788d127eea6f4c8c771a678943376c9e86e8ce7a501bb7a"
     },
     {
       "path": "renders/exploded.png",
       "kind": "png",
       "body": "render-exploded",
-      "bytes": 62087,
-      "sha256": "8d84d0faa7859e81a41115f0bc01e0c8919480d760a21b02e44777462ad00c78"
+      "bytes": 109276,
+      "sha256": "054aba3397fff38963d86c7f2fe8dd54a1c52ff7dbe710619993914a35b6a23a"
     },
     {
       "path": "renders/inside.png",
       "kind": "png",
       "body": "render-inside",
-      "bytes": 94542,
-      "sha256": "27a9999de59e956f624e68b2b80af685e61a4628e1a63d4c61df4248a0249c05"
+      "bytes": 115638,
+      "sha256": "e3455aa0b257b3e116915719f4d96d002183a67924127b4f4a1b95375efb11dc"
     },
     {
       "path": "drawing/drawing.svg",
       "kind": "svg",
       "body": "drawing",
-      "bytes": 11242,
-      "sha256": "93c1091913444e379f182e1db2a6a2768e030146d1f21443c019d9a5ec8d4214"
+      "bytes": 14414,
+      "sha256": "223bb16f1e981e91116d38bb4ab4f44ffd1cdbd83aff1cd1eb0a1d69fe84139d"
     },
     {
       "path": "drawing/drawing.pdf",
       "kind": "pdf",
       "body": "drawing",
-      "bytes": 85256,
-      "sha256": "d05bb0856df35f05da60738d6f5da3fd967b16d554777650bd84715468d02519"
+      "bytes": 85743,
+      "sha256": "d4bf42a2cad13ab6a893d11dfa8523f67431ef07ee2159fdf2432cac6523bfbe"
     },
     {
       "path": "PRINT.md",
       "kind": "md",
       "body": "PRINT",
-      "bytes": 2749,
-      "sha256": "a8b66adc517949dff26367057a5ab5f84901bded9b9dc30bc5a2db6f84adf54d"
+      "bytes": 3073,
+      "sha256": "93dce15a64c61f8f14acfae7a3d3e607219b4cfccb78cbdf8f8ad47f032f0a30"
     }
   ],
-  "hash": "5659dc0a1c822083",
+  "hash": "8a331c1193ad9bb4",
   "notes": [
     "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
     "Sizes come from the parts' mechanical data (datasheets or typical modules); clone modules can differ by about 1 mm.",

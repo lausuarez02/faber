@@ -78,9 +78,11 @@ export function pocketText(s: { w: number; h: number; d: number }): string {
   const v = pocketVerdict(s);
   const [a, b, c] = [s.w, s.h, s.d].sort((x, y) => y - x) as [number, number, number];
   if (v === "fits") return `comfortable in a pocket (${c} mm thick; up to 18 mm feels fine)`;
-  const why = c > 22 ? `${c} mm thick (over 22 mm)` : c > 18 ? `${c} mm thick (18 to 22 mm)` : `${a} x ${b} mm across (a pocket takes about 110 x 70 mm)`;
+  const wide = a > 110 || b > 70 ? `${a} x ${b} mm across (a pocket takes about 110 x 70 mm)` : "";
+  const thick = c > 22 ? `${c} mm thick (over 22 mm)` : c > 18 ? `${c} mm thick (18 to 22 mm)` : "";
+  const why = [thick, wide].filter(Boolean).join(" and ");
   if (v === "tight") return `tight in a pocket: ${why}`;
-  return `bulky for a pocket: ${c > 22 ? why : `${a} x ${b} mm across, ${c} mm thick`}`;
+  return `bulky for a pocket: ${why}`;
 }
 
 export async function generateCase(project: Project, specOf: SpecOf, opts: GenerateOptions = {}): Promise<Generated> {

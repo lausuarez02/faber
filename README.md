@@ -83,8 +83,8 @@ folder and zip a 3D printer or a factory can work from:
 
 The Pocket Muse ([example](examples/agent-built/claude-pocket-muse/)) runs from its LiPo through a
 slide switch and a Schottky diode (USB unplugged, 11/11 tests, 0 design errors), and its pebble case
-measures 65.9 × 73.6 × 24.7 mm ("fits" a pocket); a puck variant (63.1 × 55.2 × 32 mm) sits next
-to it. In the app, the **Case** button shows the case in 3D with see-through and explode sliders,
+measures 70.7 × 94.3 × 19.6 mm (97 cm³, rounded in 3D with domed faces; "tight" for a pocket at
+19.6 mm thick); a puck variant (72.7 × 72.7 × 25 mm) sits next to it. In the app, the **Case** button shows the case in 3D with see-through and explode sliders,
 the checks, the downloads and **Factory pack (zip)**. The print, the plastic and the hand feel are
 not tested. Guide: [docs/enclosures.md](docs/enclosures.md); power: [docs/power.md](docs/power.md).
 
