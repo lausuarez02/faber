@@ -263,7 +263,11 @@ export function CaseView({ onClose }: { onClose(): void }) {
               </button>
               {pack ? (
                 <div className="cv-pack" data-testid="case-pack-result">
-                  {pack.url ? <a href={pack.url}>Download again</a> : null}
+                  {pack.url ? (
+                    <div>
+                      <a href={pack.url}>Download the zip again</a>
+                    </div>
+                  ) : null}
                   {pack.missing.length ? <ul>{pack.missing.map((m) => <li key={m.item}>Missing {m.item}: {m.why}. Fix: {m.fix}</li>)}</ul> : <span> Everything is in it.</span>}
                 </div>
               ) : null}

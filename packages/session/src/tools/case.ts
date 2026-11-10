@@ -279,7 +279,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     report = st.report;
     for (const m of st.missing) missing.push({ ...m, item: `enclosure/${m.item}` });
     copyTree(join(s.dir, "case"), join(root, "enclosure"), (rel) => rel.startsWith("variants") || rel.startsWith("."));
-    if (existsSync(join(root, "enclosure", "drawing")) && !existsSync(join(root, "enclosure", "drawing", "drawing.pdf")) && !st.missing.length) missing.push({ item: "enclosure/drawing/drawing.pdf", why: "the case was generated without Chromium", fix: "pnpm --filter @jumper/web exec playwright install chromium, then design_case again" });
+    if (existsSync(join(root, "enclosure", "drawing")) && !existsSync(join(root, "enclosure", "drawing", "drawing.pdf")) && !st.missing.length) missing.push({ item: "enclosure/drawing/drawing.pdf", why: "no PDF was printed when the case was generated (Playwright's Chromium was not available, or JUMPER_CASE_PDF=0)", fix: "pnpm --filter @jumper/web exec playwright install chromium, then design_case again (drawing.svg has the same drawing)" });
     const { layoutCase } = await import("@jumper/enclosure");
     const L = layoutCase({ parts: project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: project.enclosure });
     positions = pinPositions(L.placed, (t) => reg.get(t)?.spec);

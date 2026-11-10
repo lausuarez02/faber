@@ -139,6 +139,9 @@ export function PhoneTopActions() {
             <MenuItem icon={Presentation} onSelect={() => ui().setDevice(true)} testId="phone-device">
               Device view
             </MenuItem>
+            <MenuItem icon={Box} onSelect={() => (close(), useCase.getState().setOpen(true))} testId="phone-case">
+              Case {/* round 6 case */}
+            </MenuItem>
             <div className="menu-sep" />
             <MenuItem icon={Plug} onSelect={() => ui().setPopover("mcp")} testId="phone-install-mcp">
               Install MCP
