@@ -51,7 +51,7 @@ describe("check_fit and custom outlines", () => {
     expect(withPreview.shape).toBe("custom"); // an outline alone means shape "custom"
     expect(withPreview.preview.outline.length).toBeGreaterThan(50);
     expect(withPreview.preview.parts.length).toBeGreaterThan(3);
-  });
+  }, 60_000); // five fit tests: the CPU time of each is what is checked; the wall clock waits for a busy machine
 
   it("a fixed size that is too small: misses, suggestions with the calls that make them, and design_case saves nothing", async () => {
     const r = await call("check_fit", { shape: "custom", outline: EGG, size_mm: { w: 44, h: 57 } });
