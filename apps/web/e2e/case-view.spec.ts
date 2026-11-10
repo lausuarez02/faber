@@ -46,6 +46,18 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
   };
 }
 
+/** A fresh JUMPER_HOME lands on the Projects page (round 6 switch): go back to the canvas. */
+async function dismissProjectsHome(page: Page): Promise<void> {
+  const home = page.getByTestId("projects-home");
+  try {
+    await home.waitFor({ state: "visible", timeout: 6000 });
+  } catch {
+    return;
+  }
+  await home.getByTestId("projects-close").click();
+  await expect(home).toHaveCount(0);
+}
+
 async function openCase(page: Page, info: TestInfo): Promise<void> {
   if (info.project.name === "mobile") {
     await page.getByTestId("phone-menu").click();
@@ -60,12 +72,23 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
   try {
     await page.goto(`${s.url}/`);
     await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
+    await dismissProjectsHome(page);
+    if (info.project.name !== "mobile") {
+      // the top toolbar's icons say what they are at once on hover
+      await page.getByTestId("toggle-case").hover();
+      await expect(page.getByTestId("toggle-case")).toHaveAttribute("data-tip", /Case/);
+      await expect.poll(() => page.getByTestId("toggle-case").evaluate((el) => getComputedStyle(el, "::after").opacity), { timeout: 3000 }).toBe("1");
+    }
     await openCase(page, info);
     await expect(page.getByTestId("case-empty")).toContainText("No case yet");
+    // readable on the dark stage
+    const titleColor = await page.locator(".cv-empty-title").evaluate((el) => getComputedStyle(el).color);
+    expect(titleColor).toBe("rgb(241, 243, 245)");
     await page.getByTestId("case-shape-rounded-box").click();
     await page.getByTestId("case-update").click();
+    await expect(page.getByTestId("case-update")).toHaveText("Designing…");
     await expect(page.getByTestId("case-size")).toContainText(/\d+(\.\d)? × \d+(\.\d)? × \d+(\.\d)? mm/, { timeout: 120_000 });
-    await expect(page.getByTestId("case-pocket")).toHaveText(/fits a pocket|tight for a pocket/);
+    await expect(page.getByTestId("case-pocket")).toHaveText(/fits a pocket|tight for a pocket|bulky for a pocket/);
     await expect(page.getByTestId("case-view").locator("canvas")).toBeVisible();
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
     await expect(page.getByTestId("case-checks")).toContainText("no-intersection");
@@ -87,7 +110,23 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     const dl = page.waitForEvent("download");
     await page.getByTestId("case-pack").click();
     expect((await dl).suggestedFilename()).toMatch(/^pocket-muse-v\d+\.zip$/);
-    await expect(page.getByTestId("case-pack-result")).toContainText(/Missing firmware\/: the project has no firmware\. Fix: .*build/);
+    await expect(page.getByTestId("case-pack-result")).toContainText(/Missing firmware\/: the project has no firmware\. To fix it: write the sketch in the code panel and press Build/);
+    await expect(page.getByTestId("case-pack-result")).not.toContainText("export_manufacturing");
+    // Update case says "Updating…" until the new case is there (never "up to date" mid-run)
+    await page.getByTestId("case-update").click();
+    await expect(page.getByTestId("case-update")).toHaveText("Updating…");
+    await expect(page.getByTestId("case-update")).toHaveText("Case is up to date", { timeout: 120_000 });
+    await expect(page.getByTestId("case-size")).toContainText(/× \d+(\.\d)? mm/);
+    // "Other shapes made" lists the other shapes, not the one the case is now (puck)
+    for (const [shape, size] of [["puck", { w: 63.1, h: 55.2, d: 32 }], ["pebble", { w: 70.7, h: 94.3, d: 19.6 }]] as const) {
+      mkdirSync(join(s.dir, "case", "variants", shape), { recursive: true });
+      writeFileSync(join(s.dir, "case", "variants", shape, "report.json"), JSON.stringify({ shape, size_mm: size, pocket: "tight", ok: true, files: [{ path: "stl/front.stl" }] }));
+    }
+    await expect(page.getByTestId("case-variant-pebble")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("case-variant-puck")).toHaveCount(0);
+    // the close button stays at the top of the panel when it scrolls
+    await page.locator(".cv-panel").evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    await expect(page.getByTestId("case-close")).toBeInViewport();
     await page.getByTestId("case-close").click();
     await expect(page.getByTestId("case-view")).toHaveCount(0);
   } finally {

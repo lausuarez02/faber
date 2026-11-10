@@ -35,7 +35,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [params, setParams] = useState<Params>({});
   const [opacity, setOpacity] = useState(0.35);
   const [explode, setExplode] = useState(0);
-  const [pack, setPack] = useState<{ url?: string; missing: { item: string; why: string; fix: string }[] } | undefined>();
+  const [pack, setPack] = useState<{ url?: string; missing: { item: string; why: string; fix: string; say?: string }[] } | undefined>();
   const report = state?.report;
   const hashRef = useRef<string | undefined>(undefined);
 
@@ -120,6 +120,8 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const set = <K extends keyof Params>(k: K, v: Params[K]) => setParams((p) => ({ ...p, [k]: v }));
   const files = useMemo(() => (report?.files ?? []).map((f) => (typeof f === "string" ? f : f.path)), [report]);
   const has = (p: string) => files.includes(p);
+  // the shapes made side by side, without the one the case is now (it is the case above)
+  const otherShapes = (state?.variants ?? []).filter((v) => v.shape !== (report?.shape ?? saved?.shape));
 
   return (
     <div className="case-view" data-testid="case-view" role="dialog" aria-modal="true" aria-label="Case">
@@ -219,7 +221,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
         </section>
 
         <button type="button" className="cv-primary" disabled={!!busy || (!!saved && !dirty)} data-testid="case-update" onClick={() => void apply()}>
-          {saved ? (dirty ? "Update case" : "Case is up to date") : "Design case"}
+          {busy && busy !== "Writing the factory pack…" ? (saved ? "Updating…" : "Designing…") : saved ? (dirty ? "Update case" : "Case is up to date") : "Design case"}
         </button>
         {error && mesh ? (
           <div className="cv-error" role="alert" data-testid="case-error">
@@ -268,14 +270,14 @@ export function CaseView({ onClose }: { onClose(): void }) {
                       <a href={pack.url}>Download the zip again</a>
                     </div>
                   ) : null}
-                  {pack.missing.length ? <ul>{pack.missing.map((m) => <li key={m.item}>Missing {m.item}: {m.why}. Fix: {m.fix}</li>)}</ul> : <span> Everything is in it.</span>}
+                  {pack.missing.length ? <ul>{pack.missing.map((m) => <li key={m.item}>Missing {m.item}: {m.why}. To fix it: {m.say ?? inWords(m.fix)}.</li>)}</ul> : <span> Everything is in it.</span>}
                 </div>
               ) : null}
             </section>
-            {state?.variants?.length ? (
+            {otherShapes.length ? (
               <section data-testid="case-variants">
                 <div className="cv-label">Other shapes made</div>
-                {state.variants.map((v) => (
+                {otherShapes.map((v) => (
                   <div key={v.shape} className="cv-variant" data-testid={`case-variant-${v.shape}`}>
                     <div>
                       <b>{v.shape}</b> {v.size_mm.w} × {v.size_mm.h} × {v.size_mm.d} mm <PocketBadge pocket={v.pocket} />
@@ -308,6 +310,17 @@ export function CaseView({ onClose }: { onClose(): void }) {
       </aside>
     </div>
   );
+}
+
+/** A fix written for an agent, in the words of the buttons on this page (no tool names). */
+function inWords(fix: string): string {
+  return fix
+    .replace(/\bexport_manufacturing\b/g, "Factory pack")
+    .replace(/\bdesign_case\b(\s*\{[^}]*\})?/g, "Design case")
+    .replace(/\bupdate_case\b(\s*\{[^}]*\})?/g, "Update case")
+    .replace(/\bget_case\b/g, "open the Case view")
+    .replace(/\bbuild \(or run\)/gi, "press Run (or Build)")
+    .replace(/\.$/, "");
 }
 
 function PocketBadge({ pocket }: { pocket: CaseReport["pocket"] }) {

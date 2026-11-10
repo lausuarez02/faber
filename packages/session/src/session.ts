@@ -107,7 +107,7 @@ export interface ActionEntry {
    * C3/C6): `hash` is the sha256 of the hex and a copy is kept at .jumper/builds/<hash>.hex, so
    * history can show the device at any version and followers can tell new firmware from old.
    */
-  firmware?: { artifact: string; hash?: string };
+  firmware?: { artifact: string; hash?: string; /** sourceHash() the hex was built from (round 6b) */ source?: string };
   /** The op's result when it is small (test results, check results…), for replay captions. */
   result?: unknown;
 }
@@ -133,7 +133,7 @@ interface OpCtx {
   file?: { path: string; content: string | null };
   frames?: Frame[];
   steps?: boolean;
-  firmware?: { artifact: string; hash?: string };
+  firmware?: { artifact: string; hash?: string; source?: string };
 }
 
 const WIRE_COLORS = ["#FFB23F", "#4DA3FF", "#F2E14A", "#B47CFF", "#E9EDF2", "#5CF2A1"];
@@ -1004,10 +1004,46 @@ export class ProjectSession {
         // fall through
       }
     }
-    // No build record (e.g. a committed example): compare times.
+    // No build record here (a committed example, a copy): the action log may say which sources this
+    // very hex was built from.
+    const logged = this.loggedSourceOf(info.artifactAbs);
+    if (logged) return logged === hash ? "fresh" : "stale";
+    // Otherwise compare times; files copied together (opening an example copies the folder) land
+    // within a moment of each other, so a source a second newer than the hex is not an edit.
     const hexTime = statSync(info.artifactAbs).mtimeMs;
     const newest = readdirSync(info.sketchDir!).filter((f) => SOURCE_EXT.test(f)).reduce((m, f) => Math.max(m, statSync(join(info.sketchDir!, f)).mtimeMs), 0);
-    return newest <= hexTime ? "fresh" : "stale";
+    return newest <= hexTime + 2000 ? "fresh" : "stale";
+  }
+
+  /** The source hash the action log recorded for the build that made this hex (newest first), if any. */
+  private loggedSourceOf(artifactAbs: string): string | undefined {
+    let hexHash: string;
+    try {
+      hexHash = createHash("sha256").update(readFileSync(artifactAbs, "utf8")).digest("hex");
+    } catch {
+      return undefined;
+    }
+    for (const file of [this.actionLogFile, join(this.dir, "agent-actions.jsonl")]) {
+      if (!existsSync(file)) continue;
+      let text: string;
+      try {
+        text = readFileSync(file, "utf8");
+      } catch {
+        continue;
+      }
+      const lines = text.split("\n");
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const l = lines[i]!;
+        if (!l.includes(hexHash) || !l.includes('"source"')) continue;
+        try {
+          const e = JSON.parse(l) as { firmware?: { hash?: string; source?: string } };
+          if (e.firmware?.hash === hexHash && e.firmware.source) return e.firmware.source;
+        } catch {
+          // a torn line
+        }
+      }
+    }
+    return undefined;
   }
 
   async build(args: { force?: boolean } = {}, ctx?: OpCtx): Promise<unknown> {
@@ -1044,7 +1080,8 @@ export class ProjectSession {
       } catch {
         // keeping old builds is a convenience for history; never fail a build over it
       }
-      if (ctx) ctx.firmware = { artifact: info.fw.artifact, hash: hexHash };
+      const source = this.sourceHash();
+      if (ctx) ctx.firmware = { artifact: info.fw.artifact, hash: hexHash, ...(source ? { source } : {}) };
     }
     if (ctx) ctx.summary = r.ok ? `build ok${r.cached ? " (cached)" : ""}` : `build failed: ${r.errors} errors`;
     const pct = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;

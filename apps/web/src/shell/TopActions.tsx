@@ -20,10 +20,10 @@ export function TopActions() {
   return (
     <div className="top-actions float-box" data-testid="top-actions">
       <div className="top-actions-icons">
-        <IconButton icon={SquareTerminal} label="Serial console" active={panels.includes("serial")} onClick={() => ui().togglePanel("serial")} data-testid="toggle-serial" />
-        <IconButton icon={FlaskConical} label="Tests" active={panels.includes("tests")} onClick={() => ui().togglePanel("tests")} data-testid="toggle-tests" />
-        <IconButton icon={Presentation} label="Device view" active={device} onClick={() => ui().setDevice(!device)} data-testid="toggle-device" />
-        <IconButton icon={Box} label="Case: printable enclosure and factory files" onClick={() => useCase.getState().setOpen(true)} data-testid="toggle-case" /> {/* round 6 case */}
+        <IconButton icon={SquareTerminal} label="Serial console" tip active={panels.includes("serial")} onClick={() => ui().togglePanel("serial")} data-testid="toggle-serial" />
+        <IconButton icon={FlaskConical} label="Tests" tip active={panels.includes("tests")} onClick={() => ui().togglePanel("tests")} data-testid="toggle-tests" />
+        <IconButton icon={Presentation} label="Device view" tip active={device} onClick={() => ui().setDevice(!device)} data-testid="toggle-device" />
+        <IconButton icon={Box} label="Case: printable enclosure and factory files" tip onClick={() => useCase.getState().setOpen(true)} data-testid="toggle-case" /> {/* round 6 case */}
       </div>
       <span className="vsep" aria-hidden />
       <div className="anchor">
@@ -60,7 +60,7 @@ export function TopActions() {
           <OpenInAgentMenu onClose={close} />
         </Popover>
       </div>
-      <IconButton icon={RotateCcw} label="Reset simulation" className="reset-btn" onClick={() => engine.reset()} data-testid="reset-button" />
+      <IconButton icon={RotateCcw} label="Reset simulation" tip className="reset-btn" onClick={() => engine.reset()} data-testid="reset-button" />
       <RunPill />
     </div>
   );

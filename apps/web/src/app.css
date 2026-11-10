@@ -138,6 +138,7 @@ code {
 /* ---- buttons */
 
 .icon-btn {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 36px;
@@ -2252,4 +2253,29 @@ input[type="range"] {
     left: 50%;
     bottom: 150px;
   }
+}
+
+/* Round 6b: instant tooltips on the top toolbar's icon buttons (label below the button). */
+.icon-btn.has-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: var(--fg);
+  color: var(--bg-canvas);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms var(--ease) 150ms;
+  z-index: 60;
+}
+.icon-btn.has-tip:hover::after,
+.icon-btn.has-tip:focus-visible::after {
+  opacity: 1;
 }

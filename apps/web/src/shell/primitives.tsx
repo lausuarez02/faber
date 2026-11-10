@@ -5,16 +5,16 @@ import { useUi, type PanelId, type PopoverId } from "../lib/ui.ts";
 /** Lucide stroke used everywhere: thin line icons. */
 export const STROKE = 1.6;
 
-type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string; active?: boolean; size?: number; iconSize?: number };
+type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string; active?: boolean; size?: number; iconSize?: number; /** Show the label in a styled tooltip below the button at once on hover / focus (instead of the slow native one). */ tip?: boolean };
 
 /** A ghost icon button (tooltip = label). */
-export function IconButton({ icon: I, label, active, className = "", size, iconSize = 18, ...rest }: BtnProps) {
+export function IconButton({ icon: I, label, active, className = "", size, iconSize = 18, tip, ...rest }: BtnProps) {
   return (
     <button
       type="button"
-      className={`icon-btn ${active ? "is-active" : ""} ${className}`}
+      className={`icon-btn ${tip ? "has-tip" : ""} ${active ? "is-active" : ""} ${className}`}
       aria-label={label}
-      title={label}
+      {...(tip ? { "data-tip": label } : { title: label })}
       aria-pressed={active === undefined ? undefined : active}
       style={size ? { width: size, height: size } : undefined}
       {...rest}

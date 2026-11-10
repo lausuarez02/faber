@@ -181,7 +181,7 @@ function validateEnclosure(s: ProjectSession, raw: Record<string, unknown>): Enc
 interface Out {
   report: CaseReport;
   dir: string;
-  missing: { item: string; why: string; fix: string }[];
+  missing: { item: string; why: string; fix: string; say?: string }[];
 }
 
 let pdfOk: boolean | undefined;
@@ -263,7 +263,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   const name = `${slug}-v${version}`;
   const root = join(outRoot, name);
   clearDir(root);
-  const missing: { item: string; why: string; fix: string }[] = [];
+  const missing: { item: string; why: string; fix: string; say?: string }[] = [];
   const notes: string[] = [];
   const board = project.parts.find((p) => p.id === project.firmware?.board) ?? project.parts.find((p) => reg.get(p.type)?.spec.mcu);
   const boardSpec = board ? reg.get(board.type)?.spec : undefined;
@@ -285,7 +285,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     const L = layoutCase({ parts: project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: project.enclosure });
     positions = pinPositions(L.placed, (t) => reg.get(t)?.spec);
     if (project.enclosure.params?.closure === "screws" && L.bosses.length) screws = { count: L.bosses.length, size: "M2 pan head (length in enclosure/PRINT.md)", inserts: "M2 x 3 mm brass heat-set inserts" };
-  } else missing.push({ item: "enclosure/", why: "the project has no case yet", fix: 'design_case {"shape": "pebble"} (or puck, rounded-box, pill, keychain), then export_manufacturing again' });
+  } else missing.push({ item: "enclosure/", why: "the project has no case yet", fix: 'design_case {"shape": "pebble"} (or puck, rounded-box, pill, keychain), then export_manufacturing again', say: "pick a shape and press Design case, then Factory pack again" });
 
   // ---- electronics
   const cuts = wireCuts(project, reg, positions);
@@ -311,9 +311,9 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
       writeText(root, "firmware/firmware.hex", hex);
       fwHash = (await import("node:crypto")).createHash("sha256").update(hex).digest("hex").slice(0, 16);
       if (rp2040) writeText(root, "firmware/firmware.uf2", hexToUf2(hex));
-    } else missing.push({ item: "firmware/firmware.hex", why: !art || !existsSync(art) ? "the firmware was never built" : "the sketch changed since the last build", fix: "build (or run) first, then export_manufacturing again" });
+    } else missing.push({ item: "firmware/firmware.hex", why: !art || !existsSync(art) ? "the firmware was never built" : st === "stale" ? "the sketch changed since the last build" : "the built firmware file is missing", fix: "build (or run) first, then export_manufacturing again", say: "press Run (or Build) first, then Factory pack again" });
     writeText(root, "firmware/FLASHING.md", flashingMd(project.name, boardSpec?.name ?? board?.type ?? "the board", rp2040, fw.libraries ?? []));
-  } else missing.push({ item: "firmware/", why: "the project has no firmware", fix: "write_file the sketch and build" });
+  } else missing.push({ item: "firmware/", why: "the project has no firmware", fix: "write_file the sketch and build", say: "write the sketch in the code panel and press Build, then Factory pack again" });
 
   // ---- assembly, tests, readme, notes
   writeText(root, "assembly/ASSEMBLY.md", assemblyMd(project, reg, report, soldered, !!screws));

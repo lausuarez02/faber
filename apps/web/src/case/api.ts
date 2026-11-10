@@ -55,7 +55,7 @@ export const caseApi = {
   get: () => req<CaseState>("GET", "/api/case"),
   save: (body: Partial<Enclosure>) => req<CaseReport & { error?: string }>("POST", "/api/case", body),
   mesh: () => req<CaseMesh>("GET", "/api/case/mesh"),
-  pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string }[] }>("POST", "/api/manufacturing", {}),
+  pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),
   fileUrl: (path: string) => `/api/case/file?path=${encodeURIComponent(path)}`,
 };
 
