@@ -58,21 +58,23 @@ export function lastLoggedStill(dir: string): DeviceStill | undefined {
 
 /**
  * A still of the device for a thumbnail: the last logged run, else (an example that ships its
- * built firmware but no log) the firmware run headless for `ms` of virtual time. Undefined when
- * there is nothing to run. Never throws: a thumbnail without a lit screen beats no thumbnail.
+ * built firmware but no log, or a log written before colour screens were recorded) the firmware
+ * run headless for `ms` of virtual time. Undefined when there is nothing to show. Never throws: a thumbnail without a lit screen beats no thumbnail.
  */
 export async function deviceStill(dir: string, project: Project, registry: PartRegistry, ms = 2000): Promise<DeviceStill | undefined> {
   try {
     const logged = lastLoggedStill(dir);
-    if (logged) return logged;
+    if (logged?.color) return logged;
     const artifact = project.firmware?.artifact;
-    if (!artifact || !existsSync(join(dir, artifact))) return undefined;
+    if (!artifact || !existsSync(join(dir, artifact))) return logged;
     const hex = readFileSync(join(dir, artifact), "utf8");
     await SimHost.preparePhysics(project);
     const host = new SimHost(project, registry, hex);
     try {
       host.run(ms);
       const f = host.frame();
+      // A log from before colour screens were recorded: the fresh run only wins when it has a colour screen.
+      if (logged && !f?.color) return logged;
       return { states: f?.states ?? {}, live: host.liveWires(), ...(f?.color ? { color: f.color } : {}), from: "sim" };
     } finally {
       host.dispose();

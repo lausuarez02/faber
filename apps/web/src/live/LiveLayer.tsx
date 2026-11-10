@@ -4,6 +4,7 @@ import type { Project } from "@jumper/project-format";
 import { engine, useJumper } from "../lib/app.ts";
 import { liveParams, useLive, type LiveStep } from "./liveStore.ts";
 import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, type LogFrame } from "./player.ts";
+import { setLastColorFrames } from "../lib/colorFrames.ts"; // round 6 frames
 import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts";
 import { worldTracker } from "./worldTracker.ts";
 import { useUi } from "../lib/ui.ts";
@@ -217,6 +218,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         useLive.getState().set({ steps: msg.steps ?? [], dir: msg.dir ?? "" });
         const last = [...(msg.entries ?? [])].reverse().find((e) => e.frames?.length);
         const f: LogFrame | undefined = last?.frames?.at(-1);
+        setLastColorFrames(last?.frames); // round 6 frames: the screens as the agent's last run left them
         if (f) port.showStates(f.states, f.live, f.vt);
         const code = [...(msg.entries ?? [])].reverse().find((e) => e.file?.content);
         if (code?.file?.content) useLive.getState().set({ code: { path: code.file.path, content: code.file.content } });

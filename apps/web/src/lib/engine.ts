@@ -4,6 +4,7 @@ import type { Project, PropValue } from "@jumper/project-format";
 import { registry, tftTypeFor } from "./parts.ts";
 import { registerDisplayRenderers } from "../renderers/displays/index.ts";
 import { registerTftRenderers } from "../renderers/tft/index.ts";
+import { colorFrameOf } from "./colorFrames.ts"; // round 6 frames
 import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
 import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
@@ -63,7 +64,8 @@ export class Engine {
   /** OLED / LCD canvases over display parts' data-screen rects. */
   private displays = registerDisplayRenderers();
   /** Colour TFT canvases (ILI9341, ST7735): pixels come from Simulation.framebuffer, not visualState. */
-  private tfts = registerTftRenderers((id) => this.sim?.framebuffer(id));
+  // round 6 frames: following an agent or replaying, the screens come from the logged colour frames.
+  private tfts = registerTftRenderers((id) => (this.external && !this.localRun ? colorFrameOf(id) : this.sim?.framebuffer(id)));
   /** The sandbox Wi-Fi + pet AI for projects with a Wi-Fi part (one per simulation). */
   private net: SandboxNet | undefined;
   private netListeners = new Set<() => void>();

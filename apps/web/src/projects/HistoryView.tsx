@@ -5,6 +5,7 @@ import { STROKE } from "../shell/primitives.tsx";
 import { NO_SERVER, actorLabel, ago, api, entityLabel, type VersionDetail, type VersionSummary } from "./api.ts";
 import { useServer } from "./data.ts";
 import { useProjectsUi } from "./store.ts";
+import { hasColorFrames } from "../lib/colorFrames.ts"; // round 6 frames
 import "./projects.css";
 
 /**
@@ -145,7 +146,7 @@ export function HistoryView() {
               {shown?.frame ? (
                 <>
                   <MonitorPlay size={13} strokeWidth={STROKE} aria-hidden /> The device as it ran at {(shown.frame.t_ms / 1000).toFixed(1)} s on this version
-                  {shown.project.parts.some((p) => /tft|ili9341|st7735|gc9a01/.test(p.type)) ? <span className="muted"> (colour screens are not recorded in the history, so they show dark)</span> : null}
+                  {shown.project.parts.some((p) => /tft|ili9341|st7735|gc9a01/.test(p.type)) && !hasColorFrames(shown.frame) ? <span className="muted"> (this run was logged before colour screens were recorded, so they show dark)</span> : null /* round 6 frames */}
                 </>
               ) : shown ? (
                 "Not run at this version: lights and screens are shown off"

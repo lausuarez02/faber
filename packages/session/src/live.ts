@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import { ProjectSession, type ActionEntry } from "./session.ts";
 import { stepSummary } from "./history.ts";
+import type { Frame } from "./sim.ts"; // round 6 frames
 import { createAgentStateTracker } from "./agent-state.ts";
 import type { AgentState, LiveServerEvent } from "./live-events.ts";
 
@@ -385,8 +386,12 @@ function stripFrames(e: ActionEntry): ActionEntry {
   if (!e.frames?.length) return e;
   const last = e.frames.at(-1)!;
   const merged: Record<string, unknown> = {};
-  for (const f of e.frames) Object.assign(merged, f.states ?? {});
-  return { ...e, frames: [{ ...last, states: merged as Record<string, Record<string, string | number | boolean>> }] };
+  let color: Frame["color"]; // round 6 frames: the last colour image of each screen
+  for (const f of e.frames) {
+    Object.assign(merged, f.states ?? {});
+    if (f.color) color = { ...color, ...f.color };
+  }
+  return { ...e, frames: [{ ...last, states: merged as Record<string, Record<string, string | number | boolean>>, ...(color ? { color } : {}) }] };
 }
 
 /** The board part type and its simulator backend ("arduino-uno", "avr8js"), when the project has one. */
