@@ -30,10 +30,10 @@ downloads (STL, 3MF, STEP, drawing, print notes) and **Factory pack (zip)**. It 
 | Shape | What it is |
 | --- | --- |
 | `rounded-box` | Rounded rectangle (corner radius `corner_radius_mm`), small edge round. The most compact. |
-| `pill` | Capsule: semicircular ends on the long axis. |
-| `pebble` | Oval plan, sized around the parts, centred on the screen in x, edges rounded as far as the ports allow. |
-| `puck` | Round, centred on the screen, chunky disc. |
-| `keychain` | Rounded box with a tab and a 5 mm lanyard hole (the tab prints flat with the back shell). |
+| `pill` | Capsule: semicircular ends on the long axis, front and back edges rounded in 3D (up to ~0.44 of the depth). |
+| `pebble` | Oval plan, sized around the parts, centred on the screen in x; front and back edges rounded in 3D with one large fillet each (up to ~0.44 of the depth), both faces domed about 1 mm with a flat land round the window and a flat pad on the back (what each shell prints on). |
+| `puck` | Round, centred on the screen, edges rounded in 3D (~0.34 of the depth). |
+| `keychain` | Rounded box (7 mm plan corners) with 3D-rounded edges, a tab and a 5 mm lanyard hole. |
 
 `params` (all optional): `wall_mm` (≥ 1.2, default 1.6), `corner_radius_mm` (4), `color`
 (renders + 3MF), `lanyard_hole` (default on for keychain; a small tab on other shapes), `belt_clip`
@@ -53,13 +53,18 @@ are auto-packed. `exclude`: parts not in the case (an external sensor on a cable
    footprint, keep-outs, mounting holes, and features (screen active area, button cap, USB port,
    LEDs, sensor windows, grilles, levers).
 2. **Orientation**: the front part's screen faces +z. A part with an exposed feature turns so the
-   feature faces its case face: USB to the bottom (with a flat wall so the plug seats), buttons to
+   feature faces its case face: USB to the bottom (a box or key fob: all on its bottom, with a flat
+   wall; a pebble / pill / puck: the charging port at the bottom and the next on its own side, so no
+   wall is cut flat; a spot face thins the wall round a port the curve holds back), buttons to
    the right / left / top, a slide switch's lever and sensor windows to the top, a buzzer's grille
    to the back. Everything else lies flat.
 3. **Packing**: a front stack from the screen backwards and a back stack (the LiPo in its cradle,
-   back grilles) from the back wall, as shallow as both allow, with `gap_mm` around each part; a few
-   plan rectangles are tried and the smallest case (by the shape's volume, nudged towards the pocket
-   limit) wins.
+   back grilles) from the back wall, as shallow as both allow, with `gap_mm` around each part. Side
+   parts (ports, buttons, levers) slide to mid-depth so the edges can be rounded. Four part orders
+   x 11 x 11 plan rectangles (and, on curved shapes, which port gets which side) are packed; the ~30
+   most promising are finished into real layouts and the one with the smallest outer volume wins,
+   weighed up when thicker than 18 mm (more past 22), when its edge radius falls short of the shape,
+   or when it needs a flat. `report.volume_cm3` is the volume inside the outer surface.
 4. **Plan**: the cavity outline for the shape is sized around the parts, allowing for the rounded
    front and back edges (the inner round is concentric with the outer one, so the wall is uniform).
    The outer outline is a true 2D offset of the cavity by `wall_mm`.
@@ -69,8 +74,12 @@ are auto-packed. `exclude`: parts not in the case (an external sensor on a cable
    where a module has mounting holes and a free path to a wall, the cell cradle (+10 % swell), the
    snap lip or the screw bosses, the tab.
 
-Case frame (every STL / 3MF / STEP): mm, origin at the centre of the outer box, +x right, +y up,
-+z out of the front. The slicer lays each body on the face PRINT.md names.
+Case frame (STEP files, the web meshes, the report): mm, origin at the centre of the outer box, +x
+right, +y up, +z out of the front. Every **STL is in print orientation**: the face PRINT.md names
+lies flat on z = 0, centred on x = y = 0 (front shell face down, back shell open side up, caps and
+light pipes on their flange, the belt clip on its L profile). `case.3mf` is one **build plate**:
+every body in that pose, side by side 6 mm apart (item transforms). `step/assembly.step` stays
+assembled.
 
 ## Checks (in every report)
 
@@ -85,7 +94,7 @@ Case frame (every STL / 3MF / STEP): mm, origin at the centre of the outer box, 
 | `watertight` | every STL is a closed 2-manifold with volume > 0 (re-checked from the file bytes in tests) |
 | `no-intersection` | no part body overlaps a shell (OpenCascade common volume < 0.001 mm³) |
 | `size-match` | the printed bodies are within 0.1 mm of the planned size |
-| `pocket` | `fits` ≤ 110 × 70 × 30 mm (plan_device's pocket), `tight` ≤ 130 × 80 × 35, else `no` |
+| `pocket` | thickness first: `fits` (comfortable) ≤ 18 mm thick within 110 × 70 mm, `tight` ≤ 22 mm within 130 × 80, else `no` (bulky); the message names the reason and the volume |
 
 What the case **cannot** check: snap strength and fit on your printer (print the two shells and test
 before the rest), clone modules that differ by ~1 mm from the typical sizes, drop / water / heat,
@@ -96,7 +105,7 @@ and the actual route of each wire (`gap_mm` is a budget).
 ```
 case/                    (outputs: regenerated from jumper.json + the parts' data, never undone)
   stl/front.stl, back.stl, cap-<part>.stl, light-pipe-<part>.stl, belt-clip.stl
-  case.3mf               every printable body, named and coloured
+  case.3mf               build plate: every printable body in print orientation, named and coloured
   step/assembly.step     shells + plungers + the parts as named solids (AP214), front.step, back.step
   renders/front.png, back.png, exploded.png, inside.png
   drawing/drawing.svg    A3: front / side / bottom views, overall size, openings table, tolerances,
@@ -125,8 +134,9 @@ STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
 
 ## Honest limits (round 6)
 
-- The pebble rounds its edges only where no port is: a USB-C port near the back of the stack keeps
-  that side straight (the reference Muse pebble has a 1.1 mm edge round for that reason).
+- Edges round as far as the side openings allow: every port, plunger and lever needs its hole on
+  the straight band of the side wall, so the front and back radii differ when a port sits off
+  mid-depth (the Muse pebble: 6 mm front, 2.7 mm back). Packing is a search, not an optimum.
 - Parts without mounting holes are located by ribs (screen) or held with foam tape; standoffs are
   only made where a column to a wall is free.
 - Wire cuts (`wireCuts` in `packages/session/src/assembly.ts`, shared with `export`) take the pin
