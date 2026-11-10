@@ -1,0 +1,60 @@
+{
+  "id": "ir-proximity",
+  "name": "IR obstacle sensor (FC-51 / TCRT5000-style)",
+  "category": "sensor",
+  "description": "Infrared LED + photodiode + comparator: OUT goes LOW when something is closer than the trigger distance (set with the blue knob, about 2 to 30 cm; prop threshold). VCC → 3.3 V or 5 V, GND → GND, OUT → a digital pin (it has its own pull-up). On a robot in a world, the physics measures the distance on the side set by mount, like the HC-SR04.",
+  "pins": [
+    { "id": "OUT", "label": "OUT", "x": 10, "y": 15, "type": "digital", "description": "LOW = obstacle, HIGH = clear (10 kΩ pull-up to VCC on the module, open-collector comparator)." },
+    { "id": "GND", "label": "GND", "x": 10, "y": 35, "type": "ground", "description": "Ground." },
+    { "id": "VCC", "label": "VCC", "x": 10, "y": 55, "type": "power", "voltage": { "min": 3.0, "max": 5.5 }, "description": "3.3 to 5 V." }
+  ],
+  "size": { "w": 150, "h": 70 },
+  "props": [
+    { "id": "distance", "label": "Distance to object", "type": "number", "default": 0, "min": 0, "max": 500, "step": 0.5, "unit": "cm", "description": "Distance to the nearest object in front. 0 = nothing there. A world with physics overrides it with a raycast." },
+    { "id": "threshold", "label": "Trigger distance (knob)", "type": "number", "default": 10, "min": 2, "max": 30, "step": 0.5, "unit": "cm", "description": "OUT goes LOW for a white object closer than this." },
+    {
+      "id": "surface",
+      "label": "Object surface",
+      "type": "enum",
+      "default": "white",
+      "options": [
+        { "value": "white", "label": "White / light (full range)" },
+        { "value": "grey", "label": "Grey / wood (≈ 60 % of the range)" },
+        { "value": "black", "label": "Black / matte dark (≈ 20 % of the range)" }
+      ],
+      "description": "IR reflectivity of the object: dark surfaces are seen much later."
+    },
+    {
+      "id": "mount",
+      "label": "Mounted on",
+      "type": "enum",
+      "default": "front",
+      "options": [
+        { "value": "front", "label": "Front" },
+        { "value": "front-left", "label": "Front left (30°)" },
+        { "value": "front-right", "label": "Front right (30°)" },
+        { "value": "left", "label": "Left side" },
+        { "value": "right", "label": "Right side" },
+        { "value": "rear", "label": "Rear" }
+      ],
+      "description": "Direction it looks on a robot. Used by the robot physics only."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 3.0, "maxCurrentmA": 30, "minRangeCm": 2, "maxRangeCm": 30 },
+  "footprint": "FC-51 module, 31 × 14 mm, 3-pin 0.1 in header (OUT GND VCC), IR LED and photodiode at the far end",
+  "dimensions_mm": { "w": 31, "h": 14, "d": 7 },
+  "mass_g": 2.5,
+  "current_ma": { "typ": 23, "max": 30 },
+  "price_usd": 1,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-FC-51-IR-obstacle-avoidance-sensor.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=FC-51%20IR%20obstacle%20avoidance%20sensor" }
+  ],
+  "bindings": [
+    { "key": "obstacle", "type": "boolean", "description": "Something is within the trigger distance (OUT LOW)." },
+    { "key": "distance", "type": "number", "description": "Distance to the object it sees (cm, 0 = nothing)." },
+    { "key": "label", "type": "string", "description": "e.g. \"obstacle 6 cm\" or \"clear\"." },
+    { "key": "powered", "type": "boolean", "description": "VCC is high enough." }
+  ],
+  "tags": ["ir", "infrared", "obstacle", "obstacle sensor", "proximity", "fc-51", "tcrt5000", "line", "avoidance", "robot", "distance", "sensor"]
+}

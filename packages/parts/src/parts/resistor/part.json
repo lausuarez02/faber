@@ -22,6 +22,14 @@
   ],
   "limits": { "maxPowerW": 0.25, "maxVoltage": 250 },
   "footprint": "THT axial, 0.4 in (10.16 mm) lead pitch, 1/4 W",
+  "dimensions_mm": { "w": 6.3, "h": 2.5, "d": 2.5 },
+  "mass_g": 0.25,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.05,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=1%2F4W%20through%20hole%20resistor" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-1/4W-resistor-kit.html" }
+  ],
   "bindings": [
     { "key": "resistance", "type": "number", "description": "Resistance in ohms." },
     { "key": "label", "type": "string", "description": "Formatted value, e.g. \"220 Ω\"." },

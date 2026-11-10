@@ -45,6 +45,14 @@
     "maxVoltage": 5.5
   },
   "footprint": "68.6 × 53.4 mm, Uno R3 shield headers",
+  "dimensions_mm": { "w": 68.6, "h": 53.4, "d": 15 },
+  "mass_g": 25,
+  "current_ma": { "typ": 45, "max": 60 },
+  "price_usd": 27.6,
+  "buy_links": [
+    { "vendor": "Arduino Store", "url": "https://store.arduino.cc/products/arduino-uno-rev3" },
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=Arduino%20Uno%20Rev3" }
+  ],
   "bindings": [
     {
       "key": "powered",

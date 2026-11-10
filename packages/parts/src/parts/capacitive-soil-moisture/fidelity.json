@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "n/a", "note": "Analog part." },
+    "timing": { "level": "approx", "note": "AOUT follows a moisture change at once; the real RC detector settles in ~0.5 s after power-up and after a change." },
+    "analog": { "level": "approx", "note": "Linear from ~2.9 V (0 %, air) to ~1.25 V (100 %, water) of the regulated 3.3 V, 10 kΩ output resistance. Real probes are not linear, differ by ±10 % between units, and depend on soil type, salt and temperature; dry soil reads 2.2–2.6 V, wet soil 1.4–1.8 V." },
+    "power": { "level": "approx", "note": "Constant 5 mA load; works from 3.3 to 5.5 V; below ~3.0 V AOUT is 0." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Output falls as moisture rises", "Dry and wet voltage typical of the v1.2 board on 3.3 V and 5 V", "Moisture set by prop, set_sensor_value or a scenario"],
+  "doesNotEmulate": ["Soil type, salinity and temperature effects", "Unit-to-unit spread (calibrate each probe)", "Boards with a missing regulator or an NE555 that needs 5 V (common defects)", "Water reaching the electronics above the line"],
+  "testOnRealDevice": ["Read the probe in dry air and in a glass of water and use those two numbers as 0 % and 100 %", "Do not push the probe past the white line; seal the board edge", "Power it only while reading (a GPIO-switched supply) for battery projects"]
+}

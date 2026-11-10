@@ -31,6 +31,11 @@ cp -r packages/parts/src/parts/pushbutton packages/parts/src/parts/tilt-switch
   ],
   "limits": { "maxCurrentmA": 20, "maxVoltage": 12 },
   "footprint": "THT 6 mm can, 0.1 in lead pitch",
+  "dimensions_mm": { "w": 6, "h": 6, "d": 12 },
+  "mass_g": 0.5,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.3,
+  "buy_links": [{ "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=SW-520D" }],
   "bindings": [
     { "key": "closed", "type": "boolean", "description": "True when the contact is closed (upright)." },
     { "key": "bodyTransform", "type": "string", "description": "SVG transform tilting the can." }
@@ -39,7 +44,9 @@ cp -r packages/parts/src/parts/pushbutton packages/parts/src/parts/tilt-switch
 }
 ```
 
-Checklist: 20 px = 0.1 in, so legs 0.1 in apart are 20 px apart; pin `x`/`y` are where wires
+Checklist: the five physical fields (size in mm, grams, supply current, price, buy links) are
+required for every part in this repo (`src/spec/physical.test.ts`; rules in `docs/part-spec.md`);
+20 px = 0.1 in, so legs 0.1 in apart are 20 px apart; pin `x`/`y` are where wires
 attach (lead tips), inside the viewBox; every key the SVG will bind is in `bindings`.
 
 ## 2. `visual.svg` (4 min)
@@ -149,6 +156,15 @@ data-pin="1" is drawn at (10, 58) but part.json says (10, 56)`). The spec test a
 checks that every bound key comes out of `visualState()` with the documented type, that every
 prop value and interaction solves, and that `registry.gen.ts` is up to date. Commit the part
 folder together with the regenerated `registry.gen.ts`.
+
+## 7. Usage hint (2 min)
+
+Add an entry for the part to `packages/session/src/hints-parts.ts`: `wiring` (one paragraph a
+beginner can follow), `connect` (typical connections, using the id `place_part` gives the first
+copy: the type without dashes + `1`, e.g. `tiltswitch1.1 -> uno.D2`), an `example` sketch
+(skip it when the folder has an `example.ino`, which wins) and `controls` (what `interact` /
+`set_sensor_value` accept and which state fields a scenario can check).
+`packages/session/test/hints-parts.test.ts` checks that every connection names real pins.
 
 ## Common mistakes
 

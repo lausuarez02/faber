@@ -32,6 +32,10 @@ export interface RobotSpec {
   sonar?: string;
   /** IMU part id (MPU6050) fed with the body's motion, if any. */
   imu?: string;
+  /** IR obstacle sensors (ir-proximity) and the side each looks at (degrees from the heading, from the part's mount prop). */
+  ir?: { id: string; angleDeg: number }[];
+  /** Bump switches (bump-switch) and the side each sits on. */
+  bumpers?: { id: string; angleDeg: number }[];
   /** Start pose of the body centre (cm, cm, degrees). */
   start: { x: number; y: number; heading: number };
 }
@@ -76,6 +80,16 @@ export class WorldSpecError extends Error {
 /** Minimal view of the project's parts the resolver needs (id + type). */
 export interface PartsView {
   parts: readonly { id: string; type: string; props?: Record<string, unknown> | undefined }[];
+}
+
+/**
+ * Side a mounted sensor looks at, in degrees from the robot's heading (negative = left, as the
+ * top view has y down): the `mount` prop of ir-proximity (corners at 30°) and bump-switch (45°).
+ */
+export function mountAngle(type: string, mount: string): number {
+  const corner = type === "bump-switch" ? 45 : 30;
+  const table: Record<string, number> = { front: 0, "front-left": -corner, "front-right": corner, left: -90, right: 90, rear: 180 };
+  return table[mount] ?? 0;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -212,7 +226,30 @@ export function parseWorld(raw: unknown, project?: PartsView): WorldSpec {
       if (arena.enclosed && (start.x <= 0 || start.y <= 0 || start.x >= arena.width || start.y >= arena.height)) {
         issues.push(`world.robot.start: (${start.x}, ${start.y}) is outside the ${arena.width} × ${arena.height} cm arena; put the robot inside, e.g. { "x": 40, "y": 40 }`);
       }
-      if (chassis && leftMotor && rightMotor) robot = { chassis, leftMotor, rightMotor, start, ...(sonar ? { sonar } : {}), ...(imu ? { imu } : {}) };
+      const mounted = (key: "ir" | "bumpers", type: string): { id: string; angleDeg: number }[] => {
+        const given = r[key];
+        let ids: string[];
+        if (given === undefined) ids = ofType(type);
+        else if (!Array.isArray(given) || given.some((g) => typeof g !== "string")) {
+          issues.push(`world.robot.${key}: must be a list of ${type} part ids, e.g. ["${type === "ir-proximity" ? "irLeft" : "bumpFront"}"], or left out to use every ${type} in the project`);
+          ids = [];
+        } else {
+          ids = given as string[];
+          for (const id of ids) {
+            if (project && typeOf(id) === undefined) issues.push(`world.robot.${key}: there is no part '${id}' in the project; ${type} parts in it: ${ofType(type).join(", ") || "none"}`);
+            else if (project && typeOf(id) !== type) issues.push(`world.robot.${key}: part '${id}' is a ${typeOf(id)}, not a ${type}`);
+          }
+        }
+        return ids.map((id) => {
+          const mount = String(parts.find((p) => p.id === id)?.props?.mount ?? "front");
+          return { id, angleDeg: mountAngle(type, mount) };
+        });
+      };
+      const ir = mounted("ir", "ir-proximity");
+      const bumpers = mounted("bumpers", "bump-switch");
+      if (chassis && leftMotor && rightMotor) {
+        robot = { chassis, leftMotor, rightMotor, start, ...(sonar ? { sonar } : {}), ...(imu ? { imu } : {}), ...(ir.length ? { ir } : {}), ...(bumpers.length ? { bumpers } : {}) };
+      }
     }
   }
 

@@ -1,0 +1,39 @@
+{
+  "id": "lipo-battery",
+  "name": "LiPo battery 1S (3.7 V, with protection)",
+  "category": "power",
+  "description": "Single-cell lithium-polymer pouch, 3.7 V nominal (4.2 V full, 3.0 V empty), for pocket devices. Its voltage follows the state of charge and sags under load, and it drains (or charges) with the current that flows. + to the board's battery input (VSYS / BAT on a 3.3 V board, through a TP4056 charger's B+), − to GND. A 5 V Uno cannot run from it without a boost converter.",
+  "pins": [
+    { "id": "POS", "label": "+", "x": 10, "y": 30, "type": "power", "description": "Positive (red wire)." },
+    { "id": "NEG", "label": "−", "x": 10, "y": 50, "type": "ground", "description": "Negative (black wire)." }
+  ],
+  "size": { "w": 160, "h": 80 },
+  "props": [
+    { "id": "capacity", "label": "Capacity", "type": "number", "default": 500, "min": 40, "max": 10000, "step": 10, "unit": "mAh", "description": "Rated capacity. Pocket sizes: 150 mAh (402030), 500 mAh (503035), 1000 mAh (523450)." },
+    { "id": "soc", "label": "State of charge at start", "type": "number", "default": 100, "min": 0, "max": 100, "step": 1, "unit": "%", "description": "Charge when the simulation starts (or now, when changed while running)." },
+    { "id": "protection", "label": "Protection circuit", "type": "boolean", "default": true, "description": "Most cells have a small protection board (DW01) that disconnects the cell below about 2.5 V." },
+    { "id": "speedup", "label": "Drain speed-up (for tests)", "type": "number", "default": 1, "min": 1, "max": 3600, "step": 1, "unit": "×", "description": "Multiplies how fast charge is used or added, so a test can watch hours of discharge in seconds. 1 = real time. Anything else is NOT realistic and shows in the label." }
+  ],
+  "limits": { "maxVoltage": 4.2, "minVoltage": 3.0, "cutoffVoltage": 2.5, "maxDischargeC": 2, "maxChargeC": 1 },
+  "footprint": "Pouch cell with a protection board, 503035 for 500 mAh (5 × 30 × 35 mm), 2 wires (often a JST-PH 2.0 plug)",
+  "dimensions_mm": { "w": 35, "h": 30, "d": 5 },
+  "mass_g": 10,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-503035-lipo-500mah-3.7v.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=3.7V%20500mAh%20lipo%20503035%20JST" }
+  ],
+  "bindings": [
+    { "key": "volts", "type": "number", "description": "Terminal voltage under the present load." },
+    { "key": "soc", "type": "number", "description": "State of charge in % (0..100)." },
+    { "key": "currentmA", "type": "number", "description": "Current out of + (negative while charging)." },
+    { "key": "usedmAh", "type": "number", "description": "Charge taken out since the start (negative after net charging)." },
+    { "key": "charging", "type": "boolean", "description": "Current flows into the cell." },
+    { "key": "cutoff", "type": "boolean", "description": "The protection circuit has disconnected the cell." },
+    { "key": "label", "type": "string", "description": "e.g. \"3.92 V · 72 %\"." },
+    { "key": "fillWidth", "type": "number", "description": "Width of the charge bar in the SVG (px)." },
+    { "key": "fillColor", "type": "string", "description": "Colour of the charge bar (green, amber, red)." }
+  ],
+  "tags": ["lipo", "li-po", "lithium", "battery", "1s", "3.7v", "pouch", "rechargeable", "pocket", "portable", "wearable", "power", "cell", "li-ion"]
+}

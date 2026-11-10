@@ -26,6 +26,14 @@
   ],
   "limits": { "maxVoltage": 46, "maxCurrentmA": 2000, "peakCurrentmA": 3000, "minLogicVoltage": 4.5 },
   "footprint": "L298N module, 43 × 43 mm, 3 + 2 + 2 screw terminals, 6-pin header",
+  "dimensions_mm": { "w": 43, "h": 43, "d": 27 },
+  "mass_g": 30,
+  "current_ma": { "typ": 36, "max": 70 },
+  "price_usd": 3.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-L298N-motor-driver-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=L298N%20motor%20driver%20module" }
+  ],
   "bindings": [
     { "key": "powered", "type": "boolean", "description": "Logic supply present (power LED)." },
     { "key": "aState", "type": "string", "description": "Motor A output: \"fwd\", \"rev\", \"brake\" or \"off\"." },

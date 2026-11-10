@@ -28,6 +28,14 @@
   ],
   "limits": { "maxCurrentmA": 2000 },
   "footprint": "Battery holder / pack with 2 leads",
+  "dimensions_mm": { "w": 62, "h": 58, "d": 16 },
+  "mass_g": 110,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 6,
+  "buy_links": [
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=4xAA%20battery%20holder%20with%20switch" },
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=4xAA%20battery%20holder" }
+  ],
   "bindings": [
     { "key": "volts", "type": "number", "description": "Terminal voltage under the present load." },
     { "key": "currentmA", "type": "number", "description": "Current delivered (mA)." },

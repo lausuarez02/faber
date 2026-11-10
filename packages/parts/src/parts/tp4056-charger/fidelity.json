@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "TP4056 states: off below 4 V input, trickle (10 %) below 2.9 V, constant current, constant voltage 4.2 V, full when the current falls below 10 %, recharge below 4.05 V. CHRG / STDBY LEDs follow." },
+    "timing": { "level": "approx", "note": "State changes are immediate; a finished charge restarts no sooner than 1 s later. Charging speed comes from the battery part (its speedup prop applies)." },
+    "analog": { "level": "approx", "note": "Ideal current source from VIN into BAT clamped at 4.2 V (±10 mV); the real chip is ±1 % on voltage and ±10 % on current, and reduces the current when hot (thermal regulation, often on these modules at 1 A). During CV the input still draws the full set current here." },
+    "power": { "level": "approx", "note": "Protection (DW01): OUT is cut below 2.4 V and restored above 3.0 V or while charging; it is modelled on the + side, the real module switches the − side. Its ~3 A over-current trip is a warning only." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["CC/CV charge profile with trickle, termination and recharge", "Charge current set by R_PROG (prop)", "USB plug (press) or 5 V on IN+", "Over-discharge protection on OUT", "CHRG / STDBY LEDs"],
+  "doesNotEmulate": ["Thermal regulation (a 1 A module gets hot and slows down)", "Load sharing: with a load on OUT while charging, the real chip may never see the end of charge", "Battery temperature sensing (TEMP pin is grounded on these modules)", "The protection's over-current and short-circuit trip"],
+  "testOnRealDevice": ["Set R_PROG for your cell (≤ 1C) before the first charge", "How hot the module gets at your charge current", "That your device works while charging (load on OUT during CC/CV)"]
+}

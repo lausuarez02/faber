@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "GC9A01 command set as drivers use it: SWRESET, SLPOUT, COLMOD 16/18-bit, MADCTL (MY, MX, MV, BGR), CASET/RASET windows with wrap, RAMWR, INVON/INVOFF, DISPON/DISPOFF. The vendor init registers (0x62–0x74, 0x84–0x8F, 0xF0–0xF3…) are accepted and ignored. The glass needs INVON for true colours, as on the real panel. Pixels outside the round glass are not shown." },
+    "timing": { "level": "approx", "note": "Bytes arrive at the emulated SPI speed (the Uno's 8 MHz), so redraws take realistic time; each pixel shows immediately (no refresh, no tearing)." },
+    "analog": { "level": "approx", "note": "RGB565 expanded linearly to 8 bits per channel; no gamma, IPS viewing angle or the panel's own colour tuning from the vendor registers." },
+    "power": { "level": "approx", "note": "About 10 mA logic plus 15 mA backlight from VCC; losing VCC clears RAM." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Adafruit_GFX drawing through an Adafruit_SPITFT driver (the example)", "Round visible area: drawing in the corners does nothing", "Inverted glass (INVON required)", "Rotation 0..3 and RGB/BGR order", "Reset, sleep, display on/off, backlight on/off/PWM"],
+  "doesNotEmulate": ["Whether your init sequence is complete (the vendor registers set the panel's voltages; a short init shows nothing on hardware)", "Reading pixels back", "Tearing-effect (TE) output", "The exact edge of the visible circle (a few pixels vary between panels)"],
+  "testOnRealDevice": ["The init sequence your library sends (Adafruit_GC9A01A / TFT_eSPI are known good)", "Logic level on a 5 V board (most modules are 3.3 V only)", "Colours: if they look inverted, the driver did not send INVON"]
+}

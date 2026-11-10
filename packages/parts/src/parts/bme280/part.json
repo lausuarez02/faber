@@ -18,6 +18,14 @@
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 3.3, "maxCurrentmA": 1, "typicalCurrentmA": 0.4 },
   "footprint": "13 x 10 mm GY-BME280 module, 4-pin 0.1 in header",
+  "dimensions_mm": { "w": 13, "h": 10.5, "d": 3 },
+  "mass_g": 1,
+  "current_ma": { "typ": 0.5, "max": 1 },
+  "price_usd": 5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-GY-BME280-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=BME280%20module%20I2C" }
+  ],
   "bus": { "i2c": { "addresses": [118, 119], "addressProp": "address", "pullUpOhms": 10000, "maxHz": 400000 } },
   "bindings": [
     { "key": "temperature", "type": "number", "description": "Temperature it reports, °C (after the compensation formula, 0.01 °C steps)." },

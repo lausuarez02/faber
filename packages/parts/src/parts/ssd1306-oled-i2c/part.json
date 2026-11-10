@@ -83,6 +83,14 @@
     "typicalCurrentmA": 10
   },
   "footprint": "27 x 27 mm module, 4-pin 0.1 in header (GND VCC SCL SDA)",
+  "dimensions_mm": { "w": 27, "h": 27.8, "d": 4 },
+  "mass_g": 3,
+  "current_ma": { "typ": 10, "max": 25 },
+  "price_usd": 4,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-0.96-inch-OLED-SSD1306-I2C-128x64.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=SSD1306%200.96%20OLED%20I2C" }
+  ],
   "bus": {
     "i2c": {
       "addresses": [

@@ -1,0 +1,48 @@
+{
+  "id": "relay-module",
+  "name": "Relay module (1 channel, 5 V, opto-isolated)",
+  "category": "output",
+  "description": "Switches a separate load (pump, lamp, motor, up to 10 A at 30 V DC) with a 5 V relay. Control side: VCC → 5V, GND → GND, IN → a GPIO. Load side: COM and NO in series with the load and its own supply (NO closes when the relay clicks; NC opens). Most modules are active-LOW: digitalWrite(pin, LOW) switches it on (prop trigger).",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 10, "y": 30, "type": "power", "voltage": { "min": 4.5, "max": 5.5 }, "description": "5 V for the relay coil (~70 mA). Not 3.3 V: the coil needs at least 3.75 V to pull in." },
+    { "id": "GND", "label": "GND", "x": 10, "y": 50, "type": "ground", "description": "Ground, shared with the board." },
+    { "id": "IN", "label": "IN", "x": 10, "y": 70, "type": "digital", "description": "Control input. Active low (default): LOW = relay on, HIGH or 5 V = off. About 3 mA flows while on." },
+    { "id": "NO", "label": "NO", "x": 150, "y": 30, "type": "passive", "description": "Normally open contact: connected to COM while the relay is on. Usual choice for a load." },
+    { "id": "COM", "label": "COM", "x": 150, "y": 55, "type": "passive", "description": "Common contact of the switch." },
+    { "id": "NC", "label": "NC", "x": 150, "y": 80, "type": "passive", "description": "Normally closed contact: connected to COM while the relay is off." }
+  ],
+  "size": { "w": 160, "h": 110 },
+  "props": [
+    {
+      "id": "trigger",
+      "label": "Trigger level",
+      "type": "enum",
+      "default": "low",
+      "options": [
+        { "value": "low", "label": "Active low (LOW = on), most optocoupled modules" },
+        { "value": "high", "label": "Active high (HIGH = on), transistor modules / H jumper" }
+      ],
+      "description": "Which IN level turns the relay on. Check the module's silkscreen or the H/L jumper."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 4.5, "pullInVoltage": 3.75, "coilmA": 71, "contactMaxmA": 10000, "contactMaxDcVoltage": 30, "operateMs": 10, "releaseMs": 5 },
+  "footprint": "50 × 26 mm module, 3-pin 0.1 in header (VCC GND IN), 3-way 5 mm screw terminal (NO COM NC)",
+  "dimensions_mm": { "w": 50, "h": 26, "d": 18.5 },
+  "mass_g": 15,
+  "current_ma": { "typ": 72, "max": 80 },
+  "price_usd": 2,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-5V-1-channel-relay-module-optocoupler.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=5V%201%20channel%20relay%20module%20optocoupler" }
+  ],
+  "bindings": [
+    { "key": "energized", "type": "boolean", "description": "The coil is on and COM is switched to NO." },
+    { "key": "contact", "type": "string", "description": "\"NO\" or \"NC\": which contact COM touches." },
+    { "key": "armTransform", "type": "string", "description": "SVG transform of the switch arm." },
+    { "key": "coilmA", "type": "number", "description": "Coil current (mA)." },
+    { "key": "loadmA", "type": "number", "description": "Current through the closed contact (mA)." },
+    { "key": "clicks", "type": "number", "description": "Times the relay switched on since reset." },
+    { "key": "label", "type": "string", "description": "e.g. \"ON · 180 mA\"." }
+  ],
+  "tags": ["relay", "relay module", "switch", "load", "pump", "lamp", "mains", "srd-05vdc", "optocoupler", "5v relay", "output", "actuator"]
+}

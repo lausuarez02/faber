@@ -1,0 +1,37 @@
+{
+  "id": "water-pump",
+  "name": "Mini submersible water pump (3–6 V DC)",
+  "category": "motor",
+  "description": "Small brushed DC pump for plant watering and fountains: about 120 L/h and 180 mA at 5 V. It is a motor: never wire it straight to a GPIO. Switch it with a relay module (COM/NO in series with the pump and 5 V), a MOSFET or an L298N output. Red wire (+) to the switched supply, black (−) to GND.",
+  "pins": [
+    { "id": "POS", "label": "+", "x": 10, "y": 35, "type": "passive", "description": "Red wire. Water flows when + is more positive than −." },
+    { "id": "NEG", "label": "−", "x": 10, "y": 55, "type": "passive", "description": "Black wire." }
+  ],
+  "size": { "w": 150, "h": 90 },
+  "props": [
+    { "id": "ratedVoltage", "label": "Rated voltage", "type": "number", "default": 5, "min": 2, "max": 12, "step": 0.1, "unit": "V", "description": "Voltage the flow and current below are given at." },
+    { "id": "flowLph", "label": "Flow at rated voltage", "type": "number", "default": 120, "min": 10, "max": 1000, "unit": "L/h", "description": "Free-flow rate (no lift) at the rated voltage. Common 3–6 V pumps: 80–120 L/h." },
+    { "id": "ratedCurrent", "label": "Running current", "type": "number", "default": 0.18, "min": 0.02, "max": 3, "step": 0.01, "unit": "A", "description": "Current while pumping water at the rated voltage." }
+  ],
+  "limits": { "maxVoltage": 6.5, "maxCurrentmA": 700, "minStartVoltage": 2.5 },
+  "footprint": "Submersible pump, 45 × 30 × 24 mm, 7.5 mm outlet, 2 wires",
+  "dimensions_mm": { "w": 45, "h": 30, "d": 24 },
+  "mass_g": 28,
+  "current_ma": { "typ": 180, "max": 700 },
+  "price_usd": 3,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-mini-submersible-water-pump-3V-6V.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=mini%20submersible%20water%20pump%203-6V" }
+  ],
+  "bindings": [
+    { "key": "running", "type": "boolean", "description": "Water is flowing." },
+    { "key": "flowLph", "type": "number", "description": "Flow right now (L/h)." },
+    { "key": "pumpedMl", "type": "number", "description": "Water pumped since reset (ml)." },
+    { "key": "currentmA", "type": "number", "description": "Motor current (mA)." },
+    { "key": "volts", "type": "number", "description": "Voltage across the pump (+ minus −)." },
+    { "key": "rpm", "type": "number", "description": "Impeller speed." },
+    { "key": "label", "type": "string", "description": "e.g. \"118 L/h · 42 ml\"." },
+    { "key": "waterOpacity", "type": "number", "description": "Opacity of the water jet (0..1)." }
+  ],
+  "tags": ["pump", "water pump", "submersible", "plant", "watering", "irrigation", "garden", "fountain", "motor", "dc load", "aquarium"]
+}

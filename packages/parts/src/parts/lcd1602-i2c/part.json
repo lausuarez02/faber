@@ -96,6 +96,14 @@
     "typicalCurrentmA": 25
   },
   "footprint": "80 x 36 mm module, backpack header 4 pins 0.1 in (GND VCC SDA SCL)",
+  "dimensions_mm": { "w": 80, "h": 36, "d": 20 },
+  "mass_g": 40,
+  "current_ma": { "typ": 25, "max": 40 },
+  "price_usd": 6,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-LCD1602-I2C-PCF8574-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=LCD%201602%20I2C%20module" }
+  ],
   "bus": {
     "i2c": {
       "addresses": [

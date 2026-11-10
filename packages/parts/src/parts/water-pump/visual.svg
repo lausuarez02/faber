@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 90" width="150" height="90">
+  <path d="M10 35 H26 M10 55 H26" stroke="#9AA3AF" stroke-width="2"/>
+  <path d="M10 35 H24" stroke="#E5484D" stroke-width="2"/>
+  <rect x="26" y="22" width="78" height="46" rx="10" fill="#2B313B" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="34" y="28" width="44" height="34" rx="6" fill="#1C2027" stroke="#3A4250"/>
+  <circle cx="90" cy="45" r="11" fill="#15181D" stroke="#4A5363"/>
+  <path d="M90 37 V53 M82 45 H98" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="104" y="40" width="20" height="10" rx="2" fill="#2B313B" stroke="#3A4250"/>
+  <g opacity="0" data-bind="opacity:waterOpacity">
+    <path d="M124 45 Q136 42 144 30 M124 45 Q138 46 146 40 M124 45 Q136 50 144 58" fill="none" stroke="#4CB5FF" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="56" y="43" text-anchor="middle" font-family="Bricolage Grotesque" font-size="8" fill="#E9EDF2">PUMP</text>
+  <text x="56" y="54" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">3–6 V</text>
+  <text x="65" y="84" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#5CF2A1" data-bind="text:label">0 L/h · 0 ml</text>
+  <text x="18" y="30" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">+</text>
+  <text x="18" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">−</text>
+  <circle data-pin="POS" cx="10" cy="35" r="3" fill="#C9CED6"/>
+  <circle data-pin="NEG" cx="10" cy="55" r="3" fill="#C9CED6"/>
+</svg>

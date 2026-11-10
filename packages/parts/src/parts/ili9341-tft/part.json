@@ -30,6 +30,14 @@
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 3.0, "maxCurrentmA": 120, "typicalCurrentmA": 80, "maxLogicVoltage3v3": 3.6 },
   "footprint": "86 x 50 mm module, 9-pin 0.1 in header (VCC GND CS RESET DC SDI SCK LED SDO)",
+  "dimensions_mm": { "w": 86, "h": 50, "d": 7 },
+  "mass_g": 30,
+  "current_ma": { "typ": 80, "max": 120 },
+  "price_usd": 12,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-2.8-inch-ILI9341-SPI-TFT-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=ILI9341%202.8%20inch%20SPI%20TFT" }
+  ],
   "bus": { "spi": { "modes": [0], "maxHz": 10000000 } },
   "bindings": [
     { "key": "on", "type": "boolean", "description": "The glass shows an image: powered, sleep out (0x11), display on (0x29) and backlight on." },

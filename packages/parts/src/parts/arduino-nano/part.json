@@ -46,6 +46,14 @@
     "maxVoltage": 5.5
   },
   "footprint": "18 × 45 mm DIP-30, 0.6 in row spacing",
+  "dimensions_mm": { "w": 45, "h": 18, "d": 8 },
+  "mass_g": 7,
+  "current_ma": { "typ": 20, "max": 40 },
+  "price_usd": 24.9,
+  "buy_links": [
+    { "vendor": "Arduino Store", "url": "https://store.arduino.cc/products/arduino-nano" },
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=Arduino%20Nano" }
+  ],
   "bindings": [
     {
       "key": "powered",

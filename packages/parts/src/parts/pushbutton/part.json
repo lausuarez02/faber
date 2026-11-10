@@ -12,6 +12,14 @@
   "size": { "w": 80, "h": 80 },
   "limits": { "maxCurrentmA": 50, "maxVoltage": 12 },
   "footprint": "THT 6×6 mm tactile switch, 6.5 × 4.5 mm leg spacing",
+  "dimensions_mm": { "w": 6, "h": 6, "d": 5 },
+  "mass_g": 0.4,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.15,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=6x6mm%20tactile%20switch%20THT" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-6x6x5-tactile-switch.html" }
+  ],
   "bindings": [
     { "key": "pressed", "type": "boolean", "description": "True while the button is held down." },
     { "key": "capTransform", "type": "string", "description": "SVG transform for the cap: \"translate(0 0)\" up, \"translate(0 1.5)\" pressed." }

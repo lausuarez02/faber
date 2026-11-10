@@ -29,6 +29,14 @@
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 3.0, "maxCurrentmA": 60, "typicalCurrentmA": 40 },
   "footprint": "34 x 56 mm module, 8-pin 0.1 in header (LED SCK SDA A0 RESET CS GND VCC), SD slot on the back",
+  "dimensions_mm": { "w": 34, "h": 56, "d": 7 },
+  "mass_g": 13,
+  "current_ma": { "typ": 40, "max": 60 },
+  "price_usd": 6,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-1.8-inch-ST7735-TFT-SPI-128x160.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=1.8%20inch%20TFT%20ST7735%20128x160" }
+  ],
   "bus": { "spi": { "modes": [0], "maxHz": 15000000 } },
   "bindings": [
     { "key": "on", "type": "boolean", "description": "The glass shows an image: powered, sleep out (0x11), display on (0x29) and backlight on." },

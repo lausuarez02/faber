@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Sounds while the pin toggles between 20 Hz and 20 kHz; silent on a steady level. Each new tone (start, or pitch change > 1 %) is counted and its note name recorded." },
+    "timing": { "level": "ok", "note": "The frequency is measured from the cycle-exact period of the edges on the pin (tone() timer interrupts, analogWrite PWM), sampled every 1 ms of virtual time. Tones shorter than 1 ms are not counted." },
+    "analog": { "level": "approx", "note": "Loudness is a relative 0..1 from the drive amplitude and a resonance curve around resonantHz (4 kHz). Electrically a 10 kΩ load (a real piezo is a ~20 nF capacitor: tiny average current, current spikes on each edge). No audio output." },
+    "power": { "level": "approx", "note": "Under 1 mA average." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Pitch from tone() and PWM, note names and melody history", "Silence on DC (with a hint)", "Louder near its resonant frequency"],
+  "doesNotEmulate": ["Audio you can hear", "Sound pressure level in dB", "Harmonics and the timbre of a square wave", "Magnetic (coil) passive buzzers, which draw 30–100 mA and need a transistor"],
+  "testOnRealDevice": ["Loudness at the notes you use (piezos are quiet far below their resonance)", "That your buzzer really is passive: an active one beeps at its own pitch on DC"]
+}

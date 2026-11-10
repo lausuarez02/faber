@@ -14,6 +14,14 @@
   ],
   "limits": { "maxCurrentmA": 300, "maxVoltage": 50 },
   "footprint": "THT SS12D00-style SPDT slide switch, 0.1 in pitch",
+  "dimensions_mm": { "w": 8.6, "h": 3.6, "d": 7.5 },
+  "mass_g": 0.5,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.3,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=SS12D00%20slide%20switch" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-SS12D00-slide-switch.html" }
+  ],
   "bindings": [
     { "key": "position", "type": "number", "description": "0 or 1." },
     { "key": "knobTransform", "type": "string", "description": "SVG transform for the slider: \"translate(0 0)\" or \"translate(16 0)\"." }

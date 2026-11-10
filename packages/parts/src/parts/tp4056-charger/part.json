@@ -1,0 +1,39 @@
+{
+  "id": "tp4056-charger",
+  "name": "LiPo charger module (TP4056 with protection, USB-C)",
+  "category": "power",
+  "description": "Charges a 1S LiPo from USB 5 V (constant current, then 4.2 V constant voltage) and protects it. BAT (B+) and GND.2 (B−) to the cell, OUT (OUT+) and GND.3 (OUT−) to your circuit (e.g. VSYS of a 3.3 V board). Plug USB with press (or prop usb), or feed 5 V into VIN (IN+). Red LED = charging, blue = full. The charge current is 1 A as sold: for a small cell lower it to 1C (chargeCurrentmA, R_PROG).",
+  "pins": [
+    { "id": "VIN", "label": "IN+", "x": 10, "y": 40, "type": "power", "voltage": { "min": 4.5, "max": 8 }, "description": "5 V input (same as the USB socket). 4.5 to 5.5 V; 8 V absolute max." },
+    { "id": "GND.1", "label": "IN−", "x": 10, "y": 60, "type": "ground", "description": "Input ground." },
+    { "id": "BAT", "label": "B+", "x": 130, "y": 20, "type": "power", "description": "To the LiPo cell's + (red)." },
+    { "id": "GND.2", "label": "B−", "x": 130, "y": 40, "type": "ground", "description": "To the LiPo cell's − (black)." },
+    { "id": "OUT", "label": "OUT+", "x": 130, "y": 60, "type": "power", "description": "Protected battery output (3.0 to 4.2 V) to the load, e.g. VSYS / BAT of a 3.3 V board. Not 5 V: add a boost converter for 5 V boards." },
+    { "id": "GND.3", "label": "OUT−", "x": 130, "y": 80, "type": "ground", "description": "Load ground." }
+  ],
+  "size": { "w": 140, "h": 100 },
+  "props": [
+    { "id": "usb", "label": "USB cable plugged in", "type": "boolean", "default": false, "description": "A USB charger gives the module 5 V. press toggles it." },
+    { "id": "chargeCurrentmA", "label": "Charge current (R_PROG)", "type": "number", "default": 1000, "min": 50, "max": 1000, "step": 10, "unit": "mA", "description": "Set by R_PROG: 1.2 kΩ = 1000 mA (as sold), 2 kΩ = 580, 3 kΩ = 400, 5 kΩ = 250, 10 kΩ = 130. Keep it at or below the cell's capacity (1C)." }
+  ],
+  "limits": { "maxVoltage": 8, "minVoltage": 4.5, "maxCurrentmA": 1000, "chargeVoltage": 4.2, "rechargeVoltage": 4.05, "trickleVoltage": 2.9, "protectCutoffVoltage": 2.4, "protectReleaseVoltage": 3.0 },
+  "footprint": "28 × 17.5 mm module, USB-C socket, solder pads IN+ IN− B+ B− OUT+ OUT−",
+  "dimensions_mm": { "w": 28, "h": 17.5, "d": 5 },
+  "mass_g": 2,
+  "current_ma": { "typ": 1, "max": 1000 },
+  "price_usd": 1,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-TP4056-type-c-protection-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=TP4056%20USB-C%20charger%20module%20protection" }
+  ],
+  "bindings": [
+    { "key": "usb", "type": "boolean", "description": "USB cable plugged in." },
+    { "key": "mode", "type": "string", "description": "\"off\" (no input), \"trickle\", \"CC\" (constant current), \"CV\" (4.2 V), \"full\"." },
+    { "key": "charging", "type": "boolean", "description": "Charging (red CHRG LED)." },
+    { "key": "full", "type": "boolean", "description": "Charge finished (blue STDBY LED)." },
+    { "key": "chargemA", "type": "number", "description": "Current into the cell (mA)." },
+    { "key": "protected", "type": "boolean", "description": "The protection has cut OUT off (cell below 2.4 V)." },
+    { "key": "label", "type": "string", "description": "e.g. \"CC 1000 mA\"." }
+  ],
+  "tags": ["tp4056", "charger", "lipo charger", "battery charger", "usb charger", "li-ion", "lithium", "dw01", "protection", "power", "pocket", "usb-c"]
+}
