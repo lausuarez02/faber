@@ -1,25 +1,55 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-09 (round 4: design review, live Claude builds of an AI pet and a robot, run
-what the agent built). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
+Last updated 2026-11-10 (round 5: projects and versions, the followed page runs the device, RP2040
+pocket boards, 14 new parts, parts agents can create, plan first). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
 one-line goal to a wired, programmed and tested device using only Jumper's tools, and a person
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
-## Round 5, track agent (2026-11-10): plan first, show me, safer checks
+## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
+
+Six tracks merged into main (decision [0003](docs/decisions/0003-round5-see-it-work.md)). Checks
+after the merge: `pnpm gen` no diff, `pnpm typecheck` 0 errors, `pnpm test` 110 files, 984 passed,
+2 skipped; full e2e (desktop, mobile and perf, `E2E_PORT=5260`) 66 passed, 9 skipped (device-specific).
 
 | Area | What works | Check it with |
 | --- | --- | --- |
-| Plan first | `plan_device {goal, constraints}`: board and why, BOM with a why per line and simulated-exactly / stand-in / agent-made / not-simulated, size (parts and case), battery life from `current_ma`, price, buy links, one clarifying question, `cannot_check`; missing figures are named, never guessed. Server instructions: plan first, one question, no jargon, a project per idea (`new_project {folder}`), real parts or `create_part` over stand-ins | `packages/session/test/agent-tools.test.ts` |
-| Show me | `record` (MP4 of the agent's build replayed from the log, agent-only by default; under 5 s failure when Chromium is missing), `viewer_url` + `GET /v/:id` (opens the project live with autorun), screenshots inline with their absolute path and the viewer link, `GET /api/media/:file` | `agent-tools.test.ts` (real MP4 when Chromium is installed), `apps/cli/test/agent-routes.test.ts` |
-| check_design | LED resistor along the whole path, `logic-level` by direction, `part-needs-5v`, `parallel-regulators`, `rail-3v3-budget`, `far-apart` (info); L298N 5V output may stay unwired | `packages/session/test/drc-round5.test.ts` |
-| Exports | stand-ins (`mark_stand_in`) and agent-made parts labelled in BOM / WIRING / TEST-ON-HARDWARE; `run_tests` accepts pending steps when all pass or says why not; `delete_file` | `agent-tools.test.ts` |
-| AI pet | `m=` message to the model; `jumper serve` starts the gateway (`GET /api/ai-gateway`); "Say something to the pet" box in the Network panel | `services/ai-gateway/test/pet-message.test.ts`, `e2e/devices.spec.ts` (talk box) |
+| Projects and versions | Projects gallery (logo): your projects, registered folders, examples and agent-built ones, with board, part count, tests, server-rendered thumbnails and an agent-made badge; opening an example copies it. History scrubber: every change in the action log is a version (who, why, what changed, the code, the firmware hash, a preview with that run's device state) and `restore_version` brings it back as an undoable step. Code editor (CodeMirror 6) with Save and Build & Run, compile errors underlined at the line. Switching projects keeps one MCP endpoint and one live hub | `apps/cli/test/projects.test.ts`, `e2e/projects-flow.spec.ts`, [docs/projects.md](docs/projects.md) |
+| Run it here | The page that follows an agent runs the device itself with the agent's latest hex, reloads on a new build and auto-runs after an agent build / run / run_tests (Auto-run checkbox, `?autorun=`). Hold buttons, flip switches, drag knobs, tilt / shake an IMU, slide sensor values while it runs; the project file never changes. One agent state (none / building / idle / done) behind the pill, the avatar, the Install MCP popover and the steps panel. Run with nothing to run says why and what to do | `e2e/live-run.spec.ts`, `apps/cli/test/live-routes.test.ts`, `packages/session/test/agent-state.test.ts` |
+| Pocket boards (RP2040) | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero run real arduino-pico 6.3.1 firmware on rp2040js with Jumper's own boot ROM: GPIO, PWM, 12-bit ADC, USB serial, Serial1 on pins, I2C and SPI to the existing parts, PIO on the virtual clock, deterministic timing; templates `pico`, `xiao-rp2040`, `rp2040-zero`; export writes a UF2. Runs in Node and in the page (followed or `?local`). Example `examples/pocket-oled` | `packages/parts/src/rp2040.integration.test.ts`, `packages/sim-backends/src/rp2040/rp2040.test.ts`, `e2e/rp2040.spec.ts`, [docs/rp2040.md](docs/rp2040.md) |
+| Parts | 14 new: bump switch, TTP223 touch, capacitive soil probe, relay module, water pump, vibration motor, passive buzzer (tone frequency and melody), PIR, IR obstacle, DHT22, LiPo cell, TP4056 charger, WS2812 strip, GC9A01 round TFT. Every part (41) has dimensions, mass, current, price and buy links. Robot physics feeds the IR sensors and presses bump switches | `packages/parts/src/spec/physical.test.ts`, `e2e/parts-r5.spec.ts`, [docs/adding-a-part.md](docs/adding-a-part.md) |
+| Agents create parts | `create_part` / `update_part` / `list_project_parts`: a part as data (pins, physical facts, one behaviour template: digital input, analog sensor, actuator / relay, I2C register map, UART line device, display on the SSD1306 / ST7735 / ILI9341 / GC9A01 controller), never code. Works with place / connect / run / tests / DRC / exports / screenshots / canvas; SVGs rebuilt from an allowlist; labelled "agent-made: behavioral, unverified" everywhere | `packages/parts/src/custom/custom.test.ts`, `packages/session/test/agentparts.test.ts`, `e2e/agentparts.spec.ts`, [docs/custom-parts.md](docs/custom-parts.md) |
+| Plan first, show me | `plan_device`: board and why (pocket wishes get the XIAO RP2040, 5 V-only parts steer to a 5 V board), BOM with source per line, size, battery life (catalog LiPo + TP4056; a boost converter only when the board has no input that takes a 1S cell), price, links, one question, what the sim cannot check. `record` (MP4), `viewer_url` / `GET /v/:id`, inline screenshots, `delete_file`, `mark_stand_in`, `new_project {folder}` (switches the live page) | `packages/session/test/agent-tools.test.ts`, `apps/cli/test/agent-routes.test.ts` |
+| check_design | LED resistor along the whole path, `logic-level`, `part-needs-5v`, `parallel-regulators`, `rail-3v3-budget`, `far-apart`; the I2C fix names the board's own Wire pins (XIAO GP6/GP7, Pico GP4/GP5) | `packages/session/test/drc-round5.test.ts`, `packages/session/test/rp2040-session.test.ts` |
+| AI pet | `m=` message to the model; `jumper serve` starts the gateway; "Say something to the pet" box | `services/ai-gateway/test/pet-message.test.ts`, `e2e/devices.spec.ts` |
 
-Known gaps: plan_device numbers depend on the parts track's C2 data (until merged, most prices and
-currents are listed as missing); the battery and boost converter figures are typical values,
-labelled as assumptions; the recorded video does not show colour TFT pixels (replay limitation).
+Known gaps (round 5):
+- **RP2040:** no official boot ROM (licence); Jumper's ROM matches IEEE-754 for basic arithmetic,
+  sin/cos/exp/log may differ in the last bit, ROM call timings are typical. Not simulated: core 1
+  (`setup1`/`loop1`), the on-board WS2812 LEDs, bus pins moved with `Wire.setSDA()` and similar,
+  UART formats other than 8N1, flash across a reset, an MCU's own TX wired to its RX. The
+  `jumper/arduino-pico:6.3.1-r1` image is built locally only; without it RP2040 sketches don't build
+  (golden hexes run). In the browser it runs at about 0.8 to 1x real time.
+- **Libraries:** sketches using Adafruit_GC9A01A, TFT_eSPI, the DHT library, FastLED or Adafruit
+  NeoPixel do not compile yet (no `-libs3` image; NeoPixel is LGPL-3.0 and needs a decision). The
+  examples and hints use library-free code.
+- **Parts:** WS2812 capped at 16 LEDs, no DOUT, no 3.3 V data check; the vibration motor is the
+  module version; agent-made actuators report force but do not drive the robot physics.
+- **Agent-made parts:** UART devices only on SoftwareSerial pins; the log entry for a part file is a
+  `project` entry, so the History view's file contents do not include part files.
+- **Live:** an agent writing a file without building does not rebuild the page (it says "sketch
+  changed, not built yet"); auto-run only follows agent (MCP) calls; an agent on a separate stdio
+  process ends as "idle", never "done"; IMU Shake / Drop / Spin are approximate (wall clock).
+- **Projects:** history previews show colour TFTs dark; old logs have builds without a hash;
+  files over 50 000 characters cannot be restored; the first gallery load renders thumbnails at
+  about 1 s each (cached after); `/v/:id` for a project that is not open says how to open it rather
+  than switching (switching would move the agent too).
+- **Plan:** battery and boost figures are typical values labelled as assumptions; videos do not
+  show colour TFT pixels.
+- **Flaky under load:** `visual-capture.test.ts` and `session.test.ts` "is deterministic" have each
+  hit their 5 s timeout once in a full run on a busy machine; they pass alone and in later runs.
+- ESP32-S3 / C3 is planned in the decision note, not built.
 
 ## Round 4 (2026-11-09): UI review, two live Claude builds, try it yourself
 

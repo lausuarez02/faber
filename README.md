@@ -99,29 +99,38 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 
 ## What works today
 
-- **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone. Open the examples from the project menu (or `?example=tamagotchi`, `ai-pet`, `rover`, `robot-arm`).
-- **Parts:** 24 parts, including an SSD1306 OLED, ILI9341 and ST7735 colour TFTs, an ESP-01 Wi-Fi module, a 16x2 I2C LCD, DS3231, BME280, MPU6050, servo, DC motor, L298N, HC-SR04, battery pack and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file and tests.
-- **Simulation:** Arduino Uno and Nano (ATmega328P) on [avr8js](https://github.com/wokwi/avr8js), running the real `.hex` that arduino-cli builds, with I2C and SPI buses and cycle-timed PWM.
+- **Canvas:** pan, zoom, place parts and drag wires between pins, on a breadboard-style dot grid. It also works on a phone. Open the examples from the project menu (or `?example=tamagotchi`, `ai-pet`, `rover`, `robot-arm`, `pocket-oled`).
+- **Projects and history:** the logo opens a gallery of your projects and the examples (opening an example copies it). Every change is a version you can scrub through and restore: who changed what and why, the code, and how the device looked. A code editor with Save and Build & Run underlines compile errors at the line.
+- **Parts:** 36 parts plus 5 boards, including an SSD1306 OLED, ILI9341, ST7735 and round GC9A01 colour TFTs, a WS2812 strip, an ESP-01 Wi-Fi module, a 16x2 I2C LCD, DS3231, BME280, DHT22, MPU6050, PIR, IR obstacle and bump switches, a capacitive soil probe, relay and water pump, a passive buzzer that plays melodies, a LiPo cell with a TP4056 charger, servo, DC motor, L298N, HC-SR04 and a 2WD robot chassis. Each one has a spec, a behavioral model, an SVG visual, a fidelity file, tests and physical data (size, mass, current, price, buy links).
+- **Parts agents make:** when the catalog lacks a part, an agent describes it with `create_part` (pins, physical facts and a behaviour template: digital input, analog sensor, actuator or relay, I2C register map, UART device, or a display on a known controller). No agent code runs; the part is labelled "agent-made: behavioral, unverified" in every report and export. See [docs/custom-parts.md](docs/custom-parts.md).
+- **Boards:**
+
+  | Board | Simulator | Toolchain |
+  | --- | --- | --- |
+  | Arduino Uno R3, Arduino Nano (ATmega328P, 5 V) | [avr8js](https://github.com/wokwi/avr8js) | arduino-cli `arduino:avr` |
+  | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero (RP2040, 3.3 V) | [rp2040js](https://github.com/wokwi/rp2040js) with Jumper's own boot ROM | arduino-pico 6.3.1 ([docs/rp2040.md](docs/rp2040.md)) |
+
+- **Simulation:** the real firmware arduino-cli builds, with I2C and SPI buses and cycle-timed PWM; on RP2040 also the ADC, USB serial, UARTs on pins and PIO.
   - A small DC circuit solver sets each LED's brightness from the actual current through it, so an LED wired without a resistor is flagged.
   - Time is counted in MCU cycles, never wall-clock time, so the same project gives the same run every time.
 - **Robots:** a deterministic 2D physics world (Rapier) moves a rover with its simulated motors, feeds its sonar real distances, and moves a servo arm; the canvas shows the arena or the arm next to the circuit.
 - **Device view:** the project as the physical thing in 3D: a handheld with its live screen, the rover driving in its arena, the arm on a table. The Tests panel shows every scenario as a filmstrip of what the device looked like at each check; click a frame to open that exact moment.
 - **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
-- **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 37 operations, scenario tests, design-rule checks, fault injection, a fidelity report, live follow and replay of an agent's session in the browser.
+- **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 46 operations, scenario tests, design-rule checks (including 3.3 V logic levels and rail budgets), fault injection, a fidelity report, live follow and replay of an agent's session in the browser. `plan_device` turns a wish into a parts list with size, battery life and price before anything is placed; `record` gives the person an MP4 and `viewer_url` a link that opens the project live.
 - **Run what the agent built:** the page `pnpm start` opens follows the agent live, and Run runs the project there with the agent's latest firmware (auto-run after each agent build); buttons press, knobs turn and sensors slide while it runs. `/?local` still opens a standalone copy.
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
-- **Serial console:** the firmware's UART output (Serial.print) shows up live next to the canvas.
+- **Serial console:** the firmware's serial output (Serial.print: UART0 on AVR, USB on RP2040) shows up live next to the canvas.
 
-What is **not** there yet: building firmware from the browser (builds run through the CLI / MCP server with Docker), boards other than the ATmega328P Uno/Nano, Wi-Fi beyond the ESP-01 sandbox, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
+What is **not** there yet: building firmware without `jumper serve` (Build & Run in the editor goes through the local server and Docker), ESP32 and STM32 boards, the RP2040's second core, Wi-Fi beyond the ESP-01 sandbox, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
 
 ## Roadmap
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | **M0 Foundations** | Monorepo, brand, project format, canvas (pan/zoom/place/wire), parts spec + 10 parts, avr8js running Blink with a live LED, CI | Done ([STATUS.md](STATUS.md)) |
-| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Mostly done (21 parts; serial input from the browser and the GitHub Action are open) |
+| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `jumper test` CLI, GitHub Action | Mostly done (41 parts; serial input from the browser and the GitHub Action are open) |
 | **M2 The agent** | MCP server exposing every canvas and sim action, built-in agent panel, prompt-to-passing-tests demo | MCP server, CLI and demos done; built-in panel open |
-| **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | Planned |
+| **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | RP2040 boards, 41 parts, fidelity report, DRC and exports done; ESP32 planned (decision 0003), STM32 open |
 | **M4 Robots** | Physics world, motors/servos/IMU/distance sensors, rover and robot-arm demos | Rover and arm done (pulled forward) |
 | **M5 Real hardware** | Device-farm runner, same tests on real boards, sim-vs-real diff | Planned |
 
