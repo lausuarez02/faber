@@ -462,7 +462,9 @@ backendFactory: BackendFactory          // "avr8js" + atmega328p → createAvrBa
 
 The Nano adds `A6`/`A7` as analog-only pins. Since M1 the backend implements the optional `busPins` (`i2c: { sda: "A4", scl: "A5" }`, `spi: { mosi: "D11", miso: "D12", sck: "D13", ss: "D10" }`), `attachI2c(bus)` (AVR TWI master with real SCL timing) and `attachSpi(bus)` (AVR SPI master). See `docs/adding-a-board-backend.md` and `docs/buses.md`.
 
-Deps available: `avr8js@0.21.1`, `intel-hex@0.2.0` (or use `parseIntelHex` from sim-core).
+RP2040 (round 5): `createRp2040Backend({ board?: "raspberry-pi-pico" | "seeed-xiao-rp2040" | "waveshare-rp2040-zero", clockHz?, vcc? })`, picked by `backendFactory` for `mcu.backend === "rp2040js"`. Pins `GP0`..`GP29`, bus pins per board (`RP2040_BOARDS`), `cycles` are 125 MHz reference cycles. Also `parseRp2040Hex`, `hexToUf2`, `RP2040_BACKEND_FACTS`. See `docs/rp2040.md`.
+
+Deps available: `avr8js@0.21.1`, `rp2040js@1.4.1`, `intel-hex@0.2.0` (or use `parseIntelHex` from sim-core).
 
 ## examples/blink
 
