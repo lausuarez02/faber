@@ -81,6 +81,8 @@ async function editSketch(page: Page, file: string, edit: (text: string) => stri
   await page.keyboard.insertText(edit(text));
   await editor.getByTestId("code-save").click();
   await expect(editor.getByTestId("code-save")).toBeDisabled({ timeout: 15_000 });
+  // Disabled while saving too: closing then would ask to discard (the save is still on its way).
+  await expect(editor).toHaveAttribute("data-status", "saved", { timeout: 15_000 });
   await editor.getByTestId("code-close").click();
 }
 
@@ -169,6 +171,65 @@ test.describe("switching projects (served)", () => {
       await expect.poll(async () => (await card.textContent()) ?? "", { timeout: 15_000 }).toContain(original.split("\n").find((l) => /frame/.test(l))!.trim());
       // The restore is the person's own step too.
       await expect(page.getByTestId("live-steps")).not.toContainText("restore version");
+    } finally {
+      await s.close();
+    }
+  });
+  test("round 6b: opening an example again reopens your copy, New copy makes 'Name (2)', cards stay put, End scrolls, a fresh copy is not 'sketch changed' and starts at 00:00.000", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "the gallery flow is exercised once, on desktop");
+    const s = await serve(info);
+    try {
+      await page.goto(`${s.url}/`);
+      const home = page.getByTestId("projects-home");
+      await expect(home).toBeVisible({ timeout: 30_000 });
+      const grid = home.getByTestId("projects-grid");
+      const names = async () => grid.locator("[data-testid^=project-card-]").evaluateAll((els) => els.map((e) => e.getAttribute("data-name")));
+
+      // End / Home scroll the page wherever the focus is.
+      const body = page.getByTestId("projects-body");
+      await page.keyboard.press("End");
+      await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+      await page.keyboard.press("Home");
+      await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBe(0);
+      await page.keyboard.press("PageDown");
+      await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+      await page.keyboard.press("Home");
+
+      // The AI pet: a fresh copy is not "sketch changed", its clock is at zero.
+      await openExample(page, "AI pet");
+      await expect(page.getByTestId("app")).toHaveAttribute("data-firmware", "ready", { timeout: 20_000 });
+      await expect(page.getByTestId("live-stale")).toHaveCount(0);
+      await expect(page.getByTestId("sim-clock")).toHaveText("00:00.000");
+      await shot(page, info, "r6b-ai-pet-fresh");
+
+      // Blink, then the AI pet again: the same copy reopens, no second "AI pet" card.
+      await openExample(page, "Blink");
+      await expect(page.getByTestId("part-led1")).toBeVisible({ timeout: 20_000 });
+      await page.getByTestId("open-projects").click();
+      await expect(grid).toBeVisible();
+      await expect.poll(async () => (await names()).includes("Blink"), { timeout: 15_000 }).toBe(true);
+      const order1 = await names();
+      expect(order1.filter((n) => n === "AI pet")).toHaveLength(1);
+      await openExample(page, "AI pet");
+      await expect(page.getByTestId("toast").filter({ hasText: "Opened AI pet" })).toHaveCount(1, { timeout: 20_000 });
+      await page.getByTestId("open-projects").click();
+      await expect(grid).toBeVisible();
+      await expect.poll(async () => (await names()).length).toBe(order1.length);
+      const order2 = await names();
+      expect(order2.filter((n) => n === "AI pet")).toHaveLength(1);
+      // Opening it made it the newest on the server; on this page the cards did not move.
+      expect(order2).toEqual(order1);
+
+      // Asked for a new copy: "AI pet (2)", which goes first.
+      const pet = home.getByTestId("examples-grid").locator('[data-name="AI pet"]');
+      const petId = (await pet.getAttribute("data-testid"))!.replace("project-card-", "");
+      await home.getByTestId(`new-copy-${petId}`).click();
+      await expect(home).toHaveCount(0);
+      await page.getByTestId("open-projects").click();
+      await expect(grid).toBeVisible();
+      await expect.poll(async () => (await names())[0], { timeout: 15_000 }).toBe("AI pet (2)");
+      expect((await names()).slice(1)).toEqual(order1);
+      await shot(page, info, "r6b-projects-stable");
     } finally {
       await s.close();
     }
