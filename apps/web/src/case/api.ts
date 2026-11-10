@@ -21,6 +21,28 @@ export interface CaseReport {
   files: { path: string; kind: string; body: string; bytes: number }[] | string[];
   hash: string;
   notes: string[];
+  /** Round 7: a fixed size and whether the parts fit it. */
+  fit?: { fits: boolean; needed_mm: { w: number; h: number; d: number }; asked_mm?: { w?: number; h?: number; d?: number }; scale: number };
+  /** Round 7: the outer outline seen from the front (case frame, mm). */
+  outline_mm?: [number, number][];
+}
+
+/** Round 7: POST /api/case/fit (check_fit with the front-view preview). */
+export interface FitResult {
+  fits: boolean;
+  shape: string;
+  size_mm: { w: number; h: number; d: number };
+  needed_mm: { w: number; h: number; d: number };
+  asked_mm?: { w?: number; h?: number; d?: number };
+  misses: { part: string; type: string; dimension: "outline" | "depth"; short_mm: number; where?: string; message: string }[];
+  suggestions: { kind: string; part?: string; from?: string; to?: string; message: string; fits?: boolean; size_mm?: { w: number; h: number; d: number }; tradeoff?: string }[];
+  preview: {
+    outline: [number, number][];
+    cavity: [number, number][];
+    parts: { id: string; type: string; collides: boolean; shapes: ({ shape: "rect"; min: [number, number]; max: [number, number] } | { shape: "round"; c: [number, number]; r: number })[] }[];
+  };
+  notes: string[];
+  ms: number;
 }
 export interface CaseMesh {
   hash: string;
@@ -55,6 +77,7 @@ export const caseApi = {
   get: () => req<CaseState>("GET", "/api/case"),
   save: (body: Partial<Enclosure>) => req<CaseReport & { error?: string }>("POST", "/api/case", body),
   mesh: () => req<CaseMesh>("GET", "/api/case/mesh"),
+  fit: (body: Record<string, unknown>) => req<FitResult>("POST", "/api/case/fit", body),
   pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),
   fileUrl: (path: string) => `/api/case/file?path=${encodeURIComponent(path)}`,
 };

@@ -295,7 +295,7 @@ function validateEnclosure(s: ProjectSession, raw: Record<string, unknown>): Enc
   if (!r.success) {
     const i = r.error.issues[0]!;
     const path = i.path.join(".");
-    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : `check ${path} against design_case's input schema (get it with jumper tools --json)`);
+    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : path.startsWith("size_mm") ? "size_mm.w and .h are 15 to 250 mm and .d is 6 to 120 mm (leave one out for auto)" : path.startsWith("outline") ? "outline is an SVG path string or {\"points\": [[x, y], ...], \"smooth\": true} with 3 to 400 points" : `check ${path} against design_case's input schema (get it with jumper tools --json)`);
   }
   const enc = r.data;
   if (enc.shape === "custom") {
