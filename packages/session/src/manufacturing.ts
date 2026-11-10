@@ -11,42 +11,7 @@ import { zipSync } from "fflate";
 import { buildNets, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec } from "@jumper/sim-core";
 import { partLabel } from "./exporter.ts";
-
-export interface WireCut {
-  wire: string;
-  from: string;
-  to: string;
-  color: string;
-  length_mm: number;
-  gauge_awg: number;
-}
-
-const POWER_PINS = /^(VCC|VIN|VBUS|VSYS|5V|3V3|3\.3V|GND(\.\d+)?|BAT|OUT|POS|NEG|V\+|V-|VOUT\+?|VIN[+-]|VOUT-|IN\+|IN-|B\+|B-)$/i;
-
-/**
- * Wire lengths for a hand-wired build (R2 shape). Uses 3D pin positions from the case layout when
- * given (mm, case frame), else estimates from the parts' sizes. Rounded up to 5 mm, including 10 mm
- * of strip and slack. Mirrors the power track's assembly.wireCuts contract; after both merge the
- * lead can point the pack at that one.
- */
-export function caseWireCuts(project: Project, registry: PartRegistry, positions?: Record<string, [number, number, number]>): WireCut[] {
-  const size = (id: string) => {
-    const t = project.parts.find((p) => p.id === id)?.type;
-    const d = t ? registry.get(t)?.spec.dimensions_mm : undefined;
-    return d ? Math.max(d.w, d.h) : 30;
-  };
-  return project.wires.map((w) => {
-    const a = `${w.from.part}.${w.from.pin}`;
-    const b = `${w.to.part}.${w.to.pin}`;
-    let len: number;
-    const pa = positions?.[a];
-    const pb = positions?.[b];
-    if (pa && pb) len = Math.abs(pa[0] - pb[0]) + Math.abs(pa[1] - pb[1]) + Math.abs(pa[2] - pb[2]) + 10;
-    else len = (size(w.from.part) + size(w.to.part)) / 2 + 20;
-    const power = POWER_PINS.test(w.from.pin) || POWER_PINS.test(w.to.pin);
-    return { wire: w.id, from: a, to: b, color: w.color ?? "", length_mm: Math.ceil((len + 10) / 5) * 5, gauge_awg: power ? 24 : 26 };
-  });
-}
+import type { WireCut } from "./assembly.ts"; // round 6: the power track's wire-cut model is the one used
 
 /** Pin positions in the case frame from a placed layout (pins on the part's top face). */
 export function pinPositions(placed: { mech: { id: string; type: string; w: number; h: number; d: number }; R: number[][]; T: number[] }[], specOf: (t: string) => PartSpec | undefined): Record<string, [number, number, number]> {
@@ -178,10 +143,6 @@ export function kicadNetlist(project: Project, registry: PartRegistry): string {
   });
   const nets = buildNets(project).map((n, i) => `    (net (code ${i + 1}) (name ${q(netName(n.pins, i))})\n${n.pins.map((p) => `      (node (ref ${q(p.part)}) (pin ${q(p.pin)}))`).join("\n")})`);
   return `(export (version D)\n  (design\n    (source "jumper.json")\n    (tool "Jumper")\n    (comment (number 1) (value ${q(project.name)})))\n  (components\n${comps.join("\n")})\n  (nets\n${nets.join("\n")}))\n`;
-}
-
-export function wireCutsCsv(cuts: WireCut[]): string {
-  return ["wire,from,to,color,length_mm,gauge_awg", ...cuts.map((c) => [c.wire, c.from, c.to, c.color, c.length_mm, c.gauge_awg].map(csvCell).join(","))].join("\n") + "\n";
 }
 
 /** Zip a folder (deterministic: sorted, fixed mtime). */

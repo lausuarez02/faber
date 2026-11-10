@@ -6,7 +6,8 @@ import { hexToUf2 } from "@jumper/sim-backends";
 import { fail } from "../errors.ts";
 import { wiringMarkdown } from "../exporter.ts";
 import { fidelityReport } from "../fidelity.ts";
-import { bomCsv, bomLines, bomMd, caseWireCuts, clearDir, copyTree, kicadNetlist, listFiles, netlistCsv, pinPositions, wireCutsCsv, writeText, zipFolder } from "../manufacturing.ts";
+import { wireCuts, wireCutsCsv } from "../assembly.ts"; // round 6: one wire-cut model (power track)
+import { bomCsv, bomLines, bomMd, clearDir, copyTree, kicadNetlist, listFiles, netlistCsv, pinPositions, writeText, zipFolder } from "../manufacturing.ts";
 import { projectSlug } from "../projects-registry.ts";
 import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
@@ -287,14 +288,14 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   } else missing.push({ item: "enclosure/", why: "the project has no case yet", fix: 'design_case {"shape": "pebble"} (or puck, rounded-box, pill, keychain), then export_manufacturing again' });
 
   // ---- electronics
-  const cuts = caseWireCuts(project, reg, positions);
+  const cuts = wireCuts(project, reg, positions);
   const lines = bomLines(project, reg, { soldered, cuts, ...(screws ? { screws } : {}) });
   writeText(root, "BOM.csv", bomCsv(lines));
   writeText(root, "BOM.md", bomMd(lines, project.name));
   writeText(root, "electronics/WIRING.md", wiringMarkdown(project, reg));
   writeText(root, "electronics/netlist.csv", netlistCsv(project));
   writeText(root, "electronics/jumper.net", kicadNetlist(project, reg));
-  writeText(root, "electronics/WIRE-CUTS.csv", (positions ? "" : "") + wireCutsCsv(cuts));
+  writeText(root, "electronics/WIRE-CUTS.csv", wireCutsCsv(cuts, !positions));
   if (!positions) notes.push("Wire lengths are estimates from the part sizes (no case layout yet); design_case gives lengths from the real positions.");
 
   // ---- firmware
