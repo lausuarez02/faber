@@ -343,3 +343,15 @@
     max-height: 52vh;
   }
 }
+
+/* round 6 (lead): shapes made with design_case {save: false} */
+.cv-variant {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+  font-size: 12px;
+}
+.cv-variant:first-of-type {
+  border-top: 0;
+}

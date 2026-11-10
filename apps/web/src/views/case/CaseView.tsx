@@ -272,6 +272,36 @@ export function CaseView({ onClose }: { onClose(): void }) {
                 </div>
               ) : null}
             </section>
+            {state?.variants?.length ? (
+              <section data-testid="case-variants">
+                <div className="cv-label">Other shapes made</div>
+                {state.variants.map((v) => (
+                  <div key={v.shape} className="cv-variant" data-testid={`case-variant-${v.shape}`}>
+                    <div>
+                      <b>{v.shape}</b> {v.size_mm.w} × {v.size_mm.h} × {v.size_mm.d} mm <PocketBadge pocket={v.pocket} />
+                      {v.ok ? null : <span className="cv-faint"> has problems</span>}
+                    </div>
+                    <div className="cv-files">
+                      {[
+                        ["stl/front.stl", "Front STL"],
+                        ["stl/back.stl", "Back STL"],
+                        ["case.3mf", "3MF"],
+                        ["renders/front.png", "Render"],
+                      ]
+                        .filter(([p]) => v.files.includes(`variants/${v.shape}/${p}`))
+                        .map(([p, label]) => (
+                          <a key={p} href={caseApi.fileUrl(`variants/${v.shape}/${p}`)} download className="cv-file">
+                            <Download size={13} aria-hidden /> {label}
+                          </a>
+                        ))}
+                    </div>
+                    <button type="button" className="cv-secondary" disabled={!!busy || shape === v.shape} onClick={() => setShape(v.shape as Enclosure["shape"])}>
+                      Pick {v.shape} (then Update case)
+                    </button>
+                  </div>
+                ))}
+              </section>
+            ) : null}
             <p className="cv-faint cv-note">The case cannot check snap strength or your printer's real tolerances: print the two shells first and test the fit.</p>
           </>
         ) : null}

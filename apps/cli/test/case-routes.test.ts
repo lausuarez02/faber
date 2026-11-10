@@ -31,10 +31,19 @@ const post = (path: string, body: unknown, t = token) => fetch(`${srv.url}${path
 
 describe("jumper serve: case routes", () => {
   it("before a case: GET says null, mesh says why and how to fix", async () => {
-    expect(await (await fetch(`${srv.url}/api/case`)).json()).toEqual({ enclosure: null, stale: false });
+    expect(await (await fetch(`${srv.url}/api/case`)).json()).toEqual({ enclosure: null, stale: false, variants: [] });
     const m = await fetch(`${srv.url}/api/case/mesh`);
     expect(m.status).toBe(404);
     expect((await m.json()).error).toMatch(/No case yet\. Why: .*Fix: /);
+  });
+
+  it("GET lists the shapes made with save: false (case/variants/<shape>/report.json)", async () => {
+    const v = join(root, "proj", "case", "variants", "puck");
+    mkdirSync(v, { recursive: true });
+    writeFileSync(join(v, "report.json"), JSON.stringify({ shape: "puck", size_mm: { w: 63.1, h: 55.2, d: 32 }, pocket: "tight", ok: true, files: [{ path: "stl/front.stl" }] }));
+    const g = await (await fetch(`${srv.url}/api/case`)).json();
+    expect(g.variants).toEqual([{ shape: "puck", size_mm: { w: 63.1, h: 55.2, d: 32 }, pocket: "tight", ok: true, files: ["variants/puck/stl/front.stl"] }]);
+    rmSync(join(root, "proj", "case"), { recursive: true, force: true });
   });
 
   it("POST needs the token and a shape", async () => {

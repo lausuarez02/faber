@@ -33,6 +33,8 @@ export interface CaseState {
   enclosure: Enclosure | null;
   report?: CaseReport;
   stale: boolean;
+  /** Shapes made with design_case {save: false} (case/variants/<shape>/), to compare. */
+  variants?: { shape: string; size_mm: { w: number; h: number; d: number }; pocket: CaseReport["pocket"]; ok: boolean; files: string[] }[];
 }
 
 async function req<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {

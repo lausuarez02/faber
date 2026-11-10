@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
 import { caseIsStale, caseMesh } from "@jumper/session";
@@ -6,7 +6,7 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
  * Round 6, track "case" (owner). Decision 0004, R6.
- *   GET  /api/case                 → { enclosure | null, report?, stale }
+ *   GET  /api/case                 → { enclosure | null, report?, stale, variants }
  *   POST /api/case                 → CaseReport (design_case when there is no case, else update_case; actor web)
  *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
@@ -45,6 +45,22 @@ function inside(root: string, p: string): string | undefined {
   return abs;
 }
 
+/** Round 6 (lead): the shapes made with design_case {save: false}, from case/variants/<shape>/report.json. */
+function variantsOf(dir: string): { shape: string; size_mm: unknown; pocket: unknown; ok: unknown; files: string[] }[] {
+  const root = join(dir, "case", "variants");
+  if (!existsSync(root)) return [];
+  const out: { shape: string; size_mm: unknown; pocket: unknown; ok: unknown; files: string[] }[] = [];
+  for (const name of readdirSync(root).sort()) {
+    try {
+      const r = JSON.parse(readFileSync(join(root, name, "report.json"), "utf8")) as { shape?: string; size_mm?: unknown; pocket?: unknown; ok?: unknown; files?: (string | { path: string })[] };
+      out.push({ shape: r.shape ?? name, size_mm: r.size_mm, pocket: r.pocket, ok: r.ok, files: (r.files ?? []).map((f) => `variants/${name}/${typeof f === "string" ? f : f.path}`) });
+    } catch {
+      // a variant folder without a readable report: skip it
+    }
+  }
+  return out;
+}
+
 const noCase = (dir: string) => err("No case yet", `${join(dir, "jumper.json")} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
 
 export const caseRoutes: ApiRoute[] = [
@@ -56,11 +72,12 @@ export const caseRoutes: ApiRoute[] = [
       const s = ctx.session();
       s.sync();
       const enc = s.project.enclosure ?? null;
-      if (!enc) return ctx.json(res, 200, { enclosure: null, stale: false }, cors(req));
+      const variants = variantsOf(s.dir);
+      if (!enc) return ctx.json(res, 200, { enclosure: null, stale: false, variants }, cors(req));
       const stale = await caseIsStale(s);
       const file = join(s.dir, "case", "report.json");
       const report = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : undefined;
-      ctx.json(res, 200, { enclosure: enc, ...(report ? { report } : {}), stale }, cors(req));
+      ctx.json(res, 200, { enclosure: enc, ...(report ? { report } : {}), stale, variants }, cors(req));
     },
   },
   {
