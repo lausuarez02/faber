@@ -14,6 +14,7 @@ import { backendFactory } from "@jumper/sim-backends";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import { fail } from "./errors.ts";
 import { createSessionNetwork, setWifiDrop, type SessionNetwork } from "./network.ts";
+import { COLOR_EVERY_MS, colorFrameImage, colorSig } from "./color-frames.ts";
 
 /**
  * A headless Simulation plus what agents need around it: fault injection, deterministic sensor
@@ -118,6 +119,8 @@ export class SimHost {
   private lastStates = new Map<string, string>();
   private lastLive = "";
   private lastFrameSerial = 0;
+  /** Colour screens (decision 0004, R7): what was last put in a frame, per part, and when (virtual ms). */
+  private lastColor = new Map<string, { sig: string; vt: number }>();
   /** Robot / arm physics, when the project has a world block. */
   readonly physics: PhysicsBinding | undefined;
   /** When and where the rover first touched a wall or obstacle since t = 0 (run results, scenarios). */
@@ -178,6 +181,7 @@ export class SimHost {
     this.lastStates.clear();
     this.lastLive = "";
     this.lastFrameSerial = 0;
+    this.lastColor.clear();
     this.lastNoiseMs = 0;
     this.rand = prng(0x5eed);
     this.firstCollision = undefined;
@@ -266,7 +270,7 @@ export class SimHost {
       this.watchCollisions();
       this.applyNoise();
       if (opts.onFrame && this.sim.timeMs >= nextFrame - 1e-9) {
-        const f = this.frame();
+        const f = this.frame(true);
         if (f) opts.onFrame(f);
         nextFrame += frameMs;
       }
@@ -278,8 +282,12 @@ export class SimHost {
     }
   }
 
-  /** What changed since the last frame. */
-  frame(): Frame | undefined {
+  /**
+   * What changed since the last frame. `periodic` (run()'s frames in between): a colour screen is
+   * added at most every COLOR_EVERY_MS; otherwise (the end of a run, a single frame after an
+   * interaction) every changed screen is added.
+   */
+  frame(periodic = false): Frame | undefined {
     const f: Frame = { vt: round(this.sim.timeMs) };
     const states: Record<string, VisualState> = {};
     for (const id of this.sim.partIds()) {
@@ -290,6 +298,25 @@ export class SimHost {
         this.lastStates.set(id, sig);
         states[id] = s;
       }
+    }
+    // Round 6 frames: colour TFT pixels of screens that changed since they were last sent.
+    const vt = this.sim.timeMs;
+    for (const id of this.sim.partIds()) {
+      let fb;
+      try {
+        fb = this.sim.framebuffer(id);
+      } catch {
+        fb = undefined;
+      }
+      if (!fb) continue;
+      const sig = colorSig(fb);
+      const last = this.lastColor.get(id);
+      if (last?.sig === sig || (periodic && last && vt - last.vt < COLOR_EVERY_MS)) continue;
+      this.lastColor.set(id, { sig, vt });
+      (f.color ??= {})[id] = colorFrameImage(fb);
+      // The part's state rides along so a viewer repaints that screen even when nothing else changed.
+      const st = this.sim.partState(id);
+      if (st && !states[id]) states[id] = st;
     }
     if (Object.keys(states).length) f.states = states;
     const text = this.sim.serialText();
@@ -303,7 +330,7 @@ export class SimHost {
       this.lastLive = sig;
       f.live = live;
     }
-    return f.states || f.serial || f.live ? f : undefined;
+    return f.states || f.serial || f.live || f.color ? f : undefined;
   }
 
   liveWires(): string[] {

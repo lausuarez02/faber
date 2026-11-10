@@ -46,6 +46,7 @@ import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { runScenario, setPartValue, validateScenario, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
+import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
@@ -1116,7 +1117,7 @@ export class ProjectSession {
     const wall0 = Date.now();
     host.run(ms, { frameMs, onFrame: (f) => frames.push(f) });
     const wallMs = Date.now() - wall0;
-    ctx.frames = frames;
+    ctx.frames = limitColorFrames(frames); // round 6 frames: colour screens, thinned for the log
     const serial = host.serialSince(serialFrom);
     host.serialCursor = host.sim.serialText().length;
     const diags = host.sim.diagnostics();
@@ -1310,7 +1311,7 @@ export class ProjectSession {
         framesSpan = span;
       }
     }
-    if (frames.length) ctx.frames = frames;
+    if (frames.length) ctx.frames = limitColorFrames(frames); // round 6 frames
     const passed = results.filter((r) => r.passed).length;
     ctx.summary = `${passed}/${results.length} scenarios passed`;
     this.lastVisualReport = { format: "jumper-visual-report/1", project: this.project.name, passed, failed: results.length - passed, scenarios: visuals };
@@ -1703,14 +1704,17 @@ export function downsampleFrames(frames: Frame[], max: number): Frame[] {
     const states: NonNullable<Frame["states"]> = {};
     let serial = "";
     let live: string[] | undefined;
+    let color: Frame["color"]; // round 6 frames: the latest colour image of each screen in the group
     for (const g of group) {
       if (g.states) for (const [id, st] of Object.entries(g.states)) states[id] = { ...(states[id] ?? {}), ...st };
       if (g.serial) serial += g.serial;
       if (g.live) live = g.live;
+      if (g.color) color = { ...color, ...g.color };
     }
     if (Object.keys(states).length) f.states = states;
     if (serial) f.serial = serial;
     if (live) f.live = live;
+    if (color) f.color = color;
     out.push(f);
   }
   return out;

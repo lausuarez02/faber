@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Reproducible Arduino build image for Jumper firmware.
 # Multi-arch: builds natively on linux/amd64 and linux/arm64 (Apple Silicon).
-#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs2 toolchains/arduino
+#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs3 toolchains/arduino
 # The -libsN suffix counts the pinned library set below (LIBRARIES.md). Bump N when it changes.
 # Versions are pinned; bump them together and record the change in examples/*/firmware/BUILD.md.
 FROM debian:bookworm-20251020-slim
@@ -57,6 +57,19 @@ RUN arduino-cli lib update-index \
       "U8g2@2.36.19" \
       "Adafruit ILI9341@1.7.0" \
       "Adafruit ST7735 and ST7789 Library@1.12.0" \
+ && rm -rf /opt/arduino/downloads \
+ && chmod -R a+rX /opt/arduino \
+ && arduino-cli lib list
+
+# libs3 (2026-11-10): the libraries agents reach for on round screens, LED strips and DHT sensors.
+# A layer of its own so the libs2 layer above stays cached. Adafruit NeoPixel is LGPL-3.0: it is
+# compiled into the person's own firmware inside this image, never shipped in Jumper (LIBRARIES.md).
+RUN arduino-cli lib install --no-deps \
+      "Adafruit GC9A01A@1.2.0" \
+      "DHT sensor library@1.4.7" \
+      "FastLED@3.10.8" \
+      "TFT_eSPI@2.5.43" \
+      "Adafruit NeoPixel@1.15.5" \
  && rm -rf /opt/arduino/downloads \
  && chmod -R a+rX /opt/arduino \
  && arduino-cli lib list

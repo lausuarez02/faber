@@ -29,7 +29,7 @@ describe("visual capture", () => {
     expect(compactVisual(visual).some((l) => l.includes('serial "feed food=100"'))).toBe(true);
     const png = displayPng(visual.frames[visual.frames.length - 1]!);
     expect(png?.subarray(1, 4).toString("ascii")).toBe("PNG");
-  });
+  }, 30_000); // ~2 s alone; a full parallel run on a busy machine has pushed it past the 5 s default
 
   it("replaying the recorded inputs reaches the same device state at a frame (deterministic scrubbing)", () => {
     const { project, hex } = loadProjectDir(EX("tamagotchi"));

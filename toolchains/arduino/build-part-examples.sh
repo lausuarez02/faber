@@ -8,7 +8,7 @@
 # arduino-cli wants <dir>/<dir>.ino, so each sketch is copied to toolchains/arduino/.cache first.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export JUMPER_ARDUINO_IMAGE="${JUMPER_ARDUINO_IMAGE:-jumper/arduino-cli:1.5.1-avr1.8.8-libs2}"
+export JUMPER_ARDUINO_IMAGE="${JUMPER_ARDUINO_IMAGE:-jumper/arduino-cli:1.5.1-avr1.8.8-libs3}"
 FQBN="${JUMPER_FQBN:-arduino:avr:uno}"
 CACHE="$REPO/toolchains/arduino/.cache/sketches"
 PARTS=("$@")

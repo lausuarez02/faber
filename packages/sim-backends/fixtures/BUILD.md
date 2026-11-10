@@ -39,8 +39,8 @@ rp2040js backend. Golden builds, committed; rebuild only on purpose.
 Build (Docker, the pinned arduino-pico image; the wrapper writes `<sketch>.ino.hex` from the ELF):
 
 ```sh
-docker build -t jumper/arduino-pico:6.3.1-r1 toolchains/arduino-pico   # once
-export JUMPER_ARDUINO_IMAGE=jumper/arduino-pico:6.3.1-r1
+# once: the base, runner and RP2040 images (see packages/parts/fixtures/libs3/BUILD.md)
+export JUMPER_ARDUINO_IMAGE=jumper/arduino-pico:6.3.1-libs3-r1
 for s in xiao_blink xiao_oled xiao_io_probe; do
   scripts/build-firmware.sh packages/sim-backends/fixtures/$s rp2040:rp2040:seeed_xiao_rp2040 packages/sim-backends/fixtures/$s/build
   cp packages/sim-backends/fixtures/$s/build/$s.ino.hex packages/sim-backends/fixtures/$s.hex
@@ -55,6 +55,9 @@ Toolchain: arduino-cli 1.5.1, `rp2040:rp2040` 6.3.1 (pqt-gcc 5.0.0-9576866, GCC 
 options (the CPU speed menu at its default), the library versions of
 `toolchains/arduino/LIBRARIES.md`. The builds are reproducible: `services/runner/test/runner.test.ts`
 rebuilds `xiao_blink` through the runner and compares it byte for byte.
+
+Rebuilt byte-identical with the libs3 images (`jumper/arduino-pico:6.3.1-libs3-r1`) on 2026-11-10;
+the older `jumper/arduino-pico:6.3.1-r1` gives the same bytes.
 
 sha256 (first 16 hex digits): `xiao_blink.hex` 5d16935da7297f1d, `xiao_oled.hex` 55f2cf778673ecc6,
 `xiao_io_probe.hex` 7f363c27bb871337, `pico_gadget.hex` b19abe7a89b90c64.

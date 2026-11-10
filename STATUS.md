@@ -17,6 +17,17 @@ power-path codes (`usb-backfeed`, `battery-reversed`, `battery-overvoltage`, `ld
 breadboard / dupont); search_parts says when nothing fits (create_part template), fuzzy get_part,
 planning calls logged into the project they create; the USB / battery pill in the web app;
 `examples/agent-built/claude-pocket-muse` runs from its LiPo (11/11, 0 errors). [docs/power.md](docs/power.md).
+## Round 6, frames track (2026-11-10, branch round6/frames, before the lead's merge)
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Colour screens off the live canvas | `run` / `run_tests` log each changed TFT / round screen as a PNG (`Frame.color`, at most every 100 ms of virtual time, thinned to 120 images / 1.5 MB per entry; the Muse's 4 s run adds 7 KB). `jumper record` videos, replays and a page following an agent paint them; history previews and gallery thumbnails draw them (an example without a log runs its built firmware 2 s for its thumbnail) | `packages/session/test/color-frames.test.ts`, `apps/web/src/lib/colorFrames.test.ts`, `apps/web/e2e/frames-color.spec.ts`; a recorded Muse replay shows the GC9A01 eyes |
+| libs3 images | `jumper/arduino-cli:1.5.1-avr1.8.8-libs3`, `jumper/arduino-runner:…-libs3-r1`, `jumper/arduino-pico:6.3.1-libs3-r1` (FROM the runner) add Adafruit GC9A01A, DHT sensor library, FastLED, TFT_eSPI (with a sketch `tft_setup.h`), Adafruit NeoPixel (LGPL-3.0, user firmware only, no binary committed). `ensureImage` builds all three from the Dockerfiles (checked with `--no-cache`); CI builds the RP2040 image. All 41 golden hexes and the Muse firmware rebuild byte-identical | `packages/parts/src/libs3.integration.test.ts` (sketches run with the round TFT, DHT22, WS2812 strip on Uno and XIAO RP2040; rebuilds compared byte for byte when the images exist), `services/runner/test/runner.test.ts` |
+
+Known gaps (frames): the Tests filmstrip already drew colour screens from its own 80 px thumbnails
+(unchanged); runs logged before this change stay dark in history (no pixels were kept); FastLED's
+RP2040 PIO driver sends a few bits at 0.216 µs, which the strip reports as a timing warning; TFT_eSPI
+is for RP2040 boards only (the library does not target AVR).
 
 ## Round 5 (2026-11-10): see it work, every project, pocket boards, parts agents can make
 

@@ -12,7 +12,7 @@
   "props": [
     { "id": "count", "label": "Number of LEDs", "type": "number", "default": 8, "min": 1, "max": 16, "step": 1, "description": "LEDs in the chain (the strip or stick you cut)." }
   ],
-  "limits": { "maxVoltage": 5.3, "minVoltage": 3.5, "maxCurrentmAPerLed": 60, "t0hMaxUs": 0.55, "t1hMinUs": 0.65, "resetUs": 50 },
+  "limits": { "maxVoltage": 5.3, "minVoltage": 3.5, "maxCurrentmAPerLed": 60, "t0hMaxUs": 0.55, "t1hMinUs": 0.58, "resetUs": 50 },
   "footprint": "WS2812B 5050 LEDs on flexible strip, 60 LEDs/m (16.7 mm pitch), 10 mm wide; or an 8-LED stick",
   "dimensions_mm": { "w": 133, "h": 10, "d": 3 },
   "mass_g": 4,

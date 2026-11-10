@@ -30,7 +30,7 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
     wiring: "VCC → 5V (or 3V3), GND → GND, SCL → D13 (SPI SCK), SDA → D11 (SPI MOSI, not I2C), RES → D8, DC → D9, CS → D10, BLK → 5V (or a PWM pin to dim). 240 x 240, but only the inscribed circle is visible: keep drawings within 120 px of the centre (120, 120).",
     connect: ["gc9a01roundtft1.VCC -> uno.5V", "gc9a01roundtft1.GND -> uno.GND", "gc9a01roundtft1.SCK -> uno.D13", "gc9a01roundtft1.MOSI -> uno.D11", "gc9a01roundtft1.RST -> uno.D8", "gc9a01roundtft1.DC -> uno.D9", "gc9a01roundtft1.CS -> uno.D10", "gc9a01roundtft1.LED -> uno.5V"],
     libraries: ["Adafruit GFX Library (Adafruit_SPITFT)"],
-    controls: "read_display(part) / expect_display read the round screen (the corners are always dark); screenshot shows the colours. The example's small GC9A01 class is the driver: Adafruit_GC9A01A and TFT_eSPI are not in Jumper's build image yet.",
+    controls: "read_display(part) / expect_display read the round screen (the corners are always dark); screenshot shows the colours. Adafruit_GC9A01A works as is (firmware.libraries [\"Adafruit GC9A01A\"]: Adafruit_GC9A01A tft(CS, DC, RST); tft.begin();); TFT_eSPI works on RP2040 boards with a tft_setup.h next to the sketch (#define GC9A01_DRIVER, TFT_MOSI, TFT_SCLK, TFT_CS, TFT_DC, TFT_RST). The example's small GC9A01 class needs no library.", // round 6 frames: libs3
   },
   "lipo-battery": {
     wiring: "1S LiPo, 3.0–4.2 V. Pocket setup: LiPo + → tp4056 BAT (B+), − → tp4056 GND.2 (B−); tp4056 OUT → slide-switch 2 (COM), slide-switch 1 → schottky-diode A, schottky-diode C (stripe) → the board's 5V (VBUS) on a XIAO RP2040 / RP2040-Zero; on a Pico OUT → VSYS directly (it has its own diode); tp4056 GND.3 → board GND. The diode stops the board's USB from back-feeding the cell. Not on an Uno's VIN (it needs 7 V): a 5 V board needs a boost-converter. Test it unplugged: set_power {\"usb\": false}.",
@@ -88,7 +88,7 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
   dht22: {
     wiring: "+ (VCC) → 3V3 or 5V, − → GND, OUT (DATA) → a digital pin. The module has its 10 kΩ pull-up. Wait 1 s after power-up and read at most every 2 s; each read returns the measurement taken at the previous read.",
     connect: ["dht221.VCC -> uno.5V", "dht221.GND -> uno.GND", "dht221.DATA -> uno.D2"],
-    controls: 'set_sensor_value(part, "temperature", °C) / (part, "humidity", %). The example reads it without a library; the DHT sensor library is not in Jumper\'s build image yet.',
+    controls: 'set_sensor_value(part, "temperature", °C) / (part, "humidity", %). The DHT sensor library works (firmware.libraries ["DHT sensor library"]: DHT dht(PIN, DHT22); dht.begin(); dht.readTemperature();); the example reads it without a library.', // round 6 frames: libs3
   },
   "pir-motion": {
     wiring: "VCC → 5V (4.5–20 V; not 3.3 V), GND → GND, OUT → a digital pin: HIGH (3.3 V) for delay_s after motion, safe for 3.3 V and 5 V boards.",
@@ -99,7 +99,7 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
   "ws2812-strip": {
     wiring: "5V (VCC) → 5V, GND → GND, DIN → a digital pin (330 Ω in series is good practice). Set prop count to the number of LEDs (1–16). Full white is 60 mA per LED: more than ~8 bright LEDs need their own 5 V supply with a shared GND.",
     connect: ["ws2812strip1.VCC -> uno.5V", "ws2812strip1.GND -> uno.GND", "ws2812strip1.DIN -> uno.D6"],
-    controls: 'State: colors ("#FF0000 #00FF00 …" per LED), lit, frames, currentmA, led0..led15. The example bit-bangs the 800 kHz signal on an AVR; FastLED and Adafruit NeoPixel are not in Jumper\'s build image yet. interact set key "colors" paints the LEDs without firmware.',
+    controls: 'State: colors ("#FF0000 #00FF00 …" per LED), lit, frames, currentmA, led0..led15. FastLED (MIT) and Adafruit NeoPixel (LGPL-3.0: shipping a firmware that links it carries LGPL duties) both work, on AVR and on RP2040 (PIO); the example bit-bangs the 800 kHz signal itself. interact set key "colors" paints the LEDs without firmware.', // round 6 frames: libs3
   },
   // round 6 power: the power-path parts (decision 0004, R2).
   "schottky-diode": {

@@ -19,7 +19,7 @@ scenario checks the fourth line (`frame 3 bar 77`) and that the screen is lit.
 - `jumper.json`: the project.
 - `firmware/main.ino`: the source (same as `packages/sim-backends/fixtures/xiao_oled/xiao_oled.ino`).
 - `firmware/main.hex`: the golden build (Intel HEX, flash at 0x10000000), committed so tests and the
-  browser run without Docker. Rebuild with `jumper build` (needs the `jumper/arduino-pico:6.3.1-r1`
+  browser run without Docker. Rebuild with `jumper build` (needs the `jumper/arduino-pico:6.3.1-libs3-r1`
   image, see [docs/rp2040.md](../../docs/rp2040.md)).
 
 What the simulation does not check: see the board's fidelity notes (`jumper fidelity -p .`); core 1

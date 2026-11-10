@@ -42,8 +42,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Build the Arduino toolchain images (used by firmware build tests)
-        run: pnpm exec tsx -e "import('./services/runner/src/docker.ts').then(m => m.ensureImage(console.log))"
+      # The AVR base + runner images, then the RP2040 image FROM the runner (decision 0004, R7), all from
+      # the committed Dockerfiles. The firmware build tests (golden hexes byte for byte, the libs3 sketches)
+      # run when these exist.
+      - name: Build the Arduino toolchain images (AVR and RP2040, used by firmware build tests)
+        run: pnpm exec tsx -e "Promise.all([import('./services/runner/src/docker.ts'), import('./services/runner/src/config.ts')]).then(async ([d, c]) => { await d.ensureImage(console.log); await d.ensureImage(console.log, c.PICO_IMAGE); })"
 
       - name: Unit tests
         run: pnpm test

@@ -11167,7 +11167,7 @@ export const partDefinitions: PartDefinition[] = [
         "minVoltage": 3.5,
         "maxCurrentmAPerLed": 60,
         "t0hMaxUs": 0.55,
-        "t1hMinUs": 0.65,
+        "t1hMinUs": 0.58,
         "resetUs": 50
       },
       "footprint": "WS2812B 5050 LEDs on flexible strip, 60 LEDs/m (16.7 mm pitch), 10 mm wide; or an 8-LED stick",
@@ -11496,7 +11496,7 @@ export const partDefinitions: PartDefinition[] = [
         },
         "timing": {
           "level": "ok",
-          "note": "Pulse widths are measured on the MCU clock to the cycle; a HIGH ≤ 0.6 µs is a 0, longer a 1. Bits outside the datasheet windows (0: 0.25–0.55 µs, 1: 0.65–1.0 µs) are still decoded and reported, since real LEDs often accept them; newer WS2812B parts need a ≥ 280 µs reset, here 50 µs is enough."
+          "note": "Pulse widths are measured on the MCU clock to the cycle; a HIGH ≤ 0.6 µs is a 0, longer a 1. Bits outside the datasheet windows (0: 0.22–0.55 µs, 1: 0.58–1.0 µs, the WS2812B and WS2812B-V5 datasheets together) are still decoded and reported, since real LEDs often accept them; newer WS2812B parts need a ≥ 280 µs reset, here 50 µs is enough."
         },
         "analog": {
           "level": "approx",

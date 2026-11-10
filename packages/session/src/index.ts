@@ -49,3 +49,4 @@ export type { WireCut, AssemblyStyle } from "./assembly.ts";
 export { powerReport } from "./tools/power.ts";
 export type { PowerReport } from "./tools/power.ts";
 export { batteryPathAdvice } from "./drc.ts";
+export { deviceStill, lastLoggedStill, stillKey, type DeviceStill } from "./device-still.ts"; // round 6 frames

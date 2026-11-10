@@ -19,10 +19,13 @@ Click the logo (top left) or **All projects** on an empty canvas. The page lists
   the repo nor the circuit you had open is changed. An agent-built example's `agent-actions.jsonl`
   becomes the copy's history, so you can scrub through how the agent built it.
 
-Each card shows a render of the canvas (cached as a PNG by the sha256 of `jumper.json`, in
-`<project>/.jumper/thumbs/` or `$JUMPER_HOME/thumbs/` for examples; rendered again when the file
-changes; an SVG is served when Playwright's Chromium is not installed), the board, the part count,
-the last `run_tests` result and when it last changed.
+Each card shows a render of the canvas with the device as it last ran: the last run or test in the
+action log (lit LEDs, OLED and colour screens), or, for a project with built firmware and no such
+run (the examples, a log from before colour screens were logged), the firmware run headless for 2 s.
+It is cached as a PNG by the sha256 of `jumper.json` and the log's size, in
+`<project>/.jumper/thumbs/` or `$JUMPER_HOME/thumbs/` for examples (rendered again when either
+changes; an SVG is served when Playwright's Chromium is not installed), next to the board, the part
+count, the last `run_tests` result and when it last changed.
 
 Opening a project switches the server's **active project**: the same MCP endpoint and live
 websocket now work on it (an agent that is connected keeps working, on the new folder), and the
@@ -36,8 +39,8 @@ version: version N is the N-th line of `.jumper/actions.jsonl` that changed the 
 whoever made it (an agent, you on the canvas, the CLI). For each version the scrubber shows:
 
 - the canvas at that version, with the device state of the run or test that followed it (lit LEDs,
-  OLED pixels, live wires). Colour TFT pixels are not recorded in the log, so those screens show dark,
-  and the caption says so;
+  OLED pixels, colour TFT and round screens, live wires). Colour screens are logged as PNGs in the
+  run's frames (`Frame.color`, round 6); runs logged before that show them dark, and the caption says so;
 - what changed (`+ part buzzer1`, `~ file firmware/main.ino`, `− wire w3`), who did it and why;
 - the firmware hash built at that version (the hex is kept in `.jumper/builds/<hash>.hex`; logs
   from before round 5 recorded a build without its hash);

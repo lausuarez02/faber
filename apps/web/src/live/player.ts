@@ -1,6 +1,7 @@
 import type { Project } from "@jumper/project-format";
 import type { VisualState } from "@jumper/sim-core";
 import { nextCursorN, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
+import { setColorFrames, type ColorFrameImage } from "../lib/colorFrames.ts"; // round 6 frames
 
 /**
  * Applies action-log entries (from the live hub or a replay file) to the canvas, and paces a replay.
@@ -13,6 +14,8 @@ export interface LogFrame {
   states?: Record<string, VisualState>;
   serial?: string;
   live?: string[];
+  /** Round 6 frames: colour screens that changed, as PNGs (decision 0004, R7). */
+  color?: Record<string, ColorFrameImage>;
 }
 
 export interface LogEntry {
@@ -183,6 +186,7 @@ export function playFrames(frames: LogFrame[], durationMs: number, port: CanvasP
     const at = ((f.vt - t0) / span) * durationMs;
     ids.push(
       timers.set(() => {
+        setColorFrames(f.color); // round 6 frames: before the states, so the screen repaints with them
         port.showStates(f.states, f.live, f.vt);
         if (f.serial) port.appendSerial(f.serial);
       }, at),

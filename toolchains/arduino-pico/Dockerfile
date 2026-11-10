@@ -4,10 +4,10 @@
 # plus Earle Philhower's arduino-pico core, pinned. The core is LGPL-2.1 like arduino:avr and the
 # Raspberry Pi pico-sdk inside it is BSD-3-Clause (see NOTICE). Firmware built with it is user-side code.
 #
-#   docker build -t jumper/arduino-pico:6.3.1-r1 toolchains/arduino-pico
+#   docker build -t jumper/arduino-pico:6.3.1-libs3-r1 toolchains/arduino-pico
 #
 # Keep the tag in sync with PICO_IMAGE in services/runner/src/config.ts. Bump -rN on any change here.
-ARG BASE_IMAGE=jumper/arduino-runner:1.5.1-avr1.8.8-libs2-r1
+ARG BASE_IMAGE=jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1
 FROM ${BASE_IMAGE}
 
 # Pinned core release (2026-10-23). arduino-cli checks the archive's SHA-256 from the index:
