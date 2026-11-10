@@ -71,6 +71,15 @@ describe("examples through the agent surface", () => {
     expect(r.world.arm.gripper.x).toBeTypeOf("number");
   }, 120_000);
 
+  it("pocket-oled: a XIAO RP2040 draws on the OLED with real arduino-pico firmware", async () => {
+    const s = open("pocket-oled");
+    const t = await call(s, "run_tests");
+    expect(t.failed, JSON.stringify(t.results)).toBe(0);
+    await call(s, "run", { ms: 1000 });
+    const d = await call(s, "read_display", { part: "oled" });
+    expect(d.lit_pixels).toBeGreaterThan(200);
+  }, 120_000);
+
   it("world.<field> on a project without a world says how to fix it", async () => {
     const s = open("tamagotchi");
     await expect(call(s, "write_scenario", { id: "bad", steps: [{ expect_part: "world.collisions", op: "==", value: 0 }] })).rejects.toThrow(/no world block.*set_world/s);
