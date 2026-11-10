@@ -1,4 +1,4 @@
-export { ProjectSession, OP_METHODS, allOpNames } from "./session.ts";
+export { ProjectSession, OP_METHODS, allOpNames, runSummary } from "./session.ts"; // round 6 switch: runSummary
 export { TOOL_MODULES, EXT_OPS } from "./tools/index.ts";
 export type { ExtOp, ExtOpContext, ToolModule } from "./tools/index.ts";
 export type { SessionOptions, ActionEntry, SessionEvent, Builder, CallMeta } from "./session.ts";
@@ -41,5 +41,5 @@ export { recordProject, chromiumProblem } from "./recorder.ts";
 export type { RecordOptions, RecordResult } from "./recorder.ts";
 export { planDevice } from "./planner.ts";
 export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";
-export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog } from "./versions.ts";
+export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog, lineDiff, recordSnapshot } from "./versions.ts"; // round 6 switch: lineDiff, recordSnapshot
 export type { VersionSummary, VersionDetail, VersionChanges, VersionFrame } from "./versions.ts";
