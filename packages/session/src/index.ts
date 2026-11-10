@@ -33,3 +33,4 @@ export async function renderDevice(opts: import("./device-render.ts").DeviceRend
 export { jumperHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, projectsRegistryPath, registerProject, unregisterProject } from "./projects-registry.ts";
 export type { ProjectsRegistryFile, RegisteredProject } from "./projects-registry.ts";
 export type { AgentState, AgentStateEvent, LiveServerEvent } from "./live-events.ts";
+export { projectPartProblems, projectPartsWithSvg, refreshProjectParts } from "./tools/agentparts.ts";

@@ -5,16 +5,18 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./node": "./src/custom/node.ts"
   },
   "scripts": {
-    "gen": "tsx scripts/gen-registry.ts",
+    "gen": "tsx scripts/gen-registry.ts && tsx scripts/gen-custom-schema.ts",
     "test": "vitest run",
-    "gen:check": "tsx scripts/gen-registry.ts --check"
+    "gen:check": "tsx scripts/gen-registry.ts --check && tsx scripts/gen-custom-schema.ts --check"
   },
   "dependencies": {
     "@jumper/project-format": "workspace:*",
-    "@jumper/sim-core": "workspace:*"
+    "@jumper/sim-core": "workspace:*",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@jumper/sim-backends": "workspace:*"

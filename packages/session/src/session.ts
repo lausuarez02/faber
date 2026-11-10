@@ -16,7 +16,7 @@ import {
   type Wire,
   normalizeScenarioStep,
 } from "@jumper/project-format";
-import { registry as defaultRegistry, searchParts as searchCatalog } from "@jumper/parts";
+import { AGENT_MADE_LABEL, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
 import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
@@ -48,6 +48,7 @@ import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from ".
 import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
 import { EXT_OPS, type ExtOpContext } from "./tools/index.ts";
+import { isProjectPartRegistry, refreshProjectParts } from "./tools/agentparts.ts";
 import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
@@ -201,7 +202,9 @@ export class ProjectSession {
     this.dir = resolve(opts.dir);
     this.openProject = opts.openProject;
     this.projectsRoot = resolve(opts.projectsRoot ?? dirname(this.dir));
-    this.registry = opts.registry ?? defaultRegistry;
+    // --- agentparts (decision 0003, C4): built-ins + this project's agent-made parts (parts/<id>/), refreshed in sync()
+    this.registry = withProjectParts(opts.registry ?? defaultRegistry);
+    // --- end agentparts
     this.builder = opts.builder ?? buildFirmware;
     this.actor = opts.actor ?? "session";
     this.project = { format: FORMAT_VERSION, name: basename(this.dir) || "project", parts: [], wires: [], scenarios: [] };
@@ -243,6 +246,9 @@ export class ProjectSession {
 
   /** Re-read jumper.json / history / log position if another process (CLI, web, another agent) changed them. */
   sync(force = false): void {
+    // --- agentparts (decision 0003, C4): reload parts/ when it changed; a changed part restarts the sim
+    if (refreshProjectParts(this.dir, this.registry, force)) this.hostKey = "";
+    // --- end agentparts
     const st = this.stamp();
     if (!force && st === this.diskStamp) return;
     if (existsSync(this.projectFile)) {
@@ -488,13 +494,16 @@ export class ProjectSession {
     if (args.category && !(PART_CATEGORIES as readonly string[]).includes(args.category)) {
       fail("bad-category", `Unknown category '${args.category}'`, `categories are: ${PART_CATEGORIES.join(", ")}`, "pass one of those or leave category out");
     }
-    let defs = this.registry === defaultRegistry ? searchCatalog(args.query ?? "") : this.registry.list().filter((d) => !args.query || `${d.spec.id} ${d.spec.name} ${(d.spec.tags ?? []).join(" ")}`.toLowerCase().includes(args.query!.toLowerCase()));
+    const base = isProjectPartRegistry(this.registry) ? this.registry.base : this.registry;
+    let defs = base === defaultRegistry ? rankParts(this.registry.list(), args.query ?? "") : this.registry.list().filter((d) => !args.query || `${d.spec.id} ${d.spec.name} ${(d.spec.tags ?? []).join(" ")}`.toLowerCase().includes(args.query!.toLowerCase()));
     if (args.category) defs = defs.filter((d) => d.spec.category === args.category);
-    const results = defs.slice(0, 25).map((d) => ({ type: d.spec.id, name: d.spec.name, category: d.spec.category, fidelity: d.fidelity.level, about: d.spec.description.split(/(?<=\.)\s/)[0] }));
+    const results = defs.slice(0, 25).map((d) => ({ type: d.spec.id, name: d.spec.name, category: d.spec.category, fidelity: d.fidelity.origin === "agent-made" ? AGENT_MADE_LABEL : d.fidelity.level, about: d.spec.description.split(/(?<=\.)\s/)[0] }));
     return {
       count: results.length,
       results,
-      ...(results.length === 0 ? { hint: `nothing matches '${args.query}'. Try a broader word (e.g. "display", "button", "sensor") or search_parts with no query to list all ${this.registry.list().length} types.` } : {}),
+      ...(results.length === 0
+        ? { hint: `nothing matches '${args.query}'. Try a broader word (e.g. "display", "button", "sensor") or search_parts with no query to list all ${this.registry.list().length} types. If the part really is missing, make it with create_part (a declarative part: pins + a behaviour template; it is marked "${AGENT_MADE_LABEL}"), or use a close built-in as a stand-in and say so.` }
+        : {}),
     };
   }
 

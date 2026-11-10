@@ -179,6 +179,9 @@ importers:
       '@jumper/sim-core':
         specifier: workspace:*
         version: link:../sim-core
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@jumper/sim-backends':
         specifier: workspace:*

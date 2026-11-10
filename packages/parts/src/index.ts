@@ -28,10 +28,18 @@ export function getPart(id: string): PartDefinition | undefined {
  * query returns everything.
  */
 export function searchParts(query: string): PartDefinition[] {
+  return rankParts(registry.list(), query);
+}
+
+// Agent-made parts (decision 0003, C4).
+export * from "./custom/index.ts";
+
+/** Rank `defs` against a query with the same rules as searchParts (for registries with project parts). */
+export function rankParts(defs: readonly PartDefinition[], query: string): PartDefinition[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (!terms.length) return listParts();
+  if (!terms.length) return [...defs];
   const scored: { d: PartDefinition; score: number }[] = [];
-  for (const d of registry.list()) {
+  for (const d of defs) {
     const s = d.spec;
     const id = s.id.toLowerCase();
     const name = s.name.toLowerCase();
