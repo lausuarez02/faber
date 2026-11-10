@@ -77,6 +77,14 @@ export function toContent(op: string, result: unknown, images: boolean): Content
       const buf = readFileSync(r.path);
       if (buf.length < 1_500_000) out.push({ type: "image", data: buf.toString("base64"), mimeType: "image/png" });
     }
+    // round 6 case: design_case / update_case return their renders as image_files
+    if (images && Array.isArray(r.image_files)) {
+      for (const p of r.image_files.slice(0, 4)) {
+        if (typeof p !== "string" || !existsSync(p)) continue;
+        const buf = readFileSync(p);
+        if (buf.length < 1_500_000) out.push({ type: "image", data: buf.toString("base64"), mimeType: "image/png" });
+      }
+    }
     if (op === "run_tests" && images && Array.isArray(r.frame_images)) {
       for (const p of r.frame_images.slice(0, 4)) {
         if (typeof p !== "string" || !existsSync(p)) continue;

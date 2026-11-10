@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-46 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+50 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -81,6 +81,10 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`delete_file`](#delete_file) | Delete a file | yes (undoable step) |
 | [`mark_stand_in`](#mark_stand_in) | Mark a part as a stand-in | yes (undoable step) |
 | [`restore_version`](#restore_version) | Restore an earlier version | yes (undoable step) |
+| [`design_case`](#design_case) | Design a printable case | yes (undoable step) |
+| [`update_case`](#update_case) | Change the case | yes (undoable step) |
+| [`get_case`](#get_case) | Case report | no (read-only) |
+| [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
 
 ### new_project
 
@@ -498,3 +502,49 @@ Put the project back the way it was at version N of its history (parts, wires, p
 | --- | --- | --- | --- |
 | `version` | integer | yes | Version number, 1 = the first change in the history. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "back to the working version". |
+
+### design_case
+
+Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body (front, back, button plungers, light pipes), case.3mf (coloured, for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole). Example: {"shape": "pebble"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 63.1 x 55.2 x 32), inner_mm, pocket ("fits" ≤ 110 x 70 x 30 mm, "tight", "no"), ok, checks (fits, screen-window, buttons-reachable, connector-access, min-wall, printable, watertight, no-intersection, size-match), files, plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 20 s (real CAD). What the case cannot check: snap strength and fit on your printer (print the two shells first and test), real tolerances of clone modules (about ±1 mm), drop / water / heat, the route of each wire.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `shape` | string | yes | one of `rounded-box`, `pill`, `pebble`, `puck`, `keychain` |
+| `params` | object |  | Case parameters (all optional): wall_mm (≥ 1.2, default 1.6), corner_radius_mm (rounded-box / keychain, default 4), color ('#F2EDE4'), lanyard_hole (default true for keychain), belt_clip, closure ('snap' \| 'screws' = M2 into heat-set inserts), tolerance_mm (default 0.2 FDM), process ('fdm' \| 'resin' \| 'injection'), gap_mm (wiring room around parts, default 1.5). |
+| `front` | string |  | Part id whose screen faces out of the front (default: the first display). |
+| `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270. Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer grille at the back). |
+| `exclude` | string[] |  | Part ids that are not inside the case. |
+| `save` | boolean |  | Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only. |
+| `images` | boolean |  | Default true: return the front and exploded renders inline. |
+| `why` | string |  | Short reason shown in the step list. |
+
+### update_case
+
+Change the existing case: any of shape, params, front, placements, exclude. params and placements are merged into what is there; a placement set to null is removed (back to auto-pack). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"}. Regenerates every file in case/ and returns the CaseReport like design_case. Fails when there is no case yet (use design_case). What the case cannot check: snap strength and fit on your printer (print the two shells first and test), real tolerances of clone modules (about ±1 mm), drop / water / heat, the route of each wire.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `shape` | string |  | one of `rounded-box`, `pill`, `pebble`, `puck`, `keychain` |
+| `params` | object |  | Case parameters (all optional): wall_mm (≥ 1.2, default 1.6), corner_radius_mm (rounded-box / keychain, default 4), color ('#F2EDE4'), lanyard_hole (default true for keychain), belt_clip, closure ('snap' \| 'screws' = M2 into heat-set inserts), tolerance_mm (default 0.2 FDM), process ('fdm' \| 'resin' \| 'injection'), gap_mm (wiring room around parts, default 1.5). |
+| `front` | string |  |  |
+| `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270. Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer grille at the back). |
+| `exclude` | string[] |  |  |
+| `images` | boolean |  |  |
+| `why` | string |  | Short reason shown in the step list. |
+
+### get_case
+
+The current case's CaseReport (sizes, pocket verdict, checks, files). If a part, the wiring of the case config or an undo changed things since the files were written, it regenerates them first (stale: true in the answer). Does not change jumper.json. Fails when there is no case yet.
+
+No arguments.
+
+### export_manufacturing
+
+Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `dir` | string |  | Folder inside the project (default "manufacturing"). |
+| `zip` | boolean |  | Default true: also write <name>-v<version>.zip next to the folder. |
+| `zh_cn` | boolean |  | Default true: add README.zh-CN.md. |
+| `why` | string |  | Short reason shown in the step list. |
