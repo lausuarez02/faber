@@ -114,7 +114,9 @@ test.describe("projects (served)", () => {
       await expect(home).toBeVisible();
       const yours = home.getByTestId("projects-grid");
       await expect(yours.locator('[data-name="Blink"]')).toHaveAttribute("data-active", "true");
-      await expect(home.getByTestId("examples-grid").locator('[data-kind="example"]')).toHaveCount(5);
+      await expect(home.getByTestId("examples-grid").locator('[data-kind="example"]')).toHaveCount(6);
+      // The RP2040 pocket example sits in the gallery with its board.
+      await expect(home.getByTestId("examples-grid").locator('[data-name="Pocket OLED (XIAO RP2040)"]')).toContainText("Seeed XIAO RP2040");
       await expect(home.locator('[data-kind="agent-built"]').first()).toBeVisible();
       await expect(home.getByTestId("examples-grid").locator('[data-name="Blink"]')).toContainText("Arduino Uno");
       await shot(page, info, "projects-home");
