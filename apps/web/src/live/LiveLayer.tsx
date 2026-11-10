@@ -226,10 +226,15 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         }
         const entries = msg.entries ?? [];
         useLive.getState().set({ steps: msg.steps ?? [], dir: msg.dir ?? "", stepActors: noteStepActors(entries, reason === "open" ? {} : useLive.getState().stepActors) });
-        const last = [...entries].reverse().find((e) => e.frames?.length);
-        const f: LogFrame | undefined = last?.frames?.at(-1);
-        setLastColorFrames(last?.frames); // round 6 frames: the screens as the agent's last run left them
-        if (f) port.showStates(f.states, f.live, f.vt);
+        // A reconnect to the same project shows the screens as the agent's last run left them. A
+        // project just opened shows the device off (screens dark, clock 00:00.000) until something
+        // runs: the old run's picture is not the device's state now (round 6b).
+        if (reason === "reload") {
+          const last = [...entries].reverse().find((e) => e.frames?.length);
+          const f: LogFrame | undefined = last?.frames?.at(-1);
+          setLastColorFrames(last?.frames); // round 6 frames
+          if (f) port.showStates(f.states, f.live, f.vt);
+        }
         const code = [...entries].reverse().find((e) => e.file?.content);
         if (code?.file?.content) useLive.getState().set({ code: { path: code.file.path, content: code.file.content } });
         else if (reason === "open" && msg.project?.firmware) void loadMainSketch(msg.dir ?? "");
