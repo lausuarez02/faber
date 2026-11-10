@@ -236,7 +236,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const rover = matched.has("rover");
 
   const bom: BomLine[] = [];
-  const cannot = new Set<string>(["how it looks, feels and holds together in a real case (Jumper does not model the enclosure)"]);
+  const cannot = new Set<string>(["how the printed case feels in the hand and how well it prints (design_case checks the geometry: wall, fit, button travel, USB access; not the print or the plastic)"]);
   const missing: string[] = [];
   const warnings: string[] = [];
   const needs5v: string[] = [];
@@ -461,6 +461,12 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     ...(others.some((l) => l.make_with) ? ["create_part for the agent-made lines before placing them"] : []),
     ...(others.some((l) => l.source === "stand-in") ? ["after placing a stand-in, mark_stand_in {id, real} so exports name the real part"] : []),
     "place_part each line (omit x/y), connect, check_design, write_file, run, write_scenario, run_tests",
+    // Round 6: the flow ends with a real device when the person wants one.
+    ...(rover
+      ? ["when the person wants to build it for real: export_manufacturing (factory pack: BOM, wiring, wire cuts, firmware, assembly steps; the chassis is the case)"]
+      : [
+          `when the person wants to build it for real: ${portable ? 'set_assembly "soldered", ' : ""}design_case {"shape": "${pocket ? "pebble" : "rounded-box"}"} (try a variant with save: false: puck, pill, keychain, rounded-box), show the renders and the measured size, then export_manufacturing (factory pack: STL / 3MF / STEP for a printer or a factory, BOM, wiring, wire cuts, firmware, assembly steps)`,
+        ]),
   ];
 
   return {
