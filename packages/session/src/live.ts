@@ -1,10 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { Duplex } from "node:stream";
 import { closeSync, existsSync, openSync, readFileSync, readSync, statSync, watch, type FSWatcher } from "node:fs";
-import { resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { join, resolve } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import { ProjectSession, type ActionEntry } from "./session.ts";
 import { stepSummary } from "./history.ts";
+import { createAgentStateTracker } from "./agent-state.ts";
+import type { AgentState, LiveServerEvent } from "./live-events.ts";
 
 /**
  * Live hub: lets the web canvas follow a project that any process edits (MCP server, CLI, another
@@ -68,11 +71,15 @@ export interface LiveHubCore {
   pump(): void;
   /** Replace the connected-agents list and broadcast it ({type: "presence", agents}). */
   setPresence(agents: AgentPresence[]): void;
+  /** Round 5 (C6): the one agent state (none / building / idle / done) every surface shows. */
+  agentState(): AgentState;
   followers(): number;
   close(): Promise<void>;
 }
 
 const HELLO_TAIL = 400;
+/** Agent ops after which a following page starts its own simulation (C6 auto-run). */
+const AUTO_RUN_OPS = new Set(["build", "run", "run_tests"]);
 const WEB_OPS = new Set(["accept_step", "reject_step", "undo", "redo", "list_steps", "get_project", "run", "interact", "set_sensor_value", "move_part"]);
 
 /** Keep only the lines of an action log written by these actors / clients / sessions (comma lists). */
@@ -126,6 +133,13 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
   /** Connect menus listening for the agents list only. */
   const watchers = new Set<WebSocket>();
   let presence: AgentPresence[] = [];
+  const sendAll = (msg: LiveServerEvent) => {
+    const text = JSON.stringify(msg);
+    for (const c of [...clients, ...watchers]) if (c.readyState === c.OPEN) c.send(text);
+  };
+  const tracker = createAgentStateTracker({ ownSid: session.sid, onChange: (state) => sendAll({ type: "agent-state", state }) });
+  /** Hash of the newest firmware hex followers were told about (C6 "firmware" events only on change). */
+  let fwHash = currentHexHash(session);
 
   const readLog = (): string => (existsSync(logFile) ? readFileSync(logFile, "utf8") : "");
   const send = (msg: unknown) => {
@@ -173,6 +187,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
       watchers.add(ws);
       ws.on("close", () => watchers.delete(ws));
       ws.send(JSON.stringify({ type: "presence", agents: presence }));
+      ws.send(JSON.stringify({ type: "agent-state", state: tracker.state() }));
       return;
     }
     clients.add(ws);
@@ -192,6 +207,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
     });
     ws.send(JSON.stringify({ type: "hello", dir, project: session.project, steps: session.history.steps.slice(-30).map(stepSummary), entries: tail.map(stripFrames) }));
     ws.send(JSON.stringify({ type: "presence", agents: presence }));
+    ws.send(JSON.stringify({ type: "agent-state", state: tracker.state() }));
     ws.on("message", async (raw) => {
       let msg: { type?: string; id?: unknown; op?: string; args?: Record<string, unknown> };
       try {
@@ -235,6 +251,30 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
     for (const line of lines) {
       if (!line.trim()) continue;
       send(`{"type":"action","entry":${line}}`);
+      let entry: ActionEntry;
+      try {
+        entry = JSON.parse(line) as ActionEntry;
+      } catch {
+        continue;
+      }
+      derive(entry);
+    }
+  };
+  /** Round 5 (C6): agent-state, firmware and auto-run events derived from one action-log line. */
+  const derive = (entry: ActionEntry) => {
+    tracker.action(entry);
+    if (!entry.ok) return;
+    const hash = entry.firmware?.hash;
+    if (entry.firmware && hash && hash !== fwHash) {
+      fwHash = hash;
+      const { board, backend } = boardOf(session);
+      sendAll({ type: "firmware", artifact: entry.firmware.artifact, hash, board: board ?? "", backend: backend ?? "", at: entry.t });
+    }
+    if (entry.actor === "mcp" && AUTO_RUN_OPS.has(entry.op)) {
+      // build answers {ok:false} for compile errors without failing the call: nothing new to run then.
+      const r = entry.result as { ok?: unknown } | undefined;
+      if (entry.op === "build" && r && r.ok === false) return;
+      sendAll({ type: "auto-run", after: entry.op as "build" | "run" | "run_tests", ...(fwHash ? { hash: fwHash } : {}) });
     }
   };
   const unsubscribe = session.onEvent(() => pump());
@@ -258,8 +298,10 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
     handleUpgrade: (req, socket, head) => wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req)),
     broadcast: send,
     pump,
+    agentState: () => tracker.state(),
     setPresence(agents) {
       presence = agents;
+      tracker.presence(agents);
       const text = JSON.stringify({ type: "presence", agents });
       send(text);
       for (const w of watchers) if (w.readyState === w.OPEN) w.send(text);
@@ -268,6 +310,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
     close: () =>
       new Promise<void>((r) => {
         clearInterval(poll);
+        tracker.dispose();
         watcher?.close();
         unsubscribe();
         for (const c of [...clients, ...watchers]) c.close();
@@ -316,4 +359,32 @@ function stripFrames(e: ActionEntry): ActionEntry {
   const merged: Record<string, unknown> = {};
   for (const f of e.frames) Object.assign(merged, f.states ?? {});
   return { ...e, frames: [{ ...last, states: merged as Record<string, Record<string, string | number | boolean>> }] };
+}
+
+/** The board part type and its simulator backend ("arduino-uno", "avr8js"), when the project has one. */
+export function boardOf(session: ProjectSession): { board?: string; backend?: string; partId?: string } {
+  try {
+    session.sync();
+  } catch {
+    // keep the last good project
+  }
+  const p = session.project;
+  const id = p.firmware?.board ?? p.parts.find((x) => session.registry.get(x.type)?.spec.mcu)?.id;
+  const part = id ? p.parts.find((x) => x.id === id) : undefined;
+  if (!part) return {};
+  const backend = session.registry.get(part.type)?.spec.mcu?.backend;
+  return { board: part.type, partId: part.id, ...(backend ? { backend } : {}) };
+}
+
+/** sha256 of the project's built hex (the same hash build logs), or undefined when not built. */
+export function currentHexHash(session: ProjectSession): string | undefined {
+  try {
+    const artifact = session.project.firmware?.artifact;
+    if (!artifact) return undefined;
+    const file = join(session.dir, artifact);
+    if (!existsSync(file)) return undefined;
+    return createHash("sha256").update(readFileSync(file, "utf8")).digest("hex");
+  } catch {
+    return undefined;
+  }
 }

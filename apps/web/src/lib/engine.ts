@@ -9,6 +9,7 @@ import type { SandboxNet } from "@jumper/ai-gateway";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import type { JumperStore } from "./store.ts";
 import { localCopyUrl } from "./localCopy.ts";
+import { useInteract } from "../interact/store.ts";
 
 /**
  * Runs the Simulation on the main thread (M0; a worker comes later) and pushes its state
@@ -77,6 +78,14 @@ export class Engine {
   private physicsReady = false;
   private physicsLoading: Promise<void> | undefined;
   private worldListeners = new Set<() => void>();
+  /**
+   * Round 5 (live track): on a followed page the person can run the project in place. While this
+   * is true the local Simulation drives the canvas and the agent's pushed states wait in `external`
+   * (shown again when the local run stops).
+   */
+  private localRun = false;
+  /** Set by the live layer: fetches the latest built firmware and calls runLocal(). */
+  private followRunner: (() => void) | undefined;
 
   constructor(private readonly store: JumperStore) {
     store.subscribe((s, prev) => {
@@ -202,18 +211,47 @@ export class Engine {
     return this.external !== undefined;
   }
 
+  /** A followed page is running its own simulation (the agent's pushed states are on hold). */
+  get isLocalRun(): boolean {
+    return this.localRun;
+  }
+
+  /** Follow mode: what Run does (fetch the agent's latest firmware, then runLocal). */
+  setFollowRunner(fn: (() => void) | undefined): void {
+    this.followRunner = fn;
+  }
+
+  /** Follow mode: run the project here with the firmware in the store (set by the live layer). */
+  runLocal(): void {
+    if (!this.external) return this.run();
+    this.localRun = true;
+    this.run();
+    // run() may refuse (no firmware…): then the page keeps showing the agent's states.
+    if (!this.sim) this.endLocalRun();
+  }
+
+  private endLocalRun(): void {
+    if (!this.localRun) return;
+    this.localRun = false;
+    if (this.external) {
+      this.paintIdle();
+      this.paintAll(true);
+      this.paintClock(0);
+    }
+  }
+
   /** Apply part states (only the parts given) and, when given, the set of HIGH wires. */
   showExternal(states: Record<string, VisualState> | undefined, liveWires?: readonly string[], timeMs?: number): void {
     if (!this.external) return;
     for (const [id, st] of Object.entries(states ?? {})) {
       this.external.set(id, { ...(this.external.get(id) ?? {}), ...st });
-      this.paintPart(id);
+      if (!this.localRun) this.paintPart(id);
     }
     if (liveWires) {
       this.externalLive = new Set(liveWires);
-      this.paintWires();
+      if (!this.localRun) this.paintWires();
     }
-    if (timeMs !== undefined) this.paintClock(timeMs);
+    if (timeMs !== undefined && !this.localRun) this.paintClock(timeMs);
   }
 
   /** Forget pushed states (new project / restart) and repaint idle. */
@@ -221,6 +259,7 @@ export class Engine {
     if (!this.external) return;
     this.external.clear();
     this.externalLive.clear();
+    if (this.localRun) return;
     this.paintIdle();
     this.paintWires();
   }
@@ -240,7 +279,12 @@ export class Engine {
 
   run(): void {
     const s = this.store.getState();
-    if (this.external) {
+    if (this.external && !this.localRun && this.followRunner) {
+      // Following a `jumper serve` session: run the project here with its latest built firmware.
+      this.followRunner();
+      return;
+    }
+    if (this.external && !this.localRun) {
       // Following: the sim runs in the agent's session. On a `jumper serve` page, Run opens a copy
       // of the project with its built firmware (`/?local`) where it really runs.
       const local = localCopyUrl();
@@ -253,6 +297,7 @@ export class Engine {
       return;
     }
     if (s.run === "running") return;
+    if (!this.sim && !this.explainNothingToRun()) return;
     if (s.project.world && !this.physicsReady) {
       void this.preparePhysics(s.project)?.then(() => this.run());
       return;
@@ -298,9 +343,62 @@ export class Engine {
     const s = this.store.getState();
     s.setRun("idle");
     this.setStats(0, 0);
+    this.endLocalRun();
+  }
+
+  /**
+   * Run with nothing to run says why and what to do, never silently (round 5). False = refused.
+   * A board without firmware, or parts without a board, still run their passive circuit, with a note.
+   */
+  private explainNothingToRun(): boolean {
+    const s = this.store.getState();
+    const p = s.project;
+    const fix = "Fix: ask your agent to build something, or open an example from the project menu.";
+    if (!p.parts.length) {
+      const msg = `Nothing to run: the canvas is empty. Why: there are no parts and no firmware yet. ${fix}`;
+      s.setSimError(msg);
+      s.toast({ kind: "error", title: "Nothing to run", detail: msg });
+      return false;
+    }
+    const board = p.parts.find((x) => registry.get(x.type)?.spec.mcu);
+    if (!board && !p.parts.some((x) => registry.get(x.type)?.spec.category === "power")) {
+      const msg = `Nothing to run: there is no board and no power source. Why: parts only do something when a microcontroller (Arduino Uno, Nano…) or a battery drives them. ${fix}`;
+      s.setSimError(msg);
+      s.toast({ kind: "error", title: "Nothing to run", detail: msg });
+      return false;
+    }
+    if (board && !p.firmware) {
+      s.toast({ kind: "info", title: "Running without firmware", detail: `${board.id} has no sketch, so only the passive circuit runs. Why: nothing has written firmware/main.ino yet. ${fix}` });
+    }
+    return true;
+  }
+
+  // ------------------------------------------------------------- live interaction (round 5)
+
+  /** Set a value on a running part (knob position, sensor reading, IMU axes). Simulation-only. */
+  setLiveValue(partId: string, prop: string, value: PropValue): void {
+    const st = useInteract.getState();
+    useInteract.setState({ values: { ...st.values, [partId]: { ...(st.values[partId] ?? {}), [prop]: value } } });
+    if (!this.sim) return;
+    try {
+      this.sim.setProp(partId, prop, value);
+      this.paintAll(false);
+    } catch (err) {
+      this.store.getState().toast({ kind: "error", title: `Could not set ${partId}.${prop}`, detail: `${err instanceof Error ? err.message : String(err)}. Why: the part model refused the value. Fix: pick a value inside the slider's range.` });
+    }
+  }
+
+  /** The value a part prop has in the running simulation (what the person set, else the project's). */
+  liveValue(partId: string, prop: string): PropValue | undefined {
+    const v = useInteract.getState().values[partId]?.[prop];
+    if (v !== undefined) return v;
+    const part = this.store.getState().project.parts.find((x) => x.id === partId);
+    if (part?.props?.[prop] !== undefined) return part.props[prop];
+    return registry.get(part?.type ?? "")?.spec.props?.find((x) => x.id === prop)?.default;
   }
 
   interact(partId: string, kind: "press" | "release"): void {
+    if (this.external && !this.localRun) return; // following: the agent's session owns the parts until Run
     if (!this.sim) {
       if (!this.build()) return;
       this.store.getState().setRun("paused");
@@ -348,6 +446,19 @@ export class Engine {
         this.physics = attachPhysics(sim, project.world);
         this.notifyWorld();
       }
+      // Values the person set while it ran (knobs, sensors) survive a restart.
+      const ids = new Set(project.parts.map((x) => x.id));
+      for (const [id, props] of Object.entries(useInteract.getState().values)) {
+        if (!ids.has(id)) continue;
+        for (const [k, v] of Object.entries(props)) {
+          try {
+            sim.setProp(id, k, v);
+          } catch {
+            // the part changed type; drop silently, the slider shows the project's value again
+          }
+        }
+      }
+      useInteract.setState({ active: true });
       const missing = sim.diagnostics().filter((d) => d.code === "unknown-part-type");
       s.setSimError(
         missing.length ? `Not simulated (unknown part types): ${missing.map((d) => d.partId).join(", ")}` : undefined,
@@ -369,6 +480,7 @@ export class Engine {
     s.setRun("idle");
     s.setSimError(`Simulator error: ${msg}`);
     s.toast({ kind: "error", title: "Simulation stopped", detail: msg });
+    this.endLocalRun();
   }
 
   private disposeSim(): void {
@@ -381,6 +493,7 @@ export class Engine {
     this.unsubSim = undefined;
     this.sim?.dispose();
     this.sim = undefined;
+    if (useInteract.getState().active) useInteract.setState({ active: false, held: {} });
     this.serialPending = [];
     if (this.net) {
       this.net = undefined;
@@ -503,9 +616,10 @@ export class Engine {
   private paintPart(id: string, force = false): void {
     const view = this.parts.get(id);
     const sim = this.sim;
-    if (!view || (!sim && !this.external)) return;
+    const ext = this.external && !this.localRun;
+    if (!view || (!sim && !ext)) return;
     let state: VisualState | undefined;
-    if (this.external) state = this.external.get(id);
+    if (ext) state = this.external!.get(id);
     else {
       try {
         state = sim!.partState(id);
@@ -538,7 +652,7 @@ export class Engine {
 
   private paintWires(): void {
     const sim = this.sim;
-    if (this.external) {
+    if (this.external && !this.localRun) {
       let n = 0;
       for (const [id, view] of this.wires) {
         const live = this.externalLive.has(id);

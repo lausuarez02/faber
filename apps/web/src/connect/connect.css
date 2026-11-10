@@ -304,3 +304,38 @@
     animation: none;
   }
 }
+
+/* Round 5 (C6): "No agent" + Connect next to the agent pill until an MCP client calls a tool. */
+.agent-connect {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--bg-float);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.agent-connect:hover {
+  background: var(--bg-hover);
+}
+.agent-pill[data-agent-status="none"] .agent-pill-status,
+.agent-pill[data-agent-status="done"] .agent-pill-status {
+  color: var(--fg-muted);
+}
+.cx-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 6px;
+  font-size: 13px;
+}
+.cx-state .cx-dot.is-off {
+  background: var(--fg-muted);
+  opacity: 0.6;
+}

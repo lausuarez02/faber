@@ -7,8 +7,10 @@ import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, t
 import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts";
 import { worldTracker } from "./worldTracker.ts";
 import { useUi } from "../lib/ui.ts";
+import { useInteract } from "../interact/store.ts";
 import "./live.css";
-import { localCopyUrl } from "../lib/localCopy.ts";
+import { agentLabel, feedAgentState, plural, useAgentState, type AgentState } from "./agentState.ts";
+import { applyFirmwareToStore, autoRunEnabled, autoRunOnOpen, fetchFirmware, onAutoRun, onFirmwareEvent, onSketchWritten, runFollowed, setAutoRun } from "./followRun.ts";
 
 /**
  * Follow mode (?follow=ws://127.0.0.1:7782, started by `jumper serve`) and replay mode
@@ -37,8 +39,8 @@ function usePort(): CanvasPort {
       worldTracker.setProject(p);
       useLive.getState().set({ world: worldTracker.hasRobot ? "robot" : worldTracker.hasArm ? "arm" : undefined });
       useJumper.getState().loadProject(p);
-      // The firmware runs in the agent's session; show its name instead of "not built".
-      useJumper.getState().setFirmware(p.firmware?.sketch ? { status: "ready", hex: "", name: p.firmware.sketch, source: "example" } : { status: "none" });
+      // The latest hex the server built (GET /api/firmware), so Run here runs the agent's firmware.
+      applyFirmwareToStore();
     },
     showStates: (states, live, vt) => {
       engine.showExternal(states, live, vt);
@@ -48,8 +50,13 @@ function usePort(): CanvasPort {
       engine.resetExternal();
       worldTracker.reset();
     },
-    appendSerial: (t) => engine.appendSerial(t),
-    clearSerial: () => engine.clearSerial(),
+    // While the device runs here, its own serial output owns the console.
+    appendSerial: (t) => {
+      if (!engine.isLocalRun) engine.appendSerial(t);
+    },
+    clearSerial: () => {
+      if (!engine.isLocalRun) engine.clearSerial();
+    },
     highlightNew: (parts, wires) => {
       if (!parts.length && !wires.length) return;
       requestAnimationFrame(() =>
@@ -86,7 +93,7 @@ function overlayPadding(): { top: Px; right: Px; bottom: Px; left: Px } {
   const pad = { top: document.querySelector(".live-world") ? 200 : 160, right: 48, bottom: 80, left: 92 };
   const canvas = document.querySelector('[data-testid="canvas"]')?.getBoundingClientRect();
   if (!canvas) return { top: "64px", right: "290px", bottom: "56px", left: "48px" };
-  for (const el of document.querySelectorAll(".panel-column > *, .live-bar, .live-tests, .live-code, .live-world, .title-block, .top-actions, .rail")) {
+  for (const el of document.querySelectorAll(".panel-column > *, .live-bar, .live-tests, .live-code, .live-world, .title-block, .top-actions, .rail, .ix-card")) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     const gap = 16;
@@ -122,10 +129,12 @@ export function LiveLayer() {
   const tests = useLive((s) => s.tests);
   const fidelity = useLive((s) => s.fidelity);
   const hasCode = useLive((s) => !!s.code);
-  // A card appearing (tests result, fidelity, firmware) changes the free space: fit again.
+  // The live controls card appears when the device starts running here.
+  const controls = useInteract((s) => s.active);
+  // A card appearing (tests result, fidelity, firmware, live controls) changes the free space: fit again.
   useEffect(() => {
-    if (mode !== "off" && (tests || fidelity || hasCode)) port.fit();
-  }, [mode, tests, fidelity, hasCode, port]);
+    if (mode !== "off" && (tests || fidelity || hasCode || controls)) port.fit();
+  }, [mode, tests, fidelity, hasCode, controls, port]);
 
   useEffect(() => {
     const params = liveParams();
@@ -138,7 +147,16 @@ export function LiveLayer() {
     useUi.setState({ panels: ["agent", "serial"], inspectorAuto: false });
     useJumper.getState().loadProject(EMPTY);
     useJumper.getState().setFirmware({ status: "none" });
-    if (params.mode === "follow") return connectFollow(params.url, port);
+    if (params.mode === "follow") {
+      // Run on this page runs the project here (round 5), with the agent's latest firmware.
+      engine.setFollowRunner(() => void runFollowed());
+      useLive.getState().set({ autoRun: autoRunEnabled() });
+      const stop = connectFollow(params.url, port);
+      return () => {
+        engine.setFollowRunner(undefined);
+        stop();
+      };
+    }
     let cancelled = false;
     fetch(params.url)
       .then((r) => {
@@ -185,7 +203,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
       if (!closed) retry = setTimeout(open, 1500);
     };
     ws.onmessage = (ev) => {
-      let msg: { type: string; project?: Project; steps?: LiveStep[]; dir?: string; entries?: LogEntry[]; entry?: LogEntry; ok?: boolean; error?: string };
+      let msg: { type: string; project?: Project; steps?: LiveStep[]; dir?: string; entries?: LogEntry[]; entry?: LogEntry; ok?: boolean; error?: string; state?: AgentState; hash?: string };
       try {
         msg = JSON.parse(String(ev.data));
       } catch {
@@ -202,8 +220,17 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         if (f) port.showStates(f.states, f.live, f.vt);
         const code = [...(msg.entries ?? [])].reverse().find((e) => e.file?.content);
         if (code?.file?.content) useLive.getState().set({ code: { path: code.file.path, content: code.file.content } });
+        // Ready to run here: the latest built hex (quietly; Run says why when there is none).
+        void fetchFirmware().then(() => autoRunOnOpen());
       } else if (msg.type === "action" && msg.entry) {
         player.apply(msg.entry);
+        if (msg.entry.ok && msg.entry.op === "write_file") onSketchWritten();
+      } else if (msg.type === "agent-state" && msg.state) {
+        feedAgentState(msg.state);
+      } else if (msg.type === "firmware" && msg.hash) {
+        void onFirmwareEvent(msg.hash);
+      } else if (msg.type === "auto-run") {
+        void onAutoRun(msg.hash);
       } else if (msg.type === "result" && msg.ok === false) {
         useJumper.getState().toast({ kind: "error", title: "The session refused", detail: msg.error ?? "" });
       }
@@ -218,18 +245,35 @@ function connectFollow(url: string, port: CanvasPort): () => void {
 }
 
 function LiveBar() {
-  const { mode, connected, dir, replay, ops } = useLive();
+  const { mode, connected, dir, replay, autoRun, firmwareStale } = useLive();
+  const agent = useAgentState();
+  const run = useJumper((s) => s.run);
   if (mode === "follow") {
+    const here = engine.isLocalRun && run !== "idle";
     return (
       <div className="live-bar" data-testid="live-bar">
         <span className={`live-dot ${connected ? "on" : ""}`} />
         <span className="live-bar-title">{connected ? "Live" : "Reconnecting…"}</span>
-        <span className="live-bar-dim">following {dir ? dir.split("/").slice(-2).join("/") : "agent session"} · {ops} actions</span>
-        {localCopyUrl() ? (
-          <a className="live-btn live-link" data-testid="run-local-copy" href={localCopyUrl()} target="_blank" rel="noopener" title="Open this project with its built firmware in a new tab, where Run, the buttons and the Device view work">
-            Run a copy ↗
-          </a>
+        <span className="live-bar-dim">
+          <span className="live-follow-dir">following {dir ? dir.split("/").slice(-2).join("/") : "agent session"} · </span>
+          <span data-testid="live-actions" title="Tool calls made by agents on this server (ok or failed)">
+            {agent.status === "none" ? "no agent yet" : `${plural(agent.actions, "agent action")}`}
+          </span>
+        </span>
+        {here ? (
+          <span className="live-chip-run" data-testid="live-running-here" title="The device runs in this page with the agent's latest firmware; press its buttons, turn its knobs">
+            {run === "running" ? "running here" : "paused here"}
+          </span>
         ) : null}
+        {firmwareStale ? (
+          <span className="live-bar-dim" data-testid="live-stale" title="The agent changed the sketch after the last build; the device here runs the last build until the agent builds again">
+            · sketch changed, not built yet
+          </span>
+        ) : null}
+        <label className="live-autorun" title="Start the device here after the agent builds, runs or tests">
+          <input type="checkbox" data-testid="autorun-toggle" checked={autoRun} onChange={(e) => setAutoRun(e.target.checked)} />
+          Auto-run
+        </label>
       </div>
     );
   }
@@ -269,9 +313,21 @@ export function StepsList() {
   const mode = useLive((s) => s.mode);
   const shown = steps.slice(-12);
   const pending = steps.filter((s) => s.status === "pending").length;
-  if (!shown.length) return <div className="live-steps" data-testid="live-steps"><p className="panel-empty">Waiting for the agent's first step…</p></div>;
+  const agent = useAgentState();
+  if (!shown.length)
+    return (
+      <div className="live-steps" data-testid="live-steps" data-agent-status={agent.status}>
+        <p className="panel-empty" data-testid="agent-steps-state">
+          {agent.status === "none"
+            ? "No agent yet. Connect one (Install MCP, or Connect next to the agent pill) and ask it to build something; its steps appear here with each reason."
+            : agent.status === "building"
+              ? `${agentLabel(agent)}. Its changes appear here as steps.`
+              : `${agentLabel(agent)}. It has not changed the project yet.`}
+        </p>
+      </div>
+    );
   return (
-    <div className="live-steps" data-testid="live-steps" aria-label="Agent steps">
+    <div className="live-steps" data-testid="live-steps" data-agent-status={agent.status} aria-label="Agent steps">
       <header>
         <span>
           {steps.length} step{steps.length === 1 ? "" : "s"}

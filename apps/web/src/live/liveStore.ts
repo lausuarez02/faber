@@ -52,6 +52,12 @@ export interface LiveState {
   ops: number;
   /** The project has a physical world to show (robot arena or arm). */
   world: "robot" | "arm" | undefined;
+  /** Round 5: auto-run after agent builds (followed page). */
+  autoRun: boolean;
+  /** Hash of the firmware the page has from the server (followed page). */
+  firmwareHash: string | undefined;
+  /** The agent changed the sketch after that build. */
+  firmwareStale: boolean;
   set(p: Partial<LiveState>): void;
 }
 
@@ -73,6 +79,9 @@ export const useLive = create<LiveState>()((set) => ({
   replay: { playing: false, speed: 1, index: 0, total: 0, done: false },
   ops: 0,
   world: undefined,
+  autoRun: true,
+  firmwareHash: undefined,
+  firmwareStale: false,
   set: (p) => set(p),
 }));
 
