@@ -60,6 +60,14 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
   try {
     await page.goto(`${s.url}/`);
     await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
+    // A new browser lands on the Projects page (round 6); the way back names the project on the canvas.
+    const home = page.getByTestId("projects-home");
+    await expect(home).toBeVisible({ timeout: 30_000 });
+    const back = home.getByTestId("projects-close");
+    await expect(back).toHaveText(/Back to Pocket Muse/);
+    await shot(page, info, "case-landing");
+    await back.click();
+    await expect(home).toHaveCount(0);
     await openCase(page, info);
     await expect(page.getByTestId("case-empty")).toContainText("No case yet");
     await page.getByTestId("case-shape-rounded-box").click();

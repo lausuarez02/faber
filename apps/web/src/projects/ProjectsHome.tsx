@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bot, CircuitBoard, FlaskConical, FolderOpen, Plus, X } from "lucide-react";
+import { ArrowLeft, Bot, CircuitBoard, FlaskConical, FolderOpen, Plus } from "lucide-react";
 import { useJumper } from "../lib/app.ts";
 import { exampleInfos, type ExampleInfo } from "../lib/examples.ts";
 import { getDef } from "../lib/parts.ts";
@@ -29,6 +29,7 @@ function closeHome(): void {
 export function ProjectsHome() {
   const open = useProjectsUi((s) => s.home);
   const server = useServer();
+  const current = useJumper((s) => s.project.name);
   const { data, error, loading } = useProjectsListing(open);
   const [busy, setBusy] = useState<string | undefined>();
 
@@ -62,11 +63,12 @@ export function ProjectsHome() {
           <h1>Projects</h1>
         </div>
         <div className="pj-home-actions">
-          <button type="button" className="pj-btn pj-btn-primary" data-testid="projects-new" disabled={!!busy} onClick={() => void run("new", () => newProjectAnywhere())}>
-            <Plus size={16} strokeWidth={STROKE} aria-hidden /> New project
+          <button type="button" className="pj-btn pj-btn-primary" aria-label="New project" data-testid="projects-new" disabled={!!busy} onClick={() => void run("new", () => newProjectAnywhere())}>
+            <Plus size={16} strokeWidth={STROKE} aria-hidden /> <span className="pj-new-label">New project</span>
           </button>
-          <button type="button" className="icon-btn" aria-label="Back to the canvas" title="Back to the canvas (Esc)" data-testid="projects-close" onClick={close}>
-            <X size={18} strokeWidth={STROKE} aria-hidden />
+          {/* A labelled way back to the project on the canvas: someone landing here first sees where the X would take them. */}
+          <button type="button" className="pj-btn pj-back" title={`Back to ${current || "the canvas"} (Esc)`} data-testid="projects-close" onClick={close}>
+            <ArrowLeft size={16} strokeWidth={STROKE} aria-hidden /> <span className="pj-back-label">Back to {current || "the canvas"}</span>
           </button>
         </div>
       </header>

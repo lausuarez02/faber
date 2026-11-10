@@ -121,6 +121,7 @@
   border-bottom: 1px solid var(--border);
 }
 .pj-home-brand {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -134,6 +135,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+.pj-back {
+  min-width: 0;
+  max-width: 260px;
+}
+.pj-back-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* On a phone the way back keeps its words; New project is the + (it is also the dashed card below). */
+@media (max-width: 520px) {
+  .pj-new-label {
+    display: none;
+  }
 }
 
 .pj-home-body {
