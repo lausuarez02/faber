@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getDef } from "../lib/parts.ts";
-import { controlOf, isImu, knobValue, sensorProps, tiltToAccel } from "./controls.ts";
+import { controlHitRect, controlOf, isImu, knobValue, motionSample, sensorProps, tiltFromDrag, tiltToAccel } from "./controls.ts";
 
 // Round 5, live track: which running parts take a press, a flip, a turn, a tilt or a slider.
 describe("live controls from part specs", () => {
@@ -35,5 +35,27 @@ describe("live controls from part specs", () => {
     expect(tiltToAccel(0, 90)).toMatchObject({ x: -1 });
     const a = tiltToAccel(30, 20);
     expect(Math.hypot(a.x, a.y, a.z)).toBeCloseTo(1, 2);
+  });
+
+  // Round 6, canvas track.
+  it("the hit area is the cap grown to at least 30 px, inside the part; no cap found = the middle", () => {
+    expect(controlHitRect({ x: 26, y: 26, w: 28, h: 28 }, { w: 80, h: 80 })).toEqual({ x: 20, y: 20, w: 40, h: 40 });
+    expect(controlHitRect({ x: 0, y: 0, w: 4, h: 4 }, { w: 80, h: 80 })).toEqual({ x: 0, y: 0, w: 30, h: 30 });
+    expect(controlHitRect(undefined, { w: 100, h: 50 })).toEqual({ x: 20, y: 10, w: 60, h: 30 });
+  });
+
+  it("dragging an IMU tilts it 1° per 2 px, clamped to ±60°", () => {
+    expect(tiltFromDrag({ pitch: 0, roll: 0 }, 40, -20)).toEqual({ pitch: 10, roll: 20 });
+    expect(tiltFromDrag({ pitch: 50, roll: 0 }, 0, -100)).toEqual({ pitch: 60, roll: 0 });
+  });
+
+  it("motions are functions of virtual time: shake swings ±2.2 g at 7 Hz, drop falls 0.4 s then bumps", () => {
+    const base = { x: 0, y: 0, z: 1 };
+    const peak = motionSample("shake", 1000 / 28, base); // a quarter period
+    expect(peak.accelX).toBeCloseTo(2.2, 2);
+    expect(motionSample("shake", 1000 / 28, base)).toEqual(peak); // deterministic
+    expect(motionSample("drop", 100, base).accelZ).toBe(0);
+    expect(motionSample("drop", 450, base).accelZ).toBe(6);
+    expect(motionSample("spin", 10, base).gyroZ).toBe(360);
   });
 });

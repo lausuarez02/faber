@@ -69,3 +69,84 @@ export function tiltToAccel(pitchDeg: number, rollDeg: number): { x: number; y: 
   const round = (v: number) => Math.round(v * 1000) / 1000;
   return { x: round(-Math.sin(r) * Math.cos(p)), y: round(Math.sin(p)), z: round(Math.cos(r) * Math.cos(p)) };
 }
+
+// ---- round 6, canvas track ----------------------------------------------------------------------
+
+/** A quick click still holds a button this long (virtual ms and wall ms), so firmware debouncing sees it and the cap is seen pressed. */
+export const MIN_PRESS_MS = 120;
+
+/** IMU axes a motion writes. */
+export type ImuAxes = Partial<Record<"accelX" | "accelY" | "accelZ" | "gyroX" | "gyroY" | "gyroZ", number>>;
+export type ImuMotionKind = "shake" | "drop" | "spin";
+
+/** Length of a motion played by a click (virtual ms). Shake takes the person's duration setting. */
+export const MOTION_MS: Record<ImuMotionKind, number> = { shake: 1000, drop: 520, spin: 1000 };
+export const SHAKE_DURATIONS_MS = [500, 1000, 2000, 5000] as const;
+
+/**
+ * IMU values `t` virtual ms into a motion, around a resting gravity vector `base` (from the tilt).
+ * Approximate on purpose: the shapes firmware usually detects (a 7 Hz ±2.2 g side-to-side shake,
+ * 0.4 s of free fall then a 6 g bump, a 360 °/s spin around Z), not a model of a hand.
+ */
+export function motionSample(kind: ImuMotionKind, t: number, base: { x: number; y: number; z: number }): ImuAxes {
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  if (kind === "shake") {
+    const w = Math.sin((t / 1000) * 2 * Math.PI * 7);
+    return { accelX: r(base.x + 2.2 * w), accelY: r(base.y + 0.6 * Math.cos((t / 1000) * 2 * Math.PI * 5)), accelZ: r(base.z), gyroX: 0, gyroY: 0, gyroZ: r(250 * w) };
+  }
+  if (kind === "drop") {
+    if (t < 400) return { accelX: 0, accelY: 0, accelZ: 0, gyroX: 0, gyroY: 0, gyroZ: 0 };
+    return { accelX: r(base.x * 0.5), accelY: r(base.y * 0.5), accelZ: 6, gyroX: 120, gyroY: -80, gyroZ: 0 };
+  }
+  return { accelX: r(base.x), accelY: r(base.y), accelZ: r(base.z), gyroX: 0, gyroY: 0, gyroZ: 360 };
+}
+
+/** The resting values after a motion: gravity from the tilt, no rotation. */
+export function restAxes(base: { x: number; y: number; z: number }): ImuAxes {
+  return { accelX: base.x, accelY: base.y, accelZ: base.z, gyroX: 0, gyroY: 0, gyroZ: 0 };
+}
+
+export const MAX_TILT = 60;
+
+/** Dragging an IMU part tilts it: right rolls right, up pitches the nose up; 2 px per degree. */
+export function tiltFromDrag(start: { pitch: number; roll: number }, dx: number, dy: number): { pitch: number; roll: number } {
+  const clamp = (v: number) => Math.max(-MAX_TILT, Math.min(MAX_TILT, Math.round(v)));
+  return { pitch: clamp(start.pitch - dy / 2), roll: clamp(start.roll + dx / 2) };
+}
+
+/**
+ * Where on a part's drawing the control is (the cap, the lever, the knob, the touch pad), found by
+ * the SVG bindings that move it. Parts can mark it explicitly with `data-control` on any element.
+ * Anything else on the part (its body, its label) selects and drags the part as usual.
+ */
+export const CONTROL_SELECTORS: Record<ControlKind, string> = {
+  button: '[data-control], [data-bind*="transform:capTransform"], [data-bind*="transform:leverTransform"], [data-bind*="opacity:padOpacity"], [data-bind*="visible:pressed"]',
+  toggle: '[data-control], [data-bind*="transform:knobTransform"], [data-bind*="transform:slider"]',
+  knob: '[data-control], [data-bind*="transform:knobTransform"]',
+};
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The hit area for a control: the element's box grown by `pad` and at least `min` square (a finger
+ * or a quick mouse click must land on it), kept inside the part. Falls back to the middle of the
+ * part when the drawing has no recognisable control.
+ */
+export function controlHitRect(found: Rect | undefined, box: { w: number; h: number }, pad = 6, min = 30): Rect {
+  const r = found ?? { x: box.w * 0.2 + pad, y: box.h * 0.2 + pad, w: box.w * 0.6 - 2 * pad, h: box.h * 0.6 - 2 * pad };
+  let w = Math.max(min, r.w + 2 * pad);
+  let h = Math.max(min, r.h + 2 * pad);
+  w = Math.min(w, box.w);
+  h = Math.min(h, box.h);
+  const cx = r.x + r.w / 2;
+  const cy = r.y + r.h / 2;
+  const x = Math.max(0, Math.min(box.w - w, cx - w / 2));
+  const y = Math.max(0, Math.min(box.h - h, cy - h / 2));
+  const round = (v: number) => Math.round(v * 10) / 10;
+  return { x: round(x), y: round(y), w: round(w), h: round(h) };
+}
