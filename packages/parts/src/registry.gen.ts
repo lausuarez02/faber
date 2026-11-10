@@ -4621,7 +4621,7 @@ export const partDefinitions: PartDefinition[] = [
         "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
         "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
         "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
-        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "Frame formats other than 8 data bits, no parity, 1 stop bit on Serial1/Serial2",
         "On-chip temperature sensor (reads a fixed 27 °C)",
         "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
         "Sleep / dormant modes and their current",
@@ -5483,7 +5483,7 @@ export const partDefinitions: PartDefinition[] = [
         "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
         "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
         "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
-        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "Frame formats other than 8 data bits, no parity, 1 stop bit on Serial1/Serial2",
         "On-chip temperature sensor (reads a fixed 27 °C)",
         "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
         "Sleep / dormant modes and their current",
@@ -6765,12 +6765,12 @@ export const partDefinitions: PartDefinition[] = [
         "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
         "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
         "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
-        "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+        "Frame formats other than 8 data bits, no parity, 1 stop bit on Serial1/Serial2",
         "On-chip temperature sensor (reads a fixed 27 °C)",
         "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
         "Sleep / dormant modes and their current",
         "The WS2812 RGB LED on GP16 (its data still runs, nothing is drawn)",
-        "The GPIO pads on the underside (only the edge pins are modelled)"
+        "Underside pads (only the edge pins are modelled as pins)"
       ],
       "testOnRealDevice": [
         "Anything that uses core 1 (setup1/loop1, multicore FIFO)",

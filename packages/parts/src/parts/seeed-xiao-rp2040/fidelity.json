@@ -42,7 +42,7 @@
     "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",
     "Bus electrical detail: the two-wire and serial-peripheral buses carry whole bytes, not clock edges, so clock stretching, rise times and bus capacitance are not modelled",
     "Bus pins other than the board's defaults: Wire.setSDA()/setSCL() and SPI.setRX()/setTX() to other pins do not reach the parts",
-    "Serial1/Serial2 frame formats other than 8 data bits, no parity, 1 stop bit",
+    "Frame formats other than 8 data bits, no parity, 1 stop bit on Serial1/Serial2",
     "On-chip temperature sensor (reads a fixed 27 °C)",
     "Floating inputs: an input with nothing driving it reads LOW instead of random noise (the simulator warns about it)",
     "Sleep / dormant modes and their current",
