@@ -54,6 +54,12 @@ describe("live controls from part specs", () => {
     const peak = motionSample("shake", 1000 / 28, base); // a quarter period
     expect(peak.accelX).toBeCloseTo(2.2, 2);
     expect(motionSample("shake", 1000 / 28, base)).toEqual(peak); // deterministic
+    // Every sample of a shake is a jolt: |a| at least 1.8 g and the wrist turning at 250 °/s.
+    for (let t = 0; t < 1000; t += 7) {
+      const m = motionSample("shake", t, base);
+      expect(Math.hypot(m.accelX ?? 0, m.accelY ?? 0, m.accelZ ?? 0)).toBeGreaterThan(1.8);
+      expect(Math.hypot(m.gyroX ?? 0, m.gyroY ?? 0, m.gyroZ ?? 0)).toBeCloseTo(250, 0);
+    }
     expect(motionSample("drop", 100, base).accelZ).toBe(0);
     expect(motionSample("drop", 450, base).accelZ).toBe(6);
     expect(motionSample("spin", 10, base).gyroZ).toBe(360);

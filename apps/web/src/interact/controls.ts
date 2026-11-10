@@ -85,14 +85,21 @@ export const SHAKE_DURATIONS_MS = [500, 1000, 2000, 5000] as const;
 
 /**
  * IMU values `t` virtual ms into a motion, around a resting gravity vector `base` (from the tilt).
- * Approximate on purpose: the shapes firmware usually detects (a 7 Hz ±2.2 g side-to-side shake,
+ * Approximate on purpose: the shapes firmware usually detects (a 7 Hz ±2.2 g looping shake,
  * 0.4 s of free fall then a 6 g bump, a 360 °/s spin around Z), not a model of a hand.
  */
 export function motionSample(kind: ImuMotionKind, t: number, base: { x: number; y: number; z: number }): ImuAxes {
   const r = (v: number) => Math.round(v * 1000) / 1000;
   if (kind === "shake") {
-    const w = Math.sin((t / 1000) * 2 * Math.PI * 7);
-    return { accelX: r(base.x + 2.2 * w), accelY: r(base.y + 0.6 * Math.cos((t / 1000) * 2 * Math.PI * 5)), accelZ: r(base.z), gyroX: 0, gyroY: 0, gyroZ: r(250 * w) };
+    // A hand shakes in a loop, not a straight line: ±2.2 g side to side with ±1.6 g back and forth a
+    // quarter turn later, and the wrist turning at 250 °/s. So |a| stays ≥ 1.8 g and the rotation
+    // stays at 250 °/s the whole time, as firmware that counts "shaking for 1.2 s" expects (round
+    // 6b: the old straight-line swing crossed 1 g and 0 °/s 14 times a second, and the Muse never
+    // got dizzy).
+    const ph = (t / 1000) * 2 * Math.PI * 7;
+    const s = Math.sin(ph);
+    const c = Math.cos(ph);
+    return { accelX: r(base.x + 2.2 * s), accelY: r(base.y + 1.6 * c), accelZ: r(base.z), gyroX: r(250 * c), gyroY: 0, gyroZ: r(250 * s) };
   }
   if (kind === "drop") {
     if (t < 400) return { accelX: 0, accelY: 0, accelZ: 0, gyroX: 0, gyroY: 0, gyroZ: 0 };

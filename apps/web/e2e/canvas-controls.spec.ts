@@ -1,8 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { expectWithinSimTime, hubPort, openSerial, shot, simTimeMs, waitForSimTime } from "./helpers.ts";
-import { EXAMPLES, FIXTURES, center, freshHex, openAndRun, overlaps, partState, partXY, selected, serialText, serve, viewTransform } from "./canvas-serve.ts";
+import { EXAMPLES, FIXTURES, center, freshHex, openAndRun, overlaps, partState, partXY, runState, selected, serialText, serve, viewTransform } from "./canvas-serve.ts";
 
 // Round 6, canvas track (decision 0004): while the device runs, a normal click presses a button
 // (drawn pressed, at least 120 ms so the firmware sees it), a drag on the body or label still moves
@@ -156,7 +156,21 @@ test("Pocket Muse: the docked Live controls never hide; dragging the IMU tilts i
     await expect.poll(async () => Number((await partState(page, "imu")).gyroZ)).toBe(0);
 
     // Shake, clicked with 0.5 s set: it lasts 0.5 s of virtual time, whatever the wall clock does.
-    await page.getByTestId("imu-shake-ms-imu").selectOption("500");
+    // The length picker opens (a list in the page) and works from the keyboard.
+    const dur = page.getByTestId("imu-shake-ms-imu");
+    await dur.click();
+    await expect(page.getByTestId("imu-shake-ms-list-imu")).toBeVisible();
+    await page.getByTestId("imu-shake-ms-imu-2000").click();
+    await expect(dur).toHaveAttribute("data-value", "2000");
+    await expect(page.getByTestId("imu-shake-ms-list-imu")).toHaveCount(0);
+    await dur.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(dur).toHaveAttribute("data-value", "1000");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("imu-shake-ms-list-imu")).toBeVisible();
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    await expect(dur).toHaveAttribute("data-value", "500");
     const t0 = await simTimeMs(page);
     await page.getByTestId("imu-shake-imu").click();
     await expect(page.getByTestId("imu-read-imu")).not.toContainText("shake", { timeout: 10_000 });
@@ -186,6 +200,70 @@ test("Pocket Muse: the docked Live controls never hide; dragging the IMU tilts i
     await page.getByTestId("live-controls-toggle").click();
     await expect(card).toHaveAttribute("data-open", "false");
     await expect(page.getByTestId("imu-pad-imu")).toHaveCount(0);
+  } finally {
+    await srv.stop();
+  }
+});
+
+test("Pocket Muse (round 6b): screen off and clock at zero until Run; a held Shake makes it dizzy; Serial filters the look lines", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "pointer holds are covered on desktop; phones share the handlers");
+  test.setTimeout(150_000);
+  const srv = await serve(join(FIXTURES, "canvas-muse"), hubPort(info), (dir) => {
+    freshHex(dir, "firmware/main.hex");
+    // The real Muse's log: its last run left the round screen lit (logged colour frames).
+    mkdirSync(join(dir, ".jumper"), { recursive: true });
+    copyFileSync(join(EXAMPLES, "agent-built", "claude-pocket-muse", "agent-actions.jsonl"), join(dir, ".jumper", "actions.jsonl"));
+  });
+  try {
+    await page.goto(`/?follow=${encodeURIComponent(srv.ws)}`);
+    await expect(page.getByTestId("part-imu")).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(1500); // the hello and its frames have landed
+    // Opened, not run: the eyes are dark and the clock is at zero.
+    await expect(page.getByTestId("sim-clock")).toHaveText("00:00.000");
+    const eye = page.locator('[data-testid="part-eye"] [data-display-layer="tft"] canvas');
+    const lit = () =>
+      eye.count().then((n) =>
+        n === 0
+          ? 0
+          : eye.first().evaluate((c: HTMLCanvasElement) => {
+              const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+              let on = 0;
+              for (let i = 0; i < d.length; i += 4) if (d[i]! + d[i + 1]! + d[i + 2]! > 60) on++;
+              return on;
+            }),
+      );
+    expect(await lit(), "the round screen shows the old run's eyes before Run").toBeLessThan(50);
+    await shot(page, info, "muse-opened-dark");
+
+    await page.getByTestId("run-button").click();
+    await expect.poll(() => runState(page), { timeout: 20_000 }).toBe("running");
+    await waitForSimTime(page, 1500);
+    await expect.poll(lit, { timeout: 20_000 }).toBeGreaterThan(500); // the firmware draws its eyes
+
+    // Hold Shake: the Muse is scared first, then dizzy after 1.2 s of continuous shaking.
+    const s0 = (await serialText(page)).length;
+    const sh = await center(page, "imu-shake-imu");
+    await page.mouse.move(sh.x, sh.y);
+    await page.mouse.down();
+    await expectWithinSimTime(page, 4000, async () => (await serialText(page)).slice(s0).includes("mood=dizzy"), "holding Shake for 4 virtual s should make the Muse dizzy");
+    await page.mouse.up();
+    const after = (await serialText(page)).slice(s0);
+    expect(after.indexOf("mood=scared")).toBeGreaterThanOrEqual(0);
+    expect(after.indexOf("mood=scared")).toBeLessThan(after.indexOf("mood=dizzy"));
+    await shot(page, info, "muse-dizzy");
+
+    // Serial: "-look" hides the firmware's look lines, the mood lines stay; clearing shows all.
+    await openSerial(page);
+    const con = page.getByTestId("serial-console");
+    await expect(con).toContainText("look x=");
+    await page.getByTestId("serial-filter").fill("-look");
+    await expect(con).not.toContainText("look x=");
+    await expect(con).toContainText("mood=dizzy");
+    await waitForSimTime(page, 500);
+    await expect(con).not.toContainText("look x=");
+    await shot(page, info, "muse-serial-filtered");
+    await page.getByTestId("serial-filter").fill("");
+    await expect(con).toContainText("look x=");
   } finally {
     await srv.stop();
   }

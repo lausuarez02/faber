@@ -238,14 +238,51 @@
   touch-action: none;
   user-select: none;
 }
+.ix-dur-wrap {
+  position: relative;
+  display: inline-flex;
+}
 .ix-dur {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   height: 28px;
-  padding: 0 6px;
+  padding: 0 6px 0 8px;
   border: 1px solid var(--border-strong, #2b3038);
   border-radius: 8px;
   background: transparent;
   color: inherit;
   font: inherit;
+  cursor: pointer;
+}
+.ix-dur[aria-expanded="true"],
+.ix-dur:focus-visible {
+  border-color: var(--primary, #5cf2a1);
+}
+/* Opens upward (fixed, placed by the picker): the card is docked at the bottom of the window. */
+.ix-dur-list {
+  position: fixed;
+  z-index: 200;
+  min-width: 64px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border-strong, #2b3038);
+  border-radius: 8px;
+  background: var(--bg-float, #15181d);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+.ix-dur-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ix-dur-list li.is-hi {
+  background: var(--bg-hover, #22262d);
 }
 .ix-paused {
   color: var(--warn, #ffb23f);
