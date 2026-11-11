@@ -59,7 +59,10 @@ export class RenodeBackend implements McuBackend {
   startupMs = -1;
   private _cycles = 0;
   private ns = 0n;
-  private elf: Uint8Array | undefined;
+  private firmware: { kind: "elf" | "ihex"; data: Uint8Array } | undefined;
+  /** Pins a PWM model drives (nRF52 PWM): period / high time in ns and the next edge to draw. */
+  private pwm = new Map<string, { period: bigint; high: bigint; start: bigint; next: bigint; level: 0 | 1 }>();
+  private readonly pwmPins: Record<string, string>;
   private link: SyncBridgeLink | undefined;
   private proc: RenodeProcess | undefined;
   private runDir: string | undefined;
@@ -84,6 +87,8 @@ export class RenodeBackend implements McuBackend {
     this.pinIds = Object.keys(board.pins);
     this.busPins = renodeBusPins(board);
     this.timeoutMs = opts.timeoutMs ?? 60_000;
+    this.pwmPins = { ...board.pwmPins };
+    if (!board.pwmPins) for (const [id, p] of Object.entries(board.pins)) if (/^gpio\d$/.test(p.gpio)) this.pwmPins[`${p.gpio.slice(4)}.${p.pin}`] ??= id;
   }
 
   get cycles(): number {
@@ -100,20 +105,31 @@ export class RenodeBackend implements McuBackend {
   }
 
   load(firmware: Uint8Array | string): void {
-    const bytes = typeof firmware === "string" ? undefined : firmware;
-    if (!bytes || !ELF_MAGIC.every((b, i) => bytes[i] === b)) {
-      const what = typeof firmware === "string" ? (firmware.startsWith(":") ? "Intel HEX text" : "text") : "bytes that are not an ELF file";
-      throw new Error(
-        `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode, which loads the ELF file the build writes, but it got ${what}. ` +
-          `Fix: build with the board's FQBN (${this.board.fqbn}); Jumper's build keeps <sketch>.ino.elf for Renode boards.`,
-      );
+    if ((this.board.firmware ?? "elf") === "ihex") {
+      const text = typeof firmware === "string" ? firmware : new TextDecoder("latin1").decode(firmware);
+      if (!text.trimStart().startsWith(":")) {
+        throw new Error(
+          `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode from Intel HEX (Nordic's MBR + SoftDevice + the app, as Jumper's build writes it), but it got ${typeof firmware === "string" ? "text" : "bytes"} that is not Intel HEX. Fix: build with the board's FQBN (${this.board.fqbn}).`,
+        );
+      }
+      this.firmware = { kind: "ihex", data: new TextEncoder().encode(text) };
+    } else {
+      const bytes = typeof firmware === "string" ? undefined : firmware;
+      if (!bytes || !ELF_MAGIC.every((b, i) => bytes[i] === b)) {
+        const what = typeof firmware === "string" ? (firmware.startsWith(":") ? "Intel HEX text" : "text") : "bytes that are not an ELF file";
+        throw new Error(
+          `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode, which loads the ELF file the build writes, but it got ${what}. ` +
+            `Fix: build with the board's FQBN (${this.board.fqbn}); Jumper's build keeps <sketch>.ino.elf for Renode boards.`,
+        );
+      }
+      this.firmware = { kind: "elf", data: bytes };
     }
-    this.elf = bytes;
     this.close();
     this._cycles = 0;
     this.ns = 0n;
     this.outputs.clear();
     this.driven.clear();
+    this.pwm.clear();
   }
 
   step(cycles: number): void {
@@ -127,6 +143,8 @@ export class RenodeBackend implements McuBackend {
   }
 
   readPin(pinId: string): PinState {
+    const p = this.pwm.get(pinId);
+    if (p) return { mode: "output", value: p.level };
     if (this.driven.has(pinId)) return { mode: "output", value: this.outputs.get(pinId) ?? 0 };
     return { mode: "input", value: this.inputs.get(pinId) ?? 0 };
   }
@@ -180,6 +198,7 @@ export class RenodeBackend implements McuBackend {
     this.ns = 0n;
     this.outputs.clear();
     this.driven.clear();
+    this.pwm.clear();
     this.i2cOpen = undefined;
     // A new process: the parts on the buses may have changed, and a fresh machine is the exact power-on state.
     this.close();
@@ -214,13 +233,15 @@ export class RenodeBackend implements McuBackend {
 
   private ensureStarted(): void {
     if (this.link) return;
-    if (!this.elf) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (the Renode backend needs the ELF).`);
+    const fw = this.firmware;
+    if (!fw) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (Jumper's build writes what the Renode backend loads).`);
     const why = this.opts.runtime === "native" ? undefined : renodeUnavailable(this.opts.image);
     if (why) throw new Error(why);
     const t0 = Date.now();
     const runDir = mkdtempSync(join(tmpdir(), "jumper-renode-"));
     this.runDir = runDir;
-    writeFileSync(join(runDir, "firmware.elf"), this.elf);
+    const fwFile = fw.kind === "elf" ? "firmware.elf" : "firmware.hex";
+    writeFileSync(join(runDir, fwFile), fw.data);
     writeFileSync(join(runDir, "models.cs"), bundleCSharp(["JumperBridge.cs", ...(this.board.csharp ?? [])]));
     writeFileSync(join(runDir, "extra.repl"), this.extraRepl());
     const link = new SyncBridgeLink({ blocking: BLOCKING });
@@ -236,9 +257,12 @@ export class RenodeBackend implements McuBackend {
         `mach create "jumper"`,
         `machine LoadPlatformDescription @${platform}`,
         `machine LoadPlatformDescription @${run}/extra.repl`,
-        `sysbus LoadELF @${run}/firmware.elf`,
+        ...(this.board.erasedFlash ?? []).map((r) => `sysbus.jumper Fill ${r.start} ${r.size} 255`),
+        fw.kind === "elf" ? `sysbus LoadELF @${run}/${fwFile}` : `sysbus LoadHEX @${run}/${fwFile}`,
+        ...(this.board.vectorTableOffset !== undefined ? [`sysbus.cpu VectorTableOffset ${this.board.vectorTableOffset}`] : []),
         // One instruction per core clock cycle, so DWT->CYCCNT and busy loops match the chip's clock.
         `sysbus.cpu PerformanceInMips ${Math.round(this.board.clockHz / 1e6)}`,
+        ...(this.board.cpuSettings ?? []).map((c) => `sysbus.cpu ${c}`),
         `emulation SetGlobalAdvanceImmediately true`,
         `logLevel ${this.opts.logLevel ?? 3}`,
         `sysbus.jumper Connect "${host}" ${link.port}`,
@@ -309,12 +333,14 @@ export class RenodeBackend implements McuBackend {
             break;
           case "T":
             this.advance(BigInt(f[1]!));
+            this.drawPwm(this.ns);
             if (until === "T") return;
             break;
           case "G": {
             this.advance(BigInt(f[4]!));
             const id = f[1]!;
             const v: 0 | 1 = f[2] === "1" ? 1 : 0;
+            if (this.pwm.has(id)) break; // a PWM peripheral owns the pin
             if (f[3] !== "o") {
               // An input: its level is what Jumper drives (the port echoes it); only a direction change matters.
               if (this.driven.delete(id)) {
@@ -375,6 +401,12 @@ export class RenodeBackend implements McuBackend {
             break;
           case "SE":
             break;
+          case "P": {
+            this.advance(BigInt(f[4]!));
+            const id = this.pwmPins[f[1]!.replace(/\.0*(\d)/, ".$1")];
+            if (id) this.setPwm(id, BigInt(f[2]!), BigInt(f[3]!));
+            break;
+          }
           case "E":
             throw new Error(`Renode bridge error: ${line.slice(2)}`);
           default:
@@ -392,6 +424,44 @@ export class RenodeBackend implements McuBackend {
     if (!bus) return;
     bus.start(open !== undefined);
     bus.connect(addr, read);
+  }
+
+  /** A PWM model reports a pin's period and high time (0 / 0: stopped, the pin falls back to its GPIO level). */
+  private setPwm(id: string, period: bigint, high: bigint): void {
+    this.drawPwm(this.ns);
+    if (period <= 0n) {
+      this.pwm.delete(id);
+      this.emitLevel(id, this.outputs.get(id) ?? 0, this._cycles);
+      return;
+    }
+    if (high <= 0n || high >= period) {
+      // 0 % or 100 %: a steady level, no edges.
+      this.pwm.set(id, { period, high, start: this.ns, next: -1n, level: high > 0n ? 1 : 0 });
+      this.emitLevel(id, high > 0n ? 1 : 0, this._cycles);
+      return;
+    }
+    this.pwm.set(id, { period, high, start: this.ns, next: this.ns, level: 0 });
+  }
+
+  /** Draw every PWM edge up to `until` ns with its exact cycle. */
+  private drawPwm(until: bigint): void {
+    for (const [id, p] of this.pwm) {
+      if (p.next < 0n) continue;
+      while (p.next <= until) {
+        const t = p.next;
+        const inPeriod = (t - p.start) % p.period;
+        const level: 0 | 1 = inPeriod < p.high ? 1 : 0;
+        this.emitLevel(id, level, Math.round((Number(t) * this.cyclesPerSecond) / 1e9));
+        p.level = level;
+        p.next = level === 1 ? t + p.high : t + (p.period - p.high);
+      }
+    }
+  }
+
+  private emitLevel(id: string, v: 0 | 1, cycle: number): void {
+    this.driven.add(id);
+    const st: PinState = { mode: "output", value: v };
+    for (const cb of this.pinListeners) cb(id, st, cycle);
   }
 
   /** Renode's virtual ns (each start of the process begins at 0, like our cycle 0). */
