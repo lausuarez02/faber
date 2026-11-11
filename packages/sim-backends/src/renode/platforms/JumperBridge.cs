@@ -13,6 +13,7 @@
 //   W <gpio> <pin> <id>   watch an output    IW <addr> <ns> <hex>  I2C write (no answer)
 //   S <uart> <id>         watch a UART TX    IR <addr> <n> <ns>    I2C read: answer D <hex>
 //   D <hex>               I2C read answer    IP <addr> <ns>        I2C stop
+//   K <0|1>               address ACK        IC <addr> <r|w> <ns>  I2C START + address (controller models): answer K
 //   M <hex>               SPI MISO answer    SX <bus> <hex> <ns>   SPI byte: answer M <hex>
 //   Z                     machine reset      SW <bus> <hex> <ns>   SPI byte, MISO not needed
 //   Q                     quit Renode        SE <bus> <ns>         SPI transfer end
@@ -70,6 +71,29 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             Send($"H jumper-renode-bridge {Version}", flush: true);
             var t = new Thread(ReadLoop) { IsBackground = true, Name = "jumper-bridge" };
             t.Start();
+        }
+
+        /// <summary>
+        /// Put the app's initial stack pointer and reset vector (at `app`) at address 0, as a board's
+        /// bootloader does: the CPU then reaches the app from 0 at power-on and after every reset
+        /// (NVIC_SystemReset), with VectorTableOffset 0.
+        /// </summary>
+        public void BootVector(long app)
+        {
+            var bytes = machine.SystemBus.ReadBytes((ulong)app, 8);
+            machine.SystemBus.WriteBytes(bytes, 0);
+        }
+
+        /// <summary>Fill memory with one byte value (erased flash reads 0xFF; Renode's memory starts at 0).</summary>
+        public void Fill(long start, long size, int value)
+        {
+            var chunk = new byte[0x10000];
+            for(var i = 0; i < chunk.Length; i++) chunk[i] = (byte)value;
+            for(long off = 0; off < size; off += chunk.Length)
+            {
+                var n = (int)Math.Min(chunk.Length, size - off);
+                machine.SystemBus.WriteBytes(n == chunk.Length ? chunk : chunk.Take(n).ToArray(), (ulong)(start + off));
+            }
         }
 
         /// <summary>
@@ -140,6 +164,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
 
         public int AnswerTimeoutMs { get; set; } = 30000;
 
+        /// <summary>Set by Jumper at start: some SPI device can drive MISO, so controller models ask for each byte.</summary>
+        public bool SpiNeedsMiso { get; set; } = true;
+
         /// <summary>Analog input in millivolts set by Jumper, for ADC models that read it (key "adc:channel").</summary>
         public int AnalogMv(string adc, int channel)
         {
@@ -179,6 +206,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             case "R":
             {
                 var ns = ulong.Parse(p[1], CultureInfo.InvariantCulture);
+                ReapplyInputs();
                 // Run on its own thread so this loop keeps reading answers (D / M) while the CPU waits for them.
                 var t = new Thread(() =>
                 {
@@ -197,13 +225,16 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             }
             case "D":
             case "M":
+            case "K":
                 answers.Add(line);
                 break;
             case "I":
             {
                 var rx = Peripheral(p[1]) as IGPIOReceiver;
                 if(rx == null) throw new ArgumentException($"no GPIO receiver '{p[1]}'");
-                rx.OnGPIO(int.Parse(p[2]), p[3] == "1");
+                var level = p[3] == "1";
+                inputs[p[1] + ":" + p[2]] = level;
+                rx.OnGPIO(int.Parse(p[2]), level);
                 break;
             }
             case "X":
@@ -273,6 +304,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             public string Kind;
             public ulong Base;
             public ulong OutputMask; // bit n: pin n is an output (or alternate function)
+            public readonly Dictionary<ulong, uint> Last = new Dictionary<ulong, uint>(); // last value written per register
             public readonly Dictionary<int, WatchedPin> Pins = new Dictionary<int, WatchedPin>();
             public bool IsOutput(int pin) => Kind == "unknown" || ((OutputMask >> pin) & 1) == 1;
         }
@@ -294,13 +326,19 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                 Apply(w, 0x4, bus.ReadDoubleWord(w.Base + 0x4));
             }
             else if(w.Kind == "moder") Apply(w, 0x0, bus.ReadDoubleWord(w.Base));
-            var offsets = w.Kind == "f1" ? new ulong[] { 0x0, 0x4 } : w.Kind == "moder" ? new ulong[] { 0x0 } : new ulong[] { 0x14, 0x18, 0x1C }.Concat(Enumerable.Range(0, 32).Select(i => 0x200UL + 4UL * (ulong)i)).ToArray();
+            // Direction registers, plus the ones that set a pull-up / pull-down (F1: ODR, BSRR, BRR; F4: PUPDR).
+            var offsets = w.Kind == "f1" ? new ulong[] { 0x0, 0x4, 0xC, 0x10, 0x14 } : w.Kind == "moder" ? new ulong[] { 0x0, 0xC } : new ulong[] { 0x14, 0x18, 0x1C }.Concat(Enumerable.Range(0, 32).Select(i => 0x200UL + 4UL * (ulong)i)).ToArray();
             foreach(var off in offsets)
             {
                 var o = off;
                 bus.AddWatchpointHook(w.Base + o, SysbusAccessWidth.DoubleWord, Access.Write, (cpu, addr, width, value) =>
                 {
                     var before = w.OutputMask;
+                    // Pins whose own configuration this write touches: the inputs Jumper drives are applied
+                    // again at the next step, so they win over the port's pull state and every model on the
+                    // way (STM32 AFIO / EXTI) has seen their level.
+                    var touched = Touched(w, o, (uint)value);
+                    if(touched != 0) lock(dirty) dirty[name] = (dirty.TryGetValue(name, out var d) ? d : 0) | touched;
                     Apply(w, o, (uint)value);
                     var changed = before ^ w.OutputMask;
                     if(changed == 0) return;
@@ -320,6 +358,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             {
             case "f1":
             {
+                if(off > 0x4) break;
                 var first = off == 0 ? 0 : 8;
                 for(var i = 0; i < 8; i++)
                 {
@@ -329,6 +368,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                 break;
             }
             case "moder":
+                if(off != 0x0) break;
                 for(var i = 0; i < 16; i++)
                 {
                     var m = (v >> (2 * i)) & 0x3; // 01 output, 10 alternate function
@@ -351,6 +391,57 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         }
 
         private readonly Dictionary<string, PortWatch> ports = new Dictionary<string, PortWatch>();
+        /// <summary>The level Jumper drives on each input ("gpio:pin").</summary>
+        private readonly ConcurrentDictionary<string, bool> inputs = new ConcurrentDictionary<string, bool>();
+        /// <summary>Pins (a mask per port) the firmware reconfigured since the last step.</summary>
+        private readonly Dictionary<string, ulong> dirty = new Dictionary<string, ulong>();
+
+        /// <summary>Which pins a configuration write touches (fields that changed, or bits set / cleared).</summary>
+        private static ulong Touched(PortWatch w, ulong off, uint v)
+        {
+            ulong mask = 0;
+            var old = w.Last.TryGetValue(off, out var x) ? x : 0u;
+            w.Last[off] = v;
+            if(w.Kind == "f1" && off <= 0x4)
+            {
+                for(var i = 0; i < 8; i++) if((((old ^ v) >> (4 * i)) & 0xF) != 0) mask |= 1UL << (i + (off == 0 ? 0 : 8));
+            }
+            else if(w.Kind == "f1") mask = off == 0x10 ? (v & 0xFFFF) | (v >> 16) : off == 0x14 ? v & 0xFFFF : (old ^ v) & 0xFFFF;
+            else if(w.Kind == "moder")
+            {
+                for(var i = 0; i < 16; i++) if((((old ^ v) >> (2 * i)) & 0x3) != 0) mask |= 1UL << i;
+            }
+            else if(w.Kind == "nrf") mask = off >= 0x200 ? 1UL << (int)((off - 0x200) / 4) : off == 0x14 ? old ^ v : v;
+            return mask;
+        }
+
+        /// <summary>
+        /// Before a step: the inputs Jumper drives on pins the firmware just reconfigured are applied
+        /// again, so the port and the models behind it (STM32 AFIO / EXTI) hold Jumper's level.
+        /// </summary>
+        private void ReapplyInputs()
+        {
+            KeyValuePair<string, ulong>[] items;
+            lock(dirty)
+            {
+                if(dirty.Count == 0) return;
+                items = dirty.ToArray();
+                dirty.Clear();
+            }
+            foreach(var item in items)
+            {
+                var w = ports[item.Key];
+                var rx = Peripheral(item.Key) as IGPIOReceiver;
+                foreach(var kv in w.Pins)
+                {
+                    if(((item.Value >> kv.Key) & 1) == 0 || w.IsOutput(kv.Key) || !inputs.TryGetValue(item.Key + ":" + kv.Key, out var lvl)) continue;
+                    // STM32F1: the port and AFIO only pass a change on, and a pull-up write leaves them out of
+                    // step with the pin, so the first falling edge would be lost: go through the other level.
+                    if(w.Kind == "f1" || w.Kind == "nrf") rx?.OnGPIO(kv.Key, !lvl);
+                    rx?.OnGPIO(kv.Key, lvl);
+                }
+            }
+        }
 
         public int VrefMv { get; set; } = 3300;
 

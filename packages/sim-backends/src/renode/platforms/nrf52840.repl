@@ -1,13 +1,10 @@
 // nRF52840 for Jumper boards (Arduino Nano 33 BLE, Seeed XIAO nRF52840): Renode's nrf52840 plus the
 // peripherals Arduino cores use that Renode 1.17 does not model: SAADC (analogRead) and PWM0..3
-// (analogWrite, Servo, tone), from JumperNrf52.cs, and the UICR as an erased page. Renode's own
+// (analogWrite, Servo, tone), from JumperNrf52.cs, and the UICR as an erased flash page that keeps what is written across a reset. Renode's own
 // board file (arduino_nano_33_ble.repl) is not used: it puts a camera on spi2 / twi0 0x30.
 using "platforms/cpus/nrf52840.repl"
 
-uicr: Python.PythonPeripheral @ sysbus 0x10001000
-    size: 0x1000
-    initable: true
-    filename: "/jumper/platforms/uicr_erased.py"
+uicr: Miscellaneous.JumperNrf52Uicr @ sysbus 0x10001000
 
 saadc: Miscellaneous.JumperNrf52Saadc @ sysbus 0x40007000
     name: "saadc"

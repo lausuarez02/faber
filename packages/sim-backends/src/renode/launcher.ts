@@ -47,7 +47,7 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
       "--disable-gui", "--console", "--plain", "/jumper/run/start.resc",
     ];
   } else {
-    argv = ["renode", "--disable-gui", "--console", "--plain", `${o.runDir}/start.resc`];
+    argv = [renodeBinary(), "--disable-gui", "--console", "--plain", `${o.runDir}/start.resc`];
   }
   // stdin stays open (never written): Renode's console exits on EOF, and it ends with this process.
   const child = spawn(argv[0]!, argv.slice(1), { stdio: ["pipe", out, out] });
@@ -60,6 +60,18 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
   return { child, name, argv, stop };
 }
 
+/**
+ * Docker (default) or a native Renode 1.17 on this machine (JUMPER_RENODE_RUNTIME=native; the binary
+ * from JUMPER_RENODE_BIN or `renode` on PATH). Native starts faster; the macOS build is not notarised.
+ */
+export function renodeRuntime(): "docker" | "native" {
+  return process.env.JUMPER_RENODE_RUNTIME === "native" ? "native" : "docker";
+}
+
+export function renodeBinary(): string {
+  return process.env.JUMPER_RENODE_BIN || "renode";
+}
+
 /** Remove Renode containers a crashed Jumper process left behind. */
 export async function reapRenodeContainers(): Promise<number> {
   const { stdout } = await exec("docker", ["ps", "-aq", "--filter", "label=jumper.renode=1"]);
@@ -69,7 +81,12 @@ export async function reapRenodeContainers(): Promise<number> {
 }
 
 /** Why the Renode backend cannot start here, with the fix, or undefined when Docker and the image are ready. */
-export function renodeUnavailable(image = RENODE_IMAGE): string | undefined {
+export function renodeUnavailable(image = RENODE_IMAGE, runtime = renodeRuntime()): string | undefined {
+  if (runtime === "native") {
+    const v = spawnSync(renodeBinary(), ["--version"], { encoding: "utf8", timeout: 30_000 });
+    if (v.error || v.status !== 0) return `JUMPER_RENODE_RUNTIME is native, but Renode did not run as '${renodeBinary()}' (${v.error?.message ?? (v.stderr || "").trim()}). Fix: set JUMPER_RENODE_BIN to Renode 1.17's executable (Renode.app/Contents/MacOS/renode on macOS), or unset JUMPER_RENODE_RUNTIME to use Docker.`;
+    return undefined;
+  }
   const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
   if (info.error && (info.error as NodeJS.ErrnoException).code === "ENOENT") {
     return "This board runs in Renode inside Docker, and the 'docker' command was not found. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then run again.";

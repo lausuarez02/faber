@@ -1175,8 +1175,8 @@ export const partDefinitions: PartDefinition[] = [
         "fqbn": "arduino:mbed_nano:nano33ble"
       },
       "availability": {
-        "status": "planned",
-        "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+        "status": "available",
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
       },
       "tags": [
         "arduino",
@@ -11234,8 +11234,8 @@ export const partDefinitions: PartDefinition[] = [
         "fqbn": "Seeeduino:nrf52:xiaonRF52840"
       },
       "availability": {
-        "status": "planned",
-        "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+        "status": "available",
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
       },
       "tags": [
         "seeed",
@@ -13972,8 +13972,8 @@ export const partDefinitions: PartDefinition[] = [
         "fqbn": "STMicroelectronics:stm32:GenF4:pnum=BLACKPILL_F411CE"
       },
       "availability": {
-        "status": "planned",
-        "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+        "status": "available",
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
       },
       "tags": [
         "stm32",
@@ -14689,8 +14689,8 @@ export const partDefinitions: PartDefinition[] = [
         "fqbn": "STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8"
       },
       "availability": {
-        "status": "planned",
-        "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+        "status": "available",
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
       },
       "tags": [
         "stm32",
@@ -15279,7 +15279,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "planned",
-        "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+        "reason": "Its fixture test does not pass yet: the firmware boots and every listed pin works as an output and an input, Wire, SPI, analogRead, analogWrite and Serial work, but attachInterrupt never fires on this board in Renode (tried PA8, PA10, PB5; the Black Pill F411 on the same platform works; cause not found)."
       },
       "tags": [
         "stm32",

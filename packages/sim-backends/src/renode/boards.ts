@@ -27,10 +27,14 @@ export interface RenodeBoard {
   pins: Readonly<Record<string, RenodePin>>;
   /** Pins that reach an ADC channel: the Renode ADC peripheral (path under sysbus) and channel. */
   adc?: Readonly<Record<string, { adc: string; channel: number }>>;
-  /** The controller `Wire` uses and its pins. */
-  i2c?: { controller: string; sda: string; scl: string };
-  /** The controller `SPI` uses and its pins. */
-  spi?: { controller: string; mosi: string; miso: string; sck: string; ss: string };
+  /**
+   * The controller `Wire` uses and its pins. `bridge`: "targets" (default) puts one Jumper target per
+   * address on Renode's controller model (no NACK detail); "controller" means the controller itself is
+   * Jumper's model and asks Jumper for every address ACK (real NACKs, faults).
+   */
+  i2c?: { controller: string; sda: string; scl: string; bridge?: "targets" | "controller" };
+  /** The controller `SPI` uses and its pins; `bridge` as for i2c ("controller": Jumper's own SPIM model). */
+  spi?: { controller: string; mosi: string; miso: string; sck: string; ss: string; bridge?: "targets" | "controller" };
   /** Arduino FQBN that builds firmware for it (the Jumper build image is picked from its prefix). */
   fqbn: string;
   /** Flash ranges to fill with 0xFF before loading (erased flash; the MBR reads unwritten words). */
@@ -41,6 +45,12 @@ export interface RenodeBoard {
    * every Jumper build keeps it), which has no symbols to find it from.
    */
   vectorTableOffset: number;
+  /**
+   * The app starts here behind a bootloader Jumper does not run: its first two vector-table words are
+   * copied to address 0 so the CPU reaches it at power-on and after a reset (Renode puts
+   * VectorTableOffset back to 0 on a reset). Use with vectorTableOffset 0.
+   */
+  bootFrom?: number;
   /** Extra `sysbus.cpu <Property> <value>` settings for this board's runtime. */
   cpuSettings?: readonly string[];
   /** nRF52 "port.pin" (PWM PSEL as the bridge reports it) → board pin id. Built from `pins` when absent. */
@@ -123,6 +133,7 @@ export const RENODE_BOARDS = {
     type: "stm32-blackpill-f411",
     chip: "stm32f411ce",
     platform: "/jumper/platforms/blackpill-f411.repl",
+    csharp: ["JumperStm32Syscfg.cs"],
     console: "usart1",
     clockHz: 100_000_000,
     vcc: 3.3,
@@ -140,6 +151,7 @@ export const RENODE_BOARDS = {
     type: "stm32-nucleo-f401re",
     chip: "stm32f401re",
     platform: "/jumper/platforms/nucleo-f401re.repl",
+    csharp: ["JumperStm32Syscfg.cs"],
     console: "usart2",
     clockHz: 84_000_000,
     vcc: 3.3,
@@ -166,25 +178,28 @@ export const RENODE_BOARDS = {
     i2c: { controller: "twi0", sda: "A4", scl: "A5" },
     spi: { controller: "spi2", mosi: "D11", miso: "D12", sck: "D13", ss: "D10" },
     fqbn: "arduino:mbed_nano:nano33ble",
-    // The app is linked behind Arduino's bootloader (not emulated).
-    vectorTableOffset: 0x10000,
+    // The app is linked at 0x10000 behind Arduino's bootloader (not emulated): Mbed's SystemInit writes
+    // the UICR and resets once, so the app must be reachable from 0 after a reset too.
+    vectorTableOffset: 0,
+    bootFrom: 0x10000,
   },
   // Seeed XIAO nRF52840 (64 MHz), Seeeduino:nrf52 (Adafruit nRF52 core). The build is Nordic's MBR +
   // S140 SoftDevice + the app as one Intel HEX, booted through the MBR like the real board (without
   // the UF2 bootloader). Serial is USB CDC on the real board; the simulator build prints it on Serial1
-  // (UARTE0, D6 / D7). Wire = TWIM0 on D4 / D5, SPI = SPIM2 on D10 / D9 / D8.
+  // (UARTE0, D6 / D7). Wire = TWIM0 on D4 / D5, SPI = SPIM3 on D10 / D9 / D8 (both Jumper's models).
   "seeed-xiao-nrf52840": {
     type: "seeed-xiao-nrf52840",
     chip: "nrf52840",
-    platform: "/jumper/platforms/nrf52840.repl",
+    platform: "/jumper/platforms/xiao-nrf52840.repl",
     csharp: ["JumperNrf52.cs"],
     console: "uart0",
     clockHz: 64_000_000,
     vcc: 3.3,
     pins: XIAO_NRF_PINS,
     adc: nrfAdc(XIAO_NRF_PINS),
-    i2c: { controller: "twi0", sda: "D4", scl: "D5" },
-    spi: { controller: "spi2", mosi: "D10", miso: "D9", sck: "D8", ss: "D7" },
+    // The Adafruit core drives TWI0 as TWIM (EasyDMA): Jumper's model, real ACK / NACK per address.
+    i2c: { controller: "twi0", sda: "D4", scl: "D5", bridge: "controller" },
+    spi: { controller: "spim3", mosi: "D10", miso: "D9", sck: "D8", ss: "D7", bridge: "controller" },
     fqbn: "Seeeduino:nrf52:xiaonRF52840",
     erasedFlash: [{ start: 0, size: 0x100000 }],
     vectorTableOffset: 0,

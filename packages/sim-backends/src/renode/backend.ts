@@ -16,13 +16,13 @@
 //
 // Renode starts lazily on the first step(): by then the Simulation has attached the parts, so the
 // bridge knows which I2C addresses to answer and whether SPI needs MISO.
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { I2cBus, McuBackend, McuBusPins, PinState, SpiBus, Unsubscribe } from "@jumper/sim-core";
 import { BridgeTimeoutError, SyncBridgeLink } from "../qemu-esp/sync-link.ts";
 import { renodeBoardOf, renodeBusPins, type RenodeBoard } from "./boards.ts";
-import { launchRenode, PLATFORMS_DIR, renodeUnavailable, type RenodeProcess } from "./launcher.ts";
+import { launchRenode, PLATFORMS_DIR, renodeRuntime, renodeUnavailable, type RenodeProcess } from "./launcher.ts";
 
 export interface RenodeBackendOptions {
   /** Board type (a key of RENODE_BOARDS, the board part's type). */
@@ -47,7 +47,7 @@ type SerialListener = (byte: number, cycle: number) => void;
 /** What the backend bridges, for fidelity reports and design checks. */
 export const RENODE_CAPABILITIES = ["gpio", "gpio-irq", "uart", "i2c", "spi", "adc", "pwm"] as const;
 
-const BLOCKING = ["T ", "IR ", "SX ", "H ", "E "];
+const BLOCKING = ["T ", "IR ", "IC ", "SX ", "H ", "E "];
 const ELF_MAGIC = [0x7f, 0x45, 0x4c, 0x46];
 
 export class RenodeBackend implements McuBackend {
@@ -77,7 +77,7 @@ export class RenodeBackend implements McuBackend {
   private i2c: I2cBus | undefined;
   private spi: SpiBus | undefined;
   /** I2C transaction the bridge has open: address and direction. */
-  private i2cOpen: { addr: number; read: boolean } | undefined;
+  private i2cOpen: { addr: number; read: boolean; ack: boolean } | undefined;
   private readonly timeoutMs: number;
 
   constructor(private readonly opts: RenodeBackendOptions) {
@@ -231,7 +231,8 @@ export class RenodeBackend implements McuBackend {
     if (this.link) return;
     const fw = this.firmware;
     if (!fw) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (Jumper's build writes what the Renode backend loads).`);
-    const why = this.opts.runtime === "native" || this.opts.launch ? undefined : renodeUnavailable(this.opts.image);
+    const runtime = this.opts.runtime ?? renodeRuntime();
+    const why = this.opts.launch ? undefined : renodeUnavailable(this.opts.image, runtime);
     if (why) throw new Error(why);
     const t0 = Date.now();
     const runDir = mkdtempSync(join(tmpdir(), "jumper-renode-"));
@@ -242,10 +243,21 @@ export class RenodeBackend implements McuBackend {
     writeFileSync(join(runDir, "extra.repl"), this.extraRepl());
     const link = new SyncBridgeLink({ blocking: BLOCKING });
     this.link = link;
-    const host = (this.opts.runtime ?? "docker") === "docker" ? "host.docker.internal" : "127.0.0.1";
-    const root = (this.opts.runtime ?? "docker") === "docker" ? "/jumper" : PLATFORMS_DIR.replace(/\/platforms$/, "");
+    const docker = runtime === "docker";
+    const host = docker ? "host.docker.internal" : "127.0.0.1";
+    // Docker mounts ./platforms at /jumper/platforms; a native Renode gets a copy with those paths rewritten.
+    let root = "/jumper";
+    if (!docker) {
+      root = runDir;
+      cpSync(PLATFORMS_DIR, join(runDir, "platforms"), { recursive: true });
+      for (const f of readdirSync(join(runDir, "platforms"))) {
+        if (!/\.(repl|py)$/.test(f)) continue;
+        const file = join(runDir, "platforms", f);
+        writeFileSync(file, readFileSync(file, "utf8").replaceAll("/jumper/platforms", join(runDir, "platforms")));
+      }
+    }
     const platform = this.board.platform.startsWith("/jumper/") ? this.board.platform.replace("/jumper", root) : this.board.platform;
-    const run = (this.opts.runtime ?? "docker") === "docker" ? "/jumper/run" : runDir;
+    const run = docker ? "/jumper/run" : runDir;
     writeFileSync(
       join(runDir, "start.resc"),
       [
@@ -256,31 +268,40 @@ export class RenodeBackend implements McuBackend {
         ...(this.board.erasedFlash ?? []).map((r) => `sysbus.jumper Fill ${r.start} ${r.size} 255`),
         fw.kind === "elf" ? `sysbus LoadELF @${run}/${fwFile}` : `sysbus LoadHEX @${run}/${fwFile}`,
         // An Intel HEX has no symbols to find the vector table from: the board says where it is.
-        ...(this.board.vectorTableOffset !== undefined && (fw.kind === "ihex" || this.board.erasedFlash) ? [`sysbus.cpu VectorTableOffset 0x${this.board.vectorTableOffset.toString(16)}`] : []),
+        ...(this.board.bootFrom !== undefined ? [`sysbus.jumper BootVector ${this.board.bootFrom}`] : []),
+        ...(fw.kind === "ihex" || this.board.erasedFlash || this.board.bootFrom !== undefined ? [`sysbus.cpu VectorTableOffset 0x${this.board.vectorTableOffset.toString(16)}`] : []),
         // One instruction per core clock cycle, so DWT->CYCCNT and busy loops match the chip's clock.
         `sysbus.cpu PerformanceInMips ${Math.round(this.board.clockHz / 1e6)}`,
         ...(this.board.cpuSettings ?? []).map((c) => `sysbus.cpu ${c}`),
         `emulation SetGlobalAdvanceImmediately true`,
         `logLevel ${this.opts.logLevel ?? 3}`,
+        `sysbus.jumper SpiNeedsMiso ${this.spi?.needsMiso() ?? true}`,
         `sysbus.jumper Connect "${host}" ${link.port}`,
         "",
       ].join("\n"),
     );
     const logFile = this.opts.logFile ?? join(runDir, "renode.log");
-    this.proc = this.opts.launch ? this.opts.launch({ runDir, port: link.port }) : launchRenode({ runDir, image: this.opts.image, runtime: this.opts.runtime, logFile });
+    const logStart = existsSync(logFile) ? statSync(logFile).size : 0;
+    this.proc = this.opts.launch ? this.opts.launch({ runDir, port: link.port }) : launchRenode({ runDir, image: this.opts.image, runtime, logFile });
     try {
-      this.pump("H");
+      this.waitHello(logFile, logStart);
     } catch (e) {
-      const log = existsSync(logFile) ? readFileSync(logFile, "utf8") : "";
-      const errLines = log.split("\n").filter((l) => /error|exception|could not|failed/i.test(l)).slice(-6).join(" | ");
+      const log = existsSync(logFile) ? readFileSync(logFile, "utf8").slice(logStart) : "";
+      const errLines = log.split("\n").filter((l) => /error|exception|could not|failed|does not provide/i.test(l)).slice(-6).join(" | ");
       this.close();
-      throw new Error(`Renode did not start board '${this.board.type}': ${(e as Error).message}${errLines ? `. Renode said: ${errLines}` : ""}`);
+      throw new Error(
+        `Renode did not start board '${this.board.type}': ${(e as Error).message}${errLines ? `. Renode said: ${errLines}` : ""}. ` +
+          `Fix: if Docker is fine, this is a bug in Jumper's ${this.board.type} platform or models: report it with the Renode log (run with RenodeBackendOptions.logFile to keep it).`,
+      );
     }
     this.startupMs = Date.now() - t0;
     for (const [id, p] of Object.entries(this.board.pins)) this.send(`W ${p.gpio} ${p.pin} ${id}`);
     this.send(`S ${this.board.console} console`);
     for (const [id, level] of this.inputs) {
       const p = this.board.pins[id]!;
+      // A HIGH input goes LOW then HIGH before the firmware runs, so every model on the way (the port,
+      // STM32's AFIO / EXTI) has seen it HIGH: otherwise the first falling edge is lost.
+      if (level === 1) this.send(`I ${p.gpio} ${p.pin} 0`);
       this.send(`I ${p.gpio} ${p.pin} ${level}`);
     }
     for (const [id, mv] of this.analog) {
@@ -294,17 +315,35 @@ export class RenodeBackend implements McuBackend {
     const b = this.board;
     // Every board: the bridge and a DWT cycle counter (STM32duino and Mbed busy-wait on DWT->CYCCNT).
     const lines: string[] = ["jumper: Miscellaneous.JumperBridge @ sysbus 0x5FFF0000", "", "dwt: Miscellaneous.JumperDwt @ sysbus 0xE0001000", ""];
-    if (b.i2c && this.i2c) {
+    if (b.i2c && this.i2c && (b.i2c.bridge ?? "targets") === "targets") {
       const addrs = [...new Set(this.i2c.list().map((d) => d.address))].sort((x, y) => x - y);
       for (const a of addrs) {
         lines.push(`jumperI2c${a.toString(16)}: Miscellaneous.JumperI2cTarget @ ${b.i2c.controller} 0x${a.toString(16)}`, `    address: ${a}`, "");
       }
     }
-    if (b.spi && this.spi && this.spi.list().length > 0) {
+    if (b.spi && this.spi && this.spi.list().length > 0 && (b.spi.bridge ?? "targets") === "targets") {
       lines.push(`jumperSpi: Miscellaneous.JumperSpiTarget @ ${b.spi.controller}`, `    bus: "${b.spi.controller}"`, `    sync: ${this.spi.needsMiso() ? "true" : "false"}`, "");
     }
     if (this.opts.extraRepl) lines.push(this.opts.extraRepl);
     return lines.join("\n") + "\n";
+  }
+
+  /** Wait for the bridge's hello, failing fast when Renode reports an error in its log (a script line, the C# models). */
+  private waitHello(logFile: string, logStart: number): void {
+    const link = this.link!;
+    const deadline = Date.now() + this.timeoutMs;
+    for (;;) {
+      if (link.closed) throw new Error("Renode exited before the bridge connected");
+      try {
+        for (const line of link.next(500)) if (line.startsWith("H ")) return;
+      } catch (e) {
+        if (!(e instanceof BridgeTimeoutError)) throw e;
+      }
+      const log = existsSync(logFile) ? readFileSync(logFile, "utf8").slice(logStart) : "";
+      if (/There was an error executing command|Errors during compilation|Could not compile/.test(log)) throw new Error("its start script failed");
+      if (this.proc?.child.exitCode !== null && this.proc?.child.exitCode !== undefined) throw new Error(`Renode exited with code ${this.proc.child.exitCode} before the bridge connected`);
+      if (Date.now() > deadline) throw new Error(`the bridge did not connect within ${this.timeoutMs} ms`);
+    }
   }
 
   /** Handle bridge lines until Renode parks (T), or until a line starting with `until` arrives. */
@@ -371,6 +410,13 @@ export class RenodeBackend implements McuBackend {
             for (let i = 0; i + 1 < hex.length; i += 2) this.i2c?.write(parseInt(hex.slice(i, i + 2), 16));
             break;
           }
+          case "IC": {
+            // Jumper's own controller model asks whether a device ACKs the address.
+            this.advance(BigInt(f[3]!));
+            const ack = this.i2cBegin(parseInt(f[1]!, 16), f[2] === "r", true);
+            this.send(`K ${ack ? 1 : 0}`);
+            break;
+          }
           case "IR": {
             this.advance(BigInt(f[3]!));
             const addr = parseInt(f[1]!, 16);
@@ -413,14 +459,14 @@ export class RenodeBackend implements McuBackend {
     }
   }
 
-  private i2cBegin(addr: number, read: boolean): void {
+  /** START (or repeated START) + address, unless that transfer is already open. Returns the address ACK. */
+  private i2cBegin(addr: number, read: boolean, fresh = false): boolean {
     const open = this.i2cOpen;
-    if (open && open.addr === addr && open.read === read) return;
+    if (!fresh && open && open.addr === addr && open.read === read) return open.ack;
     const bus = this.i2c;
-    this.i2cOpen = { addr, read };
-    if (!bus) return;
-    bus.start(open !== undefined);
-    bus.connect(addr, read);
+    const ack = bus ? (bus.start(open !== undefined), bus.connect(addr, read)) : false;
+    this.i2cOpen = { addr, read, ack };
+    return ack;
   }
 
   /** A PWM model reports a pin's period and high time (0 / 0: stopped, the pin falls back to its GPIO level). */

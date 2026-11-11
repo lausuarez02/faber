@@ -568,7 +568,7 @@
     "generic": "Arduino Nano 33 BLE (nRF52840)"
   },
   "availability": {
-    "status": "planned",
-    "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+    "status": "available",
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
   }
 }

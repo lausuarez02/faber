@@ -14,7 +14,7 @@ import os
 import subprocess
 import sys
 
-CORE = glob.glob("/opt/arduino/data/packages/Seeeduino/hardware/nrf52/*")[0]
+CORE = os.environ.get("JUMPER_NRF52_CORE") or glob.glob("/opt/arduino/data/packages/Seeeduino/hardware/nrf52/*")[0]
 BOOTLOADER = glob.glob(os.path.join(CORE, "bootloader/Seeed_XIAO_nRF52840/*_s140_7.3.0.hex"))[0]
 UF2CONV = os.path.join(CORE, "tools/uf2conv/uf2conv.py")
 BOOTLOADER_START = 0xF4000

@@ -536,6 +536,6 @@
   },
   "availability": {
     "status": "planned",
-    "reason": "Its fixture test (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots, every listed pin works as output and input, and its buses answer) has not passed yet on this build."
+    "reason": "Its fixture test does not pass yet: the firmware boots and every listed pin works as an output and an input, Wire, SPI, analogRead, analogWrite and Serial work, but attachInterrupt never fires on this board in Renode (tried PA8, PA10, PB5; the Black Pill F411 on the same platform works; cause not found)."
   }
 }

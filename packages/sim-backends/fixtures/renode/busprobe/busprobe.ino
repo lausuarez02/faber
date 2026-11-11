@@ -1,5 +1,5 @@
 // Renode board fixture: the buses and peripherals a sketch uses, through Jumper's bridge.
-//   Wire     scan (prints "i2c 0x<addr>"), then each loop writes register 0x00 to 0x48 and reads 2 bytes
+//   Wire     scan 0x46..0x49 (prints "i2c 0x<addr>"), then each loop writes register 0x00 to 0x48 and reads 2 bytes
 //   SPI      CS on the board's SS pin LOW, transfer 0x9F 0x00, CS HIGH; prints the two MISO bytes
 //   ADC      analogRead on the board's first analog pin (12-bit where the core allows)
 //   PWM      analogWrite(<PWM pin>, 64): about 25 % duty
@@ -52,7 +52,8 @@ void setup() {
   analogReadResolution(12);
 #endif
   analogWrite(PWM_PIN, 64);
-  for (uint8_t a = 8; a < 120; a++) {
+  // A short scan: on STM32 each absent address costs ~130 ms of virtual time in Renode (see docs/renode.md).
+  for (uint8_t a = 0x46; a <= 0x49; a++) {
     Wire.beginTransmission(a);
     if (Wire.endTransmission() == 0) {
       CONSOLE.print("i2c 0x");
