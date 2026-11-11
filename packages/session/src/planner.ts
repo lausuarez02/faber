@@ -401,12 +401,12 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       const cb = reg.get("charge-boost-5v")?.spec;
       const tp = reg.get("tp4056-charger")?.spec;
       const bo = reg.get("boost-converter")?.spec;
-      if (compact && cb && tp && bo) choices.push(`kept the TP4056 + boost: one charge-boost-5v module (${cb.dimensions_mm!.w} x ${cb.dimensions_mm!.h} mm) would save ${Math.round(footprint(tp) + footprint(bo) - footprint(cb))} mm², but it charges at about 2 A (only for a cell of 2000 mAh or more) and switches off under about 45 mA`);
+      if (compact && cb?.dimensions_mm && tp?.dimensions_mm && bo?.dimensions_mm) choices.push(`kept the TP4056 + boost: one charge-boost-5v module (${cb.dimensions_mm!.w} x ${cb.dimensions_mm!.h} mm) would save ${Math.round(footprint(tp) + footprint(bo) - footprint(cb))} mm², but it charges at about 2 A (only for a cell of 2000 mAh or more) and switches off under about 45 mA`);
     } else if (compact && kind === BATTERIES.lipo1s && reg.get("boost-converter")) {
       // round 8: say why there is no booster, and what it would have cost
       const bo = reg.get("boost-converter")!.spec;
       const fromCell = bom.filter((l) => l.type && reg.get(l.type)?.spec.category !== "board" && (reg.get(l.type)?.spec.current_ma?.typ ?? 0) >= 15 && reg.get(l.type)?.spec.pins.some((p) => p.type === "power" && p.voltage && p.voltage.min <= 3.3 && p.voltage.max >= 4.5)).map((l) => l.name.replace(/ \(.*\)$/, ""));
-      choices.push(`no 5 V boost converter: the ${b.name} takes the cell ${takesCell ? `on ${takesCell.id}` : `on ${usbPin?.id ?? "VBUS"} through the diode`}${fromCell.length ? ` and the ${fromCell.join(", ")} run${fromCell.length > 1 ? "" : "s"} from 3.3 to 4.2 V` : ""}; a boost would add ${bo.dimensions_mm!.w} x ${bo.dimensions_mm!.h} x ${bo.dimensions_mm!.d} mm (${Math.round(footprint(bo))} mm²) and waste about 12 % of the battery`);
+      choices.push(`no 5 V boost converter: the ${b.name} takes the cell ${takesCell ? `on ${takesCell.id}` : `on ${usbPin?.id ?? "VBUS"} through the diode`}${fromCell.length ? ` and the ${fromCell.join(", ")} run${fromCell.length > 1 ? "" : "s"} from 3.3 to 4.2 V` : ""}; a boost would ${bo.dimensions_mm ? `add ${bo.dimensions_mm.w} x ${bo.dimensions_mm.h} x ${bo.dimensions_mm.d} mm (${Math.round(footprint(bo))} mm²) and ` : ""}waste about 12 % of the battery`);
       if (bom.some((l) => l.type === "dfplayer-mini")) warnings.push("power the DFPlayer from the switched battery (after the slide switch, before the diode): it runs from 3.2 to 5 V, a bit quieter than at 5 V, and needs no boost converter");
     }
     let avg = 0;
@@ -437,8 +437,8 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       const chg = bom.find((l) => l.type === "tp4056-charger");
       if (chg) {
         chg.props = { chargeCurrentmA: Math.min(1000, capacity) };
-        const t = reg.get("tp4056-charger")!.spec.dimensions_mm!;
-        choices.push(`real-world alternative, not simulated in Jumper: a XIAO nRF52840 or XIAO ESP32-S3 charges a LiPo on the board itself and would save the TP4056 (${t.w} x ${t.h} x ${t.d} mm); Jumper simulates only AVR and RP2040 boards, so the plan keeps the TP4056`);
+        const t = reg.get("tp4056-charger")?.spec.dimensions_mm;
+        choices.push(`real-world alternative, not simulated in Jumper: a XIAO nRF52840 or XIAO ESP32-S3 charges a LiPo on the board itself and would save the TP4056${t ? ` (${t.w} x ${t.h} x ${t.d} mm)` : ""}; Jumper simulates only AVR and RP2040 boards, so the plan keeps the TP4056`);
       }
       const big = LIPO_CELLS.find((x) => x.mAh >= 500);
       if (big && pick.mAh < big.mAh) choices.push(`a ${pick.mAh} mAh cell (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm) instead of 500 mAh (${big.code}, ${big.w} x ${big.h} x ${big.d} mm): ${Math.round(big.w * big.h - pick.w * pick.h)} mm² less, enough for about ${target} h at ${round1(avg)} mA`);

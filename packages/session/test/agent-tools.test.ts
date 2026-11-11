@@ -75,10 +75,13 @@ describe("plan_device", () => {
     expect(p.bom.find((l) => l.type === "schottky-diode")!.why).toMatch(/back into the battery/);
     expect(p.bom.find((l) => l.type === "slide-switch")).toMatchObject({ source: "simulated-exactly" });
     expect(p.warnings.join("\n")).toMatch(/charger OUT → switch → Schottky diode → Seeed XIAO RP2040 5V.*set_power \{"usb": false\}.*about 3\.85 V.*near 3\.25 V/);
-    // Battery: 80 % of 500 mAh over the parts' own current_ma.typ (battery and charger not counted).
+    // Battery: 80 % of the cell over the parts' own current_ma.typ (battery and charger not counted).
+    // Round 8: a pocket plan is compact, so the cell is the smallest common pouch for about 3 h.
     const typ = (id: string) => registry.get(id)!.spec.current_ma!.typ;
     const avg = typ("seeed-xiao-rp2040") + typ("ssd1306-oled-i2c") + 3 * typ("pushbutton") + typ("buzzer");
-    expect(p.battery).toMatchObject({ capacity_mah: 500, avg_ma: avg, hours: Math.round((400 / avg) * 10) / 10 });
+    const cap = [100, 150, 250, 500, 1000].find((c) => c * 0.8 >= 3 * avg)!;
+    expect(p.battery).toMatchObject({ capacity_mah: cap, avg_ma: avg, hours: Math.round(((cap * 0.8) / avg) * 10) / 10 });
+    expect(cap).toBeLessThan(500);
     // Price: every line's own price_usd × qty.
     const price = (id: string) => registry.get(id)!.spec.price_usd!;
     const total = price("seeed-xiao-rp2040") + price("ssd1306-oled-i2c") + 3 * price("pushbutton") + price("buzzer") + price("lipo-battery") + price("tp4056-charger") + price("slide-switch") + price("schottky-diode");

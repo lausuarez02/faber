@@ -143,7 +143,7 @@ export function partsAdvice(project: Project, registry: PartRegistry): DesignIss
   // 3. TP4056 + boost when a real 5 V is needed: one charge-boost module, if the cell can take its 2 A.
   const tp = project.parts.find((q) => q.type === "tp4056-charger");
   const cb = registry.get("charge-boost-5v")?.spec;
-  if (tp && cb && !out.some((i) => i.code === "boost-not-needed")) {
+  if (tp && cb?.dimensions_mm && !out.some((i) => i.code === "boost-not-needed")) {
     const boost = project.parts.find((q) => q.type === "boost-converter" && consumersOf(netOf(tp.id, "OUT"), tp.id).refs.some((x) => x.ref.part === q.id));
     const cell = lipos.find((l) => netOf(l.id, "POS")?.pins.some((x) => x.ref.part === tp.id && x.ref.pin === "BAT"));
     const cap = Number(cell?.props?.capacity ?? registry.get("lipo-battery")?.spec.props?.find((x) => x.id === "capacity")?.default ?? 0);
@@ -177,8 +177,8 @@ export function partsAdvice(project: Project, registry: PartRegistry): DesignIss
 
   // 5. The 28 mm speaker in a hand-held device: a 20 mm one is clear enough for speech.
   const small = registry.get("speaker-20mm")?.spec;
-  if (small && handheld) {
-    for (const p of project.parts.filter((q) => q.type === "speaker")) {
+  if (small?.dimensions_mm && handheld) {
+    for (const p of project.parts.filter((q) => q.type === "speaker" && specOf.get(q.id)?.dimensions_mm)) {
       const big = savingFor(specOf.get(p.id));
       const s = savingFor(small);
       out.push({
