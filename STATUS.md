@@ -26,7 +26,45 @@ parts-advice, then view; no textual conflicts).
 Checks after the merges (main, local): `pnpm gen` no diff; `pnpm typecheck` 0 errors; `pnpm test`
 1380 passed, 17 skipped, 0 failed (163 files; the skips are toolchain tests while Docker is down,
 not re-checked one by one). e2e (desktop + mobile, `E2E_PORT=5640 E2E_HUB_PORT_BASE=10400`):
-`case-layout`, `case-view`, `case-outline`, 6 passed. The full e2e suite was not run this round.
+`case-layout`, `case-view`, `case-outline`, 6 passed. Full e2e on main after the merges (desktop,
+mobile and perf, `E2E_PORT=5660`, hub ports from 10500): 90 passed, 17 skipped by design, 0 failed,
+exit 0, first run. Decision note [0005](docs/decisions/0005-round8-auto-layout.md).
+
+The talking egg, end to end with the merged code (lead, through `ProjectSession`, no server, not
+port 7780): round 7's `talking-egg-2/jumper.json` copied to a temp folder, the agent's outline,
+`dome_mm: 3` and pins kept, auto size, auto layout.
+
+| Egg | Built case (balanced) | Volume (shell) | Fill | Pocket | Checks | Other proposals |
+| --- | --- | --- | --- | --- | --- | --- |
+| Round 7 as built | 78.2 x 102 x 34.3 mm, 3 layers | 201.5 cm³ | | no | all ok | |
+| As-is, round 8 | 97.6 x 127.3 x 23 mm, 1 layer | 204.4 cm³ | 0.18 | no | all ok (`design_case` 67 s) | thinnest 100.7 x 131.3 x 21.5; smallest = round 7's stack |
+| After the parts advice (Apply: boost removed, `sw.1` → `d1.A`; 20 mm speaker; check_design 0 errors, no notes left) | 79.6 x 103.8 x 28.8 mm, 2 layers | 171.4 cm³ | 0.14 | no | all ok (`design_case` 127 s) | thinnest 111.4 x 145.2 x 21.5 |
+
+Renders (front / back / exploded / inside, report.json, log.json, jumper.json):
+`jumper-evals/round8/integ-renders/{asis,advised}/` (outside the repo), checked by eye: one layer
+with lots of empty room in the as-is egg; the advised egg stacks the cell behind the screen, the
+20 mm grille is a hex field in the back shell.
+
+What the pins cost (propose_layout only): without the agent's `y_mm` pins (faces kept) the advised
+egg lays flat at 84.7 x 110.4 x 21.5 mm for all three goals; the as-is egg at 95.7 x 124.8 x 21.5
+(thinnest) or 84 x 109.5 x 26 (balanced). With the default dome instead of `dome_mm: 3`, the same
+are 17.5 mm thick. The egg never reaches "pocket": the footprint stays over 110 x 70 mm.
+
+Known gaps (round 8):
+- **Pins:** an agent's early `y_mm` pins can make the flat layout much bigger (advised egg
+  111 x 145 vs 85 x 110 mm without them), and removing parts can then make the thinnest proposal
+  larger. Jumper does not yet say what a pin costs or offer to drop it.
+- **Search quality:** heuristic, not an optimum; fill ratios 0.12 to 0.19 on the egg. Presets keep
+  round 6's full stacker search (2 to 5 s); a 15-part project was not timed.
+- **Proposal vs built volume:** a proposal's `volume_cm3` is the outline-box estimate (egg 223.9),
+  the report's is the real shell (204.4).
+- **Parts advice:** Apply covers only the smaller speaker and an unneeded boost; the 8 mm DFPlayer
+  sets the thickness floor; the IP5306 module size is a typical figure, no LCSC numbers;
+  `charger-not-needed` never fires on today's catalog; 20 / 15 mm speaker loudness is a judgement.
+- **Case view:** on mobile the 3D egg is partly under the overlays; labels on tiny parts do not show
+  in the 2D views; the "goes back" path after a bad drop has no unit test.
+- **Not checked:** the 17 skipped unit tests one by one (Docker down); `variants/puck` of the Muse
+  still at the old engine; a live Claude Code run over MCP; print, plastic and hand feel.
 
 ## Round 7 (2026-11-10): any case outline, and a part that talks
 
