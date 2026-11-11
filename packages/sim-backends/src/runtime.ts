@@ -16,9 +16,13 @@ import { join } from "node:path";
 export type Runtime = "docker" | "native";
 export type RuntimeSetting = Runtime | "auto";
 
-/** Jumper's own folder for native toolchains and emulators. Override with JUMPER_HOME. */
+/**
+ * Jumper's own folder for native toolchains and emulators (~/.jumper). Override with JUMPER_NATIVE_HOME,
+ * not JUMPER_HOME: tests point JUMPER_HOME (projects registry) at a temp folder and must still find the
+ * installed toolchains.
+ */
 export function jumperHome(): string {
-  return process.env.JUMPER_HOME || join(homedir(), ".jumper");
+  return process.env.JUMPER_NATIVE_HOME || join(homedir(), ".jumper");
 }
 
 export function runtimeSetting(): RuntimeSetting {

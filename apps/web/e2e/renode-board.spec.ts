@@ -15,7 +15,7 @@ const FIXTURES = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/
 const RENODE_IMAGE = "jumper/renode:1.17.0-r1";
 
 /** Round 11: Jumper's own Renode (jumper setup renode), which `jumper serve` uses when Docker is not up. */
-const JUMPER_RENODE = join(process.env.JUMPER_HOME || join(homedir(), ".jumper"), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
+const JUMPER_RENODE = join(process.env.JUMPER_NATIVE_HOME || join(homedir(), ".jumper"), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
 
 function renodeMissing(): string | undefined {
   if (process.env.JUMPER_RENODE_RUNTIME === "native") {

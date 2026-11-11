@@ -201,7 +201,7 @@ test.describe("projects (served)", () => {
     test.skip(info.project.name !== "desktop", "the editor is exercised once, on desktop");
     const docker = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
     // Round 11: or Jumper's native AVR toolchain (jumper setup avr), which builds without Docker.
-    const nativeAvr = existsSync(join(process.env.JUMPER_HOME || join(homedir(), ".jumper"), "toolchains/arduino/1.5.1/installed/avr.json"));
+    const nativeAvr = existsSync(join(process.env.JUMPER_NATIVE_HOME || join(homedir(), ".jumper"), "toolchains/arduino/1.5.1/installed/avr.json"));
     test.skip(docker.status !== 0 && !nativeAvr, "Build & Run compiles with arduino-cli (Docker or `jumper setup avr`), and neither is ready here");
     const s = await serve(info);
     try {

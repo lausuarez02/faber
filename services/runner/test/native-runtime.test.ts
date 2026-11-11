@@ -42,7 +42,7 @@ function fakeNative(family: keyof typeof NATIVE_CORES): void {
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "jumper-rt-"));
-  process.env.JUMPER_HOME = join(dir, "home");
+  process.env.JUMPER_NATIVE_HOME = join(dir, "home");
   delete process.env.JUMPER_RUNTIME;
   delete process.env.JUMPER_QEMU_ESP_RUNTIME;
   delete process.env.JUMPER_RENODE_RUNTIME;

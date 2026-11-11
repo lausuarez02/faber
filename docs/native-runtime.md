@@ -46,7 +46,7 @@ When nothing can run, the error says what failed, why and how to fix it, for exa
 | `~/.jumper/emulators/renode/1.17.0` | Renode 1.17.0 portable (macOS arm64 `.dmg`, Linux arm64 `.tar.gz`), SHA-256 checked, platform cache warmed | `toolchains/renode/Dockerfile` |
 
 Jumper's folders never touch an Arduino IDE install (`~/Library/Arduino15`, `~/Documents/Arduino`).
-`JUMPER_HOME` moves all of it.
+`JUMPER_NATIVE_HOME` moves all of it (`JUMPER_HOME` stays the projects registry's folder).
 
 The post-build steps the images' entrypoints do run natively too: RP2040 ELF to Intel HEX
 (`objcopy`), the ESP32 simulation build (`-DJUMPER_SIM=1`, and for sketches that include network
