@@ -183,3 +183,24 @@ person installs themselves; they are not distributed with Jumper:
   espeak-ng   GNU General Public License 3.0 or later, run as a separate
               program (https://github.com/espeak-ng/espeak-ng)
   ffmpeg      LGPL 2.1 or GPL depending on the build (https://ffmpeg.org)
+
+STM32 and nRF52 boards in Renode (round 9 spike)
+------------------------------------------------
+
+The Renode backend (packages/sim-backends/src/renode) runs boards in a separate
+process, the Docker image built from toolchains/renode/Dockerfile:
+
+  Renode 1.17.0                    MIT License, Copyright (c) 2010-2026 Antmicro
+                                   (https://renode.io; the image contains the
+                                   upstream portable release unmodified; its
+                                   bundled third-party licenses are under
+                                   /opt/renode/licenses in the image)
+
+packages/sim-backends/src/renode/external-control.ts speaks Renode's
+ExternalControl protocol, written from the MIT-licensed client in Renode's
+tools/external_control_client. No Renode code is linked into Jumper.
+
+Firmware fixtures (packages/sim-backends/fixtures/renode/*.elf) are built with
+toolchains/arduino-stm32 (STM32duino core 2.11.0: LGPL-2.1 core, ST HAL / CMSIS
+BSD-3-Clause / Apache-2.0) and toolchains/arduino-mbed-nano (arduino:mbed_nano
+4.4.1: LGPL-2.1 core, Arm Mbed OS Apache-2.0), plus newlib / libgcc as above.

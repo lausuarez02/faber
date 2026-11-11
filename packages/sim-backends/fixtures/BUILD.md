@@ -61,3 +61,15 @@ the older `jumper/arduino-pico:6.3.1-r1` gives the same bytes.
 
 sha256 (first 16 hex digits): `xiao_blink.hex` 5d16935da7297f1d, `xiao_oled.hex` 55f2cf778673ecc6,
 `xiao_io_probe.hex` 7f363c27bb871337, `pico_gadget.hex` b19abe7a89b90c64.
+
+## Renode fixtures (round 9)
+
+`renode/bridge_bluepill.elf` (sketch `renode/bridge_stm32/`) and `renode/hello_nano33ble.elf`
+(sketch `renode/hello_nano/`), debug info stripped, symbols kept (Renode finds the vector table
+through them; a fully stripped Nano 33 BLE ELF, linked at 0x10000 behind the bootloader, faults):
+
+    docker run --rm -v $PWD:/src jumper/arduino-stm32:2.11.0-r1 compile \
+      -b STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8 --output-dir /src/out /src/bridge_stm32
+    docker run --rm -v $PWD:/src jumper/arduino-mbed-nano:4.4.1-r1 arduino-cli compile \
+      -b arduino:mbed_nano:nano33ble --output-dir /src/out /src/hello_nano
+    arm-none-eabi-strip --strip-debug -o <name>.elf out/<sketch>.ino.elf

@@ -1,0 +1,22 @@
+// Blue Pill (STM32F103C8): Renode's stm32f103 plus what HAL's SystemClock_Config needs to get past
+// clock setup (Renode has no F1 RCC model): an RCC whose *ON bits set *RDY, a FLASH_ACR that reads
+// back, and the Cortex-M3 peripheral bit-band alias HAL uses to set PLLON. SPI1 borrows the F4 model
+// (same register layout for the bits Arduino SPI uses).
+using "platforms/cpus/stm32f103.repl"
+
+rcc: Python.PythonPeripheral @ sysbus 0x40021000
+    size: 0x400
+    initable: true
+    filename: "/jumper/platforms/rcc_f1.py"
+
+flashCtrl: Python.PythonPeripheral @ sysbus 0x40022000
+    size: 0x400
+    initable: true
+    filename: "/jumper/platforms/regstore.py"
+
+bitbandPeripherals: Miscellaneous.BitBanding @ sysbus <0x42000000, +0x2000000>
+    peripheralBase: 0x40000000
+
+spi1: SPI.STM32SPI @ sysbus 0x40013000
+    series: STM32Series.F4
+    IRQ -> nvic@35
