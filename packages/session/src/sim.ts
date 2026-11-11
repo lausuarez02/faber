@@ -104,6 +104,8 @@ function round(v: number): number {
 }
 
 export class SimHost {
+  /** Round 10: called with the virtual time after every step of run() (the device network's clock). */
+  readonly timeListeners = new Set<(timeMs: number) => void>();
   readonly sim: Simulation;
   /** Updated by adoptProps when saved props change while the simulation runs. */
   project: Project;
@@ -267,6 +269,7 @@ export class SimHost {
     while (this.sim.timeMs < end - 1e-9) {
       const dt = Math.min(step, end - this.sim.timeMs, frameMs ? Math.max(0.001, nextFrame - this.sim.timeMs) : Infinity);
       this.sim.runFor(dt);
+      for (const l of this.timeListeners) l(this.sim.timeMs); // round 10: the device network follows virtual time
       this.watchCollisions();
       this.applyNoise();
       if (opts.onFrame && this.sim.timeMs >= nextFrame - 1e-9) {

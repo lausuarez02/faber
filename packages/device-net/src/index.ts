@@ -14,3 +14,4 @@ export * from "./netstack/index.ts";
 export * from "./host.ts";
 export type { HostCommand, HostEvent } from "./host-worker.ts";
 export * from "./probe.ts";
+export * from "./vclock.ts";

@@ -7,6 +7,7 @@ import { SandboxCA } from "./ca.ts";
 import type { Mock, NetworkConfig } from "./config.ts";
 import { DeviceNet, type Fault, type Upstream } from "./gateway.ts";
 import { createDeviceLan } from "./netstack/lan.ts";
+import { sharedClock } from "./vclock.ts";
 import { probeRequest, type ProbeRequest, type ProbeResult } from "./probe.ts";
 
 export interface HostWorkerData {
@@ -19,6 +20,8 @@ export interface HostWorkerData {
   upstreams?: Record<string, Upstream>;
   listenHost?: string;
   rtoMs?: number;
+  /** Virtual time from the simulation (vclock.ts). */
+  vclock?: SharedArrayBuffer;
   port: MessagePort;
 }
 
@@ -48,6 +51,7 @@ async function main(d: HostWorkerData): Promise<void> {
       mocks: d.mocks,
       secrets: new Map(d.secrets),
       ca,
+      ...(d.vclock ? { clock: sharedClock(d.vclock) } : {}),
       ...(d.cassetteFile ? { cassetteFile: d.cassetteFile } : {}),
       ...(d.upstreams ? { upstream: (host: string, port: number) => d.upstreams![host] ?? { host, port } } : {}),
     });

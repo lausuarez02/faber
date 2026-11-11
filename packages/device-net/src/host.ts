@@ -11,6 +11,7 @@ import type { NetEvent } from "./log.ts";
 import type { DeviceInfo } from "./netstack/stack.ts";
 import type { ProbeRequest, ProbeResult } from "./probe.ts";
 import { Redactor } from "./secrets.ts";
+import { newVirtualTimeBuffer } from "./vclock.ts";
 
 export interface DeviceNetHostOptions {
   config: NetworkConfig;
@@ -25,6 +26,8 @@ export interface DeviceNetHostOptions {
   /** Where emulators connect (127.0.0.1; Docker reaches it as host.docker.internal). */
   listenHost?: string;
   rtoMs?: number;
+  /** Follow the simulation's virtual time (setVirtualTime) for delays and log times. Default true. */
+  virtualClock?: boolean;
   /** How long start() waits for the worker. Default 15 s. */
   timeoutMs?: number;
 }
@@ -71,6 +74,7 @@ export class DeviceNetHost {
   private closed = false;
   private errors: string[] = [];
   private nextId = 1;
+  private vtime: Float64Array | undefined;
   private pending = new Map<number, (r: ProbeResult) => void>();
 
   private constructor(
@@ -88,6 +92,7 @@ export class DeviceNetHost {
 
   static async start(opts: DeviceNetHostOptions): Promise<DeviceNetHost> {
     const { port1, port2 } = new MessageChannel();
+    let vclock: SharedArrayBuffer | undefined;
     const data: HostWorkerData = {
       config: opts.config,
       mocks: opts.mocks ?? [],
@@ -97,6 +102,7 @@ export class DeviceNetHost {
       ...(opts.upstreams ? { upstreams: opts.upstreams } : {}),
       ...(opts.listenHost ? { listenHost: opts.listenHost } : {}),
       ...(opts.rtoMs ? { rtoMs: opts.rtoMs } : {}),
+      ...(opts.virtualClock !== false ? { vclock: (vclock = newVirtualTimeBuffer()) } : {}),
       port: port2,
     };
     const worker = new Worker(new URL("./worker-boot.mjs", import.meta.url), { workerData: data, transferList: [port2] });
@@ -118,7 +124,9 @@ export class DeviceNetHost {
       });
     });
     port1.unref();
-    return new DeviceNetHost(worker, port1, ready.framePort, ready.caPem, opts);
+    const h = new DeviceNetHost(worker, port1, ready.framePort, ready.caPem, opts);
+    h.vtime = vclock ? new Float64Array(vclock) : undefined;
+    return h;
   }
 
   private onEvent(m: HostEvent): void {
@@ -177,6 +185,14 @@ export class DeviceNetHost {
   clearFaults(): void {
     this.faults = [];
     this.send({ op: "clear" });
+  }
+
+  /**
+   * The simulation's virtual time in ms, after each step: mock delays, latency faults and log
+   * times follow it. undefined: back to wall time (no simulation drives the network).
+   */
+  setVirtualTime(ms: number | undefined): void {
+    if (this.vtime) this.vtime[0] = ms === undefined ? Number.NaN : ms;
   }
 
   /** One HTTP(S) request from inside the sandbox, as a device would make it (try_request). */

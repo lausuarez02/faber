@@ -130,11 +130,12 @@ export class DeviceNet {
   constructor(private opts: DeviceNetOptions) {
     this.secrets = opts.secrets ?? new Map();
     this.redactor = new Redactor(this.secrets);
-    this.log = new NetLog(this.redactor);
+
     this.mocks = new MockSet([...(opts.mocks ?? [])]);
     if (opts.cassetteFile) this.cassette = new Cassette(opts.cassetteFile, this.redactor);
     const t0 = Date.now();
     this.clock = opts.clock ?? { now: () => Date.now() - t0, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), wallMs: () => Date.now() };
+    this.log = new NetLog(this.redactor, 2000, () => this.clock.now());
     this.httpServer = http.createServer((req, res) => void this.onRequest(req, res));
     this.httpServer.on("upgrade", (req, socket, head) => void this.onUpgrade(req, socket as Duplex, head));
   }

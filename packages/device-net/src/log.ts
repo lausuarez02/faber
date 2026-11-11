@@ -45,10 +45,12 @@ export class NetLog {
   constructor(
     private redactor: Redactor,
     private limit = 2000,
+    /** ms since the network started: the gateway's clock (virtual time when a simulation drives it). */
+    private now: () => number = () => Date.now() - this.start,
   ) {}
 
   push(d: NetEventDraft): NetEvent {
-    const e = this.redactor.deep({ ...d, seq: ++this.seq, t_ms: d.t_ms ?? Date.now() - this.start }) as NetEvent;
+    const e = this.redactor.deep({ ...d, seq: ++this.seq, t_ms: d.t_ms ?? this.now() }) as NetEvent;
     this.entries.push(e);
     if (this.entries.length > this.limit) this.entries.splice(0, this.entries.length - this.limit);
     for (const l of this.listeners) l(e);

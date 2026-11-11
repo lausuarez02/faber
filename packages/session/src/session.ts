@@ -1201,7 +1201,13 @@ export class ProjectSession {
 
   private async getHost(): Promise<{ host: SimHost; restarted?: string }> {
     await SimHost.preparePhysics(this.project);
-    return this.getHostSync();
+    const r = this.getHostSync();
+    // Round 10: a project with a device network runs its mocks on the simulation's clock.
+    if (this.project.network && !r.host.timeListeners.size) {
+      const net = await this.deviceNetwork.ensure();
+      r.host.timeListeners.add((t) => net.setVirtualTime(t));
+    }
+    return r;
   }
 
   private getHostSync(): { host: SimHost; restarted?: string } {
@@ -1431,6 +1437,7 @@ export class ProjectSession {
       const host = new SimHost(this.project, this.registry, hex);
       const mine: Frame[] = [];
       if (net?.faults.length) net.clearFaults();
+      if (net) host.timeListeners.add((t) => net.setVirtualTime(t));
       try {
         const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions(net));
         results.push(result);
@@ -1459,6 +1466,7 @@ export class ProjectSession {
     } catch {
       // A read-only project folder: the report stays in memory only.
     }
+    net?.setVirtualTime(undefined);
     if (net && netCfg && netCfg.mode !== "mock") net.setConfig(netCfg); // round 10: back to the project's mode
     const frameImages = args.images ? this.writeFrameImages(visuals) : [];
     const pendingSteps = this.acceptAfterTests(results.length - passed, args.name, ctx);
