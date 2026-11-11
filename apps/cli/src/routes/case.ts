@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { caseIsStale, caseMesh, layoutProposals, previewFit } from "@jumper/session";
+import { adviceNotes, caseIsStale, caseMesh, layoutProposals, opsForApply, previewFit } from "@jumper/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -12,6 +12,9 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  *                                    front-view preview; no CAD, nothing written or logged (the Case view's live preview)
  *   POST /api/case/layouts         → round 8: propose_layout for a draft (or the saved case): thinnest / smallest /
  *                                    balanced, each with front and side views (outline + part rectangles per layer)
+ *   GET  /api/case/advice          → round 8: { notes } "parts you may not need" in a person's words, with the mm they save
+ *   POST /api/case/advice/apply    → round 8: { id } makes a note's simple change (swap / removal) with the agent ops
+ *                                    (remove, place_part, connect) as one undoable step; { applied, result, notes }
  *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
  *   POST /api/manufacturing        → export_manufacturing + url of the zip
@@ -151,6 +154,46 @@ export const caseRoutes: ApiRoute[] = [
       } catch (e) {
         const m = (e as Error).message;
         ctx.json(res, 400, { error: m.includes("Why:") ? m : `Proposing layouts failed. Why: ${m}. Fix: change the outline or the parts and try again` });
+      }
+    },
+  },
+  {
+    method: "GET",
+    path: "/api/case/advice",
+    label: "GET /api/case/advice",
+    handle(req, res, ctx) {
+      const s = ctx.session();
+      s.sync();
+      ctx.json(res, 200, { notes: adviceNotes(s.project, s.registry) }, cors(req));
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/case/advice/apply",
+    label: "POST /api/case/advice/apply",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      let body: Record<string, unknown>;
+      try {
+        body = await ctx.body(req);
+      } catch (e) {
+        return ctx.json(res, 400, err("The apply request is not JSON", (e as Error).message, 'send {"id": "smaller-speaker:spk"} (an id from GET /api/case/advice)'));
+      }
+      const id = typeof body.id === "string" ? body.id : "";
+      if (!id) return ctx.json(res, 400, err("No advice id", "the request has no id", 'send {"id": "<id from GET /api/case/advice>"}'));
+      const s = ctx.session();
+      s.sync();
+      try {
+        const note = adviceNotes(s.project, s.registry).find((n) => n.id === id);
+        const ops = opsForApply(s.project, s.registry, id);
+        // one why, so the ops are one undoable step in the history
+        const why = `${note?.apply?.label ?? "Apply"} (Case view: ${note?.title ?? id})`;
+        for (const o of ops) await ctx.call(o.op, { ...o.args, why }, { actor: "web" });
+        s.sync();
+        ctx.json(res, 200, { applied: id, result: note?.apply?.result ?? "Done.", notes: adviceNotes(s.project, s.registry) });
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `Applying that change failed. Why: ${m}. Fix: undo the last step on the canvas and make the change there` });
       }
     },
   },

@@ -204,7 +204,13 @@ export const caseTools: ToolModule = {
         const pl: Record<string, unknown> = { ...(cur.placements ?? {}) };
         for (const [k, v] of Object.entries(args.placements as Record<string, unknown>)) {
           if (v === null) delete pl[k];
-          else pl[k] = { ...((pl[k] as object) ?? {}), ...(v as object) };
+          else {
+            // a field set to null inside a part's placement is removed (unpin x_mm / y_mm, back to auto)
+            const one: Record<string, unknown> = { ...((pl[k] as object) ?? {}), ...(v as object) };
+            for (const [f, fv] of Object.entries(one)) if (fv === null) delete one[f];
+            if (Object.keys(one).length) pl[k] = one;
+            else delete pl[k];
+          }
         }
         merged.placements = pl;
       }
