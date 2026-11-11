@@ -120,7 +120,25 @@ jumper update_case '{"layout": "thinnest"}' -p my-egg
   (`layout: {goal, asked, fill_ratio, layers, why, source}`).
 - **Pinning**: a part with `placements` `x_mm` / `y_mm` (its feature's centre on the front or back,
   or the part's centre when nothing of it shows), `layer` (0 = against the front, 1 = towards the
-  back) or a `face` stays there and the optimizer arranges the rest around it.
+  back) or a `face` stays there and the optimizer arranges the rest around it. Each proposal's
+  placement has `pin: {x_mm, y_mm, x_sign}`: the values that hold that part exactly where it is (a
+  part on a side wall only slides along it, so it has one of them). To move a part by (dx, dy) mm
+  as seen from the front, pin it at `{x_mm: pin.x_mm + x_sign * dx, y_mm: pin.y_mm + dy}`.
+  `update_case` merges a placement field by field; a field set to `null` is removed (back to auto).
+- **In the Case view** (round 8 view): the **Layout** tab shows the three proposals as cards, each
+  drawn from the front and in cross-section from the side with the sizes in mm, how thick it is,
+  the pocket verdict, how full the inside is and why. Picking one previews it in 3D (the parts as
+  labelled boxes in the see-through shell); **Use** builds it; the card of the layout the case was
+  built with (by the person or an agent) says "built". In the big front view a part can be dragged
+  (or moved with the arrow keys) to keep it there: the rest is re-arranged within a second or two
+  and the new size shows. A drop on a part that stays put is refused, and a spot the other parts
+  cannot fit around sends it back, each with the reason. **Re-distribute** shows when the built
+  case is older than the optimizer or Jumper now finds another way.
+- **Parts you may not need** (the same tab): the parts advice (`check_design`'s
+  `boost-not-needed`, `smaller-speaker`, ...) in plain words with the room it would save. A swap or a
+  removal has an Apply button, which runs the agent's own operations (`remove`, `place_part`,
+  `connect`) as one undoable step: `GET /api/case/advice` (`{notes: [{id, code, title, why, saves,
+  parts, apply?}]}`) and `POST /api/case/advice/apply {"id": "smaller-speaker:spk"}`.
 
 ## Shapes and settings
 

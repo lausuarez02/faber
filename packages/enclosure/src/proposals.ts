@@ -15,6 +15,7 @@
  */
 import type { Enclosure } from "@jumper/project-format";
 import { autoLayouts, type AutoCandidate, type Layout, type LayoutInput, type LayoutOptions, stackLayout } from "./layout.ts";
+import { apply } from "./mech.ts";
 import { outline, planBounds } from "./plan.ts";
 
 export const LAYOUT_GOALS = ["thinnest", "smallest", "balanced"] as const;
@@ -30,6 +31,13 @@ export interface ProposalPlacement {
   layer: number;
   /** The case face its exposed feature goes through (screen front, USB bottom, ...). */
   face?: string;
+  /**
+   * The enclosure.placements values that hold the part exactly here (pin it), and which way each
+   * moves with the part seen from the front: to move a part by (dx, dy) mm, pin it at
+   * {x_mm: pin.x_mm + pin.x_sign * dx, y_mm: pin.y_mm + dy}. A part on a side wall only slides along
+   * that wall (no x_mm on left / right, no y_mm on top / bottom).
+   */
+  pin: { x_mm?: number; y_mm?: number; x_sign: 1 | -1 };
 }
 
 export interface ProposalLayer {
@@ -194,6 +202,19 @@ function views(L: Layout, layer: Map<string, number>): ProposalViews {
   };
 }
 
+/** The placements x_mm / y_mm that pin a placed part where it is (layout.ts reads them back the same way). */
+export function pinOf(p: Layout["placed"][number], origin: Layout["origin"] = [0, 0, 0]): ProposalPlacement["pin"] {
+  const [ox, oy] = origin;
+  if (!p.bound) return { x_mm: r2((p.min[0] + p.max[0]) / 2 - ox), y_mm: r2((p.min[1] + p.max[1]) / 2 - oy), x_sign: 1 };
+  const t = apply(p.R, p.bound.feature.tip);
+  const tip = [t[0] + p.T[0] - ox, t[1] + p.T[1] - oy] as const;
+  const f = p.bound.face;
+  if (f === "front") return { x_mm: r2(tip[0]), y_mm: r2(tip[1]), x_sign: 1 };
+  if (f === "back") return { x_mm: r2(-tip[0]), y_mm: r2(tip[1]), x_sign: -1 };
+  if (f === "left" || f === "right") return { y_mm: r2(tip[1]), x_sign: 1 };
+  return { x_mm: r2(tip[0]), x_sign: 1 };
+}
+
 interface Cand {
   L: Layout;
   source: string;
@@ -239,6 +260,7 @@ function describe(goal: LayoutGoal, c: Cand, all: { goal: LayoutGoal; c: Cand }[
       on_edge: Math.abs(p.R[2][2]) < 0.5,
       layer: layer.get(p.mech.id) ?? 0,
       ...(p.bound ? { face: p.bound.face } : {}),
+      pin: pinOf(p, L.origin),
     };
   const why: string[] = [];
   const behind = (id: string) => {

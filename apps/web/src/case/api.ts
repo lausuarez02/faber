@@ -26,7 +26,7 @@ export interface CaseReport {
   /** Round 7: the outer outline seen from the front (case frame, mm). */
   outline_mm?: [number, number][];
   /** Round 8: the distribution the case was built from. */
-  layout?: { goal: string; asked: string; label: string; fill_ratio: number; why: string[] };
+  layout?: { goal: string; asked: string; label: string; fill_ratio: number; why: string[]; source?: string };
 }
 
 /** Round 7: POST /api/case/fit (check_fit with the front-view preview). */
@@ -55,7 +55,7 @@ export interface LayoutProposal {
   pocket: "fits" | "tight" | "no";
   fill_ratio: number;
   layers: { index: number; z_mm: [number, number]; parts: string[] }[];
-  placements: Record<string, { x_mm: number; y_mm: number; z_mm: number; rot: number; on_edge: boolean; layer: number; face?: string }>;
+  placements: Record<string, { x_mm: number; y_mm: number; z_mm: number; rot: number; on_edge: boolean; layer: number; face?: string; pin?: { x_mm?: number; y_mm?: number; x_sign: 1 | -1 } }>;
   why: string[];
   misses: string[];
   warnings: string[];
@@ -71,6 +71,16 @@ export interface LayoutsResult {
   chosen: string;
   parts_volume_cm3: number;
   ms: number;
+}
+/** Round 8: GET /api/case/advice, parts the device may not need, in a person's words. */
+export interface AdviceNote {
+  id: string;
+  code: string;
+  title: string;
+  why: string;
+  saves: { area_mm2?: number; depth_mm?: number; mass_g?: number };
+  parts: string[];
+  apply?: { label: string; result: string };
 }
 export interface CaseMesh {
   hash: string;
@@ -107,6 +117,8 @@ export const caseApi = {
   mesh: () => req<CaseMesh>("GET", "/api/case/mesh"),
   fit: (body: Record<string, unknown>) => req<FitResult>("POST", "/api/case/fit", body),
   layouts: (body: Record<string, unknown>) => req<LayoutsResult>("POST", "/api/case/layouts", body),
+  advice: () => req<{ notes: AdviceNote[] }>("GET", "/api/case/advice"),
+  applyAdvice: (id: string) => req<{ applied: string; result: string; notes: AdviceNote[] }>("POST", "/api/case/advice/apply", { id }),
   pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),
   fileUrl: (path: string) => `/api/case/file?path=${encodeURIComponent(path)}`,
 };

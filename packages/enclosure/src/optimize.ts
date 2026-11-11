@@ -441,7 +441,9 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
   // a part on a side wall stays in the middle of the depth (its opening needs the straight band of the wall)
   const zFree = items.map((it, i) => (it.zPin === undefined && it.variants.some((V) => !V.zFix && !V.side) ? i : -1)).filter((i) => i >= 0);
   const multiV = items.map((it, i) => (it.variants.length > 1 ? i : -1)).filter((i) => i >= 0);
-  const frozen = env.upright ? cur0.order.findIndex((i) => rank(i) >= 1) : 0;
+  // (when every part is pinned or heavy, the whole order is frozen: findIndex's -1 would walk past the end)
+  const firstFree = cur0.order.findIndex((i) => rank(i) >= 1);
+  const frozen = env.upright ? (firstFree < 0 ? n : firstFree) : 0;
   let curS = cur0;
   let curV = scaleFor(curS, Math.max(minS, opts.startScale ?? 0.5));
   // what the walk keeps: the smallest scale, traded against the heavy parts' height in an upright
@@ -477,7 +479,8 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
     // threshold walk on the scale grid: a step smaller is a win (then as far down as it goes), the
     // same scale is a sideways move, and now and then a slightly larger one to leave a dead end
     if (!Number.isFinite(curV)) {
-      const v = scaleFor(nx, best.S);
+      // (nothing has fitted yet: guess from the start scale, not from the infinite best)
+      const v = scaleFor(nx, Number.isFinite(best.S) ? best.S : Math.max(minS, opts.startScale ?? 0.5));
       if (Number.isFinite(v)) {
         curS = nx;
         curV = v;

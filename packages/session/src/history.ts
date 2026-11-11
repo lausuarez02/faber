@@ -133,6 +133,20 @@ export function record(h: HistoryState, why: string | undefined, seq: number, la
   if (isPersonActor(actor)) {
     // The person's own edit: its own step, accepted now (undo still works), and an agent's open
     // step stays open for the agent's next op.
+    // (several ops sent back to back with one explicit why, e.g. the Case view's Apply = remove +
+    // place_part + connect, are one step, so one undo takes the whole change back)
+    const last = h.steps[h.steps.length - 1];
+    if (why?.trim() && last && last.actor === actor && last.status === "accepted" && last.why === why.trim() && last.ops[last.ops.length - 1] === seq - 1) {
+      last.ops.push(seq);
+      last.labels.push(label);
+      for (const [k, v] of Object.entries(before)) if (!(k in last.before)) last.before[k] = v;
+      for (const [k, v] of Object.entries(after)) last.after[k] = v;
+      for (const k of Object.keys(last.after)) if (same(last.before[k], last.after[k])) {
+        delete last.before[k];
+        delete last.after[k];
+      }
+      return last;
+    }
     const own: Step = { id: h.nextId++, why: why?.trim() || label, status: "accepted", ops: [seq], labels: [label], before: { ...before }, after: { ...after }, t: now, actor };
     for (const k of Object.keys(own.after)) if (same(own.before[k], own.after[k])) {
       delete own.before[k];
