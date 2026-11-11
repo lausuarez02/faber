@@ -4,8 +4,21 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { ConfigError, validateMock, type Mock, type NetworkConfig } from "./config.ts";
-import type { DeviceNet, Fault } from "./gateway.ts";
+import type { Fault } from "./gateway.ts";
 import type { NetEvent } from "./log.ts";
+import type { Redactor } from "./secrets.ts";
+
+/** What the tools need of a device network: a DeviceNet in this thread, or a DeviceNetHost mirror. */
+export interface NetView {
+  readonly log: { since(seq?: number): NetEvent[] };
+  readonly config: NetworkConfig;
+  readonly mocks: { list: Mock[]; upsert(m: Mock): "added" | "updated" };
+  readonly faults: Fault[];
+  readonly redactor: Redactor;
+  inject(f: Fault): string;
+  clearFaults(): void;
+}
+type DeviceNet = NetView;
 
 /** Schemas in the shape of session's ToolDef (name, title, description, inputSchema). */
 export const DEVICE_NET_TOOLS = [

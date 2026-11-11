@@ -11,3 +11,5 @@ export * from "./hints.ts";
 export { readPackets, enc as mqttEncode, decodePublish, summarizePacket, topicMatches } from "./mqtt.ts";
 export * from "./flow-server.ts";
 export * from "./netstack/index.ts";
+export * from "./host.ts";
+export type { HostCommand, HostEvent } from "./host-worker.ts";

@@ -99,6 +99,8 @@ interface Device {
   shim: boolean;
   ssid?: string;
   joined: boolean;
+  /** Consecutive refused joins with the same reason (logged once, counted). */
+  failStreak?: { reason: number; n: number };
 }
 
 const GW_MAC = macParse("02:4a:4d:50:00:01");
@@ -322,17 +324,24 @@ export class Netstack {
         const ssid = m.args.ssid ?? "";
         const d = decideJoin(this.wifi, ssid, m.args.pass ?? "");
         if (d.ok) {
+          const retries = dev.failStreak?.n ?? 0;
+          dev.failStreak = undefined;
           dev.joined = true;
           dev.ssid = ssid;
           const ap = this.wifi.aps.find((a) => a.ssid === ssid);
           const out: WifiMsg[] = [{ verb: "connected", args: this.apRecord(ssid, ap) }];
           if (this.o.caDer) out.push({ verb: "ca", args: { der: this.o.caDer.toString("hex") } });
           this.sendWifi(dev, out);
-          this.log({ kind: "wifi", source: "sandbox", summary: `joined "${ssid}" (RSSI ${ap?.rssi ?? this.wifi.rssi} dBm)` });
+          this.log({ kind: "wifi", source: "sandbox", summary: `joined "${ssid}" (RSSI ${ap?.rssi ?? this.wifi.rssi} dBm)${retries ? ` after ${retries} refused attempt${retries > 1 ? "s" : ""}` : ""}` });
         } else {
           dev.joined = false;
           this.sendWifi(dev, [{ verb: "failed", args: { reason: String(d.reason), after_ms: d.reason === WIFI_REASON.NO_AP_FOUND ? "2000" : "1000" } }]);
-          this.log({ kind: "wifi", source: this.wifi.up ? "sandbox" : "fault", summary: `could not join "${ssid}" (reason ${d.reason})`, why: d.why, fix: d.fix });
+          // The firmware retries every couple of seconds: log the first refusal, count the rest.
+          if (dev.failStreak && dev.failStreak.reason === d.reason) dev.failStreak.n++;
+          else {
+            dev.failStreak = { reason: d.reason!, n: 1 };
+            this.log({ kind: "wifi", source: this.wifi.up ? "sandbox" : "fault", summary: `could not join "${ssid}" (reason ${d.reason}; later retries are counted, not logged)`, why: d.why, fix: d.fix });
+          }
         }
       } else if (m.verb === "disconnect") {
         if (dev.joined) this.log({ kind: "wifi", source: "sandbox", summary: `left "${dev.ssid ?? ""}" (WiFi.disconnect())` });

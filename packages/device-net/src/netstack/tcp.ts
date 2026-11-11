@@ -74,9 +74,10 @@ export class TcpConn {
     this.rcvNxt = seqAdd(syn.seq, 1);
     this.mss = Math.min(syn.mss ?? 536, OUR_MSS);
     this.sndWnd = syn.window;
-    this.o.emit({ seq: this.iss, ack: this.rcvNxt, flags: SYN | ACK, window: OUR_WINDOW, mss: OUR_MSS });
+    // State first, then emit: the device may answer synchronously (in-process links).
     this.sndNxt = seqAdd(this.iss, 1);
     this.arm();
+    this.o.emit({ seq: this.iss, ack: this.rcvNxt, flags: SYN | ACK, window: OUR_WINDOW, mss: OUR_MSS });
   }
 
   /** Connect the byte stream (the gateway's flow) once the handshake is done. */
@@ -207,19 +208,22 @@ export class TcpConn {
       }
       const n = Math.min(unsent, room, this.mss);
       const payload = this.buf.subarray(inflight, inflight + n);
-      this.o.emit({ seq: this.sndNxt, ack: this.rcvNxt, flags: ACK | PSH, window: OUR_WINDOW, payload });
+      const seq = this.sndNxt;
       this.sndNxt = seqAdd(this.sndNxt, n);
       sent = true;
       this.arm();
+      this.o.emit({ seq, ack: this.rcvNxt, flags: ACK | PSH, window: OUR_WINDOW, payload });
+      if ((this.state as TcpState) === "closed") return sent;
     }
     const allSent = seqDiff(this.sndNxt, this.sndUna) - (this.finSent ? 1 : 0) >= this.buf.length;
     if (this.finQueued && !this.finSent && allSent && (this.state === "established" || this.state === "close-wait")) {
-      this.o.emit({ seq: this.sndNxt, ack: this.rcvNxt, flags: FIN | ACK, window: OUR_WINDOW });
+      const seq = this.sndNxt;
       this.sndNxt = seqAdd(this.sndNxt, 1);
       this.finSent = true;
       this.state = this.state === "established" ? "fin-wait-1" : "last-ack";
       sent = true;
       this.arm();
+      this.o.emit({ seq, ack: this.rcvNxt, flags: FIN | ACK, window: OUR_WINDOW });
     }
     return sent;
   }

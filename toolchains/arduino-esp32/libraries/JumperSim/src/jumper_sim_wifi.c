@@ -263,11 +263,22 @@ static bool eth_up(void) {
     xTaskCreate(ctrl_task, "jumper_wifi", 4096, NULL, 19, NULL);
   }
   uint8_t mac[6];
+  static const uint8_t zero[6] = {0};
   read_mac(WIFI_IF_STA, mac);
-  s_eth = jumper_eth_install(mac);
+  // QEMU's eFuse has no MAC (all zero): use the one the emulator gave the network card instead,
+  // so every board on the sandbox LAN has its own address.
+  bool from_nic = memcmp(mac, zero, 6) == 0;
+  s_eth = jumper_eth_install(from_nic ? NULL : mac);
   if (!s_eth) {
     ESP_LOGE(TAG, "this simulation has no network card: Wi-Fi cannot join (start the board with networking on)");
     return false;
+  }
+  if (from_nic && esp_eth_ioctl(s_eth, ETH_CMD_G_MAC_ADDR, mac) == ESP_OK && memcmp(mac, zero, 6) != 0) {
+    memcpy(s_mac_override[WIFI_IF_STA], mac, 6);
+    s_mac_set[WIFI_IF_STA] = true;
+    memcpy(s_mac_override[WIFI_IF_AP], mac, 6);
+    s_mac_override[WIFI_IF_AP][5] ^= 0x01;
+    s_mac_set[WIFI_IF_AP] = true;
   }
   esp_eth_update_input_path(s_eth, eth_input, NULL);
   esp_eth_start(s_eth);
