@@ -1,0 +1,92 @@
+{
+  "format": "jumper/1",
+  "name": "Talking Egg",
+  "parts": [
+    { "id": "xiao", "type": "seeed-xiao-rp2040", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "eyes", "type": "ssd1306-oled-i2c", "x": 40, "y": -300, "rotation": 0 },
+    { "id": "voice", "type": "dfplayer-mini", "x": 320, "y": -300, "rotation": 0, "props": { "clips": "1: hi! I'm Eggy!\n2: hehe, that tickles!\n3: is it warm in here, or is it just my shell?\n4: I think I'm about to hatch!\n5: don't drop me, okay?\n6: I'm a little bit sleepy...\n7: hello? anybody out there?" } },
+    { "id": "spk", "type": "speaker", "x": 0, "y": -500, "rotation": 0 },
+    { "id": "r1", "type": "resistor", "x": 180, "y": -400, "rotation": 0, "props": { "resistance": 1000 } },
+    { "id": "btn", "type": "pushbutton", "x": 340, "y": -460, "rotation": 0 },
+    { "id": "bat", "type": "lipo-battery", "x": 0, "y": -660, "rotation": 0, "props": { "capacity": 500 } },
+    { "id": "chg", "type": "tp4056-charger", "x": 220, "y": -680, "rotation": 0, "props": { "chargeCurrentmA": 500 } },
+    { "id": "sw", "type": "slide-switch", "x": 420, "y": -640, "rotation": 0 },
+    { "id": "d1", "type": "schottky-diode", "x": 0, "y": -800, "rotation": 0 },
+    { "id": "r2", "type": "resistor", "x": -200, "y": -40, "rotation": 0, "props": { "resistance": 100000 } },
+    { "id": "r3", "type": "resistor", "x": -200, "y": 40, "rotation": 0, "props": { "resistance": 100000 } },
+    { "id": "boost", "type": "boost-converter", "x": 0, "y": -960, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "eyes", "pin": "VCC" }, "to": { "part": "xiao", "pin": "3V3" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "eyes", "pin": "GND" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w3", "from": { "part": "eyes", "pin": "SDA" }, "to": { "part": "xiao", "pin": "GP6" }, "color": "#F2E14A" },
+    { "id": "w4", "from": { "part": "eyes", "pin": "SCL" }, "to": { "part": "xiao", "pin": "GP7" }, "color": "#B47CFF" },
+    { "id": "w5", "from": { "part": "voice", "pin": "VCC" }, "to": { "part": "xiao", "pin": "VBUS" }, "color": "#FF4D2E" },
+    { "id": "w6", "from": { "part": "voice", "pin": "GND.1" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w7", "from": { "part": "xiao", "pin": "GP0" }, "to": { "part": "r1", "pin": "1" }, "color": "#FFB23F" },
+    { "id": "w8", "from": { "part": "r1", "pin": "2" }, "to": { "part": "voice", "pin": "RX" }, "color": "#4DA3FF" },
+    { "id": "w9", "from": { "part": "voice", "pin": "TX" }, "to": { "part": "xiao", "pin": "GP1" }, "color": "#F2E14A" },
+    { "id": "w10", "from": { "part": "voice", "pin": "SPK_1" }, "to": { "part": "spk", "pin": "+" }, "color": "#B47CFF" },
+    { "id": "w11", "from": { "part": "voice", "pin": "SPK_2" }, "to": { "part": "spk", "pin": "-" }, "color": "#E9EDF2" },
+    { "id": "w12", "from": { "part": "btn", "pin": "1a" }, "to": { "part": "xiao", "pin": "GP28" }, "color": "#5CF2A1" },
+    { "id": "w13", "from": { "part": "btn", "pin": "2a" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w14", "from": { "part": "bat", "pin": "POS" }, "to": { "part": "chg", "pin": "BAT" }, "color": "#FF4D2E" },
+    { "id": "w15", "from": { "part": "bat", "pin": "NEG" }, "to": { "part": "chg", "pin": "GND.2" }, "color": "#2B3038" },
+    { "id": "w16", "from": { "part": "chg", "pin": "OUT" }, "to": { "part": "sw", "pin": "2" }, "color": "#FF4D2E" },
+    { "id": "w18", "from": { "part": "d1", "pin": "C" }, "to": { "part": "xiao", "pin": "VBUS" }, "color": "#FF4D2E" },
+    { "id": "w19", "from": { "part": "chg", "pin": "GND.3" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w20", "from": { "part": "sw", "pin": "1" }, "to": { "part": "r2", "pin": "1" }, "color": "#4DA3FF" },
+    { "id": "w21", "from": { "part": "r2", "pin": "2" }, "to": { "part": "xiao", "pin": "GP29" }, "color": "#F2E14A" },
+    { "id": "w22", "from": { "part": "r3", "pin": "1" }, "to": { "part": "xiao", "pin": "GP29" }, "color": "#B47CFF" },
+    { "id": "w23", "from": { "part": "r3", "pin": "2" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w17", "from": { "part": "sw", "pin": "1" }, "to": { "part": "boost", "pin": "VIN+" }, "color": "#FF4D2E" },
+    { "id": "w24", "from": { "part": "boost", "pin": "VIN-" }, "to": { "part": "chg", "pin": "GND.3" }, "color": "#2B3038" },
+    { "id": "w25", "from": { "part": "boost", "pin": "VOUT+" }, "to": { "part": "d1", "pin": "A" }, "color": "#FF4D2E" },
+    { "id": "w26", "from": { "part": "boost", "pin": "VOUT-" }, "to": { "part": "xiao", "pin": "GND.1" }, "color": "#2B3038" }
+  ],
+  "firmware": {
+    "board": "xiao",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "rp2040:rp2040:seeed_xiao_rp2040"
+    },
+    "libraries": [
+      "Adafruit SSD1306",
+      "Adafruit GFX Library"
+    ]
+  },
+  "scenarios": [
+    { "id": "says-hello", "name": "Wakes up, opens its eyes and says hi", "steps": [{ "expect_serial": "Eggy awake", "within_ms": 1000 }, { "expect_part": "eyes.lit", "op": ">", "value": 1000, "within_ms": 500 }, { "said": "I'm Eggy", "within_ms": 2500 }, { "run_ms": 5000 }, { "absent": true, "said": "anybody out there" }, { "expect_serial": "eyes: blink", "within_ms": 6000 }] },
+    { "id": "poke-talks", "name": "Poking it makes it say something, different each time", "steps": [{ "said": "I'm Eggy", "within_ms": 2500 }, { "run_ms": 2000 }, { "hold_ms": 100, "press": "btn" }, { "expect_serial": "poke!", "within_ms": 300 }, { "said": { "regex": "tickles|warm|hatch|drop" }, "within_ms": 500 }, { "run_ms": 3000 }, { "hold_ms": 100, "press": "btn" }, { "expect_serial": "poke!", "within_ms": 300 }, { "said": { "regex": "tickles|warm|hatch|drop" }, "within_ms": 500 }] },
+    { "id": "lonely-after-a-minute", "name": "Calls out when nobody pokes it for a minute", "steps": [{ "said": "I'm Eggy", "within_ms": 2500 }, { "run_ms": 55000 }, { "absent": true, "said": "anybody out there" }, { "said": "anybody out there", "within_ms": 10000 }], "timeout_ms": 90000 },
+    { "id": "low-battery-goodnight", "name": "On a nearly empty battery it says it's sleepy and turns its eyes off", "steps": [{ "set": "bat.soc", "value": 3 }, { "expect_serial": "low battery", "within_ms": 8000 }, { "said": "sleepy", "within_ms": 1000 }, { "expect_part": "eyes.on", "op": "==", "value": false, "within_ms": 4000 }] }
+  ],
+  "power": {"usb":false},
+  "enclosure": {
+    "shape": "custom",
+    "params": {
+      "color": "#F4EEDC",
+      "dome_mm": 3
+    },
+    "placements": {
+      "spk": {
+        "face": "back",
+        "y_mm": -16
+      },
+      "eyes": {
+        "face": "front",
+        "y_mm": 6
+      },
+      "btn": {
+        "face": "top"
+      },
+      "sw": {
+        "face": "left"
+      }
+    },
+    "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"
+  }
+}

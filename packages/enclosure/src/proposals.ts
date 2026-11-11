@@ -204,7 +204,9 @@ function candidates(input: LayoutInput, opts: ProposeOptions): Cand[] {
   const out: Cand[] = [];
   const auto: AutoCandidate[] = autoLayouts(input, { ...(opts.quick ? { iters: 220, depths: 3 } : {}), ...(opts.time_ms ? { timeMs: opts.time_ms } : {}) });
   for (const c of auto) out.push({ L: c.layout, source: `optimizer, ${c.D.toFixed(1)} mm deep inside${c.container === "outline" ? "" : ` (${c.container})`}` });
-  out.push({ L: stackLayout(input, { quick: true }), source: "stacked front to back (round 7)" });
+  // round 7's stacker does not know a part pinned by its centre or its layer: it only competes without such pins
+  const pins = Object.entries(input.enclosure.placements ?? {}).some(([, pl]) => pl.layer !== undefined || ((pl.x_mm !== undefined || pl.y_mm !== undefined) && !pl.face));
+  if (!pins || !out.length) out.push({ L: stackLayout(input, { quick: true }), source: "stacked front to back (round 7)" });
   return out;
 }
 

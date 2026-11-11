@@ -372,6 +372,8 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
     // a part pinned in place first (the screen kept on the centre line is not pinned in height)
     if (it.variants.some((V) => V.pinY !== undefined && V.pinX !== undefined)) return 0;
     if (it.variants.some((V) => V.pinY !== undefined || (V.pinX !== undefined && V.zFix?.mode !== "front"))) return 0.5;
+    // in an upright outline the heaviest parts drop to the bottom first
+    if (env.upright && !it.variants[0]!.zFix && !it.variants[0]!.side && it.mass >= 0.5 * Math.max(...items.map((x) => x.mass))) return 0.75;
     // parts that need a wall go before the ones that fill in
     if (it.variants[0]!.side) return 1;
     if (it.variants[0]!.zFix?.mode === "front") return 2;
@@ -411,9 +413,21 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
   const sAt = (k: number) => Math.exp(k * Q);
   const kOf = (v: number) => Math.round(Math.log(v) / Q);
   const kMin = minS > 0 ? kOf(minS) : -Infinity;
+  // the heavy parts' height (mass-weighted, in half heights of the outline): lower is steadier in an upright outline
+  const massSum = items.reduce((a, it) => a + it.mass, 0) || 1;
+  const heavyOf = (placed: OPlaced[]) => {
+    if (!env.upright) return 0;
+    let h = 0;
+    for (const q of placed) h += items[q.item]!.mass * (q.y + items[q.item]!.variants[q.v]!.sy / 2);
+    return h / massSum / Math.max(1, env.B0);
+  };
+  let lastOk: OPlaced[] = [];
   const fits = (st: State, k: number) => {
     evals++;
-    return !decode(st, sAt(k), true).failed.length;
+    const r = decode(st, sAt(k), true);
+    if (r.failed.length) return false;
+    lastOk = r.placed;
+    return true;
   };
   const scaleFor = (st: State, guess: number): number => {
     let hi = Math.max(kMin, kOf(guess));
@@ -439,25 +453,32 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
   // a part on a side wall stays in the middle of the depth (its opening needs the straight band of the wall)
   const zFree = items.map((it, i) => (it.zPin === undefined && it.variants.some((V) => !V.zFix && !V.side) ? i : -1)).filter((i) => i >= 0);
   const multiV = items.map((it, i) => (it.variants.length > 1 ? i : -1)).filter((i) => i >= 0);
+  const frozen = env.upright ? cur0.order.findIndex((i) => rank(i) >= 1) : 0;
   let curS = cur0;
   let curV = scaleFor(curS, Math.max(minS, opts.startScale ?? 0.5));
   const firstV = curV;
-  let best = { st: curS, S: curV };
+  // what the walk keeps: the smallest scale, traded against the heavy parts' height in an upright
+  // outline (the whole mass half the outline's height lower is worth about 12 % of scale)
+  const HW = env.upright ? 40 : 0;
+  const costOf = (S: number, h: number) => (Number.isFinite(S) ? Math.log(S) / Q + HW * h : Infinity);
+  let best = { st: curS, S: curV, h: Number.isFinite(curV) ? heavyOf(decode(curS, curV).placed) : 0 };
   let iters = 0;
   if (Number.isFinite(curV) && curV <= minS + 1e-9) iters = opts.iters; // a fixed size already holds everything as asked
   for (; iters < opts.iters; iters++) {
     if ((iters & 7) === 0 && performance.now() > opts.deadline) break;
     const nx: State = { order: [...curS.order], v: [...curS.v], z: [...curS.z] };
     const m = rand();
-    if (m < 0.45 && n > 1) {
-      const a = Math.floor(rand() * n);
-      let b = Math.floor(rand() * (n - 1));
+    // (in an upright outline the pinned and the heavy parts keep the head of the order, so they settle low)
+    const nf = n - frozen;
+    if (m < 0.45 && nf > 1) {
+      const a = frozen + Math.floor(rand() * nf);
+      let b = frozen + Math.floor(rand() * (nf - 1));
       if (b >= a) b++;
       [nx.order[a], nx.order[b]] = [nx.order[b]!, nx.order[a]!];
-    } else if (m < 0.65 && n > 1) {
-      const a = Math.floor(rand() * n);
+    } else if (m < 0.65 && nf > 1) {
+      const a = frozen + Math.floor(rand() * nf);
       const [x] = nx.order.splice(a, 1);
-      nx.order.splice(Math.floor(rand() * n), 0, x!);
+      nx.order.splice(frozen + Math.floor(rand() * nf), 0, x!);
     } else if (m < 0.85 && multiV.length) {
       const i = multiV[Math.floor(rand() * multiV.length)]!;
       const k = items[i]!.variants.length;
@@ -473,7 +494,8 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
       if (Number.isFinite(v)) {
         curS = nx;
         curV = v;
-        if (v < best.S) best = { st: nx, S: v };
+        const h = heavyOf(decode(nx, v).placed);
+        if (costOf(v, h) < costOf(best.S, best.h)) best = { st: nx, S: v, h };
       }
       continue;
     }
@@ -482,11 +504,15 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
       let k2 = k - 1;
       while (k2 > kMin && fits(nx, k2 - 1)) k2--;
       curS = nx;
+      fits(nx, k2);
       curV = sAt(k2);
-      if (curV < best.S - 1e-12) best = { st: nx, S: curV };
-      if (k2 <= kMin) break;
+      const h = heavyOf(lastOk);
+      if (costOf(curV, h) < costOf(best.S, best.h) - 1e-9) best = { st: nx, S: curV, h };
+      if (k2 <= kMin && !env.upright) break;
     } else if (fits(nx, k)) {
       curS = nx;
+      const h = heavyOf(lastOk);
+      if (costOf(curV, h) < costOf(best.S, best.h) - 1e-9) best = { st: nx, S: curV, h };
     } else if (rand() < 0.08 * (1 - iters / Math.max(1, opts.iters)) && fits(nx, k + 4)) {
       curS = nx;
       curV = sAt(k + 4);
