@@ -16,7 +16,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, cpSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, truncateSync, writeFileSync } from "node:fs";
-import { arch, platform } from "node:os";
+import { arch, platform, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { jumperHome } from "@jumper/sim-backends/node";
 import { REPO_ROOT } from "../config.ts";
@@ -152,6 +152,9 @@ export function nativeEnv(libs: "base" | "esp32", extra: Record<string, string> 
     ARDUINO_BUILD_CACHE_PATH: join(d, "build-cache"),
     ARDUINO_BOARD_MANAGER_ADDITIONAL_URLS: NATIVE_INDEXES.join(" "),
     ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL: "false",
+    // ctags (Arduino's prototype generator) fails with "cannot open temporary file" without TMPDIR,
+    // which MCP stdio clients do not pass on.
+    TMPDIR: process.env.TMPDIR || tmpdir(),
     PATH: `${join(d, "shims")}:${process.env.PATH ?? ""}`,
     ...extra,
   };

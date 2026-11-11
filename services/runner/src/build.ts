@@ -400,6 +400,9 @@ async function compile(
   const hexPath = join(work, "out", kind === "bin" ? "sketch.ino.merged.bin" : platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
   const binary = ok && kind === "bin" ? new Uint8Array(readFileSync(hexPath)) : undefined;
+  // A failure the compiler did not explain (a tool that did not start, a killed build) is not cached:
+  // the next build tries again instead of returning the same failure.
+  const unexplained = !ok && !diagnostics.some((d) => d.severity === "error");
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
     diagnostics.push({ severity: "error", message: `arduino-cli exited with code ${r.code}: ${output.trim().split("\n").slice(-4).join(" | ")}`, hint: "Read the message above; if it mentions a library, add it to firmware.libraries." });
   }
@@ -417,9 +420,11 @@ async function compile(
     libraries,
     logTail: output.trim().split("\n").slice(-15).join("\n"),
   };
-  mkdirSync(resultDir, { recursive: true });
-  if (binary) writeFileSync(join(resultDir, "flash.json"), JSON.stringify(writeCachedFlash(resultDir, binary)));
-  writeFileSync(join(resultDir, "result.json"), JSON.stringify(result));
+  if (!unexplained) {
+    mkdirSync(resultDir, { recursive: true });
+    if (binary) writeFileSync(join(resultDir, "flash.json"), JSON.stringify(writeCachedFlash(resultDir, binary)));
+    writeFileSync(join(resultDir, "result.json"), JSON.stringify(result));
+  }
   rmSync(work, { recursive: true, force: true });
   return { ...result, ...(binary ? { binary } : {}) };
 }

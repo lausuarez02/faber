@@ -5,6 +5,7 @@
 - [Quickstart](quickstart.md): install, run the app, run Blink.
 - [Architecture](architecture.md): the packages, and how data moves from the canvas to the simulator and back.
 - [Fidelity](fidelity.md): what the simulator can promise. Exact, Behavioral and Stub.
+- [Native runtime](native-runtime.md): build and run firmware without Docker (`jumper setup`), and how Jumper picks Docker or native.
 
 ## For agents
 
