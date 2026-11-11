@@ -59,6 +59,10 @@ This is [`examples/blink/jumper.json`](../examples/blink/jumper.json). JSON has 
    - `board` is the part id of the microcontroller board that runs the firmware.
    - `artifact` is the built binary (Intel HEX for AVR), relative to `jumper.json`.
    - `sketch` and `build` say how to rebuild it. M0 supports `arduino-cli` with an FQBN.
+   - `language` (round 10, optional, default `"arduino"`): `"micropython"` (main file `main.py`,
+     `build.tool` `"micropython"`), `"esp-idf"` (`main/main.c`, `build.target`), `"platformio"`
+     (`platformio.ini`, `build.env`). See [firmware-languages.md](firmware-languages.md) for what runs
+     on which board.
 5. **`scenarios`** are reserved for M1 scenario tests. For now each needs only an `id`.
 
 ## What validation checks

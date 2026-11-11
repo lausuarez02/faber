@@ -176,6 +176,18 @@
           "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
           "description": "Part id of the MCU board that runs this firmware."
         },
+        "language": {
+          "description": "Firmware language (default 'arduino'; a .py main file means 'micropython'). See docs/firmware-languages.md for what runs on which board.",
+          "type": "string",
+          "enum": [
+            "arduino",
+            "micropython",
+            "esp-idf",
+            "platformio",
+            "rust",
+            "zephyr"
+          ]
+        },
         "dir": {
           "default": "firmware",
           "description": "Firmware folder, relative to jumper.json.",
@@ -183,7 +195,7 @@
           "const": "firmware"
         },
         "sketch": {
-          "description": "Main source file inside dir, e.g. 'blink.ino'.",
+          "description": "Main source file inside dir: 'blink.ino' (Arduino), 'main.py' (MicroPython), 'main/main.c' (ESP-IDF), 'platformio.ini' (PlatformIO).",
           "type": "string"
         },
         "artifact": {
@@ -196,17 +208,39 @@
           "properties": {
             "tool": {
               "type": "string",
-              "const": "arduino-cli"
+              "enum": [
+                "arduino-cli",
+                "micropython",
+                "esp-idf",
+                "platformio",
+                "cargo",
+                "west"
+              ],
+              "description": "Build driver: arduino-cli (Arduino), micropython (no compile: firmware + filesystem image), esp-idf (idf.py), platformio (pio run), cargo (Rust), west (Zephyr)."
             },
             "fqbn": {
+              "description": "arduino-cli: fully qualified board name, e.g. 'arduino:avr:uno'. Required for arduino-cli.",
               "type": "string",
-              "minLength": 1,
-              "description": "Fully qualified board name, e.g. 'arduino:avr:uno'."
+              "minLength": 1
+            },
+            "target": {
+              "description": "esp-idf: IDF target, e.g. 'esp32', 'esp32c3' (default: the board's chip).",
+              "type": "string",
+              "minLength": 1
+            },
+            "env": {
+              "description": "platformio: the [env:<name>] to build (default: the first env in platformio.ini).",
+              "type": "string",
+              "minLength": 1
+            },
+            "firmware": {
+              "description": "micropython: the MicroPython firmware build to flash, e.g. 'RPI_PICO@1.29.0' (default: the board's pinned build).",
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
-            "tool",
-            "fqbn"
+            "tool"
           ]
         },
         "libraries": {
