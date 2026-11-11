@@ -86,7 +86,7 @@ describe("check_fit and custom outlines", () => {
 
   it("plan_device turns a named shape into a custom outline, never a preset", async () => {
     const r = await call("plan_device", { goal: "something like the shape of an egg, with eyes and a speaker to say stuff, in my pocket" });
-    const last = (r.next as string[]).find((n) => n.includes("design_case"))!;
+    const last = (r.next as string[]).find((n) => n.includes("design_case") && !n.startsWith("case: "))!; // (round 8b: the "case: " guidance line names design_case too)
     expect(last).toMatch(/design_case \{"shape": "custom", "outline": <the egg drawn as an SVG path in mm/);
     expect(last).toMatch(/there is no "egg" preset: draw it; check_fit first/);
   });

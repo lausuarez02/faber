@@ -140,6 +140,37 @@ jumper update_case '{"layout": "thinnest"}' -p my-egg
   `connect`) as one undoable step: `GET /api/case/advice` (`{notes: [{id, code, title, why, saves,
   parts, apply?}]}`) and `POST /api/case/advice/apply {"id": "smaller-speaker:spk"}`.
 
+## What each choice costs (round 8b)
+
+An agent's own case choices can make a case much bigger than its parts need: a real Claude rebuilt
+the talking egg on round-8 code at 74 x 96 x 44.4 mm with a 6 mm dome on both faces, the eyes and
+the speaker pinned on the front and a fixed 74 x 96 mm size. So every `check_fit`,
+`propose_layout`, `design_case` and `update_case` answer has `costs`:
+
+- **Choices weighed**: each placement's `x_mm` / `y_mm` (together), `layer`, `face` and `on_edge`;
+  `dome_mm` / `dome_back_mm` over 1.5 mm (relaxed to 1.5); numeric `edge_radius_front_mm` /
+  `edge_radius_back_mm`; a fixed `size_mm` w / h, and d or `depth_mm`; `wall_mm` over 1.6; `gap_mm`
+  over 1.5; `closure: "screws"`. A part with a speaker grille pinned on the front is weighed against
+  its grille on the back (the front stays the screen's; a little quieter facing you).
+- **How**: the quick proposal search (no CAD) runs again with that one choice relaxed, and once more
+  with all of them relaxed (`relax_all`, run first), for the goal the enclosure asks for.
+  Time-boxed (10 s by default, 5 s in `check_fit`): what is not reached is listed in `skipped`.
+- **Answer**: `{base, costs: [{id, kind, part?, choice, with, without, adds_mm, adds_cm3,
+  adds_length_mm, breaks_fit, message, say, change, label, tradeoff?}], relax_all, sizes_that_work?,
+  free, skipped, ms}`, the costliest first. `message` is for agents ("A 6 mm dome on both faces adds
+  9 mm of thickness (37.2 -> 28.2 mm thick with a 1.5 mm dome). Fix: update_case
+  {"params":{"dome_mm":1.5}}"), `say` and `label` for people (no tool names), `change` the
+  `update_case` arguments that relax it.
+- **A fixed size**: at a fixed w / h the plan cannot grow, so the optimizer goes deeper until a
+  layout fits, and `balanced` takes the thinnest layout that fits that outline (never a deep stack
+  when a thinner one fits). When the parts do not fit, the answer names the choice that breaks the
+  fit and `sizes_that_work` (the sizes the same outline works at, flat and stacked).
+- **Dome**: a dome over 3 mm a face is a `dome` warning in the report with the thickness it adds
+  over the default bulge (about 1 mm).
+- **In the Case view**: the Layout tab's **What's making it bigger** lists the saved case's costly
+  choices in plain words, each with an Apply button, plus "Let Jumper decide all of these" and, for a
+  fixed size that fails, the sizes that work (`POST /api/case/costs`).
+
 ## Shapes and settings
 
 | Shape | What it is |
@@ -202,7 +233,7 @@ assembled.
 | Check | Meaning |
 | --- | --- |
 | `fits` | every part is inside with the wiring room; small passives ride in the wiring |
-| `screen-window` | window centred on the active area, not cutting past the bezel |
+| `screen-window` | window sized to the active area, not cutting past the bezel, and (round 8b) looked through: lines of sight straight in through the window must land on the display's active area, so a window off the screen, another part in front of it or nothing behind it fail, naming what is seen |
 | `buttons-reachable` | each plunger goes through its hole, stands proud for the switch's travel |
 | `connector-access` | the plug reaches: receptacle ≤ 2.5 mm inside the outer surface, opening on a flat |
 | `min-wall` | wall measured between the outer and inner surfaces in OpenCascade (and at the snap groove), ≥ 1.2 mm |
@@ -258,6 +289,13 @@ STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
 - Thickness includes `dome_mm` on both faces: the egg drawn with `dome_mm: 3` is 6 mm thicker than
   the same parts with flat faces.
 - Buttons, switches and knobs keep the side the rules give them (a port may move to another side).
+- Costs (round 8b) relax one choice at a time (and all at once): two choices that only cost
+  together show up only in `relax_all`. They come from the light search, so "with" can differ from
+  the built case by a few tenths of a millimetre. A pin at a fixed outline often costs nothing (the
+  outline, not the pin, sets the size).
+- The exploded render and the web view's explode move the parts the front shell holds (the screen,
+  a front grille's speaker) with the front shell (round 8b); before, the window showed whatever was
+  behind it by parallax.
 
 ## Honest limits (round 7, custom outlines)
 
