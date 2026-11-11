@@ -5,7 +5,7 @@ export { RENODE_BOARDS, renodeBoardOf } from "./boards.ts";
 export type { RenodeBoard, RenodeBoardType, RenodePin } from "./boards.ts";
 export { Command, ExternalControlClient, ExternalControlError } from "./external-control.ts";
 export type { GpioEvent } from "./external-control.ts";
-export { dockerAvailable, RENODE_IMAGE, RenodeMachine } from "./machine.ts";
+export { dockerAvailable, reapRenodeContainers, RENODE_IMAGE, RenodeMachine } from "./machine.ts";
 export type { PinEdge, RenodeMachineOptions } from "./machine.ts";
 export { RenodeMonitor } from "./monitor.ts";
 export { createRenodeBackend } from "./backend.ts";

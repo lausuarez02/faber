@@ -61,6 +61,14 @@ async function freePort(): Promise<number> {
   }
 }
 
+/** Remove Renode containers a crashed Jumper process left behind (`docker ps --filter label=jumper.renode`). */
+export async function reapRenodeContainers(): Promise<number> {
+  const { stdout } = await exec("docker", ["ps", "-aq", "--filter", "label=jumper.renode=1"]);
+  const ids = stdout.split("\n").filter(Boolean);
+  if (ids.length) await exec("docker", ["rm", "-f", ...ids]);
+  return ids.length;
+}
+
 /** True when `docker info` answers (the integration tests skip otherwise). */
 export async function dockerAvailable(): Promise<boolean> {
   try {
@@ -120,7 +128,7 @@ export class RenodeMachine {
     const container = `jumper-renode-${randomBytes(4).toString("hex")}`;
     const elfDir = dirname(resolve(opts.elf));
     const args = [
-      "run", "--rm", "--name", container,
+      "run", "--rm", "--name", container, "--label", "jumper.renode=1",
       "-p", `127.0.0.1:${monPort}:${monPort}`,
       "-p", `127.0.0.1:${ctlPort}:${ctlPort}`,
       "-p", `127.0.0.1:${uartPort}:${uartPort}`,
