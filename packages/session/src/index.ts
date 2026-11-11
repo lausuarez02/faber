@@ -39,7 +39,7 @@ export { setServerBase, serverBase, viewerUrlFor, projectDirById, startPetGatewa
 export type { PetGateway } from "./agent-runtime.ts";
 export { recordProject, chromiumProblem } from "./recorder.ts";
 export type { RecordOptions, RecordResult } from "./recorder.ts";
-export { planDevice } from "./planner.ts";
+export { planDevice, resolveBoard } from "./planner.ts";
 export type { DevicePlan, PlanConstraints, BomLine } from "./planner.ts";
 export { listVersions, versionCount, versionDetail, versionFiles, diskFirmwareFiles, lastTestsFromLog, lineDiff, recordSnapshot } from "./versions.ts"; // round 6 switch: lineDiff, recordSnapshot
 export type { VersionSummary, VersionDetail, VersionChanges, VersionFrame } from "./versions.ts";

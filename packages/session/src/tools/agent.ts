@@ -3,7 +3,7 @@ import { basename, isAbsolute, join, normalize, relative, resolve, sep } from "n
 import { pathToFileURL } from "node:url";
 import { serverBase, viewerUrlFor } from "../agent-runtime.ts";
 import { didYouMean, fail } from "../errors.ts";
-import { planDevice, type PlanConstraints } from "../planner.ts";
+import { planDevice, resolveBoard, type PlanConstraints } from "../planner.ts";
 import { recordProject } from "../recorder.ts";
 import type { ToolModule } from "./types.ts";
 
@@ -119,8 +119,21 @@ export const agentTools: ToolModule = {
       }
       const reg = x.session.registry;
       if (c.board !== undefined) {
-        const boards = reg.list().filter((d) => d.spec.category === "board").map((d) => d.spec.id);
-        if (!boards.includes(c.board)) fail("unknown-board", `plan_device: no board '${c.board}'`, `boards are: ${boards.join(", ")}`, `pass one of them or leave board out.${didYouMean(c.board, boards)}`);
+        const defs = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
+        const boards = defs.map((d) => d.spec.id);
+        if (typeof c.board !== "string") fail("bad-arg", "plan_device: constraints.board must be a board id", `got ${JSON.stringify(c.board)}`, `pass one of: ${boards.join(", ")}`);
+        // Round 10: short names a person uses ("esp32", "black pill", "pico") resolve to the one board they mean.
+        let id: string | undefined;
+        let several: string | undefined;
+        try {
+          id = resolveBoard(defs, c.board).spec.id;
+        } catch (err) {
+          const m = /fits several boards: (.*)\. Fix:/.exec((err as Error).message);
+          several = m?.[1];
+        }
+        if (several) fail("ambiguous-board", `plan_device: '${c.board}' fits several boards`, `it could be ${several}`, "pass one of those ids as constraints.board");
+        if (!id) fail("unknown-board", `plan_device: no board '${c.board}'`, `boards are: ${boards.join(", ")}`, `pass one of them or leave board out.${didYouMean(c.board, boards)}`);
+        c.board = id;
       }
       const { allOpNames } = await import("../session.ts");
       const plan = planDevice(goal, c, reg, { createPartAvailable: allOpNames().includes("create_part") });

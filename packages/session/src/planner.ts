@@ -222,6 +222,29 @@ function currentMa(spec: PartSpec): { ma: number; from: string } | undefined {
 const fidelityOf = (d: PartDefinition) => (d.fidelity.origin === "agent-made" ? "behavioral, unverified" : d.fidelity.level);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+const squash = (s: string) => s.toLowerCase().replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9]+/g, "");
+
+/**
+ * A board by the name a person or an agent uses: its id ("stm32-blackpill-f411"), its name, or a
+ * common short name that points at one board ("blackpill", "black pill", "esp32", "pico", "uno").
+ * A short name that fits several boards ("xiao", "nano", "stm32") throws, listing them.
+ * Round 10 eval: plan_device rejected "esp32" and "blackpill" outright.
+ */
+export function resolveBoard(boards: readonly PartDefinition[], name: string): PartDefinition {
+  const q = squash(name);
+  const exact = boards.find((d) => d.spec.id === name) ?? boards.find((d) => squash(d.spec.id) === q || squash(d.spec.name) === q);
+  if (exact) return exact;
+  // The chip itself ("esp32", "rp2040", "esp32-c3"): the one board with that chip, when there is one.
+  const byChip = boards.filter((d) => squash(d.spec.mcu?.chip ?? "") === q);
+  if (byChip.length === 1) return byChip[0]!;
+  // A piece of the id or the name ("blackpill", "pico", "uno").
+  const hits = q.length >= 3 ? boards.filter((d) => squash(d.spec.id).includes(q) || squash(d.spec.name).includes(q)) : [];
+  if (hits.length === 1) return hits[0]!;
+  const pool = byChip.length > 1 ? byChip : hits;
+  if (pool.length > 1) throw new Error(`'${name}' fits several boards: ${pool.map((d) => `${d.spec.id} (${d.spec.name})`).join(", ")}. Fix: pass one of these ids as board`);
+  throw new Error(`no board '${name}' in the catalog; boards are: ${boards.map((b) => b.spec.id).join(", ")}`);
+}
+
 function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean, wantsLang?: string): { def: PartDefinition; why: string } {
   const all = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
   if (!all.length) throw new Error("the catalog has no boards");
@@ -240,10 +263,7 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
     }
   }
   if (c.board) {
-    const d = reg.get(c.board);
-    if (!d || d.spec.category !== "board") {
-      throw new Error(`no board '${c.board}' in the catalog; boards are: ${all.map((b) => b.spec.id).join(", ")}`);
-    }
+    const d = resolveBoard(all, c.board);
     return { def: d, why: `you asked for the ${d.spec.name}` };
   }
   const area = (d: PartDefinition) => {
@@ -290,6 +310,12 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     if (extra && !matched.has(w)) matched.set(w, extra);
   }
   const rover = matched.has("rover");
+  // Round 10 eval: "shows the weather from an api" is data from the internet, not a sensor on the desk.
+  const weatherFromNet = matched.has("climate") && matched.has("wifi") && !/temperature|humidity|pressure|thermo|\bclimate|sensor|measur|indoor|\broom\b|in here|inside/.test(g);
+  if (weatherFromNet) {
+    matched.delete("climate");
+    choices.push("no temperature / humidity sensor: the weather comes from the internet (an API), not from a sensor on the device");
+  }
 
   const bom: BomLine[] = [];
   const cannot = new Set<string>(["how the printed case feels in the hand and how well it prints (design_case checks the geometry: wall, fit, button travel, USB access; not the print or the plastic)"]);
@@ -363,6 +389,12 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     ...(b.price_usd !== undefined ? { price_usd: b.price_usd } : {}),
     buy_links: b.buy_links?.length ? b.buy_links : searchLinks(b.name),
   });
+  // Round 10 eval: a board with Wi-Fi of its own (ESP32 family) needs no ESP-01 module.
+  const wifiLine = bom.findIndex((l) => l.type === "esp01-wifi");
+  if (wifiLine >= 0 && b.tags?.includes("wifi")) {
+    bom.splice(wifiLine, 1);
+    choices.push(`no Wi-Fi module: the ${b.name} has Wi-Fi built in (in Jumper its Wi-Fi sketches reach the sandbox network: mocks, cassettes, faults)`);
+  }
   const vcc = b.mcu?.vcc ?? 5;
   if (compact && !c.board) {
     const uno = reg.get("arduino-uno")?.spec;
