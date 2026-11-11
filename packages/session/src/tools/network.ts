@@ -2,6 +2,7 @@ import { addMockApi, factoryNetworkNotes, injectNetworkFault, readNetwork, type 
 import type { NetworkSettings } from "@jumper/project-format";
 import { fail } from "../errors.ts";
 import { networkConfigOf } from "../device-network.ts";
+import type { ProjectSession } from "../session.ts";
 import type { ExtOpContext, ToolModule } from "./types.ts";
 
 /**
@@ -13,6 +14,23 @@ const FAULT_KINDS = ["wifi_drop", "weak_signal", "latency", "http_error", "timeo
 
 function netOf(x: ExtOpContext) {
   return x.session.deviceNetwork;
+}
+
+type ReadArgs = { since?: number; limit?: number; kind?: string; host?: string };
+
+/** read_network's answer (also GET /api/network, which must not write the action log on every poll). */
+export async function networkSnapshot(session: ProjectSession, args: ReadArgs = {}): Promise<Record<string, unknown>> {
+  const dn = session.deviceNetwork;
+  const host = await dn.ensure();
+  host.drain();
+  const out = readNetwork(host, args);
+  const { status } = dn.secrets();
+  return {
+    ...out,
+    ...(status.length ? { secrets: status, ...(status.some((s) => !s.set) ? { secrets_fix: `put ${status.filter((s) => !s.set).map((s) => `${s.name}=...`).join(", ")} in ${session.dir}/.env (git-ignored) or the environment, then call read_network again` } : {}) } : {}),
+    boards: host.devices,
+    ...(host.devices.length ? {} : { boards_note: "no emulated board is on the sandbox network yet (boards with a network card join when they run: ESP32-family in Jumper's emulator)" }),
+  };
 }
 
 export const networkTools: ToolModule = {
@@ -83,18 +101,9 @@ export const networkTools: ToolModule = {
   ],
   ops: {
     async read_network(args, x) {
-      const dn = netOf(x);
-      const host = await dn.ensure();
-      host.drain();
-      const out = readNetwork(host, args as { since?: number; limit?: number; kind?: string; host?: string });
-      const { status } = dn.secrets();
+      const out = await networkSnapshot(x.session, args as ReadArgs);
       x.summary(`read the network log (${(out.entries as unknown[]).length} entries)`);
-      return {
-        ...out,
-        ...(status.length ? { secrets: status, ...(status.some((s) => !s.set) ? { secrets_fix: `put ${status.filter((s) => !s.set).map((s) => `${s.name}=...`).join(", ")} in ${x.session.dir}/.env (git-ignored) or the environment, then call read_network again` } : {}) } : {}),
-        boards: host.devices,
-        ...(host.devices.length ? {} : { boards_note: "no emulated board is on the sandbox network yet (boards with a network card join when they run: ESP32-family in Jumper's emulator)" }),
-      };
+      return out;
     },
     async add_mock_api(args, x) {
       const dn = netOf(x);

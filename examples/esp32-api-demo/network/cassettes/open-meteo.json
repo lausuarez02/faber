@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "note": "Recorded by Jumper (network.record). Secrets are redacted.",
+  "interactions": [
+    {
+      "request": {
+        "method": "GET",
+        "host": "api.open-meteo.com",
+        "path": "/v1/forecast?latitude=38.72&longitude=-9.14&current=temperature_2m,wind_speed_10m",
+        "header_names": [
+          "content-length",
+          "host",
+          "user-agent"
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "x-ratelimit-cost": "1.0",
+          "x-ratelimit-limit": "600.0",
+          "x-ratelimit-remaining": "598.0",
+          "x-ratelimit-reset": "1794405091",
+          "x-ratelimit-window": "60"
+        },
+        "body_b64": "eyJsYXRpdHVkZSI6MzguNzQ2MDQ0LCJsb25naXR1ZGUiOi05LjE3NTU2NSwiZ2VuZXJhdGlvbnRpbWVfbXMiOjAuMDcyNzE3NjY2NjI1OTc2NTYsInV0Y19vZmZzZXRfc2Vjb25kcyI6MCwidGltZXpvbmUiOiJHTVQiLCJ0aW1lem9uZV9hYmJyZXZpYXRpb24iOiJHTVQiLCJlbGV2YXRpb24iOjY0LjAsImN1cnJlbnRfdW5pdHMiOnsidGltZSI6Imlzbzg2MDEiLCJpbnRlcnZhbCI6InNlY29uZHMiLCJ0ZW1wZXJhdHVyZV8ybSI6IsKwQyIsIndpbmRfc3BlZWRfMTBtIjoia20vaCJ9LCJjdXJyZW50Ijp7InRpbWUiOiIyMDI2LTExLTExVDEzOjQ1IiwiaW50ZXJ2YWwiOjkwMCwidGVtcGVyYXR1cmVfMm0iOjE2LjgsIndpbmRfc3BlZWRfMTBtIjoyMS40fX0="
+      },
+      "recorded_at": "2026-11-11T13:50:49.008Z"
+    }
+  ]
+}

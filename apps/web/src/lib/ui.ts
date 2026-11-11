@@ -6,7 +6,7 @@ import { create } from "zustand";
 export type Tool = "select" | "hand" | "wire";
 
 /** Floating panels (right column on desktop, bottom sheet on phones), in their stacking order. */
-export const PANEL_ORDER = ["agent", "inspector", "serial", "tests", "firmware", "instruments", "help", "learn"] as const;
+export const PANEL_ORDER = ["agent", "inspector", "serial", "tests", "network", "firmware", "instruments", "help", "learn"] as const;
 export type PanelId = (typeof PANEL_ORDER)[number];
 
 export type PopoverId = "parts" | "jump" | "more" | "project" | "mcp" | "agent-menu" | "phone-menu" | null;
