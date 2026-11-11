@@ -1,6 +1,6 @@
 {
-  "hash": "9aad7fb809bc484c",
-  "engine": "case-4",
+  "hash": "1f5f4aaa2d409acf",
+  "engine": "case-5",
   "enclosure": {
     "shape": "pebble",
     "params": {
@@ -69,21 +69,21 @@
       "kind": "step",
       "body": "assembly",
       "bytes": 4790265,
-      "sha256": "b02548e683ad0d1503d84d0d2044132ca6903b2d47bfc53f5df415c736f88a97"
+      "sha256": "9fb0caa6fc0c22b749da6c68b11702a6efa756b5180050731f75df5c203f2cd7"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
       "bytes": 2980908,
-      "sha256": "277836ee171effb766284dbcfeba8bd480b07fe33427c1ae3d7cb77bcb6400a0"
+      "sha256": "076d74eadf20aca9a098a039fe651695582f35faa97cd299eabbbba881eb3ecb"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
       "bytes": 1607735,
-      "sha256": "cc09c3086551952d81368cc7331a1a6186b326bea614f77a5e6efb3701b82f18"
+      "sha256": "095936a07bd9997aaac9ffe273eb836936025a5bcb4dde8f9e15322c701b668c"
     },
     {
       "path": "renders/front.png",
@@ -103,8 +103,8 @@
       "path": "renders/exploded.png",
       "kind": "png",
       "body": "render-exploded",
-      "bytes": 97415,
-      "sha256": "cbceb4ca63188227144cc0c0d463532ceb42dcc0bc2b7602489bac47780de2da"
+      "bytes": 96237,
+      "sha256": "a28a696a844fcb7d48626d67466d8e2890da57d3dbf73795d74c94984ef1c6ff"
     },
     {
       "path": "renders/inside.png",
@@ -125,7 +125,7 @@
       "kind": "pdf",
       "body": "drawing",
       "bytes": 87271,
-      "sha256": "25bff491efc22c09bdec3c0aa7746dc2f1a78fb12a7cac467b9cf046aebc081a"
+      "sha256": "0032e80972774da6088e1e9b8e325d2b822046bd43ab56402116028b5d7f88dc"
     },
     {
       "path": "PRINT.md",
