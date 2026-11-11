@@ -10,7 +10,8 @@ import type { Enclosure, Project } from "@jumper/project-format";
 import type { PartSpec } from "@jumper/sim-core";
 import { drawingSvg } from "./drawing.ts";
 import { buildCase, type Body, partColor } from "./geometry.ts";
-import { layoutCase, type Layout, type LayoutInput, resolveParams } from "./layout.ts";
+import { type Layout, type LayoutInput, resolveParams } from "./layout.ts";
+import { layoutCase } from "./proposals.ts";
 import { checkMesh, type Mesh, meshOf, plateLayout, printPose, stlBinary, threeMf } from "./mesh.ts";
 import { contains, outline } from "./plan.ts";
 import { materialFor, printMd } from "./print.ts";
@@ -18,7 +19,7 @@ import { occt } from "./occt.ts";
 import { renderPng, type RenderItem, VIEWS } from "./render.ts";
 import type { CaseFile, CaseMesh, CaseReport, FitCheck, PlacedPart, Vec3 } from "./types.ts";
 
-export const ENGINE_VERSION = "case-3";
+export const ENGINE_VERSION = "case-4";
 export const MIN_WALL = 1.2;
 
 export interface GenerateOptions {
@@ -143,7 +144,8 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
 
   // ---- size match
   const ob = mergedBounds(shells.map((s) => meshes.get(s.name)!));
-  const dw = [ob.max[0] - ob.min[0] - L.outer.w, ob.max[1] - ob.min[1] - L.outer.h, ob.max[2] - ob.min[2] - L.outer.d].map(Math.abs);
+  // (against the exact planned box: outer.w / h / d are rounded to 0.1 mm for people)
+  const dw = [0, 1, 2].map((k) => Math.abs(ob.max[k]! - ob.min[k]! - (L.outer.max[k]! - L.outer.min[k]!)));
   const dc = [ob.min[0] - L.outer.min[0], ob.min[1] - L.outer.min[1], ob.min[2] - L.outer.min[2]].map(Math.abs);
   const sizeOk = Math.max(...dw, ...dc) <= 0.1 + 1e-6;
   checks.push({ id: "size-match", ok: sizeOk, severity: sizeOk ? "info" : "error", message: sizeOk ? `Printed bodies match the layout within ${Math.max(...dw, ...dc).toFixed(2)} mm (limit 0.1).` : `The printed bodies are ${Math.max(...dw, ...dc).toFixed(2)} mm off the planned size. Why: a fillet or the tab changed the outline. Fix: design again; the drawing uses the planned size.` });
@@ -273,6 +275,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     notes: [...(L.outlineNotes ?? []), ...notes],
     ...(L.fit ? { fit: { fits: L.fit.fits, needed_mm: L.fit.needed_mm, ...(L.fit.asked_mm ? { asked_mm: L.fit.asked_mm } : {}), scale: L.fit.scale } } : {}),
     outline_mm: frontOutline(L),
+    ...(L.proposal ? { layout: { goal: L.proposal.id, asked: L.proposal.asked, label: L.proposal.label, fill_ratio: L.proposal.fill_ratio, layers: L.proposal.layers, why: L.proposal.why, source: L.proposal.source } } : {}),
   };
   const reportBytes = new TextEncoder().encode(JSON.stringify(report, null, 2) + "\n");
   files.set("report.json", reportBytes);

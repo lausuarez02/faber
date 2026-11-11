@@ -4,7 +4,7 @@
 // auto sizes, and a full CAD design of an egg drawn as a custom outline.
 import { describe, expect, it } from "vitest";
 import { checkFit } from "../src/fit.ts";
-import { layoutCase } from "../src/layout.ts";
+import { layoutCase } from "../src/proposals.ts";
 import { OutlineError, parseOutline, presetOutline, signedArea } from "../src/outline.ts";
 import { contains, type Plan, polyDistance, sizePoly } from "../src/plan.ts";
 import { BEAN_POINTS, catalogX, EGG_POINTS, EGG_SVG, eggProject, HEART_SVG, partsX } from "./custom-fixtures.ts";

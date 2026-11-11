@@ -81,6 +81,8 @@ export interface CaseReport {
   fit?: { fits: boolean; needed_mm: { w: number; h: number; d: number }; asked_mm?: { w?: number; h?: number; d?: number }; scale: number };
   /** Round 7: the outer outline seen from the front (case frame, mm): the real silhouette, for previews. */
   outline_mm?: [number, number][];
+  /** Round 8: the distribution proposal the case was built from (enclosure.layout; "auto" = balanced), its fill ratio (parts' volume / cavity) and layers. */
+  layout?: { goal: string; asked: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string };
 }
 
 /** Meshes for the web Case view (GET /api/case/mesh). Positions are float32 xyz in the case frame, base64. */

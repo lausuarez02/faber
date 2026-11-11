@@ -6,8 +6,9 @@
 export type { CaseFile, CaseMesh, CaseReport, FitCheck, FitCheckId, PlacedPart, Vec3 } from "./types.ts";
 export { CASE_SHAPES } from "@jumper/project-format";
 export { generateCase, layoutInput, frontOutline, caseHash, pocketVerdict, pocketText, resolveEnclosure, readManifest, readReport, readMeshCache, writeMeshCache, writeCaseFiles, ENGINE_VERSION, type Generated, type GenerateOptions, type CaseManifest } from "./engine.ts";
-export { layoutCase, resolveParams, toCase, specWithProps, LIPO_CELLS, type Layout, type LayoutFit, type LayoutOptions, type Placed, type Opening } from "./layout.ts";
+export { stackLayout, autoLayouts, resolveParams, toCase, specWithProps, LIPO_CELLS, type Layout, type LayoutFit, type LayoutOptions, type Placed, type Opening } from "./layout.ts";
 export { parseOutline, presetPoints, presetOutline, svgPathToPolylines, catmullRomClosed, OutlineError, type ParsedOutline, type Pt } from "./outline.ts";
+export { layoutCase, proposeLayouts, proposeWithLayouts, proposalsFor, goalOf, goalCost, layersOf, volumeOf, LAYOUT_GOALS, type LayoutGoal, type LayoutProposal, type LayoutProposals, type ProposalLayer, type ProposalPlacement, type ProposalViews, type ProposeOptions } from "./proposals.ts";
 export { checkFit, roleOf, type FitReport, type FitMiss, type FitSuggestion, type FitPreviewPart, type FitInput } from "./fit.ts";
 export { resolveMech, type PartMech } from "./mech.ts";
 export { checkMesh, readStl, stlBinary, weld, type Mesh, type MeshCheck } from "./mesh.ts";

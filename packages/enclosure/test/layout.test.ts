@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { layoutCase } from "../src/layout.ts";
+import { layoutCase } from "../src/proposals.ts";
 import { contains, sizePlan } from "../src/plan.ts";
 import { resolveMech, ROTATIONS } from "../src/mech.ts";
 import { pocketVerdict } from "../src/engine.ts";
