@@ -57,7 +57,9 @@ export type Fault =
   | { kind: "latency"; ms: number }
   | { kind: "http_error"; status: number; host?: string; path?: string; count?: number }
   | { kind: "timeout"; host?: string }
-  | { kind: "dns_fail"; host?: string };
+  | { kind: "dns_fail"; host?: string }
+  /** Weak Wi-Fi signal: the RSSI the firmware reads (default -85 dBm). Traffic is not slowed; add a latency fault for that. */
+  | { kind: "weak_signal"; rssi?: number };
 
 interface Decision {
   ok: boolean;
@@ -123,6 +125,7 @@ export class DeviceNet {
   private wss = new WebSocketServer({ noServer: true });
   private clock: Clock;
   private secrets: Map<string, string>;
+  private faultListeners = new Set<(faults: Fault[]) => void>();
 
   constructor(private opts: DeviceNetOptions) {
     this.secrets = opts.secrets ?? new Map();
@@ -138,6 +141,17 @@ export class DeviceNet {
 
   get config(): NetworkConfig {
     return this.opts.config;
+  }
+
+  /** The sandbox CA (its public certificate goes to firmware built with the Wi-Fi shim). */
+  get ca(): SandboxCA {
+    return this.opts.ca;
+  }
+
+  /** Called whenever faults change (the netstack follows wifi_drop and weak_signal). */
+  onFaults(cb: (faults: Fault[]) => void): () => void {
+    this.faultListeners.add(cb);
+    return () => void this.faultListeners.delete(cb);
   }
 
   // ---------------------------------------------------------------- policy
@@ -611,6 +625,8 @@ export class DeviceNet {
   inject(f: Fault): string {
     this.faults.push({ ...f });
     this.log.push({ kind: "fault", source: "fault", summary: `fault on: ${JSON.stringify(f)}` });
+    // Listeners first: the netstack takes the link down before the flows die, so their resets are lost like on real Wi-Fi.
+    for (const l of this.faultListeners) l(this.faults);
     if (f.kind === "wifi_drop") for (const s of [...this.flows]) s.destroy();
     return f.kind;
   }
@@ -618,6 +634,7 @@ export class DeviceNet {
   clearFaults(): void {
     this.faults = [];
     this.log.push({ kind: "fault", source: "fault", summary: "faults cleared" });
+    for (const l of this.faultListeners) l(this.faults);
   }
 
   close(): void {

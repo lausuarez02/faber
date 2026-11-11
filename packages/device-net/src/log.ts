@@ -10,7 +10,7 @@ export interface NetEvent {
   seq: number;
   /** ms since the network started (wall clock in this prototype; virtual time once a backend drives it). */
   t_ms: number;
-  kind: "dns" | "connect" | "http" | "ws" | "mqtt" | "udp" | "blocked" | "fault";
+  kind: "dns" | "connect" | "http" | "ws" | "mqtt" | "udp" | "blocked" | "fault" | "wifi" | "dhcp";
   host?: string;
   port?: number;
   tls?: "inspect" | "passthrough" | "none";

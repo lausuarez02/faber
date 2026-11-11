@@ -14,7 +14,7 @@ export const DEVICE_NET_TOOLS = [
     title: "Device network log",
     description:
       "Everything the simulated device did on the network: DNS lookups, HTTP requests (method, host, path, status, bytes, time, who answered: mock / cassette / internet / fault), WebSocket and MQTT sessions with frame counts and samples, and blocked attempts with why and fix. Secrets show as [secret:NAME], never their value. Pass since (a seq) for new entries only, kind or host to filter.",
-    inputSchema: { type: "object", properties: { since: { type: "number" }, limit: { type: "number" }, kind: { type: "string", enum: ["dns", "http", "ws", "mqtt", "connect", "udp", "blocked", "fault"] }, host: { type: "string" } } },
+    inputSchema: { type: "object", properties: { since: { type: "number" }, limit: { type: "number" }, kind: { type: "string", enum: ["dns", "http", "ws", "mqtt", "connect", "udp", "blocked", "fault", "wifi", "dhcp"] }, host: { type: "string" } } },
     readOnly: true,
   },
   {
