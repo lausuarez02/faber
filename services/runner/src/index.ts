@@ -16,3 +16,10 @@ export { ESP_IDF_IMAGE, PLATFORMIO_IMAGE, ensureToolchainImage } from "./lang/to
 export type { ToolchainImage } from "./lang/toolchain.ts";
 export { parsePlatformioIni } from "./lang/build-platformio.ts";
 export { uf2ToFlash, flashToIntelHex, espPartitions, padFlash, isUf2 } from "./lang/images.ts";
+export { ARDUINO_CLI_VERSION, NATIVE_CORES, SETUP_FAMILIES, nativeArduinoDir, nativeCoreInstalled, nativeFamilyOf, installNativeCore, compileNative } from "./native/arduino.ts";
+export type { NativeFamily, NativeCore } from "./native/arduino.ts";
+export { installNativeQemu, installNativeRenode, qemuBuildPrereqs } from "./native/emulators.ts";
+export { SETUP_TARGETS, setupTargetOf, setupNative, nativeStatus, runtimeSummary } from "./native/setup.ts";
+export type { SetupStep, NativeComponentStatus } from "./native/setup.ts";
+export { runtimeSetting, probeDocker, jumperHome } from "@jumper/sim-backends/node";
+export { arduinoRuntimeFor, canBuildArduino, setupNameFor } from "./runtime.ts";

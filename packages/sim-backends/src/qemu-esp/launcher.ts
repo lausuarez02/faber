@@ -5,6 +5,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { openSync, closeSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { ESP_CHIPS, type EspChip } from "./chips.ts";
+import { nativeQemuBinary, nativeQemuDir, nativeQemuInstalled, pickRuntime, probeDocker } from "../runtime.ts";
 
 /**
  * Bridge protocol 5: GPIO + matrix + interrupts, UART0-2, I2C on every chip (two buses on the ESP32),
@@ -18,11 +19,17 @@ export const EMULATOR_LABEL = "jumper.emulator";
 export const OWNER_LABEL = "jumper.owner-pid";
 
 /**
- * Docker (default) or Jumper's patched QEMU built on this machine (JUMPER_QEMU_ESP_RUNTIME=native:
- * qemu-system-xtensa / qemu-system-riscv32 on PATH, built from toolchains/qemu-esp's patches).
+ * Docker or Jumper's patched QEMU built on this machine (round 11: ~/.jumper/emulators/qemu-esp/<tag>,
+ * installed by `jumper setup esp32`; else qemu-system-* on PATH). JUMPER_QEMU_ESP_RUNTIME=docker|native
+ * forces one; otherwise JUMPER_RUNTIME (auto: Docker when it answers and has the image, else native
+ * when installed).
  */
 export function qemuRuntime(): "docker" | "native" {
-  return process.env.JUMPER_QEMU_ESP_RUNTIME === "native" ? "native" : "docker";
+  return pickRuntime({
+    override: process.env.JUMPER_QEMU_ESP_RUNTIME,
+    nativeInstalled: nativeQemuInstalled,
+    dockerReady: () => spawnSync("docker", ["image", "inspect", process.env.JUMPER_QEMU_ESP_IMAGE ?? QEMU_ESP_IMAGE], { stdio: "ignore", timeout: 10_000 }).status === 0,
+  });
 }
 
 export interface QemuLaunchOptions {
@@ -111,6 +118,7 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
     ];
   } else {
     argv = qemuArgs(o, o.flashImage, "127.0.0.1");
+    argv[0] = nativeQemuBinary(argv[0]!);
   }
   const child = spawn(argv[0]!, argv.slice(1), { stdio: ["ignore", out, out] });
   if (typeof out === "number") closeSync(out);
@@ -135,14 +143,19 @@ export function qemuImageAvailable(image = QEMU_ESP_IMAGE): boolean {
  */
 export function qemuPreflight(o: { runtime?: "docker" | "native"; image?: string; chip?: EspChip } = {}): string | undefined {
   if ((o.runtime ?? qemuRuntime()) === "native") {
-    const bin = ESP_CHIPS[o.chip ?? "esp32"].qemu;
+    const name = ESP_CHIPS[o.chip ?? "esp32"].qemu;
+    const bin = nativeQemuBinary(name);
     const r = spawnSync(bin, ["--version"], { stdio: "ignore", timeout: 10_000 });
-    return r.status === 0 ? undefined : `${bin} is not on PATH, so the ESP32 emulator cannot start (runtime "native"). Fix: install Jumper's patched QEMU (toolchains/qemu-esp) or use runtime "docker".`;
+    if (r.status === 0) return undefined;
+    const docker = probeDocker();
+    return `the native ESP32 emulator is not installed (no ${name} in ${nativeQemuDir()}/bin or on PATH)${docker.ok ? "" : `, and Docker cannot run it instead: ${docker.why}`}. Fix: run \`jumper setup esp32\` (builds Jumper's patched QEMU on this machine, about 3 minutes)${docker.ok ? "" : ", or start Docker Desktop"}, then press Run again.`;
   }
   const image = o.image ?? QEMU_ESP_IMAGE;
-  const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { stdio: "ignore", timeout: 15_000 });
-  if (info.error || info.status !== 0) {
-    return "Docker is not running, so the ESP32 emulator (QEMU in a container) cannot start. Fix: start Docker Desktop, then press Run again.";
+  const probe = probeDocker();
+  if (!probe.ok) {
+    return nativeQemuInstalled()
+      ? `Docker is not usable (${probe.why}), and the runtime is forced to Docker, so the ESP32 emulator cannot start. Fix: unset JUMPER_RUNTIME / JUMPER_QEMU_ESP_RUNTIME (Jumper's native QEMU is installed and runs without Docker), or start Docker Desktop, then press Run again.`
+      : `Docker is not usable (${probe.why}), so the ESP32 emulator (QEMU in a container) cannot start, and Jumper's native QEMU is not installed either. Fix: run \`jumper setup esp32\` to install it natively (no Docker needed), or start Docker Desktop, then press Run again.`;
   }
   const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
   if (img.status !== 0) {

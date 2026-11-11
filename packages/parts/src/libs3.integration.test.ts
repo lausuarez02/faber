@@ -7,14 +7,13 @@
 // When Docker and the libs3 images are present, the sketches are also rebuilt and must match the
 // committed hexes byte for byte (the images are pinned), and the Adafruit NeoPixel sketches (LGPL-3.0:
 // no binary of them is committed) are built and run.
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseProject, type ProjectInput } from "@jumper/project-format";
 import { colorFrameStats, colorFrameAverage, Simulation } from "@jumper/sim-core";
 import { backendFactory } from "@jumper/sim-backends";
-import { buildFirmware, PICO_IMAGE, RUNNER_IMAGE } from "@jumper/runner";
+import { buildFirmware, canBuildArduino } from "@jumper/runner";
 import { registry } from "./registry.gen.ts";
 import { serialLines } from "./lib/firmwareBench.ts";
 
@@ -116,15 +115,8 @@ describe("libs3 sketches on the simulator", { timeout: 120_000 }, () => {
 
 // Rebuilding needs Docker and the libs3 images (CI builds them; locally `ensureImage` builds them
 // on first use, a few minutes). JUMPER_TEST_LIBS3=1 forces it on.
-const imagesReady = (() => {
-  if (process.env.JUMPER_TEST_LIBS3 === "1") return true;
-  try {
-    execFileSync("docker", ["image", "inspect", RUNNER_IMAGE, PICO_IMAGE], { stdio: "ignore", timeout: 15_000 });
-    return true;
-  } catch {
-    return false;
-  }
-})();
+// Round 11: or Jumper's native toolchain (jumper setup avr rp2040), same pinned cores and libraries.
+const imagesReady = process.env.JUMPER_TEST_LIBS3 === "1" || (canBuildArduino("arduino:avr:uno").ok && canBuildArduino("rp2040:rp2040:seeed_xiao_rp2040").ok);
 
 const SKETCHES: [string, Board, string[]][] = [
   ["gc9a01a_uno", "uno", ["Adafruit GC9A01A"]],
@@ -140,10 +132,20 @@ const build = (name: string, board: Board, libraries: string[]) => buildFirmware
 describe.skipIf(!imagesReady)("libs3 sketches build with the pinned images", () => {
   for (const [name, board, libraries] of SKETCHES) {
     it(
-      `${name} builds byte-identical to its committed hex`,
+      `${name} builds byte-identical to its committed hex (native: or behaves the same)`,
       async () => {
         const r = await build(name, board, libraries);
         expect(r.ok, r.logTail).toBe(true);
+        if (r.hex !== hexOf(name) && canBuildArduino(BOARD[board].fqbn).runtime === "native") {
+          // Round 11: a native build uses the same compiler versions built for another host (macOS
+          // vs the image's Linux). Most sketches come out byte-identical; FastLED's differs by a
+          // few bytes of register allocation (GCC is not bit-reproducible across host libcs), so
+          // the native build must do what the committed one does instead.
+          expect(Math.abs(r.hex!.length - hexOf(name).length) / hexOf(name).length).toBeLessThan(0.01);
+          expect(name.startsWith("fastled_"), `${name}: native bytes differ and no behaviour check is defined`).toBe(true);
+          expectStrip("fastled", board, r.hex!);
+          return;
+        }
         expect(r.hex).toBe(hexOf(name));
       },
       600_000,

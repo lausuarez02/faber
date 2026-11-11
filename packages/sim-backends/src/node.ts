@@ -63,3 +63,5 @@ export { QemuEspBackend, EmulatorError, explainEmulatorLog } from "./qemu-esp/ba
 export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, boardMac, qemuImageAvailable, qemuPreflight, qemuRuntime } from "./qemu-esp/launcher.ts";
 export type { QemuNetwork } from "./qemu-esp/launcher.ts";
 export { RENODE_IMAGE, renodeRuntime, renodeUnavailable } from "./renode/launcher.ts";
+export { jumperHome, runtimeSetting, probeDocker, resetDockerProbe, pickRuntime, dockerProbeMs, NATIVE_QEMU_TAG, RENODE_VERSION, nativeQemuDir, nativeQemuBinary, nativeQemuInstalled, nativeRenodeDir, nativeRenodeBinary, nativeRenodeInstalled, jumperRenodeBinary } from "./runtime.ts";
+export type { Runtime, RuntimeSetting, DockerProbe } from "./runtime.ts";
