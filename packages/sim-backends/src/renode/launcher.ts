@@ -71,15 +71,18 @@ export async function reapRenodeContainers(): Promise<number> {
 /** Why the Renode backend cannot start here, with the fix, or undefined when Docker and the image are ready. */
 export function renodeUnavailable(image = RENODE_IMAGE): string | undefined {
   const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
-  if (info.error) {
+  if (info.error && (info.error as NodeJS.ErrnoException).code === "ENOENT") {
     return "This board runs in Renode inside Docker, and the 'docker' command was not found. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then run again.";
+  }
+  if (info.error) {
+    return `This board runs in Renode inside Docker, and Docker did not answer within 15 s (${info.error.message}). Why: Docker Desktop is starting, stuck or out of disk space. Fix: open Docker Desktop and wait until it says running (restart it if it hangs; free disk space if it is full), then run again.`;
   }
   if (info.status !== 0) {
     return `This board runs in Renode inside Docker, and Docker is not running (${(info.stderr || "docker info failed").trim().split("\n")[0]}). Fix: start Docker Desktop (macOS: open -a Docker), wait until it says running, then run again.`;
   }
   const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
   if (img.status !== 0) {
-    return `The Renode emulator image ${image} is not on this machine. Fix: run \`jumper setup renode\` (or \`docker build -t ${image} toolchains/renode\` in the Jumper repo), then run again.`;
+    return `The Renode emulator image ${image} is not on this machine (or Docker cannot read it). Fix: build it once from the Jumper repo with \`docker build -t ${image} toolchains/renode\` (about 1 minute, 650 MB), then run again.`;
   }
   return undefined;
 }

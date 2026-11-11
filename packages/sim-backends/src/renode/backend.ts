@@ -37,6 +37,8 @@ export interface RenodeBackendOptions {
   logLevel?: number;
   /** Extra platform lines for this run (e.g. a Renode sensor model on a bus). */
   extraRepl?: string;
+  /** Tests: start something else that dials the bridge port instead of Renode (no Docker check). */
+  launch?: (o: { runDir: string; port: number }) => RenodeProcess;
 }
 
 type PinListener = (pinId: string, state: PinState, cycle: number) => void;
@@ -229,7 +231,7 @@ export class RenodeBackend implements McuBackend {
     if (this.link) return;
     const fw = this.firmware;
     if (!fw) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (Jumper's build writes what the Renode backend loads).`);
-    const why = this.opts.runtime === "native" ? undefined : renodeUnavailable(this.opts.image);
+    const why = this.opts.runtime === "native" || this.opts.launch ? undefined : renodeUnavailable(this.opts.image);
     if (why) throw new Error(why);
     const t0 = Date.now();
     const runDir = mkdtempSync(join(tmpdir(), "jumper-renode-"));
@@ -265,7 +267,7 @@ export class RenodeBackend implements McuBackend {
       ].join("\n"),
     );
     const logFile = this.opts.logFile ?? join(runDir, "renode.log");
-    this.proc = launchRenode({ runDir, image: this.opts.image, runtime: this.opts.runtime, logFile });
+    this.proc = this.opts.launch ? this.opts.launch({ runDir, port: link.port }) : launchRenode({ runDir, image: this.opts.image, runtime: this.opts.runtime, logFile });
     try {
       this.pump("H");
     } catch (e) {

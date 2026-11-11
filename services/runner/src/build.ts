@@ -240,7 +240,8 @@ async function compile(
   const work = join(cacheDir(), "work", hash);
   rmSync(work, { recursive: true, force: true });
   const sketchOut = join(work, "sketch");
-  for (const [rel, content] of sources) {
+  for (const [rel, raw] of sources) {
+    const content = rel === main && platform.simSketchPrelude ? `${platform.simSketchPrelude}#line 1 "/work/sketch/sketch.ino"\n${raw}` : raw;
     const dest = join(sketchOut, rel === main ? "sketch.ino" : rel);
     mkdirSync(join(dest, ".."), { recursive: true });
     writeFileSync(dest, content);

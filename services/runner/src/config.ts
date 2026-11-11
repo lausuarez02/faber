@@ -45,6 +45,11 @@ export interface Platform {
    * in every C++ file so Serial prints on the hardware UART the simulator reads.
    */
   simSerialHeader?: string;
+  /**
+   * Lines put in front of the main .ino of the simulator build (then `#line 1`, so diagnostics keep
+   * the person's line numbers), for cores where a header in every file would break the core itself.
+   */
+  simSketchPrelude?: string;
   /** The image writes <sketch>.ino.sim.hex (the whole flash the simulator loads), use it over <sketch>.ino.hex. */
   simHex?: boolean;
 }
@@ -67,7 +72,16 @@ export const PLATFORMS: readonly Platform[] = [
     dockerfile: "toolchains/arduino-mbed-nano",
     simSerialHeader: "#pragma once\n#ifdef __cplusplus\n#include <Arduino.h>\n#undef Serial\n#define Serial _UART1_\n#endif\n",
   },
-  { prefix: "Seeeduino:nrf52:", image: () => NRF52_IMAGE, examples: ["Seeeduino:nrf52:xiaonRF52840"], dockerfile: "toolchains/arduino-nrf52", simHex: true },
+  {
+    prefix: "Seeeduino:nrf52:",
+    image: () => NRF52_IMAGE,
+    examples: ["Seeeduino:nrf52:xiaonRF52840"],
+    dockerfile: "toolchains/arduino-nrf52",
+    simHex: true,
+    // Serial is TinyUSB's USB CDC object here (the core needs Adafruit_TinyUSB.h in the sketch to link
+    // it); the simulator build prints Serial on Serial1 (UARTE0) instead.
+    simSketchPrelude: "#include <Adafruit_TinyUSB.h>\n#define Serial Serial1\n",
+  },
 ];
 
 export function platformFor(fqbn: string): Platform {
