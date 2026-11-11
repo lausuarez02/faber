@@ -6,8 +6,12 @@ import { openSync, closeSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { ESP_CHIPS, type EspChip } from "./chips.ts";
 
-/** Bridge v4: GPIO, UART0, I2C0 (ESP32), lockstep, pad pull-ups / pull-downs answered in lockstep (round 10). */
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb4";
+/**
+ * Bridge protocol 5: GPIO + matrix + interrupts, UART0-2, I2C on every chip (two buses on the ESP32),
+ * LEDC, SPI, RMT, ADC (round 10 esp-periph) and pad pull-ups / pull-downs answered in lockstep
+ * (round 10 esp-app). Override with JUMPER_QEMU_ESP_IMAGE.
+ */
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb5";
 
 /** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
 export const EMULATOR_LABEL = "jumper.emulator";
@@ -87,4 +91,26 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
 export function qemuImageAvailable(image = QEMU_ESP_IMAGE): boolean {
   const r = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 10_000 });
   return r.status === 0;
+}
+
+/**
+ * Checks that the emulator can start, and says why not with the fix (Docker not running, image
+ * missing, QEMU not on PATH). Returns undefined when it can.
+ */
+export function qemuPreflight(o: { runtime?: "docker" | "native"; image?: string; chip?: EspChip } = {}): string | undefined {
+  if ((o.runtime ?? "docker") === "native") {
+    const bin = ESP_CHIPS[o.chip ?? "esp32"].qemu;
+    const r = spawnSync(bin, ["--version"], { stdio: "ignore", timeout: 10_000 });
+    return r.status === 0 ? undefined : `${bin} is not on PATH, so the ESP32 emulator cannot start (runtime "native"). Fix: install Jumper's patched QEMU (toolchains/qemu-esp) or use runtime "docker".`;
+  }
+  const image = o.image ?? QEMU_ESP_IMAGE;
+  const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { stdio: "ignore", timeout: 15_000 });
+  if (info.error || info.status !== 0) {
+    return "Docker is not running, so the ESP32 emulator (QEMU in a container) cannot start. Fix: start Docker Desktop, then press Run again.";
+  }
+  const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
+  if (img.status !== 0) {
+    return `The ESP32 emulator image ${image} is not installed. Fix: run \`jumper setup esp32\` (or docker build -t ${image} toolchains/qemu-esp).`;
+  }
+  return undefined;
 }

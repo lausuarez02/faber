@@ -98,7 +98,7 @@ Start a project from a template. For a new idea pass folder: true (or a folder n
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `blink`. Default blank. |
+| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `xiao-esp32s3`, `xiao-esp32c3`, `esp32-c3-supermini`, `esp32`, `esp32-s3`, `blink`. Default blank. |
 | `name` | string |  | Project name (default: folder name). |
 | `folder` | boolean \| string |  | true: a new folder named after name; a string: that folder name (slugged, e.g. "plant-waterer"). Created under the server's projects folder; a taken name gets -2, -3… |
 | `overwrite` | boolean |  | Replace an existing jumper.json in the current folder (throws the old project away). |
@@ -363,7 +363,7 @@ Render the canvas to a PNG (parts, wires, glowing LEDs, OLED pixels, HIGH wires 
 
 ### export
 
-Write export/BOM.md (quantities, values, buy links), export/WIRING.md (wire table and nets), export/firmware.hex (when built) and export/TEST-ON-HARDWARE.md (checklist from the fidelity report). Returns the BOM text and an upload command.
+Write export/BOM.md (quantities, values, buy links), export/WIRING.md (wire table and nets), export/firmware.hex (when built; firmware.bin, the merged flash image built for the real board, on ESP32 boards) and export/TEST-ON-HARDWARE.md (checklist from the fidelity report). Returns the BOM text and an upload command.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -608,7 +608,7 @@ No arguments.
 
 ### export_manufacturing
 
-Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).
+Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |

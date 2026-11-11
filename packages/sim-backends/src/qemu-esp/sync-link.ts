@@ -1,7 +1,7 @@
 // A synchronous line link to the QEMU bridge socket, so McuBackend.step() can stay synchronous
 // like every other backend. A worker thread owns the TCP server and the socket; the main thread
 // blocks in Atomics.wait until the worker hands over a batch of lines that ends where QEMU itself
-// blocks (lockstep target "T", or an I2C request "IS"/"IR"). QEMU cannot run ahead in between, so
+// blocks (lockstep target "T", an I2C request "IS"/"IR", or a question "SQ"/"SR"; protocol.ts). QEMU cannot run ahead in between, so
 // nothing is lost or reordered and the result is deterministic.
 import { writeSync } from "node:fs";
 import { Worker } from "node:worker_threads";
@@ -30,7 +30,7 @@ function publish() {
   Atomics.add(ctrl, ${CTRL_SEQ}, 1);
   Atomics.notify(ctrl, ${CTRL_SEQ});
 }
-const blocking = (l) => l.startsWith("T ") || l.startsWith("IS ") || l.startsWith("IR ") || l.startsWith("P ");
+const blocking = (l) => l.startsWith("T ") || l.startsWith("IS ") || l.startsWith("IR ") || l.startsWith("SQ ") || l.startsWith("SR ") || l.startsWith("P ");
 const server = net.createServer((s) => {
   if (sock) { s.destroy(); return; }
   sock = s; s.setNoDelay(true); s.setEncoding("latin1"); server.close();

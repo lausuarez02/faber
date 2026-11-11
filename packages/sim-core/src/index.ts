@@ -85,6 +85,8 @@ export { hashString } from "./hash.ts";
 export { parseBindings, applyVisualState } from "./bindings.ts";
 export type { Binding } from "./bindings.ts";
 export { I2cBus, SpiBus, I2C_FAULTS, SPI_FAULTS, I2C_LOG_BYTES } from "./bus.ts";
+export { I2sBus } from "./i2s.ts";
+export type { I2sBlock, I2sDevice, I2sFormat, I2sRequest, I2sStats } from "./i2s.ts";
 export type { I2cDevice, I2cFault, I2cTransaction, SpiDevice, SpiFault, McuBusPins } from "./bus.ts";
 export { bytesToBase64, base64ToBytes, decodeMonoFrame, monoPixel, monoLitCount, monoToAscii, monoStride } from "./display.ts";
 export type { MonoFrame } from "./display.ts";

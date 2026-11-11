@@ -1,0 +1,50 @@
+{
+  "id": "max98357a",
+  "name": "MAX98357A I2S amplifier (3 W class D)",
+  "category": "output",
+  "description": "Digital audio in (I2S), speaker out: plays the samples the board sends over I2S on a 4 or 8 Ω speaker wired to its + / - terminals. Generic audio output for any sound: tones, clips, streamed audio. Wire BCLK, LRC (word select) and DIN to three free GPIOs and pass them to the I2S driver. SD sets the channel: high or floating = left (mono boards: tie to VIN), GND = shutdown.",
+  "pins": [
+    { "id": "LRC", "label": "LRC", "x": 10, "y": 96, "type": "digital", "protocols": ["i2s-ws"], "description": "Word select (left / right clock). To the board's I2S WS pin." },
+    { "id": "BCLK", "label": "BCLK", "x": 26, "y": 96, "type": "digital", "protocols": ["i2s-bclk"], "description": "Bit clock. To the board's I2S BCLK pin." },
+    { "id": "DIN", "label": "DIN", "x": 42, "y": 96, "type": "digital", "protocols": ["i2s-din"], "description": "Serial audio data in. To the board's I2S data out pin." },
+    { "id": "GAIN", "label": "GAIN", "x": 58, "y": 96, "type": "digital", "description": "Gain: floating 9 dB, GND 12 dB, VIN 6 dB (100 kΩ to GND 15 dB, to VIN 3 dB)." },
+    { "id": "SD", "label": "SD", "x": 74, "y": 96, "type": "digital", "description": "Shutdown and channel: above 1.4 V left, 0.77 to 1.4 V right, 0.16 to 0.77 V (L+R)/2, below 0.16 V off. Floating = left (internal pull-up)." },
+    { "id": "GND", "label": "GND", "x": 90, "y": 96, "type": "ground" },
+    { "id": "VIN", "label": "Vin", "x": 106, "y": 96, "type": "power", "voltage": { "min": 2.5, "max": 5.5 }, "description": "2.5 to 5.5 V. 5 V gives the most power." },
+    { "id": "OUT+", "label": "+", "x": 40, "y": 8, "type": "passive", "description": "Speaker +. Bridge-tied output: never connect either speaker terminal to GND." },
+    { "id": "OUT-", "label": "-", "x": 80, "y": 8, "type": "passive", "description": "Speaker -." }
+  ],
+  "size": { "w": 116, "h": 104 },
+  "props": [
+    { "id": "gain_db", "label": "Gain (GAIN pin)", "type": "enum", "default": "9", "options": ["3", "6", "9", "12", "15"], "description": "Set by how the GAIN pin is strapped (floating = 9 dB). Used when the GAIN pin is not wired." }
+  ],
+  "limits": { "maxVoltage": 5.5 },
+  "footprint": "Adafruit-style breakout, 7-pin 0.1\" header + 2-pin screw terminal",
+  "dimensions_mm": { "w": 19, "h": 18, "d": 3 },
+  "mass_g": 2,
+  "current_ma": { "typ": 2.4, "max": 650 },
+  "price_usd": 2.5,
+  "buy_links": [
+    { "vendor": "Adafruit", "url": "https://www.adafruit.com/product/3006" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-MAX98357A.html" },
+    { "vendor": "LCSC", "url": "https://www.lcsc.com/search?q=MAX98357A" }
+  ],
+  "bindings": [
+    { "key": "playing", "type": "boolean", "description": "Audio above -60 dBFS arrived in the last 100 ms." },
+    { "key": "level", "type": "number", "description": "Output loudness 0..1 (RMS of the last block, after gain)." },
+    { "key": "sampleRate", "type": "number", "description": "Sample rate of the incoming I2S stream (Hz)." },
+    { "key": "outVrms", "type": "number", "description": "RMS voltage across the speaker terminals (V)." }
+  ],
+  "tags": ["i2s", "amplifier", "audio", "speaker", "dac", "class d", "sound", "max98357", "output"],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 1.5,
+    "features": [],
+    "source": "Adafruit MAX98357A breakout (19 × 18 mm)"
+  },
+  "sourcing": {
+    "package": "TQFN-16 3 × 3 mm on a breakout",
+    "generic": "MAX98357A I2S class-D amplifier breakout"
+  }
+}

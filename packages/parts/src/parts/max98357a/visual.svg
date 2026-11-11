@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 104" width="116" height="104">
+  <rect x="2" y="14" width="112" height="76" rx="4" fill="#15181D" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="26" y="2" width="68" height="18" rx="2" fill="#1C2027" stroke="#3A4250" stroke-width="1"/>
+  <rect x="44" y="38" width="28" height="28" rx="2" fill="#0D0F12" stroke="#2B313B" stroke-width="1"/>
+  <text x="58" y="34" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#E9EDF2">MAX98357A</text>
+  <text x="58" y="55" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">I2S AMP</text>
+  <g font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">
+    <text x="10" y="86">LRC</text><text x="26" y="86">BCLK</text><text x="42" y="86">DIN</text><text x="58" y="86">GAIN</text>
+    <text x="74" y="86">SD</text><text x="90" y="86">GND</text><text x="106" y="86">VIN</text>
+  </g>
+  <g display="none" data-bind="visible:playing,opacity:level">
+    <path d="M78 44 A12 12 0 0 1 78 60 M84 38 A20 20 0 0 1 84 66" fill="none" stroke="#5CF2A1" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <circle data-pin="LRC" cx="10" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="BCLK" cx="26" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="DIN" cx="42" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="GAIN" cx="58" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="SD" cx="74" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND" cx="90" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="VIN" cx="106" cy="96" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT+" cx="40" cy="8" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT-" cx="80" cy="8" r="3" fill="#C9CED6"/>
+</svg>

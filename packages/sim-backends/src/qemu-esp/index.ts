@@ -1,6 +1,8 @@
-export { ESP_CHIPS, espGpioOf, espPinId } from "./chips.ts";
-export type { EspChip, EspChipInfo } from "./chips.ts";
+export { ESP_CHIPS, espGpioOf, espOutputSource, espPinId } from "./chips.ts";
+export type { EspCapability, EspChip, EspChipInfo, EspOutputSource, EspSignals } from "./chips.ts";
 export { QemuEspBackend, createQemuEspBackend, EmulatorError, explainEmulatorLog } from "./backend.ts";
-export type { QemuEspBackendOptions } from "./backend.ts";
-export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, launchQemu, qemuArgs, qemuImageAvailable } from "./launcher.ts";
+export type { EmulatorErrorCode, EspUartListener, QemuEspBackendOptions } from "./backend.ts";
+export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, launchQemu, qemuArgs, qemuImageAvailable, qemuPreflight } from "./launcher.ts";
+export type { QemuLaunchOptions, QemuProcess } from "./launcher.ts";
 export { parseBridgeLine } from "./protocol.ts";
+export type { BridgeEvent } from "./protocol.ts";
