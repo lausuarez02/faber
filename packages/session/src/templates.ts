@@ -1,4 +1,5 @@
 import type { ProjectInput } from "@jumper/project-format";
+import { MICROPYTHON_OLED_MAIN, MICROPYTHON_SSD1306, micropythonMain, platformioFiles } from "./starters.ts";
 
 /** Starting points for new_project. Each is a jumper.json plus firmware files. */
 export interface Template {
@@ -133,6 +134,54 @@ export const TEMPLATES: Record<string, Template> = {
   "esp32-c3-supermini": espTemplate("esp32-c3-supermini", "c3", "esp32:esp32:nologo_esp32c3_super_mini", "ESP32-C3 SuperMini", "ESP32-C3", "low"),
   esp32: espTemplate("esp32-devkitc", "esp32", "esp32:esp32:esp32", "ESP32 DevKitC", "ESP32", undefined),
   "esp32-s3": espTemplate("esp32-s3-devkitc-1", "s3", "esp32:esp32:esp32s3", "ESP32-S3 DevKitC-1", "ESP32-S3", undefined),
+  // Round 10 (languages): the same boards in other firmware languages.
+  "pico-micropython": {
+    description: "A Raspberry Pi Pico running MicroPython: firmware/main.py blinks the on-board LED and prints to the Serial panel, which is also the REPL.",
+    needs: ["raspberry-pi-pico"],
+    project: (name) => ({
+      format: "jumper/1",
+      name,
+      parts: [{ id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 }],
+      wires: [],
+      firmware: { board: "pico", language: "micropython", dir: "firmware", sketch: "main.py", artifact: "firmware/main.hex", build: { tool: "micropython" } },
+      scenarios: [{ id: "blinks", name: "main.py runs and blinks", steps: [{ expect_serial: "ready", within_ms: 1000 }, { expect_serial: "LED on", within_ms: 600 }, { expect_part: "pico.led", op: "==", value: 1 }, { expect_serial: "LED off", within_ms: 600 }, { expect_part: "pico.led", op: "==", value: 0 }] }],
+    }),
+    files: { "firmware/main.py": micropythonMain({ chip: "rp2040", type: "raspberry-pi-pico" }) },
+  },
+  "pico-micropython-oled": {
+    description: "A Raspberry Pi Pico running MicroPython with an SSD1306 OLED on I2C0 (GP4 / GP5): main.py draws a counter and a bar with a small ssd1306.py driver.",
+    needs: ["raspberry-pi-pico", "ssd1306-oled-i2c"],
+    project: (name) => ({
+      format: "jumper/1",
+      name,
+      parts: [
+        { id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 },
+        { id: "oled", type: "ssd1306-oled-i2c", x: 320, y: -40 },
+      ],
+      wires: [
+        { id: "w1", from: { part: "oled", pin: "GND" }, to: { part: "pico", pin: "GND.1" }, color: "#2B3038" },
+        { id: "w2", from: { part: "oled", pin: "VCC" }, to: { part: "pico", pin: "3V3" }, color: "#FF4D2E" },
+        { id: "w3", from: { part: "oled", pin: "SDA" }, to: { part: "pico", pin: "GP4" }, color: "#F2E14A" },
+        { id: "w4", from: { part: "oled", pin: "SCL" }, to: { part: "pico", pin: "GP5" }, color: "#B47CFF" },
+      ],
+      firmware: { board: "pico", language: "micropython", dir: "firmware", sketch: "main.py", artifact: "firmware/main.hex", build: { tool: "micropython" } },
+      scenarios: [{ id: "draws", name: "The OLED shows frames", steps: [{ expect_serial: "i2c scan: ['0x3c']", within_ms: 1500 }, { expect_serial: "frame 2", within_ms: 2000 }, { expect_part: "oled.blank", op: "==", value: false, within_ms: 500 }] }],
+    }),
+    files: { "firmware/main.py": MICROPYTHON_OLED_MAIN, "firmware/ssd1306.py": MICROPYTHON_SSD1306 },
+  },
+  "uno-platformio": {
+    description: "An Arduino Uno built with PlatformIO: firmware/platformio.ini ([env:uno], atmelavr) and firmware/src/main.cpp blinking D13.",
+    needs: ["arduino-uno"],
+    project: (name) => ({
+      format: "jumper/1",
+      name,
+      parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }],
+      wires: [],
+      firmware: { board: "uno", language: "platformio", dir: "firmware", sketch: "platformio.ini", artifact: "firmware/main.hex", build: { tool: "platformio", env: "uno" } },
+      scenarios: [{ id: "blinks", name: "D13 blinks", steps: [{ expect_serial: "ready", within_ms: 500 }, { expect_serial: "LED on", within_ms: 600 }, { expect_pin: "uno.D13", level: "high" }] }],
+    }),
+    files: platformioFiles({ chip: "atmega328p", type: "arduino-uno" }),
+  },
   blink: {
     description: "Uno + 220 Ω + red LED on D13, the Blink sketch and two passing scenarios.",
     needs: ["arduino-uno", "resistor", "led"],

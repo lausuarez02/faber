@@ -263,6 +263,18 @@ export class Engine {
     return this.serial;
   }
 
+  /**
+   * Round 10: type into the board's console (USB serial / UART0), e.g. a MicroPython REPL line or a
+   * command an Arduino sketch reads with Serial.read(). Only the simulation running in this page can
+   * take input; returns false (nothing sent) when none runs here.
+   */
+  sendSerial(text: string): boolean {
+    const sim = this.sim;
+    if (!sim || (this.external && !this.localRun)) return false;
+    for (const b of new TextEncoder().encode(text)) sim.writeSerial(b);
+    return true;
+  }
+
   // ------------------------------------------------------------- follow / replay
 
   /** Switch to showing states pushed from outside (live agent session or replay). Stops the local sim. */

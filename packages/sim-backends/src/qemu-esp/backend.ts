@@ -61,6 +61,13 @@ export interface QemuEspBackendOptions {
   labels?: Record<string, string>;
   /** Every bridge line QEMU sends, for debugging. */
   onBridgeLine?: (line: string) => void;
+  /**
+   * PSRAM in MB (QEMU `-m`), for firmware built to expect it (MicroPython's generic ESP32-S3
+   * image enables PSRAM and stalls without it). Default: none.
+   */
+  psramMB?: number;
+  /** Extra QEMU arguments, appended as is. */
+  extraArgs?: readonly string[];
 }
 
 /** ESP32 datasheet: VIL max 0.25 × VDD, VIH min 0.75 × VDD. */
@@ -471,6 +478,7 @@ export class QemuEspBackend implements McuBackend {
       network: this.opts.network,
       logFile: this.logPath,
       ...(this.opts.labels ? { labels: this.opts.labels } : {}),
+      extraArgs: [...(this.opts.psramMB ? ["-m", `${this.opts.psramMB}M`] : []), ...(this.opts.extraArgs ?? [])],
     });
     this.proc = proc;
     const gone = () => {

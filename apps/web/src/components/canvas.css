@@ -79,13 +79,50 @@
 .serial-filter input::-webkit-search-cancel-button {
   display: none;
 }
+/* Round 10: a line typed under the output goes to the board (MicroPython REPL, Serial.read()). */
+.serial-send {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 8px;
+  padding: 0 4px 0 8px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-canvas);
+}
+.serial-send:focus-within {
+  border-color: var(--primary);
+}
+.serial-send input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 16px; /* 16 px: no zoom on focus on phones */
+}
+@media (min-width: 720px) {
+  .serial-send input {
+    font-size: 12px;
+  }
+}
+.serial-send-note {
+  margin: 0 12px 8px;
+  font-size: 12px;
+  color: var(--warn);
+}
 .console-out[data-filtered]:empty::before {
   content: "No line matches the filter yet.";
 }
 .serial-newest {
   position: absolute;
   right: 12px;
-  bottom: 10px;
+  bottom: 50px;
   height: 26px;
   padding: 0 10px;
   border: 1px solid var(--border-strong);

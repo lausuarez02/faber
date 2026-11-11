@@ -1,5 +1,6 @@
-import type { PartDefinition, PartRegistry, PartSpec } from "@jumper/sim-core";
+import { isProcessBackend, type PartDefinition, type PartRegistry, type PartSpec } from "@jumper/sim-core";
 import { LIPO_CELLS } from "@jumper/enclosure";
+import { LANGUAGES, languagesFor } from "@jumper/runner";
 
 /**
  * Round 5, track "agent" (decision 0003, C5 `plan_device`): turn a wish ("a pet that fits in my
@@ -51,6 +52,11 @@ export interface DevicePlan {
   summary: string;
   question?: string;
   board: { type: string; name: string; why: string };
+  /**
+   * Round 10: the firmware language to write, and every language verified on this board
+   * (set_firmware switches; docs/firmware-languages.md has the whole matrix).
+   */
+  language: { suggested: string; why: string; verified_on_board: string[] };
   bom: BomLine[];
   size_mm: { parts: { w: number; h: number; d: number }; enclosure: { w: number; h: number; d: number }; note: string };
   battery?: { type: string; capacity_mah: number; avg_ma: number; hours: number; note: string };
@@ -216,13 +222,23 @@ function currentMa(spec: PartSpec): { ma: number; from: string } | undefined {
 const fidelityOf = (d: PartDefinition) => (d.fidelity.origin === "agent-made" ? "behavioral, unverified" : d.fidelity.level);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean): { def: PartDefinition; why: string } {
+function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean, wantsLang?: string): { def: PartDefinition; why: string } {
   const all = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
   if (!all.length) throw new Error("the catalog has no boards");
   // Picked on its own, a board must be placeable and run in the page (avr8js, rp2040js); boards that run
-  // in an emulator process (Renode, needs Docker) or are only planned are chosen when asked for by name.
-  const inPage = all.filter((d) => d.spec.availability?.status !== "planned" && d.spec.mcu?.backend !== "renode");
-  const boards = inPage.length ? inPage : all;
+  // in an emulator process (ESP32 in QEMU, STM32 / nRF52 in Renode: they need Docker) or are only
+  // planned are chosen when asked for by name.
+  const inPage = all.filter((d) => d.spec.availability?.status !== "planned" && !isProcessBackend(d.spec.mcu?.backend));
+  let boards = inPage.length ? inPage : all;
+  // Round 10: a person who asked for a language gets a board that runs it.
+  if (wantsLang && !c.board) {
+    const able = boards.filter((d) => languagesFor(d.spec.mcu!.chip).includes(wantsLang as never));
+    if (able.length) {
+      boards = able;
+      const pico = able.find((d) => d.spec.id === "raspberry-pi-pico");
+      if (!small && pico) return { def: pico, why: `you want ${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label}, and the Raspberry Pi Pico runs it in Jumper (the official firmware, verified), with plenty of pins and USB` };
+    }
+  }
   if (c.board) {
     const d = reg.get(c.board);
     if (!d || d.spec.category !== "board") {
@@ -332,7 +348,8 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
 
   // Board.
   const small = compact || pocket || (!!sizeLimit && sizeLimit.w * sizeLimit.h < 120 * 80);
-  const { def: boardDef, why: boardWhy } = chooseBoard(reg, c, needs5v, small);
+  const wantsLang = /\b(micro ?python|python|\.py)\b/.test(g) ? "micropython" : /\besp-?idf\b/.test(g) ? "esp-idf" : /\bplatform ?io\b/.test(g) ? "platformio" : undefined;
+  const { def: boardDef, why: boardWhy } = chooseBoard(reg, c, needs5v, small, wantsLang);
   const b = boardDef.spec;
   const bcur = currentMa(b);
   bom.unshift({
@@ -588,6 +605,15 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     summary,
     ...(question ? { question } : {}),
     board: { type: b.id, name: b.name, why: boardWhy },
+    language: (() => {
+      const verified = languagesFor(b.mcu?.chip ?? "");
+      if (wantsLang && verified.includes(wantsLang as never)) return { suggested: wantsLang, why: `you asked for ${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label}: set_firmware {"language": "${wantsLang}"} after placing the board`, verified_on_board: verified };
+      return {
+        suggested: "arduino",
+        why: wantsLang ? `${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label} is not verified on the ${b.name} in Jumper; Arduino is (docs/firmware-languages.md)` : "Arduino (C++) has the most examples and libraries for these parts",
+        verified_on_board: verified,
+      };
+    })(),
     bom,
     size_mm: { parts: partsBox, enclosure, note: sizeNote },
     size_budget,

@@ -15,11 +15,13 @@ import {
   type Scenario,
   type Wire,
   normalizeScenarioStep,
+  firmwareLanguage,
+  type FirmwareLanguage,
 } from "@jumper/project-format";
 import { AGENT_MADE_LABEL, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
 import { isProcessBackend, PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
-import { buildFirmware, outputFormatFor, type BuildRequest, type BuildResult } from "@jumper/runner";
+import { buildFirmware, CHIP_IMAGE, chipFamily, LANGUAGES, languagesFor, microPythonErrors, outputFormatFor, supportOf, type BuildRequest, type BuildResult } from "@jumper/runner";
 import { checkDesign, type DesignIssue } from "./drc.ts";
 import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
 import { bomMarkdown, solderedAssemblyMarkdown, wiringMarkdown } from "./exporter.ts";
@@ -53,6 +55,7 @@ import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, firmwareBoardOf, SimHost, type Frame, type PrepareProgress } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
+import { starterFor } from "./starters.ts";
 import { EXT_OPS, type ExtOpContext } from "./tools/index.ts";
 import { isProjectPartRegistry, refreshProjectParts } from "./tools/agentparts.ts";
 import { viewerUrlFor } from "./agent-runtime.ts";
@@ -928,6 +931,52 @@ export class ProjectSession {
     return { libraries: libs, step: { id: step.id, why: step.why } };
   }
 
+  /** Round 10: pick the firmware language (main file, build tool, artifact), with a starter when there is no main file. */
+  async setFirmware(args: { language: string; board?: string; firmware?: string; target?: string; env?: string; keep_files?: boolean; why?: string }, ctx: OpCtx): Promise<unknown> {
+    const usable = ["arduino", "micropython", "esp-idf", "platformio"] as const;
+    const language = args.language as (typeof usable)[number];
+    if (!usable.includes(language)) {
+      const planned = ["rust", "zephyr"].includes(String(args.language));
+      fail("bad-language", `Language '${args.language}' cannot be built in Jumper${planned ? " yet" : ""}`, planned ? `${args.language === "rust" ? "Rust" : "Zephyr"} is planned (no toolchain image yet, docs/firmware-languages.md)` : "it is not one Jumper knows", `pass one of ${usable.map((l) => `"${l}"`).join(", ")}`);
+    }
+    const boardPart = args.board ? findPart(this.project, args.board) : (this.project.firmware ? this.project.parts.find((p) => p.id === this.project.firmware!.board) : undefined) ?? this.project.parts.find((p) => this.registry.get(p.type)?.spec.mcu);
+    const mcu = boardPart ? this.registry.get(boardPart.type)?.spec.mcu : undefined;
+    if (!boardPart || !mcu) fail("no-board", "set_firmware needs a board", "the project has no microcontroller board", 'place_part a board first, e.g. "raspberry-pi-pico" for MicroPython or "arduino-uno"');
+    const chip = mcu.chip;
+    const sup = supportOf(language, chip);
+    const verified = languagesFor(chip);
+    if (sup.status !== "verified") {
+      fail("language-unsupported", `${LANGUAGES[language].label} does not run on ${boardPart.id} (${chip}) in Jumper yet`, sup.why ?? "nobody has made it work yet", `use one of ${verified.map((l) => `"${l}"`).join(", ")} on this board, or a board where it is verified (docs/firmware-languages.md)`);
+    }
+    const st = starterFor(language, { chip, type: boardPart.type, ...(mcu.fqbn ? { fqbn: mcu.fqbn } : {}) });
+    const build: Record<string, string> = { ...st.build, ...(args.firmware ? { firmware: args.firmware } : {}), ...(args.target ? { target: args.target } : {}), ...(args.env ? { env: args.env } : {}) };
+    const prev = this.project.firmware;
+    const fw = { ...(prev?.libraries && language === "arduino" ? { libraries: prev.libraries } : {}), board: boardPart.id, language, dir: "firmware" as const, sketch: st.sketch, artifact: st.artifact, build } as NonNullable<Project["firmware"]>;
+    const files: Record<string, string> = {};
+    const written: string[] = [];
+    if (!args.keep_files) {
+      for (const [rel, text] of Object.entries(st.files)) {
+        if (!existsSync(join(this.dir, rel))) {
+          files[rel] = text;
+          written.push(rel);
+        }
+      }
+    }
+    const step = this.commit(ctx, `set_firmware ${language}`, { ...this.project, firmware: fw }, files);
+    ctx.summary = `firmware language: ${LANGUAGES[language].label}`;
+    return {
+      language,
+      board: boardPart.id,
+      main: `firmware/${st.sketch}`,
+      artifact: st.artifact,
+      build,
+      ...(written.length ? { wrote: written } : {}),
+      languages_on_this_board: verified,
+      next: language === "micropython" ? "write_file firmware/main.py (and modules next to it), then run: print() shows in the Serial panel, which is also the REPL" : `write_file firmware/${st.sketch}, then run (it builds first)`,
+      step: { id: step.id, why: step.why },
+    };
+  }
+
   async setWorld(args: { world: Record<string, unknown> | null; why?: string }, ctx: OpCtx): Promise<unknown> {
     if (args.world === undefined) fail("missing-arg", "set_world needs 'world'", "no world was given", 'pass e.g. { "world": { "arena": { "width": 300, "height": 200 }, "obstacles": [{ "id": "box", "shape": "box", "x": 150, "y": 100, "w": 30, "h": 30 }], "robot": { "start": { "x": 40, "y": 40, "heading": 0 } } } } (null removes it)');
     let next: Project;
@@ -974,6 +1023,21 @@ export class ProjectSession {
     const isSketch = /\.(ino|pde)$/.test(rel);
     let next = this.project;
     const notes: string[] = [];
+    // Round 10: the first firmware/main.py on a board that runs MicroPython makes it a MicroPython project.
+    if (rel === "firmware/main.py" && firmwareLanguage(next.firmware) !== "micropython") {
+      const fw = next.firmware;
+      const board = fw ? next.parts.find((p) => p.id === fw.board) : next.parts.find((p) => this.registry.get(p.type)?.spec.mcu);
+      const chip = board ? this.registry.get(board.type)?.spec.mcu?.chip : undefined;
+      const mainAbs = fw?.sketch ? join(this.dir, "firmware", fw.sketch) : undefined;
+      const untouched = !mainAbs || !existsSync(mainAbs) || TEMPLATE_SOURCES.has(readFileSync(mainAbs, "utf8").trim());
+      if (board && chip && supportOf("micropython", chip).status === "verified" && (!fw || (firmwareLanguage(fw) === "arduino" && untouched))) {
+        const st = starterFor("micropython", { chip, type: board.type });
+        next = { ...next, firmware: { board: board.id, language: "micropython", dir: "firmware", sketch: st.sketch, artifact: st.artifact, build: { tool: "micropython" } } as NonNullable<Project["firmware"]> };
+        notes.push(`the project is MicroPython now: ${rel} runs on ${board.id} (MicroPython ${"1.29.0"}); print() shows in the Serial panel`);
+      } else if (fw && firmwareLanguage(fw) === "arduino") {
+        notes.push(chip && supportOf("micropython", chip).status !== "verified" ? `${rel} is not used: MicroPython does not run on ${board?.id} (${chip}) in Jumper (${supportOf("micropython", chip).why})` : `${rel} is not used: this project's firmware is Arduino (firmware/${fw.sketch}). To switch, call set_firmware {"language": "micropython"}`);
+      }
+    }
     if (isSketch) {
       if (!next.firmware) {
         const board = next.parts.find((p) => this.registry.get(p.type)?.spec.mcu);
@@ -1031,6 +1095,7 @@ export class ProjectSession {
     if (!fw) return undefined;
     const board = this.project.parts.find((p) => p.id === fw.board);
     const mcu = board ? this.registry.get(board.type)?.spec.mcu : undefined;
+    const language = firmwareLanguage(fw);
     const platform = (f: string | undefined) => f?.split(":").slice(0, 2).join(":");
     // A firmware block written for another board family (an Uno's FQBN after the board became an
     // ESP32) builds for the board that is there now.
@@ -1038,19 +1103,42 @@ export class ProjectSession {
     const fqbn = own ?? mcu?.fqbn ?? "arduino:avr:uno";
     // Round 10 (decision 0006): the simulator may need a slightly different build of the same
     // sketch (Serial on UART0 instead of USB CDC, DIO flash): the board's toolchain says so.
-    const sim = mcu?.toolchain?.simFqbn && fqbn === mcu.fqbn ? { fqbn: mcu.toolchain.simFqbn, props: mcu.toolchain.simBuildProperties ?? [], note: mcu.toolchain.simNote } : { fqbn, props: [] as string[], note: undefined };
-    const format = outputFormatFor(sim.fqbn);
+    const sim = language === "arduino" && mcu?.toolchain?.simFqbn && fqbn === mcu.fqbn ? { fqbn: mcu.toolchain.simFqbn, props: mcu.toolchain.simBuildProperties ?? [], note: mcu.toolchain.simNote } : { fqbn, props: [] as string[], note: undefined };
+    // What the emulator loads: Intel HEX (AVR, RP2040, Renode boards) or a flash image (ESP32 family),
+    // whatever the language (decision 0006; services/runner/src/lang/registry.ts CHIP_IMAGE).
+    const fam = chipFamily(mcu?.chip);
+    const format: "hex" | "bin" = language === "arduino" ? outputFormatFor(sim.fqbn) : fam && CHIP_IMAGE[fam].format === "esp-flash" ? "bin" : "hex";
     // A .hex artifact name on a board that builds flash images is read and written as .bin.
     const artifact = format === "bin" ? fw.artifact.replace(/\.hex$/i, ".bin") : fw.artifact;
     const sketchAbs = fw.sketch ? join(this.dir, "firmware", fw.sketch) : undefined;
-    return { fw, fqbn, buildFqbn: sim.fqbn, buildProperties: sim.props, simNote: sim.note, format, artifact, deviceFqbn: fqbn, sketchAbs, sketchDir: sketchAbs ? dirname(sketchAbs) : undefined, artifactAbs: join(this.dir, artifact) };
+    // Arduino builds the main sketch's folder; the other languages build the whole firmware/ folder
+    // (ESP-IDF's main/ component, PlatformIO's src/, MicroPython's modules next to main.py).
+    const sketchDir = language === "arduino" || language === "micropython" ? (sketchAbs ? dirname(sketchAbs) : undefined) : join(this.dir, "firmware");
+    return { fw, language, fqbn, chip: mcu?.chip, boardType: board?.type, buildFqbn: sim.fqbn, buildProperties: sim.props, simNote: sim.note, format, artifact, deviceFqbn: fqbn, sketchAbs, sketchDir, artifactAbs: join(this.dir, artifact) };
+  }
+
+  /** Source files of the build, relative to its folder (Arduino: the sketch folder; others recurse). */
+  private sourceFiles(info: NonNullable<ReturnType<ProjectSession["firmwareInfo"]>>): string[] {
+    if (!info.sketchDir || !existsSync(info.sketchDir)) return [];
+    const ext = info.language === "arduino" ? SOURCE_EXT : LANGUAGES[info.language].sourceExt;
+    if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f)).sort();
+    const out: string[] = [];
+    const walk = (d: string) => {
+      for (const n of readdirSync(d).sort()) {
+        if (n === "build" || n === ".pio" || n === "target" || n.startsWith(".") || n === "sdkconfig") continue;
+        const abs = join(d, n);
+        if (statSync(abs).isDirectory()) walk(abs);
+        else if (ext.test(n) || ext.test(relative(info.sketchDir!, abs))) out.push(relative(info.sketchDir!, abs).split(sep).join("/"));
+      }
+    };
+    walk(info.sketchDir);
+    return out;
   }
 
   private firmwareSource(): string {
     const info = this.firmwareInfo();
     if (!info?.sketchDir || !existsSync(info.sketchDir)) return "";
-    return readdirSync(info.sketchDir)
-      .filter((f) => SOURCE_EXT.test(f))
+    return this.sourceFiles(info)
       .map((f) => readFileSync(join(info.sketchDir!, f), "utf8"))
       .join("\n");
   }
@@ -1059,17 +1147,18 @@ export class ProjectSession {
    * What the firmware is built from: board (fqbn), libraries (sorted: their order never changes the
    * build), the main sketch, and every source file in the sketch folder with line endings made LF
    * (a CRLF checkout or editor is the same sketch). `legacy` is the round 6 formula, so build
-   * records written before still count.
+   * records written before still count. Round 10: other languages add the language, chip and build
+   * options in front (Arduino projects keep the exact same hash).
    */
   private sourceHash(legacy = false): string | undefined {
     const info = this.firmwareInfo();
     if (!info?.sketchDir || !existsSync(info.sketchDir)) return undefined;
     const h = createHash("sha256");
     const libs = [...(info.fw.libraries ?? [])];
+    if (info.language !== "arduino") h.update(`lang=${info.language}|chip=${info.chip ?? ""}|board=${info.boardType ?? ""}|${JSON.stringify(info.fw.build ?? {})}\n`);
     h.update(`${info.fqbn}|${(legacy ? libs : libs.map((l) => l.trim()).sort()).join(",")}|${info.fw.sketch}\n`);
     if (info.buildFqbn !== info.fqbn || info.buildProperties.length) h.update(`sim:${info.buildFqbn}|${info.buildProperties.join(",")}\n`);
-    for (const f of readdirSync(info.sketchDir).sort()) {
-      if (!SOURCE_EXT.test(f)) continue;
+    for (const f of this.sourceFiles(info)) {
       const text = readFileSync(join(info.sketchDir, f), "utf8");
       h.update(`${f}\0${legacy ? text : text.replace(/\r\n?/g, "\n")}\0`);
     }
@@ -1099,7 +1188,7 @@ export class ProjectSession {
     // Otherwise compare times; files copied together (opening an example copies the folder) land
     // within a moment of each other, so a source a second newer than the hex is not an edit.
     const hexTime = statSync(info.artifactAbs).mtimeMs;
-    const newest = readdirSync(info.sketchDir!).filter((f) => SOURCE_EXT.test(f)).reduce((m, f) => Math.max(m, statSync(join(info.sketchDir!, f)).mtimeMs), 0);
+    const newest = this.sourceFiles(info).reduce((m, f) => Math.max(m, statSync(join(info.sketchDir!, f)).mtimeMs), 0);
     return newest <= hexTime + 2000 ? "fresh" : "stale";
   }
 
@@ -1154,15 +1243,28 @@ export class ProjectSession {
       const board = this.project.parts.find((p) => this.registry.get(p.type)?.spec.mcu);
       fail("no-firmware", "Nothing to build", board ? "the project has a board but no sketch" : "the project has no board and no sketch", board ? 'write_file("firmware/main.ino", "...") first' : 'place_part "arduino-uno", then write_file("firmware/main.ino", "...")');
     }
+    const lang = LANGUAGES[info.language];
     if (!info.sketchAbs || !existsSync(info.sketchAbs)) {
-      fail("no-sketch", "Nothing to build", `firmware.sketch is ${info.fw.sketch ? `'${info.fw.sketch}' but that file does not exist` : "not set"}`, 'write the sketch with write_file("firmware/main.ino", "...")');
+      fail("no-sketch", "Nothing to build", `firmware.sketch is ${info.fw.sketch ? `'${info.fw.sketch}' but that file does not exist` : "not set"}`, `write the ${info.language === "arduino" ? "sketch" : "main file"} with write_file("firmware/${lang.mainFile}", "...")`);
+    }
+    if (info.language !== "arduino" && info.chip) {
+      const sup = supportOf(info.language, info.chip);
+      if (sup.status !== "verified") {
+        const ok = languagesFor(info.chip).map((l) => `"${l}"`).join(", ");
+        fail("language-unsupported", `${lang.label} does not run on this board (${info.chip}) in Jumper yet`, sup.why ?? "nobody has made it work yet", `use one of ${ok || '"arduino"'} on this board (set_firmware {"language": ...}), or a board where ${lang.label} is verified (docs/firmware-languages.md)`);
+      }
     }
     const displayPrefix = `${relative(this.dir, info.sketchDir!).split(sep).join("/")}/`;
+    const b = info.fw.build;
     const r = await this.builder({
       sketchDir: info.sketchDir!,
-      main: basename(info.sketchAbs),
-      fqbn: info.buildFqbn,
-      ...(info.buildProperties.length ? { buildProperties: info.buildProperties } : {}),
+      main: info.language === "arduino" || info.language === "micropython" ? basename(info.sketchAbs!) : info.fw.sketch!,
+      ...(info.language === "arduino" ? { fqbn: info.buildFqbn, ...(info.buildProperties.length ? { buildProperties: info.buildProperties } : {}) } : { language: info.language }),
+      ...(info.chip ? { chip: info.chip } : {}),
+      ...(info.boardType ? { board: info.boardType } : {}),
+      ...(b?.firmware ? { micropythonFirmware: b.firmware } : {}),
+      ...(b?.target ? { target: b.target } : {}),
+      ...(b?.env ? { env: b.env } : {}),
       libraries: info.fw.libraries ?? [],
       displayPrefix,
       ...(args.force ? { cache: false } : {}),
@@ -1170,9 +1272,12 @@ export class ProjectSession {
     // Hints are written for any project; name this project's real sketch folder.
     for (const d of r.diagnostics ?? []) if (d.hint) d.hint = d.hint.replaceAll("firmware/<sketch folder>/", displayPrefix);
     this.lastBuild = r;
-    // Intel HEX text (AVR, RP2040) or the merged flash image (ESP32 family, without its padding).
-    const image: string | Uint8Array | undefined = r.ok ? (r.hex ?? (r.bin ? new Uint8Array(Buffer.from(r.bin, "base64")) : undefined)) : undefined;
+    // Intel HEX text (AVR, RP2040, Renode boards) or a flash image (ESP32 family, any language).
+    const image: string | Uint8Array | undefined = r.ok ? (r.hex ?? r.binary) : undefined;
     if (r.ok && image !== undefined) {
+      if (typeof image !== "string" && info.format !== "bin") {
+        fail("artifact-format", `The build made a ${r.format ?? "binary"} image, but this board's emulator loads Intel HEX`, `${info.language} on ${info.chip ?? "this board"} gave ${r.format ?? "bytes"}`, "report it: the language registry (services/runner/src/lang/registry.ts) and the board disagree");
+      }
       mkdirSync(dirname(info.artifactAbs), { recursive: true });
       writeFileSync(info.artifactAbs, image);
       mkdirSync(this.metaDir, { recursive: true });
@@ -1192,16 +1297,18 @@ export class ProjectSession {
     const pct = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
     return {
       ok: r.ok,
+      ...(info.language !== "arduino" ? { language: info.language } : {}),
       ...(r.ok ? { artifact: info.artifact } : {}),
       ...(r.ok && info.buildFqbn !== info.fqbn ? { simulator_build: `${info.buildFqbn}${info.buildProperties.length ? ` + ${info.buildProperties.join(" ")}` : ""}${info.simNote ? `: ${info.simNote}` : ""}` } : {}),
       cached: r.cached,
       ms: r.durationMs,
-      ...(r.size ? { size: `flash ${r.size.flash}/${r.size.flashMax} B (${pct(r.size.flash, r.size.flashMax)}), ram ${r.size.ram}/${r.size.ramMax} B (${pct(r.size.ram, r.size.ramMax)})` } : {}),
+      ...(r.size && r.size.flashMax > 0 && r.size.ramMax > 0 ? { size: `flash ${r.size.flash}/${r.size.flashMax} B (${pct(r.size.flash, r.size.flashMax)}), ram ${r.size.ram}/${r.size.ramMax} B (${pct(r.size.ram, r.size.ramMax)})` } : {}),
+      ...(r.summary ? { built: r.summary } : {}),
       ...(r.errors ? { errors: r.diagnostics.filter((d) => d.severity === "error").map(fmtDiag) } : {}),
       ...(r.warnings ? { warnings: r.diagnostics.filter((d) => d.severity === "warning").slice(0, 8).map(fmtDiag) } : {}),
       ...(r.libraries.length ? { libraries: r.libraries } : {}),
       ...(!r.ok && !r.errors ? { log: r.logTail } : {}),
-      next: r.ok ? "run (e.g. run 3000 ms) or run_tests" : "fix the errors (read_file shows the code with the reported line) and build again",
+      next: r.ok ? (info.language === "micropython" ? "run (e.g. run 3000 ms): MicroPython boots, runs main.py, then waits at its REPL (the Serial panel, or run's serial_write)" : "run (e.g. run 3000 ms) or run_tests") : "fix the errors (read_file shows the code with the reported line) and build again",
     };
   }
 
@@ -1216,7 +1323,8 @@ export class ProjectSession {
     const mcu = this.registry.get(this.project.parts.find((p) => p.id === info.fw.board)?.type ?? "")?.spec.mcu;
     const flash = mcu?.toolchain?.flash;
     // ESP32 simulator builds carry Jumper's Wi-Fi / TLS shim, so the device build is always separate.
-    if (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length && info.format !== "bin") {
+    // Other languages (MicroPython, ESP-IDF, PlatformIO) build the same image for both.
+    if (info.language !== "arduino" || (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length && info.format !== "bin")) {
       const st = this.firmwareState();
       const data = this.loadHex();
       if (data === undefined || st !== "fresh") return { error: data === undefined ? "the firmware was never built" : "the sketch changed since the last build", fix: "build (or run) first, then export again" };
@@ -1224,12 +1332,12 @@ export class ProjectSession {
     }
     let r: BuildResult;
     try {
-      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [], target: "device" });
+      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [], purpose: "device" });
     } catch (err) {
       return { error: `the build for the real board (${info.deviceFqbn}) could not run: ${(err as Error).message}`, fix: "start Docker Desktop, then export again" };
     }
     if (!r.ok) return { error: `the sketch does not compile for the real board (${info.deviceFqbn}): ${r.diagnostics.filter((d) => d.severity === "error").map(fmtDiag).slice(0, 3).join(" | ")}`, fix: "fix the errors (build shows them), then export again" };
-    const data = r.hex ?? (r.bin ? new Uint8Array(Buffer.from(r.bin, "base64")) : undefined);
+    const data = r.hex ?? r.binary;
     if (data === undefined) return { error: "the build wrote no firmware file", fix: "build again; if it repeats, report the build log" };
     return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}${info.format === "bin" ? " without Jumper's simulation shims (JUMPER_SIM=0)" : ""}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
   }
@@ -1305,7 +1413,7 @@ export class ProjectSession {
     return { host: this.host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
   }
 
-  async run(args: { ms?: number; duration_ms?: number; speed?: number; reset?: boolean; frames?: boolean }, ctx: OpCtx): Promise<unknown> {
+  async run(args: { ms?: number; duration_ms?: number; speed?: number; reset?: boolean; frames?: boolean; serial_write?: string }, ctx: OpCtx): Promise<unknown> {
     const ms = Number(args.ms ?? args.duration_ms ?? 1000);
     if (!Number.isFinite(ms) || ms <= 0) fail("bad-arg", `run: duration ${args.ms ?? args.duration_ms} is not valid`, "it must be a positive number of milliseconds", "pass e.g. { \"ms\": 3000 }");
     if (ms > 600_000) fail("bad-arg", `run: ${ms} ms is too long for one call`, "one call is capped at 600000 ms (10 virtual minutes)", "run in several calls, or write a scenario");
@@ -1315,6 +1423,8 @@ export class ProjectSession {
     if (args.reset && !restarted) host.reset();
     const serialFrom = host.serialCursor;
     const t0 = host.timeMs;
+    // Round 10: type into the console first (a MicroPython REPL line, a command an Arduino sketch reads).
+    if (typeof args.serial_write === "string") for (const ch of new TextEncoder().encode(args.serial_write.replace(/\r?\n/g, "\r"))) host.sim.writeSerial(ch);
     const frames: Frame[] = [];
     const frameMs = Math.max(20, Math.ceil(ms / 400 / 10) * 10);
     const wall0 = Date.now();
@@ -1324,6 +1434,7 @@ export class ProjectSession {
     const serial = host.serialSince(serialFrom);
     host.serialCursor = host.sim.serialText().length;
     const diags = host.sim.diagnostics();
+    const runtime = this.runtimeErrors(serial);
     const wf = host.worldFields();
     const nearMiss = wf && typeof wf.min_clearance_cm === "number" && wf.min_clearance_cm < 2 && wf.collisions === 0 ? `near miss: the closest gap to a wall or obstacle was ${wf.min_clearance_cm} cm (a real rover scrapes at that distance; sensor noise and wheel slip are not simulated). Fix: turn earlier or slow down, and test a margin with {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3}` : undefined;
     const notes = [built, restarted, nearMiss, args.reset && faults ? `restarted from 0 ms with the injected faults still active (${JSON.stringify(host.faults())}); inject_fault kind "clear" removes them` : undefined, !host.hasFirmware && this.project.firmware ? "no firmware loaded: only the passive circuit runs" : undefined].filter(Boolean);
@@ -1345,9 +1456,22 @@ export class ProjectSession {
       ...(displays.length ? { displays: `${displays.join(", ")}: call read_display to see the screen` } : {}),
       ...(host.worldSummary() ? { world: host.worldSummary() } : {}),
       diagnostics: diags.map((d) => `${d.severity} ${d.partId}${d.code ? ` [${d.code}]` : ""}: ${d.message}`),
+      ...(runtime.length ? { errors: runtime, errors_note: "the firmware stopped with this error (MicroPython then waits at its REPL); fix the line and run again" } : {}),
       ...(Object.keys(host.faults()).length ? { faults: host.faults() } : {}),
       ...(notes.length ? { notes } : {}),
     };
+  }
+
+  /** Round 10: errors the firmware printed (MicroPython tracebacks), as "firmware/main.py:9: ValueError: boom". */
+  private runtimeErrors(serial: string): string[] {
+    const info = this.firmwareInfo();
+    if (!info || info.language !== "micropython" || !info.sketchDir) return [];
+    const prefix = `${relative(this.dir, info.sketchDir).split(sep).join("/")}/`;
+    const files = new Set(this.sourceFiles(info));
+    const main = info.fw.sketch ? basename(info.fw.sketch) : "main.py";
+    // A main file not named main.py runs on the device as main.py.
+    if (main !== "main.py") files.add("main.py");
+    return microPythonErrors(serial, files, prefix).map((e) => `${e.file ? `${e.file === prefix + "main.py" ? prefix + main : e.file}:${e.line}: ` : ""}${e.message}`);
   }
 
   async readSerial(args: { since?: number }): Promise<unknown> {
@@ -1884,6 +2008,7 @@ export const OP_METHODS: Record<string, string> = {
   disconnect: "disconnect",
   set_part_property: "setPartProperty",
   set_libraries: "setLibraries",
+  set_firmware: "setFirmware",
   set_world: "setWorld",
   write_file: "writeFile",
   read_file: "readFile",

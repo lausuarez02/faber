@@ -8,3 +8,11 @@ export { PINNED_LIBRARIES, RUNNER_IMAGE, BASE_IMAGE, PICO_IMAGE, ESP32_IMAGE, ES
 export type { Platform } from "./config.ts";
 export { EMULATORS, emulatorOf, checkEmulator, ensureEmulatorImage, reapEmulators, trackEmulator, untrackEmulator, runningEmulators, emulatorLabels } from "./emulators.ts";
 export type { EmulatorCheck, EmulatorInfo, ProcessBackendId } from "./emulators.ts";
+export { LANGUAGES, CHIPS, CHIP_IMAGE, chipFamily, languageInfo, supportOf, languagesFor, isChip } from "./lang/registry.ts";
+export type { Chip, ImageFormat, LanguageInfo, LanguageSupport } from "./lang/registry.ts";
+export { MICROPYTHON_FIRMWARE, MICROPYTHON_VERSION, pickMicroPythonFirmware, microPythonFirmwareBytes, microPythonErrors, composeMicroPython, checkSyntax } from "./lang/micropython.ts";
+export type { MicroPythonFirmware, RuntimeError } from "./lang/micropython.ts";
+export { ESP_IDF_IMAGE, PLATFORMIO_IMAGE, ensureToolchainImage } from "./lang/toolchain.ts";
+export type { ToolchainImage } from "./lang/toolchain.ts";
+export { parsePlatformioIni } from "./lang/build-platformio.ts";
+export { uf2ToFlash, flashToIntelHex, espPartitions, padFlash, isUf2 } from "./lang/images.ts";

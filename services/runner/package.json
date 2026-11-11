@@ -16,10 +16,15 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@jumper/sim-backends": "workspace:*",
+    "@jumper/sim-core": "workspace:*",
     "tsx": "4.23.15"
   },
   "dependencies": {
+    "@jumper/project-format": "workspace:*",
     "@jumper/sim-backends": "workspace:*",
-    "@jumper/sim-core": "workspace:*"
+    "@jumper/sim-core": "workspace:*",
+    "@pybricks/mpy-cross-v6": "2.0.0",
+    "littlefs": "0.1.0"
   }
 }

@@ -16,7 +16,7 @@ const HELP = `jumper: hardware sandbox CLI (same operations as the MCP server)
 Usage: jumper <command> [args] [--project <dir>] [--json]
 
 Project
-  new <dir> [--template blank|uno|nano|blink] [--name N] [--overwrite]
+  new <dir> [--template blank|uno|nano|blink|pico-micropython|...] [--name N] [--overwrite]
   status                                  project summary (get_project)
   parts [query] [--category C]            search the catalog
   part <type>                             pins, wiring, example code
@@ -34,6 +34,9 @@ Project
   update-part <id> [part.json] [--svg F | --no-svg]   change it (update_part)
   project-parts                           this project's agent-made parts (list_project_parts)
 Firmware and simulation
+  firmware <language> [--firmware ID@v] [--target T] [--env E]   set_firmware: arduino | micropython | esp-idf | platformio
+  setup <language|list>                   install a language's toolchain ahead of the first build
+                                          (micropython: firmware downloads; esp-idf / platformio: Docker images)
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
   display <part> [--ms N] [--scale S]     run N ms, then show the screen as ASCII
@@ -227,6 +230,8 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       return { op: "set_part_property", args: { id: need(p.pos[0], "the part id"), prop: need(p.pos[1], "the property"), value: (() => { const v = need(p.pos[2], "the value"); return Number.isFinite(Number(v)) ? Number(v) : v === "true" ? true : v === "false" ? false : v; })(), ...why } };
     case "libs":
       return { op: "set_libraries", args: { libraries: p.pos, ...why } };
+    case "firmware":
+      return { op: "set_firmware", args: { language: need(p.pos[0], "the language (arduino, micropython, esp-idf, platformio)"), ...(o.firmware ? { firmware: o.firmware } : {}), ...(o.target ? { target: o.target } : {}), ...(o.env ? { env: o.env } : {}), ...(o.board ? { board: o.board } : {}), ...why } };
     case "write":
       return { op: "write_file", args: { path: need(p.pos[0], "the path (firmware/main.ino)"), content: o.from ? readFileSync(resolve(BASE, o.from as string), "utf8") : await readStdin(), ...why } };
     case "read":
@@ -350,6 +355,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     return servers.runServerCommand(p.cmd, p.pos, p.opts, p.cmd === "serve" ? serveDir(p.opts) : projectDir(p.opts), BASE);
   }
   if (p.cmd === "render-device") return renderDeviceCommand(p);
+  if (p.cmd === "setup") return setupCommand(p.pos[0]);
   let mapped: Awaited<ReturnType<typeof toOp>>;
   try {
     mapped = await toOp(p);
@@ -426,4 +432,52 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
   }
   process.stdout.write(`${n} frame(s) in ${outDir}${every && !msList.length ? `; video: ffmpeg -framerate ${Math.round(1000 / every)} -i ${outDir}/frame-%05d.png -pix_fmt yuv420p device.mp4` : ""}\n`);
   return 0;
+}
+
+/**
+ * Round 10: `jumper setup <language>` installs what a language's first build would fetch, with
+ * progress, so the first Build & Run is fast: the MicroPython firmware builds (downloaded, sha256
+ * checked) or the toolchain Docker image (built from toolchains/<dir>).
+ */
+async function setupCommand(what: string | undefined): Promise<number> {
+  const runner = await import("@jumper/runner");
+  const log = (l: string) => process.stderr.write(l + "\n");
+  const list = () => {
+    process.stdout.write("Languages and their support per chip (docs/firmware-languages.md):\n");
+    for (const lang of Object.values(runner.LANGUAGES)) {
+      const ok = Object.entries(lang.chips).filter(([, s]) => s.status === "verified").map(([c]) => c);
+      process.stdout.write(`  ${lang.id.padEnd(12)} ${lang.label.padEnd(16)} verified on: ${ok.join(", ") || "none yet"}\n`);
+    }
+  };
+  try {
+    switch (what) {
+      case undefined:
+      case "list":
+        list();
+        return 0;
+      case "micropython":
+        for (const fw of runner.MICROPYTHON_FIRMWARE) {
+          await runner.microPythonFirmwareBytes(fw, log);
+          process.stdout.write(`MicroPython ${fw.version} ${fw.id} (${fw.chip}): ready${fw.verified ? "" : " (not verified in Jumper: " + (fw.note ?? "") + ")"}\n`);
+        }
+        return 0;
+      case "esp-idf":
+        await runner.ensureToolchainImage(runner.ESP_IDF_IMAGE, log);
+        process.stdout.write(`${runner.ESP_IDF_IMAGE.image}: ready\n`);
+        return 0;
+      case "platformio":
+        await runner.ensureToolchainImage(runner.PLATFORMIO_IMAGE, log);
+        process.stdout.write(`${runner.PLATFORMIO_IMAGE.image}: ready\n`);
+        return 0;
+      case "arduino":
+        process.stdout.write("Arduino builds install their image on the first build (jumper build).\n");
+        return 0;
+      default:
+        process.stderr.write(`jumper setup: no toolchain called '${what}'. Why: Jumper knows arduino, micropython, esp-idf and platformio (rust and zephyr are planned). Fix: jumper setup list.\n`);
+        return 2;
+    }
+  } catch (err) {
+    process.stderr.write(`jumper setup ${what}: ${(err as Error).message}\n`);
+    return 1;
+  }
 }

@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-60 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+61 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -21,7 +21,7 @@ The loop:
 2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
 3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
 4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins). Battery devices: cell → charger BAT, charger OUT → switch → schottky-diode → the board's 5V (a Pico's VSYS directly); set_power {"usb": false} then run to prove it runs from the battery.
-5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
+5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries. Other languages: set_firmware {"language": "micropython"} (Pico / XIAO RP2040: firmware/main.py, print() goes to the Serial panel, which is also the REPL), "esp-idf" or "platformio"; plan_device says which languages the board runs.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
 8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer. Boards with Wi-Fi in the emulator (ESP32 family) join Jumper's device network: plain WiFi.begin() / HTTPClient / WebSockets / MQTT sketches work unchanged (write them for the real device, real root CA); set_network (mode mock by default, internet + allow list, secrets by NAME, values in .env), add_mock_api for any API (HTTP, streamed chunks, WebSocket frames, MQTT broker), try_request to check one, read_network for what the device did, inject_network_fault (wifi_drop, weak_signal, latency, http_error, timeout, dns_fail) and scenario steps {"request": ...} / {"network_fault": ...}.
@@ -47,6 +47,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`disconnect`](#disconnect) | Remove wires | yes (undoable step) |
 | [`set_part_property`](#set_part_property) | Change a part property | yes (undoable step) |
 | [`set_libraries`](#set_libraries) | Declare Arduino libraries | yes (undoable step) |
+| [`set_firmware`](#set_firmware) | Choose the firmware language | yes (undoable step) |
 | [`set_world`](#set_world) | Set the robot's world | yes (undoable step) |
 | [`write_file`](#write_file) | Write firmware source | yes (undoable step) |
 | [`read_file`](#read_file) | Read a file | no (read-only) |
@@ -103,7 +104,7 @@ Start a project from a template. For a new idea pass folder: true (or a folder n
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `xiao-esp32s3`, `xiao-esp32c3`, `esp32-c3-supermini`, `esp32`, `esp32-s3`, `blink`. Default blank. |
+| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `xiao-esp32s3`, `xiao-esp32c3`, `esp32-c3-supermini`, `esp32`, `esp32-s3`, `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `blink`. Default blank. |
 | `name` | string |  | Project name (default: folder name). |
 | `folder` | boolean \| string |  | true: a new folder named after name; a string: that folder name (slugged, e.g. "plant-waterer"). Created under the server's projects folder; a taken name gets -2, -3… |
 | `overwrite` | boolean |  | Replace an existing jumper.json in the current folder (throws the old project away). |
@@ -208,6 +209,20 @@ Set the Arduino libraries the sketch needs (replaces the list): {"libraries": ["
 | `libraries` | string[] | yes |  |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step. |
 
+### set_firmware
+
+Pick the language the board's firmware is written in: {"language": "micropython"} (also "arduino", "esp-idf", "platformio"). Sets firmware.language, the main file (main.ino, main.py, main/main.c, platformio.ini), the build tool and the artifact, and says which languages this board runs (verified ones only; plan_device lists them too). Writes a starter main file when there is none (keep_files: true never touches files). Options: "firmware": "RPI_PICO@1.29.0" (MicroPython build), "target": "esp32c3" (ESP-IDF), "env": "uno" (PlatformIO).
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `language` | string | yes | one of `arduino`, `micropython`, `esp-idf`, `platformio` |
+| `board` | string |  | Board part id (default: the board in the project). |
+| `firmware` | string |  |  |
+| `target` | string |  |  |
+| `env` | string |  |  |
+| `keep_files` | boolean |  |  |
+| `why` | string |  | Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step. |
+
 ### set_world
 
 Robots only: the physical world the simulation moves the robot in, saved in jumper.json. Rover: {"world": {"arena": {"width": 300, "height": 200}, "obstacles": [{"id": "crate", "shape": "box", "x": 160, "y": 80, "w": 36, "h": 36, "angle": 15}, {"id": "pillar", "shape": "circle", "x": 240, "y": 150, "r": 12}], "robot": {"chassis": "chassis1", "leftMotor": "motor1", "rightMotor": "motor2", "sonar": "sonar1", "start": {"x": 40, "y": 40, "heading": 0}}}} (cm, degrees; robot part ids are filled in when there is exactly one chassis / two motors / one sonar). The rover needs a robot-chassis-2wd part and two dc-motor parts driven by an l298n; the sonar (hc-sr04) then reads real distances to walls and obstacles. Give the rover a safety margin in tests: {"expect_part": "world.min_clearance_cm", "op": ">=", "value": 3} (any gap above 0 counts as no collision). Servo arm: {"world": {"arm": {"base": {"x": 0, "y": 5}, "links": [10, 8], "joints": [{"servo": "servo1", "zero": 90, "direction": 1, "offset": 90}, …], "targets": [{"id": "cup", "x": 12, "y": 6, "r": 2}]}}}. After run, the result has world {robot {x, y, heading}, collisions, min_clearance_cm, travelled_cm} (arm: {gripper, reached}; scenarios use world.gripper_x, world.gripper_y, world.reached); scenarios check them with {"expect_part": "world.collisions", "op": "==", "value": 0} (the chassis part state has the same pose too); screenshot draws the arena / arm next to the circuit. null removes the world.
@@ -219,7 +234,7 @@ Robots only: the physical world the simulation moves the robot in, saved in jump
 
 ### write_file
 
-Create or replace a firmware file under firmware/: {"path": "firmware/main.ino", "content": "void setup() {...}"}. The first .ino you write becomes the main sketch and is linked to the board automatically. Extra .h/.cpp files go in the same folder. Write the whole file every time (no patches). Use Serial.begin(115200) and print what happens: serial output is how you (and scenarios) verify behaviour. Returns notes when something about the sketch layout matters.
+Create or replace a firmware file under firmware/: {"path": "firmware/main.ino", "content": "void setup() {...}"}. The first .ino you write becomes the main sketch and is linked to the board automatically. Extra .h/.cpp files go in the same folder. Write the whole file every time (no patches). Use Serial.begin(115200) and print what happens: serial output is how you (and scenarios) verify behaviour. Other languages (set_firmware picks one): MicroPython writes firmware/main.py plus modules next to it (the first main.py on a board that runs MicroPython switches the project to MicroPython), ESP-IDF writes firmware/CMakeLists.txt + firmware/main/main.c, PlatformIO writes firmware/platformio.ini + firmware/src/main.cpp. Returns notes when something about the layout matters.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -243,7 +258,7 @@ No arguments.
 
 ### build
 
-Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sources are served from cache in milliseconds). Returns {ok, size "flash 1992/32256 B (6%), ram …", errors: ["firmware/main.ino:12:5: 'foo' was not declared in this scope (fix: …)"], warnings}. Each error has file:line and a concrete fix hint. If Docker is not running the error says how to start it. run and run_tests build automatically when sources changed, so you rarely need this except to check errors.
+Build the firmware in its language (firmware.language): Arduino with arduino-cli, ESP-IDF with idf.py, PlatformIO with pio run (pinned toolchains in Docker; identical sources are served from cache in milliseconds); MicroPython has no compile step: every .py is syntax-checked with mpy-cross (errors at file:line) and the pinned MicroPython firmware is flashed with a filesystem holding the files. Returns {ok, size "flash 1992/32256 B (6%), ram …", errors: ["firmware/main.ino:12:5: 'foo' was not declared in this scope (fix: …)"], warnings}. Each error has file:line and a concrete fix hint. If Docker is not running the error says how to start it. run and run_tests build automatically when sources changed, so you rarely need this except to check errors.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -251,12 +266,13 @@ Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sourc
 
 ### run
 
-Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.
+Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again. serial_write types into the console before running (a MicroPython REPL line such as "print(led.value())\n", or a command an Arduino sketch reads). MicroPython tracebacks come back as errors ["firmware/main.py:9: ValueError: boom"].
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `ms` | number | yes | Virtual ms to simulate, e.g. 2000 (max 600000). |
 | `reset` | boolean |  | Restart from 0 ms first. |
+| `serial_write` | string |  | Text sent to the board's console before running, e.g. "print(2 + 2)\n" at a MicroPython REPL. |
 | `speed` | number |  | Ignored headless (always as fast as possible); kept for compatibility. |
 
 ### read_serial

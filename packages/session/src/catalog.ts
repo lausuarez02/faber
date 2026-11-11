@@ -129,6 +129,14 @@ export const TOOLS: ToolDef[] = [
     edits: true,
   },
   {
+    name: "set_firmware",
+    title: "Choose the firmware language",
+    description:
+      'Pick the language the board\'s firmware is written in: {"language": "micropython"} (also "arduino", "esp-idf", "platformio"). Sets firmware.language, the main file (main.ino, main.py, main/main.c, platformio.ini), the build tool and the artifact, and says which languages this board runs (verified ones only; plan_device lists them too). Writes a starter main file when there is none (keep_files: true never touches files). Options: "firmware": "RPI_PICO@1.29.0" (MicroPython build), "target": "esp32c3" (ESP-IDF), "env": "uno" (PlatformIO).',
+    inputSchema: { type: "object", properties: { language: { type: "string", enum: ["arduino", "micropython", "esp-idf", "platformio"] }, board: { type: "string", description: "Board part id (default: the board in the project)." }, firmware: { type: "string" }, target: { type: "string" }, env: { type: "string" }, keep_files: { type: "boolean" }, why }, required: ["language"] },
+    edits: true,
+  },
+  {
     name: "set_world",
     title: "Set the robot's world",
     description:
@@ -140,7 +148,7 @@ export const TOOLS: ToolDef[] = [
     name: "write_file",
     title: "Write firmware source",
     description:
-      'Create or replace a firmware file under firmware/: {"path": "firmware/main.ino", "content": "void setup() {...}"}. The first .ino you write becomes the main sketch and is linked to the board automatically. Extra .h/.cpp files go in the same folder. Write the whole file every time (no patches). Use Serial.begin(115200) and print what happens: serial output is how you (and scenarios) verify behaviour. Returns notes when something about the sketch layout matters.',
+      'Create or replace a firmware file under firmware/: {"path": "firmware/main.ino", "content": "void setup() {...}"}. The first .ino you write becomes the main sketch and is linked to the board automatically. Extra .h/.cpp files go in the same folder. Write the whole file every time (no patches). Use Serial.begin(115200) and print what happens: serial output is how you (and scenarios) verify behaviour. Other languages (set_firmware picks one): MicroPython writes firmware/main.py plus modules next to it (the first main.py on a board that runs MicroPython switches the project to MicroPython), ESP-IDF writes firmware/CMakeLists.txt + firmware/main/main.c, PlatformIO writes firmware/platformio.ini + firmware/src/main.cpp. Returns notes when something about the layout matters.',
     inputSchema: { type: "object", properties: { path: { type: "string", description: '"firmware/main.ino", "firmware/pet.h"…' }, content: { type: "string" }, why }, required: ["path", "content"] },
     edits: true,
   },
@@ -162,15 +170,15 @@ export const TOOLS: ToolDef[] = [
     name: "build",
     title: "Compile the firmware",
     description:
-      'Compile the sketch with arduino-cli (pinned toolchain in Docker; identical sources are served from cache in milliseconds). Returns {ok, size "flash 1992/32256 B (6%), ram …", errors: ["firmware/main.ino:12:5: \'foo\' was not declared in this scope (fix: …)"], warnings}. Each error has file:line and a concrete fix hint. If Docker is not running the error says how to start it. run and run_tests build automatically when sources changed, so you rarely need this except to check errors.',
+      'Build the firmware in its language (firmware.language): Arduino with arduino-cli, ESP-IDF with idf.py, PlatformIO with pio run (pinned toolchains in Docker; identical sources are served from cache in milliseconds); MicroPython has no compile step: every .py is syntax-checked with mpy-cross (errors at file:line) and the pinned MicroPython firmware is flashed with a filesystem holding the files. Returns {ok, size "flash 1992/32256 B (6%), ram …", errors: ["firmware/main.ino:12:5: \'foo\' was not declared in this scope (fix: …)"], warnings}. Each error has file:line and a concrete fix hint. If Docker is not running the error says how to start it. run and run_tests build automatically when sources changed, so you rarely need this except to check errors.',
     inputSchema: { type: "object", properties: { force: { type: "boolean", description: "Ignore the cache." } } },
   },
   {
     name: "run",
     title: "Simulate",
     description:
-      'Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again.',
-    inputSchema: { type: "object", properties: { ms: { type: "number", description: "Virtual ms to simulate, e.g. 2000 (max 600000)." }, reset: { type: "boolean", description: "Restart from 0 ms first." }, speed: { type: "number", description: "Ignored headless (always as fast as possible); kept for compatibility." } }, required: ["ms"] },
+      'Run the simulation for ms of virtual time (deterministic, faster than real time; continues from where the last run stopped unless reset is true or the circuit/firmware changed). Builds first if needed. Returns {t_ms, serial (new output), pins {"D13": "out H 5.00V", "D9": "out pulse 50Hz 1500us" for servo pulses, "D5": "out PWM 490Hz duty 70%"}, parts {"led1": {"brightness": 0.62, "on": true}}, diagnostics (overcurrent, floating inputs…), world (robots: pose, collisions, first_collision {t_ms, x, y, heading, with: [what it hit]}, closest gap; arms: gripper position, targets reached), notes (e.g. a near miss under 2 cm)}. Example: {"ms": 3000}. Then press buttons with interact, change sensors with set_sensor_value, and run again. serial_write types into the console before running (a MicroPython REPL line such as "print(led.value())\\n", or a command an Arduino sketch reads). MicroPython tracebacks come back as errors ["firmware/main.py:9: ValueError: boom"].',
+    inputSchema: { type: "object", properties: { ms: { type: "number", description: "Virtual ms to simulate, e.g. 2000 (max 600000)." }, reset: { type: "boolean", description: "Restart from 0 ms first." }, serial_write: { type: "string", description: 'Text sent to the board\'s console before running, e.g. "print(2 + 2)\\n" at a MicroPython REPL.' }, speed: { type: "number", description: "Ignored headless (always as fast as possible); kept for compatibility." } }, required: ["ms"] },
   },
   {
     name: "read_serial",
@@ -317,7 +325,7 @@ The loop:
 2. search_parts for each thing the device needs, then get_part to learn its pins, wiring and example code.
 3. place_part (omit x/y), connect pins ("uno.D13" -> "r1.1"); pass a short why so the human sees your reasoning.
 4. check_design and fix every error (LED resistors, power, voltage levels, I2C pins). Battery devices: cell → charger BAT, charger OUT → switch → schottky-diode → the board's 5V (a Pico's VSYS directly); set_power {"usb": false} then run to prove it runs from the battery.
-5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
+5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries. Other languages: set_firmware {"language": "micropython"} (Pico / XIAO RP2040: firmware/main.py, print() goes to the Serial panel, which is also the REPL), "esp-idf" or "platformio"; plan_device says which languages the board runs.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
 8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer. Boards with Wi-Fi in the emulator (ESP32 family) join Jumper's device network: plain WiFi.begin() / HTTPClient / WebSockets / MQTT sketches work unchanged (write them for the real device, real root CA); set_network (mode mock by default, internet + allow list, secrets by NAME, values in .env), add_mock_api for any API (HTTP, streamed chunks, WebSocket frames, MQTT broker), try_request to check one, read_network for what the device did, inject_network_fault (wifi_drop, weak_signal, latency, http_error, timeout, dns_fail) and scenario steps {"request": ...} / {"network_fault": ...}.

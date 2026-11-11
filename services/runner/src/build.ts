@@ -4,14 +4,30 @@ import { basename, join, relative } from "node:path";
 import { cacheDir, imageFor, outputFormatFor, PINNED_LIBRARIES, platformFor, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
+import type { FirmwareLanguage } from "@jumper/project-format";
+import type { ImageFormat } from "./lang/registry.ts";
+import { buildMicroPython } from "./lang/build-micropython.ts";
+import { buildEspIdf } from "./lang/build-espidf.ts";
+import { buildPlatformIO } from "./lang/build-platformio.ts";
 
 export interface BuildRequest {
   /** Absolute folder holding the sketch sources: every .ino/.h/.hpp/.c/.cpp/.S in it (and its src/ folder). */
   sketchDir: string;
   /** Main .ino file inside sketchDir. Default: the only .ino, or the one named like the folder. */
   main?: string;
-  /** e.g. "arduino:avr:uno", "rp2040:rp2040:rpipico" (picks the Docker image). */
-  fqbn: string;
+  /** e.g. "arduino:avr:uno", "rp2040:rp2040:rpipico" (picks the Docker image). Arduino only. */
+  fqbn?: string;
+  /** Round 10: the firmware language (default "arduino"); picks the toolchain. */
+  language?: FirmwareLanguage;
+  /** The board's chip (part.json mcu.chip), e.g. "rp2040", "esp32c3": picks the toolchain and image format. */
+  chip?: string;
+  /** The board part type, e.g. "raspberry-pi-pico" (MicroPython picks that board's build). */
+  board?: string;
+  /** MicroPython: firmware build "ID@version" (firmware.build.firmware). */
+  micropythonFirmware?: string;
+  /** ESP-IDF: target (firmware.build.target, default the chip). PlatformIO: env (firmware.build.env). */
+  target?: string;
+  env?: string;
   /** "Name" or "Name@version". Names without a version resolve to Jumper's pinned versions. */
   libraries?: readonly string[];
   /** Prefix for file paths in diagnostics, e.g. "firmware/" so errors read "firmware/pet.ino:12". */
@@ -23,7 +39,7 @@ export interface BuildRequest {
    * Wi-Fi on the emulated Ethernet card, TLS trusting the sandbox CA) leave it out of a "device" build
    * (JUMPER_SIM=0), so the factory pack's firmware is plain arduino-cli output.
    */
-  target?: "simulator" | "device";
+  purpose?: "simulator" | "device";
   /** Reuse a cached result for identical inputs (default true). */
   cache?: boolean;
   /** Progress lines (image builds, library installs). */
@@ -32,17 +48,16 @@ export interface BuildRequest {
 
 export interface BuildResult {
   ok: boolean;
-  /** Intel HEX text (when ok, AVR / RP2040). */
+  /** Intel HEX text (when ok and the board's emulator loads hex: AVR, RP2040). */
   hex?: string;
-  /**
-   * ESP32 family (when ok): the merged flash image (bootloader + partitions + app) as base64, with
-   * its trailing padding cut (`binPad` bytes of `binPadByte` follow to fill the flash).
-   */
-  bin?: string;
-  binPad?: number;
-  binPadByte?: number;
-  /** "hex" or "bin". */
-  format?: "hex" | "bin";
+  /** Round 10: what the emulator loads. "ihex" = `hex`; "esp-flash" / "elf" = `binary`. Default "ihex". */
+  format?: ImageFormat;
+  /** The image bytes for "esp-flash" (merged flash padded to its size) and "elf". */
+  binary?: Uint8Array;
+  /** Round 10: the language that built it (default arduino). */
+  language?: FirmwareLanguage;
+  /** One line about what was built, when the size line does not fit (MicroPython). */
+  summary?: string;
   cached: boolean;
   durationMs: number;
   /** Content hash of the inputs (sources + fqbn + libraries + image). */
@@ -88,13 +103,9 @@ export function trimFlash(buf: Buffer): { data: Buffer; pad: number; padByte: nu
   return { data: buf.subarray(0, end), pad: buf.length - end, padByte };
 }
 
-/** The full flash image of a build result (bin + its padding), or undefined for a hex build. */
-export function flashImageOf(r: Pick<BuildResult, "bin" | "binPad" | "binPadByte">): Uint8Array | undefined {
-  if (!r.bin) return undefined;
-  const data = Buffer.from(r.bin, "base64");
-  const out = new Uint8Array(data.length + (r.binPad ?? 0)).fill(r.binPadByte ?? 0xff);
-  out.set(data);
-  return out;
+/** The full flash image of a build result (ESP32 family), or undefined for an Intel HEX build. */
+export function flashImageOf(r: Pick<BuildResult, "format" | "binary">): Uint8Array | undefined {
+  return r.format === "esp-flash" ? r.binary : undefined;
 }
 
 /** Resolve names to pinned versions and add pinned dependencies. Throws a clear error for malformed entries. */
@@ -214,6 +225,23 @@ async function ensureLibrary(spec: string, log: (l: string) => void): Promise<st
  */
 export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   const t0 = Date.now();
+  switch (req.language ?? "arduino") {
+    case "arduino":
+      return buildArduino(req, t0);
+    case "micropython":
+      return buildMicroPython(req, t0);
+    case "esp-idf":
+      return buildEspIdf(req, t0);
+    case "platformio":
+      return buildPlatformIO(req, t0);
+    default:
+      throw new RunnerError("language-not-built", `Build failed: firmware.language '${req.language}' has no toolchain in Jumper yet. Why: ${req.language === "rust" ? "the Rust (esp-hal / rp-hal) image is planned, not built" : "the Zephyr SDK image is planned, not built"} (docs/firmware-languages.md). Fix: use "arduino", "micropython", "esp-idf" or "platformio".`);
+  }
+}
+
+async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResult> {
+  if (!reqIn.fqbn) throw new RunnerError("missing-fqbn", 'Build failed: an Arduino build needs a board (FQBN). Fix: set firmware.build.fqbn, e.g. "arduino:avr:uno", or set firmware.board to a board part.');
+  const req = reqIn as BuildRequest & { fqbn: string };
   const log = req.log ?? (() => {});
   if (!existsSync(req.sketchDir)) {
     throw new RunnerError("no-sketch", `Build failed: the sketch folder ${req.sketchDir} does not exist. Fix: write the sketch first, e.g. write_file("firmware/main.ino", "...").`);
@@ -225,14 +253,18 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   const h = createHash("sha256");
   h.update(`image=${imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
   if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
-  if (req.target === "device") h.update("target=device\n");
+  if (req.purpose === "device") h.update("purpose=device\n");
   for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
   const hash = h.digest("hex").slice(0, 24);
 
   const resultDir = join(cacheDir(), "builds", hash);
   if (req.cache !== false && existsSync(join(resultDir, "result.json"))) {
     const cached = JSON.parse(readFileSync(join(resultDir, "result.json"), "utf8")) as BuildResult;
-    return { ...cached, diagnostics: refineWithSources(cached.diagnostics, sources), cached: true, durationMs: Date.now() - t0 };
+    // Flash images (ESP32 family) are kept next to result.json, without their trailing padding.
+    const flash = cached.format === "esp-flash" ? readCachedFlash(resultDir) : undefined;
+    if (cached.format !== "esp-flash" || flash) {
+      return { ...cached, ...(flash ? { binary: flash } : {}), diagnostics: refineWithSources(cached.diagnostics, sources), cached: true, durationMs: Date.now() - t0 };
+    }
   }
   const running = inflight.get(hash);
   if (running) return running;
@@ -256,7 +288,7 @@ export function sketchSetupFlags(sources: Map<string, string>, forceInclude?: st
 }
 
 async function compile(
-  req: BuildRequest,
+  req: BuildRequest & { fqbn: string },
   sources: Map<string, string>,
   main: string,
   libraries: string[],
@@ -291,7 +323,7 @@ async function compile(
   const args = [
     "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
     "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
-    ...(req.target === "device" ? ["-e", "JUMPER_SIM=0"] : []),
+    ...(req.purpose === "device" ? ["-e", "JUMPER_SIM=0"] : []),
     image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
@@ -317,18 +349,17 @@ async function compile(
     return prefix + rel;
   };
   const diagnostics = refineWithSources(parseCompilerOutput(output, pathMap), sources);
-  const format = outputFormatFor(req.fqbn);
-  const hexPath = join(work, "out", format === "bin" ? "sketch.ino.merged.bin" : platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
+  const kind = outputFormatFor(req.fqbn);
+  const hexPath = join(work, "out", kind === "bin" ? "sketch.ino.merged.bin" : platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
-  const flash = ok && format === "bin" ? trimFlash(readFileSync(hexPath)) : undefined;
+  const binary = ok && kind === "bin" ? new Uint8Array(readFileSync(hexPath)) : undefined;
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
     diagnostics.push({ severity: "error", message: `arduino-cli exited with code ${r.code}: ${output.trim().split("\n").slice(-4).join(" | ")}`, hint: "Read the message above; if it mentions a library, add it to firmware.libraries." });
   }
   const result: BuildResult = {
     ok,
-    ...(ok && format === "hex" ? { hex: readFileSync(hexPath, "utf8") } : {}),
-    ...(flash ? { bin: flash.data.toString("base64"), binPad: flash.pad, binPadByte: flash.padByte } : {}),
-    format,
+    ...(ok && kind === "hex" ? { hex: readFileSync(hexPath, "utf8") } : {}),
+    format: kind === "bin" ? "esp-flash" : "ihex",
     cached: false,
     durationMs: Date.now() - t0,
     hash,
@@ -340,7 +371,27 @@ async function compile(
     logTail: output.trim().split("\n").slice(-15).join("\n"),
   };
   mkdirSync(resultDir, { recursive: true });
+  if (binary) writeFileSync(join(resultDir, "flash.json"), JSON.stringify(writeCachedFlash(resultDir, binary)));
   writeFileSync(join(resultDir, "result.json"), JSON.stringify(result));
   rmSync(work, { recursive: true, force: true });
-  return result;
+  return { ...result, ...(binary ? { binary } : {}) };
+}
+
+/** Keeps a merged flash image in the build cache without its 0xFF tail (often most of 4 MB). */
+function writeCachedFlash(dir: string, image: Uint8Array): { pad: number; padByte: number; size: number } {
+  const t = trimFlash(Buffer.from(image.buffer, image.byteOffset, image.byteLength));
+  writeFileSync(join(dir, "flash.bin"), t.data);
+  return { pad: t.pad, padByte: t.padByte, size: image.length };
+}
+
+function readCachedFlash(dir: string): Uint8Array | undefined {
+  try {
+    const meta = JSON.parse(readFileSync(join(dir, "flash.json"), "utf8")) as { pad: number; padByte: number };
+    const data = readFileSync(join(dir, "flash.bin"));
+    const out = new Uint8Array(data.length + meta.pad).fill(meta.padByte);
+    out.set(data);
+    return out;
+  } catch {
+    return undefined;
+  }
 }

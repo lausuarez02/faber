@@ -57,6 +57,18 @@ Known gaps (round 10 net):
 - Timing through the network is not bit-exact (frames cross a socket while QEMU is parked);
   outcomes are deterministic in mock and cassette modes.
 
+## Round 10, languages track (2026-11-11): firmware languages beyond Arduino, as one mechanism
+
+Branch `round10/lang` (on `round9/spike`). `firmware.language` + a toolchain per language per chip +
+one output rule per chip ([docs/firmware-languages.md](docs/firmware-languages.md), the matrix).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| MicroPython on RP2040 | Official MicroPython 1.29.0 (RPI_PICO bundled, SEEED_XIAO_RP2040 downloaded + SHA-256) + a littlefs image with the project's `.py` files, built in process (no Docker), as one Intel HEX; boots on rp2040js, runs main.py, Pin / hardware I2C on the board's bus, REPL in the Serial panel; syntax errors (mpy-cross) and tracebacks at file:line | `services/runner/src/lang/lang.test.ts`, `packages/session/test/languages.test.ts`, `apps/web/e2e/micropython.spec.ts` |
+| Mechanism | `firmware.language` in the schema, `set_firmware` tool / `jumper firmware`, starters, templates `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `plan_device` proposes a language, `run {serial_write}` and `run.errors`, `jumper setup <language>` | same |
+| Web | Python mode in the code editor, tabs show paths (main/main.c), the Serial panel has a send line (REPL, `Serial.read()`), language-aware build status, runtime errors at their line | `e2e/micropython.spec.ts` |
+| ESP-IDF, PlatformIO | Images `jumper/esp-idf:5.5.5-r1` and `jumper/platformio:6.2.0-avr5.3.0-r1` built; builders and Docker tests written; **not verified**: Docker Desktop's disk failed mid-round | `espidf.integration.test.ts`, `platformio.integration.test.ts` (skip without the images) |
+| Fix | RP2040 backend: an output pin's input register reads its own level (as on the chip) | `lang.test.ts` |
 
 ## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
 

@@ -278,3 +278,41 @@ Nordic's own license (the "5-Clause Nordic License": redistribution in binary
 form for use with Nordic devices); the Seeed core ships them without a separate
 license file, so check Nordic's terms before shipping a product. The other
 fixtures (*.hex) are STM32duino / Mbed builds of Jumper's own sketches.
+
+Firmware languages (round 10)
+-----------------------------
+
+MicroPython (firmware.language "micropython"):
+
+  MicroPython 1.29.0 official      MIT License, Copyright (c) 2013-2026 Damien P.
+  firmware builds (RPI_PICO,       George and contributors (https://micropython.org).
+  SEEED_XIAO_RP2040, ESP32_GENERIC, toolchains/micropython/firmware/ ships the
+  ESP32_GENERIC_C3, ...)           unmodified RPI_PICO UF2 (gzip); the others are
+                                   downloaded from micropython.org on first use and
+                                   checked against pinned SHA-256 sums. The images
+                                   bundle third-party code under their own licences
+                                   (pico-sdk BSD-3-Clause, TinyUSB MIT, ESP-IDF
+                                   Apache-2.0, ...), see the MicroPython repository.
+  littlefs (as WebAssembly)        BSD-3-Clause, Copyright (c) 2022 The littlefs
+  via npm "littlefs" 0.1.0         authors, Copyright (c) 2017 Arm Limited; the npm
+                                   wrapper (wokwi/littlefs-wasm) ISC, Uri Shaked.
+                                   Builds the flash filesystem image in process.
+  mpy-cross (as WebAssembly)       MIT License, MicroPython authors; the npm
+  via @pybricks/mpy-cross-v6 2.0.0 package MIT, The Pybricks Authors. Used only
+                                   to report syntax errors at file:line.
+
+ESP-IDF (firmware.language "esp-idf"): the Docker image built by
+toolchains/esp-idf/Dockerfile adds ESP-IDF v5.5.5 (Apache-2.0, Copyright (c)
+Espressif Systems; components and submodules under their own licences, e.g.
+mbedTLS Apache-2.0, lwIP BSD-3-Clause, FreeRTOS MIT) and its Python tools to the
+arduino-esp32 image above (same cross compilers, GPL-3.0 with the GCC runtime
+exception, run as programs). The source is a shallow clone of the public v5.5.5
+tag; nothing from it is linked into Jumper.
+
+PlatformIO (firmware.language "platformio"): the Docker image built by
+toolchains/platformio/Dockerfile contains PlatformIO Core 6.2.0 (Apache-2.0,
+Copyright (c) PlatformIO Labs) and the atmelavr platform 5.3.0 (Apache-2.0) with
+its packages: avr-gcc (GPL-3.0 with the GCC runtime exception, run as a
+program) and the Arduino AVR core (LGPL-2.1, built into the person's firmware
+like the arduino-cli builds above). The base image is python:3.12.12-slim-bookworm
+(Python PSF License, Debian packages under their own licences).

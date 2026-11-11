@@ -45,15 +45,34 @@ export const WireSchema = z.object({
   waypoints: z.array(PointSchema).optional().describe("Bend points between the two pins, in canvas px."),
 });
 
-export const FirmwareBuildSchema = z.object({
-  tool: z.literal("arduino-cli"),
-  fqbn: z.string().min(1).describe("Fully qualified board name, e.g. 'arduino:avr:uno'."),
-});
+/**
+ * Round 10 (languages): the firmware language. Each language is one toolchain per chip family plus
+ * a rule that turns its output into the image the board's emulator loads (docs/firmware-languages.md).
+ * "arduino" is the default, so every project written before round 10 means what it meant.
+ */
+export const FIRMWARE_LANGUAGES = ["arduino", "micropython", "esp-idf", "platformio", "rust", "zephyr"] as const;
+export const FirmwareLanguageSchema = z.enum(FIRMWARE_LANGUAGES);
+
+/** The build driver for each language (`firmware.build.tool`). */
+export const BUILD_TOOLS = ["arduino-cli", "micropython", "esp-idf", "platformio", "cargo", "west"] as const;
+
+export const FirmwareBuildSchema = z
+  .object({
+    tool: z.enum(BUILD_TOOLS).describe("Build driver: arduino-cli (Arduino), micropython (no compile: firmware + filesystem image), esp-idf (idf.py), platformio (pio run), cargo (Rust), west (Zephyr)."),
+    fqbn: z.string().min(1).optional().describe("arduino-cli: fully qualified board name, e.g. 'arduino:avr:uno'. Required for arduino-cli."),
+    target: z.string().min(1).optional().describe("esp-idf: IDF target, e.g. 'esp32', 'esp32c3' (default: the board's chip)."),
+    env: z.string().min(1).optional().describe("platformio: the [env:<name>] to build (default: the first env in platformio.ini)."),
+    firmware: z.string().min(1).optional().describe("micropython: the MicroPython firmware build to flash, e.g. 'RPI_PICO@1.29.0' (default: the board's pinned build)."),
+  })
+  .superRefine((b, ctx) => {
+    if (b.tool === "arduino-cli" && !b.fqbn) ctx.addIssue({ code: "custom", path: ["fqbn"], message: "arduino-cli builds need an fqbn, e.g. 'arduino:avr:uno'" });
+  });
 
 export const FirmwareSchema = z.object({
   board: Id.describe("Part id of the MCU board that runs this firmware."),
+  language: FirmwareLanguageSchema.optional().describe("Firmware language (default 'arduino'; a .py main file means 'micropython'). See docs/firmware-languages.md for what runs on which board."),
   dir: z.literal("firmware").default("firmware").describe("Firmware folder, relative to jumper.json."),
-  sketch: z.string().optional().describe("Main source file inside dir, e.g. 'blink.ino'."),
+  sketch: z.string().optional().describe("Main source file inside dir: 'blink.ino' (Arduino), 'main.py' (MicroPython), 'main/main.c' (ESP-IDF), 'platformio.ini' (PlatformIO)."),
   artifact: z.string().min(1).describe("Built binary (.hex or .bin), relative to jumper.json."),
   build: FirmwareBuildSchema.optional(),
   libraries: z
@@ -61,6 +80,21 @@ export const FirmwareSchema = z.object({
     .optional()
     .describe("Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Jumper's pinned version."),
 });
+
+/** The language a firmware block means: explicit, else from the build tool, else from the main file, else Arduino. */
+export function firmwareLanguage(fw: { language?: FirmwareLanguage | undefined; sketch?: string | undefined; build?: { tool: (typeof BUILD_TOOLS)[number] } | undefined } | undefined): FirmwareLanguage {
+  if (!fw) return "arduino";
+  if (fw.language) return fw.language;
+  const byTool: Partial<Record<(typeof BUILD_TOOLS)[number], FirmwareLanguage>> = { micropython: "micropython", "esp-idf": "esp-idf", platformio: "platformio", cargo: "rust", west: "zephyr" };
+  if (fw.build && byTool[fw.build.tool]) return byTool[fw.build.tool]!;
+  const s = fw.sketch ?? "";
+  if (s.endsWith(".py")) return "micropython";
+  if (/(^|\/)platformio\.ini$/.test(s)) return "platformio";
+  if (/(^|\/)Cargo\.toml$/.test(s)) return "rust";
+  return "arduino";
+}
+
+export type FirmwareLanguage = z.infer<typeof FirmwareLanguageSchema>;
 
 export { ScenarioSchema };
 

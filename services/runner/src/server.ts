@@ -12,6 +12,8 @@ import { RunnerError } from "./docker.ts";
  *   GET  /health                       → { ok, image }
  *   POST /build  { sketchDir, main?, fqbn, libraries?, cache? }        build a folder on this machine
  *   POST /build  { files: { "main.ino": "..." }, main?, fqbn, libraries? }   build sources sent inline
+ *   POST /build  { language: "micropython", chip: "rp2040", files: { "main.py": "..." } }   other languages
+ *                (language, chip, board, micropythonFirmware, target, env; see docs/firmware-languages.md)
  *
  * Response: BuildResult JSON (ok:false + diagnostics for compile errors), or
  * { ok:false, error:{ code, message } } with HTTP 503 for environment problems (Docker not running…).
@@ -35,7 +37,7 @@ export function startRunnerServer(port = DEFAULT_PORT, host = "127.0.0.1"): Prom
       } catch {
         return send(400, { ok: false, error: { code: "bad-json", message: "Request body is not JSON. Send { fqbn, sketchDir } or { fqbn, files }." } });
       }
-      if (!body.fqbn) return send(400, { ok: false, error: { code: "missing-fqbn", message: 'Missing "fqbn". Fix: send e.g. { "fqbn": "arduino:avr:uno", ... }.' } });
+      if (!body.fqbn && !body.language) return send(400, { ok: false, error: { code: "missing-fqbn", message: 'Missing "fqbn". Fix: send e.g. { "fqbn": "arduino:avr:uno", ... }.' } });
       let tmp: string | undefined;
       let sketchDir = body.sketchDir;
       if (body.files) {
@@ -50,8 +52,12 @@ export function startRunnerServer(port = DEFAULT_PORT, host = "127.0.0.1"): Prom
       }
       if (!sketchDir) return send(400, { ok: false, error: { code: "missing-sources", message: 'Send "sketchDir" (absolute path) or "files" ({ "main.ino": "..." }).' } });
       try {
-        const result = await buildFirmware({ sketchDir, fqbn: body.fqbn, ...(body.main ? { main: body.main } : {}), ...(body.libraries ? { libraries: body.libraries } : {}), ...(body.cache === false ? { cache: false } : {}) });
-        return send(200, result);
+        const pass = { language: body.language, chip: body.chip, board: body.board, micropythonFirmware: body.micropythonFirmware, target: body.target, env: body.env, fqbn: body.fqbn };
+        const defined = Object.fromEntries(Object.entries(pass).filter(([, v]) => typeof v === "string")) as Partial<BuildRequest>;
+        const result = await buildFirmware({ sketchDir, ...defined, ...(body.main ? { main: body.main } : {}), ...(body.libraries ? { libraries: body.libraries } : {}), ...(body.cache === false ? { cache: false } : {}) });
+        // Binary images (ESP flash, ELF) travel as base64 in JSON.
+        const { binary, ...rest } = result;
+        return send(200, binary ? { ...rest, binaryBase64: Buffer.from(binary).toString("base64") } : rest);
       } finally {
         if (tmp) rmSync(tmp, { recursive: true, force: true });
       }

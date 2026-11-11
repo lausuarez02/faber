@@ -20,7 +20,7 @@ const TEMPLATE_FIXTURE: Record<string, string> = {
 const builds: BuildRequest[] = [];
 const builder = async (req: BuildRequest): Promise<BuildResult> => {
   builds.push(req);
-  const name = TEMPLATE_FIXTURE[req.fqbn];
+  const name = TEMPLATE_FIXTURE[req.fqbn ?? ""];
   if (!name) throw new Error(`no golden build for ${req.fqbn}`);
   const hex = readFileSync(join(FIXTURES, `${name}.hex`), "utf8");
   return { ok: true, hex, cached: false, durationMs: 1, hash: name, diagnostics: [], errors: 0, warnings: 0, size: { flash: 54456, flashMax: 2093056, ram: 8900, ramMax: 262144 }, libraries: [], logTail: "" };

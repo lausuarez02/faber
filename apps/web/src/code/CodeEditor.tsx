@@ -35,6 +35,7 @@ export function CodeEditor() {
   const tick = useProjectsUi((s) => s.tick);
   const server = useServer();
   const projectName = useJumper((s) => s.project.name);
+  const language = useJumper((s) => languageOf(s.project.firmware));
   const [files, setFiles] = useState<string[]>([]);
   const [path, setPath] = useState<string | undefined>();
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -148,7 +149,7 @@ export function CodeEditor() {
         }
       }
       if (!alive || !editor.current) return;
-      editor.current.setDoc(b?.text ?? "", !editable);
+      editor.current.setDoc(b?.text ?? "", !editable, path);
       loaded.current = path;
       showDiagnostics(path);
     })();
@@ -196,7 +197,7 @@ export function CodeEditor() {
     setStatus({ kind: "building" });
     try {
       const res = await api.build(true);
-      diags.current = res.diagnostics ?? [];
+      diags.current = [...(res.diagnostics ?? []), ...runErrors(res)];
       showDiagnostics(currentPath.current);
       if (!res.ok) {
         setStatus({ kind: "failed", res });
@@ -270,7 +271,7 @@ export function CodeEditor() {
             const b = buffers.current.get(f);
             return (
               <button key={f} type="button" className={`code-tab${f === path ? " is-active" : ""}`} onClick={() => setPath(f)} data-testid={`code-tab-${f}`} title={f}>
-                {f.split("/").pop()}
+                {f.replace(/^firmware\//, "")}
                 {b && b.text !== b.saved ? <span className="code-dot" aria-label="unsaved" /> : null}
               </button>
             );
@@ -311,7 +312,7 @@ export function CodeEditor() {
       ) : null}
       <div className="code-body" ref={host} />
       <footer className="code-status" data-testid="code-status">
-        {editable ? <StatusLine status={status} dirty={dirty.length} errors={errors.length} warnings={warnings.length} /> : <span className="muted">{files.length ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}</span>}
+        {editable ? <StatusLine status={status} dirty={dirty.length} errors={errors.length} warnings={warnings.length} language={language} /> : <span className="muted">{files.length ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}</span>}
         {diags.current.length ? (
           <ul className="code-problems" data-testid="code-problems">
             {diags.current.slice(0, 12).map((d, i) => (
@@ -341,23 +342,31 @@ export function CodeEditor() {
   );
 }
 
-function StatusLine({ status, dirty, errors, warnings }: { status: Status; dirty: number; errors: number; warnings: number }) {
+/** Round 10: how each language builds, for the status line. */
+const BUILDING: Record<string, string> = {
+  arduino: "Building with arduino-cli (first builds take a while)…",
+  micropython: "Checking the Python and flashing MicroPython…",
+  "esp-idf": "Building with ESP-IDF (idf.py; first builds take a few minutes)…",
+  platformio: "Building with PlatformIO (pio run; first builds take a while)…",
+};
+
+function StatusLine({ status, dirty, errors, warnings, language }: { status: Status; dirty: number; errors: number; warnings: number; language: string }) {
   switch (status.kind) {
     case "saving":
       return <span>Saving…</span>;
     case "building":
       return (
         <span>
-          <Loader2 size={13} strokeWidth={STROKE} className="spin" aria-hidden /> Building with arduino-cli (first builds take a while)…
+          <Loader2 size={13} strokeWidth={STROKE} className="spin" aria-hidden /> {BUILDING[language] ?? BUILDING.arduino}
         </span>
       );
     case "built":
       return (
         <span className="code-ok">
           <CircleCheck size={13} strokeWidth={STROKE} aria-hidden /> Built{status.res.cached ? " (cached)" : ""}
-          {status.res.size ? ` · ${status.res.size}` : ""}
+          {status.res.size ? ` · ${status.res.size}` : status.res.built ? ` · ${status.res.built}` : ""}
           {warnings ? ` · ${warnings} warning${warnings === 1 ? "" : "s"}` : ""}
-          {status.res.run ? (status.res.run.error ? ` · run failed: ${status.res.run.error}` : " · running on the canvas") : ""}
+          {status.res.run ? (status.res.run.error ? ` · run failed: ${status.res.run.error}` : status.res.run.errors?.length ? ` · the program stopped with an error, shown at its line` : " · running on the canvas") : ""}
         </span>
       );
     case "failed":
@@ -377,4 +386,21 @@ function StatusLine({ status, dirty, errors, warnings }: { status: Status; dirty
     default:
       return <span className="muted">{dirty ? `${dirty} unsaved file${dirty === 1 ? "" : "s"} · ⌘S saves, ⌘↵ builds and runs` : "⌘S saves · ⌘↵ builds and runs"}</span>;
   }
+}
+
+/** "arduino" unless the project says otherwise (same rule as @jumper/project-format firmwareLanguage). */
+function languageOf(fw: { language?: string; sketch?: string; build?: { tool?: string } } | undefined): string {
+  if (!fw) return "arduino";
+  if (fw.language) return fw.language;
+  const byTool: Record<string, string> = { micropython: "micropython", "esp-idf": "esp-idf", platformio: "platformio" };
+  if (fw.build?.tool && byTool[fw.build.tool]) return byTool[fw.build.tool]!;
+  return fw.sketch?.endsWith(".py") ? "micropython" : "arduino";
+}
+
+/** Runtime errors from the server's run after the build ("firmware/main.py:9: ValueError: boom") as diagnostics at their line. */
+function runErrors(res: BuildResponse): CompileDiagnostic[] {
+  return (res.run?.errors ?? []).map((t) => {
+    const m = /^(.+?):(\d+): (.*)$/.exec(t);
+    return m ? { severity: "error" as const, file: m[1]!, line: Number(m[2]), message: m[3]!, hint: "the program stopped here while running (not a build error); fix it and press Build & Run again" } : { severity: "error" as const, message: t };
+  });
 }
