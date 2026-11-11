@@ -8,6 +8,7 @@
  */
 import { useMemo } from "react";
 import { engine, useJumper } from "../../lib/app.ts";
+import { useCase } from "../../case/store.ts";
 import { DeviceStage } from "./DeviceStage.tsx";
 import { engineSource, type DeviceSource } from "./source.ts";
 
@@ -15,7 +16,14 @@ export function DeviceView({ onClose, source }: { onClose(): void; source?: Devi
   const fromEngine = useMemo(() => source ?? engineSource(engine, useJumper), [source]);
   return (
     <div className="device-view" data-testid="device-view" role="dialog" aria-modal="true" aria-label="Device view">
-      <DeviceStage source={fromEngine} onClose={onClose} />
+      <DeviceStage
+        source={fromEngine}
+        onClose={onClose}
+        onOpenCase={() => {
+          onClose();
+          useCase.getState().setOpen(true);
+        }}
+      />
     </div>
   );
 }

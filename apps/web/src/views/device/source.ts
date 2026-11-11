@@ -30,6 +30,8 @@ export interface DeviceSource {
   /** Push / let go of a button (or any part with a press interaction). */
   press(partId: string): void;
   release(partId: string): void;
+  /** The project's built case (Device view shows it). Default: GET /api/device/case on jumper serve. */
+  loadCase?(): Promise<import("./classify.ts").CaseModel | null>;
   /** Subscribe to changes that need a React render (project, run state); returns unsubscribe. */
   subscribe(fn: () => void): () => void;
 }
