@@ -27,6 +27,8 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "retain-on-failure",
     colorScheme: "dark", // dark-first brand; the theme test switches to light itself
+    // Chromium refuses some ports outright (6000 is X11's): let the chosen Vite port through
+    launchOptions: { args: [`--explicitly-allowed-ports=${PORT}`] },
   },
   projects: [
     {
