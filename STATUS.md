@@ -23,6 +23,41 @@ use. Branch `round10/net`. Guide: [docs/network.md](docs/network.md); decision
 | Network panel | Rail → Network (phone menu → Network): Wi-Fi state, mode, secrets by name (set / missing), requests with status / source / time / TLS / secret names, WS and MQTT sessions summarized, Wi-Fi / DHCP / DNS events, blocked with why and fix; Drop Wi-Fi / Weak signal / Clear faults; a Try box (`GET /api/network`, `POST /api/network/fault`, `POST /api/network/try`) | `apps/web/e2e/network-panel.spec.ts`, `apps/web/src/views/network/devnet.test.ts` |
 | Examples | `examples/esp32-api-demo` (XIAO ESP32-S3 + SSD1306: HTTPS JSON from Open-Meteo with the real root CA, replayed from a real recorded cassette; MQTT publish to a mock broker; Wi-Fi drop and 503 scenarios) and `examples/esp32-ws-stream` (XIAO ESP32-C3, 40 binary chunks over wss://) | need the ESP32 boards from round10/esp-app (see gaps) |
 
+Real firmware (earlier in this round, before Docker failed): the `wifi-https` fixture, a plain
+WiFi.h sketch with the ISRG Root X1 CA set, built with the r3 image for the ESP32-C3 and run
+free-running in `jumper/qemu-esp` with its NIC on the netstack: scan finds "JumperNet", joins,
+DHCP 10.0.2.15 / gw 10.0.2.2, DNS → 198.18.0.1, HTTPS GET to a mock → 200 with the body (mbedTLS
+accepted the sandbox CA through the shim; 1.0 to 1.4 s virtual, handshake included), a blocked host
+→ NXDOMAIN with why / fix, weak_signal → `WiFi.RSSI()` -82, wifi_drop → status 5 then 1 with
+refused joins counted, clear → rejoin, DHCP, fetch again 200. Run three times, same outcome.
+
+Checks (worktree `round10/net`): `pnpm gen` no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0,
+1436 passed, 26 skipped (176 files) with the `docker` command stubbed to fail fast, because Docker
+Desktop stopped answering (below); e2e `network-panel` + `projects-flow` on desktop and mobile
+(`E2E_PORT=5840 E2E_HUB_PORT_BASE=11200`): 7 passed, 3 skipped by design, exit 0.
+
+Known gaps (round 10 net):
+- **Docker Desktop hung** mid-round after the disk filled up (I/O errors in its containerd store,
+  then every `docker` call hanging for over an hour; not restarted, other tracks share it). Not run
+  because of it: the committed `test/firmware.integration.test.ts` (ESP32-S3 in lockstep through
+  `DeviceNetHost`: secret injected and masked, MQTT, drop + reconnect; it skips until
+  `fixtures/net-probe.esp32s3.merged.bin.gz` is built, see fixtures/BUILD.md), the r3 image rebuild
+  with the MAC fix (the r3 tag on this machine predates it), and compiling both examples. The
+  WebSockets example (`beginSslWithCA`) and the S3 build were never compiled.
+- **Examples need round10/esp-app**: they use its `seeed-xiao-esp32s3` / `seeed-xiao-esp32c3` parts
+  and its session wiring for ESP32 boards. On this branch alone they list with unknown parts. After
+  the merge: set `ESP32_IMAGE` to `jumper/arduino-esp32:3.3.12-r3` (build it from `Dockerfile.sim`)
+  and pass `network: await session.networkFor(n)` instead of `network: false` to `QemuEspBackend`
+  when `project.network` is set.
+- **OLED on the S3**: QEMU's S3 machine has no I2C controller model (round 9), so the demo's display
+  stays blank unless another track adds it; the firmware says `oled not found` and keeps working.
+- Not emulated: the Wi-Fi radio (signal, range, roaming, power save), soft-AP clients, ESP-NOW,
+  BLE; UDP other than DNS / NTP; IPv6; MQTT secrets in CONNECT; QoS 2. Renode boards have no NIC
+  (not connected; docs/network.md says what it would take).
+- Timing through the network is not bit-exact (frames cross a socket while QEMU is parked);
+  outcomes are deterministic in mock and cassette modes.
+
+
 ## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
 
 Evidence: a real Claude rebuilt the talking egg on round-8 code and got 74 x 96 x 44.4 mm, worse
