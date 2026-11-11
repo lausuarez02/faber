@@ -209,7 +209,12 @@ The people asking for a device are often beginners. The server instructions say 
     `size_mm` if they gave one; there is no preset per object. Test it first with `check_fit` (no CAD,
     under a second): when the parts do not fit the size it lists each miss in mm and tried
     suggestions (a smaller screen, speaker or LiPo cell, a board on its edge, less rounded rims, or
-    "make it N mm bigger"); tell the person the trade-off and let them pick. Show the front and exploded renders it returns, the measured size and the checks (pocket
+    "make it N mm bigger"); tell the person the trade-off and let them pick. Round 8: Jumper works
+    out how the parts go inside by itself (flat first, then layers) and `propose_layout` shows the
+    three best ways (`thinnest`, `smallest`, `balanced`, with sizes, layers and reasons); tell the
+    person the choice in plain words ("one flat layer: 17.5 mm thick but 131 mm tall; or the cell
+    behind the screen: ...") and build it with `design_case` / `update_case {"layout": "<id>"}`
+    (default `auto` = balanced; pin a part with `placements` to move it). Show the front and exploded renders it returns, the measured size and the checks (pocket
     verdict, screen window, button travel, USB access). Then `export_manufacturing`: one folder +
     zip with the case (STL, 3MF, STEP, drawing, print notes), BOM, wiring, netlists, wire cuts,
     firmware, numbered assembly steps and the test plan, for a 3D printer or a supplier. Say plainly
