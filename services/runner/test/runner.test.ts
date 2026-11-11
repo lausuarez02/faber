@@ -1,19 +1,12 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildFirmware, imageFor, libraryForHeader, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
+import { buildFirmware, canBuildArduino, imageFor, libraryForHeader, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
 import { sketchSetupFlags } from "../src/build.ts";
 
-const dockerUp = (() => {
-  try {
-    execFileSync("docker", ["info"], { stdio: "ignore", timeout: 15_000 });
-    return true;
-  } catch {
-    return false;
-  }
-})();
+// Round 11: Docker with the image, or Jumper's native toolchain (jumper setup avr / rp2040).
+const avrReady = canBuildArduino("arduino:avr:uno");
 
 describe("library resolution", () => {
   it("pins bare names and adds pinned dependencies", () => {
@@ -68,7 +61,7 @@ describe("sketch-aware hints", () => {
   });
 });
 
-describe.skipIf(!dockerUp)("Docker builds", () => {
+describe.skipIf(!avrReady.ok)(`Arduino builds (${avrReady.runtime ?? "skipped: " + avrReady.why})`, () => {
   it(
     "builds the Blink example byte-identical to the golden hex, then serves it from cache",
     async () => {
@@ -106,16 +99,8 @@ describe.skipIf(!dockerUp)("Docker builds", () => {
 // RP2040 builds use the arduino-pico image. It is ~1 GB, so these run only when it is already built
 // (ensureImage(log, PICO_IMAGE), or the docker build lines in packages/parts/fixtures/libs3/BUILD.md)
 // or JUMPER_TEST_PICO=1. CI builds it.
-const picoImage = (() => {
-  if (!dockerUp) return false;
-  if (process.env.JUMPER_TEST_PICO === "1") return true;
-  try {
-    execFileSync("docker", ["image", "inspect", PICO_IMAGE], { stdio: "ignore", timeout: 15_000 });
-    return true;
-  } catch {
-    return false;
-  }
-})();
+const picoReady = canBuildArduino("rp2040:rp2040:seeed_xiao_rp2040");
+const picoImage = process.env.JUMPER_TEST_PICO === "1" || picoReady.ok;
 
 describe("RP2040 image selection", () => {
   it("builds rp2040:rp2040:* with the arduino-pico image and AVR boards with the runner image", () => {
@@ -126,7 +111,7 @@ describe("RP2040 image selection", () => {
   });
 });
 
-describe.skipIf(!picoImage)("Docker builds for RP2040 (arduino-pico)", () => {
+describe.skipIf(!picoImage)(`RP2040 builds (arduino-pico, ${picoReady.runtime ?? "forced"})`, () => {
   it(
     "builds the XIAO RP2040 blink fixture byte-identical to the golden Intel HEX (flash at 0x10000000)",
     async () => {

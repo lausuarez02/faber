@@ -6,10 +6,11 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { TOOLS } from "@jumper/session";
+import { canBuildArduino, TOOLS } from "@jumper/session";
 
 const BIN = fileURLToPath(new URL("../bin/jumper-mcp.mjs", import.meta.url));
-const dockerUp = (() => {
+// Round 11: Docker or the native AVR toolchain can build Blink.
+const dockerUp = canBuildArduino("arduino:avr:uno").ok || (() => {
   try {
     execFileSync("docker", ["info"], { stdio: "ignore", timeout: 15_000 });
     return true;

@@ -191,7 +191,7 @@ function FirmwarePanel() {
         ) : null}
         {fw.status === "missing" ? (
           <p className="callout callout-warn">
-            {fw.reason}. Fix: build it with <code>jumper run -p &lt;dir&gt;</code> (Docker), or load the .hex below.
+            {fw.reason}. Fix: build it with <code>jumper run -p &lt;dir&gt;</code> (Docker, or natively after <code>jumper setup</code>), or load the .hex below.
           </p>
         ) : null}
         <div className="insp-row">

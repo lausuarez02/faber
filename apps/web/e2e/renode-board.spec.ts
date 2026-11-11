@@ -1,6 +1,6 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
@@ -14,13 +14,16 @@ const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/renode/", import.meta.url));
 const RENODE_IMAGE = "jumper/renode:1.17.0-r1";
 
+/** Round 11: Jumper's own Renode (jumper setup renode), which `jumper serve` uses when Docker is not up. */
+const JUMPER_RENODE = join(process.env.JUMPER_NATIVE_HOME || join(homedir(), ".jumper"), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
+
 function renodeMissing(): string | undefined {
   if (process.env.JUMPER_RENODE_RUNTIME === "native") {
     const r = spawnSync(process.env.JUMPER_RENODE_BIN || "renode", ["--version"], { timeout: 30_000 });
     return r.status === 0 ? undefined : "native Renode (JUMPER_RENODE_BIN) does not run";
   }
   const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { timeout: 15_000 });
-  if (info.status !== 0) return "Docker is not running or not answering";
+  if (info.status !== 0) return existsSync(JUMPER_RENODE) ? undefined : "Docker is not running or not answering, and Renode is not installed natively (jumper setup renode)";
   const img = spawnSync("docker", ["image", "inspect", RENODE_IMAGE], { stdio: "ignore", timeout: 15_000 });
   return img.status === 0 ? undefined : `the ${RENODE_IMAGE} image is missing`;
 }

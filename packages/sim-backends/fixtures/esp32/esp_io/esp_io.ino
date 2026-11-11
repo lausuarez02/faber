@@ -11,8 +11,8 @@ void setup() {
   pinMode(PIN_IRQ, INPUT);
   attachInterrupt(PIN_IRQ, onRise, RISING);
   analogWrite(PIN_LED, 64);              // LEDC, 1 kHz, 8 bit: 25 %
-  ledcAttach(PIN_SERVO, 50, 16);         // servo frame
-  ledcWrite(PIN_SERVO, 4915);            // 1.5 ms of 20 ms
+  ledcAttach(PIN_SERVO, 50, 14);         // servo frame (14 bit: the most the S3 / C3 LEDC has)
+  ledcWrite(PIN_SERVO, 1229);            // 1.5 ms of 20 ms
   tone(PIN_TONE, 2000);
   analogReadResolution(12);
   Serial.println("io ready");
@@ -31,7 +31,7 @@ void loop() {
   phase++;
   if (phase == 3) {
     analogWrite(PIN_LED, 192);           // 75 %
-    ledcWrite(PIN_SERVO, 6554);          // 2.0 ms
+    ledcWrite(PIN_SERVO, 1638);          // 2.0 ms
     noTone(PIN_TONE);
     Serial.println("changed");
   }

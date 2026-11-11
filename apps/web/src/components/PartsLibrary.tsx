@@ -88,7 +88,7 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
                 const planned = def.spec.availability?.status === "planned";
                 const backend = def.spec.mcu?.backend;
                 const emu = backend === "renode" ? "Renode" : backend === "qemu-esp" ? "QEMU" : undefined;
-                const where = emu ? ` · runs in ${emu === "QEMU" ? "Espressif QEMU" : "Renode"} on this computer (Docker, via jumper serve)` : "";
+                const where = emu ? ` · runs in ${emu === "QEMU" ? "Espressif QEMU" : "Renode"} on this computer (natively or in Docker, via jumper serve)` : "";
                 // Round 10: what the board's emulator really carries (docs/boards.md), in the tooltip.
                 const support = def.spec.category === "board" ? boardSupportOf(def.spec.id) : undefined;
                 const supportText = support ? `\n\n${boardSupportSummary(support)}\n(docs/boards.md)` : "";

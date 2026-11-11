@@ -9,6 +9,9 @@ import type { ImageFormat } from "./lang/registry.ts";
 import { buildMicroPython } from "./lang/build-micropython.ts";
 import { buildEspIdf } from "./lang/build-espidf.ts";
 import { buildPlatformIO } from "./lang/build-platformio.ts";
+import { arduinoRuntimeFor } from "./runtime.ts";
+import { compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
+import type { Runtime } from "@jumper/sim-backends/node";
 
 export interface BuildRequest {
   /** Absolute folder holding the sketch sources: every .ino/.h/.hpp/.c/.cpp/.S in it (and its src/ folder). */
@@ -130,12 +133,17 @@ export function resolveLibraries(libs: readonly string[] = []): string[] {
   return [...out.values()].sort();
 }
 
-function isPreinstalled(spec: string): boolean {
+function isPreinstalled(spec: string, fqbn = ""): boolean {
   const at = spec.lastIndexOf("@");
   const name = at > 0 ? spec.slice(0, at) : spec;
   const version = at > 0 ? spec.slice(at + 1) : "";
   const p = PINNED_LIBRARIES[name];
-  return !!p && p.preinstalled && p.version === version;
+  return !!p && p.preinstalled && p.version === version && (!p.only || p.only.some((x) => fqbn.startsWith(x)));
+}
+
+/** `s` without `prefix`, or undefined when it does not start with it. */
+function p0(s: string, prefix: string): string | undefined {
+  return s.startsWith(prefix) ? s.slice(prefix.length) : undefined;
 }
 
 function slug(s: string): string {
@@ -194,17 +202,22 @@ function uidArgs(): string[] {
 }
 
 /** Install a non-preinstalled library into the cache (once). Returns the folder to pass as --libraries. */
-async function ensureLibrary(spec: string, log: (l: string) => void): Promise<string> {
+async function ensureLibrary(spec: string, log: (l: string) => void, runtime: Runtime = "docker"): Promise<string> {
   const root = join(cacheDir(), "arduino-libs");
   const dir = join(root, slug(spec));
-  if (existsSync(join(dir, ".ok"))) return `/extra/${slug(spec)}/libraries`;
+  // The same folder serves both runtimes: Docker mounts it at /extra, a native build reads it in place.
+  const ret = runtime === "native" ? join(dir, "libraries") : `/extra/${slug(spec)}/libraries`;
+  if (existsSync(join(dir, ".ok"))) return ret;
   mkdirSync(dir, { recursive: true });
   log(`installing Arduino library ${spec}…`);
-  const r = await exec(
-    "docker",
-    ["run", "--rm", ...uidArgs(), "-v", `${root}:/extra`, "-e", `ARDUINO_DIRECTORIES_USER=/extra/${slug(spec)}`, "-e", `ARDUINO_DIRECTORIES_DOWNLOADS=/extra/${slug(spec)}/.dl`, RUNNER_IMAGE, "lib", "install", spec],
-    { timeoutMs: 10 * 60_000 },
-  );
+  const r =
+    runtime === "native"
+      ? await installLibraryNative(spec, dir)
+      : await exec(
+          "docker",
+          ["run", "--rm", ...uidArgs(), "-v", `${root}:/extra`, "-e", `ARDUINO_DIRECTORIES_USER=/extra/${slug(spec)}`, "-e", `ARDUINO_DIRECTORIES_DOWNLOADS=/extra/${slug(spec)}/.dl`, RUNNER_IMAGE, "lib", "install", spec],
+          { timeoutMs: 10 * 60_000 },
+        );
   if (r.code !== 0) {
     rmSync(dir, { recursive: true, force: true });
     const why = (r.stderr || r.stdout).trim().split("\n").slice(-3).join(" ");
@@ -215,11 +228,12 @@ async function ensureLibrary(spec: string, log: (l: string) => void): Promise<st
   }
   writeFileSync(join(dir, ".ok"), spec + "\n");
   rmSync(join(dir, ".dl"), { recursive: true, force: true });
-  return `/extra/${slug(spec)}/libraries`;
+  return ret;
 }
 
 /**
- * Compile a sketch with arduino-cli in the pinned Docker image. Identical inputs return the cached result.
+ * Compile a sketch with arduino-cli in the pinned Docker image, or (round 11) Jumper's native toolchain
+ * when Docker is not usable (JUMPER_RUNTIME). Identical inputs return the cached result.
  * Throws RunnerError only for environment problems (Docker missing, image/library install failures);
  * compile errors come back as `ok: false` with diagnostics.
  */
@@ -250,25 +264,41 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
   const main = pickMain(sources, req.sketchDir, req.main);
   const libraries = resolveLibraries(req.libraries);
 
-  const h = createHash("sha256");
-  h.update(`image=${imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
-  if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
-  if (req.purpose === "device") h.update("purpose=device\n");
-  for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
-  const hash = h.digest("hex").slice(0, 24);
-
-  const resultDir = join(cacheDir(), "builds", hash);
-  if (req.cache !== false && existsSync(join(resultDir, "result.json"))) {
+  // Round 11: Docker and native builds of the same inputs are cached apart (same sources, other compilers).
+  const keyOf = (runtime: Runtime) => {
+    const h = createHash("sha256");
+    const family = nativeFamilyOf(req.fqbn);
+    h.update(`image=${runtime === "native" && family ? nativeToolchainId(family) : imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
+    if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
+    if (req.purpose === "device") h.update("purpose=device\n");
+    for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
+    return h.digest("hex").slice(0, 24);
+  };
+  const fromCache = (hash: string): BuildResult | undefined => {
+    const resultDir = join(cacheDir(), "builds", hash);
+    if (req.cache === false || !existsSync(join(resultDir, "result.json"))) return undefined;
     const cached = JSON.parse(readFileSync(join(resultDir, "result.json"), "utf8")) as BuildResult;
     // Flash images (ESP32 family) are kept next to result.json, without their trailing padding.
     const flash = cached.format === "esp-flash" ? readCachedFlash(resultDir) : undefined;
-    if (cached.format !== "esp-flash" || flash) {
-      return { ...cached, ...(flash ? { binary: flash } : {}), diagnostics: refineWithSources(cached.diagnostics, sources), cached: true, durationMs: Date.now() - t0 };
-    }
+    if (cached.format === "esp-flash" && !flash) return undefined;
+    return { ...cached, ...(flash ? { binary: flash } : {}), diagnostics: refineWithSources(cached.diagnostics, sources), cached: true, durationMs: Date.now() - t0 };
+  };
+  let runtime: Runtime;
+  try {
+    runtime = await arduinoRuntimeFor(req.fqbn);
+  } catch (err) {
+    // Nothing can compile right now, but an earlier build of these exact inputs still counts.
+    const hit = fromCache(keyOf("docker")) ?? fromCache(keyOf("native"));
+    if (hit) return hit;
+    throw err;
   }
+  const hash = keyOf(runtime);
+  const resultDir = join(cacheDir(), "builds", hash);
+  const hit = fromCache(hash);
+  if (hit) return hit;
   const running = inflight.get(hash);
   if (running) return running;
-  const p = compile(req, sources, main, libraries, hash, resultDir, log, t0).finally(() => inflight.delete(hash));
+  const p = compile(req, sources, main, libraries, hash, resultDir, log, t0, runtime).finally(() => inflight.delete(hash));
   inflight.set(hash, p);
   return p;
 }
@@ -280,11 +310,11 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
  * the exact same command (and the same bytes).
  */
 const SKETCH_SETUP_HEADERS = ["tft_setup.h"];
-export function sketchSetupFlags(sources: Map<string, string>, forceInclude?: string): string[] {
+export function sketchSetupFlags(sources: Map<string, string>, forceInclude?: string, sketchDir = "/work/sketch"): string[] {
   const setup = SKETCH_SETUP_HEADERS.some((h) => sources.has(h));
   if (!setup && !forceInclude) return [];
-  const cpp = [...(setup ? ["-I/work/sketch"] : []), ...(forceInclude ? [`-include ${forceInclude}`] : [])].join(" ");
-  return ["--build-property", `compiler.cpp.extra_flags=${cpp}`, ...(setup ? ["--build-property", "compiler.c.extra_flags=-I/work/sketch"] : [])];
+  const cpp = [...(setup ? [`-I${sketchDir}`] : []), ...(forceInclude ? [`-include ${forceInclude}`] : [])].join(" ");
+  return ["--build-property", `compiler.cpp.extra_flags=${cpp}`, ...(setup ? ["--build-property", `compiler.c.extra_flags=-I${sketchDir}`] : [])];
 }
 
 async function compile(
@@ -296,20 +326,26 @@ async function compile(
   resultDir: string,
   log: (l: string) => void,
   t0: number,
+  runtime: Runtime = "docker",
 ): Promise<BuildResult> {
-  await ensureDocker();
+  const native = runtime === "native";
   const platform = platformFor(req.fqbn);
   const image = imageFor(req.fqbn);
-  await ensureImage(log, image);
+  if (!native) {
+    await ensureDocker();
+    await ensureImage(log, image);
+  }
   const libDirs: string[] = [];
-  for (const lib of libraries) if (!isPreinstalled(lib)) libDirs.push(await ensureLibrary(lib, log));
+  for (const lib of libraries) if (!isPreinstalled(lib, req.fqbn)) libDirs.push(await ensureLibrary(lib, log, runtime));
 
   // Arduino wants <name>/<name>.ino; we always use "sketch/sketch.ino" and map paths back.
   const work = join(cacheDir(), "work", hash);
+  // Where the compiler sees the work folder: /work in the container, the folder itself natively.
+  const workIn = native ? work : "/work";
   rmSync(work, { recursive: true, force: true });
   const sketchOut = join(work, "sketch");
   for (const [rel, raw] of sources) {
-    const content = rel === main && platform.simSketchPrelude ? `${platform.simSketchPrelude}#line 1 "/work/sketch/sketch.ino"\n${raw}` : raw;
+    const content = rel === main && platform.simSketchPrelude ? `${platform.simSketchPrelude}#line 1 "${workIn}/sketch/sketch.ino"\n${raw}` : raw;
     const dest = join(sketchOut, rel === main ? "sketch.ino" : rel);
     mkdirSync(join(dest, ".."), { recursive: true });
     writeFileSync(dest, content);
@@ -320,18 +356,27 @@ async function compile(
   const libRoot = join(cacheDir(), "arduino-libs");
   mkdirSync(libRoot, { recursive: true });
 
-  const args = [
-    "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
-    "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
-    ...(req.purpose === "device" ? ["-e", "JUMPER_SIM=0"] : []),
-    image,
-    "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
+  const compileArgs = [
+    "--fqbn", req.fqbn, "--output-dir", `${workIn}/out`, "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
-    ...sketchSetupFlags(sources, platform.simSerialHeader ? "/work/jumper_sim_serial.h" : undefined),
+    ...sketchSetupFlags(sources, platform.simSerialHeader ? `${workIn}/jumper_sim_serial.h` : undefined, `${workIn}/sketch`),
     ...(req.buildProperties ?? []).flatMap((p) => ["--build-property", p]),
-    "/work/sketch",
   ];
-  const r = await exec("docker", args, { timeoutMs: 5 * 60_000 });
+  let r: { code: number; stdout: string; stderr: string };
+  if (native) {
+    log(`compiling natively (${req.fqbn}, Jumper's arduino-cli toolchain)…`);
+    r = await compileNative({ fqbn: req.fqbn, args: compileArgs, sketch: `${work}/sketch`, outDir: join(work, "out"), workDir: work, ...(req.purpose ? { purpose: req.purpose } : {}), timeoutMs: 10 * 60_000 });
+  } else {
+    const args = [
+      "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
+      "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
+      ...(req.purpose === "device" ? ["-e", "JUMPER_SIM=0"] : []),
+      image,
+      "compile", ...compileArgs,
+      "/work/sketch",
+    ];
+    r = await exec("docker", args, { timeoutMs: 5 * 60_000 });
+  }
   // eslint-disable-next-line no-control-regex
   const output = `${r.stdout}\n${r.stderr}`.replace(/\x1b\[[0-9;]*m/g, "");
   if (/Unable to find image|Cannot connect to the Docker daemon/.test(r.stderr)) {
@@ -341,8 +386,10 @@ async function compile(
     throw new RunnerError("bad-fqbn", `Build failed: the board '${req.fqbn}' is not supported by the build image (${output.trim().split("\n").find((l) => /fqbn|platform/i.test(l)) ?? ""}). Fix: use one of ${SUPPORTED_FQBNS.map((f) => `"${f}"`).join(", ")} (firmware.build.fqbn; the board part's mcu.fqbn is the default).`);
   }
   const prefix = req.displayPrefix ?? "";
+  const nativeSketch = (s: string) => p0(s, `${work}/sketch/`) ?? p0(s, `${work}/jsim/sketch/`) ?? p0(s, `/private${work}/sketch/`);
   const pathMap = (p: string): string | undefined => {
-    const m = p.match(/^(?:\/work\/sketch|\/tmp\/[^/]*\/sketch)\/(.+)$/) ?? p.match(/^(?:.*\/)?sketch\/(sketch\.ino(?:\.cpp)?)$/);
+    const n = native ? nativeSketch(p) : undefined;
+    const m = (n !== undefined ? [p, n] : undefined) ?? p.match(/^(?:\/work\/sketch|\/tmp\/[^/]*\/sketch)\/(.+)$/) ?? p.match(/^(?:.*\/)?sketch\/(sketch\.ino(?:\.cpp)?)$/);
     if (!m) return undefined;
     let rel = m[1]!.replace(/\.ino\.cpp$/, ".ino");
     if (rel === "sketch.ino") rel = main;
@@ -353,6 +400,9 @@ async function compile(
   const hexPath = join(work, "out", kind === "bin" ? "sketch.ino.merged.bin" : platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
   const binary = ok && kind === "bin" ? new Uint8Array(readFileSync(hexPath)) : undefined;
+  // A failure the compiler did not explain (a tool that did not start, a killed build) is not cached:
+  // the next build tries again instead of returning the same failure.
+  const unexplained = !ok && !diagnostics.some((d) => d.severity === "error");
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
     diagnostics.push({ severity: "error", message: `arduino-cli exited with code ${r.code}: ${output.trim().split("\n").slice(-4).join(" | ")}`, hint: "Read the message above; if it mentions a library, add it to firmware.libraries." });
   }
@@ -370,9 +420,11 @@ async function compile(
     libraries,
     logTail: output.trim().split("\n").slice(-15).join("\n"),
   };
-  mkdirSync(resultDir, { recursive: true });
-  if (binary) writeFileSync(join(resultDir, "flash.json"), JSON.stringify(writeCachedFlash(resultDir, binary)));
-  writeFileSync(join(resultDir, "result.json"), JSON.stringify(result));
+  if (!unexplained) {
+    mkdirSync(resultDir, { recursive: true });
+    if (binary) writeFileSync(join(resultDir, "flash.json"), JSON.stringify(writeCachedFlash(resultDir, binary)));
+    writeFileSync(join(resultDir, "result.json"), JSON.stringify(result));
+  }
   rmSync(work, { recursive: true, force: true });
   return { ...result, ...(binary ? { binary } : {}) };
 }

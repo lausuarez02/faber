@@ -72,6 +72,11 @@ export class SandboxCA {
   }
 
   private async makeLeaf(host: string): Promise<tls.SecureContext> {
+    return tls.createSecureContext(await this.leafPem(host));
+  }
+
+  /** A fresh key and certificate chain for `host` as PEM (a server in another thread or process can use them). */
+  async leafPem(host: string): Promise<{ key: string; cert: string }> {
     const keys = (await webcrypto.subtle.generateKey(ALG, true, ["sign", "verify"])) as unknown as CryptoKeyPair;
     const now = Date.now();
     const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(host);
@@ -91,6 +96,6 @@ export class SandboxCA {
       ],
     });
     const key = pemKey(await webcrypto.subtle.exportKey("pkcs8", keys.privateKey as unknown as webcrypto.CryptoKey));
-    return tls.createSecureContext({ key, cert: `${leaf.toString("pem").trim()}\n${this.certPem.trim()}\n` });
+    return { key, cert: `${leaf.toString("pem").trim()}\n${this.certPem.trim()}\n` };
   }
 }

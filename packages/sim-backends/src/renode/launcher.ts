@@ -4,11 +4,12 @@
 // dial back to Jumper's bridge port. Everything after that goes over the bridge socket.
 import { execFile, spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { closeSync, openSync } from "node:fs";
+import { closeSync, existsSync, openSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { EMULATOR_LABEL, OWNER_LABEL } from "../qemu-esp/launcher.ts";
+import { jumperRenodeBinary, nativeRenodeBinary, nativeRenodeInstalled, pickRuntime, probeDocker } from "../runtime.ts";
 
 const exec = promisify(execFile);
 
@@ -39,7 +40,7 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
   const out = o.logFile ? openSync(o.logFile, "a") : "ignore";
   let argv: string[];
   let name: string | undefined;
-  if ((o.runtime ?? "docker") === "docker") {
+  if ((o.runtime ?? renodeRuntime()) === "docker") {
     name = `jumper-renode-${process.pid}-${randomBytes(3).toString("hex")}`;
     argv = [
       "docker", "run", "--rm", "-i", "--name", name, "--label", "jumper.renode=1",
@@ -66,15 +67,21 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
 }
 
 /**
- * Docker (default) or a native Renode 1.17 on this machine (JUMPER_RENODE_RUNTIME=native; the binary
- * from JUMPER_RENODE_BIN or `renode` on PATH). Native starts faster; the macOS build is not notarised.
+ * Docker or a native Renode 1.17 on this machine (round 11: ~/.jumper/emulators/renode/1.17.0, installed
+ * by `jumper setup renode`; or JUMPER_RENODE_BIN; or \`renode\` on PATH). JUMPER_RENODE_RUNTIME=docker|native
+ * forces one; otherwise JUMPER_RUNTIME (auto: Docker when it answers and has the image, else native when
+ * installed). Native starts faster; the macOS build is not notarised.
  */
 export function renodeRuntime(): "docker" | "native" {
-  return process.env.JUMPER_RENODE_RUNTIME === "native" ? "native" : "docker";
+  return pickRuntime({
+    override: process.env.JUMPER_RENODE_RUNTIME,
+    nativeInstalled: nativeRenodeInstalled,
+    dockerReady: () => spawnSync("docker", ["image", "inspect", RENODE_IMAGE], { stdio: "ignore", timeout: 10_000 }).status === 0,
+  });
 }
 
 export function renodeBinary(): string {
-  return process.env.JUMPER_RENODE_BIN || "renode";
+  return nativeRenodeBinary();
 }
 
 /** Remove Renode containers a crashed Jumper process left behind. */
@@ -88,19 +95,22 @@ export async function reapRenodeContainers(): Promise<number> {
 /** Why the Renode backend cannot start here, with the fix, or undefined when Docker and the image are ready. */
 export function renodeUnavailable(image = RENODE_IMAGE, runtime = renodeRuntime()): string | undefined {
   if (runtime === "native") {
-    const v = spawnSync(renodeBinary(), ["--version"], { encoding: "utf8", timeout: 30_000 });
-    if (v.error || v.status !== 0) return `JUMPER_RENODE_RUNTIME is native, but Renode did not run as '${renodeBinary()}' (${v.error?.message ?? (v.stderr || "").trim()}). Fix: set JUMPER_RENODE_BIN to Renode 1.17's executable (Renode.app/Contents/MacOS/renode on macOS), or unset JUMPER_RENODE_RUNTIME to use Docker.`;
+    const bin = renodeBinary();
+    const absent = bin === "renode" ? (spawnSync("renode", ["--version"], { stdio: "ignore", timeout: 30_000 }).error as NodeJS.ErrnoException | undefined)?.code === "ENOENT" : !existsSync(bin);
+    if (absent) {
+      return `Renode is not installed natively (no ${bin})${probeDocker().ok ? "" : `, and Docker cannot run it instead: ${probeDocker().why}`}. Fix: run \`jumper setup renode\` (downloads Renode 1.17.0, about 75 MB, checksum-checked), then run again.`;
+    }
+    const v = spawnSync(bin, ["--version"], { encoding: "utf8", timeout: 30_000 });
+    if (v.error || v.status !== 0) {
+      return `Renode did not run as '${bin}' (${v.error?.message ?? (v.stderr || "").trim()}). Why: ${bin === "renode" ? "Jumper's Renode is not installed and none is on PATH" : "the install is damaged or macOS blocked it"}. Fix: run \`jumper setup renode\` (installs Renode 1.17.0 in ${jumperRenodeBinary().split("/Renode.app")[0]}), or set JUMPER_RENODE_BIN to Renode 1.17's executable.`;
+    }
     return undefined;
   }
-  const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
-  if (info.error && (info.error as NodeJS.ErrnoException).code === "ENOENT") {
-    return "This board runs in Renode inside Docker, and the 'docker' command was not found. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then run again.";
-  }
-  if (info.error) {
-    return `This board runs in Renode inside Docker, and Docker did not answer within 15 s (${info.error.message}). Why: Docker Desktop is starting, stuck or out of disk space. Fix: open Docker Desktop and wait until it says running (restart it if it hangs; free disk space if it is full), then run again.`;
-  }
-  if (info.status !== 0) {
-    return `This board runs in Renode inside Docker, and Docker is not running (${(info.stderr || "docker info failed").trim().split("\n")[0]}). Fix: start Docker Desktop (macOS: open -a Docker), wait until it says running, then run again.`;
+  const info = probeDocker();
+  if (!info.ok) {
+    return nativeRenodeInstalled()
+      ? `This board runs in Renode, the runtime is forced to Docker, and ${info.why}. Fix: unset JUMPER_RUNTIME / JUMPER_RENODE_RUNTIME (Jumper's native Renode is installed), or start Docker Desktop, then run again.`
+      : `This board runs in Renode, and neither runtime is ready: ${info.why}, and Renode is not installed natively. Fix: run \`jumper setup renode\` (native Renode 1.17.0, no Docker needed), or start Docker Desktop (restart it if it hangs; free disk space if it is full), then run again.`;
   }
   const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
   if (img.status !== 0) {

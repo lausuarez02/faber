@@ -1382,12 +1382,19 @@ export class ProjectSession {
     const had = !!this.host;
     this.host?.dispose();
     this.host = undefined;
-    // Round 10: an ESP32's network card plugs into the project's device network (when it has one).
-    const network = this.project.network && board?.mcu.backend === "qemu-esp" ? await this.networkFor(1) : undefined;
-    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress, network ? { network } : undefined);
+    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress, await this.boardNetwork());
     this.host = host;
     this.hostKey = key;
     return this.withNetworkClock({ host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) });
+  }
+
+  /**
+   * Round 10: an ESP32's network card plugs into the project's device network (when it has one).
+   * Round 11: for every host (run, run_tests, screenshot), not only the live one.
+   */
+  private async boardNetwork(): Promise<{ network: { framePort: number; mac: string } } | undefined> {
+    const board = firmwareBoardOf(this.project, this.registry);
+    return this.project.network && board?.mcu.backend === "qemu-esp" ? { network: await this.networkFor(1) } : undefined;
   }
 
   /** Round 10: a project with a device network runs its mocks on the simulation's clock. */
@@ -1639,8 +1646,9 @@ export class ProjectSession {
     // Frames of one representative scenario (the longest up to 2 virtual minutes), for live view / replay.
     let frames: Frame[] = [];
     let framesSpan = -1;
+    const boardNet = await this.boardNetwork();
     for (const s of pick) {
-      const host = await SimHost.create(this.project, this.registry, hex);
+      const host = await SimHost.create(this.project, this.registry, hex, undefined, boardNet);
       const mine: Frame[] = [];
       if (net?.faults.length) net.clearFaults();
       // a scenario's network_mock steps last for that scenario only
@@ -1777,7 +1785,7 @@ export class ProjectSession {
       if (!Number.isInteger(at) || at < 0 || at > last) fail("bad-arg", `screenshot: at_step ${args.at_step} is out of range`, `scenario '${sc.id}' has steps 0..${last}`, `pass a step index between 0 and ${last} (or leave at_step out for the end)`);
       await this.ensureBuilt(ctx);
       await SimHost.preparePhysics(this.project);
-      tmpHost = await SimHost.create(this.project, this.registry, this.loadHex());
+      tmpHost = await SimHost.create(this.project, this.registry, this.loadHex(), undefined, await this.boardNetwork());
       const r = runScenario(tmpHost, sc, this.project, this.registry, undefined, { ...this.scenarioOptions(), stopAfter: at });
       host = tmpHost;
       scenarioNote = { scenario: sc.id, at_step: at, step: JSON.stringify(sc.steps[at]), ...(r.passed ? {} : { note: `the scenario failed before step ${at}: ${r.reason}; the picture shows the moment it failed` }) };

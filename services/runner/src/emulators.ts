@@ -60,10 +60,10 @@ export async function checkEmulator(backend: ProcessBackendId, board = "this boa
   try {
     r = await exec("docker", ["info", "--format", "{{.ServerVersion}}"], { timeoutMs: 15_000 });
   } catch {
-    return { ok: false, code: "docker-missing", image: info.image, message: `Can't run ${board}: the 'docker' command was not found. Why: ${board} runs in ${info.name}, a local emulator Jumper starts in Docker on your computer. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then press Run again.` };
+    return { ok: false, code: "docker-missing", image: info.image, message: `Can't run ${board}: the 'docker' command was not found. Why: ${board} runs in ${info.name}, a local emulator Jumper starts on your computer (natively, or in Docker), and neither is ready. Fix: run \`${info.setup}\` to install it natively (no Docker needed), or install Docker Desktop (https://www.docker.com/products/docker-desktop/) and start it, then press Run again.` };
   }
   if (r.code !== 0) {
-    return { ok: false, code: "docker-not-running", image: info.image, message: `Can't run ${board}: Docker is not running. Why: ${board} runs in ${info.name}, a local emulator Jumper starts in Docker on your computer. Fix: start Docker Desktop (macOS: open -a Docker), wait until it says running, then press Run again.` };
+    return { ok: false, code: "docker-not-running", image: info.image, message: `Can't run ${board}: Docker is not running${r.stderr.includes("[jumper] killed after") ? " (it did not answer within 15 s)" : ""}. Why: ${board} runs in ${info.name}, a local emulator Jumper starts on your computer (natively, or in Docker), and neither is ready. Fix: run \`${info.setup}\` to install it natively (no Docker needed), or start Docker Desktop (macOS: open -a Docker) and wait until it says running, then press Run again.` };
   }
   const dockerMs = Date.now() - t0;
   const img = await exec("docker", ["image", "inspect", "--format", "{{.Id}}", info.image], { timeoutMs: 15_000 });

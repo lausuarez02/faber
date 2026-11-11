@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-11 (rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-11 (round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,45 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 11 (2026-11-11): native builds, firmware and emulators without Docker
+
+Docker Desktop on this Mac is broken (its VM disk has EXT4 errors), so Jumper now builds and runs
+firmware natively. Docker stays supported (Linux, CI, or `JUMPER_RUNTIME=docker`). Guide:
+[docs/native-runtime.md](docs/native-runtime.md). Branch `round11/native-builds`.
+
+| Area | What works |
+| --- | --- |
+| Runtime choice | `JUMPER_RUNTIME=auto` (default): Docker when `docker info` answers within 4 s and has the image, else Jumper's native install; `docker` / `native` force one. One probe per 30 s. Nothing usable: what failed, why, and `jumper setup <family>` or start Docker |
+| Toolchain | arduino-cli 1.5.1 (SHA-256 checked) in `~/.jumper/toolchains/arduino/1.5.1` with its own data / user dirs: arduino:avr 1.8.8, rp2040 6.3.1, esp32 3.3.12, STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13, the libs3 set; the ESP32 set adds the r3 network libraries + JumperEth + JumperSim. The images' post-build steps run natively (RP2040 ihex, ESP32 Wi-Fi/TLS shim + 4 MB flash, nRF52 sim.hex) |
+| Emulators | Espressif QEMU 9.2.2 + patches 0001-0003 (bridge v5) compiled into `~/.jumper/emulators/qemu-esp/9.2.2-20260417-jb5` (45 s, 50 MB); Renode 1.17.0 from the release .dmg (SHA-256 checked, 13 s, 180 MB) |
+| Setup | `jumper setup` (all) / `jumper setup avr|rp2040|esp32|stm32|nrf52|renode` / `jumper setup list`, with progress; the app: `GET /api/runtime`, `POST /api/runtime/setup` (same lines, NDJSON) |
+| Same output | AVR Blink and the RP2040 / libs3 fixtures byte-identical to the Docker builds, except FastLED (a few bytes of register allocation; runs identically, checked on the simulator). ESP32: same image size as Docker's; paths mapped to the image's (`-ffile-prefix-map`), no home folder in firmware |
+| Pending fixtures | built natively and run: esp-periph `esp_io` / `esp_bus` on ESP32, S3 and C3 (LEDC PWM, servo, tone, fade, IRQ, ADC raw, I2C on both controllers, Arduino SPI, UART1/2 both ways), `esp_neopixel` (built at test time, LGPL), `net-probe` on the S3 through the device network (2/2), both network examples' scenarios (4/4) |
+| Fixes found | servo fixture at 14 bit (the S3 / C3 LEDC maximum); the device-net test's upstream server moved to its own thread (the lockstep loop starved it); run_tests / screenshot now plug an ESP32 into the device network (examples failed "no network card"); native builds set TMPDIR (ctags failed under MCP stdio); unexplained build failures are no longer cached; ESP32 network libraries pinned (PubSubClient 2.8.0, MQTT 2.5.3, ArduinoJson 7.4.3, WebSockets 2.7.2); stale esp32-session expectation; a fake-QEMU cleanup race |
+
+Install (M4 Max): avr 30 s, rp2040 27 s, esp32 92 s, stm32 34 s, mbed_nano 17 s, nrf52 31 s, QEMU 45 s,
+Renode 13 s: about 5 minutes and 10 GB in `~/.jumper` (esp32 3.9 GB, stm32 2.2 GB, rp2040 1.1 GB, nRF52 0.9 GB,
+mbed 0.5 GB, avr 0.25 GB, libraries 0.4 GB, Renode 0.18 GB, QEMU 0.05 GB). QEMU needs Homebrew's glib,
+pixman, libgcrypt, libslirp (`libslirp` was installed for this round: Espressif's 9.2.2 compiles net/slirp.c
+even with slirp disabled).
+
+Checks (worktree `jumper-wt-r11-native`, no Docker stub, Docker down):
+- `pnpm test`: exit 0, **205 files passed, 2 skipped; 1711 tests passed, 5 expected fail, 5 skipped**. Every
+  emulator integration test ran natively: ESP board fixtures, ESP I2C0, MicroPython ESP32 / C3, ESP
+  peripherals (MicroPython + the new Arduino fixtures), esp32-session (5/5), device-net firmware (2/2),
+  Renode 18/18 + the Black Pill OLED, runner Docker-path tests (AVR + RP2040 byte-identity), libs3 17/17,
+  MCP Blink end to end. Skipped: ESP-IDF 2 and PlatformIO 1 (Docker-only toolchains), live AI 2 (keys).
+- e2e, full suite (`E2E_PORT=6100 E2E_HUB_PORT_BASE=12100 --workers=2`): 95 passed, 16 skipped, 2 did not run, 1 failed
+  (case-view desktop, a text assertion under load; re-run alone: desktop + mobile 2/2 passed). Now running instead of
+  skipping without Docker: projects-flow "Build & Run" (native AVR) and renode-board (native Renode), both 2/2 alone.
+
+Gaps:
+- ESP-IDF and PlatformIO builds still need Docker (no native toolchain).
+- No Docker image was built or run this round (Docker Desktop broken): the Docker path is unchanged and
+  unit-tested with a fake `docker`, not re-run for real.
+- analogReadMilliVolts is wrong on every ESP chip (no calibration eFuses in QEMU); MicroPython SPI (DMA)
+  still fails; ESP32 DevKitC networking not run; native QEMU / Renode are unsigned and QEMU links Homebrew.
 
 ## Rounds 9-10, integrated on main (2026-11-11): every board family, one registry, one pipeline
 

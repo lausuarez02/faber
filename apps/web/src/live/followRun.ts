@@ -144,7 +144,7 @@ export async function runFollowed(): Promise<void> {
       refuse(`${proc.name} runs in ${emulatorName(proc.backend)} next to jumper serve, and this page is not connected to it. Fix: wait for the Live bar to say connected (or restart \`jumper serve\`), then press Run again.`);
       return;
     }
-    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in ${emulatorName(proc.backend)}`, detail: `The firmware runs in the emulator on this computer (Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
+    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in ${emulatorName(proc.backend)}`, detail: `The firmware runs in the emulator on this computer (natively, or in Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
     return;
   }
   const needsFirmware = !!p.firmware || p.parts.length === 0;

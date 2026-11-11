@@ -35,8 +35,9 @@ Project
   project-parts                           this project's agent-made parts (list_project_parts)
 Firmware and simulation
   firmware <language> [--firmware ID@v] [--target T] [--env E]   set_firmware: arduino | micropython | esp-idf | platformio
-  setup <language|board family|list>     install a language's toolchain or a board family's build +
-                                          emulator images (esp32, renode) ahead of the first run
+  setup [family|language|list]           install natively (no Docker needed): all families, or one of
+                                          avr, rp2040, esp32, stm32, nrf52, renode (toolchain + emulator);
+                                          JUMPER_RUNTIME=docker builds the Docker images instead
                                           (micropython: firmware downloads; esp-idf / platformio: Docker images)
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
@@ -436,24 +437,31 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
 }
 
 /**
- * Round 10: `jumper setup <language>` installs what a language's first build would fetch, with
- * progress, so the first Build & Run is fast: the MicroPython firmware builds (downloaded, sha256
- * checked) or the toolchain Docker image (built from toolchains/<dir>).
+ * `jumper setup`: install what builds and emulators need, with progress, so the first Build & Run is
+ * fast. Round 11: board families install natively (~/.jumper: arduino-cli + pinned cores and
+ * libraries, Jumper's patched QEMU, Renode), so a Mac needs no Docker; JUMPER_RUNTIME=docker keeps
+ * the round 10 behaviour (build the Docker images). Languages: MicroPython firmware (downloaded,
+ * sha256 checked) or the toolchain Docker image (built from toolchains/<dir>).
  */
 async function setupCommand(what: string | undefined): Promise<number> {
   const runner = await import("@jumper/runner");
   const log = (l: string) => process.stderr.write(l + "\n");
   const list = () => {
-    process.stdout.write("Board families with a local emulator (docs/boards.md): esp32 (ESP32 / S3 / C3 in QEMU), renode (STM32, nRF52840)\n");
-    process.stdout.write("Languages and their support per chip (docs/firmware-languages.md):\n");
+    process.stdout.write(`${runner.runtimeSummary()}\n\nNative installs (jumper setup <family>, or jumper setup for all):\n`);
+    for (const c of runner.nativeStatus()) process.stdout.write(`  ${c.installed ? "installed " : "missing   "} ${c.id.padEnd(10)} ${c.label}\n`);
+    process.stdout.write(`\nFamilies: ${Object.entries(runner.SETUP_TARGETS).map(([k, v]) => `${k} (${v.label})`).join(", ")}\n`);
+    process.stdout.write("\nLanguages and their support per chip (docs/firmware-languages.md):\n");
     for (const lang of Object.values(runner.LANGUAGES)) {
       const ok = Object.entries(lang.chips).filter(([, s]) => s.status === "verified").map(([c]) => c);
       process.stdout.write(`  ${lang.id.padEnd(12)} ${lang.label.padEnd(16)} verified on: ${ok.join(", ") || "none yet"}\n`);
     }
   };
+  const report = (steps: Awaited<ReturnType<typeof runner.setupNative>>) => {
+    for (const s of steps) process.stdout.write(`${s.what}: ${s.skipped ? "already installed" : `installed in ${(s.ms / 1000).toFixed(0)} s`}${s.bytes ? `, ${(s.bytes / 1e9).toFixed(2)} GB on disk` : ""}\n`);
+  };
+  const docker = runner.runtimeSetting() === "docker";
   try {
     switch (what) {
-      case undefined:
       case "list":
         list();
         return 0;
@@ -471,34 +479,35 @@ async function setupCommand(what: string | undefined): Promise<number> {
         await runner.ensureToolchainImage(runner.PLATFORMIO_IMAGE, log);
         process.stdout.write(`${runner.PLATFORMIO_IMAGE.image}: ready\n`);
         return 0;
-      case "arduino":
-        process.stdout.write("Arduino builds install their image on the first build (jumper build).\n");
-        return 0;
-      // Board families that run in a local emulator: their Arduino build image(s) and the emulator image.
-      case "esp32":
-        await runner.ensureDocker();
+    }
+    if (docker && (what === "esp32" || what === "renode" || what === "stm32" || what === "nrf52")) {
+      // JUMPER_RUNTIME=docker: the round 10 path, Docker images.
+      await runner.ensureDocker();
+      if (what === "esp32") {
         await runner.ensureImage(log, runner.ESP32_IMAGE);
         process.stdout.write(`${runner.ESP32_IMAGE} (ESP32 / S3 / C3 builds): ready\n`);
         await runner.ensureEmulatorImage("qemu-esp", log);
         process.stdout.write(`${runner.EMULATORS["qemu-esp"].image} (Espressif QEMU + Jumper bridge): ready\n`);
         return 0;
-      case "renode":
-      case "stm32":
-      case "nrf52":
-        await runner.ensureDocker();
-        for (const image of [runner.STM32_IMAGE, runner.MBED_NANO_IMAGE, runner.NRF52_IMAGE]) {
-          await runner.ensureImage(log, image);
-          process.stdout.write(`${image}: ready\n`);
-        }
-        await runner.ensureEmulatorImage("renode", log);
-        process.stdout.write(`${runner.EMULATORS.renode.image} (Renode 1.17.0 + Jumper bridge): ready\n`);
-        return 0;
-      default:
-        process.stderr.write(`jumper setup: no toolchain called '${what}'. Why: Jumper knows the languages arduino, micropython, esp-idf and platformio (rust and zephyr are planned) and the board families esp32 and renode (STM32, nRF52). Fix: jumper setup list.\n`);
-        return 2;
+      }
+      for (const image of [runner.STM32_IMAGE, runner.MBED_NANO_IMAGE, runner.NRF52_IMAGE]) {
+        await runner.ensureImage(log, image);
+        process.stdout.write(`${image}: ready\n`);
+      }
+      await runner.ensureEmulatorImage("renode", log);
+      process.stdout.write(`${runner.EMULATORS.renode.image} (Renode 1.17.0 + Jumper bridge): ready\n`);
+      return 0;
     }
+    const target = what === undefined || what === "all" ? "all" : runner.setupTargetOf(what);
+    if (!target) {
+      process.stderr.write(`jumper setup: no toolchain called '${what}'. Why: Jumper knows the board families ${Object.keys(runner.SETUP_TARGETS).join(", ")} (or all) and the languages micropython, esp-idf and platformio (rust and zephyr are planned). Fix: jumper setup list.\n`);
+      return 2;
+    }
+    log(runner.runtimeSummary());
+    report(await runner.setupNative(target, log));
+    return 0;
   } catch (err) {
-    process.stderr.write(`jumper setup ${what}: ${(err as Error).message}\n`);
+    process.stderr.write(`jumper setup ${what ?? "all"}: ${(err as Error).message}\n`);
     return 1;
   }
 }

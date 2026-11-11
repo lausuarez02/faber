@@ -56,3 +56,6 @@ export type { AdviceNote, AdviceOp } from "./advice-notes.ts";
 // round 10 network
 export { networkSnapshot } from "./tools/network.ts";
 export { SessionDeviceNet, sandboxCaDir, networkConfigOf } from "./device-network.ts";
+
+// Round 11: tests and the app ask whether this machine can build a board right now (Docker or native).
+export { canBuildArduino, runtimeSummary, nativeStatus } from "@jumper/runner";

@@ -46,7 +46,7 @@ function fake(events: Ev[], chip: "esp32" | "esp32s3" | "esp32c3" = "esp32c3") {
   };
   cleanups.push(() => {
     be.close();
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }); // the killed fake may still be writing its record
   });
   return { be, record };
 }

@@ -3,18 +3,17 @@
 // toolchain (jumper/arduino-esp32, the board's simulator FQBN), run it in Espressif's QEMU (Docker),
 // see the LED toggle and Serial, press the button, run a scenario, export with esptool instructions.
 // Needs Docker with jumper/qemu-esp and jumper/arduino-esp32; skipped otherwise (the reason is printed).
-import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { ESP32_IMAGE } from "@jumper/runner";
-import { QEMU_ESP_IMAGE } from "@jumper/sim-backends/node";
+import { canBuildArduino, ESP32_IMAGE } from "@jumper/runner";
+import { QEMU_ESP_IMAGE, qemuImageAvailable } from "@jumper/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
-const has = (img: string) => spawnSync("docker", ["image", "inspect", img], { stdio: "ignore", timeout: 15_000 }).status === 0;
-const ready = has(QEMU_ESP_IMAGE) && has(ESP32_IMAGE);
-if (!ready) console.warn(`skipping the ESP32 session test: Docker is not running or ${QEMU_ESP_IMAGE} / ${ESP32_IMAGE} is missing (Fix: start Docker Desktop, then pnpm jumper setup esp32)`);
+// Round 11: Docker with both images, or the native toolchain + native QEMU (jumper setup esp32).
+const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
+if (!ready) console.warn(`skipping the ESP32 session test: neither Docker (${QEMU_ESP_IMAGE} / ${ESP32_IMAGE}) nor the native ESP32 toolchain and QEMU are ready (Fix: pnpm jumper setup esp32)`);
 
 export const XIAO_BLINK_BUTTON = `// XIAO ESP32-S3: an LED on D0 blinks; a button on D1 (to GND) lights the user LED while pressed.
 const int LED = D0;
@@ -113,7 +112,7 @@ describe.skipIf(!ready)("ESP32 boards through the session (real build, real QEMU
     const e = await call(s, "export", {});
     expect(e.files).toContain("firmware.bin");
     expect(e.flash).toMatch(/^esptool --chip esp32s3 --port <port> --baud 921600 write_flash 0x0 .*firmware\.bin$/);
-    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3; the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
+    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3 without Jumper's simulation shims \(JUMPER_SIM=0\); the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
     const bin = readFileSync(join(e.dir, "firmware.bin"));
     expect(bin[0]).toBe(0xe9); // the ESP image magic of the bootloader at 0x0
   });
