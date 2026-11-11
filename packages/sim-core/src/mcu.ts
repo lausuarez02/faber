@@ -62,6 +62,13 @@ export interface McuBackend {
    * to the serial monitor and no pin toggles, which keeps plain Serial.print cheap).
    */
   pinWatched?(pinId: string): void;
+  /**
+   * Optional (round 10): release what the backend holds outside this process (an emulator process,
+   * a container). The Simulation calls it from dispose().
+   */
+  dispose?(): void;
+  /** Optional: which buses the backend bridges ("gpio", "uart", "i2c", "spi", "adc", "pwm", …), for reports. */
+  readonly capabilities?: readonly string[];
 }
 
 /** Creates a backend for a board part. `spec.mcu.backend` says which one (e.g. "avr8js"). */

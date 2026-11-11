@@ -33,15 +33,14 @@ export interface RenodeBoard {
   spi?: { controller: string; mosi: string; miso: string; sck: string; ss: string };
   /** Arduino FQBN that builds firmware for it (the Jumper build image is picked from its prefix). */
   fqbn: string;
-  /**
-   * What load() takes: "elf" (default; Renode finds the vector table from its symbols) or "ihex"
-   * (Intel HEX, e.g. the Adafruit nRF52 build: Nordic's MBR + SoftDevice merged with the app).
-   */
-  firmware?: "elf" | "ihex";
   /** Flash ranges to fill with 0xFF before loading (erased flash; the MBR reads unwritten words). */
   erasedFlash?: readonly { start: number; size: number }[];
-  /** Start from this vector table instead of the ELF's (0: the Nordic MBR at the bottom of flash). */
-  vectorTableOffset?: number;
+  /**
+   * Where the CPU finds its vector table at reset: the app's start in flash (0x08000000 on STM32,
+   * 0x10000 behind the Nano 33 BLE's bootloader), or 0 for Nordic's MBR. Firmware is Intel HEX (as
+   * every Jumper build keeps it), which has no symbols to find it from.
+   */
+  vectorTableOffset: number;
   /** Extra `sysbus.cpu <Property> <value>` settings for this board's runtime. */
   cpuSettings?: readonly string[];
   /** nRF52 "port.pin" (PWM PSEL as the bridge reports it) → board pin id. Built from `pins` when absent. */
@@ -115,6 +114,7 @@ export const RENODE_BOARDS = {
     i2c: { controller: "i2c1", sda: "PB7", scl: "PB6" },
     spi: { controller: "spi1", mosi: "PA7", miso: "PA6", sck: "PA5", ss: "PA4" },
     fqbn: "STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8",
+    vectorTableOffset: 0x0800_0000,
   },
   // WeAct "Black Pill" STM32F411CEU6 (100 MHz, 512 KB flash), STM32duino GenF4 BLACKPILL_F411CE.
   // Serial = USART1 (PA9 / PA10), Wire = I2C1 (PB7 / PB6), SPI = SPI1 (PA7 / PA6 / PA5, SS PA4),
@@ -131,6 +131,7 @@ export const RENODE_BOARDS = {
     i2c: { controller: "i2c1", sda: "PB7", scl: "PB6" },
     spi: { controller: "spi1", mosi: "PA7", miso: "PA6", sck: "PA5", ss: "PA4" },
     fqbn: "STMicroelectronics:stm32:GenF4:pnum=BLACKPILL_F411CE",
+    vectorTableOffset: 0x0800_0000,
   },
   // ST Nucleo-F401RE (84 MHz). Arduino headers: D0 PA3, D1 PA2 (Serial = USART2, through the ST-LINK
   // USB), D14 / D15 = PB9 / PB8 (Wire = I2C1), D11 / D12 / D13 = PA7 / PA6 / PA5 (SPI1, SS D10 = PB6),
@@ -147,6 +148,7 @@ export const RENODE_BOARDS = {
     i2c: { controller: "i2c1", sda: "PB9", scl: "PB8" },
     spi: { controller: "spi1", mosi: "PA7", miso: "PA6", sck: "PA5", ss: "PB6" },
     fqbn: "STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F401RE",
+    vectorTableOffset: 0x0800_0000,
   },
   // Arduino Nano 33 BLE (nRF52840, 64 MHz), arduino:mbed_nano. Serial is USB CDC on the real board;
   // the simulator build prints it on Serial1 (UARTE0 = Renode uart0, D0 / D1). Wire = TWI0 on A4 / A5,
@@ -164,6 +166,8 @@ export const RENODE_BOARDS = {
     i2c: { controller: "twi0", sda: "A4", scl: "A5" },
     spi: { controller: "spi2", mosi: "D11", miso: "D12", sck: "D13", ss: "D10" },
     fqbn: "arduino:mbed_nano:nano33ble",
+    // The app is linked behind Arduino's bootloader (not emulated).
+    vectorTableOffset: 0x10000,
   },
   // Seeed XIAO nRF52840 (64 MHz), Seeeduino:nrf52 (Adafruit nRF52 core). The build is Nordic's MBR +
   // S140 SoftDevice + the app as one Intel HEX, booted through the MBR like the real board (without
@@ -182,7 +186,6 @@ export const RENODE_BOARDS = {
     i2c: { controller: "twi0", sda: "D4", scl: "D5" },
     spi: { controller: "spi2", mosi: "D10", miso: "D9", sck: "D8", ss: "D7" },
     fqbn: "Seeeduino:nrf52:xiaonRF52840",
-    firmware: "ihex",
     erasedFlash: [{ start: 0, size: 0x100000 }],
     vectorTableOffset: 0,
     // FreeRTOS's tickless idle waits in WFE for an interrupt the SoftDevice keeps masked; Renode does

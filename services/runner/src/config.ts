@@ -22,15 +22,61 @@ export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-r
  */
 export const PICO_IMAGE = process.env.JUMPER_PICO_IMAGE ?? "jumper/arduino-pico:6.3.1-libs3-r1";
 
+/**
+ * Round 10 (Renode boards). STM32duino 2.11.0 (toolchains/arduino-stm32): linux/amd64 only (STM32Tools
+ * has no aarch64 build), so on Apple silicon it runs emulated: about 14 s for a small sketch, 40 s with
+ * display libraries. arduino:mbed_nano 4.4.1 (toolchains/arduino-mbed-nano) and Seeed's nRF52 core
+ * 1.1.13 (toolchains/arduino-nrf52) are native arm64. All carry the libs3 libraries.
+ */
+export const STM32_IMAGE = process.env.JUMPER_STM32_IMAGE ?? "jumper/arduino-stm32:2.11.0-libs3-r1";
+export const MBED_NANO_IMAGE = process.env.JUMPER_MBED_NANO_IMAGE ?? "jumper/arduino-mbed-nano:4.4.1-libs3-r1";
+export const NRF52_IMAGE = process.env.JUMPER_NRF52_IMAGE ?? "jumper/arduino-nrf52:1.1.13-libs3-r2";
+
+export interface Platform {
+  prefix: string;
+  image: () => string;
+  examples: readonly string[];
+  /** Folder (under toolchains/) whose Dockerfile builds the image, for "image missing" errors. */
+  dockerfile: string;
+  /** Extra `docker build` / `docker run` platform (amd64-only images). */
+  dockerPlatform?: string;
+  /**
+   * The simulator build of a board whose `Serial` is USB CDC (not emulated): a header force-included
+   * in every C++ file so Serial prints on the hardware UART the simulator reads.
+   */
+  simSerialHeader?: string;
+  /** The image writes <sketch>.ino.sim.hex (the whole flash the simulator loads), use it over <sketch>.ino.hex. */
+  simHex?: boolean;
+}
+
 /** arduino-cli platforms the images carry, by FQBN prefix. */
-export const PLATFORMS = [
-  { prefix: "arduino:avr:", image: () => RUNNER_IMAGE, examples: ["arduino:avr:uno", "arduino:avr:nano"] },
-  { prefix: "rp2040:rp2040:", image: () => PICO_IMAGE, examples: ["rp2040:rp2040:rpipico", "rp2040:rp2040:seeed_xiao_rp2040", "rp2040:rp2040:waveshare_rp2040_zero"] },
-] as const;
+export const PLATFORMS: readonly Platform[] = [
+  { prefix: "arduino:avr:", image: () => RUNNER_IMAGE, examples: ["arduino:avr:uno", "arduino:avr:nano"], dockerfile: "services/runner/docker" },
+  { prefix: "rp2040:rp2040:", image: () => PICO_IMAGE, examples: ["rp2040:rp2040:rpipico", "rp2040:rp2040:seeed_xiao_rp2040", "rp2040:rp2040:waveshare_rp2040_zero"], dockerfile: "toolchains/arduino-pico" },
+  {
+    prefix: "STMicroelectronics:stm32:",
+    image: () => STM32_IMAGE,
+    examples: ["STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8", "STMicroelectronics:stm32:GenF4:pnum=BLACKPILL_F411CE", "STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F401RE"],
+    dockerfile: "toolchains/arduino-stm32",
+    dockerPlatform: "linux/amd64",
+  },
+  {
+    prefix: "arduino:mbed_nano:",
+    image: () => MBED_NANO_IMAGE,
+    examples: ["arduino:mbed_nano:nano33ble"],
+    dockerfile: "toolchains/arduino-mbed-nano",
+    simSerialHeader: "#pragma once\n#ifdef __cplusplus\n#include <Arduino.h>\n#undef Serial\n#define Serial _UART1_\n#endif\n",
+  },
+  { prefix: "Seeeduino:nrf52:", image: () => NRF52_IMAGE, examples: ["Seeeduino:nrf52:xiaonRF52840"], dockerfile: "toolchains/arduino-nrf52", simHex: true },
+];
+
+export function platformFor(fqbn: string): Platform {
+  return PLATFORMS.find((p) => fqbn.startsWith(p.prefix)) ?? PLATFORMS[0]!;
+}
 
 /** The Docker image that builds a FQBN (the AVR runner image for anything it does not know). */
 export function imageFor(fqbn: string): string {
-  return (PLATFORMS.find((p) => fqbn.startsWith(p.prefix)) ?? PLATFORMS[0]).image();
+  return platformFor(fqbn).image();
 }
 
 /** "arduino:avr:uno", "rp2040:rp2040:rpipico", … for error messages. */

@@ -104,25 +104,19 @@ export class RenodeBackend implements McuBackend {
     return this.link !== undefined;
   }
 
+  /** Intel HEX text (what Jumper's build keeps for every board) or an ELF file's bytes. */
   load(firmware: Uint8Array | string): void {
-    if ((this.board.firmware ?? "elf") === "ihex") {
+    const bytes = typeof firmware === "string" ? undefined : firmware;
+    if (bytes && ELF_MAGIC.every((b, i) => bytes[i] === b)) {
+      this.firmware = { kind: "elf", data: bytes };
+    } else {
       const text = typeof firmware === "string" ? firmware : new TextDecoder("latin1").decode(firmware);
       if (!text.trimStart().startsWith(":")) {
         throw new Error(
-          `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode from Intel HEX (Nordic's MBR + SoftDevice + the app, as Jumper's build writes it), but it got ${typeof firmware === "string" ? "text" : "bytes"} that is not Intel HEX. Fix: build with the board's FQBN (${this.board.fqbn}).`,
+          `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode, which loads Intel HEX or an ELF file, but it got ${typeof firmware === "string" ? "text" : "bytes"} that is neither. Fix: build the sketch with the board's FQBN (${this.board.fqbn}).`,
         );
       }
       this.firmware = { kind: "ihex", data: new TextEncoder().encode(text) };
-    } else {
-      const bytes = typeof firmware === "string" ? undefined : firmware;
-      if (!bytes || !ELF_MAGIC.every((b, i) => bytes[i] === b)) {
-        const what = typeof firmware === "string" ? (firmware.startsWith(":") ? "Intel HEX text" : "text") : "bytes that are not an ELF file";
-        throw new Error(
-          `The ${this.board.chip} board '${this.board.type}' runs its firmware in Renode, which loads the ELF file the build writes, but it got ${what}. ` +
-            `Fix: build with the board's FQBN (${this.board.fqbn}); Jumper's build keeps <sketch>.ino.elf for Renode boards.`,
-        );
-      }
-      this.firmware = { kind: "elf", data: bytes };
     }
     this.close();
     this._cycles = 0;
@@ -259,7 +253,8 @@ export class RenodeBackend implements McuBackend {
         `machine LoadPlatformDescription @${run}/extra.repl`,
         ...(this.board.erasedFlash ?? []).map((r) => `sysbus.jumper Fill ${r.start} ${r.size} 255`),
         fw.kind === "elf" ? `sysbus LoadELF @${run}/${fwFile}` : `sysbus LoadHEX @${run}/${fwFile}`,
-        ...(this.board.vectorTableOffset !== undefined ? [`sysbus.cpu VectorTableOffset ${this.board.vectorTableOffset}`] : []),
+        // An Intel HEX has no symbols to find the vector table from: the board says where it is.
+        ...(this.board.vectorTableOffset !== undefined && (fw.kind === "ihex" || this.board.erasedFlash) ? [`sysbus.cpu VectorTableOffset 0x${this.board.vectorTableOffset.toString(16)}`] : []),
         // One instruction per core clock cycle, so DWT->CYCCNT and busy loops match the chip's clock.
         `sysbus.cpu PerformanceInMips ${Math.round(this.board.clockHz / 1e6)}`,
         ...(this.board.cpuSettings ?? []).map((c) => `sysbus.cpu ${c}`),

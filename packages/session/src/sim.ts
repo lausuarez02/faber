@@ -10,7 +10,7 @@ import {
   type PartRegistry,
   type VisualState,
 } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { nodeBackendFactory as backendFactory } from "@jumper/sim-backends/node";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import { fail } from "./errors.ts";
 import { createSessionNetwork, setWifiDrop, type SessionNetwork } from "./network.ts";

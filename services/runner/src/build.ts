@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { cacheDir, imageFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
+import { cacheDir, imageFor, PINNED_LIBRARIES, platformFor, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
 
@@ -212,9 +212,11 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
  * the exact same command (and the same bytes).
  */
 const SKETCH_SETUP_HEADERS = ["tft_setup.h"];
-export function sketchSetupFlags(sources: Map<string, string>): string[] {
-  if (!SKETCH_SETUP_HEADERS.some((h) => sources.has(h))) return [];
-  return ["--build-property", "compiler.cpp.extra_flags=-I/work/sketch", "--build-property", "compiler.c.extra_flags=-I/work/sketch"];
+export function sketchSetupFlags(sources: Map<string, string>, forceInclude?: string): string[] {
+  const setup = SKETCH_SETUP_HEADERS.some((h) => sources.has(h));
+  if (!setup && !forceInclude) return [];
+  const cpp = [...(setup ? ["-I/work/sketch"] : []), ...(forceInclude ? [`-include ${forceInclude}`] : [])].join(" ");
+  return ["--build-property", `compiler.cpp.extra_flags=${cpp}`, ...(setup ? ["--build-property", "compiler.c.extra_flags=-I/work/sketch"] : [])];
 }
 
 async function compile(
@@ -228,6 +230,7 @@ async function compile(
   t0: number,
 ): Promise<BuildResult> {
   await ensureDocker();
+  const platform = platformFor(req.fqbn);
   const image = imageFor(req.fqbn);
   await ensureImage(log, image);
   const libDirs: string[] = [];
@@ -243,16 +246,18 @@ async function compile(
     writeFileSync(dest, content);
   }
   mkdirSync(join(work, "out"), { recursive: true });
+  // Boards whose Serial is USB CDC (not emulated): the simulator build prints Serial on the hardware UART.
+  if (platform.simSerialHeader) writeFileSync(join(work, "jumper_sim_serial.h"), platform.simSerialHeader);
   const libRoot = join(cacheDir(), "arduino-libs");
   mkdirSync(libRoot, { recursive: true });
 
   const args = [
-    "run", "--rm", ...uidArgs(),
+    "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
     "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
     image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
-    ...sketchSetupFlags(sources),
+    ...sketchSetupFlags(sources, platform.simSerialHeader ? "/work/jumper_sim_serial.h" : undefined),
     "/work/sketch",
   ];
   const r = await exec("docker", args, { timeoutMs: 5 * 60_000 });
@@ -273,7 +278,7 @@ async function compile(
     return prefix + rel;
   };
   const diagnostics = refineWithSources(parseCompilerOutput(output, pathMap), sources);
-  const hexPath = join(work, "out", "sketch.ino.hex");
+  const hexPath = join(work, "out", platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
     diagnostics.push({ severity: "error", message: `arduino-cli exited with code ${r.code}: ${output.trim().split("\n").slice(-4).join(" | ")}`, hint: "Read the message above; if it mentions a library, add it to firmware.libraries." });

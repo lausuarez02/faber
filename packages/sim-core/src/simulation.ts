@@ -310,6 +310,7 @@ export class Simulation {
     this.detachBuses();
     for (const s of this.slots) s.model.dispose?.();
     this.listeners.clear();
+    this.mcu?.dispose?.();
   }
 
   // ------------------------------------------------------------------ circuit

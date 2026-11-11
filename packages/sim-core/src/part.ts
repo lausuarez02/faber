@@ -73,9 +73,10 @@ export type BindingSpec = z.infer<typeof BindingSpecSchema>;
  * Simulator backends a board part may declare in `mcu.backend` (decision 0003, C1).
  *   avr8js    ATmega328P (Uno, Nano) through avr8js
  *   rp2040js  RP2040 (Pico, XIAO RP2040, RP2040-Zero) through rp2040js (round 5, track rp2040)
- * ESP32 ("qemu-esp32") is planned, not implemented.
+ *   renode    STM32 and nRF52840 boards in Renode, an emulator in another process (Docker), round 10;
+ *             Node only (jumper serve, MCP, CLI): @jumper/sim-backends/node
  */
-export const BOARD_BACKENDS = ["avr8js", "rp2040js"] as const;
+export const BOARD_BACKENDS = ["avr8js", "rp2040js", "renode"] as const;
 export type BoardBackendId = (typeof BOARD_BACKENDS)[number];
 
 /** Extra block for MCU boards. */

@@ -16,7 +16,10 @@ export function createBackend(boardType: BoardType | string): McuBackend {
   return createAvrBackend({ chip: "atmega328p", clockHz: 16_000_000, vcc: 5, board });
 }
 
-/** Picks a backend from the board's part.json `mcu.backend` ("avr8js" → createAvrBackend, "rp2040js" → createRp2040Backend). */
+/**
+ * Picks an in-process backend from the board's part.json `mcu.backend` ("avr8js" → createAvrBackend,
+ * "rp2040js" → createRp2040Backend). Process backends (Renode) are in "@jumper/sim-backends/node".
+ */
 export const backendFactory: BackendFactory = (board) => {
   if (board.mcu.backend === "avr8js") {
     if (board.mcu.chip.toLowerCase() !== "atmega328p") {
@@ -35,6 +38,11 @@ export const backendFactory: BackendFactory = (board) => {
       throw new Error(`board '${board.partId}' (${board.type}) asks for the rp2040js backend, but it only knows the RP2040 boards raspberry-pi-pico, seeed-xiao-rp2040 and waveshare-rp2040-zero (chip 'rp2040'). Fix: use one of those part types, or add the board to packages/sim-backends/src/rp2040/boards.ts.`);
     }
     return createRp2040Backend({ board: rp.type, clockHz: board.mcu.clockHz, vcc: board.mcu.vcc });
+  }
+  if (board.mcu.backend === "renode") {
+    throw new Error(
+      `board '${board.partId}' (${board.type}, ${board.mcu.chip}) runs in Renode, an emulator that runs on your computer in Docker, not in the browser. Fix: open the project with \`jumper serve\` and press Run there (this page then shows that run), or ask your agent to run it.`,
+    );
   }
   throw new Error(`no simulator backend '${board.mcu.backend}' for board '${board.partId}' (${board.type})`);
 };
