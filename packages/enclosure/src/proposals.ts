@@ -90,7 +90,7 @@ export interface ProposeOptions extends LayoutOptions {
   light?: boolean;
 }
 
-const LABEL: Record<LayoutGoal, string> = { thinnest: "Thinnest", smallest: "Smallest", balanced: "Balanced (pocket)" };
+const LABEL: Record<LayoutGoal, string> = { thinnest: "Thinnest", smallest: "Smallest", balanced: "Balanced" };
 const PALETTE = ["#4DA3FF", "#FF7A59", "#5CF2A1", "#F2E14A", "#B47CFF", "#FF4D8D", "#3DD6D0", "#FFB23F", "#9BE15D", "#E9EDF2", "#7A8CFF", "#FF9DCB"];
 
 const r1 = (v: number) => Math.round(v * 10) / 10;

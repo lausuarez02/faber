@@ -886,7 +886,7 @@
   "layout": {
     "goal": "balanced",
     "asked": "auto",
-    "label": "Balanced (pocket)",
+    "label": "Balanced",
     "fill_ratio": 0.26,
     "layers": [
       {
