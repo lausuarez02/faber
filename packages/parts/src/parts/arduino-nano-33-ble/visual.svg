@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 140" width="340" height="140">
+  <defs>
+    <filter id="arduino-nano-33-ble-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="340" height="140" rx="6" fill="#0E6E74" stroke="#3A4250" stroke-width="2"/>
+  <rect x="6" y="28" width="328" height="84" rx="3" fill="none" stroke="#3A4250" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <rect x="-4" y="48.0" width="22" height="44" rx="2" fill="#AEB4BD" stroke="#5B636F" stroke-width="1"/>
+  <text x="7.0" y="70.0" font-family="IBM Plex Mono" font-size="5" fill="#0B0D10" text-anchor="middle" dominant-baseline="central" transform="rotate(-90 7.0 70.0)">USB</text>
+  <rect x="140.0" y="40.0" width="60" height="60" rx="2" fill="#0E1116" stroke="#2A2F38" stroke-width="1"/>
+  <text x="170.0" y="70.0" font-family="IBM Plex Mono" font-size="7" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">nRF52840</text>
+  <rect x="65" y="67" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="70" cy="70" r="6" fill="#FFB020" opacity="0" filter="url(#arduino-nano-33-ble-glow)" data-bind="opacity:led"/>
+  <rect x="66" y="68" width="8" height="4" rx="1" fill="#FFB020" opacity="0.25"/>
+  <rect x="66" y="68" width="8" height="4" rx="1" fill="#FFB020" opacity="0" data-bind="opacity:led"/>
+  <text x="70" y="79" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">L</text>
+  <rect x="245" y="67" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="250" cy="70" r="6" fill="#FF4D4D" opacity="0" filter="url(#arduino-nano-33-ble-glow)" data-bind="opacity:led_r"/>
+  <rect x="246" y="68" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0.25"/>
+  <rect x="246" y="68" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0" data-bind="opacity:led_r"/>
+  <text x="250" y="79" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">R</text>
+  <rect x="260" y="67" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="265" cy="70" r="6" fill="#3DDC84" opacity="0" filter="url(#arduino-nano-33-ble-glow)" data-bind="opacity:led_g"/>
+  <rect x="261" y="68" width="8" height="4" rx="1" fill="#3DDC84" opacity="0.25"/>
+  <rect x="261" y="68" width="8" height="4" rx="1" fill="#3DDC84" opacity="0" data-bind="opacity:led_g"/>
+  <text x="265" y="79" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">G</text>
+  <rect x="275" y="67" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="280" cy="70" r="6" fill="#4C8CFF" opacity="0" filter="url(#arduino-nano-33-ble-glow)" data-bind="opacity:led_b"/>
+  <rect x="276" y="68" width="8" height="4" rx="1" fill="#4C8CFF" opacity="0.25"/>
+  <rect x="276" y="68" width="8" height="4" rx="1" fill="#4C8CFF" opacity="0" data-bind="opacity:led_b"/>
+  <text x="280" y="79" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">B</text>
+  <rect x="295" y="97" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="300" cy="100" r="6" fill="#3DDC84" opacity="0" filter="url(#arduino-nano-33-ble-glow)" data-bind="opacity:powered"/>
+  <rect x="296" y="98" width="8" height="4" rx="1" fill="#3DDC84" opacity="0.25"/>
+  <rect x="296" y="98" width="8" height="4" rx="1" fill="#3DDC84" opacity="0" data-bind="opacity:powered"/>
+  <text x="300" y="109" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">ON</text>
+  <text x="30.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D13/SCK</text>
+  <text x="50.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">3V3</text>
+  <text x="70.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">AREF</text>
+  <text x="90.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A0</text>
+  <text x="110.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A1</text>
+  <text x="130.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A2</text>
+  <text x="150.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A3</text>
+  <text x="170.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A4/SDA</text>
+  <text x="190.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A5/SCL</text>
+  <text x="210.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A6</text>
+  <text x="230.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A7</text>
+  <text x="250.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">VUSB</text>
+  <text x="270.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">RST</text>
+  <text x="290.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">GND</text>
+  <text x="310.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">VIN</text>
+  <text x="30.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D12/MISO</text>
+  <text x="50.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D11/MOSI</text>
+  <text x="70.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D10/SS</text>
+  <text x="90.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D9</text>
+  <text x="110.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D8</text>
+  <text x="130.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D7</text>
+  <text x="150.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D6</text>
+  <text x="170.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D5</text>
+  <text x="190.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D4</text>
+  <text x="210.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D3</text>
+  <text x="230.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">D2</text>
+  <text x="250.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">GND</text>
+  <text x="270.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">RST</text>
+  <text x="290.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">RX0/D1</text>
+  <text x="310.0" y="114" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">TX1/D0</text>
+  <circle data-pin="D13" cx="30.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="3V3" cx="50.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="AREF" cx="70.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A0" cx="90.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A1" cx="110.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A2" cx="130.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A3" cx="150.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A4" cx="170.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A5" cx="190.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A6" cx="210.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="A7" cx="230.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="VUSB" cx="250.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="RST.1" cx="270.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND.1" cx="290.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="VIN" cx="310.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D12" cx="30.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D11" cx="50.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D10" cx="70.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D9" cx="90.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D8" cx="110.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D7" cx="130.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D6" cx="150.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D5" cx="170.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D4" cx="190.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D3" cx="210.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D2" cx="230.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND.2" cx="250.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="RST.2" cx="270.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D1" cx="290.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D0" cx="310.0" cy="126" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 138 166" width="138" height="166">
+  <defs>
+    <filter id="seeed-xiao-nrf52840-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="138" height="166" rx="8" fill="#141A22" stroke="#3A4250" stroke-width="2"/>
+  <rect x="-4" y="0" width="22" height="30" rx="2" fill="#AEB4BD" stroke="#5B636F" stroke-width="1"/>
+  <text x="7.0" y="15.0" font-family="IBM Plex Mono" font-size="5" fill="#0B0D10" text-anchor="middle" dominant-baseline="central">USB</text>
+  <rect x="44" y="60" width="50" height="50" rx="2" fill="#0E1116" stroke="#2A2F38" stroke-width="1"/>
+  <text x="69.0" y="85.0" font-family="IBM Plex Mono" font-size="7" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">nRF52840</text>
+  <rect x="95" y="17" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="100" cy="20" r="6" fill="#FF4D4D" opacity="0" filter="url(#seeed-xiao-nrf52840-glow)" data-bind="opacity:led_r"/>
+  <rect x="96" y="18" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0.25"/>
+  <rect x="96" y="18" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0" data-bind="opacity:led_r"/>
+  <text x="100" y="29" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">R</text>
+  <rect x="107" y="17" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="112" cy="20" r="6" fill="#3DDC84" opacity="0" filter="url(#seeed-xiao-nrf52840-glow)" data-bind="opacity:led_g"/>
+  <rect x="108" y="18" width="8" height="4" rx="1" fill="#3DDC84" opacity="0.25"/>
+  <rect x="108" y="18" width="8" height="4" rx="1" fill="#3DDC84" opacity="0" data-bind="opacity:led_g"/>
+  <text x="112" y="29" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">G</text>
+  <rect x="119" y="17" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="124" cy="20" r="6" fill="#4C8CFF" opacity="0" filter="url(#seeed-xiao-nrf52840-glow)" data-bind="opacity:led_b"/>
+  <rect x="120" y="18" width="8" height="4" rx="1" fill="#4C8CFF" opacity="0.25"/>
+  <rect x="120" y="18" width="8" height="4" rx="1" fill="#4C8CFF" opacity="0" data-bind="opacity:led_b"/>
+  <text x="124" y="29" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">B</text>
+  <rect x="55" y="17" width="10" height="6" rx="1" fill="#2A2F38"/>
+  <circle cx="60" cy="20" r="6" fill="#3DDC84" opacity="0" filter="url(#seeed-xiao-nrf52840-glow)" data-bind="opacity:charging"/>
+  <rect x="56" y="18" width="8" height="4" rx="1" fill="#3DDC84" opacity="0.25"/>
+  <rect x="56" y="18" width="8" height="4" rx="1" fill="#3DDC84" opacity="0" data-bind="opacity:charging"/>
+  <text x="60" y="29" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">CHG</text>
+  <rect x="40" y="140" width="58" height="20" rx="3" fill="none" stroke="#8A7A4A" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <text x="69" y="134" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">underside</text>
+  <text x="69" y="118" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central" data-bind="text:battery">BAT</text>
+  <text x="18" y="36" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D0/A0</text>
+  <text x="18" y="56" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D1/A1</text>
+  <text x="18" y="76" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D2/A2</text>
+  <text x="18" y="96" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D3/A3</text>
+  <text x="18" y="116" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D4/SDA</text>
+  <text x="18" y="136" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D5/SCL</text>
+  <text x="18" y="156" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">D6/TX</text>
+  <text x="120" y="36" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">5V</text>
+  <text x="120" y="56" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">GND</text>
+  <text x="120" y="76" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">3V3</text>
+  <text x="120" y="96" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">D10/MOSI</text>
+  <text x="120" y="116" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">D9/MISO</text>
+  <text x="120" y="136" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">D8/SCK</text>
+  <text x="120" y="156" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">D7/RX</text>
+  <text x="43" y="150" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central">BAT+</text>
+  <text x="95" y="150" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central">BAT-</text>
+  <circle data-pin="D0" cx="9" cy="36" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D1" cx="9" cy="56" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D2" cx="9" cy="76" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D3" cx="9" cy="96" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D4" cx="9" cy="116" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D5" cx="9" cy="136" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D6" cx="9" cy="156" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="5V" cx="129" cy="36" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND.1" cx="129" cy="56" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="3V3" cx="129" cy="76" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D10" cx="129" cy="96" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D9" cx="129" cy="116" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D8" cx="129" cy="136" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D7" cx="129" cy="156" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="BAT+" cx="52" cy="150" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="BAT-" cx="86" cy="150" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+</svg>
