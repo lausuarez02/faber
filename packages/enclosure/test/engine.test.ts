@@ -25,6 +25,9 @@ describe("case engine on the Muse", () => {
       expect(bad, JSON.stringify(bad, null, 1)).toEqual([]);
       expect(g.report.ok).toBe(true);
       for (const id of ["watertight", "no-intersection", "size-match", "min-wall", "screen-window", "connector-access", "buttons-reachable"]) expect(g.report.checks.some((c) => c.id === id && c.ok), id).toBe(true);
+      // round 8b: the window check looks through the window, and the screen moves out with the front shell when exploded
+      expect(g.report.checks.find((c) => c.id === "screen-window")!.message).toMatch(/lines of sight through it land on the screen/);
+      expect(g.mesh.bodies.find((x) => x.body === "part-eye")!.explode).toEqual(g.mesh.bodies.find((x) => x.body === "front")!.explode);
       // re-read every STL from its bytes and check it independently
       const stls = [...g.files.keys()].filter((k) => k.endsWith(".stl"));
       expect(stls).toContain("stl/front.stl");

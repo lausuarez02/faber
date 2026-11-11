@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { adviceNotes, caseIsStale, caseMesh, layoutProposals, opsForApply, previewFit } from "@jumper/session";
+import { adviceNotes, caseIsStale, caseMesh, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -12,6 +12,8 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  *                                    front-view preview; no CAD, nothing written or logged (the Case view's live preview)
  *   POST /api/case/layouts         → round 8: propose_layout for a draft (or the saved case): thinnest / smallest /
  *                                    balanced, each with front and side views (outline + part rectangles per layer)
+ *   POST /api/case/costs           → round 8b: what each choice in a draft (or the saved case) costs: pins, faces, dome,
+ *                                    edges, a fixed size, wall; { base, costs: [{say, label, change, ...}], relax_all }
  *   GET  /api/case/advice          → round 8: { notes } "parts you may not need" in a person's words, with the mm they save
  *   POST /api/case/advice/apply    → round 8: { id } makes a note's simple change (swap / removal) with the agent ops
  *                                    (remove, place_part, connect) as one undoable step; { applied, result, notes }
@@ -100,7 +102,8 @@ export const caseRoutes: ApiRoute[] = [
         return ctx.json(res, 400, err("The case request is not JSON", (e as Error).message, 'send {"shape": "pebble", "params": {...}}'));
       }
       const has = !!ctx.session().project.enclosure;
-      const args: Record<string, unknown> = { images: false };
+      // (the Case view asks for the costs on its own, POST /api/case/costs)
+      const args: Record<string, unknown> = { images: false, costs: false };
       for (const k of ["shape", "outline", "size_mm", "params", "front", "placements", "exclude", "layout"]) if (body[k] !== undefined) args[k] = body[k];
       if (!has && !args.shape) return ctx.json(res, 400, err("No case yet", "a new case needs a shape", 'send {"shape": "pebble"} (rounded-box, pill, pebble, puck or keychain)'));
       try {
@@ -150,10 +153,32 @@ export const caseRoutes: ApiRoute[] = [
       try {
         const s = ctx.session();
         s.sync();
-        ctx.json(res, 200, await layoutProposals(s, body, { views: body.views !== false }));
+        ctx.json(res, 200, await layoutProposals(s, body, { views: body.views !== false, costs: body.costs === true }));
       } catch (e) {
         const m = (e as Error).message;
         ctx.json(res, 400, { error: m.includes("Why:") ? m : `Proposing layouts failed. Why: ${m}. Fix: change the outline or the parts and try again` });
+      }
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/case/costs",
+    label: "POST /api/case/costs",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      let body: Record<string, unknown>;
+      try {
+        body = await ctx.body(req);
+      } catch (e) {
+        return ctx.json(res, 400, err("The costs request is not JSON", (e as Error).message, 'send {} for the saved case, or the draft {"shape": "custom", "outline": "M ... Z", "params": {...}}'));
+      }
+      try {
+        const s = ctx.session();
+        s.sync();
+        ctx.json(res, 200, await draftCosts(s, body));
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `Weighing the case choices failed. Why: ${m}. Fix: change the outline or the parts and try again` });
       }
     },
   },

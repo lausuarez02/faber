@@ -568,6 +568,10 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     ...(others.some((l) => l.make_with) ? ["create_part for the agent-made lines before placing them"] : []),
     ...(others.some((l) => l.source === "stand-in") ? ["after placing a stand-in, mark_stand_in {id, real} so exports name the real part"] : []),
     "place_part each line (omit x/y), connect, check_design, write_file, run, write_scenario, run_tests",
+    // Round 8b: a device to hold: the case choices that cost thickness
+    ...(!rover && (compact || pocket || portable)
+      ? ["case: aim for 20 mm thick or less (it is held or carried). Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot; leave dome_mm and the edges on auto; call propose_layout before design_case; read costs in every case answer (what each of your choices adds, with the update_case call that relaxes it) and relax the costly ones; a speaker's grille goes on the back by default (the front is the screen's)"]
+      : []),
     // Round 6: the flow ends with a real device when the person wants one.
     ...(rover
       ? ["when the person wants to build it for real: export_manufacturing (factory pack: BOM, wiring, wire cuts, firmware, assembly steps; the chassis is the case)"]

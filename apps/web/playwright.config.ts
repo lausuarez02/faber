@@ -32,7 +32,15 @@ export default defineConfig({
     {
       name: "desktop",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
-      testIgnore: /perf\.spec\.ts/,
+      testIgnore: /perf\.spec\.ts|case-costs\.spec\.ts/,
+    },
+    {
+      // Round 8b: two real CAD builds of a domed egg plus the costs, several minutes of full CPU:
+      // run after the other specs, alone, so it does not starve the timing-sensitive ones.
+      name: "case-costs",
+      testMatch: /case-costs\.spec\.ts/,
+      dependencies: ["desktop", "mobile"],
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
     {
       // The 200-part frame-rate benchmark. It runs in full Chromium ("new headless") with the
@@ -41,7 +49,7 @@ export default defineConfig({
       name: "perf",
       testMatch: /perf\.spec\.ts/,
       // Measured last and alone, so the other browsers do not steal its frames.
-      dependencies: ["desktop", "mobile"],
+      dependencies: ["desktop", "mobile", "case-costs"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
@@ -56,7 +64,7 @@ export default defineConfig({
       name: "mobile",
       use: { ...devices["iPhone 13"], browserName: "chromium", defaultBrowserType: "chromium" },
       // The 200-part frame-rate benchmark is measured once, in the "perf" project.
-      testIgnore: /perf\.spec\.ts/,
+      testIgnore: /perf\.spec\.ts|case-costs\.spec\.ts/,
     },
   ],
   webServer: {

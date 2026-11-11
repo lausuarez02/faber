@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-10 (round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-11 (round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,59 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
+
+Evidence: a real Claude rebuilt the talking egg on round-8 code and got 74 x 96 x 44.4 mm, worse
+than round 7's 34.3 mm, with small parts. Its own case choices made it thick (a 6 mm dome on both
+faces, the eyes and the speaker pinned on the front with `y_mm`, a fixed 74 x 96 mm size after
+60 x 78 failed, where "balanced" picked round 7's 3-layer stack), and Jumper never said what they cost.
+One branch (`round8b/costs`), merged into main.
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Choice costs | `check_fit`, `propose_layout`, `design_case`, `update_case` return `costs`: for each choice (a placement's x / y, layer, face, on_edge; dome over 1.5 mm; numeric edges; a fixed w / h or d; wall over 1.6; gap over 1.5; screws) the light proposal search runs again with it relaxed, and with all relaxed (`relax_all`); each says what it adds (thickness, length, cm³) with the `update_case` call that relaxes it, e.g. "A 6 mm dome on both faces adds 9 mm of thickness (37.2 -> 28.2 mm thick with a 1.5 mm dome). Fix: update_case {\"params\":{\"dome_mm\":1.5}}". Time-boxed (10 s; check_fit 5 s), what is not reached is `skipped`. `next` names the costliest | `packages/enclosure/test/costs.test.ts`, `packages/session/test/round8b-costs.test.ts` |
+| Steer to thin | At a fixed w / h the optimizer goes deeper until a layout fits (and searches a slightly smaller outline when the finished case pokes out); balanced = the thinnest that fits that outline. A dome over 3 mm a face is a `dome` warning with what it adds. A speaker pinned on the front is weighed against its grille on the back. A fixed size that fails names the choice that breaks it and `sizes_that_work` (flat and stacked) | same |
+| Case view | Layout tab, "What's making it bigger": each costly choice in plain words (no tool names) with an Apply button, "Let Jumper decide all of these", the sizes a failing fixed outline works at (`POST /api/case/costs`) | `e2e/case-costs.spec.ts` |
+| Agent guidance | Tool descriptions (the design_case example no longer shows `dome_mm: 3`), MCP server instructions, AGENTS.md and `plan_device`'s plan for held devices: do not pin unless the person asked, dome and edges on auto, `propose_layout` before `design_case`, read `costs` and relax the costly ones, aim for 20 mm or less for a pocket device | `round8b-costs.test.ts` |
+| Window bug | The red in round 8's exploded egg was the speaker seen by parallax: the front shell moved 20 mm out, the screen stayed behind. The screen-window check only compared sizes. Now it looks through the window (rays must land on the display's active area; a window off the screen, a part in front or nothing behind fail, naming what is seen), and the parts the front shell holds move out with it in the exploded render and the web explode. Engine `case-5`; the Muse example regenerated (same size) | `packages/enclosure/test/sight.test.ts`, `engine.test.ts` |
+
+The talking egg, end to end (lead, in process through `ProjectSession`, not port 7780): round 8's
+`talking-egg-2/jumper.json` copied to a temp folder.
+
+| Egg | Size | Layers | Volume | Checks | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Round 8 as the agent built it | 74 x 96 x 44.4 mm | 3 | 218.8 cm³ | all ok | round 7's stack at a fixed size |
+| As-is, round 8b (same choices) | 74 x 96 x 37.2 mm | 3 | 181.1 cm³ | all ok, `dome` warning (+10.1 mm) | `design_case` 68 s; costs 8.2 s: the fixed size adds 10 mm (93.8 x 122.2 x 27.2 at auto), the dome 9 mm; relax_all 84.8 x 110.5 x 18.5; both pins, the speaker face and the switch face cost nothing alone |
+| After the agent applies the top costs (dome 1.5, size auto, eyes pin dropped; each checked with propose_layout first) | 81.7 x 106.5 x 20.2 mm | 2 | 130.6 cm³ | all ok (fits, watertight, no-intersection, min-wall, size-match, screen-window 35 / 35 lines of sight, both USB) | `update_case` 54 s; pocket "no" (106.5 x 81.7 across, over 70 mm wide) |
+
+Renders, report and log: `jumper-evals/round8b/proof/` (outside the repo), looked at: the screen is
+dark behind its window in the front, exploded and inside renders.
+
+Checks (worktree, before the merge): `pnpm gen` no diff; `pnpm typecheck` 0 errors; `pnpm test`
+1414 passed, 2 skipped, 0 failed (166 files; earlier full runs each had one load timeout, in
+`visual-capture` or the CLI test, both passing alone; the CLI test got 30 s). Full e2e (desktop,
+mobile, perf and the new `case-costs` project, `E2E_PORT=5700`, hub ports from 10600): 92 passed,
+16 skipped by design, 0 failed, exit 0, with `--workers=1`. Not first time: five earlier full runs
+at the default 3 workers (2 once) had 1 to 3 failures each, different specs every time (rp2040
+follow, power-usb, switch-projects, voice mute, case-outline, case-layout), each passing when re-run
+alone, while the machine's load average was 14 to 39 (other processes). Two real causes found and
+fixed on the way: the costs blocked jumper serve for seconds (now they give way between searches,
+and the Case view's own saves skip them), and a case spec's jumper serve kept running in CAD after
+SIGTERM (now killed); the `case-costs` spec runs alone after the others.
+
+Known gaps (round 8b):
+- **Costs** relax one choice at a time and all at once: two choices that only cost together show
+  only in `relax_all`. They use the light search (a few tenths of a mm from the built case). On a
+  loaded machine the 10 s box can skip choices (`skipped`). The Case view weighs the saved case only
+  (not a dragged draft); each search still holds the server for about 1 to 2.5 s (they give way
+  between searches).
+- **Fixed sizes**: the deeper search at a fixed outline takes 1 to 2.5 s; the shrink retry rarely helps.
+- **The egg** at 81.7 x 106.5 x 20.2 mm is still not "pocket" (over 70 mm wide); the speaker stays
+  pinned on the front in the proof (its pin cost nothing alone).
+- **e2e**: a clean full run needed `--workers=1` on this loaded machine (see above); the suite is
+  heavier by one spec (about 6 minutes of CAD).
+- **Not checked**: a live Claude Code run over MCP with the new guidance; print and hand feel.
 
 ## Round 8 (2026-11-11): Jumper works out how the parts go inside, and shows it
 

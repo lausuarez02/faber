@@ -40,6 +40,8 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
         const exited = new Promise((r) => proc.once("exit", r));
         proc.kill("SIGTERM");
         await Promise.race([exited, new Promise((r) => setTimeout(r, 10_000))]);
+        // (a server busy in CAD may not get to SIGTERM: do not leave it running into the next specs)
+        if (proc.exitCode === null && proc.signalCode === null) proc.kill("SIGKILL");
       }
       rmSync(root, { recursive: true, force: true });
     },

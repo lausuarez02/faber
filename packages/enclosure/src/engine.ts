@@ -16,10 +16,11 @@ import { checkMesh, type Mesh, meshOf, plateLayout, printPose, stlBinary, threeM
 import { contains, outline } from "./plan.ts";
 import { materialFor, printMd } from "./print.ts";
 import { occt } from "./occt.ts";
+import { windowSight } from "./sight.ts";
 import { renderPng, type RenderItem, VIEWS } from "./render.ts";
 import type { CaseFile, CaseMesh, CaseReport, FitCheck, PlacedPart, Vec3 } from "./types.ts";
 
-export const ENGINE_VERSION = "case-4";
+export const ENGINE_VERSION = "case-5"; // round 8b: fixed sizes thinnest first, the window sight test, the front-held parts explode with the front
 export const MIN_WALL = 1.2;
 
 export interface GenerateOptions {
@@ -157,7 +158,12 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const scr = front.mech.features.find((f) => f.kind === "screen");
     if (win && scr) {
       const over = (win.u - scr.u) / 2;
-      checks.push({ id: "screen-window", ok: over >= -0.01 && over <= scr.bezel + 0.01, severity: over >= -0.01 && over <= scr.bezel + 0.01 ? "info" : "error", message: `Window ${win.shape === "round" ? "Ø" + win.u.toFixed(1) : win.u.toFixed(1) + " x " + win.v.toFixed(1)} mm centred on the ${front.mech.id} active area (${scr.shape === "round" ? "Ø" + scr.u.toFixed(1) : scr.u.toFixed(1) + " x " + scr.v.toFixed(1)}), ${over.toFixed(2)} mm over its ${scr.bezel} mm bezel, glass ${win.standoff.toFixed(1)} mm behind the wall.`, parts: [front.mech.id] });
+      // round 8b: and look through it: the screen's active area must be what is behind the window
+      const sight = windowSight(L);
+      const sizeOk = over >= -0.01 && over <= scr.bezel + 0.01;
+      const ok = sizeOk && (sight?.ok ?? false);
+      const sizeMsg = `Window ${win.shape === "round" ? "Ø" + win.u.toFixed(1) : win.u.toFixed(1) + " x " + win.v.toFixed(1)} mm over the ${front.mech.id} active area (${scr.shape === "round" ? "Ø" + scr.u.toFixed(1) : scr.u.toFixed(1) + " x " + scr.v.toFixed(1)}), ${over.toFixed(2)} mm over its ${scr.bezel} mm bezel, glass ${win.standoff.toFixed(1)} mm behind the wall.`;
+      checks.push({ id: "screen-window", ok, severity: ok ? "info" : "error", message: sight && !sight.ok ? sight.message : `${sizeMsg} ${sight?.message ?? ""}`.trim(), parts: [front.mech.id, ...(sight?.blocked.map((b) => b.by).filter((b) => L.placed.some((p) => p.mech.id === b)) ?? [])] });
     } else if (!checks.some((c) => c.id === "screen-window")) checks.push({ id: "screen-window", ok: false, severity: "error", message: `${L.front} has no screen window. Why: its part data has no exposed screen feature facing the front. Fix: check its mechanical block, or pass front with the display's id.`, parts: [L.front!] });
   }
   // ---- buttons
@@ -225,7 +231,11 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const assembled: RenderItem[] = [...B.bodies.map((b) => ({ mesh: meshes.get(b.name)!, color: b.color })), ...envMeshes.map((e) => ({ mesh: e.mesh, color: e.color }))];
     files.set("renders/front.png", renderPng(assembled, VIEWS.front));
     files.set("renders/back.png", renderPng(assembled, VIEWS.back));
-    const exploded: RenderItem[] = [...B.bodies.map((b) => ({ mesh: meshes.get(b.name)!, color: b.color, offset: b.explode })), ...envMeshes.map((e) => ({ mesh: e.mesh, color: e.color }))];
+    // round 8b: the parts held by the front shell (the screen behind its window, a front grille's
+    // speaker) move out with it, so the window shows the screen and not, by parallax, a part behind
+    const frontOff = B.bodies.find((b) => b.name === "front")?.explode ?? ([0, 0, 0] as Vec3);
+    const withFront = new Set(L.placed.filter((p) => p.bound?.face === "front").map((p) => p.mech.id));
+    const exploded: RenderItem[] = [...B.bodies.map((b) => ({ mesh: meshes.get(b.name)!, color: b.color, offset: b.explode })), ...envMeshes.map((e) => ({ mesh: e.mesh, color: e.color, ...(withFront.has(e.id) ? { offset: frontOff } : {}) }))];
     files.set("renders/exploded.png", renderPng(exploded, VIEWS.exploded));
     const inside: RenderItem[] = [...B.bodies.filter((b) => b.name !== "front").map((b) => ({ mesh: meshes.get(b.name)!, color: b.color })), ...envMeshes.map((e) => ({ mesh: e.mesh, color: e.color })), { mesh: meshes.get("front")!, color: B.bodies[0]!.color, alpha: 0.22 }];
     files.set("renders/inside.png", renderPng(inside, VIEWS.inside));
@@ -287,7 +297,8 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     hash,
     bodies: [
       ...B.bodies.map((b) => ({ body: b.name, kind: b.kind === "shell" ? ("shell" as const) : ("cap" as const), color: b.color, positions: b64(meshes.get(b.name)!.positions), indices: b64(meshes.get(b.name)!.indices), explode: b.explode })),
-      ...envMeshes.map((e) => ({ body: `part-${e.id}`, kind: "part" as const, color: e.color, positions: b64(e.mesh.positions), indices: b64(e.mesh.indices), explode: [0, 0, 0] as Vec3 })),
+      // (the parts the front shell holds move out with it, as in the exploded render)
+      ...envMeshes.map((e) => ({ body: `part-${e.id}`, kind: "part" as const, color: e.color, positions: b64(e.mesh.positions), indices: b64(e.mesh.indices), explode: (L.placed.some((p) => p.mech.id === e.id && p.bound?.face === "front") ? B.bodies.find((b) => b.name === "front")?.explode ?? [0, 0, 0] : [0, 0, 0]) as Vec3 })),
     ],
   };
   return { report, files, mesh, layout: L, missing };
