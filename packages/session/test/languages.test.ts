@@ -97,3 +97,14 @@ describe("MicroPython on the Raspberry Pi Pico", { timeout: 120_000 }, () => {
     expect(r.serial).toContain("hi from py");
   });
 });
+
+describe("plan_device and languages", () => {
+  it("a wish in Python gets a board that runs MicroPython and says so", async () => {
+    const s = fresh();
+    const p = await call(s, "plan_device", { goal: "a desk light that blinks, written in MicroPython" });
+    expect(p.board.type).toBe("raspberry-pi-pico");
+    expect(p.language).toMatchObject({ suggested: "micropython", verified_on_board: expect.arrayContaining(["arduino", "micropython"]) });
+    const q = await call(s, "plan_device", { goal: "a desk light that blinks" });
+    expect(q.language.suggested).toBe("arduino");
+  });
+});
