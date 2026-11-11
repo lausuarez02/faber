@@ -113,6 +113,12 @@ describe("jumper serve: case routes", () => {
       expect(s.stale).toBe(true);
       expect(s.stale_reason).toMatch(/changed since/);
       expect(s.hash).toBe(d.hash);
+      // the openings stay where the built meshes have them (each moved back by how far its part moved)
+      const sw = s.openings.find((o: { kind: string }) => o.kind === "window");
+      for (const k of [0, 1, 2]) expect(sw.at[k]).toBeCloseTo(win.at[k], 1);
+      const sb = s.openings.find((o: { kind: string; part: string }) => o.kind === "button" && o.part === "pet");
+      for (const k of [0, 1, 2]) expect(sb.at[k]).toBeCloseTo(btn.at[k], 1);
+      expect(s.openings.some((o: { part: string }) => o.part === "imu")).toBe(false);
       expect(readFileSync(join(root, "proj", "case", "manifest.json"), "utf8")).toBe(before);
     },
     120_000,

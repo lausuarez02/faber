@@ -852,7 +852,20 @@ export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> 
     if (!stale) E.writeMeshCache(cacheFile, mesh);
   }
   L ??= E.layoutCase(E.layoutInput(built, specOf));
-  const openings: DeviceCaseOpening[] = L.openings.map((o) => {
+  // A stale case: today's layout may have moved the parts. The meshes are the case as built, so each
+  // opening is moved by how far its part moved from where the built report placed it (same facing),
+  // and openings of parts the built case did not have (or that turned to another face) are dropped.
+  const shift = new Map<string, [number, number, number]>();
+  if (stale) {
+    for (const p of L.placed) {
+      const was = report.placed?.find((q) => q.id === p.mech.id);
+      if (!was || was.facing !== p.facing) continue;
+      shift.set(p.mech.id, [0, 1, 2].map((k) => (was.min[k]! + was.max[k]!) / 2 - (p.min[k]! + p.max[k]!) / 2) as [number, number, number]);
+    }
+  }
+  const kept = stale ? L.openings.filter((o) => shift.has(o.part)) : L.openings;
+  const openings: DeviceCaseOpening[] = kept.map((o) => {
+    const d = shift.get(o.part) ?? [0, 0, 0];
     const scr = o.kind === "window" ? L!.placed.find((p) => p.mech.id === o.part)?.mech.features.find((f) => f.kind === "screen") : undefined;
     return {
       part: o.part,
@@ -860,7 +873,7 @@ export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> 
       kind: o.kind,
       face: o.face,
       n: v3(o.n),
-      at: v3(o.at),
+      at: v3([o.at[0] + d[0], o.at[1] + d[1], o.at[2] + d[2]]),
       shape: o.shape,
       u: r3(o.u),
       v: r3(o.v),
