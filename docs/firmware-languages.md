@@ -27,26 +27,24 @@ fails if a verified entry names a test file that does not exist.
 
 | Language | ATmega328P (Uno, Nano) | RP2040 (Pico, XIAO RP2040, RP2040-Zero) | ESP32 | ESP32-C3 | ESP32-S3 | STM32F103 (Blue Pill) | STM32F4 | nRF52840 (Nano 33 BLE) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Arduino | verified | verified | verified (backend test) | verified (backend test) | planned | verified (backend test) | planned | verified (backend test) |
-| MicroPython | no (2 KB RAM) | **verified** (blink, I2C, REPL, e2e) | planned (boots, see below) | planned (boots, see below) | planned | no port | planned | planned |
+| Arduino | verified | verified | verified (board fixtures) | verified (board fixtures) | verified (board fixtures) | verified (board fixtures) | verified (Black Pill F411) | verified (board fixtures) |
+| MicroPython | no (2 KB RAM) | **verified** (blink, I2C, REPL, e2e) | **verified** (main.py, GPIO, I2C0, PWM, IRQ, UART1, ADC, REPL) | **verified** (same) | planned | no port | planned | planned |
 | ESP-IDF (C) | n/a | n/a | planned (image built) | planned (image built) | planned | n/a | n/a | n/a |
 | PlatformIO | planned (image built) | planned | planned | n/a | n/a | planned | n/a | planned |
 | Rust | | planned | | planned | | | | |
 | Zephyr | | | | | | | | planned |
 
-The ESP32, C3, Blue Pill and Nano 33 BLE columns run through the round 9 process backends
-(`packages/sim-backends/src/qemu-esp`, `src/renode`), which are not yet wired into the canvas, so
-those boards are not in the parts library; their "verified" means the backend test.
+The ESP32, C3, S3, STM32 and nRF52840 columns run through the process backends (Espressif QEMU,
+Renode) that `jumper serve` starts; their boards are in the parts library, and what each one emulates
+is in [boards.md](boards.md). Round 10 integration: Arduino is verified by each board's fixture test
+(`qemu-esp/boards.integration.test.ts`, `renode/boards.integration.test.ts`).
 
-Why each planned cell is planned (from the registry):
-
-- **MicroPython on ESP32 / ESP32-C3**: the official `ESP32_GENERIC` and `ESP32_GENERIC_C3` 1.29.0 builds
-  booted to their REPL in `jumper/qemu-esp` and drove GPIO2 / GPIO8 from the REPL (round 10 spike,
-  logged). Jumper writes the littlefs image into the `vfs` partition it reads from the firmware's own
-  partition table. The test with `main.py` in the filesystem, I2C0 and the REPL
-  (`micropython-esp.integration.test.ts`) is written but did not run: Docker Desktop's disk failed
-  during this round (input/output errors after the host disk filled). The C3 machine has no I2C
-  controller model in QEMU.
+- **MicroPython on ESP32 / ESP32-C3** (verified, round 10 integration): the official `ESP32_GENERIC` and
+  `ESP32_GENERIC_C3` 1.29.0 builds ship only nvs / phy_init / factory partitions and add `vfs` at first
+  boot over the rest of the flash, so Jumper writes the littlefs image right after the last partition.
+  `micropython-esp.integration.test.ts` boots main.py from it (GPIO, I2C0 on both chips, the REPL);
+  `esp-peripherals.integration.test.ts` drives PWM, a pin interrupt, UART1 and the ADC (raw: QEMU's
+  eFuse has no calibration, so `read_uv` raises) and records SPI as a known gap.
 - **MicroPython on ESP32-S3**: the official build stops after `Failed to set QIE bit` in QEMU, with or
   without emulated PSRAM (`psramMB` option added to the backend); its REPL is on USB-OTG, which QEMU
   does not model. Needs a UART-REPL build (the ESP-IDF image can build MicroPython from source).
