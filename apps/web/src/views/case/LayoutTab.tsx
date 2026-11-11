@@ -7,11 +7,12 @@
  * builds it. In the big front view a part can be dragged (or moved with the arrow keys) to pin it
  * there: Jumper re-arranges the rest around it and shows the new size. Below, the parts advice:
  * parts the device may not need, with the mm they would save and, for a simple swap or removal,
- * an Apply button.
+ * an Apply button. Round 8b: "What's making it bigger": the choices in the case (a big dome, a part
+ * kept in one spot, a speaker on the front, a fixed size) with what each adds and an Apply button.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Pin, RotateCcw, Sparkles } from "lucide-react";
-import type { AdviceNote, CaseReport, LayoutProposal, LayoutsResult } from "../../case/api.ts";
+import type { AdviceNote, CaseReport, CostsResult, LayoutProposal, LayoutsResult } from "../../case/api.ts";
 
 export type Pins = Record<string, { x_mm?: number; y_mm?: number } | null>;
 
@@ -52,6 +53,13 @@ export interface LayoutTabProps {
   onApplyAdvice(id: string): void;
   /** A move that could not be kept, and why. */
   notice?: string;
+  /** Round 8b: what each choice in the case adds (the saved case). */
+  costs?: CostsResult;
+  costsBusy?: boolean;
+  costsError?: string;
+  /** The Apply button of a cost (its id) is working. */
+  costApplying?: string;
+  onApplyCost(id: string, change: Record<string, unknown>): void;
 }
 
 /** One colour per part, the same in every card, the big view and the 3D preview. */
@@ -171,6 +179,8 @@ export function LayoutTab(props: LayoutTabProps) {
           {p.warnings.length ? <div className="cv-lt-warn">{p.warnings.map((w) => <div key={w}>{w}</div>)}</div> : null}
         </section>
       ) : null}
+
+      <Costs result={props.costs} busy={props.costsBusy} error={props.costsError} applying={props.costApplying} working={props.working} onApply={props.onApplyCost} />
 
       <Advice notes={props.advice} busy={props.adviceBusy} error={props.adviceError} done={props.adviceDone} onApply={props.onApplyAdvice} />
     </div>
@@ -433,6 +443,54 @@ function FrontEditor({ p, pinned, busy, onPin, onBlocked, color }: { p: LayoutPr
 }
 
 const round1 = (v: number) => Math.round(v * 10) / 10;
+
+/** Round 8b: the choices that make the case bigger than the parts need, each with an Apply button. */
+function Costs({ result, busy, error, applying, working, onApply }: { result?: CostsResult; busy?: boolean; error?: string; applying?: string; working: boolean; onApply(id: string, change: Record<string, unknown>): void }) {
+  const items = result?.costs ?? [];
+  const sizes = result?.base && !result.base.fits ? (result.sizes_that_work ?? []) : [];
+  if (!items.length && !result?.relax_all && !sizes.length && !busy && !error) return null;
+  return (
+    <section aria-labelledby="cv-cost-h" data-testid="case-costs">
+      <div className="cv-label" id="cv-cost-h">
+        What's making it bigger {busy ? <span className="cv-faint cv-working"><Loader2 size={11} className="spin" aria-hidden /> weighing each choice…</span> : null}
+      </div>
+      {error ? (
+        <div className="cv-error" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {items.length || result?.relax_all ? <div className="cv-faint cv-lt-intro">Choices made for this case that the parts do not need, and what each one adds.</div> : null}
+      <ul className="cv-adv">
+        {items.map((c) => (
+          <li key={c.id} data-testid={`case-cost-${c.id.replace(/[^a-z0-9-]/gi, "-")}`}>
+            <div className="cv-adv-title">{c.say}</div>
+            <button type="button" className="cv-chip is-strong" disabled={working || !!applying} onClick={() => onApply(c.id, c.change)}>
+              {applying === c.id ? <Loader2 size={12} className="spin" aria-hidden /> : null} {c.label}
+            </button>
+          </li>
+        ))}
+        {result?.relax_all && items.length !== 1 ? (
+          <li data-testid="case-cost-all">
+            <div className="cv-adv-title">{result.relax_all.say}</div>
+            <button type="button" className="cv-chip is-strong" disabled={working || !!applying} onClick={() => onApply("all", result.relax_all!.change)}>
+              {applying === "all" ? <Loader2 size={12} className="spin" aria-hidden /> : null} {result.relax_all.label}
+            </button>
+          </li>
+        ) : null}
+        {sizes.map((z) => (
+          <li key={z.label} data-testid={`case-cost-size-${z.layers}`}>
+            <div className="cv-adv-title">
+              This outline works at {z.size_mm.w} × {z.size_mm.h} × {z.size_mm.d} mm, {z.label}.
+            </div>
+            <button type="button" className="cv-chip is-strong" disabled={working || !!applying} onClick={() => onApply(`size-${z.layers}`, z.change)}>
+              {applying === `size-${z.layers}` ? <Loader2 size={12} className="spin" aria-hidden /> : null} Use {z.size_mm.w} × {z.size_mm.h} mm
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 function Advice({ notes, busy, error, done, onApply }: { notes?: AdviceNote[]; busy?: string; error?: string; done?: string; onApply(id: string): void }) {
   if (!notes?.length && !done && !error) return null;

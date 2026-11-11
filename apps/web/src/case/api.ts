@@ -72,6 +72,39 @@ export interface LayoutsResult {
   parts_volume_cm3: number;
   ms: number;
 }
+/** Round 8b: POST /api/case/costs, what each choice in the case adds to its size (people's words in say / label). */
+export interface CostSize {
+  w: number;
+  h: number;
+  d: number;
+  volume_cm3: number;
+  layers: number;
+  fits: boolean;
+}
+export interface ChoiceCost {
+  id: string;
+  kind: string;
+  part?: string;
+  choice: string;
+  with: CostSize;
+  without: CostSize;
+  adds_mm: number;
+  adds_cm3: number;
+  adds_length_mm: number;
+  breaks_fit: boolean;
+  say: string;
+  label: string;
+  change: Record<string, unknown>;
+  tradeoff?: string;
+}
+export interface CostsResult {
+  base?: CostSize;
+  costs: ChoiceCost[];
+  relax_all?: { without: CostSize; adds_mm: number; say: string; label: string; change: Record<string, unknown>; choices: string[] };
+  sizes_that_work?: { layers: number; size_mm: { w: number; h: number; d: number }; pocket: string; label: string; change: Record<string, unknown> }[];
+  skipped: string[];
+  ms: number;
+}
 /** Round 8: GET /api/case/advice, parts the device may not need, in a person's words. */
 export interface AdviceNote {
   id: string;
@@ -117,6 +150,7 @@ export const caseApi = {
   mesh: () => req<CaseMesh>("GET", "/api/case/mesh"),
   fit: (body: Record<string, unknown>) => req<FitResult>("POST", "/api/case/fit", body),
   layouts: (body: Record<string, unknown>) => req<LayoutsResult>("POST", "/api/case/layouts", body),
+  costs: (body: Record<string, unknown>) => req<CostsResult>("POST", "/api/case/costs", body),
   advice: () => req<{ notes: AdviceNote[] }>("GET", "/api/case/advice"),
   applyAdvice: (id: string) => req<{ applied: string; result: string; notes: AdviceNote[] }>("POST", "/api/case/advice/apply", { id }),
   pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),

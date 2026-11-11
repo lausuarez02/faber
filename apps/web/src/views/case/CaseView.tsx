@@ -12,7 +12,7 @@ import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { AlertTriangle, Box, CheckCircle2, Download, Loader2, Package, X, XCircle } from "lucide-react";
 import type { Enclosure } from "@jumper/project-format";
-import { caseApi, decodeF32, decodeU32, type AdviceNote, type CaseMesh, type CaseReport, type CaseState, type FitResult, type LayoutProposal, type LayoutsResult } from "../../case/api.ts";
+import { caseApi, decodeF32, decodeU32, type AdviceNote, type CaseMesh, type CaseReport, type CaseState, type CostsResult, type FitResult, type LayoutProposal, type LayoutsResult } from "../../case/api.ts";
 import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
 import { LayoutTab, partColors, type Pins } from "./LayoutTab.tsx";
@@ -63,6 +63,11 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [adviceError, setAdviceError] = useState<string | undefined>();
   const [adviceDone, setAdviceDone] = useState<string | undefined>();
   const [partsTick, setPartsTick] = useState(0);
+  // round 8b: what each choice in the saved case adds, and the Apply of one
+  const [costs, setCosts] = useState<CostsResult | undefined>();
+  const [costsBusy, setCostsBusy] = useState(false);
+  const [costsError, setCostsError] = useState<string | undefined>();
+  const [costApplying, setCostApplying] = useState<string | undefined>();
   const [notice, setNotice] = useState<string | undefined>();
   // the last part moved, and where it was before (put back when Jumper cannot fit the rest around it)
   const lastPin = useRef<{ id: string; before: Pins[string] | undefined } | undefined>(undefined);
@@ -238,6 +243,53 @@ export function CaseView({ onClose }: { onClose(): void }) {
       live = false;
     };
   }, [report?.hash, partsTick, epoch]);
+
+  // round 8b: the costs of the saved case's choices, when the Layout tab is open (a few seconds on the server)
+  useEffect(() => {
+    if (tab !== "layout" || !saved) return;
+    let live = true;
+    setCostsBusy(true);
+    const t = setTimeout(() => {
+      caseApi
+        .costs({ budget_ms: 5000 })
+        .then((r) => live && (setCosts(r), setCostsError(undefined)))
+        .catch((e: Error) => live && setCostsError(e.message))
+        .finally(() => live && setCostsBusy(false));
+    }, 600);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, report?.hash, partsTick, epoch, !!saved]);
+
+  /** Relax one choice (or all of them): the change is the case settings that drop it, saved like Update case. */
+  const applyCost = async (id: string, change: Record<string, unknown>) => {
+    setCostApplying(id);
+    try {
+      const d = draft();
+      const over: Record<string, unknown> = {};
+      const nulls = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null));
+      if (change.params) {
+        const p = nulls({ ...((d.params as Record<string, unknown>) ?? {}), ...(change.params as Record<string, unknown>) });
+        over.params = p;
+        setParams(p as Params);
+      }
+      if (change.size_mm) {
+        const sz = { ...((d.size_mm as Record<string, unknown>) ?? {}), ...(change.size_mm as Record<string, unknown>) };
+        over.size_mm = sz;
+        setSize(nulls(sz) as SizeDraft);
+      }
+      if (change.placements) {
+        const pl: Record<string, unknown> = { ...((d.placements as Record<string, unknown>) ?? {}) };
+        for (const [k, v] of Object.entries(change.placements as Record<string, Record<string, unknown>>)) pl[k] = { ...((pl[k] as object) ?? {}), ...v };
+        over.placements = pl;
+      }
+      await apply(over);
+    } finally {
+      setCostApplying(undefined);
+    }
+  };
 
   const applyAdvice = async (id: string) => {
     setAdviceBusy(id);
@@ -473,6 +525,11 @@ export function CaseView({ onClose }: { onClose(): void }) {
               {...(adviceError ? { adviceError } : {})}
               {...(adviceDone ? { adviceDone } : {})}
               onApplyAdvice={(id) => void applyAdvice(id)}
+              {...(costs ? { costs } : {})}
+              costsBusy={costsBusy}
+              {...(costsError ? { costsError } : {})}
+              {...(costApplying ? { costApplying } : {})}
+              onApplyCost={(id, change) => void applyCost(id, change)}
             />
             {error ? (
               <div className="cv-error" role="alert" data-testid="case-error">
