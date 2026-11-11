@@ -520,6 +520,480 @@
 }
 
 /* Round 8: how the parts go inside (the layout proposals) */
+/* Round 8 (view): the Layout tab, how the parts go inside */
+.cv-panel.is-wide {
+  width: 420px;
+}
+
+.cv-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #232323);
+}
+
+.cv-tabs button {
+  position: relative;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg-muted, #8a8a8a);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cv-tabs button.is-on {
+  color: var(--fg, #ededed);
+  background: var(--bg-raised, #1a1a1a);
+  box-shadow: inset 0 0 0 1px var(--border-strong, #2a2a2a);
+}
+
+.cv-tabs button:focus-visible,
+.cv-card:focus-visible,
+.cv-fp:focus-visible {
+  outline: 2px solid var(--fg, #ededed);
+  outline-offset: 2px;
+}
+
+.cv-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--warn, #f5a524);
+  vertical-align: 1px;
+}
+
+.cv-pane,
+.cv-lt {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-lt-intro {
+  font-size: 12px;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.cv-working {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 6px;
+}
+
+.cv-stale {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--warn, #f5a524) 45%, transparent);
+  color: var(--fg, #ededed);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cv-stale svg {
+  color: var(--warn, #f5a524);
+  margin-top: 1px;
+}
+
+.cv-stale .cv-chip {
+  margin-top: 8px;
+}
+
+.cv-chip.is-strong {
+  color: var(--fg, #ededed);
+  border-color: var(--fg-muted, #8a8a8a);
+  font-weight: 600;
+}
+
+.cv-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #232323);
+  color: var(--fg-muted, #8a8a8a);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cv-card:hover {
+  border-color: var(--border-strong, #3a3a3a);
+}
+
+.cv-card.is-on {
+  border-color: var(--fg, #ededed);
+  background: var(--bg-raised, #1a1a1a);
+}
+
+.cv-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cv-card-head b {
+  color: var(--fg, #ededed);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.cv-card-tags {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.cv-tag {
+  font-size: 10.5px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong, #2a2a2a);
+  color: var(--fg-muted, #8a8a8a);
+  white-space: nowrap;
+}
+
+.cv-tag.is-built {
+  color: var(--accent, #3ddc97);
+  border-color: color-mix(in srgb, var(--accent, #3ddc97) 45%, transparent);
+}
+
+.cv-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.cv-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cv-card-svg {
+  width: 100%;
+  height: 120px;
+}
+
+.cv-card.is-on .cv-card-svg {
+  height: 150px;
+}
+
+.cv-lt-notice {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warn, #f5a524) 45%, transparent);
+  color: var(--fg, #ededed);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cv-3d-label {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(13, 15, 18, 0.72);
+  color: #ffffff;
+  font: 500 11px var(--font-mono, ui-monospace, monospace);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cv-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cv-card-d {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 15px;
+  color: var(--fg, #ededed);
+}
+
+.cv-card-d .cv-faint {
+  font-family: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
+  font-size: 12px;
+}
+
+.cv-card-size {
+  font-size: 11.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.cv-why {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.45;
+}
+
+.cv-why li + li {
+  margin-top: 3px;
+}
+
+.cv-use .cv-primary {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.cv-use > .cv-faint {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.cv-front {
+  width: 100%;
+  max-height: 340px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #232323);
+  background: #0d0f12;
+  touch-action: none;
+  user-select: none;
+}
+
+.cv-front.is-busy {
+  opacity: 0.8;
+}
+
+.cv-fp {
+  cursor: grab;
+  outline: none;
+}
+
+.cv-fp.is-drag {
+  cursor: grabbing;
+}
+
+.cv-fp.is-drag rect,
+.cv-fp.is-focus rect {
+  stroke: #ffffff;
+  stroke-width: 0.9;
+}
+
+.cv-pin-dot {
+  fill: #ffffff;
+}
+
+.cv-newsize {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-newsize b {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--fg, #ededed);
+  font-weight: 500;
+}
+
+.cv-pins {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.cv-pins li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cv-pins b {
+  color: var(--fg, #ededed);
+}
+
+.cv-pins .cv-chip {
+  margin-left: auto;
+}
+
+.cv-lt-warn {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--warn, #f5a524);
+}
+
+.cv-adv {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-adv li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #232323);
+  font-size: 12px;
+}
+
+.cv-adv-title {
+  color: var(--fg, #ededed);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cv-adv-save {
+  color: var(--accent, #3ddc97);
+}
+
+.cv-adv details {
+  color: var(--fg-muted, #8a8a8a);
+  line-height: 1.45;
+}
+
+.cv-adv summary {
+  cursor: pointer;
+}
+
+.cv-adv-ask {
+  font-size: 11.5px;
+}
+
+.cv-adv-done {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--accent, #3ddc97);
+}
+
+.cv-inside-link {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong, #2a2a2a);
+  background: transparent;
+  color: var(--fg-muted, #8a8a8a);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cv-inside-link:hover,
+.cv-inside-link:focus-visible {
+  color: var(--fg, #ededed);
+  border-color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-stage-mode {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+}
+
+.cv-stage-mode button {
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted, #8a8a8a);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cv-stage-mode button.is-on {
+  color: var(--fg, #ededed);
+  background: var(--bg-raised, #1a1a1a);
+}
+
+.cv-stage-mode button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cv-preview-note {
+  position: absolute;
+  top: 56px;
+  left: 12px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--fg-muted, #8a8a8a);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.cv-ls-dim line {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 0.35;
+}
+
+.cv-ls-dim text {
+  fill: rgba(255, 255, 255, 0.7);
+  text-anchor: middle;
+}
+
+.cv-ls-note {
+  fill: rgba(255, 255, 255, 0.45);
+}
+
+/* the stage's own controls stay above the 3D labels */
+.cv-stage-mode,
+.cv-preview-note,
+.cv-sliders {
+  z-index: 40;
+}
+
+@media (max-width: 760px) {
+  .cv-panel.is-wide {
+    width: auto;
+  }
+  .cv-preview-long {
+    display: none;
+  }
+  .cv-3d-label {
+    font-size: 10px;
+    padding: 0 4px;
+  }
+  .cv-front {
+    max-height: 260px;
+  }
+}
+
 .cv-layouts {
   display: flex;
   flex-direction: column;

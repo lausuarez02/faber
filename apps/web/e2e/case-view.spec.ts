@@ -89,17 +89,20 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     await expect(page.getByTestId("case-checks")).toContainText("no-intersection");
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");
     // Round 8: Jumper proposes how the parts go inside, three layouts drawn from the front and the side
+    await expect(page.getByTestId("case-open-layout")).toContainText(/Parts inside: .*mm thick/, { timeout: 60_000 });
+    await page.getByTestId("case-tab-layout").click();
     const lay = page.getByTestId("case-layouts");
     await expect(lay.getByRole("radio")).toHaveCount(3, { timeout: 60_000 });
     await expect(page.getByTestId("case-layout-size-thinnest")).toContainText(/\d+(\.\d)? mm · \d layers?/);
     await expect(lay.locator("svg").first()).toBeVisible();
     await expect(page.getByTestId("case-layout-balanced")).toHaveAttribute("aria-checked", "true"); // auto = balanced
-    await lay.scrollIntoViewIfNeeded();
     await shot(page, info, "case-layouts");
     await page.getByTestId("case-layout-thinnest").click();
     await expect(page.getByTestId("case-layout-thinnest")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByTestId("case-update")).toHaveText("Update case");
+    await expect(page.getByTestId("case-layout-use")).toBeVisible(); // selecting only previews; Use builds it
     await page.getByTestId("case-layout-balanced").click();
+    await expect(page.getByTestId("case-layout-built-note")).toBeVisible();
+    await page.getByTestId("case-tab-shape").click();
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");
     // Round 6b: the person's own Design case is never an agent step waiting for Accept / Reject.
     await page.waitForTimeout(500);
