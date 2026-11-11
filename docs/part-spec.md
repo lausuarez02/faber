@@ -394,3 +394,15 @@ active buzzer ≈ 23 mA on a 5 V GPIO; Uno D13 → 220 Ω → red LED ≈ 12 mA.
 A UART part hears a board's hardware serial port too: the AVR backend puts its USART on D1 / D0
 once a part watches D1 (`McuBackend.pinWatched`); RP2040 boards already put Serial1 / Serial2 on
 their pins.
+
+## 11. Round 8 parts (smaller devices)
+
+| id | What it adds | Checked with |
+| --- | --- | --- |
+| `speaker-20mm` | 20 x 20 x 4 mm, 8 Ω, 0.5 W, Ø13 grille: the smallest speaker plan_device picks for speech (the 28 mm `speaker`'s coil model, its own size and rating) | its `model.test.ts`, `packages/session/test/parts-advice.test.ts` |
+| `speaker-15mm` | 15 x 15 x 3.5 mm, 8 Ω, 0.25 W, Ø10 grille: quieter, for the tightest cases | its `model.test.ts` |
+| `charge-boost-5v` | IP5306-class LiPo charger + 5 V boost on one 25 x 21 x 4.5 mm board (instead of TP4056 + MT3608, 1102 → 525 mm²): CC / CV charge at about 2 A, 5 V at 90 %, 3.0 V cut-off, 32 s light-load auto-off under 45 mA, KEY (press) and USB wake it | its `model.test.ts`, `packages/session/test/parts-advice.test.ts` |
+
+Speakers are separate parts, not a size prop, because the case packs a part by its `dimensions_mm`
+(only a LiPo's `capacity` changes its packed size). Smaller LiPo cells need no new part: `capacity`
+100 / 150 / 250 mAh packs a 401730 / 402030 / 502030 pouch.
