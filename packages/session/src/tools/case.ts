@@ -777,3 +777,104 @@ export async function caseMesh(s: ProjectSession): Promise<{ mesh: import("@jump
   writeMeshCache(file, g.mesh);
   return { mesh: g.mesh, regenerated: st.regenerated, report: st.report };
 }
+
+/** One opening of the built case, as the Device view places its live parts (case frame, mm). */
+export interface DeviceCaseOpening {
+  part: string;
+  feature: string;
+  kind: string;
+  face: string;
+  /** Outward normal. */
+  n: [number, number, number];
+  /** Centre on the cavity's inner surface (outer surface = at + n * depth). */
+  at: [number, number, number];
+  shape: "rect" | "round";
+  u: number;
+  v: number;
+  uAxis: [number, number, number];
+  vAxis: [number, number, number];
+  depth: number;
+  standoff: number;
+  /** window: the display's active area behind it (u along uAxis). */
+  screen?: { u: number; v: number; shape: string };
+  /** button cap / light pipe printed as its own body (mesh body `cap-<part>` / `light-pipe-<part>`). */
+  insert?: { kind: string; d: number; travel: number; protrude: number; length: number };
+  holes?: number;
+}
+
+/** GET /api/device/case: the built case for the Device view, never rebuilt here (a stale case is shown as built, with stale: true). */
+export interface DeviceCase {
+  hash: string;
+  engine: string;
+  stale: boolean;
+  /** Why it is out of date, in a person's words (when stale). */
+  stale_reason?: string;
+  shape: string;
+  color?: string;
+  size_mm: { w: number; h: number; d: number };
+  mesh: import("@jumper/enclosure").CaseMesh;
+  openings: DeviceCaseOpening[];
+  /** Built from this many ms of work on the server (0 = all from the cache). */
+  ms: number;
+}
+
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
+const v3 = (v: readonly number[]) => [r3(v[0]!), r3(v[1]!), r3(v[2]!)] as [number, number, number];
+
+/**
+ * The case as built, for the Device view: its meshes (the web mesh cache, made once when missing)
+ * and where its openings are (window, buttons, light pipes, grille, connectors), from the layout the
+ * case was built with. Never writes case/ files: a stale case is returned as built with stale: true,
+ * so the view can say "case out of date - Update case". null when the project has no case yet, or
+ * a case was asked for but never built.
+ */
+export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> {
+  if (!s.project.enclosure) return null;
+  const t0 = Date.now();
+  const E = await import("@jumper/enclosure");
+  const specOf = (t: string) => s.registry.get(t)?.spec;
+  const caseDir = join(s.dir, "case");
+  const manifest = E.readManifest(caseDir);
+  const report = E.readReport(caseDir);
+  if (!manifest || !report) return null;
+  const hash = E.caseHash(s.project, specOf);
+  const stale = manifest.hash !== hash;
+  // the project the case was built from: today's parts with the enclosure as it was saved then
+  const built: Project = stale ? { ...s.project, enclosure: (manifest.enclosure ?? report.enclosure ?? s.project.enclosure) as Enclosure } : s.project;
+  const cacheFile = join(s.dir, ".jumper", "case-mesh.json");
+  let mesh = E.readMeshCache(cacheFile, report.hash);
+  let L: import("@jumper/enclosure").Layout | undefined;
+  if (!mesh) {
+    // the meshes are not cached yet: tessellate the case as built (CAD, once; the Case view reads the same cache)
+    const g = await E.generateCase(built, specOf, { renders: false });
+    mesh = g.mesh;
+    L = g.layout;
+    if (!stale) E.writeMeshCache(cacheFile, mesh);
+  }
+  L ??= E.layoutCase(E.layoutInput(built, specOf));
+  const openings: DeviceCaseOpening[] = L.openings.map((o) => {
+    const scr = o.kind === "window" ? L!.placed.find((p) => p.mech.id === o.part)?.mech.features.find((f) => f.kind === "screen") : undefined;
+    return {
+      part: o.part,
+      feature: o.feature,
+      kind: o.kind,
+      face: o.face,
+      n: v3(o.n),
+      at: v3(o.at),
+      shape: o.shape,
+      u: r3(o.u),
+      v: r3(o.v),
+      uAxis: v3(o.uAxis),
+      vAxis: v3(o.vAxis),
+      depth: r3(o.depth),
+      standoff: r3(o.standoff),
+      ...(scr ? { screen: { u: r3(scr.u), v: r3(scr.v), shape: scr.shape } } : {}),
+      ...(o.insert ? { insert: { kind: o.insert.kind, d: r3(o.insert.d), travel: r3(o.insert.travel), protrude: r3(o.insert.protrude), length: r3(o.insert.length) } } : {}),
+      ...(o.holes ? { holes: o.holes.length } : {}),
+    };
+  });
+  const engine = manifest.engine ?? "?";
+  const staleReason = !stale ? undefined : engine !== E.ENGINE_VERSION ? `made with an older case engine (${engine}, now ${E.ENGINE_VERSION})` : "the parts or the case settings changed since it was built";
+  const color = (report.enclosure?.params as { color?: string } | undefined)?.color ?? mesh.bodies.find((b) => b.kind === "shell")?.color;
+  return { hash: report.hash, engine, stale, ...(staleReason ? { stale_reason: staleReason } : {}), shape: report.shape, ...(color ? { color } : {}), size_mm: report.size_mm, mesh, openings, ms: Date.now() - t0 };
+}

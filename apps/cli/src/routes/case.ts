@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { adviceNotes, caseIsStale, caseMesh, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
+import { adviceNotes, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -18,6 +18,8 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  *   POST /api/case/advice/apply    → round 8: { id } makes a note's simple change (swap / removal) with the agent ops
  *                                    (remove, place_part, connect) as one undoable step; { applied, result, notes }
  *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
+ *   GET  /api/device/case          → the built case for the Device view: { case: null } or { case: { mesh, openings,
+ *                                    stale, stale_reason, color, size_mm } }; never rebuilds case/ (a stale case comes as built)
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
  *   POST /api/manufacturing        → export_manufacturing + url of the zip
  *   GET  /api/manufacturing/:file  → a zip from <project>/manufacturing/
@@ -236,6 +238,20 @@ export const caseRoutes: ApiRoute[] = [
         ctx.json(res, 200, mesh, cors(req));
       } catch (e) {
         ctx.json(res, 500, err("Could not build the case meshes", (e as Error).message, "check get_case for errors, change the case and try again"), cors(req));
+      }
+    },
+  },
+  {
+    method: "GET",
+    path: "/api/device/case",
+    label: "GET /api/device/case",
+    async handle(req, res, ctx) {
+      const s = ctx.session();
+      s.sync();
+      try {
+        ctx.json(res, 200, { case: await deviceCase(s) }, cors(req));
+      } catch (e) {
+        ctx.json(res, 500, err("Could not load the case for the Device view", (e as Error).message, "open the Case view and press Update case, then open the Device view again"), cors(req));
       }
     },
   },
