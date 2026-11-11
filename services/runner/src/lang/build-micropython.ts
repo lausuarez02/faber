@@ -6,7 +6,7 @@ import { join, relative } from "node:path";
 import type { BuildRequest, BuildResult } from "../build.ts";
 import type { CompileDiagnostic } from "../diagnostics.ts";
 import { RunnerError } from "../docker.ts";
-import { checkSyntax, composeMicroPython } from "./micropython.ts";
+import { checkSyntax, composeMicroPython, USB_MAIN_FILE } from "./micropython.ts";
 
 /** Files that go onto the device: .py modules plus small data files next to them. */
 const DEVICE_FILE = /\.(py|json|txt|csv|bin|pbm|raw)$/;
@@ -59,7 +59,7 @@ export async function buildMicroPython(req: BuildRequest, t0: number): Promise<B
     ...(out.hex !== undefined ? { hex: out.hex } : {}),
     ...(out.binary ? { binary: out.binary } : {}),
     durationMs: Date.now() - t0,
-    summary: `MicroPython ${out.firmware.version} (${out.firmware.id}) + ${out.files.length} file${out.files.length === 1 ? "" : "s"} (${out.fsBytesUsed} B of a ${Math.round(out.fsBytes / 1024)} KB littlefs)`,
+    summary: `MicroPython ${out.firmware.version} (${out.firmware.id}) + ${files.size} file${files.size === 1 ? "" : "s"} (${out.fsBytesUsed} B of a ${Math.round(out.fsBytes / 1024)} KB littlefs)${out.files.includes(USB_MAIN_FILE) ? `; main.py runs through Jumper's USB launcher (waits 40 ms for the computer to open the port)` : ""}`,
     logTail: `MicroPython ${out.firmware.version} ${out.firmware.id} + littlefs with ${out.files.join(", ")}`,
   };
 }

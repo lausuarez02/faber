@@ -192,18 +192,20 @@ function syntaxHint(kind: string, msg: string): string {
 // ------------------------------------------------------------------------------- build
 
 /**
- * On the RP2040 the console is USB CDC. The emulated computer opens the port about 13 ms after
- * reset; text MicroPython prints before that waits in its USB buffer until the next print, so a
- * main.py that prints once and ends would show nothing. A terminal that is already open sees the
- * text, so Jumper adds this boot.py (only when the project has none; the person's own boot.py
- * replaces it, and it is listed in the build output).
+ * On the RP2040 the console is USB CDC, and MicroPython starts USB only after boot.py, right before
+ * main.py. The emulated computer opens the port about 13 ms later; text printed before that waits in
+ * MicroPython's USB buffer until the next print (a real Pico does the same, which is why Thonny and
+ * mpremote soft-reset the board after connecting). So that a terminal that is already open sees
+ * everything, the device's main.py is this small launcher: it waits 40 ms, then runs the project's
+ * main.py (stored as USB_MAIN_FILE) compiled under the name "main.py", so tracebacks name the
+ * project's own file and line. The build output says so.
  */
-export const USB_BOOT_PY = `# boot.py added by Jumper because the project has none (your own boot.py replaces it).
-# The console is the USB port: give the computer 50 ms to open it before main.py runs,
-# so main.py's first prints reach the Serial panel.
+export const USB_MAIN_FILE = "jumper_main.py";
+export const USB_LAUNCHER = `# Added by Jumper: the console is USB, so wait 40 ms for the computer to open it,
+# then run the project's main.py (stored as ${"jumper_main.py"}).
 import time
-for _ in range(50):
-    time.sleep_ms(1)
+time.sleep_ms(40)
+exec(compile(open("${"jumper_main.py"}").read(), "main.py", "exec"), {"__name__": "__main__"})
 `;
 
 export interface MicroPythonBuild {
@@ -232,7 +234,10 @@ export async function composeMicroPython(opts: { chip: string; board?: string; s
     if (bad) throw new RunnerError("micropython-bad-file", `Cannot put ${bad}.`);
     files.set(name, typeof content === "string" ? new TextEncoder().encode(content) : content);
   }
-  if (fw.layout.kind === "rp2040-uf2" && !files.has("boot.py")) files.set("boot.py", new TextEncoder().encode(USB_BOOT_PY));
+  if (fw.layout.kind === "rp2040-uf2" && files.has("main.py")) {
+    files.set(USB_MAIN_FILE, files.get("main.py")!);
+    files.set("main.py", new TextEncoder().encode(USB_LAUNCHER));
+  }
   const used = [...files.values()].reduce((n, b) => n + b.length, 0);
   if (fw.layout.kind === "rp2040-uf2") {
     const base = 0x1000_0000;

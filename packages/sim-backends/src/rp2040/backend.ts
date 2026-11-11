@@ -45,6 +45,7 @@ const FUNC_SPI = 1;
 const FUNC_UART = 2;
 const FUNC_I2C = 3;
 const FUNC_NULL = 0x1f;
+const FUNC_SIO = 5;
 /** IC_RAW_INTR_STAT.TX_EMPTY. */
 const I2C_R_TX_EMPTY = 1 << 4;
 
@@ -271,6 +272,13 @@ class Rp2040Backend implements McuBackend {
 
   private report(g: number): void {
     const state = this.stateOf(g);
+    // The pad's input buffer sees what the pin drives: GPIO_IN of an output reads its own level, as
+    // on the chip (MicroPython's Pin.value() / toggle() and digitalRead() of an output depend on it).
+    // Not for the bus lines while the soft-I2C decoder owns their inputs.
+    const pin = this.m.mcu.gpio[g]!;
+    if (state.mode === "output" && pin.functionSelect === FUNC_SIO && !(this.m.softActive && (g === this.sdaG || g === this.sclG))) {
+      if (pin.inputValue !== (state.value === 1)) pin.setInputValue(state.value === 1);
+    }
     const k = key(state);
     if (this.reported.get(g) === k) return;
     this.reported.set(g, k);
