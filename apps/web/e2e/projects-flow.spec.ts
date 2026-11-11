@@ -1,6 +1,6 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
@@ -200,7 +200,9 @@ test.describe("projects (served)", () => {
   test("Code: the sketch opens in the editor, saves through write_file, and Build & Run shows errors at their line", async ({ page }, info) => {
     test.skip(info.project.name !== "desktop", "the editor is exercised once, on desktop");
     const docker = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
-    test.skip(docker.status !== 0, "Build & Run compiles with arduino-cli in Docker, and Docker is not running here");
+    // Round 11: or Jumper's native AVR toolchain (jumper setup avr), which builds without Docker.
+    const nativeAvr = existsSync(join(process.env.JUMPER_HOME || join(homedir(), ".jumper"), "toolchains/arduino/1.5.1/installed/avr.json"));
+    test.skip(docker.status !== 0 && !nativeAvr, "Build & Run compiles with arduino-cli (Docker or `jumper setup avr`), and neither is ready here");
     const s = await serve(info);
     try {
       await openServed(page, s);

@@ -133,7 +133,7 @@ export async function checkBoardRuntime(project: Project, registry: PartRegistry
   if (!board || !isProcessBackend(board.mcu.backend)) return;
   const backend = board.mcu.backend as ProcessBackendId;
   if ((checkedOk.get(backend) ?? 0) > Date.now()) return;
-  progress?.({ stage: "check", text: "checking Docker and the emulator image" });
+  progress?.({ stage: "check", text: "checking the emulator (native install or Docker image)" });
   const c = await checkEmulator(backend, board.name);
   if (!c.ok) {
     const [what, rest] = splitWhy(c.message ?? `${board.name} cannot run`);

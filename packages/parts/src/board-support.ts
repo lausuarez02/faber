@@ -67,6 +67,7 @@ const T = {
   espNet: "packages/device-net/test/firmware.integration.test.ts",
   espPeriph: "services/runner/src/lang/esp-peripherals.integration.test.ts",
   mpyEsp: "services/runner/src/lang/micropython-esp.integration.test.ts",
+  espArduino: "services/runner/src/lang/esp-arduino-peripherals.integration.test.ts",
   renode: "packages/sim-backends/src/renode/boards.integration.test.ts",
   renodeParts: "packages/parts/src/renode.integration.test.ts",
 } as const;
@@ -130,13 +131,11 @@ const rp = (board: string, boots: string): BoardSupport => ({
 
 // ------------------------------------------------------------------------------------------ ESP32 family
 
-const JB5 = "bridged in the jb5 QEMU image and Jumper's backend (fake-QEMU protocol tests pass), but no real firmware has exercised it on this chip yet";
-const NATIVE = "on the merged jb5 sources (a native QEMU build: the jb5 Docker image itself was not built, Docker was hung)";
+const NATIVE = "on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet)";
 
 const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => {
   const s3 = chip === "esp32s3";
-  // Real-firmware peripheral checks run with MicroPython, which runs on the ESP32 and the C3 (not the S3).
-  const periph = (what: string): SupportCell => (s3 ? untested(`${what}: verified on the ESP32 and ESP32-C3 (same model); not run on the S3: ${JB5}`) : v(T.espPeriph, `${what}, real MicroPython firmware ${NATIVE}`));
+  // Round 11: real Arduino firmware on every chip (esp_io / esp_bus / esp_neopixel), plus MicroPython on the ESP32 and C3.
   return {
     board,
     backend: "qemu-esp",
@@ -144,27 +143,23 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
     areas: {
       boots: v(T.espBoards, `real arduino-esp32 firmware ${NATIVE}`),
       gpio: v(T.espBoards, "output, input with the internal pull-up"),
-      pwm: periph("LEDC PWM: 1 kHz, 25 % duty to the pin edge"),
-      adc: periph("single-shot ADC of the solved pad voltage (linear model, no calibration eFuse: read_uv fails, raw reads work)"),
-      irq: periph("GPIO interrupt on a falling edge, three presses"),
-      uart: s3 ? { status: "partial", test: T.espBoards, note: `UART0 (Serial) verified; UART1 / UART2 verified on the ESP32 and C3, not run on the S3` } : v(T.espPeriph, "UART0 (Serial) and UART1 bytes"),
-      i2c:
-        chip === "esp32"
-          ? v(T.mpyEsp, `I2C0 scan and write (round 9, and MicroPython ${NATIVE}); the second bus untested`)
-          : chip === "esp32c3"
-            ? v(T.mpyEsp, `the I2C controller jb5 adds to the C3: scan and write from MicroPython ${NATIVE}`)
-            : untested(`jb5 adds an I2C controller to the S3 (verified on the C3): ${JB5}`),
-      spi: { status: "no", note: s3 ? `not run on the S3; on the ESP32 and C3 MicroPython's SPI does not come through the jb5 model (C3: MOSI arrives as 00, ESP32: the transfer hangs) - see ${T.espPeriph}` : `does not work yet: MicroPython's SPI transfer ${chip === "esp32c3" ? "arrives with MOSI 00 00 and MISO unused" : "never returns"} in the jb5 model (asserted as a known gap in ${T.espPeriph}); Arduino SPI not tried` },
+      pwm: v(T.espArduino, `LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade${s3 ? "" : "; MicroPython PWM too"}`),
+      adc: { status: "partial", test: T.espArduino, note: "analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap)" },
+      irq: v(T.espArduino, `attachInterrupt RISING, three edges counted${s3 ? "" : "; MicroPython Pin.irq FALLING too"}`),
+      uart: v(T.espArduino, `Serial (UART0), Serial1${chip === "esp32c3" ? "" : " and Serial2"} on matrix pins, both directions`),
+      i2c: v(T.espArduino, chip === "esp32c3" ? "Wire: scan, write, repeated-START read (the controller jb5 adds to the C3)" : `Wire and Wire1 on two buses: scan, write, repeated-START read${s3 ? " (the controllers jb5 adds to the S3)" : ""}`),
+      spi: { status: "partial", test: T.espArduino, note: `Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; ${s3 ? "MicroPython does not run on the S3" : `MicroPython's SPI (DMA) still fails (${chip === "esp32c3" ? "MOSI arrives as 00 00" : "the transfer never returns"}), asserted as a known gap in ${T.espPeriph}`}` },
       i2s: no("Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet"),
-      rmt: untested(`RMT transmit (NeoPixel): ${JB5}`),
-      net:
-        chip === "esp32c3"
-          ? { status: "partial", test: T.espNet, note: "an unmodified WiFi.h + HTTPS sketch ran 3x on an ESP32-C3 through the sandbox network (scan, DHCP, DNS, TLS 200, blocked host, weak signal, drop and rejoin) before Docker failed; the committed firmware test never ran. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card" }
-          : untested("the netstack and the r3 Wi-Fi shim are chip-independent, but no firmware for this chip has run through them; the radio itself is not emulated"),
+      rmt: v(T.espArduino, "Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin"),
+      net: s3
+        ? v(T.espNet, "net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card")
+        : chip === "esp32c3"
+          ? { status: "partial", test: T.espNet, note: "the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated" }
+          : untested("the netstack and the r3 Wi-Fi shim are chip-independent (verified on the S3), but no firmware for this chip has run through them; the radio itself is not emulated"),
       ble: no("QEMU has no radio model"),
     },
     languages: [
-      { id: "arduino", status: "verified", note: "simulation build jumper/arduino-esp32:3.3.12-r3; device build JUMPER_SIM=0" },
+      { id: "arduino", status: "verified", note: "simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0" },
       s3
         ? { id: "micropython", status: "no", note: "the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build" }
         : { id: "micropython", status: "verified", note: "official 1.29.0 build + Jumper's littlefs image with main.py" },
@@ -286,7 +281,7 @@ export function boardSupportMarkdown(names: Record<string, { name: string; avail
   out.push("## Gaps across boards");
   out.push("");
   out.push("- **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.");
-  out.push("- **The merged ESP32 emulator image (jumper/qemu-esp:9.2.2-20260417-jb5) has not been built**: Docker Desktop on the integration machine was hung. Until it is built and the fixture tests re-run, ESP32 boards fail to start with \"image missing\" and a fix (`pnpm jumper setup esp32`).");
+  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb5 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
   out.push("- **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.");
   out.push("- **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.");
   out.push("");
