@@ -82,27 +82,32 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
           <section key={g.cat} className="lib-group">
             <h3 className="lib-group-title">{CATEGORY_LABEL[g.cat]}</h3>
             <ul className="lib-grid">
-              {g.defs.map((def) => (
-                <li key={def.spec.id}>
-                  <button
-                    type="button"
-                    className="lib-item"
-                    draggable
-                    onDragStart={(e) => onDragStart(e, def)}
-                    onClick={() => place(def)}
-                    data-testid={`library-${def.spec.id}`}
-                    title={`${def.spec.description}\nClick to place, or drag onto the canvas.`}
-                  >
-                    <span className="lib-thumb">
-                      <img src={thumbs.get(def.spec.id)} alt="" draggable={false} />
-                    </span>
-                    <span className="lib-name">{def.spec.name}</span>
-                    <span className="lib-meta">
-                      {def.spec.pins.length} pins
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {g.defs.map((def) => {
+                // Round 10: a board whose emulator support is not proven yet is shown, not placeable, with the reason.
+                const planned = def.spec.availability?.status === "planned";
+                const where = def.spec.mcu?.backend === "renode" ? " · runs in Renode (Docker, via jumper serve)" : "";
+                return (
+                  <li key={def.spec.id}>
+                    <button
+                      type="button"
+                      className={planned ? "lib-item planned" : "lib-item"}
+                      draggable={!planned}
+                      disabled={planned}
+                      aria-disabled={planned}
+                      onDragStart={(e) => onDragStart(e, def)}
+                      onClick={() => !planned && place(def)}
+                      data-testid={`library-${def.spec.id}`}
+                      title={planned ? `Planned, not placeable yet: ${def.spec.availability!.reason}` : `${def.spec.description}${where}\nClick to place, or drag onto the canvas.`}
+                    >
+                      <span className="lib-thumb">
+                        <img src={thumbs.get(def.spec.id)} alt="" draggable={false} />
+                      </span>
+                      <span className="lib-name">{def.spec.name}</span>
+                      <span className="lib-meta">{planned ? "Planned" : `${def.spec.pins.length} pins${def.spec.mcu?.backend === "renode" ? " · Renode" : ""}`}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}

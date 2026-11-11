@@ -638,10 +638,14 @@ export class ProjectSession {
         ...(mentioned.length ? { mentioned_in: mentioned } : {}),
       };
     }
+    // Round 10: boards whose emulator support is not proven yet are listed apart, with the reason.
+    const planned = defs.filter((d) => d.spec.availability?.status === "planned");
+    defs = defs.filter((d) => d.spec.availability?.status !== "planned");
     const results = defs.slice(0, 25).map((d) => ({ type: d.spec.id, name: d.spec.name, category: d.spec.category, fidelity: d.fidelity.origin === "agent-made" ? AGENT_MADE_LABEL : d.fidelity.level, about: d.spec.description.split(/(?<=\.)\s/)[0] }));
     return {
       count: results.length,
       results,
+      ...(planned.length ? { planned: planned.map((d) => ({ type: d.spec.id, name: d.spec.name, why: d.spec.availability!.reason })) } : {}),
       ...(results.length === 0
         ? { hint: `nothing matches '${args.query}'. Try a broader word (e.g. "display", "button", "sensor") or search_parts with no query to list all ${this.registry.list().length} types. If the part really is missing, make it with create_part (a declarative part: pins + a behaviour template; it is marked "${AGENT_MADE_LABEL}"), or use a close built-in as a stand-in and say so.` }
         : {}),
@@ -710,6 +714,14 @@ export class ProjectSession {
   async placePart(args: { type: string; id?: string; x?: number; y?: number; rotation?: number; props?: Record<string, PropValue>; why?: string }, ctx: OpCtx): Promise<unknown> {
     if (!args.type) fail("missing-arg", "place_part needs 'type'", "no part type was given", 'pass a type from search_parts, e.g. { "type": "led" }');
     const spec = this.spec(args.type);
+    if (spec.availability?.status === "planned") {
+      fail(
+        "part-planned",
+        `${spec.name} (${spec.id}) cannot be placed yet`,
+        `it is planned, not available: ${spec.availability.reason}`,
+        "pick an available board from search_parts (category board), e.g. raspberry-pi-pico or arduino-uno; this one becomes placeable once its emulator test passes",
+      );
+    }
     const rotation = (args.rotation ?? 0) as Rotation;
     if (![0, 90, 180, 270].includes(rotation)) fail("bad-rotation", `Rotation ${args.rotation} is not allowed`, "parts rotate in quarter turns", "pass 0, 90, 180 or 270");
     let id = args.id ?? this.nextId(spec.id);

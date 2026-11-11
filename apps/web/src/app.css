@@ -704,6 +704,14 @@ code {
 .lib-item:active {
   cursor: grabbing;
 }
+/* Round 10: planned boards (emulator support not proven yet): visible, not placeable. */
+.lib-item.planned {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lib-item.planned:hover {
+  transform: none;
+}
 
 .lib-thumb {
   display: grid;

@@ -6,6 +6,7 @@ import { liveParams, noteStepActors, useAgentSteps, useLive, type LiveStep } fro
 import { expectProject, loadMainSketch, refreshCodeCard, switchProject } from "../projects/switch.ts";
 import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, type LogFrame } from "./player.ts";
 import { setLastColorFrames } from "../lib/colorFrames.ts"; // round 6 frames
+import { setCommandSender } from "./command.ts";
 import { PhysicsCanvas, drawArm, drawWorld } from "../renderers/physics/index.ts";
 import { worldTracker } from "./worldTracker.ts";
 import { useUi } from "../lib/ui.ts";
@@ -31,9 +32,12 @@ let replayPlayer: ReplayPlayer | undefined;
 let socket: WebSocket | undefined;
 let cmdSeq = 0;
 
-function sendCommand(op: string, args: Record<string, unknown> = {}): void {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "command", id: ++cmdSeq, op, args }));
+function sendCommand(op: string, args: Record<string, unknown> = {}): boolean {
+  if (socket?.readyState !== WebSocket.OPEN) return false;
+  socket.send(JSON.stringify({ type: "command", id: ++cmdSeq, op, args }));
+  return true;
 }
+setCommandSender(sendCommand);
 
 function usePort(): CanvasPort {
   const rf = useReactFlow();
