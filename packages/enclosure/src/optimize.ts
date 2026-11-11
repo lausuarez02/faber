@@ -27,7 +27,7 @@ export interface OVariant {
   /** Footprint outline points (front view) relative to the box's min corner. */
   pts: Pt2[];
   /** A side-bound feature: its face's outward direction in plan and the tip (relative to the box min, plan) + offset kept from the wall. */
-  side?: { face: string; n: Pt2; tip: Pt2; off: number; connector: boolean; /** a lever / shaft that pokes through the wall this far */ poke: number };
+  side?: { face: string; n: Pt2; tip: Pt2; off: number; connector: boolean; /** a lever / shaft that pokes through the wall this far */ poke: number; /** how far the feature may stay from the wall (mm) */ reach: number };
   /** Front / back bound: the box's top sits at z = -top (front) or its bottom at z = -D + bottom (back). */
   zFix?: { mode: "front"; top: number } | { mode: "back"; bottom: number };
   /** Pinned box-min x / y (a placement's x_mm / y_mm, the screen on the centre line). */
@@ -203,7 +203,7 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
     ),
   );
   // how far a feature may stay from its wall: a plug reaches about 1 mm in through a spot face on a curve (0.8 on a flat; past that the wall would need a flat), a plunger or lever more
-  const reachOf = (V: OVariant) => (V.side!.connector ? (env.kind === "poly" ? 1.0 : 0.8) : 2);
+  const reachOf = (V: OVariant) => (V.side!.connector ? (env.kind === "poly" ? 1.0 : 0.8) : V.side!.reach);
   const ext = items.map((it) => it.variants.map((V) => Math.hypot(V.sx, V.sy)));
   const maxR = Math.max(...Array.from(R.r));
   // every part left out counts at least this much (mm²), so a small one is not given up lightly

@@ -594,7 +594,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
             // (a keep-out past the feature's face, e.g. a speaker's, just keeps the feature a little further from the wall)
             if (b.face === "front") V.zFix = { mode: "front", top: Math.max(0, o + tip[2] - bx.max[2]) };
             if (b.face === "back") V.zFix = { mode: "back", bottom: Math.max(0, o - (tip[2] - bx.min[2])) };
-            if (SIDE_FACES.includes(b.face)) V.side = { face: b.face, n: [FACE_DIR[b.face][0], FACE_DIR[b.face][1]], tip: [tip[0] - bx.min[0], tip[1] - bx.min[1]], off: o, connector: b.feature.kind === "connector", poke: b.feature.passThrough ? b.feature.protrude : 0 };
+            if (SIDE_FACES.includes(b.face)) V.side = { face: b.face, n: [FACE_DIR[b.face][0], FACE_DIR[b.face][1]], tip: [tip[0] - bx.min[0], tip[1] - bx.min[1]], off: o, connector: b.feature.kind === "connector", poke: b.feature.passThrough ? b.feature.protrude : 0, reach: b.feature.kind === "button" ? 6 : b.feature.kind === "led" ? 4 : 1.2 };
             const ax = faceAxes(b.face);
             const offX = placement?.x_mm;
             const offY = placement?.y_mm;
@@ -644,7 +644,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     // preset's outline at a few aspects (its real plan is then sized round the parts)
     const containers: { radial: OEnv["radial"]; fixed: boolean; label: string }[] = [];
     if (polySpec) containers.push({ radial: radialOf(polySpec.poly, polySpec.A0, polySpec.B0), fixed: polySpec.fixed, label: "outline" });
-    else for (const asp of shape === "puck" ? [1] : [1, 1.4, 0.72]) containers.push({ radial: radialOf(presetPoints(shape, 60, 60 * asp, params.corner_radius_mm), 1, 1), fixed: false, label: `aspect ${asp}` });
+    else for (const asp of shape === "puck" ? [1] : [1, 0.75]) containers.push({ radial: radialOf(presetPoints(shape, 60, 60 * asp, params.corner_radius_mm), 1, 1), fixed: false, label: `aspect ${asp}` });
     const crownEst = (v: number | "auto") => (v === "auto" ? (shape === "pebble" || shape === "custom" ? 1 : 0) : v);
     const maxD = depthFixed !== undefined ? depthFixed - 2 * t - crownEst(params.dome_mm) - crownEst(params.dome_back_mm) : Infinity;
     let Ds = depthCandidates(items, g, Number.isFinite(maxD) ? maxD : 60, opts.optimize.depths ?? 5);
@@ -668,7 +668,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       let a1 = 0;
       for (let k = 0; k < ct.radial.r.length; k++) a1 += 0.5 * ct.radial.r[k]! ** 2 * ((2 * Math.PI) / ct.radial.r.length);
       for (const D of Ds) {
-        const r = searchAtDepth(items, env, D, { iters: Math.round((opts.optimize.iters ?? 800) / Math.sqrt(containers.length)), seed, deadline, ...(ct.fixed ? { minScale: 1, startScale: 1 } : { startScale: Math.sqrt(partsArea / Math.max(1, a1)) * 0.9 }) });
+        const r = searchAtDepth(items, env, D, { iters: Math.round((opts.optimize.iters ?? 600) / Math.sqrt(containers.length)), seed, deadline, ...(ct.fixed ? { minScale: 1, startScale: 1 } : { startScale: Math.sqrt(partsArea / Math.max(1, a1)) * 0.9 }) });
         const placedL: Placed[] = r.placed.map((q) => {
           const d = vdata[q.item]![q.v]!;
           const min: Vec3 = [q.x, q.y, q.z0];

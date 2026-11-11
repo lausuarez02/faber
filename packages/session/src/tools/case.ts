@@ -65,6 +65,12 @@ const placements = {
   additionalProperties: true,
 };
 const why = { type: "string", description: "Short reason shown in the step list." };
+const layoutArg = {
+  type: "string",
+  enum: ["auto", "thinnest", "smallest", "balanced"],
+  description:
+    'How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it.',
+};
 
 export const caseTools: ToolModule = {
   name: "case",
@@ -83,6 +89,7 @@ export const caseTools: ToolModule = {
           front: { type: "string", description: "Part id whose screen faces out of the front (default: the first display)." },
           placements,
           exclude: { type: "array", items: { type: "string" }, description: "Part ids that are not inside the case." },
+          layout: layoutArg,
           dry_run: { type: "boolean", description: "true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit." },
           save: { type: "boolean", description: "Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
           images: { type: "boolean", description: "Default true: return the front and exploded renders inline." },
@@ -98,7 +105,7 @@ export const caseTools: ToolModule = {
       description: `Change the existing case: any of shape, outline, size_mm, params, front, placements, exclude. params, size_mm and placements are merged into what is there; a placement or a size value set to null is removed (back to auto). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"} or {"size_mm": {"w": 64, "h": 84}} or {"outline": {"points": [[0, 40], [24, 16], [28, -4], [13, -32], [-13, -32], [-28, -4], [-24, 16]], "smooth": true}}. Regenerates every file in case/ and returns the CaseReport like design_case (or fits: false with misses and suggestions when a fixed size cannot hold the parts; nothing changes then). Fails when there is no case yet (use design_case). ${CANNOT}`,
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, images: { type: "boolean" }, why },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, images: { type: "boolean" }, why },
       },
       edits: true,
     },
@@ -109,7 +116,18 @@ export const caseTools: ToolModule = {
         'Test whether the project\'s parts fit a case WITHOUT making it (no CAD, nothing written, answers in under a second): any preset or a custom outline, any size. Takes the same arguments as design_case (shape, outline, size_mm, params, placements, exclude, front); with none it tests the saved case. Returns {fits, size_mm (as laid out), needed_mm (what the parts need), asked_mm, misses: [{part, type, dimension: "outline" | "depth", short_mm, where, message}], suggestions: [{kind: "swap" | "smaller-cell" | "on-edge" | "bigger", part, from, to, message, change: [{tool, args}], fits, size_mm, tradeoff}], issues, ms}. Each suggestion is tried with the same quick layout while about a second lasts (fits says whether it then fits the asked size; untried ones have no fits; try_suggestions: true tries them all, a few seconds). Use it to rethink the pieces before design_case: e.g. {"shape": "custom", "outline": "<egg path>", "size_mm": {"w": 58, "h": 75, "d": 20}}. preview: true adds the front-view geometry (outline, cavity, part footprints with collides) for drawing it.',
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
+      },
+      readOnly: true,
+    },
+    {
+      name: "propose_layout",
+      title: "Propose how the parts are distributed",
+      description:
+        'Work out, automatically, the best ways to distribute the project\'s parts inside a case of ANY outline and size (no CAD, nothing written, about 1 to 2 s): Jumper lays the parts out flat first (every part side by side in one layer inside the real outline, rotated 0 / 90, a board on its edge where it helps), then in two or three layers (e.g. the cell behind the screen), keeping the screen behind its window, the speaker grille on its face, each USB port / button / switch reaching its wall, the cell flat, wiring room between parts and the rim round-over at each part\'s depth (heavy parts low in an upright outline). Returns {proposals: [{id: "thinnest" | "smallest" | "balanced", label, size_mm, volume_cm3, pocket, fill_ratio, layers: [{index, z_mm, parts}], placements: {part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}, why: [reasons in plain words], misses, warnings, source}], best, chosen, parts_volume_cm3, ms}. Same arguments as check_fit (with none it uses the saved case). Then make the one you want with design_case / update_case {layout: "<id>"}; to move a part, pin it with placements and propose again (the rest is arranged around it). views: true adds front and side views (outline + part rectangles per layer) for drawing them. Deterministic: the same project gives the same proposals.',
+      inputSchema: {
+        type: "object",
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, views: { type: "boolean", description: "Add the front and side views per proposal (default false)." } },
       },
       readOnly: true,
     },
@@ -178,6 +196,10 @@ export const caseTools: ToolModule = {
       if (args.params) merged.params = { ...(cur.params ?? {}), ...(args.params as object) };
       if (args.front !== undefined) merged.front = args.front;
       if (args.exclude !== undefined) merged.exclude = args.exclude;
+      if (args.layout !== undefined) {
+        if (args.layout === null || args.layout === "auto") delete merged.layout;
+        else merged.layout = args.layout;
+      }
       if (args.placements) {
         const pl: Record<string, unknown> = { ...(cur.placements ?? {}) };
         for (const [k, v] of Object.entries(args.placements as Record<string, unknown>)) {
@@ -206,6 +228,12 @@ export const caseTools: ToolModule = {
       x.summary(`fit ${enc.shape}: ${r.fits ? `fits, ${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm` : `${r.misses.length} miss(es), ${r.suggestions.length} suggestion(s)`} (${r.ms} ms)`);
       return r;
     },
+    async propose_layout(args, x) {
+      const s = x.session;
+      const r = await layoutProposals(s, args, { views: args.views === true });
+      x.summary(`layouts: ${r.proposals.map((p) => `${p.id} ${p.size_mm.w} x ${p.size_mm.h} x ${p.size_mm.d}`).join(", ")} (${r.ms} ms)`);
+      return r;
+    },
     async get_case(_args, x) {
       const s = x.session;
       if (!s.project.enclosure) fail("no-case", "No case yet", "this project has no enclosure in jumper.json", 'design_case {"shape": "pebble"}');
@@ -231,6 +259,36 @@ function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Rec
     ...(args.front ? { front: args.front } : {}),
     ...(args.placements ? { placements: stripNulls(args.placements as Record<string, unknown>) } : {}),
     ...(args.exclude ? { exclude: args.exclude } : {}),
+    ...(args.layout ? { layout: args.layout } : {}),
+  };
+}
+
+/**
+ * Round 8: the layouts Jumper proposes for an enclosure (propose_layout, POST /api/case/layouts):
+ * thinnest, smallest and balanced, each a finished layout, and which one the case uses.
+ */
+export async function layoutProposals(s: ProjectSession, args: Record<string, unknown>, opts: { views?: boolean } = {}) {
+  const has = args.shape !== undefined || args.outline !== undefined || args.size_mm !== undefined;
+  if (!has && !s.project.enclosure) fail("no-case", "Nothing to lay out", "propose_layout with no shape uses the saved case, and this project has none", 'pass a shape, e.g. {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C ... Z"}');
+  const base = s.project.enclosure && !args.shape ? s.project.enclosure : undefined;
+  const enc = has || args.placements || args.params || args.layout || args.exclude || args.front ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
+  const { layoutInput, proposalsFor, layoutCase } = await import("@jumper/enclosure");
+  const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
+  if (!input.parts.length) fail("no-parts", "No parts to lay out", "the project has no parts with a case footprint", "place parts first (place_part)");
+  let L;
+  let P;
+  try {
+    L = layoutCase(input);
+    P = proposalsFor(input);
+  } catch (e) {
+    rethrowOutline(e);
+  }
+  const chosen = L.proposal?.id ?? P.best;
+  return {
+    ...P,
+    chosen,
+    proposals: P.proposals.map(({ views, ...rest }) => (opts.views ? { ...rest, views } : rest)),
+    next: `The case uses "${chosen}"${enc.layout && enc.layout !== "auto" ? "" : " (layout auto)"}. Make another one with design_case / update_case {"layout": "<id>"}; pin a part with placements to move it and propose again.`,
   };
 }
 
@@ -240,7 +298,7 @@ export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { previ
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   let r;
   try {
-    r = checkFit({ ...input, catalog: s.registry.list().map((d) => d.spec) }, { ...(opts.layout ? { layout: opts.layout } : {}), ...(opts.budgetMs ? { budgetMs: opts.budgetMs } : {}) });
+    r = checkFit({ ...input, catalog: s.registry.list().map((d) => d.spec) }, { ...(opts.layout ? { layout: opts.layout } : {}), ...(opts.budgetMs ? { budgetMs: opts.budgetMs } : {}), ...(opts.preview ? { views: true } : {}) });
   } catch (e) {
     rethrowOutline(e);
   }
