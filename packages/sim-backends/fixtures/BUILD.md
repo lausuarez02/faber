@@ -61,3 +61,30 @@ the older `jumper/arduino-pico:6.3.1-r1` gives the same bytes.
 
 sha256 (first 16 hex digits): `xiao_blink.hex` 5d16935da7297f1d, `xiao_oled.hex` 55f2cf778673ecc6,
 `xiao_io_probe.hex` 7f363c27bb871337, `pico_gadget.hex` b19abe7a89b90c64.
+
+## ESP32-family fixtures (arduino-esp32, run in Espressif's QEMU)
+
+`src/qemu-esp/qemu-esp.integration.test.ts` boots these in the `jumper/qemu-esp` image
+(toolchains/qemu-esp). They are merged 4 MB flash images (bootloader + partition table +
+boot_app0 + app, as `esptool merge-bin` writes them), gzipped (the padding is 0xFF).
+
+| Sketch | Image | Chip | What it does |
+| --- | --- | --- | --- |
+| `esp32_blink_io/esp32_blink_io.ino` | `esp32c3_blink_io.merged.bin.gz` | ESP32-C3 | Prints `hello from jumper esp32`, toggles GPIO8 every 500 ms, mirrors GPIO4 to GPIO2 and prints `in4=<level>` |
+| `esp32_i2c_probe/esp32_i2c_probe.ino` | `esp32_i2c_probe.merged.bin.gz` | ESP32 | I2C0 (SDA 21, SCL 22) scan, reads QEMU's built-in tmp105 at 0x48, writes `04 AA` to 0x3C, reads 4 bytes from register 2 |
+
+```sh
+docker build -t jumper/arduino-esp32:3.3.12-r2 toolchains/arduino-esp32
+F=packages/sim-backends/fixtures
+docker run --rm -v $PWD/$F:/work jumper/arduino-esp32:3.3.12-r2 compile \
+  --fqbn esp32:esp32:esp32c3:FlashMode=dio --output-dir /work/build /work/esp32_blink_io
+gzip -9 -n -c $F/build/esp32_blink_io.ino.merged.bin > $F/esp32c3_blink_io.merged.bin.gz
+docker run --rm -v $PWD/$F:/work jumper/arduino-esp32:3.3.12-r2 compile \
+  --fqbn esp32:esp32:esp32:FlashMode=dio --output-dir /work/build2 /work/esp32_i2c_probe
+gzip -9 -n -c $F/build2/esp32_i2c_probe.ino.merged.bin > $F/esp32_i2c_probe.merged.bin.gz
+rm -rf $F/build $F/build2
+```
+
+Toolchain: arduino-cli 1.5.1, `esp32:esp32` 3.3.12 (ESP-IDF v5.5.5, esp-x32 / esp-rv32 2601,
+esptool 5.3.1). sha256 (first 16 hex digits of the .gz): `esp32c3_blink_io.merged.bin.gz`
+09de6aab95b741a7, `esp32_i2c_probe.merged.bin.gz` 0adda1611242ac3e.
