@@ -23,8 +23,13 @@ When the person wants a real device, finish with `design_case` (shape, renders, 
 fit checks; any shape they name, an egg or a heart, is `"shape": "custom"` with an `outline` you
 draw and maybe `size_mm`: `check_fit` first says what fits and what smaller parts would;
 `propose_layout` shows how Jumper would distribute the parts inside, thinnest / smallest / balanced,
-with the reasons: tell the person which one and why, `layout: "<id>"` picks it) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
+with the reasons: tell the person which one and why, `layout: "<id>"` picks it; call it before
+`design_case`) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
 steps: the factory pack).
+Case choices cost size: do not pin parts (`placements` x_mm / y_mm / layer / face) unless the person
+asked for that spot, leave `dome_mm` and the edges on auto, and read `costs` in every `check_fit` /
+`propose_layout` / `design_case` / `update_case` answer (what each choice adds, with the call that
+relaxes it): relax the costly ones. Pocket and hand-held devices: aim for 20 mm thick or less.
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 

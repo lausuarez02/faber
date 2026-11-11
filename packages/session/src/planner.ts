@@ -574,6 +574,10 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       : [
           `when the person wants to build it for real: ${portable ? 'set_assembly "soldered", ' : ""}design_case {"shape": "${shapeWish ? "custom" : pocket ? "pebble" : "rounded-box"}"${shapeWish ? `, "outline": <the ${shapeWish} drawn as an SVG path in mm or {"points": [...], "smooth": true}>` : ""}} (${shapeWish ? `there is no "${shapeWish}" preset: draw it; check_fit first, under a second, says what fits and suggests smaller parts when it does not` : "any other shape is custom with an outline you draw; try a variant with save: false: puck, pill, keychain, rounded-box"}), show the renders and the measured size, then export_manufacturing (factory pack: STL / 3MF / STEP for a printer or a factory, BOM, wiring, wire cuts, firmware, assembly steps)`,
         ]),
+    // Round 8b: a device to hold: the case choices that cost thickness
+    ...(!rover && (compact || pocket || portable)
+      ? ["case: aim for 20 mm thick or less (it is held or carried). Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot; leave dome_mm and the edges on auto; call propose_layout before design_case; read costs in every case answer (what each of your choices adds, with the update_case call that relaxes it) and relax the costly ones; a speaker's grille goes on the back by default (the front is the screen's)"]
+      : []),
   ];
 
   return {
