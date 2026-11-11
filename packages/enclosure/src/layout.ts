@@ -214,6 +214,8 @@ export interface Layout {
   /** Keychain / lanyard tab: centre, size, hole. */
   tab?: { x: number; y: number; w: number; h: number; t: number; hole: number; z0: number };
   outer: { w: number; h: number; d: number; min: Vec3; max: Vec3 };
+  /** Where the packing frame's origin ended up after the case was centred (placements x_mm / y_mm are in the packing frame). */
+  origin?: Vec3;
   inner: { w: number; h: number; d: number };
   issues: FitCheck[];
   /** Round 7: how the parts fit a fixed size (custom outlines and size_mm). */
@@ -1475,6 +1477,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     dome,
     ...(tab ? { tab } : {}),
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },
+    origin: [-c[0], -c[1], -c[2]],
     inner: { w: r1(ib.maxX - ib.minX), h: r1(ib.maxY - ib.minY), d: r1(zFront - zBack) },
     issues,
     fit,
