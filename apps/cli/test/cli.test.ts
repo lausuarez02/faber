@@ -32,7 +32,7 @@ describe("jumper CLI", () => {
     const status = JSON.parse(jumper("status", "-p", "p", "--json").out);
     expect(status.wires).toEqual(["w1: uno.D9 -> r1.1", "w2: r1.2 -> led1.A", "w3: led1.C -> uno.GND.1"]);
     expect(jumper("check", "-p", "p").code).toBe(0);
-  });
+  }, 30_000); // five CLI processes: about 1 s each, more while the CAD and costs tests run beside it
 
   it("exits 1 with a what/why/fix message on errors, 2 on bad usage", () => {
     const r = jumper("connect", "uno.D99", "led1.A", "-p", "p");

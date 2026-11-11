@@ -51,8 +51,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
 const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
 
 test("Case view, Layout: what's making it bigger, in plain words, and Apply relaxes the dome", async ({ page }, info) => {
-  // (desktop only: the same panel on a phone is the Layout tab's, covered by case-layout)
-  test.skip(info.project.name !== "desktop", "desktop only");
+  // (its own "case-costs" project in playwright.config.ts: desktop size, after the other specs)
   test.setTimeout(720_000);
   const s = await serve(info);
   try {
