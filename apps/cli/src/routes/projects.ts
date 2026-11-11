@@ -532,7 +532,7 @@ async function build(req: IncomingMessage, res: ServerResponse, ctx: RouteContex
   if (!needToken(req, res, ctx)) return;
   const body = await readBody<{ run?: unknown; ms?: unknown }>(req, res, ctx, '{"run": true}');
   if (!body) return;
-  let result: { ok: boolean; errors?: string[]; warnings?: string[]; log?: string; artifact?: string; size?: string; cached?: boolean };
+  let result: { ok: boolean; errors?: string[]; warnings?: string[]; log?: string; artifact?: string; size?: string; cached?: boolean; built?: string; language?: string };
   try {
     result = (await ctx.call("build", {}, { actor: "web" })) as typeof result;
   } catch (e) {
@@ -544,7 +544,8 @@ async function build(req: IncomingMessage, res: ServerResponse, ctx: RouteContex
     ? last.diagnostics.filter((d) => d.severity !== "note")
     : [...(result.errors ?? []).map((t) => parseDiag(t, "error")), ...(result.warnings ?? []).map((t) => parseDiag(t, "warning"))];
   const artifact = result.ok && result.artifact ? join(ctx.dir(), result.artifact) : undefined;
-  const hex = artifact && existsSync(artifact) ? readFileSync(artifact, "utf8") : undefined;
+  // Round 10: only Intel HEX goes to the browser (the in-page emulators load it); flash images stay server side.
+  const hex = artifact && /\.hex$/i.test(artifact) && existsSync(artifact) ? readFileSync(artifact, "utf8") : undefined;
   const hash = hex ? createHash("sha256").update(hex).digest("hex") : undefined;
   let run: unknown;
   if (result.ok && body.run) {
@@ -560,6 +561,8 @@ async function build(req: IncomingMessage, res: ServerResponse, ctx: RouteContex
     diagnostics,
     ...(hash ? { hash, hex } : {}),
     ...(result.size ? { size: result.size } : {}),
+    ...(result.built ? { built: result.built } : {}),
+    ...(result.language ? { language: result.language } : {}),
     ...(result.cached !== undefined ? { cached: result.cached } : {}),
     ...(!result.ok && !diagnostics.length && result.log ? { log: result.log } : {}),
     ...(run ? { run } : {}),

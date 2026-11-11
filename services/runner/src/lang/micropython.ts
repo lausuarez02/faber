@@ -202,10 +202,10 @@ function syntaxHint(kind: string, msg: string): string {
  */
 export const USB_MAIN_FILE = "jumper_main.py";
 export const USB_LAUNCHER = `# Added by Jumper: the console is USB, so wait 40 ms for the computer to open it,
-# then run the project's main.py (stored as ${"jumper_main.py"}).
-import time
-time.sleep_ms(40)
-exec(compile(open("${"jumper_main.py"}").read(), "main.py", "exec"), {"__name__": "__main__"})
+# then run the project's main.py (stored as ${"jumper_main.py"}) in this module's globals,
+# so its names stay defined at the REPL afterwards, as they would on the board.
+__import__("time").sleep_ms(40)
+exec(compile(open("${"jumper_main.py"}").read(), "main.py", "exec"), globals())
 `;
 
 export interface MicroPythonBuild {

@@ -70,8 +70,9 @@ describe("MicroPython on the Raspberry Pi Pico", { timeout: 120_000 }, () => {
     expect(r.serial).toContain("ZeroDivisionError");
     expect(r.errors).toEqual(["firmware/util.py:2: ZeroDivisionError: divide by zero"]);
     // main.py ended, so MicroPython waits at its REPL on the same console.
-    const q = await call(s, "run", { ms: 200, serial_write: "print(6 * 7)\n" });
-    expect(q.serial).toContain("42");
+    const q = await call(s, "run", { ms: 200, serial_write: "print(6 * 7, util.half.__name__)\n" });
+    // main.py's names stay defined at the REPL, as on the board.
+    expect(q.serial).toContain("42 half");
   });
 
   it("set_firmware switches a board's language and refuses one that does not run there, saying why", async () => {

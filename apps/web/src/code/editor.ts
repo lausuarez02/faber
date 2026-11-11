@@ -2,6 +2,7 @@ import { EditorState, Compartment, type Extension } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { cpp } from "@codemirror/lang-cpp";
+import { python } from "@codemirror/lang-python";
 import { lintGutter, setDiagnostics, type Diagnostic } from "@codemirror/lint";
 import { syntaxHighlighting } from "@codemirror/language";
 import { classHighlighter } from "@lezer/highlight";
@@ -41,9 +42,23 @@ const theme = EditorView.theme({
   ".cm-foldPlaceholder": { backgroundColor: "var(--bg-raised)", border: "1px solid var(--border)", color: "var(--fg-muted)" },
 });
 
+/**
+ * Round 10 (languages): the editor mode for a file, from its name. Python for MicroPython (.py),
+ * C / C++ for Arduino, ESP-IDF and PlatformIO sources, plain text for the rest (platformio.ini,
+ * CMakeLists.txt, sdkconfig.defaults).
+ */
+export type EditorMode = "python" | "cpp" | "text";
+export function modeFor(path: string | undefined): EditorMode {
+  if (!path) return "cpp";
+  if (/\.py$/i.test(path)) return "python";
+  if (/\.(ino|pde|c|cc|cpp|cxx|h|hh|hpp|S)$/i.test(path)) return "cpp";
+  return "text";
+}
+
 export interface CodeEditorHandle {
   view: EditorView;
-  setDoc(text: string, readOnly: boolean): void;
+  /** `path` picks the language mode (modeFor). */
+  setDoc(text: string, readOnly: boolean, path?: string): void;
   setDiagnostics(diags: CompileDiagnostic[]): void;
   goto(line: number, column?: number): void;
   destroy(): void;
@@ -51,13 +66,13 @@ export interface CodeEditorHandle {
 
 export function createEditor(parent: HTMLElement, opts: { onChange(text: string): void; onSave(): void; onBuild(): void }): CodeEditorHandle {
   const readOnly = new Compartment();
-  const extensions = (ro: boolean): Extension[] => [
+  const extensions = (ro: boolean, mode: EditorMode = "cpp"): Extension[] => [
     keymap.of([
       { key: "Mod-s", preventDefault: true, run: () => (opts.onSave(), true) },
       { key: "Mod-Enter", preventDefault: true, run: () => (opts.onBuild(), true) },
     ]),
     basicSetup,
-    cpp(),
+    mode === "python" ? python() : mode === "cpp" ? cpp() : [],
     syntaxHighlighting(classHighlighter),
     lintGutter(),
     theme,
@@ -65,13 +80,13 @@ export function createEditor(parent: HTMLElement, opts: { onChange(text: string)
     EditorView.updateListener.of((u) => {
       if (u.docChanged) opts.onChange(u.state.doc.toString());
     }),
-    EditorView.contentAttributes.of({ "aria-label": "Sketch source", "data-testid": "code-content" }),
+    EditorView.contentAttributes.of({ "aria-label": mode === "python" ? "Python source" : "Sketch source", "data-testid": "code-content", "data-mode": mode }),
   ];
   const view = new EditorView({ parent, state: EditorState.create({ doc: "", extensions: extensions(true) }) });
   return {
     view,
-    setDoc(text, ro) {
-      view.setState(EditorState.create({ doc: text, extensions: extensions(ro) }));
+    setDoc(text, ro, path) {
+      view.setState(EditorState.create({ doc: text, extensions: extensions(ro, modeFor(path)) }));
     },
     setDiagnostics(diags) {
       const doc = view.state.doc;

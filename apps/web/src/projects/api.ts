@@ -84,10 +84,14 @@ export interface BuildResponse {
   hash?: string;
   hex?: string;
   size?: string;
+  /** Round 10: what was built, when there is no size line (e.g. "MicroPython 1.29.0 (RPI_PICO) + 2 files …"). */
+  built?: string;
+  language?: string;
   cached?: boolean;
   log?: string;
   error?: string;
-  run?: { t_ms?: number; serial?: string; error?: string };
+  /** errors: runtime errors the firmware printed, "firmware/main.py:9: ValueError: boom" (MicroPython). */
+  run?: { t_ms?: number; serial?: string; error?: string; errors?: string[] };
 }
 
 /** An error from the server, already in "what. Why: … Fix: …" form. */
