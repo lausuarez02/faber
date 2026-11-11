@@ -1,0 +1,21 @@
+{
+  "name": "@jumper/device-net",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "The generic device network sandbox: DNS, TCP/UDP flows, TLS (inspect or passthrough), mock APIs (HTTP, WebSocket, MQTT), cassettes, secrets injected at the edge, a redacted log.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@peculiar/x509": "1.14.3",
+    "ws": "8.22.2"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}
