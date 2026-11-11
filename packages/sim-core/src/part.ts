@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { PropValue } from "@jumper/project-format";
 import type { CircuitBuilder, NodeId, SolveResultView } from "./circuit.ts";
 import type { I2cDevice, SpiDevice } from "./bus.ts";
+import type { I2sDevice } from "./i2s.ts";
 import type { McuBackend } from "./mcu.ts";
 import type { PwmReading } from "./pwm.ts";
 
@@ -426,6 +427,11 @@ export interface PartModel {
   i2c?: I2cDevice;
   /** SPI peripheral behaviour, attached when its MOSI/MISO/SCK pins are wired to the board's. */
   spi?: SpiDevice;
+  /**
+   * I2S audio behaviour (an amplifier that plays, a microphone that records). Attached to the
+   * board's I2S bus when the part's "i2s-bclk" and "i2s-ws" pins are wired to board GPIOs.
+   */
+  i2s?: I2sDevice;
   /**
    * Colour display parts: the frame the glass shows (RGB565, viewer orientation). Too big for
    * visualState(), so renderers and screenshots read it here (Simulation.framebuffer(partId)).

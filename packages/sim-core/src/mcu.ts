@@ -1,4 +1,5 @@
 import type { I2cBus, McuBusPins, SpiBus } from "./bus.ts";
+import type { I2sBus } from "./i2s.ts";
 
 export type PinMode = "input" | "input_pullup" | "output" | "analog";
 
@@ -47,6 +48,15 @@ export interface McuBackend {
   attachI2c?(bus: I2cBus): void;
   /** Optional: connect the MCU's SPI master to a bus. Same lifetime as attachI2c. */
   attachSpi?(bus: SpiBus): void;
+  /** Optional: connect the MCU's I2S peripheral (audio frames out and in). Same lifetime as attachI2c. */
+  attachI2s?(bus: I2sBus): void;
+  /**
+   * Optional: which peripherals this backend actually emulates and carries to the circuit
+   * ("gpio", "irq", "uart", "i2c", "spi", "pwm", "adc", "rmt", "i2s", "net"), so the fidelity
+   * report and design checks can say "I2S is not emulated on this board" up front. Undefined means
+   * the long-standing set of the in-process backends (gpio, uart, i2c, spi, pwm, adc).
+   */
+  readonly capabilities?: readonly string[];
   /**
    * Optional: end the step() in progress at `cycle` (or as soon as possible after it) instead of its
    * original target. The Simulation calls it, from inside a pin-change callback, when a part

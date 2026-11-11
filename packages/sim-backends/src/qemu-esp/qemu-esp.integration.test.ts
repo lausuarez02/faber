@@ -39,7 +39,7 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
   it("boots Blink: serial text and the LED pin toggling every 500 ms of virtual time", () => {
     const t0 = Date.now();
     const s = boot();
-    expect(s.be.hello).toMatch(/jumper-esp32-bridge 2 esp32c3.gpio sync=1/);
+    expect(s.be.hello).toMatch(/jumper-esp32-bridge 3 esp32c3.gpio sync=1/);
     run(s.be, 2600);
     const wallMs = Date.now() - t0;
     expect(s.serial).toContain("hello from jumper esp32");
@@ -90,6 +90,8 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
       i2cRead: () => regs[ptr++ & 15]!,
       i2cStop: () => {},
     });
+    // Bridge v3 leaves QEMU's demo tmp105 out (no real board has it); a part at 0x48 answers instead.
+    bus.attach("tmp", { i2cAddress: () => 0x48, i2cConnect: () => true, i2cWrite: () => true, i2cRead: (() => { let i = 0; return () => [0x19, 0x00][i++ % 2]!; })(), i2cStop: () => {} });
     be.attachI2c(bus);
     let serial = "";
     be.onSerial((b) => (serial += String.fromCharCode(b)));

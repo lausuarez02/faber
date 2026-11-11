@@ -1,6 +1,7 @@
 import { buildNets, netIndex, pinKey, type Net, type Project, type PropValue } from "@jumper/project-format";
 import { Circuit, GROUND, scopedBuilder, type NodeId, type SolveResult } from "./circuit.ts";
 import { I2C_FAULTS, I2cBus, SPI_FAULTS, SpiBus, type I2cFault, type SpiFault } from "./bus.ts";
+import { I2sBus } from "./i2s.ts";
 import { Clock } from "./clock.ts";
 import { hashString } from "./hash.ts";
 import { averageSolves, PwmMeter, type PwmReading } from "./pwm.ts";
@@ -124,6 +125,8 @@ export class Simulation {
   readonly i2c: I2cBus;
   /** The firmware board's SPI bus. */
   readonly spi: SpiBus;
+  /** The firmware board's I2S bus (audio frames; backends with attachI2s). */
+  readonly i2s: I2sBus;
 
   // ---- PWM measurement, periodic ticks and part-scheduled events (packages/sim-core/PWM.md)
   /** One meter per MCU GPIO that has changed at least once, fed from onPinChange. */
@@ -195,8 +198,10 @@ export class Simulation {
     this.clock = new Clock(mcu?.cyclesPerSecond ?? opts.frequency ?? 1_000_000);
     this.i2c = new I2cBus("i2c0", () => this.cycles);
     this.spi = new SpiBus("spi0");
+    this.i2s = new I2sBus("i2s0");
     mcu?.attachI2c?.(this.i2c);
     mcu?.attachSpi?.(this.spi);
+    mcu?.attachI2s?.(this.i2s);
     this.chunkCycles = Math.max(1, this.clock.fromMs(opts.chunkMs ?? 1));
     this.tickCycles = Math.max(1, this.clock.fromMs(TICK_MS));
     if (mcu && this.boardId) {
@@ -750,6 +755,33 @@ export class Simulation {
         this.busUnsubs.push(this.spi.attach(s.id, s.model.spi, selected));
         this.spiSelected.set(s.id, { selected, last: false });
       }
+    }
+
+    for (const s of this.slots) {
+      if (!s.model.i2s) continue;
+      const diag = (severity: SimDiagnostic["severity"], code: string, message: string, pin?: string) =>
+        this.busDiag.push({ partId: s.id, severity, code, message, ...(pin ? { pin } : {}) });
+      const [bclk] = pinsWith(s, "i2s-bclk");
+      const [ws] = pinsWith(s, "i2s-ws");
+      if (!bclk || !ws) {
+        diag("error", "i2s-pins-missing", `${s.id} (${s.def.spec.id}) is an I2S device but its part.json marks no pin with protocol "i2s-bclk" and "i2s-ws", so the simulator cannot attach it. This is a bug in the part definition: add the protocols to its BCLK and WS (LRC) pins.`);
+        continue;
+      }
+      if (!board || !this.mcu) {
+        diag("warning", "i2s-no-mcu", `${s.id} is an I2S device but the project has no firmware board running, so no audio reaches it. Set project.firmware.board to the board part and load firmware.`);
+        continue;
+      }
+      if (!this.mcu.attachI2s) {
+        diag("error", "i2s-unsupported", `${s.id} needs I2S, but the board '${board}' has no I2S in its simulator backend, so it stays silent. Use a board whose backend emulates I2S (ESP32, ESP32-S3, ESP32-C3).`);
+        continue;
+      }
+      const toBoard = (pin: string) => this.mcuPinOfNode.has(this.nodeOf(s.id, pin));
+      const missing = [bclk, ws].filter((p) => !toBoard(p));
+      if (missing.length > 0) {
+        diag("error", "i2s-not-connected", `${s.id} is not on the I2S bus: ${missing.map((p) => `${s.id}:${p}`).join(" and ")} ${missing.length > 1 ? "are" : "is"} not wired to a GPIO of '${board}', so it hears nothing. Wire BCLK and WS (LRC) to the GPIOs the sketch passes to the I2S driver (for example I2S.setPins(bclk, ws, dout, din)).`, missing[0]);
+        continue;
+      }
+      this.busUnsubs.push(this.i2s.attach(s.id, s.model.i2s));
     }
 
     if (i2cDevices > 0 && !i2cPullups) {

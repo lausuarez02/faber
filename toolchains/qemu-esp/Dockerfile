@@ -3,7 +3,10 @@
 # ESP32 / ESP32-S3 (qemu-system-xtensa) and ESP32-C3 (qemu-system-riscv32), plus Jumper's bridge
 # patch: a working GPIO block whose pins (and the ESP32's I2C0 bus) are mirrored over a chardev.
 #
-#   docker build -t jumper/qemu-esp:9.2.2-20260417-jb2 toolchains/qemu-esp
+#   docker build -t jumper/qemu-esp:9.2.2-20260417-jb3 toolchains/qemu-esp
+#
+# Patches: 0001 GPIO/UART0/I2C0 bridge + lockstep (jb2); 0002 GPIO matrix + interrupts, LEDC, GP-SPI,
+# RMT, ADC, UART1/2, I2C on S3/C3 and I2C1 (jb3). Protocol: hw/gpio/esp32_gpio.c, docs/esp32-emulator.md.
 ARG QEMU_TAG=esp-develop-9.2.2-20260417
 FROM debian:bookworm-slim AS build
 ARG QEMU_TAG
@@ -13,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 --branch ${QEMU_TAG} https://github.com/espressif/qemu /src
 WORKDIR /src
-COPY 0001-jumper-bridge.patch /tmp/
-RUN git apply /tmp/0001-jumper-bridge.patch
+COPY 0001-jumper-bridge.patch 0002-jumper-peripherals.patch /tmp/
+RUN git apply /tmp/0001-jumper-bridge.patch && git apply /tmp/0002-jumper-peripherals.patch
 RUN ./configure --prefix=/opt/qemu --target-list=xtensa-softmmu,riscv32-softmmu \
       --enable-gcrypt --enable-slirp --disable-sdl --disable-gtk --disable-vnc --disable-capstone \
       --disable-docs --disable-tools --disable-user --disable-werror \

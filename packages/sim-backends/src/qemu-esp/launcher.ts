@@ -6,7 +6,8 @@ import { openSync, closeSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { ESP_CHIPS, type EspChip } from "./chips.ts";
 
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb2";
+/** Bridge protocol 3: GPIO matrix + interrupts, LEDC, SPI, RMT, ADC, UART1/2, I2C on every chip, I2S. */
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb3";
 
 export interface QemuLaunchOptions {
   chip: EspChip;
@@ -78,4 +79,26 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
 export function qemuImageAvailable(image = QEMU_ESP_IMAGE): boolean {
   const r = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 10_000 });
   return r.status === 0;
+}
+
+/**
+ * Checks that the emulator can start, and says why not with the fix (Docker not running, image
+ * missing, QEMU not on PATH). Returns undefined when it can.
+ */
+export function qemuPreflight(o: { runtime?: "docker" | "native"; image?: string; chip?: EspChip } = {}): string | undefined {
+  if ((o.runtime ?? "docker") === "native") {
+    const bin = ESP_CHIPS[o.chip ?? "esp32"].qemu;
+    const r = spawnSync(bin, ["--version"], { stdio: "ignore", timeout: 10_000 });
+    return r.status === 0 ? undefined : `${bin} is not on PATH, so the ESP32 emulator cannot start (runtime "native"). Fix: install Jumper's patched QEMU (toolchains/qemu-esp) or use runtime "docker".`;
+  }
+  const image = o.image ?? QEMU_ESP_IMAGE;
+  const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { stdio: "ignore", timeout: 15_000 });
+  if (info.error || info.status !== 0) {
+    return "Docker is not running, so the ESP32 emulator (QEMU in a container) cannot start. Fix: start Docker Desktop, then press Run again.";
+  }
+  const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
+  if (img.status !== 0) {
+    return `The ESP32 emulator image ${image} is not installed. Fix: run \`jumper setup esp32\` (or docker build -t ${image} toolchains/qemu-esp).`;
+  }
+  return undefined;
 }
