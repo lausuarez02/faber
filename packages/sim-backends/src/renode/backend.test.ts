@@ -58,6 +58,7 @@ describe("Renode backend protocol (fake bridge)", () => {
     let runDir = "";
     const be = createRenodeBackend({
       board: "stm32-blackpill-f411",
+      runtime: "docker", // the paths below are the container's
       launch: (o) => {
         runDir = o.runDir;
         return fb.launch(o);
