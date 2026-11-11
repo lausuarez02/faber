@@ -1,0 +1,49 @@
+{
+  "id": "inmp441",
+  "name": "INMP441 I2S MEMS microphone",
+  "category": "sensor",
+  "description": "Digital microphone (I2S, 24-bit): the board records sound from it over I2S. Generic audio input for anything that listens: level meters, clap detection, recording, streaming. Wire SCK, WS and SD to three free GPIOs and pass them to the I2S driver; L/R to GND puts it on the left channel. In the simulator its sound is set by props (silence, a tone, noise, or a sample clip), or by a test.",
+  "pins": [
+    { "id": "SCK", "label": "SCK", "x": 10, "y": 76, "type": "digital", "protocols": ["i2s-bclk"], "description": "Bit clock from the board (I2S BCLK)." },
+    { "id": "WS", "label": "WS", "x": 26, "y": 76, "type": "digital", "protocols": ["i2s-ws"], "description": "Word select from the board (I2S WS / LRCLK)." },
+    { "id": "SD", "label": "SD", "x": 42, "y": 76, "type": "digital", "protocols": ["i2s-dout"], "description": "Serial data out of the mic. To the board's I2S data in pin." },
+    { "id": "L/R", "label": "L/R", "x": 58, "y": 76, "type": "digital", "description": "Channel: GND = left, VDD = right." },
+    { "id": "VDD", "label": "VDD", "x": 74, "y": 76, "type": "power", "voltage": { "min": 1.8, "max": 3.6 }, "description": "1.8 to 3.3 V. Not 5 V." },
+    { "id": "GND", "label": "GND", "x": 90, "y": 76, "type": "ground" }
+  ],
+  "size": { "w": 100, "h": 84 },
+  "props": [
+    { "id": "sound", "label": "Sound", "type": "enum", "default": "silence", "options": ["silence", "tone", "noise", "clip"], "description": "What the microphone hears: quiet room, a sine tone, broadband noise, or the sample clip in 'clip_b64'." },
+    { "id": "spl_db", "label": "Loudness", "type": "number", "default": 70, "min": 30, "max": 120, "unit": "dB SPL", "description": "Sound pressure at the microphone. 94 dB SPL reads -26 dBFS (datasheet sensitivity); speech at 1 m is about 60 dB." },
+    { "id": "tone_hz", "label": "Tone frequency", "type": "number", "default": 1000, "min": 20, "max": 20000, "unit": "Hz", "description": "Frequency when Sound is 'tone'." },
+    { "id": "clip_b64", "label": "Clip (16-bit PCM, base64)", "type": "text", "default": "", "description": "Mono 16-bit little-endian PCM at 16 kHz, base64. Played in a loop when Sound is 'clip' (a scenario or the agent sets it; the browser can fill it from the microphone)." }
+  ],
+  "limits": { "maxVoltage": 3.6 },
+  "footprint": "Round 14 mm breakout, 6-pin 0.1\" header",
+  "dimensions_mm": { "w": 14, "h": 14, "d": 3 },
+  "mass_g": 1,
+  "current_ma": { "typ": 1.4, "max": 1.6 },
+  "price_usd": 1.8,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-INMP441.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=INMP441" }
+  ],
+  "bindings": [
+    { "key": "listening", "type": "boolean", "description": "The board reads samples from it (last 100 ms)." },
+    { "key": "levelDbfs", "type": "number", "description": "Level of what it hears, dBFS." }
+  ],
+  "tags": ["i2s", "microphone", "mic", "audio", "sound", "mems", "inmp441", "record", "listen", "input"],
+  "mechanical": {
+    "outline": "round",
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 1,
+    "features": [
+      { "id": "port", "kind": "grille", "face": "-z", "x": 7, "y": 7, "shape": "round", "d": 1 }
+    ],
+    "source": "common INMP441 round breakout; the sound port is on the bottom of the module"
+  },
+  "sourcing": {
+    "package": "INMP441 MEMS (4.72 × 3.76 mm LGA) on a 14 mm breakout",
+    "generic": "INMP441 I2S MEMS microphone module"
+  }
+}

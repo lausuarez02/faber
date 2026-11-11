@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "approx", "note": "Samples are handed to the board's I2S peripheral as whole blocks in the format the firmware configured (24-bit data left-justified in 32-bit slots, as the chip sends). BCLK / WS edges and the 'tri-state the other channel' timing are not simulated." },
+    "timing": { "level": "approx", "note": "Blocks are produced when the board's DMA asks for them, in virtual time; sample-accurate phase of the tone or clip is kept across blocks." },
+    "analog": { "level": "approx", "note": "Sound is synthetic (silence, a sine tone, deterministic noise or a PCM clip) at the set SPL, mapped with the datasheet sensitivity (-26 dBFS at 94 dB SPL). No acoustic path, frequency response, self-noise floor (61 dBA SNR) or clipping above 120 dB SPL." },
+    "power": { "level": "approx", "note": "1.4 mA from VDD; off below 1.8 V." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": ["Audio the firmware records over I2S, in the format it asked for", "Left / right channel from the L/R pin", "Loudness in dB SPL with the real sensitivity"],
+  "doesNotEmulate": ["Real room sound (the browser microphone can feed the clip prop with permission)", "Acoustic port, case resonance, wind noise", "Start-up time (the real mic needs ~85 ms of clock before data is valid)"],
+  "testOnRealDevice": ["Point the sound port (bottom hole) at the source through a hole in the case", "Discard the first ~100 ms after starting I2S", "Check the 24-bit samples are read from 32-bit slots and shifted down"]
+}
