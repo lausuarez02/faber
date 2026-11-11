@@ -13,6 +13,25 @@ describe("board support matrix (docs/boards.md)", () => {
     for (const b of BOARD_SUPPORT) expect(b.backend, b.board).toBe(boards.find((d) => d.spec.id === b.board)!.spec.mcu!.backend);
   });
 
+  it("a board's fidelity notes do not deny what the matrix verifies (round 10 eval: the ESP notes still said WiFi.begin() crashes)", () => {
+    // Phrases that say an area does not work at all; a board whose matrix cell says otherwise must not use them.
+    const denies: Partial<Record<(typeof SUPPORT_AREAS)[number], RegExp>> = {
+      adc: /ADC is not emulated|\(reads 0\)|returns 0\)/i,
+      pwm: /LEDC PWM does not reach|analogWrite \/ LEDC PWM, tone\(\), RMT/i,
+      irq: /attachInterrupt never fires/i,
+      i2c: /I2C is NOT emulated|no I2C controller model/i,
+      net: /WiFi\.begin\(\)[^.]*crash/i,
+    };
+    for (const b of BOARD_SUPPORT) {
+      const def = listParts("board").find((d) => d.spec.id === b.board)!;
+      const text = JSON.stringify(def.fidelity);
+      for (const [area, re] of Object.entries(denies)) {
+        const st = b.areas[area as (typeof SUPPORT_AREAS)[number]].status;
+        if (st === "verified" || st === "partial" || (area === "net" && st !== "no")) expect(text, `${b.board}: fidelity denies ${area}, matrix says ${st}`).not.toMatch(re!);
+      }
+    }
+  });
+
   it("every verified or partial cell names a test file that exists; every other cell says why", () => {
     for (const b of BOARD_SUPPORT) {
       for (const a of SUPPORT_AREAS) {

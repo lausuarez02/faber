@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-C3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: with the jb5 emulator, PWM (LEDC), GPIO interrupts, UART1, the ADC and the I2C controller are verified on real firmware on this chip; SPI does not work yet and RMT is untested. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
+      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
     },
     "timing": {
       "level": "approx",
@@ -11,7 +11,7 @@
     },
     "analog": {
       "level": "approx",
-      "note": "Pins are ideal sources with 30 Ω output resistance (default 20 mA drive) and 45 kΩ internal pull-ups / pull-downs. Digital inputs switch at 0.25 × and 0.75 × VDD and keep their last level in between. analogRead() / the ADC is not emulated (it returns 0); analogWrite() / LEDC PWM does not reach the pin."
+      "note": "Pins are ideal sources with 30 Ω output resistance (default 20 mA drive) and 45 kΩ internal pull-ups / pull-downs. Digital inputs switch at 0.25 × and 0.75 × VDD and keep their last level in between. analogRead() reads the pad voltage the circuit solved, converted by the emulator's ADC model (not the real chip's non-linearity, attenuation error or noise); LEDC PWM (analogWrite, servos, tone()) is drawn on the pin as edges."
     },
     "power": {
       "level": "approx",
@@ -19,22 +19,22 @@
     },
     "radio": {
       "level": "none",
-      "note": "Wi-Fi and Bluetooth are not emulated: QEMU has no radio model, and WiFi.begin() / WiFi.mode() crash the firmware in a reboot loop. Test every radio feature on the real board."
+      "note": "The radio is not emulated (QEMU has no radio model): no RF, signal, range or roaming, and no Bluetooth / BLE. Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal); partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it). Test range, real access points and everything Bluetooth on the real board."
     }
   },
   "emulates": [
     "ESP32-C3 (single-core RISC-V) running the real compiled firmware in Espressif's QEMU, in lockstep with the circuit",
     "Digital I/O with the chip's internal pull-ups / pull-downs, 3.3 V thresholds",
     "Serial (UART0) as the console, with virtual time stamps",
+    "I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt), UART1 and the ADC (analogRead), verified on real firmware",
     "Per-pin over-current check (40 mA)",
-    "On-board Li-ion charger (ETA4054S2F, 380 mA) and the battery power path"
+    "On-board Li-ion charger (ETA4054S2F, 380 mA) and the battery power path",
+    "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))"
   ],
   "doesNotEmulate": [
-    "Wi-Fi and Bluetooth (the radio): WiFi.begin() crashes the firmware in the emulator",
-    "analogRead / the ADC (reads 0), touch pads",
-    "analogWrite / LEDC PWM, tone(), RMT (NeoPixel / WS2812), I2S, the SPI peripheral (SPI.transfer does not reach the parts)",
-    "GPIO interrupts (attachInterrupt never fires); poll with digitalRead instead",
-    "I2C (Wire): no I2C controller model for the ESP32-C3 in QEMU",
+    "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
+    "Touch pads",
+    "The SPI peripheral (SPI transfers do not come through yet) and I2S; RMT (NeoPixel / WS2812) is untested",
     "Deep sleep, light sleep and their currents",
     "Pull-ups / pull-downs the chip applies at reset before the firmware sets them (only the ones the firmware sets are seen)",
     "Reset and boot from the EN / RST and BOOT pins, and the strapping levels themselves (check_design checks them instead)",
@@ -42,7 +42,7 @@
     "The native USB port (USB CDC): in the simulator Serial is UART0"
   ],
   "testOnRealDevice": [
-    "Everything that uses Wi-Fi or Bluetooth",
+    "Wi-Fi range, real access points and real servers, and everything Bluetooth",
     "analogRead values and PWM brightness",
     "Timing-critical code (bit-banged protocols, tight loops): instruction timing is approximate",
     "Upload with esptool / Arduino IDE (strapping pins at reset)",
