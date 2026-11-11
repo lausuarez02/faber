@@ -18,8 +18,32 @@ import type { CasePlacement, CaseShape, Enclosure } from "@jumper/project-format
 import type { PartSpec } from "@jumper/sim-core";
 import { apply, envelopeZ, FACE_DIR, faceAxes, I3, type LocalFeature, type Mat3, mul, type PartMech, resolveMech, ROTATIONS, rotAbout, eqv } from "./mech.ts";
 import { contains, type Flat, growPlan, withFastOutline, type Need, outline, type Plan, type PlanKind, planBounds, polyDistance, polyOuter, rayExit, sizePlan, sizePoly } from "./plan.ts";
-import { outlineFeatureIssues, parseOutline, presetOutline, type ParsedOutline } from "./outline.ts";
+import { outlineFeatureIssues, parseOutline, presetOutline, presetPoints, type ParsedOutline } from "./outline.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
+import { depthCandidates, hashSeed, type OEnv, type OItem, type OVariant, radialOf, searchAtDepth, type ZMode } from "./optimize.ts";
+
+/** Round 8: the optimizer's settings for one layout run. */
+export interface OptimizeOptions {
+  /** Annealing steps per depth (deterministic). */
+  iters?: number;
+  /** How many depths to try (thinnest first). */
+  depths?: number;
+  /** Safety stop for the whole search, ms. */
+  timeMs?: number;
+}
+
+/** One finished layout the optimizer made at a cavity depth. */
+export interface AutoCandidate {
+  layout: Layout;
+  /** Cavity depth tried, mm. */
+  D: number;
+  /** What the search minimised (outline scale or plan area). */
+  size: number;
+  failed: string[];
+  iters: number;
+  /** The container the search packed into (the outline, or a preset at an aspect). */
+  container: string;
+}
 
 export type CaseFaceName = keyof typeof FACE_DIR;
 
@@ -196,6 +220,8 @@ export interface Layout {
   fit?: LayoutFit;
   /** What parsing the outline changed (corners rounded). */
   outlineNotes?: string[];
+  /** Round 8: the distribution proposal this layout is (layoutCase sets it). */
+  proposal?: { id: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string; asked: string };
 }
 
 const SIDE_FACES: CaseFaceName[] = ["right", "left", "top", "bottom"];
@@ -345,10 +371,11 @@ export interface LayoutFit {
 }
 
 /**
- * Pack the parts into a case. A curved shape gives each connector its own side; which connector
- * gets which side is tried both ways (up to 4 orders) and the smallest case kept.
+ * Round 7's packer (kept as one of the candidates the proposals compare): parts stacked front to
+ * back. A curved shape gives each connector its own side; which connector gets which side is tried
+ * both ways (up to 4 orders) and the smallest case kept.
  */
-export function layoutCase(input: LayoutInput, opts: LayoutOptions = {}): Layout {
+export function stackLayout(input: LayoutInput, opts: LayoutOptions = {}): Layout {
   // A custom outline (or a preset at a fixed size) always gets the same search, so check_fit's
   // quick answer is the answer design_case builds; the presets keep their larger round-6 search.
   const sz = input.enclosure.size_mm;
@@ -390,7 +417,7 @@ function overflow(L: Layout): number {
   return (f.fixed.w || f.fixed.h ? Math.max(0, f.scale - 1) * 1e10 : 0) + (f.depthMiss ? (f.depthMiss.needed_mm - f.depthMiss.available_mm) * 1e9 : 0);
 }
 
-function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[] } {
+function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions & { optimize?: OptimizeOptions } = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[]; candidates?: AutoCandidate[] } {
   const enc = input.enclosure;
   const shape = enc.shape;
   const params = resolveParams(shape, enc.params);
@@ -454,12 +481,13 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     const cycle: CaseFaceName[] = connCycle ?? (shape === "rounded-box" || shape === "keychain" ? ["bottom"] : ["bottom", "left", "right", "top"]);
     conn.forEach((m, i) => connFace.set(m.id, cycle[i % cycle.length]!));
   }
-  const plans: Plan0[] = mechs.map((m) => {
+  // one part's orientation and binding; round 8: the optimizer also asks for another face or the part on its edge
+  const planOf = (m: PartMech, faceOver?: CaseFaceName, edgeOver?: boolean): Plan0 => {
     const placement = enc.placements?.[m.id];
     const isFront = m.id === frontId;
     const exposed = m.features.filter((f) => f.expose).sort((a, b) => priority(b, isFront) - priority(a, isFront));
     let primary = exposed[0];
-    let face: CaseFaceName | "inside" | undefined = placement?.face;
+    let face: CaseFaceName | "inside" | undefined = faceOver ?? placement?.face;
     if (isFront) {
       primary = m.features.find((f) => f.kind === "screen") ?? primary;
       face = face ?? "front";
@@ -493,7 +521,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     if (!primary || !face || face === "inside") return { mech: m, ...(placement ? { placement } : {}), Rs: placement?.on_edge ? edgeRotations(m) : flatRotations(), isFront };
     const target = FACE_DIR[face];
     let cands = ROTATIONS.filter((R) => eqv(apply(R, primary!.n), target));
-    if (placement?.on_edge) {
+    if (placement?.on_edge || edgeOver) {
       const edge = cands.filter((R) => Math.abs(apply(R, [0, 0, 1])[2]) < 0.5);
       if (edge.length) cands = edge;
     }
@@ -512,11 +540,158 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     let R = cands[0] ?? I3;
     if (placement?.rotation) R = mul(rotAbout(target, placement.rotation), R);
     return { mech: m, ...(placement ? { placement } : {}), bound: { face, feature: primary, offset: tipOffset(primary, tol) }, Rs: [R], isFront };
-  });
+  };
+  const plans: Plan0[] = mechs.map((m) => planOf(m));
 
   // ---- 2. packing
   const order = [...plans].sort((a, b) => rank(a) - rank(b) || vol(b.mech) - vol(a.mech));
   const front = plans.find((p) => p.isFront);
+  // ---- round 8: the distribution optimizer (flat first, then stacked), each result finished into a real layout
+  if (opts.optimize) {
+    const baseIss = issues.splice(0);
+    const items: OItem[] = [];
+    const vdata: { R: Mat3; bound?: Plan0["bound"]; bx: Box; body: Box; mech: PartMech }[][] = [];
+    const curvedShape = !(shape === "rounded-box" || shape === "keychain") || !!polySpec;
+    for (const pl of plans) {
+      const m = pl.mech;
+      const placement = pl.placement;
+      const vs: Plan0[] = [];
+      const pk = pl.bound?.feature.kind;
+      if (pl.bound && !placement?.face && !pl.isFront && SIDE_FACES.includes(pl.bound.face)) {
+        // a port, button or switch may go on another side; the one the round-7 rules pick comes first
+        // (buttons, switches and knobs keep the side the rules give them: people expect them there)
+        const faces: CaseFaceName[] = pk === "connector" ? (curvedShape ? ["bottom", "left", "right", "top"] : ["bottom"]) : [pl.bound.face];
+        for (const f of [pl.bound.face, ...faces.filter((f) => f !== pl.bound!.face)]) vs.push(planOf(m, f));
+        // stood on its edge, port still on its side (a board standing behind the wall)
+        if (!placement?.on_edge && !m.soft) for (const f of [pl.bound.face]) {
+          const e = planOf(m, f, true);
+          if (Math.abs(apply(e.Rs[0]!, [0, 0, 1])[2]) < 0.5) vs.push(e);
+        }
+      } else vs.push(pl);
+      const variants: OVariant[] = [];
+      const data: (typeof vdata)[number] = [];
+      const seen = new Set<string>();
+      for (const v of vs) {
+        let Rs = v.Rs;
+        // a free part: turned 0 / 90 (the same box either way up), then on its edge where allowed (never a cell)
+        if (!v.bound) {
+          Rs = placement?.on_edge ? Rs : [...Rs.filter((R) => Math.abs(apply(R, [0, 0, 1])[2]) > 0.5), ...(m.soft || placement?.face === "inside" ? [] : edgeRotations(m))];
+        }
+        for (const R of Rs) {
+          const bx = rotatedBox(m, R);
+          const body = rotatedBox(m, R, true);
+          const sx = bx.max[0] - bx.min[0];
+          const sy = bx.max[1] - bx.min[1];
+          const szz = bx.max[2] - bx.min[2];
+          const key = `${v.bound?.face ?? "-"}:${sx.toFixed(2)},${sy.toFixed(2)},${szz.toFixed(2)}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const V: OVariant = { sx, sy, sz: szz, pts: footprintPts(m, R, bx, 9), onEdge: Math.abs(apply(R, [0, 0, 1])[2]) < 0.5 };
+          const b = v.bound;
+          if (b) {
+            const tip = apply(R, b.feature.tip);
+            const o = b.offset;
+            // (a keep-out past the feature's face, e.g. a speaker's, just keeps the feature a little further from the wall)
+            if (b.face === "front") V.zFix = { mode: "front", top: Math.max(0, o + tip[2] - bx.max[2]) };
+            if (b.face === "back") V.zFix = { mode: "back", bottom: Math.max(0, o - (tip[2] - bx.min[2])) };
+            if (SIDE_FACES.includes(b.face)) V.side = { face: b.face, n: [FACE_DIR[b.face][0], FACE_DIR[b.face][1]], tip: [tip[0] - bx.min[0], tip[1] - bx.min[1]], off: o, connector: b.feature.kind === "connector", poke: b.feature.passThrough ? b.feature.protrude : 0, reach: b.feature.kind === "button" ? 6 : b.feature.kind === "led" ? 4 : 1.2 };
+            const ax = faceAxes(b.face);
+            const offX = placement?.x_mm;
+            const offY = placement?.y_mm;
+            if (b.face === "front" || b.face === "back") {
+              if (v.isFront || offX !== undefined) V.pinX = (offX ?? 0) * ax.right[0] - (tip[0] - bx.min[0]);
+              if (offY !== undefined) V.pinY = offY - (tip[1] - bx.min[1]);
+            } else if (b.face === "left" || b.face === "right") {
+              if (offY !== undefined) V.pinY = offY - (tip[1] - bx.min[1]);
+            } else if (offX !== undefined) V.pinX = offX - (tip[0] - bx.min[0]);
+          } else {
+            // a part with nothing on a wall can be pinned by its centre
+            if (placement?.x_mm !== undefined) V.pinX = placement.x_mm - sx / 2;
+            if (placement?.y_mm !== undefined) V.pinY = placement.y_mm - sy / 2;
+          }
+          variants.push(V);
+          data.push({ R, ...(b ? { bound: b } : {}), bx, body, mech: m });
+        }
+      }
+      const lay = placement?.layer;
+      items.push({ id: m.id, variants, mass: m.w * m.h * m.d * (m.soft ? 2 : 1), soft: m.soft, ...(lay !== undefined && !pl.bound ? { zPin: (lay === 0 ? 0 : 1) as ZMode } : {}) });
+      vdata.push(data);
+    }
+    const lipT = Math.max(0.8, Math.min(1.2, t * 0.6));
+    const kindO: OEnv["kind"] = polySpec ? "poly" : shape === "puck" ? "circle" : shape === "pebble" ? "ellipse" : shape === "pill" ? "stadium" : "rrect";
+    // the straight band of the side wall that the openings on the sides (and the closure lip) need,
+    // as half its height about the middle of the depth: the rims can only round over outside it (step 5)
+    let band = 0.6;
+    for (const it of vdata)
+      for (const d of it) {
+        const f = d.bound?.feature;
+        if (!f || !SIDE_FACES.includes(d.bound!.face)) continue;
+        const uz = Math.abs(apply(d.R, f.uAxis)[2]);
+        const vz = Math.abs(apply(d.R, f.vAxis)[2]);
+        const ext = f.kind === "button" ? Math.max(3, Math.min(6, f.u)) / 2 + 0.3 : (uz * (f.u + (f.kind === "switch" ? f.travel : 0)) + vz * f.v) / 2;
+        band = Math.max(band, ext + (f.kind === "connector" ? Math.min(0.6, f.plugClearance) : 0.2) + 0.6);
+      }
+    const rimOf = (D: number, which: "front" | "back") => {
+      const Dout = D + 2 * t + 0.3;
+      const asked = which === "front" ? params.edge_radius_front_mm : params.edge_radius_back_mm;
+      let e = typeof asked === "number" ? asked : shape === "rounded-box" ? 1.2 : EDGE_SHARE[shape] * Dout;
+      if (shape === "keychain" && typeof asked !== "number") e = Math.min(e, params.corner_radius_mm - 3);
+      // as step 5 clamps it: the band (front) or the lip below the split (back) stays straight
+      e = Math.min(e, t + 0.3 + D / 2 - (which === "front" ? band : Math.max(band, 2.6)));
+      return Math.max(0, e - t);
+    };
+    // the container the search packs into: the drawn outline (centred; fixed: at the asked size), or a
+    // preset's outline at a few aspects (its real plan is then sized round the parts)
+    const containers: { radial: OEnv["radial"]; fixed: boolean; label: string }[] = [];
+    if (polySpec) containers.push({ radial: radialOf(polySpec.poly, polySpec.A0, polySpec.B0), fixed: polySpec.fixed, label: "outline" });
+    else for (const asp of shape === "puck" ? [1] : [1, 0.75]) containers.push({ radial: radialOf(presetPoints(shape, 60, 60 * asp, params.corner_radius_mm), 1, 1), fixed: false, label: `aspect ${asp}` });
+    const crownEst = (v: number | "auto") => (v === "auto" ? (shape === "pebble" || shape === "custom" ? 1 : 0) : v);
+    const maxD = depthFixed !== undefined ? depthFixed - 2 * t - crownEst(params.dome_mm) - crownEst(params.dome_back_mm) : Infinity;
+    let Ds = depthCandidates(items, g, Number.isFinite(maxD) ? maxD : 60, opts.optimize.depths ?? 5);
+    if (Number.isFinite(maxD)) Ds = [...new Set([...Ds.filter((d) => d <= maxD + 1e-6), Math.max(4, Math.round(maxD * 10) / 10)])].sort((a, b) => a - b);
+    const seed = hashSeed(items.map((it) => `${it.id}:${it.variants.length}`).join("|") + shape);
+    const deadline = performance.now() + (opts.optimize.timeMs ?? 6000);
+    const cands: AutoCandidate[] = [];
+    const partsArea = items.reduce((a, it) => a + (it.variants[0]!.sx + g) * (it.variants[0]!.sy + g), 0);
+    for (const ct of containers) {
+      const env: OEnv = {
+        kind: kindO,
+        radial: ct.radial,
+        g,
+        t,
+        lip: Math.max(0, lipT + tol - g),
+        rims: (D) => [rimOf(D, "front"), rimOf(D, "back")],
+        upright: !!polySpec && polySpec.B0 > 1.15 * polySpec.A0,
+        B0: polySpec ? polySpec.B0 : 30,
+      };
+      // area of the container at scale 1 (mm²), for a first guess of the scale
+      let a1 = 0;
+      for (let k = 0; k < ct.radial.r.length; k++) a1 += 0.5 * ct.radial.r[k]! ** 2 * ((2 * Math.PI) / ct.radial.r.length);
+      for (const D of Ds) {
+        const r = searchAtDepth(items, env, D, { iters: Math.round((opts.optimize.iters ?? 600) / Math.sqrt(containers.length)), seed, deadline, ...(ct.fixed ? { minScale: 1, startScale: 1 } : { startScale: Math.sqrt(partsArea / Math.max(1, a1)) * 0.9 }) });
+        const placedL: Placed[] = r.placed.map((q) => {
+          const d = vdata[q.item]![q.v]!;
+          const min: Vec3 = [q.x, q.y, q.z0];
+          const T: Vec3 = [min[0] - d.bx.min[0], min[1] - d.bx.min[1], min[2] - d.bx.min[2]];
+          const add = (v: Vec3): Vec3 => [v[0] + T[0], v[1] + T[1], v[2] + T[2]];
+          return { mech: d.mech, R: d.R, T, facing: facingOf(d.R), rotation: rotationDeg(d.R), layer: 0, min, max: add(d.bx.max), bodyMin: add(d.body.min), bodyMax: add(d.body.max), ...(d.bound ? { bound: d.bound } : {}) };
+        });
+        const iss: FitCheck[] = baseIss.map((i) => ({ ...i }));
+        for (const k of r.failed) {
+          const id = items[k]!.id;
+          iss.push({ id: "fits", ok: false, severity: "error", message: `${id} could not be placed with the others. Why: at ${D.toFixed(1)} mm of depth there is no spot where it fits, reaches its wall and keeps clear of the other parts. Fix: let the case be deeper (a larger size_mm.d or depth_mm), move it with placements, or exclude it.`, parts: [id] });
+        }
+        if (!placedL.length) continue;
+        const Lc = finish(placedL, iss);
+        cands.push({ layout: Lc, D, size: r.size, failed: r.failed.map((k) => items[k]!.id), iters: r.iters, container: ct.label });
+      }
+    }
+    if (!cands.length) {
+      const first = layoutOnce(input, connPerm, { ...opts, optimize: undefined }, connCycle);
+      return { ...first, candidates: [] };
+    }
+    return { ...cands[0]!.layout, connOrder: [], candidates: cands };
+  }
   const dims = plans.map((p) => {
     const bx = rotatedBox(p.mech, p.Rs[0]!);
     const ex = p.Rs.length > 1 ? Math.min(bx.max[0] - bx.min[0], bx.max[1] - bx.min[1]) : bx.max[0] - bx.min[0];
@@ -1423,10 +1598,10 @@ interface Region {
 }
 
 /** Outline points of a part's footprint (front view), relative to its box's min corner: rect edges every ~4 mm, discs every 22.5°. */
-function footprintPts(m: PartMech, R: Mat3, bx: Box): [number, number][] {
+function footprintPts(m: PartMech, R: Mat3, bx: Box, step = 4): [number, number][] {
   const pts: [number, number][] = [];
   const edge = (a: [number, number], b: [number, number]) => {
-    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 4));
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
     for (let i = 0; i < n; i++) pts.push([a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n]);
   };
   if (Math.abs(apply(R, [0, 0, 1])[2]) > 0.5) {
@@ -1654,4 +1829,9 @@ function pack(order: Plan0[], W: number, H: number, g: number, front: Plan0 | un
     score = area * (od + 2) * (1 + 0.03 * Math.max(0, c - 18) + 0.06 * Math.max(0, c - 22) + 0.02 * Math.max(0, a - 110) + 0.03 * Math.max(0, b - 70));
   }
   return { placed, score, failed };
+}
+
+/** Round 8: the optimizer's finished layouts, one per cavity depth tried (thinnest first). */
+export function autoLayouts(input: LayoutInput, opts: OptimizeOptions = {}): AutoCandidate[] {
+  return layoutOnce(input, undefined, { quick: true, optimize: opts }).candidates ?? [];
 }

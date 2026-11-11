@@ -25,6 +25,8 @@ export interface CaseReport {
   fit?: { fits: boolean; needed_mm: { w: number; h: number; d: number }; asked_mm?: { w?: number; h?: number; d?: number }; scale: number };
   /** Round 7: the outer outline seen from the front (case frame, mm). */
   outline_mm?: [number, number][];
+  /** Round 8: the distribution the case was built from. */
+  layout?: { goal: string; asked: string; label: string; fill_ratio: number; why: string[] };
 }
 
 /** Round 7: POST /api/case/fit (check_fit with the front-view preview). */
@@ -42,6 +44,32 @@ export interface FitResult {
     parts: { id: string; type: string; collides: boolean; shapes: ({ shape: "rect"; min: [number, number]; max: [number, number] } | { shape: "round"; c: [number, number]; r: number })[] }[];
   };
   notes: string[];
+  ms: number;
+}
+/** Round 8: POST /api/case/layouts (propose_layout with the front and side views). */
+export interface LayoutProposal {
+  id: "thinnest" | "smallest" | "balanced";
+  label: string;
+  size_mm: { w: number; h: number; d: number };
+  volume_cm3: number;
+  pocket: "fits" | "tight" | "no";
+  fill_ratio: number;
+  layers: { index: number; z_mm: [number, number]; parts: string[] }[];
+  placements: Record<string, { x_mm: number; y_mm: number; z_mm: number; rot: number; on_edge: boolean; layer: number; face?: string }>;
+  why: string[];
+  misses: string[];
+  warnings: string[];
+  source: string;
+  views?: {
+    front: { outline: [number, number][]; cavity: [number, number][]; parts: { id: string; label: string; color: string; layer: number; min: [number, number]; max: [number, number] }[] };
+    side: { z: [number, number]; y: [number, number]; parts: { id: string; label: string; color: string; layer: number; z: [number, number]; y: [number, number] }[] };
+  };
+}
+export interface LayoutsResult {
+  proposals: LayoutProposal[];
+  best: string;
+  chosen: string;
+  parts_volume_cm3: number;
   ms: number;
 }
 export interface CaseMesh {
@@ -78,6 +106,7 @@ export const caseApi = {
   save: (body: Partial<Enclosure>) => req<CaseReport & { error?: string }>("POST", "/api/case", body),
   mesh: () => req<CaseMesh>("GET", "/api/case/mesh"),
   fit: (body: Record<string, unknown>) => req<FitResult>("POST", "/api/case/fit", body),
+  layouts: (body: Record<string, unknown>) => req<LayoutsResult>("POST", "/api/case/layouts", body),
   pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),
   fileUrl: (path: string) => `/api/case/file?path=${encodeURIComponent(path)}`,
 };

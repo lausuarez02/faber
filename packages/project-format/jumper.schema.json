@@ -1054,6 +1054,16 @@
               "maximum": 120
             }
           }
+        },
+        "layout": {
+          "description": "Round 8: how the parts are distributed inside. Jumper proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it.",
+          "type": "string",
+          "enum": [
+            "auto",
+            "thinnest",
+            "smallest",
+            "balanced"
+          ]
         }
       },
       "required": [

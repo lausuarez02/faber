@@ -21,8 +21,9 @@ The loop: `search_parts` → `get_part` → `place_part` → `connect` → `chec
 `record`, `viewer_url`) → `fidelity_report` (say what the simulation cannot check).
 When the person wants a real device, finish with `design_case` (shape, renders, measured size,
 fit checks; any shape they name, an egg or a heart, is `"shape": "custom"` with an `outline` you
-draw and maybe `size_mm`: `check_fit` first says in under a second what fits and what smaller
-parts would) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
+draw and maybe `size_mm`: `check_fit` first says what fits and what smaller parts would;
+`propose_layout` shows how Jumper would distribute the parts inside, thinnest / smallest / balanced,
+with the reasons: tell the person which one and why, `layout: "<id>"` picks it) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
 steps: the factory pack).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.

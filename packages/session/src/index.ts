@@ -50,4 +50,4 @@ export { powerReport } from "./tools/power.ts";
 export type { PowerReport } from "./tools/power.ts";
 export { batteryPathAdvice } from "./drc.ts";
 export { deviceStill, lastLoggedStill, stillKey, type DeviceStill } from "./device-still.ts"; // round 6 frames
-export { caseState, caseIsStale, caseMesh, previewFit } from "./tools/case.ts"; // round 6 case, round 7 fit preview
+export { caseState, caseIsStale, caseMesh, previewFit, layoutProposals } from "./tools/case.ts"; // round 6 case, round 7 fit preview, round 8 layout proposals

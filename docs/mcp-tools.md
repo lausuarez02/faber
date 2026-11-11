@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-54 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+55 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -87,6 +87,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`design_case`](#design_case) | Design a printable case | yes (undoable step) |
 | [`update_case`](#update_case) | Change the case | yes (undoable step) |
 | [`check_fit`](#check_fit) | Test a case fit | no (read-only) |
+| [`propose_layout`](#propose_layout) | Propose how the parts are distributed | no (read-only) |
 | [`get_case`](#get_case) | Case report | no (read-only) |
 | [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
 | [`read_speech`](#read_speech) | Read what it said | no (read-only) |
@@ -539,6 +540,7 @@ Pack the project's parts into a two-part printable case and write everything nee
 | `front` | string |  | Part id whose screen faces out of the front (default: the first display). |
 | `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}). |
 | `exclude` | string[] |  | Part ids that are not inside the case. |
+| `layout` | string |  | one of `auto`, `thinnest`, `smallest`, `balanced`. How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it. |
 | `dry_run` | boolean |  | true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit. |
 | `save` | boolean |  | Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only. |
 | `images` | boolean |  | Default true: return the front and exploded renders inline. |
@@ -557,6 +559,7 @@ Change the existing case: any of shape, outline, size_mm, params, front, placeme
 | `front` | string |  |  |
 | `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}). |
 | `exclude` | string[] |  |  |
+| `layout` | string |  | one of `auto`, `thinnest`, `smallest`, `balanced`. How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it. |
 | `images` | boolean |  |  |
 | `why` | string |  | Short reason shown in the step list. |
 
@@ -573,8 +576,25 @@ Test whether the project's parts fit a case WITHOUT making it (no CAD, nothing w
 | `front` | string |  |  |
 | `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}). |
 | `exclude` | string[] |  |  |
+| `layout` | string |  | one of `auto`, `thinnest`, `smallest`, `balanced`. How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it. |
 | `preview` | boolean |  | Add the front-view geometry (default false). |
 | `try_suggestions` | boolean |  | Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false). |
+
+### propose_layout
+
+Work out, automatically, the best ways to distribute the project's parts inside a case of ANY outline and size (no CAD, nothing written, about 1 to 2 s): Jumper lays the parts out flat first (every part side by side in one layer inside the real outline, rotated 0 / 90, a board on its edge where it helps), then in two or three layers (e.g. the cell behind the screen), keeping the screen behind its window, the speaker grille on its face, each USB port / button / switch reaching its wall, the cell flat, wiring room between parts and the rim round-over at each part's depth (heavy parts low in an upright outline). Returns {proposals: [{id: "thinnest" | "smallest" | "balanced", label, size_mm, volume_cm3, pocket, fill_ratio, layers: [{index, z_mm, parts}], placements: {part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}, why: [reasons in plain words], misses, warnings, source}], best, chosen, parts_volume_cm3, ms}. Same arguments as check_fit (with none it uses the saved case). Then make the one you want with design_case / update_case {layout: "<id>"}; to move a part, pin it with placements and propose again (the rest is arranged around it). views: true adds front and side views (outline + part rectangles per layer) for drawing them. Deterministic: the same project gives the same proposals.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `shape` | string |  | one of `rounded-box`, `pill`, `pebble`, `puck`, `keychain`, `custom` |
+| `outline` | any |  | Shape "custom" only: the FRONT outline of the case in mm, drawn however you like. Either an SVG path string (M L H V C S Q T A Z, absolute or relative; y points DOWN like any SVG) e.g. an egg 56 x 73 mm: "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z", or {"points": [[x, y], ...], "smooth": true} with y UP (the top of the device is +y; smooth = a closed curve through the points). One closed shape that does not cross itself; sharp corners are rounded so they print. Only the proportions matter unless size_mm is given. |
+| `size_mm` | object |  | Fixed overall size in mm: {"w": 58, "h": 75, "d": 22} (any of them; the rest auto). The outline is scaled to w x h and the case is exactly that size; parts that do not fit come back as misses with smaller swaps instead of the case growing. Leave it out for auto (the smallest that holds the parts). |
+| `params` | object |  | Case parameters (all optional): wall_mm (≥ 1.2, default 1.6), corner_radius_mm (rounded-box / keychain, default 4), color ('#F2EDE4'), lanyard_hole (default true for keychain), belt_clip, closure ('snap' \| 'screws' = M2 into heat-set inserts), tolerance_mm (default 0.2 FDM), process ('fdm' \| 'resin' \| 'injection'), gap_mm (wiring room around parts, default 1.5). 3D finish, any shape (number or "auto"): edge_radius_front_mm / edge_radius_back_mm (round-over of each rim), dome_mm / dome_back_mm (how far the faces bulge, e.g. 3 for a rounder egg), depth_mm (overall thickness). |
+| `front` | string |  |  |
+| `placements` | object |  | Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front \| back \| left \| right \| top \| bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}). |
+| `exclude` | string[] |  |  |
+| `layout` | string |  | one of `auto`, `thinnest`, `smallest`, `balanced`. How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it. |
+| `views` | boolean |  | Add the front and side views per proposal (default false). |
 
 ### get_case
 

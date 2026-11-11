@@ -8,7 +8,8 @@
  */
 import type { Enclosure } from "@jumper/project-format";
 import type { PartSpec } from "@jumper/sim-core";
-import { layoutCase, LIPO_CELLS, type Layout, type LayoutInput, specWithProps } from "./layout.ts";
+import { LIPO_CELLS, type Layout, type LayoutInput, specWithProps } from "./layout.ts";
+import { layoutCase, type LayoutProposals, proposalsFor } from "./proposals.ts";
 import { contains, outline, polyOuter } from "./plan.ts";
 import type { FitCheck } from "./types.ts";
 
@@ -66,6 +67,8 @@ export interface FitReport {
   /** Layout problems other than fit (exposed features, outline warnings). */
   issues: FitCheck[];
   notes: string[];
+  /** Round 8: the ways to distribute the parts Jumper proposes (thinnest, smallest, balanced) and the one the case uses. */
+  proposals?: Omit<LayoutProposals, "proposals"> & { proposals: Omit<LayoutProposals["proposals"][number], "views">[]; chosen: string };
   ms: number;
 }
 
@@ -77,9 +80,15 @@ export interface FitInput extends LayoutInput {
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
 /** Run the quick layout and turn it into a fit report (suggestions when it does not fit). */
-export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: number; layout?: Layout } = {}): FitReport {
+export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: number; layout?: Layout; views?: boolean } = {}): FitReport {
   const t0 = performance.now();
-  const L = opts.layout ?? layoutCase(input, { quick: true });
+  // the same layout design_case builds (the proposal the enclosure asks for)
+  const L = opts.layout ?? layoutCase(input);
+  let proposals: FitReport["proposals"];
+  if (!opts.layout || opts.layout.proposal) {
+    const P = proposalsFor(input);
+    proposals = { ...P, chosen: L.proposal?.id ?? P.best, proposals: P.proposals.map(({ views, ...rest }) => (opts.views ? { ...rest, views } : rest)) };
+  }
   const fit = L.fit;
   const fits = fit ? fit.fits : !L.issues.some((i) => i.id === "fits" && i.severity === "error");
   const typeOf = (id: string) => input.parts.find((p) => p.id === id)?.type ?? "";
@@ -103,6 +112,7 @@ export function checkFit(input: FitInput, opts: { suggest?: boolean; budgetMs?: 
     preview: preview(L),
     issues: L.issues.filter((i) => i.id !== "fits"),
     notes: L.outlineNotes ?? [],
+    ...(proposals ? { proposals } : {}),
     ms: Math.round(performance.now() - t0),
   };
 }

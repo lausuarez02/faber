@@ -69,8 +69,8 @@ jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[2
   a smaller LiPo cell (the `capacity` prop picks the pouch: 150 mAh 402030, 250 mAh 502030, 500 mAh
   503035, 1000 mAh 523450), a board stood on its edge (`placements: {"xiao": {"on_edge": true}}`),
   less rounded rims, or "make it N mm bigger" with the size that holds everything.
-- **`check_fit`** (or `design_case {"dry_run": true}`) answers all of that without CAD in well under a
-  second (the suggestions are tried while about a second lasts; untried ones have no `fits`;
+- **`check_fit`** (or `design_case {"dry_run": true}`) answers all of that without CAD in about one
+  to two seconds (with the layout proposals, below) (the suggestions are tried while about a second lasts; untried ones have no `fits`;
   `try_suggestions: true` tries them all; `design_case` with a size that misses tries them all).
   `check_fit` with no arguments tests the saved case; `preview: true` adds the front-view geometry.
 - **In the Case view**: **Custom** opens the outline editor: start from an ellipse or a preset, drag
@@ -81,6 +81,46 @@ jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[2
   that holds everything). An outline an agent drew opens in the same editor.
 
 <p align="center"><img src="media/round7-egg-front.png" alt="A talking egg: a custom egg outline with a round screen for eyes" width="300"> <img src="media/round7-egg-exploded.png" alt="The egg case exploded: front shell, parts, back shell with the speaker grille" width="300"></p>
+
+## How the parts are distributed (round 8)
+
+Jumper decides where every part goes by itself, for any outline at any size, and proposes the best
+ways to do it:
+
+```bash
+jumper propose_layout '{}' -p my-egg            # the saved case; or any design_case arguments
+jumper update_case '{"layout": "thinnest"}' -p my-egg
+```
+
+- **The model**: each part is a box (its size, keep-outs and the 10 % a cell may swell) that turns
+  0 / 90 in plan, may stand on its edge (never the cell, the screen or a grille that must face the
+  back), and keeps its constraints: the screen behind its window on the front, the speaker grille on
+  its face, every USB port, button and switch reaching its wall (a port may take another side on a
+  curved shape, each on its own), wiring room between parts (`gap_mm`), the wall and the rim
+  round-over at the part's depth (a part against the front or back face keeps clear of the rounded
+  rim; one in the middle of the depth less so), heavy parts low in an upright outline (an egg).
+- **The search**: flat first, every part side by side in one layer inside the real outline; then
+  the depths where two parts stack (the cell behind the screen), then three. At each depth a
+  bottom-left fill (each part to the lowest free spot, next to the parts already there or against
+  the wall; a part with a port against its wall) decodes an order, and a seeded walk over the order,
+  the turns and which layer each part is in shrinks the outline as far as it holds everything.
+  Round 7's front-to-back stacker is one more candidate. Deterministic: the same project gives the
+  same proposals (the time box, 6 s, only stops a search that runs far longer than planned).
+- **The proposals**: `thinnest` (least thickness), `smallest` (least volume), `balanced` (pocket
+  first: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). Each has `size_mm`,
+  `volume_cm3`, `pocket`, `fill_ratio` (the parts' volume over the cavity's), `layers`
+  (`[{index, z_mm, parts}]`), `placements` (`{part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}`),
+  `why` (plain words: "3 layers: the cell behind the screen", "12.8 mm thinner than stacking every
+  part front to back"), `misses` (a fixed size it does not fit), `warnings` and `source`.
+  `views: true` (and `POST /api/case/layouts`) adds a front view and a side view per proposal: the
+  outline, the cavity and a labelled, coloured rectangle per part with its layer.
+- **Choosing**: `enclosure.layout` (`design_case` / `update_case` `{"layout": ...}`) is `auto`
+  (default, = `balanced`), `thinnest`, `smallest` or `balanced`. `check_fit` returns the proposals
+  too (`proposals`, with `chosen`), and `report.json` records the one the case was built from
+  (`layout: {goal, asked, fill_ratio, layers, why, source}`).
+- **Pinning**: a part with `placements` `x_mm` / `y_mm` (its feature's centre on the front or back,
+  or the part's centre when nothing of it shows), `layer` (0 = against the front, 1 = towards the
+  back) or a `face` stays there and the optimizer arranges the rest around it.
 
 ## Shapes and settings
 
@@ -190,11 +230,21 @@ fflate, MIT), renders by Jumper's own rasteriser (no browser), the drawing as SV
 Playwright's Chromium when present). This OpenCascade build has no IGES writer: the pack ships
 STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
 
+## Honest limits (round 8, distribution)
+
+- The optimizer is a search (a greedy fill and a seeded local walk), not a proven optimum; on the
+  talking egg it lands within a few percent of what more steps find. About 1.5 to 2 s for 10 to 15
+  parts (presets try two aspects), check_fit included; design_case reuses the answer.
+- Its outline test is radial (fast); the finished layout is then sized with the exact outline, so
+  a proposal's size can differ from the search's estimate by a few tenths of a millimetre.
+- Thickness includes `dome_mm` on both faces: the egg drawn with `dome_mm: 3` is 6 mm thicker than
+  the same parts with flat faces.
+- Buttons, switches and knobs keep the side the rules give them (a port may move to another side).
+
 ## Honest limits (round 7, custom outlines)
 
-- The packer is a search (packings into the outline at a few sizes and part orders, plus rectangles),
-  not an optimum; a custom outline gets the same search in `check_fit` and `design_case` (about
-  0.3 to 0.6 s), so they agree. Suggestions are each one change, tried alone.
+- Round 7's packer (still one of the round-8 candidates) is a search, not an optimum; `check_fit`
+  and `design_case` now share the round-8 proposals, so they agree. Suggestions are each one change, tried alone.
 - A narrow tip or a deep notch is rounded less than the rest (OpenCascade cannot roll a large rim
   round a tight curve; the report says the radius it made). Outline necks narrower than two walls
   plus 4 mm are reported, not fixed.
