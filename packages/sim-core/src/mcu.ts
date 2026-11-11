@@ -1,6 +1,13 @@
 import type { I2cBus, McuBusPins, SpiBus } from "./bus.ts";
 
-export type PinMode = "input" | "input_pullup" | "output" | "analog";
+export type PinMode = "input" | "input_pullup" | "input_pulldown" | "output" | "analog";
+
+/**
+ * What a backend carries between the firmware and the circuit (decision 0006). The fidelity report
+ * and check_design read it to say "I2C is not emulated on the ESP32-C3" at the board, before a run.
+ */
+export const MCU_CAPABILITIES = ["gpio", "pulls", "uart", "i2c", "spi", "adc", "pwm", "i2s", "net", "interrupts"] as const;
+export type McuCapability = (typeof MCU_CAPABILITIES)[number];
 
 export interface PinState {
   mode: PinMode;
@@ -62,11 +69,38 @@ export interface McuBackend {
    * to the serial monitor and no pin toggles, which keeps plain Serial.print cheap).
    */
   pinWatched?(pinId: string): void;
+  /**
+   * Optional (round 10, decision 0006): "in-process" (avr8js, rp2040js: runs in the browser and in
+   * Node) or "process" (Espressif QEMU, Renode: a local emulator process / container that only the
+   * Jumper server can start). Default "in-process".
+   */
+  readonly kind?: "in-process" | "process";
+  /**
+   * Optional: start the emulator for this firmware without blocking the event loop (a container
+   * starts in 1 to 3 s). A later load() of the same firmware returns at once. Rejects with an error
+   * that says what failed, why and how to fix it (Docker not running, image missing…).
+   */
+  prepare?(firmware: Uint8Array | string): Promise<void>;
+  /** Optional: stop the emulator process for good (process backends must implement it). */
+  dispose?(): void;
+  /** Optional: which signals this backend bridges (see McuCapability). Unknown = everything in-process. */
+  readonly capabilities?: readonly McuCapability[];
 }
 
 /** Creates a backend for a board part. `spec.mcu.backend` says which one (e.g. "avr8js"). */
 export type BackendFactory = (board: {
   partId: string;
   type: string;
-  mcu: { backend: string; chip: string; clockHz: number; vcc: number; fqbn?: string | undefined };
+  mcu: {
+    backend: string;
+    chip: string;
+    clockHz: number;
+    vcc: number;
+    fqbn?: string | undefined;
+    /** Round 10 (boards as data): board pin id → backend pin id, when they differ. */
+    pinMap?: Record<string, string> | undefined;
+    flash?: { sizeMB: number; mode?: string | undefined } | undefined;
+    platform?: string | undefined;
+    console?: string | undefined;
+  };
 }) => McuBackend;

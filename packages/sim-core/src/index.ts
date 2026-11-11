@@ -30,6 +30,9 @@ export {
   BindingSpecSchema,
   McuSpecSchema,
   BOARD_BACKENDS,
+  PROCESS_BACKENDS,
+  isProcessBackend,
+  StrappingPinSchema,
   PartSpecSchema,
   MECH_FACES,
   MECH_FEATURE_KINDS,
@@ -49,6 +52,7 @@ export type {
   BindingSpec,
   McuSpec,
   BoardBackendId,
+  StrappingPin,
   PartSpec,
   MechFace,
   MechFeatureKind,
@@ -68,7 +72,8 @@ export type {
   PartDefinition,
   PartRegistry,
 } from "./part.ts";
-export type { PinMode, PinState, Unsubscribe, McuBackend, BackendFactory } from "./mcu.ts";
+export type { PinMode, PinState, Unsubscribe, McuBackend, BackendFactory, McuCapability } from "./mcu.ts";
+export { MCU_CAPABILITIES } from "./mcu.ts";
 export { createMcuBoardModel, GPIO_R_OUT, PULLUP_OHMS, USB_VOLTS, defaultBoardSupply } from "./board.ts";
 export type { McuBoardOptions, BoardSupply, BoardSupplyState } from "./board.ts";
 export { Simulation, TICK_MS } from "./simulation.ts";

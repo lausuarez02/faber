@@ -323,6 +323,13 @@ importers:
   services/ai-gateway: {}
 
   services/runner:
+    dependencies:
+      '@jumper/sim-backends':
+        specifier: workspace:*
+        version: link:../../packages/sim-backends
+      '@jumper/sim-core':
+        specifier: workspace:*
+        version: link:../../packages/sim-core
     devDependencies:
       tsx:
         specifier: 4.23.15

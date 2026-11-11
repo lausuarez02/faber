@@ -70,26 +70,88 @@ export const BindingSpecSchema = z.object({
 export type BindingSpec = z.infer<typeof BindingSpecSchema>;
 
 /**
- * Simulator backends a board part may declare in `mcu.backend` (decision 0003, C1).
- *   avr8js    ATmega328P (Uno, Nano) through avr8js
- *   rp2040js  RP2040 (Pico, XIAO RP2040, RP2040-Zero) through rp2040js (round 5, track rp2040)
- * ESP32 ("qemu-esp32") is planned, not implemented.
+ * Simulator backends a board part may declare in `mcu.backend` (decision 0003, C1; decision 0006).
+ *   avr8js    ATmega328P (Uno, Nano) through avr8js                         in-process (browser + Node)
+ *   rp2040js  RP2040 (Pico, XIAO RP2040, RP2040-Zero) through rp2040js      in-process (browser + Node)
+ *   qemu-esp  ESP32 / ESP32-S3 / ESP32-C3 on Espressif's QEMU + Jumper bridge   local process (Docker)
+ *   renode    Cortex-M boards (STM32, nRF52) on Renode                      local process (Docker)
  */
-export const BOARD_BACKENDS = ["avr8js", "rp2040js"] as const;
+export const BOARD_BACKENDS = ["avr8js", "rp2040js", "qemu-esp", "renode"] as const;
 export type BoardBackendId = (typeof BOARD_BACKENDS)[number];
+/** Backends that run as a local emulator process the Jumper server owns (never in the browser). */
+export const PROCESS_BACKENDS: readonly string[] = ["qemu-esp", "renode"];
+export const isProcessBackend = (backend: string | undefined): boolean => !!backend && PROCESS_BACKENDS.includes(backend);
 
-/** Extra block for MCU boards. */
+/** A pin a board needs at a level when it resets (ESP32 GPIO0 / 2 / 12 / 15…), checked by check_design. */
+export const StrappingPinSchema = z.object({
+  /** Board pin id. */
+  pin: z.string().min(1),
+  /** Level the chip needs at reset for a normal boot (internal pull), or "any" when it only changes an option. */
+  boot: z.enum(["high", "low", "floating-or-high", "floating-or-low", "any"]),
+  /** What goes wrong when something on this pin pulls it the other way at reset. */
+  note: z.string().min(1),
+});
+export type StrappingPin = z.infer<typeof StrappingPinSchema>;
+
+/** Extra block for MCU boards. Round 10 (decision 0006): everything the runtime needs is data. */
 export const McuSpecSchema = z.object({
   /** Backend id the backendFactory understands. Shipped boards use one of BOARD_BACKENDS (tests may use fakes). */
   backend: z.string().min(1),
-  /** Chip name, e.g. "atmega328p". */
+  /** Chip name, e.g. "atmega328p", "esp32s3". */
   chip: z.string().min(1),
-  /** Clock in Hz, e.g. 16000000. */
+  /** Clock in Hz, e.g. 16000000 (the time base McuBackend.cycles counts in). */
   clockHz: z.number().positive(),
   /** Logic supply voltage, e.g. 5 or 3.3. */
   vcc: z.number().positive(),
-  /** arduino-cli board id, e.g. "arduino:avr:uno". */
+  /** arduino-cli board id, e.g. "arduino:avr:uno". What the factory pack flashes onto the real board. */
   fqbn: z.string().optional(),
+  /** Renode platform file (.repl), or the QEMU machine when it differs from the chip. */
+  platform: z.string().optional(),
+  /** Flash the board carries (the emulator's flash image is padded to it). */
+  flash: z.object({ sizeMB: z.number().positive(), mode: z.string().optional() }).optional(),
+  /** The UART the serial monitor shows, e.g. "uart0". */
+  console: z.string().optional(),
+  /** Board pin id → backend pin id, when they differ (e.g. "D13" → "P0.13"). Identity when absent. */
+  pinMap: z.record(z.string(), z.string()).optional(),
+  /** Pins with a pull-up resistor on the board itself (not the chip's internal ones). */
+  pullUps: z.array(z.string()).optional(),
+  /** Default bus pins (board pin ids) of Wire / SPI / Serial1. */
+  busPins: z
+    .object({
+      i2c: z.object({ sda: z.string(), scl: z.string() }).optional(),
+      spi: z.object({ sck: z.string(), mosi: z.string(), miso: z.string(), ss: z.string().optional() }).optional(),
+      uart: z.object({ tx: z.string(), rx: z.string() }).optional(),
+    })
+    .optional(),
+  /** Boot-strapping pins (check_design warns when a part pulls one the wrong way at reset). */
+  strapping: z.array(StrappingPinSchema).optional(),
+  /** Pins that can only be inputs (ESP32 GPIO34-39). */
+  inputOnly: z.array(z.string()).optional(),
+  /** Pins wired to the board's flash / PSRAM: never use them. */
+  reserved: z.array(z.object({ pin: z.string(), why: z.string() })).optional(),
+  /** ADC2 pins (ESP32 family): analogRead fails on them while Wi-Fi is on. */
+  adc2: z.array(z.string()).optional(),
+  /** How firmware is built for it. */
+  toolchain: z
+    .object({
+      /** Docker image the runner builds with (informational; the runner picks it from the FQBN prefix). */
+      image: z.string().optional(),
+      /** FQBN of the build the simulator runs, when it differs from `fqbn` (e.g. Serial on UART0 instead of USB CDC). */
+      simFqbn: z.string().optional(),
+      /** Extra arduino-cli --build-property values for the simulator build. */
+      simBuildProperties: z.array(z.string()).optional(),
+      /** What the simulator build changes compared with the real board's build, in plain words. */
+      simNote: z.string().optional(),
+      /** How to flash the real board (factory pack), {bin} / {port} are filled in. */
+      flash: z.string().optional(),
+    })
+    .optional(),
+  /**
+   * The fixture test that proves the board boots real firmware and its listed buses work
+   * (e.g. "packages/sim-backends/src/qemu-esp/boards.integration.test.ts#seeed-xiao-esp32s3").
+   * A process-backend board without it is listed as planned, not placed.
+   */
+  verified: z.string().optional(),
 });
 export type McuSpec = z.infer<typeof McuSpecSchema>;
 

@@ -2,12 +2,14 @@ import type { BackendFactory, McuBackend } from "@jumper/sim-core";
 import { createAvrBackend } from "./avr.ts";
 import { boardTypeOf, type BoardType } from "./pins.ts";
 import { createRp2040Backend, rp2040BoardOf } from "./rp2040/index.ts";
+import { withPinMap } from "./pinmap.ts";
 
 export { AVR_BACKEND_FACTS, createAvrBackend } from "./avr.ts";
 export type { AvrBackendOptions } from "./avr.ts";
 export { boardPinMap, boardTypeOf } from "./pins.ts";
 export type { BoardPin, BoardType } from "./pins.ts";
 export * from "./rp2040/index.ts";
+export { withPinMap } from "./pinmap.ts";
 
 /** A ready backend for a known board ("uno"/"arduino-uno", "nano"/"arduino-nano"): ATmega328P, 16 MHz, 5 V. */
 export function createBackend(boardType: BoardType | string): McuBackend {
@@ -16,8 +18,14 @@ export function createBackend(boardType: BoardType | string): McuBackend {
   return createAvrBackend({ chip: "atmega328p", clockHz: 16_000_000, vcc: 5, board });
 }
 
-/** Picks a backend from the board's part.json `mcu.backend` ("avr8js" → createAvrBackend, "rp2040js" → createRp2040Backend). */
-export const backendFactory: BackendFactory = (board) => {
+/**
+ * Picks an in-process backend from the board's part.json `mcu.backend` ("avr8js" → createAvrBackend,
+ * "rp2040js" → createRp2040Backend). Safe in the browser. Process backends (qemu-esp, renode) need the
+ * Jumper server: use `nodeBackendFactory` from "@jumper/sim-backends/node" there.
+ */
+export const backendFactory: BackendFactory = (board) => withPinMap(inProcessBackend(board), board.mcu.pinMap);
+
+function inProcessBackend(board: Parameters<BackendFactory>[0]): McuBackend {
   if (board.mcu.backend === "avr8js") {
     if (board.mcu.chip.toLowerCase() !== "atmega328p") {
       throw new Error(`board '${board.partId}' (${board.type}) asks for chip '${board.mcu.chip}', but the avr8js backend only supports atmega328p in M0`);
@@ -36,5 +44,8 @@ export const backendFactory: BackendFactory = (board) => {
     }
     return createRp2040Backend({ board: rp.type, clockHz: board.mcu.clockHz, vcc: board.mcu.vcc });
   }
+  if (board.mcu.backend === "qemu-esp" || board.mcu.backend === "renode") {
+    throw new Error(`board '${board.partId}' (${board.type}) runs in a local emulator (${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"}) that only the Jumper server can start, not in this page. Fix: open the project from \`pnpm start\` (jumper serve) and press Run there; the page then follows the server's simulation.`);
+  }
   throw new Error(`no simulator backend '${board.mcu.backend}' for board '${board.partId}' (${board.type})`);
-};
+}

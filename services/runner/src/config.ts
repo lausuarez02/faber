@@ -22,11 +22,24 @@ export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-r
  */
 export const PICO_IMAGE = process.env.JUMPER_PICO_IMAGE ?? "jumper/arduino-pico:6.3.1-libs3-r1";
 
+/**
+ * ESP32-family image (toolchains/arduino-esp32, decision 0006): the runner image + Espressif's
+ * arduino-esp32 core 3.3.12 (ESP-IDF 5.5) + JumperEth. Builds write a merged flash image
+ * (<sketch>.ino.merged.bin) that the QEMU backend boots. About 6.5 GB: built on the first ESP build.
+ */
+export const ESP32_IMAGE = process.env.JUMPER_ESP32_IMAGE ?? "jumper/arduino-esp32:3.3.12-r2";
+
 /** arduino-cli platforms the images carry, by FQBN prefix. */
 export const PLATFORMS = [
   { prefix: "arduino:avr:", image: () => RUNNER_IMAGE, examples: ["arduino:avr:uno", "arduino:avr:nano"] },
   { prefix: "rp2040:rp2040:", image: () => PICO_IMAGE, examples: ["rp2040:rp2040:rpipico", "rp2040:rp2040:seeed_xiao_rp2040", "rp2040:rp2040:waveshare_rp2040_zero"] },
+  { prefix: "esp32:esp32:", image: () => ESP32_IMAGE, examples: ["esp32:esp32:esp32", "esp32:esp32:esp32s3", "esp32:esp32:XIAO_ESP32S3", "esp32:esp32:XIAO_ESP32C3", "esp32:esp32:nologo_esp32c3_super_mini"] },
 ] as const;
+
+/** What a build writes: Intel HEX text (AVR, RP2040) or a merged flash image (ESP32 family). */
+export function outputFormatFor(fqbn: string): "hex" | "bin" {
+  return fqbn.startsWith("esp32:esp32:") ? "bin" : "hex";
+}
 
 /** The Docker image that builds a FQBN (the AVR runner image for anything it does not know). */
 export function imageFor(fqbn: string): string {
@@ -39,6 +52,8 @@ export const SUPPORTED_FQBNS: readonly string[] = PLATFORMS.flatMap((p) => p.exa
 export const BASE_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino");
 export const PICO_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino-pico");
 export const RUNNER_DOCKERFILE_DIR = join(REPO_ROOT, "services/runner/docker");
+export const ESP32_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/arduino-esp32");
+export const QEMU_ESP_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/qemu-esp");
 
 export const DEFAULT_PORT = 7781;
 

@@ -6,7 +6,12 @@ import { openSync, closeSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { ESP_CHIPS, type EspChip } from "./chips.ts";
 
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb2";
+/** Bridge v3: GPIO, UART0, I2C0 (ESP32), lockstep, pad pull-ups / pull-downs (round 10). */
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb3";
+
+/** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
+export const EMULATOR_LABEL = "jumper.emulator";
+export const OWNER_LABEL = "jumper.owner-pid";
 
 export interface QemuLaunchOptions {
   chip: EspChip;
@@ -22,6 +27,8 @@ export interface QemuLaunchOptions {
   /** Where QEMU's own stdout/stderr go (a file path). Default: discarded. */
   logFile?: string;
   extraArgs?: readonly string[];
+  /** Extra Docker labels (key → value). jumper.emulator=1 and jumper.owner-pid=<pid> are always set. */
+  labels?: Record<string, string>;
 }
 
 export interface QemuProcess {
@@ -56,6 +63,8 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
     name = `jumper-qemu-esp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
     argv = [
       "docker", "run", "--rm", "--name", name,
+      "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "jumper.backend=qemu-esp",
+      ...Object.entries(o.labels ?? {}).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
       "--add-host=host.docker.internal:host-gateway",
       "-v", `${dirname(o.flashImage)}:/fw:ro`,
       o.image ?? QEMU_ESP_IMAGE,

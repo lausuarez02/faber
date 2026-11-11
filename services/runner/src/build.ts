@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { cacheDir, imageFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
+import { cacheDir, imageFor, outputFormatFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
 
@@ -16,6 +16,8 @@ export interface BuildRequest {
   libraries?: readonly string[];
   /** Prefix for file paths in diagnostics, e.g. "firmware/" so errors read "firmware/pet.ino:12". */
   displayPrefix?: string;
+  /** Extra `--build-property` values (e.g. "build.cdc_on_boot=0" for a simulator build). */
+  buildProperties?: readonly string[];
   /** Reuse a cached result for identical inputs (default true). */
   cache?: boolean;
   /** Progress lines (image builds, library installs). */
@@ -24,8 +26,17 @@ export interface BuildRequest {
 
 export interface BuildResult {
   ok: boolean;
-  /** Intel HEX text (when ok). */
+  /** Intel HEX text (when ok, AVR / RP2040). */
   hex?: string;
+  /**
+   * ESP32 family (when ok): the merged flash image (bootloader + partitions + app) as base64, with
+   * its trailing padding cut (`binPad` bytes of `binPadByte` follow to fill the flash).
+   */
+  bin?: string;
+  binPad?: number;
+  binPadByte?: number;
+  /** "hex" or "bin". */
+  format?: "hex" | "bin";
   cached: boolean;
   durationMs: number;
   /** Content hash of the inputs (sources + fqbn + libraries + image). */
@@ -61,6 +72,23 @@ export function refineWithSources(diags: CompileDiagnostic[], sources: Map<strin
       hint: `'${name}' is declared in your sketch, but Arduino puts automatic function prototypes at the top of the .ino, above that declaration. Fix: move the ${name} declaration into a header (write_file firmware/<sketch folder>/types.h and #include "types.h" at the top of the .ino), or write the prototypes of the functions that use ${name} yourself right after its declaration.`,
     };
   });
+}
+
+/** Cuts the run of identical bytes a merged flash image is padded with (restored exactly by flashImageOf). */
+export function trimFlash(buf: Buffer): { data: Buffer; pad: number; padByte: number } {
+  const padByte = buf.length ? buf[buf.length - 1]! : 0xff;
+  let end = buf.length;
+  while (end > 0 && buf[end - 1] === padByte) end--;
+  return { data: buf.subarray(0, end), pad: buf.length - end, padByte };
+}
+
+/** The full flash image of a build result (bin + its padding), or undefined for a hex build. */
+export function flashImageOf(r: Pick<BuildResult, "bin" | "binPad" | "binPadByte">): Uint8Array | undefined {
+  if (!r.bin) return undefined;
+  const data = Buffer.from(r.bin, "base64");
+  const out = new Uint8Array(data.length + (r.binPad ?? 0)).fill(r.binPadByte ?? 0xff);
+  out.set(data);
+  return out;
 }
 
 /** Resolve names to pinned versions and add pinned dependencies. Throws a clear error for malformed entries. */
@@ -190,6 +218,7 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
 
   const h = createHash("sha256");
   h.update(`image=${imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
+  if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
   for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
   const hash = h.digest("hex").slice(0, 24);
 
@@ -253,6 +282,7 @@ async function compile(
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
     ...sketchSetupFlags(sources),
+    ...(req.buildProperties ?? []).flatMap((p) => ["--build-property", p]),
     "/work/sketch",
   ];
   const r = await exec("docker", args, { timeoutMs: 5 * 60_000 });
@@ -273,14 +303,18 @@ async function compile(
     return prefix + rel;
   };
   const diagnostics = refineWithSources(parseCompilerOutput(output, pathMap), sources);
-  const hexPath = join(work, "out", "sketch.ino.hex");
+  const format = outputFormatFor(req.fqbn);
+  const hexPath = join(work, "out", format === "bin" ? "sketch.ino.merged.bin" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
+  const flash = ok && format === "bin" ? trimFlash(readFileSync(hexPath)) : undefined;
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
     diagnostics.push({ severity: "error", message: `arduino-cli exited with code ${r.code}: ${output.trim().split("\n").slice(-4).join(" | ")}`, hint: "Read the message above; if it mentions a library, add it to firmware.libraries." });
   }
   const result: BuildResult = {
     ok,
-    ...(ok ? { hex: readFileSync(hexPath, "utf8") } : {}),
+    ...(ok && format === "hex" ? { hex: readFileSync(hexPath, "utf8") } : {}),
+    ...(flash ? { bin: flash.data.toString("base64"), binPad: flash.pad, binPadByte: flash.padByte } : {}),
+    format,
     cached: false,
     durationMs: Date.now() - t0,
     hash,

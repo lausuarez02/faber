@@ -78,6 +78,8 @@ export interface McuBoardOptions {
   gpioROut?: number;
   /** INPUT_PULLUP resistance (Ω). Default 35 kΩ. */
   pullupOhms?: number;
+  /** Internal pull-down (input_pulldown, e.g. ESP32 pads). Default = pullupOhms. */
+  pulldownOhms?: number;
   /** Per-pin current that triggers an error diagnostic (mA). Default spec.limits.maxCurrentmA ?? 40. */
   maxPinCurrentmA?: number;
   /** Extra visual state, merged over the defaults. Gets the latest solve (or undefined before the first). */
@@ -108,6 +110,7 @@ export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}
   const vcc = mcu?.vcc ?? ctx.spec.mcu?.vcc ?? 5;
   const rOut = opts.gpioROut ?? GPIO_R_OUT;
   const pullup = opts.pullupOhms ?? PULLUP_OHMS;
+  const pulldown = opts.pulldownOhms ?? pullup;
   const maxmA = opts.maxPinCurrentmA ?? ctx.spec.limits?.maxCurrentmA ?? 40;
   const specPins = new Set(ctx.spec.pins.map((p) => p.id));
   const gpio = (opts.gpio ?? mcu?.pinIds ?? []).filter((p) => specPins.has(p));
@@ -160,6 +163,8 @@ export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}
           drivers.set(pin, c.voltageSource(node, GROUND, s.value ? high : 0, rOut, { id: `gpio:${pin}` }));
         } else if (s.mode === "input_pullup") {
           drivers.set(pin, c.voltageSource(node, GROUND, high, pullup, { id: `pullup:${pin}` }));
+        } else if (s.mode === "input_pulldown") {
+          drivers.set(pin, c.voltageSource(node, GROUND, 0, pulldown, { id: `pulldown:${pin}` }));
         }
       }
     },

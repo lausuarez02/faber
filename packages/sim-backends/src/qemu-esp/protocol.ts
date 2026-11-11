@@ -10,6 +10,7 @@
 //   IW <addr> <byte>     I2C write
 //   IR <addr>            I2C read
 //   IP <addr>            I2C stop
+//   P <pu0> <pu1> <pd0> <pd1> <ns>   pad pull-up / pull-down masks (IO_MUX / RTC_IO), bridge v3
 
 export type BridgeEvent =
   | { kind: "hello"; version: number; type: string }
@@ -20,6 +21,7 @@ export type BridgeEvent =
   | { kind: "i2c-write"; addr: number; byte: number }
   | { kind: "i2c-read"; addr: number }
   | { kind: "i2c-stop"; addr: number }
+  | { kind: "pads"; pullUp: bigint; pullDown: bigint; ns: bigint }
   | { kind: "unknown"; line: string };
 
 const hex = (s: string | undefined) => BigInt(`0x${s ?? "0"}`);
@@ -41,6 +43,8 @@ export function parseBridgeLine(line: string): BridgeEvent {
       return { kind: "i2c-write", addr: parseInt(f[1] ?? "0", 16), byte: parseInt(f[2] ?? "0", 16) };
     case "IR":
       return { kind: "i2c-read", addr: parseInt(f[1] ?? "0", 16) };
+    case "P":
+      return { kind: "pads", pullUp: (hex(f[2]) << 32n) | hex(f[1]), pullDown: (hex(f[4]) << 32n) | hex(f[3]), ns: hex(f[5]) };
     case "IP":
       return { kind: "i2c-stop", addr: parseInt(f[1] ?? "0", 16) };
     default:

@@ -17,5 +17,9 @@
   },
   "devDependencies": {
     "tsx": "4.23.15"
+  },
+  "dependencies": {
+    "@jumper/sim-backends": "workspace:*",
+    "@jumper/sim-core": "workspace:*"
   }
 }

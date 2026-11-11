@@ -39,16 +39,17 @@ index 41de9cf..3f8242b 100644
  
  
 diff --git a/hw/gpio/esp32_gpio.c b/hw/gpio/esp32_gpio.c
-index 4fea1f5..880b935 100644
+index 4fea1f5..b34cf33 100644
 --- a/hw/gpio/esp32_gpio.c
 +++ b/hw/gpio/esp32_gpio.c
-@@ -18,27 +18,300 @@
+@@ -18,27 +18,301 @@
  #include "hw/irq.h"
  #include "hw/qdev-properties.h"
  #include "hw/gpio/esp32_gpio.h"
 +#include "chardev/char-fe.h"
 +#include "qemu/timer.h"
 +#include "hw/qdev-properties-system.h"
++#include "exec/address-spaces.h"
  
  
  
@@ -349,13 +350,129 @@ index 4fea1f5..880b935 100644
  }
  
  static const MemoryRegionOps uart_ops = {
-@@ -49,10 +322,24 @@ static const MemoryRegionOps uart_ops = {
+@@ -49,10 +323,141 @@ static const MemoryRegionOps uart_ops = {
  
  static void esp32_gpio_reset_hold(Object *obj, ResetType type)
  {
 +    Esp32GpioState *s = ESP32_GPIO(obj);
 +    memset(s->regs, 0, sizeof(s->regs));
 +    s->out[0] = s->out[1] = s->enable[0] = s->enable[1] = 0;
++}
++
++
++/*
++ * Jumper pads: the internal pull-up / pull-down of every pin, so Jumper can model a button to GND
++ * read with INPUT_PULLUP. Upstream maps IO_MUX (and the ESP32's RTC_IO) as unimplemented memory,
++ * so the bits the firmware sets are lost. These regions sit on top, keep the registers and report
++ *   P <pu0> <pu1> <pd0> <pd1> <ns>      pull-up / pull-down masks (hex) after any change
++ * Layout from ESP-IDF v5.5 (soc/io_mux_reg.h, soc/rtc_io_reg.h): FUN_WPU = bit 8, FUN_WPD = bit 7;
++ * ESP32-S3 / C3: IO_MUX_GPIOn = base + 4 + 4n; ESP32: a table, and the RTC pads use RTC_IO RUE/RDE.
++ */
++enum { JUMPER_PADS_LINEAR, JUMPER_PADS_ESP32_IOMUX, JUMPER_PADS_ESP32_RTCIO };
++typedef struct JumperPads {
++    MemoryRegion mr;
++    int kind;
++    uint32_t regs[0x2000 / 4];
++} JumperPads;
++static uint32_t jumper_pu[2], jumper_pd[2];
++
++/* ESP32 IO_MUX register offset of GPIO n (0 = no pad). */
++static const uint16_t esp32_iomux_off[40] = {
++    0x44, 0x88, 0x40, 0x84, 0x48, 0x6c, 0x60, 0x64, 0x68, 0x54, 0x58, 0x5c, 0x34, 0x38, 0x30, 0x3c,
++    0x4c, 0x50, 0x70, 0x74, 0x78, 0x7c, 0x80, 0x8c, 0x90, 0x24, 0x28, 0x2c, 0, 0, 0, 0,
++    0x1c, 0x20, 0x14, 0x18, 0x04, 0x08, 0x0c, 0x10,
++};
++/* ESP32 RTC_IO: GPIO, register offset, pull-up bit, pull-down bit. */
++static const struct { uint8_t gpio; uint16_t off; uint8_t pu, pd; } esp32_rtcio_pads[] = {
++    { 4, 0x94, 27, 28 }, { 0, 0x98, 27, 28 }, { 2, 0x9c, 27, 28 }, { 15, 0xa0, 27, 28 },
++    { 13, 0xa4, 27, 28 }, { 12, 0xa8, 27, 28 }, { 14, 0xac, 27, 28 }, { 27, 0xb0, 27, 28 },
++    { 25, 0x84, 27, 28 }, { 26, 0x88, 27, 28 }, { 32, 0x8c, 22, 23 }, { 33, 0x8c, 27, 28 },
++};
++static bool esp32_is_rtc_pad(int g)
++{
++    for (size_t i = 0; i < ARRAY_SIZE(esp32_rtcio_pads); i++) {
++        if (esp32_rtcio_pads[i].gpio == g) {
++            return true;
++        }
++    }
++    return false;
++}
++
++static void jumper_pads_set(int g, bool pu, bool pd)
++{
++    if (g < 0 || g >= 64) {
++        return;
++    }
++    uint32_t bit = 1u << (g & 31);
++    jumper_pu[g >> 5] = pu ? jumper_pu[g >> 5] | bit : jumper_pu[g >> 5] & ~bit;
++    jumper_pd[g >> 5] = pd ? jumper_pd[g >> 5] | bit : jumper_pd[g >> 5] & ~bit;
++}
++
++static uint64_t jumper_pads_read(void *opaque, hwaddr addr, unsigned size)
++{
++    JumperPads *p = opaque;
++    return addr / 4 < ARRAY_SIZE(p->regs) ? p->regs[addr / 4] : 0;
++}
++
++static void jumper_pads_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
++{
++    JumperPads *p = opaque;
++    if (addr / 4 >= ARRAY_SIZE(p->regs)) {
++        return;
++    }
++    p->regs[addr / 4] = value;
++    uint32_t pu0 = jumper_pu[0], pu1 = jumper_pu[1], pd0 = jumper_pd[0], pd1 = jumper_pd[1];
++    uint32_t v = value;
++    if (p->kind == JUMPER_PADS_LINEAR) {
++        if (addr >= 4 && (addr & 3) == 0) {
++            jumper_pads_set((addr - 4) / 4, v & (1u << 8), v & (1u << 7));
++        }
++    } else if (p->kind == JUMPER_PADS_ESP32_IOMUX) {
++        for (int g = 0; g < 40; g++) {
++            if (esp32_iomux_off[g] == addr && !esp32_is_rtc_pad(g)) {
++                jumper_pads_set(g, v & (1u << 8), v & (1u << 7));
++            }
++        }
++    } else {
++        for (size_t i = 0; i < ARRAY_SIZE(esp32_rtcio_pads); i++) {
++            if (esp32_rtcio_pads[i].off == addr) {
++                jumper_pads_set(esp32_rtcio_pads[i].gpio, v & (1u << esp32_rtcio_pads[i].pu),
++                                v & (1u << esp32_rtcio_pads[i].pd));
++            }
++        }
++    }
++    if ((pu0 != jumper_pu[0] || pu1 != jumper_pu[1] || pd0 != jumper_pd[0] || pd1 != jumper_pd[1])
++        && jumper_bridge_gpio) {
++        jumper_bridge_printf(jumper_bridge_gpio, "P %x %x %x %x %" PRIx64 "\n", jumper_pu[0], jumper_pu[1],
++                             jumper_pd[0], jumper_pd[1], (uint64_t)qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
++    }
++}
++
++static const MemoryRegionOps jumper_pads_ops = {
++    .read = jumper_pads_read,
++    .write = jumper_pads_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = { .min_access_size = 1, .max_access_size = 4 },
++};
++
++static void jumper_pads_map(Object *owner, const char *name, hwaddr base, uint64_t size, int kind)
++{
++    JumperPads *p = g_new0(JumperPads, 1);
++    p->kind = kind;
++    memory_region_init_io(&p->mr, owner, &jumper_pads_ops, p, name, size);
++    memory_region_add_subregion_overlap(get_system_memory(), base, &p->mr, 10);
++}
++
++static void jumper_pads_install(DeviceState *dev)
++{
++    const char *type = object_get_typename(OBJECT(dev));
++    if (!strcmp(type, "esp32.gpio")) {
++        jumper_pads_map(OBJECT(dev), "jumper.esp32.iomux", 0x3ff49000, 0x2000, JUMPER_PADS_ESP32_IOMUX);
++        jumper_pads_map(OBJECT(dev), "jumper.esp32.rtcio", 0x3ff48400, 0x400, JUMPER_PADS_ESP32_RTCIO);
++    } else {
++        /* esp32s3.gpio, esp32c3.gpio: IO_MUX at 0x60009000 */
++        jumper_pads_map(OBJECT(dev), "jumper.iomux", 0x60009000, 0x1000, JUMPER_PADS_LINEAR);
++    }
  }
  
  static void esp32_gpio_realize(DeviceState *dev, Error **errp)
@@ -365,7 +482,8 @@ index 4fea1f5..880b935 100644
 +        jumper_bridge_gpio = s;
 +        qemu_chr_fe_set_handlers(&s->bridge, esp32_gpio_can_receive, esp32_gpio_receive,
 +                                 NULL, NULL, s, NULL, true);
-+        jumper_bridge_printf(s, "H jumper-esp32-bridge 2 %s sync=%d\n", object_get_typename(OBJECT(dev)), s->sync);
++        jumper_pads_install(dev);
++        jumper_bridge_printf(s, "H jumper-esp32-bridge 3 %s sync=%d pads=1\n", object_get_typename(OBJECT(dev)), s->sync);
 +        if (s->sync) {
 +            s->sync_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, jumper_sync_cb, s);
 +            timer_mod(s->sync_timer, 0);
@@ -374,7 +492,7 @@ index 4fea1f5..880b935 100644
  }
  
  static void esp32_gpio_init(Object *obj)
-@@ -73,6 +360,8 @@ static Property esp32_gpio_properties[] = {
+@@ -73,6 +478,8 @@ static Property esp32_gpio_properties[] = {
      /* The strap_mode needs to be explicitly set in the instance init, thus, set
       * the default value to 0. */
      DEFINE_PROP_UINT32("strap_mode", Esp32GpioState, strap_mode, 0),

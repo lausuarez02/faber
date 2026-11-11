@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./qemu-esp": "./src/qemu-esp/index.ts",
-    "./renode": "./src/renode/index.ts"
+    "./renode": "./src/renode/index.ts",
+    "./node": "./src/node.ts"
   },
   "scripts": {
     "test": "vitest run"

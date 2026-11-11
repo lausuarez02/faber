@@ -122,6 +122,18 @@ export class SyncBridgeLink {
     return text.length ? text.split("\n") : [];
   }
 
+  /** Like next(), but waits without blocking the event loop (Atomics.waitAsync): for the 1 to 3 s boot. */
+  async nextAsync(timeoutMs: number): Promise<string[]> {
+    const deadline = Date.now() + timeoutMs;
+    while (Atomics.load(this.ctrl, CTRL_SEQ) === this.consumed) {
+      const left = deadline - Date.now();
+      if (left <= 0) throw new BridgeTimeoutError(`no answer from the emulator within ${timeoutMs} ms`);
+      const w = (Atomics as unknown as { waitAsync: (a: Int32Array, i: number, v: number, t: number) => { async: boolean; value: Promise<string> | string } }).waitAsync(this.ctrl, CTRL_SEQ, this.consumed, Math.min(left, 250));
+      if (w.async) await w.value;
+    }
+    return this.next(0);
+  }
+
   close(): void {
     this.worker.postMessage({ close: true });
     void this.worker.terminate();
