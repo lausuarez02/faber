@@ -183,3 +183,31 @@ person installs themselves; they are not distributed with Jumper:
   espeak-ng   GNU General Public License 3.0 or later, run as a separate
               program (https://github.com/espeak-ng/espeak-ng)
   ffmpeg      LGPL 2.1 or GPL depending on the build (https://ffmpeg.org)
+
+ESP32-family boards (round 9 spike, emulator)
+---------------------------------------------
+
+ESP32 / ESP32-S3 / ESP32-C3 firmware runs in Espressif's fork of QEMU
+(https://github.com/espressif/qemu, tag esp-develop-9.2.2-20260417), GNU General
+Public License 2.0. Jumper does not link QEMU: it runs as a separate program in
+the Docker image built by toolchains/qemu-esp/Dockerfile, which compiles that
+tag with Jumper's patch toolchains/qemu-esp/0001-jumper-bridge.patch (GPL-2.0,
+like the files it modifies; it adds a GPIO/UART/I2C bridge). Anyone receiving
+the image can rebuild it from the Dockerfile, the public tag and the patch.
+packages/sim-backends/src/qemu-esp talks to it over a socket (Apache-2.0).
+
+ESP32 firmware (packages/sim-backends/fixtures/esp32*.merged.bin.gz and
+anything built with toolchains/arduino-esp32) is built with:
+
+  arduino-esp32 core 3.3.12        GNU Lesser General Public License 2.1,
+  (esp32:esp32)                    Copyright (c) Espressif Systems and contributors
+  ESP-IDF v5.5.5 (precompiled in   Apache-2.0, Copyright (c) Espressif Systems
+  the core) and its components     (each component under its own licence; see
+                                   the core's tools/esp32*-libs)
+  esptool 5.3.1 (build tool only)  GNU General Public License 2.0, run as a program
+
+The JumperEth Arduino library (toolchains/arduino-esp32/libraries/JumperEth)
+contains ESP-IDF v5.5.5 components/esp_eth/src/openeth (esp_eth_mac_openeth.c,
+openeth.h, esp_openeth.h), Apache-2.0, Copyright (c) 2019-2024 Espressif Systems
+(Shanghai) CO LTD, built into the sketch because the precompiled core leaves
+CONFIG_ETH_USE_OPENETH off; the rest of the library is by the Jumper Authors.
