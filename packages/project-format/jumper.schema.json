@@ -882,6 +882,27 @@
                     "network_fault"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "network_mock": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {},
+                      "description": "A mock, as add_mock_api takes it: {\"host\", \"method\"?, \"path\", \"response\": {...}} (HTTP), or a \"ws\" / \"mqtt\" mock."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "network_mock"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
