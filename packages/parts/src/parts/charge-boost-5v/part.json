@@ -1,0 +1,59 @@
+{
+  "id": "charge-boost-5v",
+  "name": "LiPo charger + 5 V boost module (IP5306, USB-C)",
+  "category": "power",
+  "description": "One small board instead of a TP4056 charger plus an MT3608 boost: charges a 1S LiPo from its own USB-C socket and gives a steady 5 V from the cell on OUT, with a low-battery cut-off. BAT / GND.2 to the cell, OUT / GND.3 to a 5 V board (Uno / Nano 5V, a XIAO's 5V through a Schottky diode) or 5 V loads. IN+ / IN− are the USB input: leave them unconnected. Two catches of the IP5306 as sold: it charges at about 2 A (too hard for a cell under 2000 mAh), and it switches OUT off when the load stays under about 45 mA for 32 s (press its KEY, or plug USB, to wake it).",
+  "pins": [
+    { "id": "VIN", "label": "IN+", "x": 10, "y": 40, "type": "power", "voltage": { "min": 4.5, "max": 5.5 }, "description": "USB 5 V input, the same node as the module's USB-C socket (4.5 to 5.5 V). Usually left unconnected: the person plugs a USB charger into the socket. Never wire it to the board's 5V / VBUS." },
+    { "id": "GND.1", "label": "IN−", "x": 10, "y": 60, "type": "ground", "description": "USB input ground (same as the socket's ground). Usually left unconnected." },
+    { "id": "BAT", "label": "B+", "x": 130, "y": 20, "type": "power", "description": "To the LiPo cell's + (red). The cell's connection, not a supply output: power the device from OUT." },
+    { "id": "GND.2", "label": "B−", "x": 130, "y": 40, "type": "ground", "description": "To the LiPo cell's − (black)." },
+    { "id": "OUT", "label": "5V", "x": 130, "y": 60, "type": "power", "voltage": { "min": 4.75, "max": 5.25 }, "description": "Boosted 5 V output (up to about 2 A) to the device. Off below a 3.0 V cell, and after 32 s under about 45 mA (auto-off) until KEY is pressed or USB is plugged." },
+    { "id": "GND.3", "label": "OUT−", "x": 130, "y": 80, "type": "ground", "description": "Load ground." }
+  ],
+  "size": { "w": 140, "h": 100 },
+  "props": [
+    { "id": "usb", "label": "USB cable plugged in", "type": "boolean", "default": false, "description": "A USB charger gives the module 5 V: it charges the cell and wakes the output." },
+    { "id": "chargeCurrentmA", "label": "Charge current into the cell", "type": "number", "default": 2000, "min": 100, "max": 2400, "step": 10, "unit": "mA", "description": "Set by the chip, not a resistor: the IP5306 as sold charges at about 2 A into the cell (2.1 A from USB). Only the I2C version lowers it. Keep the cell at 2000 mAh or more (1C)." },
+    { "id": "auto_off", "label": "Light-load auto-off", "type": "boolean", "default": true, "description": "The IP5306 as sold turns OUT off when the load stays under about 45 mA for 32 s (it thinks the phone is full). The I2C version (or a module that keeps it awake) can switch this off." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 4.5, "maxCurrentmA": 2100, "outputVoltage": 5, "efficiency": 0.9, "chargeVoltage": 4.2, "cutoffVoltage": 3.0, "autoOffmA": 45, "autoOffMs": 32000, "noLoadmA": 1 },
+  "footprint": "about 25 × 21 mm module, USB-C socket, solder pads IN+ IN− B+ B− 5V OUT−, KEY pad",
+  "dimensions_mm": { "w": 25, "h": 21, "d": 4.5 },
+  "mass_g": 2,
+  "current_ma": { "typ": 1, "max": 2100 },
+  "price_usd": 1.5,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-IP5306-type-c-charge-boost-module.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=IP5306%20USB-C%205V%20boost%20charger%20module" }
+  ],
+  "bindings": [
+    { "key": "usb", "type": "boolean", "description": "USB cable plugged in." },
+    { "key": "mode", "type": "string", "description": "Charging: \"off\", \"trickle\", \"CC\", \"CV\" or \"full\"." },
+    { "key": "charging", "type": "boolean", "description": "Charging the cell." },
+    { "key": "full", "type": "boolean", "description": "Charge finished." },
+    { "key": "chargemA", "type": "number", "description": "Current into the cell (mA)." },
+    { "key": "outOn", "type": "boolean", "description": "The 5 V output is on." },
+    { "key": "off", "type": "string", "description": "Why OUT is off: \"\", \"low battery\", \"auto-off\"." },
+    { "key": "outmA", "type": "number", "description": "Current delivered on OUT (mA)." },
+    { "key": "label", "type": "string", "description": "e.g. \"5.00 V · 120 mA\"." }
+  ],
+  "tags": ["ip5306", "charger", "boost", "charge boost", "power bank", "lipo charger", "5v", "step-up", "usb-c", "li-ion", "lithium", "battery", "power", "pocket", "small"],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_top_mm": 1,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      { "id": "usb", "kind": "connector", "face": "-x", "x": 0, "y": 10.5, "z": 2.6, "w": 9, "h": 3.3, "connector": "usb-c", "plug_clearance_mm": 1.5, "protrude_mm": 0.8 },
+      { "id": "key", "kind": "button", "face": "+z", "x": 20, "y": 17, "z": 4.5, "w": 3, "h": 3, "travel_mm": 0.3, "expose": false, "description": "KEY pad / button: wakes the 5 V output after an auto-off; expose it (a plunger) when the load is light" },
+      { "id": "led", "kind": "led", "face": "+z", "x": 14, "y": 4, "shape": "round", "d": 1.6, "expose": false }
+    ],
+    "source": "typical module (IP5306 USB-C charge / boost boards measure about 19 x 22 to 25 x 21 mm; check the listing)"
+  },
+  "sourcing": {
+    "mpn": "IP5306",
+    "manufacturer": "Injoinic (IC)",
+    "package": "module about 25 x 21 mm, USB-C",
+    "generic": "IP5306 1S LiPo charge + 5 V boost (power bank) module, USB-C, 2.1 A charge, 5 V 2 A out, low-battery cut-off"
+  }
+}

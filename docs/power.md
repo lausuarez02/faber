@@ -73,6 +73,17 @@ written into the new project's action log (with `moved_from`), not the project t
 | `diode-reversed` | warning | a diode in a battery path has its stripe towards the battery |
 | `board-unpowered`, `usb-backfeed` (live) | from the simulation | the board's logic rail is down; current flows back into the USB port |
 
+Round 8 adds advice (all `info`: it works as wired, it is only bigger than it needs to be). Each
+says what, why with the millimetres from the parts' `dimensions_mm`, and the fix:
+
+| Code | When |
+| --- | --- |
+| `boost-not-needed` | a boost converter feeds only parts that run from a 1S cell (a module whose supply takes 3.3 to 4.2 V, such as the DFPlayer's 3.2 to 5 V; a XIAO / RP2040-Zero VBUS through a diode; a Pico VSYS). The talking egg of round 7 had one: 36 x 17 x 6 mm for nothing |
+| `combine-charge-boost` | a TP4056 and a boost that is needed, on a cell of 2000 mAh or more: one `charge-boost-5v` saves 577 mm² |
+| `charger-not-needed` | a TP4056 / charge-boost module on a board whose data says it charges a LiPo itself (`limits.chargerBuiltIn: 1` or the tag `lipo charger`; no simulated board does today) |
+| `board-bigger-than-needed` | a board in a device with a battery or a case, when a simulated board at most 70 % of its footprint has enough GPIO for the wired pins (same chip first: Uno → Nano keeps the sketch) |
+| `smaller-speaker` | the 28 mm speaker in a device with a battery or a case: `speaker-20mm` saves 384 mm² and 1 mm |
+
 A battery on a charger's `BAT` is not `parallel-regulators`; a power part's input (an LDO's VIN, a
 charger's IN+) is not a rail; the TP4056's IN+ / IN− are optional and no fix sends them to a board pin.
 
@@ -80,7 +91,10 @@ charger's IN+) is not a rail; the TP4056's IN+ / IN− are optional and no fix s
 
 `schottky-diode` (1N5817), `generic-diode` (1N4148), `n-mosfet` (AO3400), `npn-transistor`
 (2N2222 / BC547), `pnp-transistor` (2N2907 / BC557), `ldo-regulator` (MCP1700-3.3 / AP2112K-3.3),
-`boost-converter` (MT3608). Each has its datasheet figures in `limits`, physical data, `mechanical`
+`boost-converter` (MT3608), and (round 8) `charge-boost-5v` (IP5306-class charger + 5 V boost on one
+25 x 21 mm board: charges at about 2 A, so only for cells of 2000 mAh or more; cuts OUT at a 3.0 V
+cell; switches OUT off after 32 s under about 45 mA, woken by a press = its KEY or by USB, prop
+`auto_off: false` for the I2C version). Each has its datasheet figures in `limits`, physical data, `mechanical`
 and `sourcing` (no LCSC numbers: none were checked), fidelity notes and model tests.
 
 ## What it does not model

@@ -79,7 +79,7 @@ export function speakerOf(project: Project, talkerId: string): string {
   const typeOf = new Map(project.parts.map((p) => [p.id, p.type]));
   for (const pin of ["SPK_1", "SPK_2", "DAC_R", "DAC_L"]) {
     const net = nets.find((n) => n.pins.some((x) => x.part === talkerId && x.pin === pin));
-    const spk = net?.pins.find((x) => x.part !== talkerId && typeOf.get(x.part) === "speaker");
+    const spk = net?.pins.find((x) => x.part !== talkerId && /^speaker(-\d+mm)?$/.test(typeOf.get(x.part) ?? "")); // round 8: speaker-20mm / speaker-15mm too
     if (spk) return spk.part;
   }
   return talkerId;

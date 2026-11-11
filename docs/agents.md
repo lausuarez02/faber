@@ -163,6 +163,12 @@ The people asking for a device are often beginners. The server instructions say 
   placing anything: what it will do, the board and why, each part and why, the rough size of the
   case, the battery life, the price, and which parts are simulated as themselves, with a stand-in,
   agent-made or not at all. Figures a part does not have are listed in `missing_data`, not guessed.
+  For something to hold (pocket, small, tiny, a keychain, any named shape such as an egg) the plan
+  is compact by itself (`constraints.compact` forces it either way): the smallest board, screen,
+  speaker and LiPo cell for the runtime (3 h when none is asked), no boost converter unless a part
+  really needs 5 V, and `size_budget` says the footprint, the thickest part and each smaller
+  choice with the mm it saves. `check_design` then flags parts a built device may not need
+  (`boost-not-needed`, `board-bigger-than-needed`, `smaller-speaker`, ...).
 - **Ask one question** when the wish leaves a real choice open (`plan_device` returns `question`,
   e.g. "should it only tell you the plant is thirsty, or also water it?"), then wait.
 - **No jargon** unless the person uses it: "the screen", "a resistor that protects the light".

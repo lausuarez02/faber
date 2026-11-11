@@ -10,6 +10,9 @@ import { formatClips, parseClips } from "@jumper/parts";
 import type { PartRegistry } from "@jumper/sim-core";
 import type { DesignIssue } from "./drc.ts";
 
+/** The speaker parts: "speaker" (28 mm) and the smaller "speaker-20mm" / "speaker-15mm" (round 8). */
+export const isSpeakerType = (type: string) => /^speaker(-\d+mm)?$/.test(type);
+
 /** Parts that talk: a clip table ("clips" prop). */
 export function talkingParts(project: Project, registry: PartRegistry): PartInstance[] {
   return project.parts.filter((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips"));
@@ -43,7 +46,7 @@ export function voiceChecks(project: Project, registry: PartRegistry, firmwareSo
     const spk1 = others("SPK_1");
     const spk2 = others("SPK_2");
     const dac = [...others("DAC_R"), ...others("DAC_L")];
-    const isSpeaker = (x: { part: string }) => typeOf(x.part) === "speaker" || /speaker|amp/i.test(specOf(x.part)?.name ?? "");
+    const isSpeaker = (x: { part: string }) => isSpeakerType(typeOf(x.part)) || /speaker|amp/i.test(specOf(x.part)?.name ?? "");
     const bridged = spk1.some((a) => isSpeaker(a) && spk2.some((b) => b.part === a.part));
     const onDac = dac.some(isSpeaker) || dac.some((x) => specOf(x.part)?.category !== "board" && specOf(x.part)?.category !== "passive");
     if (!bridged && !onDac) {
@@ -97,7 +100,7 @@ export function voiceChecks(project: Project, registry: PartRegistry, firmwareSo
   }
 
   // A speaker straight on a board pin or a supply.
-  for (const spk of project.parts.filter((p) => p.type === "speaker")) {
+  for (const spk of project.parts.filter((p) => isSpeakerType(p.type))) {
     for (const pin of ["+", "-"]) {
       const n = netOf(spk.id, pin);
       const hot = n?.pins.filter((x) => {

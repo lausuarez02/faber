@@ -209,8 +209,9 @@ describe("custom outlines: rethink the pieces", () => {
     const r = checkFit({ parts: partsX(p), enclosure: p.enclosure!, catalog: catalogX() }, { budgetMs: 60_000 });
     expect(r.fits).toBe(false);
     expect(r.asked_mm?.w).toBe(42);
-    const spk = r.suggestions.find((s) => s.kind === "swap" && s.part === "spk")!;
-    expect(spk.to).toBe("speaker-20mm");
+    // round 8: the library also has speaker-15mm, so look for the 20 mm swap among the speaker swaps
+    const spk = r.suggestions.find((s) => s.kind === "swap" && s.part === "spk" && s.to === "speaker-20mm")!;
+    expect(spk).toBeDefined();
     expect(spk.fits).toBe(true);
     expect(spk.tradeoff).toMatch(/quieter/);
     // a 1000 mAh cell (50 x 34 mm) in an egg that holds the 500 mAh one

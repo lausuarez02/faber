@@ -138,7 +138,8 @@ describe("plan_device", () => {
   it("picks a DFPlayer Mini + speaker + 1k when the goal talks", () => {
     const p = planDevice("an egg shaped pocket device with eyes and a speaker to say stuff", { pocket: true }, registry);
     const types = p.bom.map((l) => l.type);
-    expect(types).toEqual(expect.arrayContaining(["dfplayer-mini", "speaker", "resistor"]));
+    expect(types).toEqual(expect.arrayContaining(["dfplayer-mini", "resistor"]));
+    expect(types).toContain("speaker-20mm"); // round 8: a pocket device gets the smallest speaker that is clear for speech
     expect(p.bom.find((l) => l.type === "dfplayer-mini")!.why).toMatch(/says words/);
     expect(types).not.toContain("buzzer");
     // "eyes" means a screen to draw them on (round 7: the user asked for eyes and a voice)

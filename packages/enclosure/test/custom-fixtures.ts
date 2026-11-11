@@ -34,7 +34,8 @@ export const specOfX = (t: string): PartSpec | undefined => FIXTURES.get(t) ?? r
 
 /** Every part spec in the library plus the fixtures (for swap suggestions). */
 export function catalogX(): PartSpec[] {
-  return [...registry.list().map((d) => d.spec), ...FIXTURES.values()];
+  // round 8: the library now has a real speaker-20mm; the fixture of the same id replaces it
+  return [...registry.list().map((d) => d.spec).filter((s) => !FIXTURES.has(s.id)), ...FIXTURES.values()];
 }
 
 /**

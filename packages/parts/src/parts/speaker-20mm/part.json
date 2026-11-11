@@ -1,0 +1,140 @@
+{
+  "id": "speaker-20mm",
+  "name": "Speaker 8 Ω 0.5 W (20 mm round)",
+  "category": "output",
+  "description": "Small round 20 mm speaker for voice in tight cases (an egg, a keychain): a bit quieter than the 28 mm one but clear for speech. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA).",
+  "pins": [
+    {
+      "id": "+",
+      "label": "+",
+      "x": 40,
+      "y": 116,
+      "type": "passive",
+      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+    },
+    {
+      "id": "-",
+      "label": "-",
+      "x": 80,
+      "y": 116,
+      "type": "passive",
+      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+    }
+  ],
+  "size": {
+    "w": 120,
+    "h": 120
+  },
+  "props": [
+    {
+      "id": "ohms",
+      "label": "Impedance",
+      "type": "enum",
+      "default": "8",
+      "options": [
+        "4",
+        "8"
+      ],
+      "description": "Coil impedance. The DFPlayer drives 4 or 8 Ω; 8 Ω is quieter but kinder to a battery."
+    },
+    {
+      "id": "rated_w",
+      "label": "Rated power",
+      "type": "number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1,
+      "unit": "W",
+      "description": "What the speaker takes continuously before it distorts or burns."
+    }
+  ],
+  "limits": {
+    "maxPowerW": 0.5
+  },
+  "footprint": "20 mm round frame, two solder pads (wires)",
+  "dimensions_mm": {
+    "w": 20,
+    "h": 20,
+    "d": 4
+  },
+  "mass_g": 2,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.7,
+  "buy_links": [
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-20mm-speaker-8-ohm.html"
+    },
+    {
+      "vendor": "LCSC",
+      "url": "https://www.lcsc.com/search?q=speaker%2020mm%208ohm"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "sounding",
+      "type": "boolean",
+      "description": "Something plays through it (more than 1 mW)."
+    },
+    {
+      "key": "volume",
+      "type": "number",
+      "description": "Loudness 0..1 against its rated power."
+    },
+    {
+      "key": "powerW",
+      "type": "number",
+      "description": "Electrical power into the coil (W, RMS)."
+    },
+    {
+      "key": "currentmA",
+      "type": "number",
+      "description": "RMS current through the coil (mA)."
+    },
+    {
+      "key": "volts",
+      "type": "number",
+      "description": "RMS voltage across the leads (+ minus -)."
+    }
+  ],
+  "tags": [
+    "speaker",
+    "loudspeaker",
+    "8 ohm",
+    "voice",
+    "talk",
+    "speak",
+    "audio",
+    "sound",
+    "dfplayer",
+    "mp3",
+    "small",
+    "mini",
+    "tiny",
+    "20mm"
+  ],
+  "mechanical": {
+    "outline": "round",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 1,
+    "features": [
+      {
+        "id": "sound",
+        "kind": "grille",
+        "face": "+z",
+        "x": 10.0,
+        "y": 10.0,
+        "shape": "round",
+        "d": 13
+      }
+    ],
+    "source": "typical 20 mm 8 Ω 0.5 W mylar micro speaker, 4 mm deep (often sold as 2004 / 20 x 4 mm)"
+  },
+  "sourcing": {
+    "package": "20 mm round, 4 mm deep, solder pads",
+    "generic": "Micro speaker 20 mm, 8 Ω, 0.5 W (mylar cone)"
+  }
+}

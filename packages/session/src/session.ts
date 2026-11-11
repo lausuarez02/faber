@@ -145,6 +145,8 @@ const SHORT_IDS: Record<string, string> = {
   "arduino-nano": "nano",
   "dfplayer-mini": "df", // round 7 voice
   speaker: "spk", // round 7 voice
+  "speaker-20mm": "spk", // round 8 parts-advice
+  "speaker-15mm": "spk",
   "raspberry-pi-pico": "pico",
   "seeed-xiao-rp2040": "xiao",
   "waveshare-rp2040-zero": "zero",
