@@ -98,7 +98,7 @@ export const caseRoutes: ApiRoute[] = [
       }
       const has = !!ctx.session().project.enclosure;
       const args: Record<string, unknown> = { images: false };
-      for (const k of ["shape", "outline", "size_mm", "params", "front", "placements", "exclude"]) if (body[k] !== undefined) args[k] = body[k];
+      for (const k of ["shape", "outline", "size_mm", "params", "front", "placements", "exclude", "layout"]) if (body[k] !== undefined) args[k] = body[k];
       if (!has && !args.shape) return ctx.json(res, 400, err("No case yet", "a new case needs a shape", 'send {"shape": "pebble"} (rounded-box, pill, pebble, puck or keychain)'));
       try {
         const r = await ctx.call(has ? "update_case" : "design_case", args, { actor: "web" });

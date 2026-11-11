@@ -12,9 +12,10 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { AlertTriangle, Box, CheckCircle2, Download, Loader2, Package, X, XCircle } from "lucide-react";
 import type { Enclosure } from "@jumper/project-format";
-import { caseApi, decodeF32, decodeU32, type CaseMesh, type CaseReport, type CaseState, type FitResult } from "../../case/api.ts";
+import { caseApi, decodeF32, decodeU32, type CaseMesh, type CaseReport, type CaseState, type FitResult, type LayoutsResult } from "../../case/api.ts";
 import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
+import { LayoutPicker } from "./LayoutPicker.tsx";
 import { OutlineEditor, type SizeDraft } from "./OutlineEditor.tsx";
 
 const SHAPES: { id: Enclosure["shape"]; label: string; hint: string }[] = [
@@ -46,6 +47,12 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [fitBusy, setFitBusy] = useState(false);
   const [fitError, setFitError] = useState<string | undefined>();
   const fitSeq = useRef(0);
+  // round 8: the distributions Jumper proposes and the one picked ("auto" = its best)
+  const [layout, setLayout] = useState<string>("auto");
+  const [layouts, setLayouts] = useState<LayoutsResult | undefined>();
+  const [layoutsBusy, setLayoutsBusy] = useState(false);
+  const [layoutsError, setLayoutsError] = useState<string | undefined>();
+  const layoutSeq = useRef(0);
   const report = state?.report;
   const hashRef = useRef<string | undefined>(undefined);
 
@@ -62,6 +69,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
         if (o && typeof o === "object" && "points" in o) setPoints(o.points as Pt[]);
         else if (st.enclosure.shape === "custom" && st.report?.outline_mm?.length) setPoints(resampleClosed(st.report.outline_mm, 14));
         setSize({ ...(st.enclosure.size_mm ?? {}) });
+        setLayout(st.enclosure.layout ?? "auto");
       }
       const h = st.report?.hash;
       if (st.enclosure && (withMesh || st.stale || h !== hashRef.current)) {
@@ -98,10 +106,10 @@ export function CaseView({ onClose }: { onClose(): void }) {
   }, [onClose]);
 
   const saved = state?.enclosure;
-  const draft = (): Record<string, unknown> => ({ shape, params, ...(shape === "custom" ? { outline: toOutline(points), size_mm: { w: size.w ?? null, h: size.h ?? null, d: size.d ?? null } } : { size_mm: null }) });
+  const draft = (): Record<string, unknown> => ({ shape, params, layout, ...(shape === "custom" ? { outline: toOutline(points), size_mm: { w: size.w ?? null, h: size.h ?? null, d: size.d ?? null } } : { size_mm: null }) });
   const sizeKey = JSON.stringify({ w: size.w, h: size.h, d: size.d });
   const savedSizeKey = JSON.stringify({ w: saved?.size_mm?.w, h: saved?.size_mm?.h, d: saved?.size_mm?.d });
-  const dirty = !saved || saved.shape !== shape || JSON.stringify(saved.params ?? {}) !== JSON.stringify(params) || (shape === "custom" && (JSON.stringify(saved.outline ?? null) !== JSON.stringify(toOutline(points)) || sizeKey !== savedSizeKey));
+  const dirty = !saved || saved.shape !== shape || (saved.layout ?? "auto") !== layout || JSON.stringify(saved.params ?? {}) !== JSON.stringify(params) || (shape === "custom" && (JSON.stringify(saved.outline ?? null) !== JSON.stringify(toOutline(points)) || sizeKey !== savedSizeKey));
 
   // the live fit while drawing (no CAD on the server, under a second), the newest answer wins
   useEffect(() => {
@@ -127,6 +135,31 @@ export function CaseView({ onClose }: { onClose(): void }) {
         })
         .finally(() => seq === fitSeq.current && setFitBusy(false));
     }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shape, JSON.stringify(points), sizeKey, JSON.stringify(params), epoch]);
+
+  // the proposals for the shape as drawn (a second or two on the server), the newest answer wins
+  useEffect(() => {
+    const seq = ++layoutSeq.current;
+    setLayoutsBusy(true);
+    const t = setTimeout(() => {
+      const { layout: _l, ...body } = draft();
+      void _l;
+      caseApi
+        .layouts({ ...body, views: true })
+        .then((r) => {
+          if (seq !== layoutSeq.current) return;
+          setLayouts(r);
+          setLayoutsError(undefined);
+        })
+        .catch((e: Error) => {
+          if (seq !== layoutSeq.current) return;
+          setLayouts(undefined);
+          setLayoutsError(e.message);
+        })
+        .finally(() => seq === layoutSeq.current && setLayoutsBusy(false));
+    }, 450);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shape, JSON.stringify(points), sizeKey, JSON.stringify(params), epoch]);
@@ -303,6 +336,8 @@ export function CaseView({ onClose }: { onClose(): void }) {
             <input type="checkbox" checked={params.belt_clip ?? false} onChange={(e) => set("belt_clip", e.target.checked)} /> Belt clip
           </label>
         </section>
+
+        <LayoutPicker result={layouts} busy={layoutsBusy} {...(layoutsError ? { error: layoutsError } : {})} value={layout} onPick={(id) => setLayout(id === (layouts?.best ?? "balanced") ? "auto" : id)} />
 
         <button type="button" className="cv-primary" disabled={!!busy || (!!saved && !dirty)} data-testid="case-update" onClick={() => void apply()}>
           {busy && busy !== "Writing the factory pack…" ? (saved ? "Updating…" : "Designing…") : saved ? (dirty ? "Update case" : "Case is up to date") : "Design case"}
