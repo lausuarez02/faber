@@ -217,12 +217,16 @@ const fidelityOf = (d: PartDefinition) => (d.fidelity.origin === "agent-made" ? 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean): { def: PartDefinition; why: string } {
-  const boards = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
-  if (!boards.length) throw new Error("the catalog has no boards");
+  const all = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
+  if (!all.length) throw new Error("the catalog has no boards");
+  // Picked on its own, a board must be placeable and run in the page (avr8js, rp2040js); boards that run
+  // in an emulator process (Renode, needs Docker) or are only planned are chosen when asked for by name.
+  const inPage = all.filter((d) => d.spec.availability?.status !== "planned" && d.spec.mcu?.backend !== "renode");
+  const boards = inPage.length ? inPage : all;
   if (c.board) {
     const d = reg.get(c.board);
     if (!d || d.spec.category !== "board") {
-      throw new Error(`no board '${c.board}' in the catalog; boards are: ${boards.map((b) => b.spec.id).join(", ")}`);
+      throw new Error(`no board '${c.board}' in the catalog; boards are: ${all.map((b) => b.spec.id).join(", ")}`);
     }
     return { def: d, why: `you asked for the ${d.spec.name}` };
   }
@@ -438,7 +442,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       if (chg) {
         chg.props = { chargeCurrentmA: Math.min(1000, capacity) };
         const t = reg.get("tp4056-charger")?.spec.dimensions_mm;
-        choices.push(`real-world alternative, not simulated in Jumper: a XIAO nRF52840 or XIAO ESP32-S3 charges a LiPo on the board itself and would save the TP4056${t ? ` (${t.w} x ${t.h} x ${t.d} mm)` : ""}; Jumper simulates only AVR and RP2040 boards, so the plan keeps the TP4056`);
+        choices.push(`alternative: a XIAO nRF52840 (seeed-xiao-nrf52840) charges a LiPo on the board itself and would save the TP4056${t ? ` (${t.w} x ${t.h} x ${t.d} mm)` : ""}; Jumper runs it in Renode, which needs Docker on this computer, so the plan keeps a board that runs in the page and the TP4056 (ask for board seeed-xiao-nrf52840 to use it)`);
       }
       const big = LIPO_CELLS.find((x) => x.mAh >= 500);
       if (big && pick.mAh < big.mAh) choices.push(`a ${pick.mAh} mAh cell (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm) instead of 500 mAh (${big.code}, ${big.w} x ${big.h} x ${big.d} mm): ${Math.round(big.w * big.h - pick.w * pick.h)} mm² less, enough for about ${target} h at ${round1(avg)} mA`);

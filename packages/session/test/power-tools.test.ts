@@ -178,7 +178,9 @@ describe("catalog: no fit, fuzzy ids", () => {
     const z = await call(s, "get_part", { type: "rp2040-zero" });
     expect(z.type).toBe("waveshare-rp2040-zero");
     expect(z.matched).toMatch(/'rp2040-zero' is waveshare-rp2040-zero/);
-    expect((await call(s, "get_part", { type: "xiao" })).type).toBe("seeed-xiao-rp2040");
+    // Round 10: two XIAO boards now, so "xiao" is ambiguous and says which ones.
+    await expect(call(s, "get_part", { type: "xiao" })).rejects.toThrow(/matches 2 part types.*seeed-xiao-nrf52840.*seeed-xiao-rp2040/);
+    expect((await call(s, "get_part", { type: "xiao-rp2040" })).type).toBe("seeed-xiao-rp2040");
     await expect(call(s, "get_part", { type: "transistor" })).rejects.toThrow(/matches 2 part types.*npn-transistor.*pnp-transistor/);
     await expect(call(s, "get_part", { type: "flux-capacitor" })).rejects.toThrow(/No part type 'flux-capacitor'/);
   });

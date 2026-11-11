@@ -152,7 +152,7 @@ describe("plan_device: the smallest parts that do the job", () => {
     expect(ch).toMatch(/no 5 V boost converter: .*36 x 17 x 6 mm \(612 mm²\)/);
     expect(ch).toMatch(/20 x 20 x 4 mm\) instead of the .*28 x 28 x 5 mm\): 384 mm² less/);
     expect(ch).toMatch(/250 mAh cell \(502030, 30 x 20 x 5 mm\) instead of 500 mAh/);
-    expect(ch).toMatch(/not simulated in Jumper: a XIAO nRF52840/);
+    expect(ch).toMatch(/a XIAO nRF52840 \(seeed-xiao-nrf52840\) charges a LiPo on the board itself.*needs Docker/);
     expect(plan.size_budget.thickest).toMatch(/DFPlayer/);
     expect(plan.warnings.join("\n")).toMatch(/power the DFPlayer from the switched battery/);
   });
