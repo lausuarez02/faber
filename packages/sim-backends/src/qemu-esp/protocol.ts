@@ -10,7 +10,8 @@
 //   IW <addr> <byte>     I2C write
 //   IR <addr>            I2C read
 //   IP <addr>            I2C stop
-//   P <pu0> <pu1> <pd0> <pd1> <ns>   pad pull-up / pull-down masks (IO_MUX / RTC_IO), bridge v3
+//   P <pu0> <pu1> <pd0> <pd1> <ns>   pad pull-up / pull-down masks (IO_MUX / RTC_IO), bridge v3;
+//                                    v4 in lockstep: QEMU waits for "A 0" after it
 
 export type BridgeEvent =
   | { kind: "hello"; version: number; type: string }
@@ -69,4 +70,4 @@ export function encodeSerial(bytes: Iterable<number>): string {
 }
 
 /** True when the line is one QEMU blocks on until Jumper answers (or the lockstep target "T"). */
-export const isBlockingLine = (line: string) => line.startsWith("T ") || line.startsWith("IS ") || line.startsWith("IR ");
+export const isBlockingLine = (line: string) => line.startsWith("T ") || line.startsWith("IS ") || line.startsWith("IR ") || line.startsWith("P ");

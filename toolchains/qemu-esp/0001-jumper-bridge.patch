@@ -39,7 +39,7 @@ index 41de9cf..3f8242b 100644
  
  
 diff --git a/hw/gpio/esp32_gpio.c b/hw/gpio/esp32_gpio.c
-index 4fea1f5..b34cf33 100644
+index 4fea1f5..4ea90f7 100644
 --- a/hw/gpio/esp32_gpio.c
 +++ b/hw/gpio/esp32_gpio.c
 @@ -18,27 +18,301 @@
@@ -350,7 +350,7 @@ index 4fea1f5..b34cf33 100644
  }
  
  static const MemoryRegionOps uart_ops = {
-@@ -49,10 +323,141 @@ static const MemoryRegionOps uart_ops = {
+@@ -49,10 +323,147 @@ static const MemoryRegionOps uart_ops = {
  
  static void esp32_gpio_reset_hold(Object *obj, ResetType type)
  {
@@ -364,7 +364,8 @@ index 4fea1f5..b34cf33 100644
 + * Jumper pads: the internal pull-up / pull-down of every pin, so Jumper can model a button to GND
 + * read with INPUT_PULLUP. Upstream maps IO_MUX (and the ESP32's RTC_IO) as unimplemented memory,
 + * so the bits the firmware sets are lost. These regions sit on top, keep the registers and report
-+ *   P <pu0> <pu1> <pd0> <pd1> <ns>      pull-up / pull-down masks (hex) after any change
++ *   P <pu0> <pu1> <pd0> <pd1> <ns>      pull-up / pull-down masks (hex) after any change; in lockstep
++ *                                       QEMU waits for "A 0" (Jumper applies the resulting input levels first)
 + * Layout from ESP-IDF v5.5 (soc/io_mux_reg.h, soc/rtc_io_reg.h): FUN_WPU = bit 8, FUN_WPD = bit 7;
 + * ESP32-S3 / C3: IO_MUX_GPIOn = base + 4 + 4n; ESP32: a table, and the RTC pads use RTC_IO RUE/RDE.
 + */
@@ -445,6 +446,11 @@ index 4fea1f5..b34cf33 100644
 +        && jumper_bridge_gpio) {
 +        jumper_bridge_printf(jumper_bridge_gpio, "P %x %x %x %x %" PRIx64 "\n", jumper_pu[0], jumper_pu[1],
 +                             jumper_pd[0], jumper_pd[1], (uint64_t)qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
++        /* Lockstep: wait until Jumper has applied the levels the new pulls give ("I" lines, then
++         * "A 0"), so a digitalRead() right after pinMode(INPUT_PULLUP) already sees them. */
++        if (jumper_bridge_gpio->sync && jumper_bridge_active()) {
++            jumper_bridge_wait(jumper_bridge_gpio, 'A', 0);
++        }
 +    }
 +}
 +
@@ -483,7 +489,7 @@ index 4fea1f5..b34cf33 100644
 +        qemu_chr_fe_set_handlers(&s->bridge, esp32_gpio_can_receive, esp32_gpio_receive,
 +                                 NULL, NULL, s, NULL, true);
 +        jumper_pads_install(dev);
-+        jumper_bridge_printf(s, "H jumper-esp32-bridge 3 %s sync=%d pads=1\n", object_get_typename(OBJECT(dev)), s->sync);
++        jumper_bridge_printf(s, "H jumper-esp32-bridge 4 %s sync=%d pads=1\n", object_get_typename(OBJECT(dev)), s->sync);
 +        if (s->sync) {
 +            s->sync_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, jumper_sync_cb, s);
 +            timer_mod(s->sync_timer, 0);
@@ -492,7 +498,7 @@ index 4fea1f5..b34cf33 100644
  }
  
  static void esp32_gpio_init(Object *obj)
-@@ -73,6 +478,8 @@ static Property esp32_gpio_properties[] = {
+@@ -73,6 +484,8 @@ static Property esp32_gpio_properties[] = {
      /* The strap_mode needs to be explicitly set in the instance init, thus, set
       * the default value to 0. */
      DEFINE_PROP_UINT32("strap_mode", Esp32GpioState, strap_mode, 0),

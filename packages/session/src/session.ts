@@ -784,7 +784,8 @@ export class ProjectSession {
     const sk = sketch ?? this.listFirmwareFiles().find((f) => /\.(ino|pde)$/.test(f))?.replace(/^firmware\//, "");
     if (!sk) return undefined;
     const base = basename(sk).replace(/\.(ino|pde)$/, "");
-    return { ...p, firmware: { board: boardId, dir: "firmware", sketch: sk, artifact: `firmware/${base}.hex`, build: { tool: "arduino-cli", fqbn: spec.mcu.fqbn ?? "arduino:avr:uno" } } };
+    const fqbn = spec.mcu.fqbn ?? "arduino:avr:uno";
+    return { ...p, firmware: { board: boardId, dir: "firmware", sketch: sk, artifact: `firmware/${base}.${outputFormatFor(fqbn)}`, build: { tool: "arduino-cli", fqbn } } };
   }
 
   async movePart(args: { id: string; x?: number; y?: number; rotation?: number; why?: string }, ctx: OpCtx): Promise<unknown> {

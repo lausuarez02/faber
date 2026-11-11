@@ -64,6 +64,33 @@ function rp2040Template(type: string, id: string, fqbn: string, name: string, le
   };
 }
 
+/** ESP32-family boards (round 10): Serial is UART0 in the simulator build, so no wait for USB. */
+const espIno = (led: "high" | "low" | undefined) => `// ${led ? "Blinks the on-board LED and says" : "Says"} "ready" on serial.
+void setup() {
+  Serial.begin(115200);
+  Serial.println("ready");${led ? `\n  pinMode(LED_BUILTIN, OUTPUT);` : ""}
+}
+
+void loop() {${led ? `\n  digitalWrite(LED_BUILTIN, ${led === "low" ? "LOW" : "HIGH"});  // on${led === "low" ? " (this LED is active low)" : ""}\n  delay(500);\n  digitalWrite(LED_BUILTIN, ${led === "low" ? "HIGH" : "LOW"});\n  delay(500);` : "\n  delay(1000);"}
+}
+`;
+
+function espTemplate(type: string, id: string, fqbn: string, name: string, chip: string, led: "high" | "low" | undefined): Template {
+  return {
+    description: `A ${name} (${chip}, 3.3 V; runs in a local emulator, needs Docker) and a sketch (firmware/main.ino) that prints 'ready'${led ? " and blinks the on-board LED" : ""}.`,
+    needs: [type],
+    project: (projectName) => ({
+      format: "jumper/1",
+      name: projectName,
+      parts: [{ id, type, x: 0, y: 0 }],
+      wires: [],
+      firmware: { board: id, dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn } },
+      scenarios: [{ id: "boots", name: "Firmware boots", steps: [{ expect_serial: "ready", within_ms: 1500 }] }],
+    }),
+    files: { "firmware/main.ino": espIno(led) },
+  };
+}
+
 export const TEMPLATES: Record<string, Template> = {
   blank: {
     description: "Empty canvas, no parts, no firmware.",
@@ -101,6 +128,11 @@ export const TEMPLATES: Record<string, Template> = {
   pico: rp2040Template("raspberry-pi-pico", "pico", "rp2040:rp2040:rpipico", "Raspberry Pi Pico", "high"),
   "xiao-rp2040": rp2040Template("seeed-xiao-rp2040", "xiao", "rp2040:rp2040:seeed_xiao_rp2040", "Seeed XIAO RP2040", "low"),
   "rp2040-zero": rp2040Template("waveshare-rp2040-zero", "zero", "rp2040:rp2040:waveshare_rp2040_zero", "Waveshare RP2040-Zero", undefined),
+  "xiao-esp32s3": espTemplate("seeed-xiao-esp32s3", "xiao", "esp32:esp32:XIAO_ESP32S3", "Seeed XIAO ESP32-S3", "ESP32-S3", "low"),
+  "xiao-esp32c3": espTemplate("seeed-xiao-esp32c3", "xiao", "esp32:esp32:XIAO_ESP32C3", "Seeed XIAO ESP32-C3", "ESP32-C3", undefined),
+  "esp32-c3-supermini": espTemplate("esp32-c3-supermini", "c3", "esp32:esp32:nologo_esp32c3_super_mini", "ESP32-C3 SuperMini", "ESP32-C3", "low"),
+  esp32: espTemplate("esp32-devkitc", "esp32", "esp32:esp32:esp32", "ESP32 DevKitC", "ESP32", undefined),
+  "esp32-s3": espTemplate("esp32-s3-devkitc-1", "s3", "esp32:esp32:esp32s3", "ESP32-S3 DevKitC-1", "ESP32-S3", undefined),
   blink: {
     description: "Uno + 220 Ω + red LED on D13, the Blink sketch and two passing scenarios.",
     needs: ["arduino-uno", "resistor", "led"],

@@ -6,8 +6,8 @@ import { openSync, closeSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { ESP_CHIPS, type EspChip } from "./chips.ts";
 
-/** Bridge v3: GPIO, UART0, I2C0 (ESP32), lockstep, pad pull-ups / pull-downs (round 10). */
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb3";
+/** Bridge v4: GPIO, UART0, I2C0 (ESP32), lockstep, pad pull-ups / pull-downs answered in lockstep (round 10). */
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb4";
 
 /** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
 export const EMULATOR_LABEL = "jumper.emulator";

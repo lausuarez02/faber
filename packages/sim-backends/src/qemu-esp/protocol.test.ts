@@ -14,7 +14,8 @@ describe("qemu-esp bridge protocol", () => {
     if (u.kind === "uart") expect(Buffer.from(u.bytes).toString()).toBe("hi\n");
     expect(parseBridgeLine("IS 3c r 10")).toEqual({ kind: "i2c-start", addr: 0x3c, read: true, ns: 16n });
     expect(parseBridgeLine("IW 3c aa")).toEqual({ kind: "i2c-write", addr: 0x3c, byte: 0xaa });
-    expect(isBlockingLine("T 0") && isBlockingLine("IR 3c") && !isBlockingLine("IW 3c 1")).toBe(true);
+    expect(isBlockingLine("T 0") && isBlockingLine("IR 3c") && isBlockingLine("P 4 0 0 0 10") && !isBlockingLine("IW 3c 1")).toBe(true);
+    expect(parseBridgeLine("P 4 10000 0 0 3e8")).toEqual({ kind: "pads", pullUp: (0x10000n << 32n) | 4n, pullDown: 0n, ns: 1000n });
   });
   it("encodes commands", () => {
     expect(encodeRun(1_000_000n)).toBe("R f4240\n");

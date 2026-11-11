@@ -30,7 +30,7 @@ function publish() {
   Atomics.add(ctrl, ${CTRL_SEQ}, 1);
   Atomics.notify(ctrl, ${CTRL_SEQ});
 }
-const blocking = (l) => l.startsWith("T ") || l.startsWith("IS ") || l.startsWith("IR ");
+const blocking = (l) => l.startsWith("T ") || l.startsWith("IS ") || l.startsWith("IR ") || l.startsWith("P ");
 const server = net.createServer((s) => {
   if (sock) { s.destroy(); return; }
   sock = s; s.setNoDelay(true); s.setEncoding("latin1"); server.close();

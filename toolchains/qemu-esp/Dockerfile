@@ -3,7 +3,7 @@
 # ESP32 / ESP32-S3 (qemu-system-xtensa) and ESP32-C3 (qemu-system-riscv32), plus Jumper's bridge
 # patch: a working GPIO block whose pins (and the ESP32's I2C0 bus) are mirrored over a chardev.
 #
-#   docker build -t jumper/qemu-esp:9.2.2-20260417-jb3 toolchains/qemu-esp
+#   docker build -t jumper/qemu-esp:9.2.2-20260417-jb4 toolchains/qemu-esp
 ARG QEMU_TAG=esp-develop-9.2.2-20260417
 FROM debian:bookworm-slim AS build
 ARG QEMU_TAG

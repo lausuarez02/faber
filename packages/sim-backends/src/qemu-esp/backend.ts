@@ -98,8 +98,10 @@ export class QemuEspBackend implements McuBackend {
   /** True from a finished boot until the first step: load() of the same image is then a no-op. */
   private fresh = false;
   private exited = false;
-  /** The handshake line QEMU sent ("H jumper-esp32-bridge 3 esp32c3.gpio sync=1 pads=1"). */
+  /** The handshake line QEMU sent ("H jumper-esp32-bridge 4 esp32c3.gpio sync=1 pads=1"). */
   hello = "";
+  /** Bridge protocol version from the handshake. */
+  version = 0;
   /** Wall ms from launch to parked at t = 0 (the last boot). */
   bootMs = 0;
 
@@ -355,6 +357,7 @@ export class QemuEspBackend implements McuBackend {
       switch (ev.kind) {
         case "hello":
           this.hello = line;
+          this.version = ev.version;
           break;
         case "gpio":
           this.advance(ev.ns);
@@ -362,7 +365,10 @@ export class QemuEspBackend implements McuBackend {
           break;
         case "pads":
           this.advance(ev.ns);
+          // The circuit re-solves inside the pin callbacks and drives the new input levels ("I");
+          // only then may QEMU go on (bridge v4 waits for this answer in lockstep).
           this.applyPads(ev.pullUp, ev.pullDown);
+          if (this.version >= 4) link.send(encodeAck(true));
           break;
         case "uart":
           this.advance(ev.ns);
