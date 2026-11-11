@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-11 (round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-11 (rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,63 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Rounds 9-10, integrated on main (2026-11-11): every board family, one registry, one pipeline
+
+Round 9 spiked the ESP32 family (Espressif QEMU + a Jumper bridge), STM32 / nRF52 boards (Renode)
+and a device network. Round 10 ran five tracks on it (esp-app, esp-periph, net, renode, lang); this
+merge joins them into one board registry (part.json `mcu` + `availability`), one server-side backend
+factory (`@jumper/sim-backends/node`: avr8js, rp2040js, QEMU, Renode), one runner (one Platform table
+for every Arduino core, one `BuildResult` for every language) and one support matrix.
+
+**What each board emulates, peripheral by peripheral, with the test behind each cell:
+[docs/boards.md](docs/boards.md)** (generated from `packages/parts/src/board-support.ts`; the parts
+library shows a board's row, `get_part` returns it as `emulation`).
+
+| Area | Done in this merge |
+| --- | --- |
+| ESP32 emulator | QEMU patches are a series: 0001 bridge (jb2), 0002 peripherals (esp-periph), 0003 pad pulls + lockstep handshake (esp-app); bridge protocol v5; tag `jumper/qemu-esp:9.2.2-20260417-jb5`. The series applied to clean upstream equals branch `jumper-jb5` of the spike QEMU repo, and it compiles on macOS. `JUMPER_QEMU_ESP_RUNTIME=native` runs a local build. |
+| ESP32 backend | esp-periph's pump (stopAt, waveforms, buses) + esp-app's async `prepare()`, why/fix `EmulatorError`, flash padding, pull modes; pad voltages set before boot survive it; network card from the session's device network |
+| Renode | the new one-socket Renode backend replaces round 9's ELF adapter in the factory; container labels shared with QEMU (one reaper); native runtime honoured by the runner's checks |
+| Builds | ESP32 sketches build with `jumper/arduino-esp32:3.3.12-r3` (Wi-Fi / TLS shim; r2 then r3 built on first use); `purpose: "device"` builds with `JUMPER_SIM=0` for the factory pack; MicroPython / ESP-IDF / PlatformIO through the same `BuildResult` (`format` ihex / esp-flash / elf) |
+| Languages | chip families (stm32f103c8 -> stm32f103), Renode loads Intel HEX, MicroPython verified on ESP32 / ESP32-C3 (the filesystem goes after the last partition, as MicroPython 1.24+ expects) |
+| Product | `jumper setup esp32` / `jumper setup renode`; the followed page's Run goes to the session for every process board; plan_device never picks a Docker board on its own; Docker that hangs gets its own why / fix |
+
+Checks on this merge (worktree `jumper-wt-r10-main`, branch `main`):
+- `pnpm gen`: exit 0, no diff. `pnpm typecheck`: exit 0.
+- `pnpm test`: exit 0, **197 files passed, 4 skipped; 1657 tests passed, 2 expected fail, 27 skipped**.
+  Run with `JUMPER_QEMU_ESP_RUNTIME=native` (the jb5 sources built natively), native Renode 1.17.0
+  and the `docker` command stubbed to fail fast, because **Docker Desktop was hung on this machine
+  for the whole merge** (disk filled earlier; containerd I/O errors; every `docker` call hangs; not
+  restarted). So the emulator integration tests ran on native emulators, and none ran in Docker:
+  - ran: ESP32 board fixtures 5/5 boards, ESP32 I2C0, MicroPython on ESP32 / C3 (GPIO, I2C0 on both),
+    ESP32 / C3 peripherals on real firmware (PWM, pin IRQ, UART1, ADC; SPI asserted as a known gap,
+    the 2 expected fails), Renode 18/18 (5 boards).
+  - skipped (need Docker builds or keys): runner.test 4, libs3 image builds 10, ESP-IDF 2, PlatformIO 1,
+    esp32-session 5 (needs an ESP build), device-net firmware 2 (fixture never built), AI gateway / MCP live 3.
+- e2e, full suite, `E2E_PORT=5900 E2E_HUB_PORT_BASE=11500 --workers=2`, desktop + mobile + case-costs +
+  perf: 94 passed, 17 skipped, 1 failed + 2 did not run (rp2040.spec.ts: `jumper serve` did not start
+  within 45 s while a QEMU compile loaded the machine); `rp2040.spec.ts` re-run on desktop + mobile: 6/6
+  passed. `renode-board.spec.ts` passed on native Renode.
+- Speed (native QEMU, 1.5 s of device time): XIAO ESP32-S3 2.65x real time, XIAO C3 5.05x, C3
+  SuperMini 5.73x, ESP32 DevKitC 0.63x, S3 DevKitC-1 2.59x; boot to t = 0 in 37 to 56 ms (no container).
+
+Gaps (rounds 9-10):
+- **Docker**: nothing ran in Docker during the merge. Not built: `jumper/qemu-esp:9.2.2-20260417-jb5`,
+  `jumper/arduino-esp32:3.3.12-r3` with net's MAC fix, `jumper/arduino-nrf52:1.1.13-libs3-r2`. Until
+  the jb5 image is built (`pnpm jumper setup esp32`), ESP boards in Docker fail with "image missing"
+  and its fix. After a Docker restart: build the images, re-run `pnpm test` without the stub.
+- **ESP32 SPI does not work** on real firmware (C3: MOSI arrives as 00 00; ESP32: the transfer hangs).
+  RMT, the S3's peripherals, I2C1 and UART2 are written but unverified; I2S has no QEMU device.
+- Arduino-built peripheral fixtures (esp-periph's `esp_io` / `esp_bus` / `esp_neopixel`) and the
+  net-probe firmware were never compiled (Docker); the peripheral checks above use MicroPython.
+- The ESP session test (build -> run -> export of a XIAO S3) and an ESP e2e did not run (Docker build).
+- esp-app's `RemoteRun` (server-paced runs streamed to the page) is not wired into the live hub; the
+  followed page runs a fixed 3 s `run` in the session instead. check_design does not read the ESP
+  pins' strapping / input-only / ADC2 data yet.
+- Renode: Nucleo-F401RE stays planned (attachInterrupt never fires); Nano 33 BLE Serial1 RX never
+  delivers; Renode starts on the first step and blocks the server about 2.4 s; no networking.
+- Wi-Fi radio and BLE are not emulated anywhere (Wi-Fi sketches ride an emulated Ethernet card).
 
 ## Round 10, track net (2026-11-11): the device network, end to end
 
