@@ -1,0 +1,438 @@
+{
+  "id": "esp32-c3-supermini",
+  "name": "ESP32-C3 SuperMini",
+  "category": "board",
+  "description": "Tiny generic ESP32-C3 board (22.5 × 18 mm, USB-C, RISC-V at 160 MHz) with Wi-Fi / BLE (not emulated), 4 MB flash, 13 GPIOs, a blue LED on GPIO8 (active low, shared with the default SDA) and a BOOT button on GPIO9. No battery charger. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers. 3.3 V logic only.",
+  "pins": [
+    {
+      "id": "5V",
+      "label": "5V",
+      "x": 9,
+      "y": 36,
+      "type": "power",
+      "description": "VBUS: 5 V from the USB-C port when plugged in (power.usb). Without USB it is the board's input (4 to 6 V into the LDO; no battery charger on this board).",
+      "voltage": {
+        "min": 4.5,
+        "max": 5.5
+      }
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 9,
+      "y": 56,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 9,
+      "y": 76,
+      "type": "power",
+      "description": "3.3 V output of the on-board LDO (about 0.3 V dropout, Jumper checks 300 mA).",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      }
+    },
+    {
+      "id": "GPIO4",
+      "label": "4/A4/SCK",
+      "x": 9,
+      "y": 96,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO4; McuBackend pin \"GPIO4\" (pinMode(4, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1; default SPI SCK.",
+      "protocols": [
+        "adc",
+        "spi-sck"
+      ]
+    },
+    {
+      "id": "GPIO3",
+      "label": "3/A3",
+      "x": 9,
+      "y": 116,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO3; McuBackend pin \"GPIO3\" (pinMode(3, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO2",
+      "label": "2/A2",
+      "x": 9,
+      "y": 136,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO2; McuBackend pin \"GPIO2\" (pinMode(2, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1. Strapping pin: must not be pulled LOW at reset.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO1",
+      "label": "1/A1",
+      "x": 9,
+      "y": 156,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO1; McuBackend pin \"GPIO1\" (pinMode(1, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO0",
+      "label": "0/A0",
+      "x": 9,
+      "y": 176,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO0; McuBackend pin \"GPIO0\" (pinMode(0, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO5",
+      "label": "5/A5/MISO",
+      "x": 129,
+      "y": 36,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO5; McuBackend pin \"GPIO5\" (pinMode(5, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2 (unreliable with Wi-Fi on); default SPI MISO.",
+      "protocols": [
+        "adc",
+        "spi-miso"
+      ]
+    },
+    {
+      "id": "GPIO6",
+      "label": "6/MOSI",
+      "x": 129,
+      "y": 56,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO6; McuBackend pin \"GPIO6\" (pinMode(6, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Default SPI MOSI.",
+      "protocols": [
+        "spi-mosi"
+      ]
+    },
+    {
+      "id": "GPIO7",
+      "label": "7/SS",
+      "x": 129,
+      "y": 76,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO7; McuBackend pin \"GPIO7\" (pinMode(7, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Default SPI SS.",
+      "protocols": [
+        "spi-ss"
+      ]
+    },
+    {
+      "id": "GPIO8",
+      "label": "8/SDA/LED",
+      "x": 129,
+      "y": 96,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO8; McuBackend pin \"GPIO8\" (pinMode(8, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Blue on-board LED (active low; LED_BUILTIN) AND the default Wire SDA. Strapping pin: must be HIGH at reset for flashing.",
+      "protocols": [
+        "i2c-sda"
+      ]
+    },
+    {
+      "id": "GPIO9",
+      "label": "9/SCL/BOOT",
+      "x": 129,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO9; McuBackend pin \"GPIO9\" (pinMode(9, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. BOOT button to GND and the default Wire SCL. Strapping pin: LOW at reset = download mode.",
+      "protocols": [
+        "i2c-scl"
+      ]
+    },
+    {
+      "id": "GPIO10",
+      "label": "10",
+      "x": 129,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO10; McuBackend pin \"GPIO10\" (pinMode(10, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. General GPIO."
+    },
+    {
+      "id": "GPIO20",
+      "label": "20/RX",
+      "x": 129,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO20; McuBackend pin \"GPIO20\" (pinMode(20, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. UART0 RX.",
+      "protocols": [
+        "uart-rx"
+      ]
+    },
+    {
+      "id": "GPIO21",
+      "label": "21/TX",
+      "x": 129,
+      "y": 176,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO21; McuBackend pin \"GPIO21\" (pinMode(21, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. UART0 TX.",
+      "protocols": [
+        "uart-tx"
+      ]
+    }
+  ],
+  "size": {
+    "w": 138,
+    "h": 196
+  },
+  "limits": {
+    "maxCurrentmA": 40,
+    "recommendedPinCurrentmA": 20,
+    "maxTotalCurrentmA": 200,
+    "maxVoltage": 3.6,
+    "max3v3mA": 300,
+    "minSupplyV": 3.6,
+    "vbusInMinV": 4.0,
+    "vbusInMaxV": 6.0,
+    "ldoDropoutV": 0.3,
+    "min3v3V": 3.0
+  },
+  "footprint": "22.5 × 18 mm, 2 × 8 pins at 0.1 in, rows 0.6 in apart",
+  "dimensions_mm": {
+    "w": 18,
+    "h": 22.5,
+    "d": 3.5
+  },
+  "mass_g": 2,
+  "current_ma": {
+    "typ": 20,
+    "max": 350
+  },
+  "price_usd": 2.5,
+  "buy_links": [
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-esp32-c3-supermini.html"
+    },
+    {
+      "vendor": "Amazon",
+      "url": "https://www.amazon.com/s?k=ESP32-C3%20SuperMini"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "led_user",
+      "type": "number",
+      "description": "Blue LED (GPIO8, active low; LED_BUILTIN) brightness 0..1."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_GPIO2 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "qemu-esp",
+    "chip": "esp32c3",
+    "clockHz": 160000000,
+    "vcc": 3.3,
+    "fqbn": "esp32:esp32:nologo_esp32c3_super_mini",
+    "flash": {
+      "sizeMB": 4,
+      "mode": "dio"
+    },
+    "console": "uart0",
+    "busPins": {
+      "i2c": {
+        "sda": "GPIO8",
+        "scl": "GPIO9"
+      },
+      "spi": {
+        "sck": "GPIO4",
+        "miso": "GPIO5",
+        "mosi": "GPIO6",
+        "ss": "GPIO7"
+      },
+      "uart": {
+        "tx": "GPIO21",
+        "rx": "GPIO20"
+      }
+    },
+    "strapping": [
+      {
+        "pin": "GPIO2",
+        "boot": "floating-or-high",
+        "note": "GPIO2 must be HIGH or floating at reset, or the chip does not boot from flash."
+      },
+      {
+        "pin": "GPIO8",
+        "boot": "floating-or-high",
+        "note": "GPIO8 must be HIGH at reset for flashing (the on-board LED to 3V3 keeps it high; a part pulling it LOW makes uploads fail)."
+      },
+      {
+        "pin": "GPIO9",
+        "boot": "floating-or-high",
+        "note": "GPIO9 LOW at reset starts the ROM downloader instead of your program (the BOOT button)."
+      }
+    ],
+    "adc2": [
+      "GPIO5"
+    ],
+    "toolchain": {
+      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "simFqbn": "esp32:esp32:nologo_esp32c3_super_mini:FlashMode=dio",
+      "simBuildProperties": [
+        "build.cdc_on_boot=0"
+      ],
+      "simNote": "The simulator build sends Serial to UART0 (CDC on boot off) and uses DIO flash; the factory pack builds the board's own settings (Serial on the USB-C port).",
+      "flash": "esptool --chip esp32c3 --port {port} --baud 921600 write_flash 0x0 {bin}"
+    },
+    "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts"
+  },
+  "tags": [
+    "esp32",
+    "esp32-c3",
+    "c3",
+    "supermini",
+    "super mini",
+    "risc-v",
+    "wifi",
+    "ble",
+    "board",
+    "microcontroller",
+    "3.3v",
+    "pocket",
+    "tiny",
+    "usb-c",
+    "cheap"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      {
+        "id": "usb",
+        "kind": "connector",
+        "face": "-y",
+        "x": 9,
+        "y": 0,
+        "z": 1.9,
+        "w": 9,
+        "h": 3.2,
+        "connector": "usb-c",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1
+      },
+      {
+        "id": "led",
+        "kind": "led",
+        "face": "+z",
+        "x": 4,
+        "y": 6,
+        "shape": "round",
+        "d": 1.2,
+        "expose": false,
+        "description": "blue LED (GPIO8)"
+      },
+      {
+        "id": "boot",
+        "kind": "button",
+        "face": "+z",
+        "x": 3.5,
+        "y": 3.5,
+        "shape": "round",
+        "d": 2,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "reset",
+        "kind": "button",
+        "face": "+z",
+        "x": 14.5,
+        "y": 3.5,
+        "shape": "round",
+        "d": 2,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "antenna",
+        "kind": "antenna",
+        "face": "+z",
+        "x": 9,
+        "y": 20,
+        "shape": "rect",
+        "w": 14,
+        "h": 4,
+        "description": "chip antenna at the far end (keep metal and walls thin there)"
+      }
+    ],
+    "source": "generic ESP32-C3 SuperMini listings (22.5 x 18 mm), typical"
+  },
+  "sourcing": {
+    "package": "module 22.5 x 18 mm, 2 x 8 pins",
+    "generic": "ESP32-C3 SuperMini development board (ESP32-C3FH4, 4 MB flash, USB-C, ceramic antenna)"
+  }
+}

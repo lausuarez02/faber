@@ -1,0 +1,439 @@
+{
+  "id": "seeed-xiao-esp32c3",
+  "name": "Seeed XIAO ESP32-C3",
+  "category": "board",
+  "description": "Thumb-sized ESP32-C3 board (21 × 17.8 mm, USB-C, RISC-V at 160 MHz) with Wi-Fi / BLE (not emulated), 4 MB flash, 11 GPIOs (D0 to D10), I2C, SPI and UART, and a built-in Li-ion charger (ETA4054, 380 mA) with BAT pads underneath. No user LED. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers (GPIO2 = D0 …). 3.3 V logic only.",
+  "pins": [
+    {
+      "id": "GPIO2",
+      "label": "D0/A0",
+      "x": 9,
+      "y": 36,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO2; McuBackend pin \"GPIO2\" (pinMode(2, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D0 / A0 (ADC1). Strapping pin: must not be pulled LOW at reset (boot mode).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO3",
+      "label": "D1/A1",
+      "x": 9,
+      "y": 56,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO3; McuBackend pin \"GPIO3\" (pinMode(3, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D1 / A1 (ADC1).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO4",
+      "label": "D2/A2",
+      "x": 9,
+      "y": 76,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO4; McuBackend pin \"GPIO4\" (pinMode(4, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D2 / A2 (ADC1).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO5",
+      "label": "D3/A3",
+      "x": 9,
+      "y": 96,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO5; McuBackend pin \"GPIO5\" (pinMode(5, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D3 / A3: ADC2 (analogRead is unreliable while Wi-Fi is on; prefer A0-A2).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO6",
+      "label": "D4/SDA",
+      "x": 9,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO6; McuBackend pin \"GPIO6\" (pinMode(6, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D4 / SDA: Wire SDA.",
+      "protocols": [
+        "i2c-sda"
+      ]
+    },
+    {
+      "id": "GPIO7",
+      "label": "D5/SCL",
+      "x": 9,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO7; McuBackend pin \"GPIO7\" (pinMode(7, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D5 / SCL: Wire SCL.",
+      "protocols": [
+        "i2c-scl"
+      ]
+    },
+    {
+      "id": "GPIO21",
+      "label": "D6/TX",
+      "x": 9,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO21; McuBackend pin \"GPIO21\" (pinMode(21, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX.",
+      "protocols": [
+        "uart-tx"
+      ]
+    },
+    {
+      "id": "5V",
+      "label": "5V",
+      "x": 129,
+      "y": 36,
+      "type": "power",
+      "description": "VBUS: 5 V from the USB-C port when plugged in (jumper.json power.usb). Without USB it is an input (4.5 to 5.5 V); on battery it stays at 0 V.",
+      "voltage": {
+        "min": 4.5,
+        "max": 5.5
+      }
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 129,
+      "y": 56,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 129,
+      "y": 76,
+      "type": "power",
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Seeed rates it up to 500 mA (Jumper checks 500).",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      }
+    },
+    {
+      "id": "GPIO10",
+      "label": "D10/MOSI",
+      "x": 129,
+      "y": 96,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO10; McuBackend pin \"GPIO10\" (pinMode(10, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D10 / MOSI: SPI MOSI.",
+      "protocols": [
+        "spi-mosi"
+      ]
+    },
+    {
+      "id": "GPIO9",
+      "label": "D9/MISO",
+      "x": 129,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO9; McuBackend pin \"GPIO9\" (pinMode(9, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D9 / MISO: SPI MISO. Strapping pin: LOW at reset = download mode (the BOOT button).",
+      "protocols": [
+        "spi-miso"
+      ]
+    },
+    {
+      "id": "GPIO8",
+      "label": "D8/SCK",
+      "x": 129,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO8; McuBackend pin \"GPIO8\" (pinMode(8, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D8 / SCK: SPI SCK. Strapping pin: must be HIGH for download mode.",
+      "protocols": [
+        "spi-sck"
+      ]
+    },
+    {
+      "id": "GPIO20",
+      "label": "D7/RX",
+      "x": 129,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-C3 GPIO20; McuBackend pin \"GPIO20\" (pinMode(20, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D7 / RX: UART0 RX.",
+      "protocols": [
+        "uart-rx"
+      ]
+    },
+    {
+      "id": "BAT",
+      "label": "BAT+",
+      "x": 55,
+      "y": 172,
+      "type": "power",
+      "voltage": {
+        "min": 3.0,
+        "max": 4.2
+      },
+      "description": "Battery pad on the underside (+): a 1S LiPo / Li-ion cell. The board's ETA4054 charger charges it from USB at 380 mA (40 mA trickle below 2.9 V, CV at 4.2 V); use a cell of 380 mAh or more. Without USB the cell powers the board."
+    },
+    {
+      "id": "GND.2",
+      "label": "BAT−",
+      "x": 83,
+      "y": 172,
+      "type": "ground",
+      "description": "Battery − pad on the underside. Same node as GND."
+    }
+  ],
+  "size": {
+    "w": 138,
+    "h": 186
+  },
+  "limits": {
+    "maxCurrentmA": 40,
+    "recommendedPinCurrentmA": 20,
+    "maxTotalCurrentmA": 200,
+    "maxVoltage": 3.6,
+    "max3v3mA": 500,
+    "minSupplyV": 3.4,
+    "vbusInMinV": 4.5,
+    "vbusInMaxV": 5.5,
+    "ldoDropoutV": 0.25,
+    "min3v3V": 3.0
+  },
+  "footprint": "21 × 17.8 mm castellated module, 2 × 7 pins at 0.1 in, rows 0.6 in apart, BAT pads underneath",
+  "dimensions_mm": {
+    "w": 21,
+    "h": 17.8,
+    "d": 3.5
+  },
+  "mass_g": 3,
+  "current_ma": {
+    "typ": 20,
+    "max": 350
+  },
+  "price_usd": 4.99,
+  "buy_links": [
+    {
+      "vendor": "Seeed",
+      "url": "https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html"
+    },
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=XIAO%20ESP32C3"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "charging",
+      "type": "boolean",
+      "description": "The on-board ETA4054S2F charger is charging the cell on BAT (charge LED lit)."
+    },
+    {
+      "key": "chargemA",
+      "type": "number",
+      "description": "Charge current into BAT (mA)."
+    },
+    {
+      "key": "chargeMode",
+      "type": "string",
+      "description": "off / trickle / CC / CV / full."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_GPIO2 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "qemu-esp",
+    "chip": "esp32c3",
+    "clockHz": 160000000,
+    "vcc": 3.3,
+    "fqbn": "esp32:esp32:XIAO_ESP32C3",
+    "flash": {
+      "sizeMB": 4,
+      "mode": "dio"
+    },
+    "console": "uart0",
+    "busPins": {
+      "i2c": {
+        "sda": "GPIO6",
+        "scl": "GPIO7"
+      },
+      "spi": {
+        "sck": "GPIO8",
+        "miso": "GPIO9",
+        "mosi": "GPIO10"
+      },
+      "uart": {
+        "tx": "GPIO21",
+        "rx": "GPIO20"
+      }
+    },
+    "strapping": [
+      {
+        "pin": "GPIO2",
+        "boot": "floating-or-high",
+        "note": "GPIO2 (D0) must be HIGH or floating at reset, or the chip does not boot from flash."
+      },
+      {
+        "pin": "GPIO8",
+        "boot": "floating-or-high",
+        "note": "GPIO8 (D8) must be HIGH at reset for USB / UART flashing; a part pulling it LOW makes uploads fail."
+      },
+      {
+        "pin": "GPIO9",
+        "boot": "floating-or-high",
+        "note": "GPIO9 (D9) LOW at reset starts the ROM downloader instead of your program (that is what the BOOT button does)."
+      }
+    ],
+    "adc2": [
+      "GPIO5"
+    ],
+    "toolchain": {
+      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "simFqbn": "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,FlashMode=dio",
+      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash; the factory pack builds the board's own settings (Serial on the USB-C port).",
+      "flash": "esptool --chip esp32c3 --port {port} --baud 921600 write_flash 0x0 {bin}"
+    },
+    "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts"
+  },
+  "tags": [
+    "seeed",
+    "xiao",
+    "esp32",
+    "esp32-c3",
+    "c3",
+    "risc-v",
+    "wifi",
+    "ble",
+    "board",
+    "microcontroller",
+    "3.3v",
+    "pocket",
+    "tiny",
+    "usb-c",
+    "battery",
+    "charger",
+    "lipo"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      {
+        "id": "usb",
+        "kind": "connector",
+        "face": "-y",
+        "x": 10.5,
+        "y": 0,
+        "z": 1.9,
+        "w": 9,
+        "h": 3.2,
+        "connector": "usb-c",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1
+      },
+      {
+        "id": "charge-led",
+        "kind": "led",
+        "face": "+z",
+        "x": 15.6,
+        "y": 3.2,
+        "shape": "round",
+        "d": 1.2,
+        "expose": false,
+        "description": "charge LED (lit while the battery charges)"
+      },
+      {
+        "id": "boot",
+        "kind": "button",
+        "face": "+z",
+        "x": 3.0,
+        "y": 5.0,
+        "shape": "round",
+        "d": 1.5,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "reset",
+        "kind": "button",
+        "face": "+z",
+        "x": 18.0,
+        "y": 5.0,
+        "shape": "round",
+        "d": 1.5,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "antenna",
+        "kind": "antenna",
+        "face": "+z",
+        "x": 10.5,
+        "y": 15.5,
+        "shape": "rect",
+        "w": 6,
+        "h": 3,
+        "description": "U.FL connector for the external antenna (keep metal away)"
+      }
+    ],
+    "source": "Seeed XIAO ESP32C3 wiki (21 x 17.8 mm), USB-C typical"
+  },
+  "sourcing": {
+    "mpn": "113991054",
+    "manufacturer": "Seeed Studio",
+    "package": "module 21 x 17.8 mm, castellated",
+    "generic": "Seeed XIAO ESP32C3 (ESP32-C3, 4 MB flash, USB-C, castellated pads, LiPo charger)"
+  }
+}

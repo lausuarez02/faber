@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 138 186" width="138" height="186">
+  <defs>
+    <filter id="seeed-xiao-esp32c3-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="138" height="186" rx="8" fill="#141A22" stroke="#3A4250" stroke-width="2"/>
+  <rect x="51.0" y="-2" width="36" height="16" rx="3" fill="#2A303A" stroke="#8A93A0" stroke-width="1"/>
+  <text x="69.0" y="24" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0" text-anchor="middle">USB-C</text>
+  <rect x="30" y="58" width="78" height="56" rx="4" fill="#C9CED6" stroke="#8A93A0" stroke-width="1"/>
+  <text x="69.0" y="84" font-family="Bricolage Grotesque" font-size="10" font-weight="800" fill="#15181D" text-anchor="middle">XIAO</text>
+  <text x="69.0" y="100" font-family="IBM Plex Mono" font-size="6" fill="#2B313B" text-anchor="middle">ESP32-C3</text>
+  <text x="30" y="40" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">BOOT</text>
+  <rect x="25" y="43" width="10" height="7" rx="1.5" fill="#2A303A" stroke="#8A93A0" stroke-width="0.8"/>
+  <text x="108" y="40" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">RST</text>
+  <rect x="103" y="43" width="10" height="7" rx="1.5" fill="#2A303A" stroke="#8A93A0" stroke-width="0.8"/>
+  <rect x="55.0" y="122" width="28" height="12" rx="2" fill="none" stroke="#5A6474" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <text x="69.0" y="130" font-family="IBM Plex Mono" font-size="5" fill="#5A6474" text-anchor="middle">ANT</text>
+  <circle cx="102" cy="24" r="3" fill="#3A1A1A" stroke="#8A4A4A" stroke-width="0.6"/>
+  <circle cx="102" cy="24" r="3" fill="#FF4D2E" visibility="hidden" data-bind="visible:charging"/>
+  <text x="102" y="34" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">CHG</text>
+  <rect x="3" y="29" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="36" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D0/A0</text>
+  <circle data-pin="GPIO2" cx="9" cy="36" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="49" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="56" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D1/A1</text>
+  <circle data-pin="GPIO3" cx="9" cy="56" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="69" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="76" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D2/A2</text>
+  <circle data-pin="GPIO4" cx="9" cy="76" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="89" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="96" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D3/A3</text>
+  <circle data-pin="GPIO5" cx="9" cy="96" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="109" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="116" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D4/SDA</text>
+  <circle data-pin="GPIO6" cx="9" cy="116" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="129" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="136" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D5/SCL</text>
+  <circle data-pin="GPIO7" cx="9" cy="136" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="3" y="149" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="19" y="156" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="start" dominant-baseline="central">D6/TX</text>
+  <circle data-pin="GPIO21" cx="9" cy="156" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="29" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="36" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">5V</text>
+  <circle data-pin="5V" cx="129" cy="36" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="49" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="56" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">GND</text>
+  <circle data-pin="GND" cx="129" cy="56" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="69" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="76" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">3V3</text>
+  <circle data-pin="3V3" cx="129" cy="76" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="89" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="96" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">D10/MOSI</text>
+  <circle data-pin="GPIO10" cx="129" cy="96" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="109" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="116" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">D9/MISO</text>
+  <circle data-pin="GPIO9" cx="129" cy="116" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="129" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="136" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">D8/SCK</text>
+  <circle data-pin="GPIO8" cx="129" cy="136" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="123" y="149" width="12" height="14" rx="2" fill="#2B2416" stroke="#8A7A4A" stroke-width="0.8"/>
+  <text x="119" y="156" font-family="IBM Plex Mono" font-size="5" fill="#C9CED6" text-anchor="end" dominant-baseline="central">D7/RX</text>
+  <circle data-pin="GPIO20" cx="129" cy="156" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="48" y="165" width="14" height="14" rx="2" fill="none" stroke="#8A7A4A" stroke-width="0.8" stroke-dasharray="2 1.5"/>
+  <text x="55" y="162" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">BAT+</text>
+  <circle data-pin="BAT" cx="55" cy="172" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <rect x="76" y="165" width="14" height="14" rx="2" fill="none" stroke="#8A7A4A" stroke-width="0.8" stroke-dasharray="2 1.5"/>
+  <text x="83" y="162" font-family="IBM Plex Mono" font-size="5" fill="#8A93A0" text-anchor="middle">BAT−</text>
+  <circle data-pin="GND.2" cx="83" cy="172" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <text x="69.0" y="182" font-family="IBM Plex Mono" font-size="4.5" fill="#5A6474" text-anchor="middle">pads underneath</text>
+</svg>

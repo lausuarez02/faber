@@ -17,6 +17,8 @@ export const USB_R_OUT = 0.05;
  * above `minLogicV`.
  */
 export interface BoardSupply {
+  // Round 10: a name starting with "@" is a node inside the board (ctx.internalNode), e.g. the
+  // power-path node between USB, the battery pad and the LDO on a XIAO ESP32-S3.
   /** Pin the USB 5 V reaches ("VBUS" / "5V"). */
   usbPin: string;
   /** On-board regulators, from pin → to pin (an id is the element id). */
@@ -116,6 +118,7 @@ export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}
   const gpio = (opts.gpio ?? mcu?.pinIds ?? []).filter((p) => specPins.has(p));
   const supply = opts.supply === false ? undefined : (opts.supply ?? defaultBoardSupply(ctx.spec, opts.rails ?? {}, vcc));
   const usbOn = () => ctx.power?.usb !== false;
+  const at = (name: string) => (name.startsWith("@") ? ctx.internalNode(name.slice(1)) : ctx.node(name));
   let drivers = new Map<string, ElementId>();
   let last: SolveResultView | undefined;
   let lastCurrents = new Map<string, number>();
@@ -141,13 +144,13 @@ export function createMcuBoardModel(ctx: PartContext, opts: McuBoardOptions = {}
         }
       } else {
         usbEl = usbOn() && specPins.has(supply.usbPin) ? c.voltageSource(ctx.node(supply.usbPin), GROUND, USB_VOLTS, USB_R_OUT, { id: "usb" }) : undefined;
-        for (const d of supply.diodes ?? []) c.diode(ctx.node(d.from), ctx.node(d.to), { vf: d.vf, rOn: d.rOn }, { id: d.id });
-        for (const t of supply.ties ?? []) c.resistor(ctx.node(t.a), ctx.node(t.b), t.ohms, { id: t.id });
+        for (const d of supply.diodes ?? []) c.diode(at(d.from), at(d.to), { vf: d.vf, rOn: d.rOn }, { id: d.id });
+        for (const t of supply.ties ?? []) c.resistor(at(t.a), at(t.b), t.ohms, { id: t.id });
         for (const r of supply.regulators) {
-          if (r.enable) c.resistor(ctx.node(r.from), ctx.node(r.enable), 100_000, { id: `${r.id}:en` });
+          if (r.enable) c.resistor(at(r.from), at(r.enable), 100_000, { id: `${r.id}:en` });
           if (disabled.has(r.id)) continue;
           if (!c.regulator) throw new Error("the circuit builder has no regulator(); boards with a supply need sim-core round 6");
-          c.regulator(ctx.node(r.from), ctx.node(r.to), r.params, { id: r.id });
+          c.regulator(at(r.from), at(r.to), r.params, { id: r.id });
         }
         // The board's own current. On USB with the logic rail being the USB pin (Uno, Nano) the cable
         // supplies it directly, so it does not sag the rail the round-5 projects were tuned on.

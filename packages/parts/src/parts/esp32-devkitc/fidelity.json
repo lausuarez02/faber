@@ -1,0 +1,49 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. Wire (I2C0) transactions reach the I2C parts on the default pins (GPIO21 / GPIO22). SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "QEMU runs in lockstep with Jumper's virtual clock (-icount, one instruction = 8 ns, -rtc clock=vm), so millis(), delay() and the order of pin events are deterministic and repeat exactly. Instruction timing is not cycle-accurate: code runs at about 125 M instructions per virtual second whatever the real 240 MHz pipeline, caches and flash wait states would do, so tight loops and bit-banged protocols run at a different speed than on the chip."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Pins are ideal sources with 30 Ω output resistance (default 20 mA drive) and 45 kΩ internal pull-ups / pull-downs. Digital inputs switch at 0.25 × and 0.75 × VDD and keep their last level in between. analogRead() / the ADC is not emulated (it returns 0); analogWrite() / LEDC PWM does not reach the pin."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Round 10: USB (power.usb) is 5 V on the 5V pad; without it the board runs from 5V or the BAT pad through its power path and LDO, the board draws its typical current, and the firmware is held in reset while 3V3 is under 3.0 V. Wi-Fi transmit peaks (up to 350 to 500 mA), sleep currents and brown-out behaviour are not simulated."
+    },
+    "radio": {
+      "level": "none",
+      "note": "Wi-Fi and Bluetooth are not emulated: QEMU has no radio model, and WiFi.begin() / WiFi.mode() crash the firmware in a reboot loop. Test every radio feature on the real board."
+    }
+  },
+  "emulates": [
+    "ESP32 (dual-core Xtensa LX6) running the real compiled firmware in Espressif's QEMU, in lockstep with the circuit",
+    "Digital I/O with the chip's internal pull-ups / pull-downs, 3.3 V thresholds",
+    "Serial (UART0) as the console, with virtual time stamps",
+    "I2C (Wire) on GPIO21 / GPIO22 to the I2C parts",
+    "Per-pin over-current check (40 mA)"
+  ],
+  "doesNotEmulate": [
+    "Wi-Fi and Bluetooth (the radio): WiFi.begin() crashes the firmware in the emulator",
+    "analogRead / the ADC (reads 0), touch pads",
+    "analogWrite / LEDC PWM, tone(), RMT (NeoPixel / WS2812), I2S, the SPI peripheral (SPI.transfer does not reach the parts)",
+    "GPIO interrupts (attachInterrupt never fires); poll with digitalRead instead",
+    "Deep sleep, light sleep and their currents",
+    "Pull-ups / pull-downs the chip applies at reset before the firmware sets them (only the ones the firmware sets are seen)",
+    "Reset and boot from the EN / RST and BOOT pins, and the strapping levels themselves (check_design checks them instead)",
+    "The second core's timing (both cores run, in one QEMU thread)"
+  ],
+  "testOnRealDevice": [
+    "Everything that uses Wi-Fi or Bluetooth",
+    "analogRead values and PWM brightness",
+    "Timing-critical code (bit-banged protocols, tight loops): instruction timing is approximate",
+    "Upload with esptool / Arduino IDE (strapping pins at reset)",
+    "Every 5 V part: ESP32 pins are not 5 V tolerant; use a level shifter"
+  ]
+}

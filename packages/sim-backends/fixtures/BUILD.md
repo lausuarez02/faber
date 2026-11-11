@@ -100,3 +100,26 @@ through them; a fully stripped Nano 33 BLE ELF, linked at 0x10000 behind the boo
     docker run --rm -v $PWD:/src jumper/arduino-mbed-nano:4.4.1-r1 arduino-cli compile \
       -b arduino:mbed_nano:nano33ble --output-dir /src/out /src/hello_nano
     arm-none-eabi-strip --strip-debug -o <name>.elf out/<sketch>.ino.elf
+
+## ESP32-family board fixtures (round 10)
+
+`src/qemu-esp/boards.integration.test.ts` boots these in Espressif's QEMU (`jumper/qemu-esp:9.2.2-20260417-jb3`)
+through the server-side factory with each board's `part.json` mcu block. They are the fixture tests
+the boards' `mcu.verified` names: a board appears in the parts library only while its fixture passes.
+
+| Sketch | Image | Board (simulator FQBN) | What it does |
+| --- | --- | --- | --- |
+| `esp-boards/<board>/sketch/sketch.ino` | `esp-boards/<board>.bin.gz` | the board's `mcu.toolchain.simFqbn` (+ `simBuildProperties`) | prints `boot <board>`; one GPIO toggles every 100 ms; another is INPUT_PULLUP and prints `in=<level> t=<ms>` on every change |
+
+Pins: XIAO ESP32-S3 GPIO1 / GPIO2 (+ user LED GPIO21), XIAO ESP32-C3 GPIO3 / GPIO4, C3 SuperMini
+GPIO10 / GPIO9 (+ LED GPIO8), DevKitC GPIO2 / GPIO4, S3 DevKitC-1 GPIO4 / GPIO5.
+
+Build through Jumper's own pipeline (`services/runner`, image `jumper/arduino-esp32:3.3.12-r2`,
+arduino-esp32 3.3.12):
+
+```sh
+node_modules/.bin/tsx packages/sim-backends/fixtures/esp-boards/build.ts
+```
+
+The `.bin.gz` files hold the merged flash image without its trailing 0xFF padding; the backend pads it
+to the board's flash size (`mcu.flash.sizeMB`).

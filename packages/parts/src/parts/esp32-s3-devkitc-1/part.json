@@ -1,0 +1,829 @@
+{
+  "id": "esp32-s3-devkitc-1",
+  "name": "ESP32-S3 DevKitC-1",
+  "category": "board",
+  "description": "Espressif's ESP32-S3-DevKitC-1 (ESP32-S3-WROOM-1, dual-core Xtensa LX7 at 240 MHz, Wi-Fi / BLE not emulated, 8 MB flash), 44 pins, two USB-C ports (USB-to-UART: Serial on UART0; native USB), BOOT and RESET buttons and an addressable RGB LED (GPIO48 on v1.0, GPIO38 on v1.1; not drawn: RMT is not emulated). Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers. 3.3 V logic only.",
+  "pins": [
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 9,
+      "y": 30,
+      "type": "power",
+      "description": "3.3 V output of the board's LDO (Jumper checks 500 mA).",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      }
+    },
+    {
+      "id": "3V3.2",
+      "label": "3V3",
+      "x": 9,
+      "y": 50,
+      "type": "power",
+      "description": "Second 3V3 pin (same rail).",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      }
+    },
+    {
+      "id": "RST",
+      "label": "RST",
+      "x": 9,
+      "y": 70,
+      "type": "passive",
+      "description": "Chip enable / reset (the RESET button pulls it LOW). Not a GPIO; Jumper does not model reset from it."
+    },
+    {
+      "id": "GPIO4",
+      "label": "4",
+      "x": 9,
+      "y": 90,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO4; McuBackend pin \"GPIO4\" (pinMode(4, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO5",
+      "label": "5",
+      "x": 9,
+      "y": 110,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO5; McuBackend pin \"GPIO5\" (pinMode(5, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO6",
+      "label": "6",
+      "x": 9,
+      "y": 130,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO6; McuBackend pin \"GPIO6\" (pinMode(6, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO7",
+      "label": "7",
+      "x": 9,
+      "y": 150,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO7; McuBackend pin \"GPIO7\" (pinMode(7, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO15",
+      "label": "15",
+      "x": 9,
+      "y": 170,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO15; McuBackend pin \"GPIO15\" (pinMode(15, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO16",
+      "label": "16",
+      "x": 9,
+      "y": 190,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO16; McuBackend pin \"GPIO16\" (pinMode(16, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO17",
+      "label": "17",
+      "x": 9,
+      "y": 210,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO17; McuBackend pin \"GPIO17\" (pinMode(17, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO18",
+      "label": "18",
+      "x": 9,
+      "y": 230,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO18; McuBackend pin \"GPIO18\" (pinMode(18, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO8",
+      "label": "8",
+      "x": 9,
+      "y": 250,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO8; McuBackend pin \"GPIO8\" (pinMode(8, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1. Default Wire SDA.",
+      "protocols": [
+        "adc",
+        "i2c-sda"
+      ]
+    },
+    {
+      "id": "GPIO3",
+      "label": "3",
+      "x": 9,
+      "y": 270,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO3; McuBackend pin \"GPIO3\" (pinMode(3, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1. Strapping pin (JTAG source when the eFuse asks; harmless otherwise).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO46",
+      "label": "46",
+      "x": 9,
+      "y": 290,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO46; McuBackend pin \"GPIO46\" (pinMode(46, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Strapping pin: must be LOW or floating at reset (boot mode / ROM log). Input only on some revisions."
+    },
+    {
+      "id": "GPIO9",
+      "label": "9",
+      "x": 9,
+      "y": 310,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO9; McuBackend pin \"GPIO9\" (pinMode(9, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1. Default Wire SCL.",
+      "protocols": [
+        "adc",
+        "i2c-scl"
+      ]
+    },
+    {
+      "id": "GPIO10",
+      "label": "10",
+      "x": 9,
+      "y": 330,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO10; McuBackend pin \"GPIO10\" (pinMode(10, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1. Default SPI SS.",
+      "protocols": [
+        "adc",
+        "spi-ss"
+      ]
+    },
+    {
+      "id": "GPIO11",
+      "label": "11",
+      "x": 9,
+      "y": 350,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO11; McuBackend pin \"GPIO11\" (pinMode(11, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on. Default SPI MOSI.",
+      "protocols": [
+        "adc",
+        "spi-mosi"
+      ]
+    },
+    {
+      "id": "GPIO12",
+      "label": "12",
+      "x": 9,
+      "y": 370,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO12; McuBackend pin \"GPIO12\" (pinMode(12, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on. Default SPI SCK.",
+      "protocols": [
+        "adc",
+        "spi-sck"
+      ]
+    },
+    {
+      "id": "GPIO13",
+      "label": "13",
+      "x": 9,
+      "y": 390,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO13; McuBackend pin \"GPIO13\" (pinMode(13, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on. Default SPI MISO.",
+      "protocols": [
+        "adc",
+        "spi-miso"
+      ]
+    },
+    {
+      "id": "GPIO14",
+      "label": "14",
+      "x": 9,
+      "y": 410,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO14; McuBackend pin \"GPIO14\" (pinMode(14, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "5V",
+      "label": "5V",
+      "x": 9,
+      "y": 430,
+      "type": "power",
+      "description": "5 V from either USB port when plugged in (power.usb). Without USB it is the board's input.",
+      "voltage": {
+        "min": 4.5,
+        "max": 5.5
+      }
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 9,
+      "y": 450,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "GND.2",
+      "label": "GND",
+      "x": 197,
+      "y": 30,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "GPIO43",
+      "label": "TX/43",
+      "x": 197,
+      "y": 50,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. UART0 TX (Serial): the USB-to-UART port's chip listens here.",
+      "protocols": [
+        "uart-tx"
+      ]
+    },
+    {
+      "id": "GPIO44",
+      "label": "RX/44",
+      "x": 197,
+      "y": 70,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO44; McuBackend pin \"GPIO44\" (pinMode(44, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. UART0 RX (Serial).",
+      "protocols": [
+        "uart-rx"
+      ]
+    },
+    {
+      "id": "GPIO1",
+      "label": "1",
+      "x": 197,
+      "y": 90,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO1; McuBackend pin \"GPIO1\" (pinMode(1, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO2",
+      "label": "2",
+      "x": 197,
+      "y": 110,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO2; McuBackend pin \"GPIO2\" (pinMode(2, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC1.",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO42",
+      "label": "42",
+      "x": 197,
+      "y": 130,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO42; McuBackend pin \"GPIO42\" (pinMode(42, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. JTAG MTMS."
+    },
+    {
+      "id": "GPIO41",
+      "label": "41",
+      "x": 197,
+      "y": 150,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO41; McuBackend pin \"GPIO41\" (pinMode(41, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. JTAG MTDI."
+    },
+    {
+      "id": "GPIO40",
+      "label": "40",
+      "x": 197,
+      "y": 170,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO40; McuBackend pin \"GPIO40\" (pinMode(40, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. JTAG MTDO."
+    },
+    {
+      "id": "GPIO39",
+      "label": "39",
+      "x": 197,
+      "y": 190,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO39; McuBackend pin \"GPIO39\" (pinMode(39, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. JTAG MTCK."
+    },
+    {
+      "id": "GPIO38",
+      "label": "38",
+      "x": 197,
+      "y": 210,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO38; McuBackend pin \"GPIO38\" (pinMode(38, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. RGB LED data on DevKitC-1 v1.1."
+    },
+    {
+      "id": "GPIO37",
+      "label": "37",
+      "x": 197,
+      "y": 230,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO37; McuBackend pin \"GPIO37\" (pinMode(37, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Used by octal PSRAM on N8R8 / N16R8 modules: do not use there."
+    },
+    {
+      "id": "GPIO36",
+      "label": "36",
+      "x": 197,
+      "y": 250,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO36; McuBackend pin \"GPIO36\" (pinMode(36, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Used by octal PSRAM on N8R8 / N16R8 modules: do not use there."
+    },
+    {
+      "id": "GPIO35",
+      "label": "35",
+      "x": 197,
+      "y": 270,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO35; McuBackend pin \"GPIO35\" (pinMode(35, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Used by octal PSRAM on N8R8 / N16R8 modules: do not use there."
+    },
+    {
+      "id": "GPIO0",
+      "label": "0",
+      "x": 197,
+      "y": 290,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO0; McuBackend pin \"GPIO0\" (pinMode(0, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. BOOT button to GND. Strapping pin: LOW at reset = download mode."
+    },
+    {
+      "id": "GPIO45",
+      "label": "45",
+      "x": 197,
+      "y": 310,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO45; McuBackend pin \"GPIO45\" (pinMode(45, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Strapping pin (VDD_SPI voltage): must be LOW or floating at reset, HIGH selects 1.8 V flash and the module does not boot."
+    },
+    {
+      "id": "GPIO48",
+      "label": "48",
+      "x": 197,
+      "y": 330,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO48; McuBackend pin \"GPIO48\" (pinMode(48, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. RGB LED (WS2812) data on DevKitC-1 v1.0."
+    },
+    {
+      "id": "GPIO47",
+      "label": "47",
+      "x": 197,
+      "y": 350,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO47; McuBackend pin \"GPIO47\" (pinMode(47, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant."
+    },
+    {
+      "id": "GPIO21",
+      "label": "21",
+      "x": 197,
+      "y": 370,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO21; McuBackend pin \"GPIO21\" (pinMode(21, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant."
+    },
+    {
+      "id": "GPIO20",
+      "label": "20",
+      "x": 197,
+      "y": 390,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO20; McuBackend pin \"GPIO20\" (pinMode(20, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on. USB D+ (native USB port).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO19",
+      "label": "19",
+      "x": 197,
+      "y": 410,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO19; McuBackend pin \"GPIO19\" (pinMode(19, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. ADC2: analogRead fails while Wi-Fi is on. USB D− (native USB port).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GND.3",
+      "label": "GND",
+      "x": 197,
+      "y": 430,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "GND.4",
+      "label": "GND",
+      "x": 197,
+      "y": 450,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    }
+  ],
+  "size": {
+    "w": 206,
+    "h": 470
+  },
+  "limits": {
+    "maxCurrentmA": 40,
+    "recommendedPinCurrentmA": 20,
+    "maxTotalCurrentmA": 1000,
+    "maxVoltage": 3.6,
+    "max3v3mA": 500,
+    "minSupplyV": 4.0,
+    "vbusInMinV": 4.5,
+    "vbusInMaxV": 5.5,
+    "ldoDropoutV": 0.5,
+    "min3v3V": 3.0
+  },
+  "footprint": "63 × 25.5 mm, 2 × 22 pins at 0.1 in, rows 0.9 in apart",
+  "dimensions_mm": {
+    "w": 25.5,
+    "h": 63,
+    "d": 10
+  },
+  "mass_g": 9,
+  "current_ma": {
+    "typ": 40,
+    "max": 350
+  },
+  "price_usd": 15,
+  "buy_links": [
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=ESP32-S3-DEVKITC-1"
+    },
+    {
+      "vendor": "Mouser",
+      "url": "https://www.mouser.com/c/?q=ESP32-S3-DevKitC-1"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_GPIO2 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "qemu-esp",
+    "chip": "esp32s3",
+    "clockHz": 240000000,
+    "vcc": 3.3,
+    "fqbn": "esp32:esp32:esp32s3",
+    "flash": {
+      "sizeMB": 8,
+      "mode": "dio"
+    },
+    "console": "uart0",
+    "busPins": {
+      "i2c": {
+        "sda": "GPIO8",
+        "scl": "GPIO9"
+      },
+      "spi": {
+        "sck": "GPIO12",
+        "miso": "GPIO13",
+        "mosi": "GPIO11",
+        "ss": "GPIO10"
+      },
+      "uart": {
+        "tx": "GPIO43",
+        "rx": "GPIO44"
+      }
+    },
+    "strapping": [
+      {
+        "pin": "GPIO0",
+        "boot": "floating-or-high",
+        "note": "GPIO0 LOW at reset starts the ROM downloader instead of your program (the BOOT button)."
+      },
+      {
+        "pin": "GPIO3",
+        "boot": "any",
+        "note": "GPIO3 selects the JTAG source only when the eFuse asks for it."
+      },
+      {
+        "pin": "GPIO45",
+        "boot": "floating-or-low",
+        "note": "GPIO45 HIGH at reset selects 1.8 V flash: the WROOM-1 then does not boot. Do not pull it up."
+      },
+      {
+        "pin": "GPIO46",
+        "boot": "floating-or-low",
+        "note": "GPIO46 must be LOW or floating at reset (with GPIO0 it picks the boot mode)."
+      }
+    ],
+    "reserved": [
+      {
+        "pin": "GPIO35",
+        "why": "used by the octal PSRAM on N8R8 / N16R8 modules"
+      },
+      {
+        "pin": "GPIO36",
+        "why": "used by the octal PSRAM on N8R8 / N16R8 modules"
+      },
+      {
+        "pin": "GPIO37",
+        "why": "used by the octal PSRAM on N8R8 / N16R8 modules"
+      }
+    ],
+    "adc2": [
+      "GPIO11",
+      "GPIO12",
+      "GPIO13",
+      "GPIO14",
+      "GPIO15",
+      "GPIO16",
+      "GPIO17",
+      "GPIO18",
+      "GPIO19",
+      "GPIO20"
+    ],
+    "toolchain": {
+      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "simFqbn": "esp32:esp32:esp32s3:FlashMode=dio,FlashSize=8M",
+      "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the board's default build (Serial on UART0, the USB-to-UART port).",
+      "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
+    },
+    "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts"
+  },
+  "tags": [
+    "esp32",
+    "esp32-s3",
+    "s3",
+    "espressif",
+    "devkitc",
+    "wroom",
+    "wifi",
+    "ble",
+    "board",
+    "microcontroller",
+    "3.3v",
+    "breadboard",
+    "usb-c"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 1.5,
+    "keepout_bottom_mm": 3,
+    "features": [
+      {
+        "id": "usb-uart",
+        "kind": "connector",
+        "face": "+y",
+        "x": 7,
+        "y": 63,
+        "z": 2.8,
+        "w": 9,
+        "h": 3.2,
+        "connector": "usb-c",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1,
+        "description": "USB-to-UART port (Serial)"
+      },
+      {
+        "id": "usb-native",
+        "kind": "connector",
+        "face": "+y",
+        "x": 18.5,
+        "y": 63,
+        "z": 2.8,
+        "w": 9,
+        "h": 3.2,
+        "connector": "usb-c",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1,
+        "description": "native USB port"
+      },
+      {
+        "id": "boot",
+        "kind": "button",
+        "face": "+z",
+        "x": 21,
+        "y": 56,
+        "shape": "rect",
+        "w": 3,
+        "h": 4,
+        "travel_mm": 0.3,
+        "expose": false
+      },
+      {
+        "id": "reset",
+        "kind": "button",
+        "face": "+z",
+        "x": 4.5,
+        "y": 56,
+        "shape": "rect",
+        "w": 3,
+        "h": 4,
+        "travel_mm": 0.3,
+        "expose": false
+      },
+      {
+        "id": "rgb-led",
+        "kind": "led",
+        "face": "+z",
+        "x": 12.7,
+        "y": 50,
+        "shape": "round",
+        "d": 2,
+        "expose": false,
+        "description": "WS2812 RGB LED (not emulated)"
+      },
+      {
+        "id": "antenna",
+        "kind": "antenna",
+        "face": "+z",
+        "x": 12.7,
+        "y": 3.5,
+        "shape": "rect",
+        "w": 18,
+        "h": 6,
+        "description": "PCB antenna of the WROOM-1 module (keep metal away)"
+      }
+    ],
+    "source": "Espressif ESP32-S3-DevKitC-1 user guide (about 62.7 x 25.4 mm), typical"
+  },
+  "sourcing": {
+    "mpn": "ESP32-S3-DEVKITC-1-N8",
+    "manufacturer": "Espressif Systems",
+    "package": "board 63 x 25.5 mm, 2 x 22 headers",
+    "generic": "ESP32-S3-DevKitC-1 (ESP32-S3-WROOM-1, 8 MB flash, 2 x USB-C)"
+  }
+}

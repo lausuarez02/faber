@@ -39,7 +39,7 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
   it("boots Blink: serial text and the LED pin toggling every 500 ms of virtual time", () => {
     const t0 = Date.now();
     const s = boot();
-    expect(s.be.hello).toMatch(/jumper-esp32-bridge 2 esp32c3.gpio sync=1/);
+    expect(s.be.hello).toMatch(/jumper-esp32-bridge 3 esp32c3.gpio sync=1 pads=1/);
     run(s.be, 2600);
     const wallMs = Date.now() - t0;
     expect(s.serial).toContain("hello from jumper esp32");
