@@ -10,7 +10,9 @@ import {
   type PartRegistry,
   type VisualState,
 } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { isProcessBackend, type BackendFactory, type McuBackend } from "@jumper/sim-core";
+import { createNodeBackendFactory, EmulatorError } from "@jumper/sim-backends/node";
+import { checkEmulator, emulatorLabels, reapEmulators, trackEmulator, untrackEmulator, type ProcessBackendId } from "@jumper/runner";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import { fail } from "./errors.ts";
 import { createSessionNetwork, setWifiDrop, type SessionNetwork } from "./network.ts";
@@ -103,6 +105,68 @@ function round(v: number): number {
   return Math.round(v * 1000) / 1000;
 }
 
+/** Every backend the Jumper server can run: in-process ones, and local emulators it owns (decision 0006). */
+const serverFactory: BackendFactory = createNodeBackendFactory({ labels: emulatorLabels(), onProcess: trackEmulator });
+
+/** Docker / image checks are ~100 ms each: a good answer is trusted for this long. */
+const CHECK_TTL_MS = 30_000;
+const checkedOk = new Map<string, number>();
+let reaped = false;
+
+/** The firmware board of a project, when it has one with an mcu block. */
+export function firmwareBoardOf(project: Project, registry: PartRegistry): { partId: string; type: string; mcu: NonNullable<PartDefinition["spec"]["mcu"]>; name: string } | undefined {
+  const id = project.firmware?.board;
+  const part = id ? project.parts.find((p) => p.id === id) : undefined;
+  const spec = part ? registry.get(part.type)?.spec : undefined;
+  return part && spec?.mcu ? { partId: part.id, type: part.type, mcu: spec.mcu, name: spec.name } : undefined;
+}
+
+/** Progress of a local emulator start, for the canvas ("checking Docker", "starting QEMU"…). */
+export type PrepareProgress = (step: { stage: "check" | "image" | "start" | "ready"; text: string; ms?: number }) => void;
+
+/**
+ * Makes sure a process backend can start (Docker running, image present) and fails with what /
+ * why / fix otherwise. In-process boards return at once.
+ */
+export async function checkBoardRuntime(project: Project, registry: PartRegistry, progress?: PrepareProgress): Promise<void> {
+  const board = firmwareBoardOf(project, registry);
+  if (!board || !isProcessBackend(board.mcu.backend)) return;
+  const backend = board.mcu.backend as ProcessBackendId;
+  if ((checkedOk.get(backend) ?? 0) > Date.now()) return;
+  progress?.({ stage: "check", text: "checking Docker and the emulator image" });
+  const c = await checkEmulator(backend, board.name);
+  if (!c.ok) {
+    const [what, rest] = splitWhy(c.message ?? `${board.name} cannot run`);
+    fail(c.code ?? "emulator-unavailable", what, rest.why, rest.fix, { board: board.type, backend, image: c.image });
+  }
+  checkedOk.set(backend, Date.now() + CHECK_TTL_MS);
+  if (!reaped) {
+    reaped = true;
+    void reapEmulators();
+  }
+}
+
+/** "Can't run X: Docker is not running. Why: … Fix: …" → what / why / fix. */
+function splitWhy(msg: string): [string, { why: string; fix: string }] {
+  const fixAt = msg.indexOf(" Fix: ");
+  const fix = fixAt >= 0 ? msg.slice(fixAt + 6).replace(/\.$/, "") : "see the message";
+  const head = fixAt >= 0 ? msg.slice(0, fixAt) : msg;
+  const whyAt = head.indexOf(" Why: ");
+  const colon = head.indexOf(": ");
+  const what = colon > 0 ? head.slice(0, colon) : head;
+  const why = (whyAt >= 0 ? `${head.slice(colon + 2, whyAt).replace(/\.$/, "")}; ${head.slice(whyAt + 6)}` : head.slice(colon + 2)).replace(/\.$/, "");
+  return [what, { why, fix }];
+}
+
+/** An emulator failure (crash, timeout, bad image) as a JumperError with what / why / fix. */
+export function emulatorFailure(err: unknown): never {
+  if (err instanceof EmulatorError) {
+    const [what, rest] = splitWhy(err.message);
+    fail(err.code, what, rest.why, rest.fix);
+  }
+  throw err;
+}
+
 export class SimHost {
   readonly sim: Simulation;
   /** Updated by adoptProps when saved props change while the simulation runs. */
@@ -135,17 +199,46 @@ export class SimHost {
     if (project.world) await initPhysics();
   }
 
-  constructor(project: Project, registry: PartRegistry, hex: string | undefined) {
+  /**
+   * The way to make a host on the server: a local emulator (process backend) is checked and booted
+   * first without blocking the event loop (1 to 3 s), then handed to the Simulation.
+   */
+  static async create(project: Project, registry: PartRegistry, firmware: string | Uint8Array | undefined, progress?: PrepareProgress): Promise<SimHost> {
+    await SimHost.preparePhysics(project);
+    const board = firmwareBoardOf(project, registry);
+    if (!board || !isProcessBackend(board.mcu.backend) || firmware === undefined) return new SimHost(project, registry, firmware);
+    await checkBoardRuntime(project, registry, progress);
+    const be = serverFactory({ partId: board.partId, type: board.type, mcu: board.mcu });
+    const t0 = Date.now();
+    progress?.({ stage: "start", text: `starting ${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"} for ${board.name}` });
+    try {
+      await be.prepare!(firmware);
+    } catch (err) {
+      be.dispose?.();
+      untrackEmulator(be);
+      emulatorFailure(err);
+    }
+    progress?.({ stage: "ready", text: `${board.name} booted`, ms: Date.now() - t0 });
+    return new SimHost(project, registry, firmware, be);
+  }
+
+  /** Optional `prepared`: an already booted backend for the firmware board (SimHost.create). */
+  constructor(project: Project, registry: PartRegistry, hex: string | Uint8Array | undefined, prepared?: McuBackend) {
     this.project = project;
     this.registry = registry;
     this.hasFirmware = hex !== undefined;
-    this.sim = new Simulation({
-      project,
-      registry: faultRegistry(registry, this.disconnected),
-      backendFactory,
-      ...(hex !== undefined ? { firmware: hex } : {}),
-      services: { network: this.network },
-    });
+    try {
+      this.sim = new Simulation({
+        project,
+        registry: faultRegistry(registry, this.disconnected),
+        backendFactory: prepared ? () => prepared : serverFactory,
+        ...(hex !== undefined ? { firmware: hex } : {}),
+        services: { network: this.network },
+      });
+    } catch (err) {
+      prepared?.dispose?.();
+      emulatorFailure(err);
+    }
     if (project.world) {
       try {
         this.physics = attachPhysics(this.sim, project.world);
@@ -161,9 +254,19 @@ export class SimHost {
     return this.sim.timeMs;
   }
 
+  /** The firmware runs in a local emulator process (QEMU / Renode), not in this thread. */
+  get isProcess(): boolean {
+    return this.sim.mcu?.kind === "process";
+  }
+
   dispose(): void {
     this.physics?.dispose();
     this.sim.dispose();
+    const mcu = this.sim.mcu;
+    if (mcu?.dispose) {
+      mcu.dispose();
+      untrackEmulator(mcu);
+    }
   }
 
   /** Saved props changed (set_part_property, undo…): apply them live and keep them for reset(). */
@@ -254,8 +357,31 @@ export class SimHost {
     return out;
   }
 
+  /**
+   * run() that gives the event loop a turn every ~25 ms of wall time when the firmware runs in a
+   * local emulator (each step waits on the emulator), so the server keeps answering while it runs.
+   * Same frames and results as run().
+   */
+  async runAsync(ms: number, opts: Parameters<SimHost["run"]>[1] = {}): Promise<void> {
+    if (!this.isProcess) return this.run(ms, opts);
+    const it = this.runSteps(ms, opts);
+    let w0 = Date.now();
+    while (!it.next().done) {
+      if (Date.now() - w0 >= 25) {
+        await new Promise((r) => setImmediate(r));
+        w0 = Date.now();
+      }
+    }
+  }
+
   /** Advance `ms` of virtual time. Calls onFrame every frameMs with what changed. */
   run(ms: number, opts: { frameMs?: number; onFrame?: (f: Frame) => void; until?: () => boolean; stepMs?: number } = {}): void {
+    const it = this.runSteps(ms, opts);
+    while (!it.next().done);
+  }
+
+  /** run() as a generator: yields after every slice, so a caller can pause between slices. */
+  private *runSteps(ms: number, opts: { frameMs?: number; onFrame?: (f: Frame) => void; until?: () => boolean; stepMs?: number }): Generator<void> {
     const end = this.sim.timeMs + ms;
     const step = opts.stepMs ?? (opts.until ? 1 : this.noise.size ? 10 : 50);
     const frameMs = opts.frameMs ?? 0;
@@ -275,6 +401,7 @@ export class SimHost {
         nextFrame += frameMs;
       }
       if (opts.until?.()) break;
+      yield;
     }
     if (opts.onFrame) {
       const f = this.frame();

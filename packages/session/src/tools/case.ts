@@ -142,7 +142,7 @@ export const caseTools: ToolModule = {
     {
       name: "export_manufacturing",
       title: "Factory pack",
-      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
+      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
       inputSchema: {
         type: "object",
         properties: {
@@ -557,15 +557,21 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   if (fw) {
     const fwDir = join(s.dir, fw.dir ?? "firmware");
     copyTree(fwDir, join(root, "firmware", "source"), (rel) => /\.(hex|elf|bin|uf2|map)$/.test(rel) || rel.startsWith("build") || rel.startsWith("."));
-    const art = fw.artifact ? join(s.dir, fw.artifact) : undefined;
-    const st = (s as unknown as { firmwareState(): string }).firmwareState();
-    if (art && existsSync(art) && st === "fresh") {
-      const hex = readFileSync(art, "utf8");
-      writeText(root, "firmware/firmware.hex", hex);
-      fwHash = (await import("node:crypto")).createHash("sha256").update(hex).digest("hex").slice(0, 16);
-      if (rp2040) writeText(root, "firmware/firmware.uf2", hexToUf2(hex));
-    } else missing.push({ item: "firmware/firmware.hex", why: !art || !existsSync(art) ? "the firmware was never built" : st === "stale" ? "the sketch changed since the last build" : "the built firmware file is missing", fix: "build (or run) first, then export_manufacturing again", say: "press Run (or Build) first, then Factory pack again" });
-    writeText(root, "firmware/FLASHING.md", flashingMd(project.name, boardSpec?.name ?? board?.type ?? "the board", rp2040, fw.libraries ?? []));
+    // Round 10: the firmware for the real board (ESP32 boards get their own build: Serial on USB, QIO flash).
+    const dev = await s.deviceFirmware();
+    if ("data" in dev) {
+      const crypto = await import("node:crypto");
+      if (dev.format === "bin") {
+        writeFileSync(join(root, "firmware", "firmware.bin"), dev.data as Uint8Array);
+      } else {
+        writeText(root, "firmware/firmware.hex", dev.data as string);
+        if (rp2040) writeText(root, "firmware/firmware.uf2", hexToUf2(dev.data as string));
+      }
+      fwHash = crypto.createHash("sha256").update(dev.data).digest("hex").slice(0, 16);
+      if (dev.differs) notes.push(`Firmware: ${dev.differs}.`);
+    } else missing.push({ item: "firmware/firmware.hex", why: dev.error, fix: dev.fix, say: "press Run (or Build) first, then Factory pack again" });
+    const esp = "data" in dev && dev.format === "bin" ? { flash: dev.flash, fqbn: dev.fqbn } : boardSpec?.mcu?.backend === "qemu-esp" ? { flash: boardSpec.mcu.toolchain?.flash, fqbn: boardSpec.mcu.fqbn ?? "" } : undefined;
+    writeText(root, "firmware/FLASHING.md", flashingMd(project.name, boardSpec?.name ?? board?.type ?? "the board", rp2040, fw.libraries ?? [], esp));
   } else missing.push({ item: "firmware/", why: "the project has no firmware", fix: "write_file the sketch and build", say: "write the sketch in the code panel and press Build, then Factory pack again" });
 
   // ---- assembly, tests, readme, notes
@@ -594,9 +600,22 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   };
 }
 
-function flashingMd(name: string, board: string, rp2040: boolean, libs: string[]): string {
+function flashingMd(name: string, board: string, rp2040: boolean, libs: string[], esp?: { flash?: string | undefined; fqbn: string }): string {
   const lines = [`# Flashing ${name}`, "", `Board: **${board}**.`, ""];
-  if (rp2040)
+  if (esp)
+    lines.push(
+      "## Command line (esptool)",
+      "",
+      "`firmware.bin` is the merged flash image (bootloader, partition table and app) built for this board. Install esptool (`pip install esptool`; GPL-2.0, a separate program) and plug the board in:",
+      "",
+      "```sh\n" + (esp.flash ?? "esptool --port <port> write_flash 0x0 {bin}").replace("{bin}", "firmware.bin").replace("{port}", "<port>") + "\n```",
+      "",
+      "`<port>` is the board's serial port (macOS `/dev/cu.usbmodem…` or `/dev/cu.usbserial…`, Linux `/dev/ttyACM0` / `/dev/ttyUSB0`, Windows `COM3`). If it does not connect, hold **BOOT** while pressing **RESET** (or while plugging USB in), then try again.",
+      "",
+      `Or from source: \`arduino-cli compile --fqbn ${esp.fqbn} source && arduino-cli upload --fqbn ${esp.fqbn} -p <port> source\` (board package esp32:esp32 3.3.12).`,
+      "",
+    );
+  else if (rp2040)
     lines.push("## Easiest: drag and drop (no software)", "", "1. Hold the **BOOT** (BOOTSEL) button on the board.", "2. Plug the USB-C cable into a computer while holding it; release. A drive called **RPI-RP2** appears.", "3. Copy `firmware.uf2` onto that drive. It disconnects and the device starts.", "", "## Command line", "", "```sh\npicotool load -x firmware.uf2\n```", "");
   else lines.push("## Command line (avrdude)", "", "```sh\navrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:firmware.hex:i\n```", "", "Or open `source/` in the Arduino IDE and press Upload.", "");
   lines.push("## Build from source", "", "The sketch is in `source/`. Arduino IDE or arduino-cli with the board package for this board" + (libs.length ? ` and these libraries: ${libs.join(", ")}` : "") + ".", "", "Some libraries are LGPL (for example Adafruit NeoPixel): a firmware binary you distribute that links one carries LGPL obligations (offer the object files or the source).", "");

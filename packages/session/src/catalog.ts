@@ -260,7 +260,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "export",
     title: "Export for the real build",
-    description: "Write export/BOM.md (quantities, values, buy links), export/WIRING.md (wire table and nets), export/firmware.hex (when built) and export/TEST-ON-HARDWARE.md (checklist from the fidelity report). Returns the BOM text and an upload command.",
+    description: "Write export/BOM.md (quantities, values, buy links), export/WIRING.md (wire table and nets), export/firmware.hex (when built; firmware.bin, the merged flash image built for the real board, on ESP32 boards) and export/TEST-ON-HARDWARE.md (checklist from the fidelity report). Returns the BOM text and an upload command.",
     inputSchema: { type: "object", properties: { dir: { type: "string", description: "Default export/ in the project." } } },
   },
   {

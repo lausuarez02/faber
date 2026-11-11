@@ -17,9 +17,9 @@ import {
   normalizeScenarioStep,
 } from "@jumper/project-format";
 import { AGENT_MADE_LABEL, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
-import { PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
+import { isProcessBackend, PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
-import { buildFirmware, type BuildRequest, type BuildResult } from "@jumper/runner";
+import { buildFirmware, outputFormatFor, type BuildRequest, type BuildResult } from "@jumper/runner";
 import { checkDesign, type DesignIssue } from "./drc.ts";
 import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
 import { bomMarkdown, solderedAssemblyMarkdown, wiringMarkdown } from "./exporter.ts";
@@ -49,7 +49,7 @@ import { runScenario, setPartValue, validateScenario, type ScenarioResult } from
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
-import { compactState, FAULT_KINDS, SimHost, type Frame } from "./sim.ts";
+import { compactState, FAULT_KINDS, firmwareBoardOf, SimHost, type Frame, type PrepareProgress } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
 import { EXT_OPS, type ExtOpContext } from "./tools/index.ts";
 import { isProjectPartRegistry, refreshProjectParts } from "./tools/agentparts.ts";
@@ -1010,9 +1010,20 @@ export class ProjectSession {
     const fw = this.project.firmware;
     if (!fw) return undefined;
     const board = this.project.parts.find((p) => p.id === fw.board);
-    const fqbn = fw.build?.fqbn ?? (board ? this.registry.get(board.type)?.spec.mcu?.fqbn : undefined) ?? "arduino:avr:uno";
+    const mcu = board ? this.registry.get(board.type)?.spec.mcu : undefined;
+    const platform = (f: string | undefined) => f?.split(":").slice(0, 2).join(":");
+    // A firmware block written for another board family (an Uno's FQBN after the board became an
+    // ESP32) builds for the board that is there now.
+    const own = fw.build?.fqbn && (!mcu?.fqbn || platform(fw.build.fqbn) === platform(mcu.fqbn)) ? fw.build.fqbn : undefined;
+    const fqbn = own ?? mcu?.fqbn ?? "arduino:avr:uno";
+    // Round 10 (decision 0006): the simulator may need a slightly different build of the same
+    // sketch (Serial on UART0 instead of USB CDC, DIO flash): the board's toolchain says so.
+    const sim = mcu?.toolchain?.simFqbn && fqbn === mcu.fqbn ? { fqbn: mcu.toolchain.simFqbn, props: mcu.toolchain.simBuildProperties ?? [], note: mcu.toolchain.simNote } : { fqbn, props: [] as string[], note: undefined };
+    const format = outputFormatFor(sim.fqbn);
+    // A .hex artifact name on a board that builds flash images is read and written as .bin.
+    const artifact = format === "bin" ? fw.artifact.replace(/\.hex$/i, ".bin") : fw.artifact;
     const sketchAbs = fw.sketch ? join(this.dir, "firmware", fw.sketch) : undefined;
-    return { fw, fqbn, sketchAbs, sketchDir: sketchAbs ? dirname(sketchAbs) : undefined, artifactAbs: join(this.dir, fw.artifact) };
+    return { fw, fqbn, buildFqbn: sim.fqbn, buildProperties: sim.props, simNote: sim.note, format, artifact, deviceFqbn: fqbn, sketchAbs, sketchDir: sketchAbs ? dirname(sketchAbs) : undefined, artifactAbs: join(this.dir, artifact) };
   }
 
   private firmwareSource(): string {
@@ -1036,6 +1047,7 @@ export class ProjectSession {
     const h = createHash("sha256");
     const libs = [...(info.fw.libraries ?? [])];
     h.update(`${info.fqbn}|${(legacy ? libs : libs.map((l) => l.trim()).sort()).join(",")}|${info.fw.sketch}\n`);
+    if (info.buildFqbn !== info.fqbn || info.buildProperties.length) h.update(`sim:${info.buildFqbn}|${info.buildProperties.join(",")}\n`);
     for (const f of readdirSync(info.sketchDir).sort()) {
       if (!SOURCE_EXT.test(f)) continue;
       const text = readFileSync(join(info.sketchDir, f), "utf8");
@@ -1055,7 +1067,7 @@ export class ProjectSession {
     if (existsSync(bf)) {
       try {
         const rec = JSON.parse(readFileSync(bf, "utf8")) as { hash: string; artifact?: string };
-        if (rec.artifact === undefined || rec.artifact === info.fw.artifact) return rec.hash === hash || rec.hash === this.sourceHash(true) ? "fresh" : "stale";
+        if (rec.artifact === undefined || rec.artifact === info.artifact) return rec.hash === hash || rec.hash === this.sourceHash(true) ? "fresh" : "stale";
       } catch {
         // fall through
       }
@@ -1075,7 +1087,7 @@ export class ProjectSession {
   private loggedSourceOf(artifactAbs: string): string | undefined {
     let hexHash: string;
     try {
-      hexHash = createHash("sha256").update(readFileSync(artifactAbs, "utf8")).digest("hex");
+      hexHash = createHash("sha256").update(readFileSync(artifactAbs)).digest("hex");
     } catch {
       return undefined;
     }
@@ -1112,7 +1124,7 @@ export class ProjectSession {
     const hash = this.sourceHash();
     if (!info || !hash || !existsSync(info.artifactAbs)) return false;
     mkdirSync(this.metaDir, { recursive: true });
-    writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash, artifact: info.fw.artifact, at: new Date().toISOString(), shipped: true }));
+    writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash, artifact: info.artifact, at: new Date().toISOString(), shipped: true }));
     return true;
   }
 
@@ -1129,7 +1141,8 @@ export class ProjectSession {
     const r = await this.builder({
       sketchDir: info.sketchDir!,
       main: basename(info.sketchAbs),
-      fqbn: info.fqbn,
+      fqbn: info.buildFqbn,
+      ...(info.buildProperties.length ? { buildProperties: info.buildProperties } : {}),
       libraries: info.fw.libraries ?? [],
       displayPrefix,
       ...(args.force ? { cache: false } : {}),
@@ -1137,27 +1150,30 @@ export class ProjectSession {
     // Hints are written for any project; name this project's real sketch folder.
     for (const d of r.diagnostics ?? []) if (d.hint) d.hint = d.hint.replaceAll("firmware/<sketch folder>/", displayPrefix);
     this.lastBuild = r;
-    if (r.ok && r.hex) {
+    // Intel HEX text (AVR, RP2040) or the merged flash image (ESP32 family, without its padding).
+    const image: string | Uint8Array | undefined = r.ok ? (r.hex ?? (r.bin ? new Uint8Array(Buffer.from(r.bin, "base64")) : undefined)) : undefined;
+    if (r.ok && image !== undefined) {
       mkdirSync(dirname(info.artifactAbs), { recursive: true });
-      writeFileSync(info.artifactAbs, r.hex);
+      writeFileSync(info.artifactAbs, image);
       mkdirSync(this.metaDir, { recursive: true });
-      writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash: this.sourceHash(), artifact: info.fw.artifact, at: new Date().toISOString() }));
-      const hexHash = createHash("sha256").update(r.hex).digest("hex");
+      writeFileSync(join(this.metaDir, "build.json"), JSON.stringify({ hash: this.sourceHash(), artifact: info.artifact, at: new Date().toISOString() }));
+      const hexHash = createHash("sha256").update(image).digest("hex");
       try {
         mkdirSync(join(this.metaDir, "builds"), { recursive: true });
-        const kept = join(this.metaDir, "builds", `${hexHash}.hex`);
-        if (!existsSync(kept)) writeFileSync(kept, r.hex);
+        const kept = join(this.metaDir, "builds", `${hexHash}.${info.format}`);
+        if (!existsSync(kept)) writeFileSync(kept, image);
       } catch {
         // keeping old builds is a convenience for history; never fail a build over it
       }
       const source = this.sourceHash();
-      if (ctx) ctx.firmware = { artifact: info.fw.artifact, hash: hexHash, ...(source ? { source } : {}) };
+      if (ctx) ctx.firmware = { artifact: info.artifact, hash: hexHash, ...(source ? { source } : {}) };
     }
     if (ctx) ctx.summary = r.ok ? `build ok${r.cached ? " (cached)" : ""}` : `build failed: ${r.errors} errors`;
     const pct = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
     return {
       ok: r.ok,
-      ...(r.ok ? { artifact: info.fw.artifact } : {}),
+      ...(r.ok ? { artifact: info.artifact } : {}),
+      ...(r.ok && info.buildFqbn !== info.fqbn ? { simulator_build: `${info.buildFqbn}${info.buildProperties.length ? ` + ${info.buildProperties.join(" ")}` : ""}${info.simNote ? `: ${info.simNote}` : ""}` } : {}),
       cached: r.cached,
       ms: r.durationMs,
       ...(r.size ? { size: `flash ${r.size.flash}/${r.size.flashMax} B (${pct(r.size.flash, r.size.flashMax)}), ram ${r.size.ram}/${r.size.ramMax} B (${pct(r.size.ram, r.size.ramMax)})` } : {}),
@@ -1169,10 +1185,39 @@ export class ProjectSession {
     };
   }
 
-  private loadHex(): string | undefined {
+  /**
+   * Round 10: the firmware for the REAL board (factory pack). Usually the simulator's build; when the
+   * board's simulator build differs (ESP32 family: Serial on UART0, DIO flash), the board's own
+   * FQBN is built here (cached like every build). Undefined with a why when it cannot be had.
+   */
+  async deviceFirmware(): Promise<{ format: "hex" | "bin"; data: string | Uint8Array; fqbn: string; flash?: string; differs?: string } | { error: string; fix: string }> {
+    const info = this.firmwareInfo();
+    if (!info?.sketchDir || !info.sketchAbs) return { error: "the project has no sketch", fix: "write_file the sketch and build" };
+    const mcu = this.registry.get(this.project.parts.find((p) => p.id === info.fw.board)?.type ?? "")?.spec.mcu;
+    const flash = mcu?.toolchain?.flash;
+    if (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length) {
+      const st = this.firmwareState();
+      const data = this.loadHex();
+      if (data === undefined || st !== "fresh") return { error: data === undefined ? "the firmware was never built" : "the sketch changed since the last build", fix: "build (or run) first, then export again" };
+      return { format: info.format, data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}) };
+    }
+    let r: BuildResult;
+    try {
+      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [] });
+    } catch (err) {
+      return { error: `the build for the real board (${info.deviceFqbn}) could not run: ${(err as Error).message}`, fix: "start Docker Desktop, then export again" };
+    }
+    if (!r.ok) return { error: `the sketch does not compile for the real board (${info.deviceFqbn}): ${r.diagnostics.filter((d) => d.severity === "error").map(fmtDiag).slice(0, 3).join(" | ")}`, fix: "fix the errors (build shows them), then export again" };
+    const data = r.hex ?? (r.bin ? new Uint8Array(Buffer.from(r.bin, "base64")) : undefined);
+    if (data === undefined) return { error: "the build wrote no firmware file", fix: "build again; if it repeats, report the build log" };
+    return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
+  }
+
+  /** The built firmware: Intel HEX text, or the flash image bytes (ESP32 family). */
+  private loadHex(): string | Uint8Array | undefined {
     const info = this.firmwareInfo();
     if (!info || !existsSync(info.artifactAbs)) return undefined;
-    return readFileSync(info.artifactAbs, "utf8");
+    return info.format === "bin" ? new Uint8Array(readFileSync(info.artifactAbs)) : readFileSync(info.artifactAbs, "utf8");
   }
 
   /** Make sure the firmware hex matches the sources; builds when needed. Returns a note when it built. */
@@ -1189,12 +1234,26 @@ export class ProjectSession {
   // =================================================================== simulation
 
   private simKey(project: Project = this.project): string {
-    return topologyKey(project) + "|" + (this.loadHex() ?? "").length + ":" + createHash("sha1").update(this.loadHex() ?? "").digest("hex").slice(0, 8);
+    const fw = this.loadHex() ?? "";
+    return topologyKey(project) + "|" + fw.length + ":" + createHash("sha1").update(fw).digest("hex").slice(0, 8);
   }
 
-  private async getHost(): Promise<{ host: SimHost; restarted?: string }> {
+  private async getHost(progress?: PrepareProgress): Promise<{ host: SimHost; restarted?: string }> {
     await SimHost.preparePhysics(this.project);
-    return this.getHostSync();
+    const key = this.simKey();
+    if (this.host && key === this.hostKey) return { host: this.host };
+    if (!this.host || !this.host.isProcess) {
+      const board = firmwareBoardOf(this.project, this.registry);
+      if (!board || !isProcessBackend(board.mcu.backend)) return this.getHostSync();
+    }
+    // A local emulator boots asynchronously (the server keeps answering meanwhile).
+    const had = !!this.host;
+    this.host?.dispose();
+    this.host = undefined;
+    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress);
+    this.host = host;
+    this.hostKey = key;
+    return { host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
   }
 
   private getHostSync(): { host: SimHost; restarted?: string } {
@@ -1227,7 +1286,7 @@ export class ProjectSession {
     const frames: Frame[] = [];
     const frameMs = Math.max(20, Math.ceil(ms / 400 / 10) * 10);
     const wall0 = Date.now();
-    host.run(ms, { frameMs, onFrame: (f) => frames.push(f) });
+    await host.runAsync(ms, { frameMs, onFrame: (f) => frames.push(f) });
     const wallMs = Date.now() - wall0;
     ctx.frames = limitColorFrames(frames); // round 6 frames: colour screens, thinned for the log
     const serial = host.serialSince(serialFrom);
@@ -1246,6 +1305,7 @@ export class ProjectSession {
       t_ms: round(host.timeMs),
       ran_ms: round(host.timeMs - t0),
       speed: `${round(ms / Math.max(1, wallMs))}x real time`,
+      wall_ms: wallMs,
       serial: serial.length > 3000 ? `…${serial.slice(-3000)}` : serial,
       ...(serial.length > 3000 ? { serial_note: `${serial.length} chars printed; showing the last 3000 (read_serial since 0 for all)` } : {}),
       pins: host.pinSummary(),
@@ -1408,7 +1468,7 @@ export class ProjectSession {
     let frames: Frame[] = [];
     let framesSpan = -1;
     for (const s of pick) {
-      const host = new SimHost(this.project, this.registry, hex);
+      const host = await SimHost.create(this.project, this.registry, hex);
       const mine: Frame[] = [];
       try {
         const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions());
@@ -1538,7 +1598,7 @@ export class ProjectSession {
       if (!Number.isInteger(at) || at < 0 || at > last) fail("bad-arg", `screenshot: at_step ${args.at_step} is out of range`, `scenario '${sc.id}' has steps 0..${last}`, `pass a step index between 0 and ${last} (or leave at_step out for the end)`);
       await this.ensureBuilt(ctx);
       await SimHost.preparePhysics(this.project);
-      tmpHost = new SimHost(this.project, this.registry, this.loadHex());
+      tmpHost = await SimHost.create(this.project, this.registry, this.loadHex());
       const r = runScenario(tmpHost, sc, this.project, this.registry, undefined, { ...this.scenarioOptions(), stopAfter: at });
       host = tmpHost;
       scenarioNote = { scenario: sc.id, at_step: at, step: JSON.stringify(sc.steps[at]), ...(r.passed ? {} : { note: `the scenario failed before step ${at}: ${r.reason}; the picture shows the moment it failed` }) };
@@ -1620,7 +1680,9 @@ export class ProjectSession {
       writeFileSync(join(out, "ASSEMBLY.md"), solderedAssemblyMarkdown(this.project, this.registry, cuts, true));
       files.push("WIRE-CUTS.csv", "ASSEMBLY.md");
     }
-    const hex = this.loadHex();
+    const dev = this.project.firmware ? await this.deviceFirmware() : undefined;
+    const hex = dev && "data" in dev && dev.format === "hex" ? (dev.data as string) : undefined;
+    const bin = dev && "data" in dev && dev.format === "bin" ? (dev.data as Uint8Array) : undefined;
     // rp2040 track: RP2040 boards also get a UF2 for the BOOTSEL drive, and their own flash line.
     const boardType = this.project.parts.find((p) => p.id === this.project.firmware?.board)?.type;
     const boardMcu = boardType ? this.registry.get(boardType)?.spec.mcu : undefined;
@@ -1633,6 +1695,10 @@ export class ProjectSession {
         files.push("firmware.uf2");
       }
     }
+    if (bin) {
+      writeFileSync(join(out, "firmware.bin"), bin);
+      files.push("firmware.bin");
+    }
     const fid = fidelityReport(this.project, this.registry);
     // Round 5 (C2/C4): stand-ins and agent-made parts are what the simulation trusted least.
     const flagged = this.project.parts.filter((p) => p.standIn || this.registry.get(p.type)?.fidelity.origin === "agent-made");
@@ -1642,7 +1708,7 @@ export class ProjectSession {
     writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n${flaggedText}\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
     files.push("TEST-ON-HARDWARE.md");
     ctx.summary = `exported to ${out}`;
-    return { dir: out, files, assembly: style, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex ? {} : { note: "no firmware.hex: build first to include it" }), flash: !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
+    return { dir: out, files, assembly: style, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex || bin ? {} : { note: dev && "error" in dev ? `no firmware: ${dev.error}. Fix: ${dev.fix}` : "no firmware.hex: build first to include it" }), ...(dev && "differs" in dev && dev.differs ? { firmware_note: dev.differs } : {}), flash: bin ? (dev && "flash" in dev && dev.flash ? dev.flash : "esptool write_flash 0x0 {bin}").replace("{bin}", join(out, "firmware.bin")).replace("{port}", "<port>") : !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
   }
 
   // =================================================================== steps

@@ -158,7 +158,7 @@ export function solderedAssemblyMarkdown(project: Project, registry: PartRegistr
   if (modulePower.length) steps.push(`Solder the modules' power and ground (24 AWG):\n${modulePower.map(line).join("\n")}`);
   if (signal.length) steps.push(`Solder the signal wires (26 AWG):\n${signal.map(line).join("\n")}`);
   steps.push("Insulate every joint that could touch another (heat-shrink), and check with a multimeter that the supply and GND are not shorted (more than a few hundred Ω between them with the switch off).");
-  if (board) steps.push(`Flash the firmware: ${registry.get(board.type)?.spec.mcu?.backend === "rp2040js" ? "hold BOOT while plugging the board into USB, then copy firmware.uf2 to the drive that appears" : "upload firmware.hex with avrdude or arduino-cli"} (see the export's flash line).`);
+  if (board) steps.push(`Flash the firmware: ${registry.get(board.type)?.spec.mcu?.backend === "rp2040js" ? "hold BOOT while plugging the board into USB, then copy firmware.uf2 to the drive that appears" : registry.get(board.type)?.spec.mcu?.backend === "qemu-esp" ? "write firmware.bin at 0x0 with esptool (FLASHING.md)" : "upload firmware.hex with avrdude or arduino-cli"} (see the export's flash line).`);
   steps.push("Switch on and go through TEST-ON-HARDWARE.md.");
   return [`# Assembly (soldered): ${project.name}`, "", "Hand-wired point to point (or on perfboard), no breadboard. Pin names are the ones on the parts' silkscreen as in WIRING.md.", "", ...steps.map((t, i) => `${i + 1}. ${t}`), ""].join("\n");
 }
