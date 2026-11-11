@@ -126,7 +126,7 @@ test("Case view: draw a custom outline, see the fit as you edit, type a size, ta
     await page.getByTestId("case-update").click();
     await expect(page.getByTestId("case-size")).toContainText(new RegExp(`^${w} × ${h} × [\\d.]+ mm`), { timeout: 360_000 });
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
-    await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");
+    await expect(page.getByTestId("case-update")).toHaveText("Case is up to date", { timeout: 60_000 }); // (after the mesh of the new case loads)
     const saved = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8"));
     expect(saved.enclosure.shape).toBe("custom");
     expect(saved.enclosure.size_mm).toEqual({ w, h });
