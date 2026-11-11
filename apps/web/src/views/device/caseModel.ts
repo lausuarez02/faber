@@ -4,6 +4,7 @@
 // swaps it when the server says the case changed. Geometry is decoded once per case hash.
 import { useEffect, useState } from "react";
 import * as THREE from "three";
+import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Project } from "@jumper/project-format";
 import { decodeF32, decodeU32 } from "../../case/api.ts";
 import { serverConnection } from "../../projects/api.ts";
@@ -103,10 +104,12 @@ export function caseGeometry(model: CaseModel): CaseGeometry[] {
   const hit = geoCache.get(k);
   if (hit) return hit;
   const out = model.mesh.bodies.map((b) => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(decodeF32(b.positions), 3));
-    g.setIndex(new THREE.BufferAttribute(decodeU32(b.indices), 1));
-    g.computeVertexNormals();
+    const raw = new THREE.BufferGeometry();
+    raw.setAttribute("position", new THREE.BufferAttribute(decodeF32(b.positions), 3));
+    raw.setIndex(new THREE.BufferAttribute(decodeU32(b.indices), 1));
+    // smooth over the dome and the rounded edges, crisp at the window, hole and seam edges
+    const g = b.kind === "part" ? (raw.computeVertexNormals(), raw) : toCreasedNormals(raw, Math.PI / 6);
+    if (g !== raw) raw.dispose();
     g.computeBoundingBox();
     return { body: b.body, kind: b.kind, color: b.color, geometry: g };
   });

@@ -4,8 +4,8 @@
 // at their light pipes and sound rings at the speaker grille. Any outline or body works: it only
 // draws the meshes the case has and puts the live parts at the case's own openings.
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Html } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { ReadoutsContext, useDeviceSource } from "../context.ts";
 import { SCREEN_TYPES, type CaseFit, type CaseOpening } from "../classify.ts";
@@ -17,8 +17,8 @@ import { buttonLabel, Led, SHELLS, type ShellFinish } from "./Handheld.tsx";
 export type CaseFinish = "design" | ShellFinish;
 
 /** Scene size of the case's tallest side (same as the generic handheld, so the camera fits both). */
-const MAX_H = 7.6;
-const MAX_W = 6.4;
+const MAX_H = 7.0;
+const MAX_W = 6.0;
 const STAND_TOP = 0.34;
 const TILT = -0.17;
 
@@ -107,7 +107,7 @@ export function CaseDevice({ fit, finish, onPressKey }: { fit: CaseFit; finish: 
       </group>
       {/* Stand: a puck the case rests on */}
       <mesh position={[0, 0.17, 0.25]} castShadow receiveShadow>
-        <cylinderGeometry args={[Math.max(2.6, (size.x * k) / 2 + 0.4), Math.max(2.75, (size.x * k) / 2 + 0.55), 0.34, 96]} />
+        <cylinderGeometry args={[Math.max(1.8, size.x * k * 0.4), Math.max(1.9, size.x * k * 0.4 + 0.12), 0.34, 96]} />
         <meshStandardMaterial color="#1a1a1a" roughness={0.6} metalness={0.2} />
       </mesh>
       <ContactShadows position={[0, 0.005, 0]} opacity={0.7} scale={16} blur={2.6} far={9} resolution={512} frames={Infinity} />
@@ -156,10 +156,8 @@ function WindowScreen({ partId, type, o }: { partId: string; type: string; o: Ca
 function CaseButton({ index, partId, o, cap, color, registerPress }: { index: number; partId: string; o: CaseOpening; cap: { geometry: THREE.BufferGeometry } | undefined; color: string; registerPress: (fn: (down: boolean) => void) => void }) {
   const source = useDeviceSource();
   const group = useRef<THREE.Group>(null);
-  const label = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
   const held = useRef(false);
-  const camera = useThree((s) => s.camera);
   const n = useMemo(() => v3(o.n).normalize(), [o]);
   const down = (v: boolean) => {
     if (held.current === v) return;
@@ -173,7 +171,6 @@ function CaseButton({ index, partId, o, cap, color, registerPress }: { index: nu
   }, []);
   // the cap travels in along its opening (exaggerated a little so the press reads at this scale)
   const travel = Math.max(0.8, (o.insert?.travel ?? 0.25) * 3);
-  const tmp = useMemo(() => ({ wp: new THREE.Vector3(), wn: new THREE.Vector3(), q: new THREE.Quaternion() }), []);
   useFrame((_, dt) => {
     const st = source.partState(partId);
     const pressed = held.current || st?.pressed === true;
@@ -182,17 +179,15 @@ function CaseButton({ index, partId, o, cap, color, registerPress }: { index: nu
     const cur = -g.position.dot(n);
     const next = cur + ((pressed ? travel : 0) - cur) * Math.min(1, dt * 30);
     g.position.copy(n).multiplyScalar(-next);
-    // the label fades out when its face turns away from the camera
-    if (label.current) {
-      g.getWorldPosition(tmp.wp);
-      g.getWorldQuaternion(tmp.q);
-      tmp.wn.copy(n).applyQuaternion(tmp.q);
-      const facing = tmp.wn.dot(camera.position.clone().sub(tmp.wp).normalize());
-      label.current.style.opacity = String(Math.max(0, Math.min(1, (facing + 0.15) * 2.5)));
-    }
   });
   const hitAt = useMemo(() => outer(o, (o.insert?.protrude ?? 0) / 2), [o]);
-  const labelAt = useMemo(() => outer(o, (o.insert?.protrude ?? 0) + 6), [o]);
+  // beside the cap, never over it: under it on the front / back, out past it on a side, above it on the top
+  const labelAt = useMemo(() => {
+    const p = o.insert?.protrude ?? 0;
+    if (Math.abs(o.n[2]) > 0.5) return outer(o, p + 1).add(new THREE.Vector3(0, -(o.u / 2 + 4.5), 0));
+    if (Math.abs(o.n[0]) > 0.5) return outer(o, p + 12);
+    return outer(o, p + 4);
+  }, [o]);
   const hitR = Math.max(4.5, o.u * 1.2);
   const handlers = {
     onPointerDown: (e: { stopPropagation(): void; pointerId: number; target: EventTarget | null }) => {
@@ -230,13 +225,49 @@ function CaseButton({ index, partId, o, cap, color, registerPress }: { index: nu
         <sphereGeometry args={[hitR, 16, 12]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Html position={labelAt} center zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
-        <div ref={label} className="dv-cap-label" data-testid={`device-case-button-${partId}`}>
-          <kbd>{index + 1}</kbd>
-          <span>{buttonLabel(partId)}</span>
-        </div>
-      </Html>
+      {/* key badge beside the cap (hidden by the case when it is on the far side) */}
+      <KeyBadge index={index} text={buttonLabel(partId)} position={labelAt} />
     </group>
+  );
+}
+
+/** "1 BTN" as a small sprite (always faces the camera; the case hides it from behind). */
+function KeyBadge({ index, text, position }: { index: number; text: string; position: THREE.Vector3 }) {
+  const tex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 128;
+    const g = c.getContext("2d")!;
+    g.scale(2, 2);
+    g.font = "500 30px 'Geist Mono Variable', ui-monospace, monospace";
+    const tw = Math.min(150, g.measureText(text).width);
+    const w = 64 + tw + 22;
+    const x0 = (256 - w) / 2;
+    g.fillStyle = "rgba(10,10,10,0.78)";
+    g.beginPath();
+    g.roundRect(x0, 6, w, 52, 26);
+    g.fill();
+    g.fillStyle = "#2a2a2a";
+    g.beginPath();
+    g.roundRect(x0 + 8, 13, 38, 38, 9);
+    g.fill();
+    g.fillStyle = "#ffffff";
+    g.textBaseline = "middle";
+    g.textAlign = "center";
+    g.fillText(String(index + 1), x0 + 27, 33);
+    g.fillStyle = "#d6d6d6";
+    g.textAlign = "left";
+    g.fillText(text, x0 + 58, 33, 150);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }, [index, text]);
+  useEffect(() => () => tex.dispose(), [tex]);
+  return (
+    <sprite position={position} scale={[18, 4.5, 1]} renderOrder={5}>
+      <spriteMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+    </sprite>
   );
 }
 

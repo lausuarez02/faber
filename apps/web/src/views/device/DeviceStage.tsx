@@ -8,7 +8,7 @@
 //   - anything else: the board on a desk with its LEDs
 import "./device.css";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 import { Camera, ChevronDown, Crosshair, Maximize2, Palette, Pause, Play, X } from "lucide-react";
@@ -78,9 +78,11 @@ function useSourceTick(source: DeviceSource): number {
   return useSyncExternalStore(sub, () => ver.current);
 }
 
-function cameraFor(kind: DeviceKind, source: DeviceSource, mobile: boolean): { position: [number, number, number]; target: [number, number, number]; fov: number } {
+function cameraFor(kind: DeviceKind, source: DeviceSource, mobile: boolean, side = 0): { position: [number, number, number]; target: [number, number, number]; fov: number } {
   const k = mobile ? 1.55 : 1;
-  if (kind === "handheld" || kind === "case") return { position: [5.2 * k, 7.4, 22 * k], target: [0, mobile ? 3.2 : 3.7, 0], fov: 30 };
+  // a designed case: a three-quarter view toward the side its first button is on, so the cap shows
+  if (kind === "case") return { position: [(side === 0 ? 5.2 : 9.5 * side) * k, 7, 20.5 * k], target: [0, mobile ? 3.2 : 3.6, 0], fov: 30 };
+  if (kind === "handheld") return { position: [5.2 * k, 7.4, 22 * k], target: [0, mobile ? 3.2 : 3.7, 0], fov: 30 };
   if (kind === "arm") return { position: [3.5 * k, 6.8, 19 * k], target: [0.6, 2.6, 0], fov: 32 };
   if (kind === "rover") {
     const w = (source.project().world as { arena?: { width?: number; height?: number } } | undefined)?.arena;
@@ -113,11 +115,13 @@ export function DeviceStage({ source, onClose, onOpenCase, capture = false, hud 
   const pressKey = useRef<((i: number, down: boolean) => void) | null>(null);
   const mobile = typeof window !== "undefined" && window.innerWidth < 640;
   const cam = useMemo(() => {
-    const c = cameraFor(layout.kind, source, mobile);
+    const n0 = layout.case?.buttons.find((b) => b.opening)?.opening?.n;
+    const c = cameraFor(layout.kind, source, mobile, n0 && Math.abs(n0[0]) > 0.5 ? Math.sign(n0[0]) : 0);
     // Keep the device clear of a timeline under the stage: aim a little lower so it sits higher.
     if (bottomInset && layout.kind !== "rover") return { ...c, target: [c.target[0], c.target[1] - bottomInset / 110, c.target[2]] as [number, number, number] };
     return c;
-  }, [layout.kind, source, mobile, bottomInset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout.kind, source, mobile, bottomInset, layout.case?.model.hash]);
 
   // Keys: Esc closes, Space runs / pauses, 1-9 press the device's buttons, F toggles follow.
   useEffect(() => {
@@ -209,6 +213,7 @@ export function DeviceStage({ source, onClose, onOpenCase, capture = false, hud 
                 </>
               ) : null}
             </Suspense>
+            <CameraTo position={cam.position} />
             <OrbitControls
               makeDefault
               enabled={!follow}
@@ -255,6 +260,22 @@ export function DeviceStage({ source, onClose, onOpenCase, capture = false, hud 
       </ReadoutsContext.Provider>
     </DeviceSourceContext.Provider>
   );
+}
+
+/** Moves the camera when the framing changes after the canvas exists (the case arrives after the first frame). */
+function CameraTo({ position }: { position: [number, number, number] }) {
+  const camera = useThree((s) => s.camera);
+  const first = useRef(true);
+  const key = position.join(",");
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    camera.position.set(position[0], position[1], position[2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, camera]);
+  return null;
 }
 
 export function fmtClock(ms: number): string {
