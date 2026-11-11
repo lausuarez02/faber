@@ -72,11 +72,11 @@ describe("choice costs", { timeout: T }, () => {
   });
 
   it("a fixed size that fails: the choice that breaks it is named and the sizes that work are given", () => {
-    const p = withEnc(egg8(), { size_mm: { w: 60, h: 78 } });
+    const p = withEnc(egg8(), { size_mm: { w: 44, h: 57 } });
     const r = choiceCosts(layoutInput(p, specOf), { budgetMs: 30_000 });
     expect(r.base.fits).toBe(false);
     expect(r.sizes_that_work?.length).toBeGreaterThan(0);
-    for (const z of r.sizes_that_work!) expect(z.size_mm.w).toBeGreaterThan(60);
+    for (const z of r.sizes_that_work!) expect(z.size_mm.w).toBeGreaterThan(44);
     // relaxing the size makes it fit (the costliest is a choice that breaks the fit)
     expect(r.costs[0]!.breaks_fit).toBe(true);
     expect(r.costs[0]!.message).toMatch(/keeps the parts from fitting/);
