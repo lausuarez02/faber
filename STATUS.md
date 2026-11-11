@@ -37,7 +37,9 @@ Checks (worktree `jumper-wt-r11-native`, no Docker stub, Docker down):
   peripherals (MicroPython + the new Arduino fixtures), esp32-session (5/5), device-net firmware (2/2),
   Renode 18/18 + the Black Pill OLED, runner Docker-path tests (AVR + RP2040 byte-identity), libs3 17/17,
   MCP Blink end to end. Skipped: ESP-IDF 2 and PlatformIO 1 (Docker-only toolchains), live AI 2 (keys).
-- E2E_RESULT
+- e2e, full suite (`E2E_PORT=6100 E2E_HUB_PORT_BASE=12100 --workers=2`): 95 passed, 16 skipped, 2 did not run, 1 failed
+  (case-view desktop, a text assertion under load; re-run alone: desktop + mobile 2/2 passed). Now running instead of
+  skipping without Docker: projects-flow "Build & Run" (native AVR) and renode-board (native Renode), both 2/2 alone.
 
 Gaps:
 - ESP-IDF and PlatformIO builds still need Docker (no native toolchain).
