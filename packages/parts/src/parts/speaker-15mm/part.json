@@ -1,0 +1,140 @@
+{
+  "id": "speaker-15mm",
+  "name": "Speaker 8 Ω 0.25 W (15 mm round)",
+  "category": "output",
+  "description": "Tiny 15 mm round speaker for the smallest cases: speech is understandable at arm's length but noticeably quieter and thinner than 20 or 28 mm speakers; keep the DFPlayer volume at 20 or below (0.25 W). Drive it from an amplifier (DFPlayer SPK_1 / SPK_2), never straight from a board pin.",
+  "pins": [
+    {
+      "id": "+",
+      "label": "+",
+      "x": 40,
+      "y": 116,
+      "type": "passive",
+      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+    },
+    {
+      "id": "-",
+      "label": "-",
+      "x": 80,
+      "y": 116,
+      "type": "passive",
+      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+    }
+  ],
+  "size": {
+    "w": 120,
+    "h": 120
+  },
+  "props": [
+    {
+      "id": "ohms",
+      "label": "Impedance",
+      "type": "enum",
+      "default": "8",
+      "options": [
+        "4",
+        "8"
+      ],
+      "description": "Coil impedance. The DFPlayer drives 4 or 8 Ω; 8 Ω is quieter but kinder to a battery."
+    },
+    {
+      "id": "rated_w",
+      "label": "Rated power",
+      "type": "number",
+      "default": 0.25,
+      "min": 0.1,
+      "max": 1,
+      "unit": "W",
+      "description": "What the speaker takes continuously before it distorts or burns."
+    }
+  ],
+  "limits": {
+    "maxPowerW": 0.25
+  },
+  "footprint": "15 mm round frame, two solder pads (wires)",
+  "dimensions_mm": {
+    "w": 15,
+    "h": 15,
+    "d": 3.5
+  },
+  "mass_g": 1,
+  "current_ma": {
+    "typ": 0,
+    "max": 0
+  },
+  "price_usd": 0.6,
+  "buy_links": [
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-15mm-speaker-8-ohm.html"
+    },
+    {
+      "vendor": "LCSC",
+      "url": "https://www.lcsc.com/search?q=speaker%2015mm%208ohm"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "sounding",
+      "type": "boolean",
+      "description": "Something plays through it (more than 1 mW)."
+    },
+    {
+      "key": "volume",
+      "type": "number",
+      "description": "Loudness 0..1 against its rated power."
+    },
+    {
+      "key": "powerW",
+      "type": "number",
+      "description": "Electrical power into the coil (W, RMS)."
+    },
+    {
+      "key": "currentmA",
+      "type": "number",
+      "description": "RMS current through the coil (mA)."
+    },
+    {
+      "key": "volts",
+      "type": "number",
+      "description": "RMS voltage across the leads (+ minus -)."
+    }
+  ],
+  "tags": [
+    "speaker",
+    "loudspeaker",
+    "8 ohm",
+    "voice",
+    "talk",
+    "speak",
+    "audio",
+    "sound",
+    "dfplayer",
+    "mp3",
+    "small",
+    "mini",
+    "tiny",
+    "15mm"
+  ],
+  "mechanical": {
+    "outline": "round",
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 1,
+    "features": [
+      {
+        "id": "sound",
+        "kind": "grille",
+        "face": "+z",
+        "x": 7.5,
+        "y": 7.5,
+        "shape": "round",
+        "d": 10
+      }
+    ],
+    "source": "typical 15 mm 8 Ω 0.25 W micro speaker, 3.5 mm deep (toy / greeting-card size)"
+  },
+  "sourcing": {
+    "package": "15 mm round, 3.5 mm deep, solder pads",
+    "generic": "Micro speaker 15 mm, 8 Ω, 0.25 W (mylar cone)"
+  }
+}

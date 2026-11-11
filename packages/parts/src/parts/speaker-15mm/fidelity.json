@@ -1,0 +1,39 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "n/a",
+      "note": ""
+    },
+    "timing": {
+      "level": "n/a",
+      "note": ""
+    },
+    "analog": {
+      "level": "approx",
+      "note": "The coil is a plain 4 or 8 Ω resistor; amplifier levels are RMS values solved as DC, so power is I² · R. No inductance, no resonance, no frequency response."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Power above the rated value is reported (warning above 1.25 ×, error above 3 ×); heating and failure are not simulated."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": ""
+    }
+  },
+  "emulates": [
+    "Whether an amplifier output drives it (sounding, loudness against its rating)",
+    "Overpower from a too-loud amplifier or a wrong connection"
+  ],
+  "doesNotEmulate": [
+    "Sound itself: the browser speaks a DFPlayer clip's words with its own voice",
+    "Frequency response, distortion, enclosure acoustics (a sealed back makes it louder and fuller)"
+  ],
+  "testOnRealDevice": [
+    "Listen to it inside the case: a 15 mm cone is quiet and has little bass, so check speech is clear at the distance the device is used",
+    "Listen to it inside the case: grille holes in front of the cone and a sealed back sound best",
+    "Glue or foam-tape it against the grille so it does not buzz",
+    "Keep it away from a magnetometer (IMU) and from screws it could pull"
+  ]
+}

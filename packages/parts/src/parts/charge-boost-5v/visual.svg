@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100" width="140" height="100">
+  <rect x="4" y="6" width="132" height="88" rx="4" fill="#0F1E22" stroke="#3A4250" stroke-width="1.5"/>
+  <rect x="0" y="30" width="22" height="40" rx="3" fill="#9AA3AF" stroke="#C9CED6"/>
+  <rect x="4" y="38" width="12" height="24" rx="2" fill="#15181D"/>
+  <g display="none" data-bind="visible:usb">
+    <rect x="-10" y="40" width="14" height="20" rx="2" fill="#2B313B" stroke="#4A5363"/>
+  </g>
+  <rect x="40" y="34" width="28" height="28" rx="2" fill="#15181D" stroke="#3A4250"/>
+  <text x="54" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="5.5" fill="#8A93A0">IP5306</text>
+  <rect x="74" y="36" width="20" height="20" rx="3" fill="#1C2027" stroke="#3A4250"/>
+  <path d="M78 46 q3 -6 6 0 q3 6 6 0" fill="none" stroke="#8A93A0" stroke-width="1"/>
+  <circle cx="100" cy="24" r="5" fill="#2B313B" stroke="#3A4250"/>
+  <text x="100" y="35" text-anchor="middle" font-family="IBM Plex Mono" font-size="4.5" fill="#8A93A0">KEY</text>
+  <rect x="40" y="16" width="8" height="6" rx="1" fill="#2B313B"/>
+  <rect x="40" y="16" width="8" height="6" rx="1" fill="#4CB5FF" display="none" data-bind="visible:charging"/>
+  <rect x="54" y="16" width="8" height="6" rx="1" fill="#2B313B"/>
+  <rect x="54" y="16" width="8" height="6" rx="1" fill="#5CF2A1" display="none" data-bind="visible:outOn"/>
+  <text x="62" y="80" text-anchor="middle" font-family="IBM Plex Mono" font-size="7" fill="#5CF2A1" data-bind="text:label">off</text>
+  <text x="26" y="36" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN+</text>
+  <text x="26" y="66" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">IN−</text>
+  <text x="122" y="23" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">B+</text>
+  <text x="122" y="43" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">B−</text>
+  <text x="122" y="63" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">5V</text>
+  <text x="122" y="83" text-anchor="end" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2">OUT−</text>
+  <circle data-pin="VIN" cx="10" cy="40" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND.1" cx="10" cy="60" r="3" fill="#C9CED6"/>
+  <circle data-pin="BAT" cx="130" cy="20" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND.2" cx="130" cy="40" r="3" fill="#C9CED6"/>
+  <circle data-pin="OUT" cx="130" cy="60" r="3" fill="#C9CED6"/>
+  <circle data-pin="GND.3" cx="130" cy="80" r="3" fill="#C9CED6"/>
+</svg>

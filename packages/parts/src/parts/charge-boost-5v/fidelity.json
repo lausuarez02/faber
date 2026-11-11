@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Charge states (trickle, CC, CV, full), output on / off with the low-battery cut-off, the 32 s light-load auto-off and waking by KEY or USB." },
+    "timing": { "level": "approx", "note": "Auto-off after 32 s of virtual time under 45 mA; the real threshold varies between 45 and 50 mA by module and chip lot." },
+    "analog": { "level": "approx", "note": "The boost is an ideal 5 V regulator at a fixed 90 % efficiency; the charger is a constant current clamped at 4.2 V like the TP4056 model. No output ripple, no thermal fold-back, no input current limit at 2.1 A." },
+    "power": { "level": "approx", "note": "Draw from the cell = 5 V x load / (0.9 x cell voltage); no-load current about 1 mA while on, standby not modelled separately." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": ["Charging a LiPo from USB (CC, then 4.2 V CV, then full)", "A 5 V output from a 3.0 to 4.2 V cell", "Low-battery cut-off at 3.0 V", "The light-load auto-off (under 45 mA for 32 s) and waking by KEY (press) or USB"],
+  "doesNotEmulate": ["The I2C registers of the I2C variant", "The four-LED fuel gauge and the flashlight output some boards have", "Switching noise on the 5 V rail", "Charging current fold-back with temperature"],
+  "testOnRealDevice": ["Leave it running on battery for a minute with the real load: if the 5 V output switches off, the load is under the auto-off threshold (add a KEY press from a GPIO through 2 kOhm, or use a TP4056 + boost)", "Check the charge current on your module (many charge a small cell far too hard)", "Feel the board while charging at 2 A: it gets warm"]
+}
