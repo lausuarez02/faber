@@ -3,17 +3,18 @@
  *
  * Every part is a box (its envelope: dimensions + keep-outs + swell) with a few ways to sit
  * ("variants": turned 0 / 90 in plan, stood on its edge where allowed, a port on another side) and
- * a depth mode (against the front, against the back, or in the middle). For a given cavity depth D
- * the parts are laid side by side inside the real outline, stacking only where two of them fit
- * behind each other within D. A layout is decoded from an order and the per-part choices by a
- * bottom-left style greedy (candidate spots touch the parts already placed); a seeded simulated
- * annealing over the order and the choices improves it. The objective is the outline scale needed
- * (custom outlines and fixed sizes) or the plan area (presets at auto size), with the heavy parts
- * kept low in an upright outline. Deterministic: the same parts give the same layouts (the time box
- * only stops a search that would take far longer than planned).
+ * a depth mode (against the front, against the back, or in the middle of the depth). For a cavity
+ * depth D the outline (its shape fixed) is tried at a scale: a bottom-left fill puts each part, in
+ * order, at the lowest free spot inside it (next to the parts already there, or snug against the
+ * wall; a part with a port, button or switch against its own wall, its feature within reach and
+ * nothing between it and that wall), stacking only where two parts fit behind each other within D.
+ * A seeded threshold walk over the order and the per-part choices finds the smallest scale that
+ * holds everything (in an upright outline, traded against keeping the heavy parts low).
+ * Deterministic: the same parts give the same layouts (the time box only stops a search that would
+ * take far longer than planned).
  *
  * The caller (layout.ts) tries depths from the thinnest that holds the thickest part (one flat
- * layer) upwards, and turns each result into a real layout (finish: rims, openings, retention).
+ * layer) upwards and turns each result into a real layout (finish: rims, openings, retention).
  */
 
 export type Pt2 = [number, number];
@@ -80,12 +81,9 @@ export interface OResult {
   size: number;
   cost: number;
   iters: number;
-  /** mm the side-bound features still stay from their walls (0 = all reach). */
-  gaps: number;
 }
 
 const NA = 360;
-const DEBUG = !!process.env.JUMPER_OPT_DEBUG;
 
 /** Boundary radius and slant per angle of a normalised outline (bounding box [-1, 1]²) at half sizes A0, B0. */
 export function radialOf(poly: Pt2[], A0: number, B0: number): { r: Float64Array; c: Float64Array } {
@@ -339,16 +337,6 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
         break;
       }
       if (!best) {
-        if (DEBUG) {
-          let ni = 0, nf = 0, nr = 0;
-          for (const [x, y] of cands) {
-            if (!inside(x, y)) ni++;
-            else if (!free(x, y)) nf++;
-            else if (s && !reaches(x, y)) nr++;
-          }
-          console.log(`[opt] D=${D} S=${S.toFixed(3)} ${it.id}: ${cands.length} spots, ${ni} outside, ${nf} blocked, ${nr} out of reach`, JSON.stringify(V.side), V.sx, V.sy, V.sz, zr, ins);
-          if (s) for (const [x, y] of cands.slice(0, 2)) console.log("   ", x.toFixed(1), y.toFixed(1), Math.max(...G.map(([px, py]) => scaleOf(x + px, y + py, ins))).toFixed(4), scaleOf(x + s.tip[0] + s.n[0] * s.off, y + s.tip[1] + s.n[1] * s.off, env.t).toFixed(4));
-        }
         failed.push(i);
         left += V.sx * V.sy + FAIL;
         if (early) break;
@@ -456,7 +444,6 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
   const frozen = env.upright ? cur0.order.findIndex((i) => rank(i) >= 1) : 0;
   let curS = cur0;
   let curV = scaleFor(curS, Math.max(minS, opts.startScale ?? 0.5));
-  const firstV = curV;
   // what the walk keeps: the smallest scale, traded against the heavy parts' height in an upright
   // outline (the whole mass half the outline's height lower is worth about 12 % of scale)
   const HW = env.upright ? 40 : 0;
@@ -520,27 +507,7 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
   }
   const S = Number.isFinite(best.S) ? best.S : 1;
   const curR = decode(best.st, S);
-  if (DEBUG) console.log(`[opt-sa] D=${D} start=${(opts.startScale ?? 0).toFixed(3)} greedy=${firstV.toFixed(3)} best=${S.toFixed(3)} failed=${curR.failed.map((i) => items[i]!.id)} iters=${iters} evals=${evals}`);
-  return { D, placed: curR.placed, failed: curR.failed, size: S, cost: curR.left, iters, gaps: 0 };
-}
-
-/** Plan area of a preset shape around a bounding box (auto size). */
-function areaOf(kind: OEnv["kind"], e: [number, number, number, number]): number {
-  const w = Math.max(0, e[2] - e[0]);
-  const h = Math.max(0, e[3] - e[1]);
-  if (!Number.isFinite(w) || !Number.isFinite(h)) return 0;
-  switch (kind) {
-    case "ellipse":
-      return (Math.PI / 2) * w * h; // the ellipse through the box corners
-    case "circle": {
-      const r = Math.hypot(w, h) / 2;
-      return Math.PI * r * r;
-    }
-    case "stadium":
-      return w * h * 0.95;
-    default:
-      return w * h;
-  }
+  return { D, placed: curR.placed, failed: curR.failed, size: S, cost: curR.left, iters };
 }
 
 /**

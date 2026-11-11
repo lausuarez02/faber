@@ -206,7 +206,8 @@ function candidates(input: LayoutInput, opts: ProposeOptions): Cand[] {
   for (const c of auto) out.push({ L: c.layout, source: `optimizer, ${c.D.toFixed(1)} mm deep inside${c.container === "outline" ? "" : ` (${c.container})`}` });
   // round 7's stacker does not know a part pinned by its centre or its layer: it only competes without such pins
   const pins = Object.entries(input.enclosure.placements ?? {}).some(([, pl]) => pl.layer !== undefined || ((pl.x_mm !== undefined || pl.y_mm !== undefined) && !pl.face));
-  if (!pins || !out.length) out.push({ L: stackLayout(input, { quick: true }), source: "stacked front to back (round 7)" });
+  // (a preset at auto size keeps round 6's fuller search, as before; it forces the quick one itself otherwise)
+  if (!pins || !out.length) out.push({ L: stackLayout(input, { quick: !!opts.quick }), source: "stacked front to back (round 7)" });
   return out;
 }
 
