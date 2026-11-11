@@ -6,7 +6,8 @@
 import { spawn } from "node:child_process";
 import { QEMU_ESP_IMAGE, RENODE_IMAGE, EMULATOR_LABEL, OWNER_LABEL, renodeRuntime, renodeUnavailable } from "@jumper/sim-backends/node";
 import type { McuBackend } from "@jumper/sim-core";
-import { QEMU_ESP_DOCKERFILE_DIR } from "./config.ts";
+import { QEMU_ESP_DOCKERFILE_DIR, REPO_ROOT } from "./config.ts";
+import { join } from "node:path";
 import { exec, RunnerError } from "./docker.ts";
 
 export type ProcessBackendId = "qemu-esp" | "renode";
@@ -25,7 +26,7 @@ export interface EmulatorInfo {
 
 export const EMULATORS: Record<ProcessBackendId, EmulatorInfo> = {
   "qemu-esp": { backend: "qemu-esp", image: QEMU_ESP_IMAGE, name: "Espressif QEMU 9.2.2 with the Jumper bridge", setup: "pnpm jumper setup esp32", buildDir: QEMU_ESP_DOCKERFILE_DIR, buildMinutes: 2 },
-  renode: { backend: "renode", image: RENODE_IMAGE, name: "Renode 1.17.0", setup: `docker build -t ${RENODE_IMAGE} toolchains/renode` },
+  renode: { backend: "renode", image: RENODE_IMAGE, name: "Renode 1.17.0", setup: "pnpm jumper setup renode", buildDir: join(REPO_ROOT, "toolchains/renode"), buildMinutes: 2 },
 };
 
 export function emulatorOf(backend: string | undefined): EmulatorInfo | undefined {
@@ -85,7 +86,7 @@ export async function ensureEmulatorImage(backend: ProcessBackendId, log: (line:
     log(`building the emulator image ${info.image} from ${info.buildDir} (once, about ${info.buildMinutes} minutes)…`);
     const r = await exec("docker", ["build", "-t", info.image, info.buildDir!], { timeoutMs: 30 * 60_000 });
     if (r.code !== 0) {
-      throw new RunnerError("image-build-failed", `Could not build the emulator image ${info.image}: ${(r.stderr || r.stdout).trim().split("\n").slice(-4).join(" | ")}. Fix: check your network connection (it clones Espressif's QEMU from GitHub) and run \`${info.setup}\`.`);
+      throw new RunnerError("image-build-failed", `Could not build the emulator image ${info.image}: ${(r.stderr || r.stdout).trim().split("\n").slice(-4).join(" | ")}. Fix: check your network connection (${backend === "qemu-esp" ? "it clones Espressif's QEMU from GitHub" : "it downloads Renode 1.17.0 from GitHub"}) and free disk space, then run \`${info.setup}\`.`);
     }
     log(`built ${info.image}`);
   })().finally(() => {

@@ -35,7 +35,8 @@ Project
   project-parts                           this project's agent-made parts (list_project_parts)
 Firmware and simulation
   firmware <language> [--firmware ID@v] [--target T] [--env E]   set_firmware: arduino | micropython | esp-idf | platformio
-  setup <language|list>                   install a language's toolchain ahead of the first build
+  setup <language|board family|list>     install a language's toolchain or a board family's build +
+                                          emulator images (esp32, renode) ahead of the first run
                                           (micropython: firmware downloads; esp-idf / platformio: Docker images)
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
@@ -443,6 +444,7 @@ async function setupCommand(what: string | undefined): Promise<number> {
   const runner = await import("@jumper/runner");
   const log = (l: string) => process.stderr.write(l + "\n");
   const list = () => {
+    process.stdout.write("Board families with a local emulator (docs/boards.md): esp32 (ESP32 / S3 / C3 in QEMU), renode (STM32, nRF52840)\n");
     process.stdout.write("Languages and their support per chip (docs/firmware-languages.md):\n");
     for (const lang of Object.values(runner.LANGUAGES)) {
       const ok = Object.entries(lang.chips).filter(([, s]) => s.status === "verified").map(([c]) => c);
@@ -472,8 +474,27 @@ async function setupCommand(what: string | undefined): Promise<number> {
       case "arduino":
         process.stdout.write("Arduino builds install their image on the first build (jumper build).\n");
         return 0;
+      // Board families that run in a local emulator: their Arduino build image(s) and the emulator image.
+      case "esp32":
+        await runner.ensureDocker();
+        await runner.ensureImage(log, runner.ESP32_IMAGE);
+        process.stdout.write(`${runner.ESP32_IMAGE} (ESP32 / S3 / C3 builds): ready\n`);
+        await runner.ensureEmulatorImage("qemu-esp", log);
+        process.stdout.write(`${runner.EMULATORS["qemu-esp"].image} (Espressif QEMU + Jumper bridge): ready\n`);
+        return 0;
+      case "renode":
+      case "stm32":
+      case "nrf52":
+        await runner.ensureDocker();
+        for (const image of [runner.STM32_IMAGE, runner.MBED_NANO_IMAGE, runner.NRF52_IMAGE]) {
+          await runner.ensureImage(log, image);
+          process.stdout.write(`${image}: ready\n`);
+        }
+        await runner.ensureEmulatorImage("renode", log);
+        process.stdout.write(`${runner.EMULATORS.renode.image} (Renode 1.17.0 + Jumper bridge): ready\n`);
+        return 0;
       default:
-        process.stderr.write(`jumper setup: no toolchain called '${what}'. Why: Jumper knows arduino, micropython, esp-idf and platformio (rust and zephyr are planned). Fix: jumper setup list.\n`);
+        process.stderr.write(`jumper setup: no toolchain called '${what}'. Why: Jumper knows the languages arduino, micropython, esp-idf and platformio (rust and zephyr are planned) and the board families esp32 and renode (STM32, nRF52). Fix: jumper setup list.\n`);
         return 2;
     }
   } catch (err) {

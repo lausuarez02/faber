@@ -9,7 +9,7 @@
     "./node": "./src/custom/node.ts"
   },
   "scripts": {
-    "gen": "tsx scripts/gen-registry.ts && tsx scripts/gen-custom-schema.ts",
+    "gen": "tsx scripts/gen-registry.ts && tsx scripts/gen-custom-schema.ts && tsx scripts/gen-boards-doc.ts",
     "test": "vitest run",
     "gen:check": "tsx scripts/gen-registry.ts --check && tsx scripts/gen-custom-schema.ts --check"
   },

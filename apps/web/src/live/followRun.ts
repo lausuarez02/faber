@@ -1,5 +1,6 @@
 import { engine, useJumper } from "../lib/app.ts";
 import { registry } from "../lib/parts.ts";
+import { PROCESS_BACKENDS as SIM_PROCESS_BACKENDS } from "@jumper/sim-core";
 import { sendLiveCommand } from "./command.ts";
 import { useLive } from "./liveStore.ts";
 
@@ -112,8 +113,13 @@ function refuse(error: string): void {
   s.toast({ kind: "error", title: "Can't run yet", detail: error });
 }
 
-/** Simulator backends that run as a process next to `jumper serve` (Renode in Docker), never in the page. */
-export const PROCESS_BACKENDS = new Set(["renode"]);
+/** Simulator backends that run as a process next to `jumper serve` (Espressif QEMU, Renode), never in the page. */
+export const PROCESS_BACKENDS = new Set<string>(SIM_PROCESS_BACKENDS);
+
+/** The emulator a process backend runs in, for messages. */
+export function emulatorName(backend: string): string {
+  return backend === "qemu-esp" ? "Espressif QEMU" : backend === "renode" ? "Renode" : backend;
+}
 
 /** The firmware board's backend when it runs in another process (the page cannot run it), else undefined. */
 export function processBackendOf(project = useJumper.getState().project): { board: string; backend: string; name: string } | undefined {
@@ -129,15 +135,16 @@ export const PROCESS_RUN_MS = 3000;
 /** Run pressed on the followed page: latest firmware, then the simulation here. */
 export async function runFollowed(): Promise<void> {
   const p = useJumper.getState().project;
-  // Round 10: a board that runs in Renode runs in the jumper serve session; this page shows that run.
+  // Round 10: a board that runs in a local emulator (QEMU, Renode) runs in the jumper serve session;
+  // this page shows that run.
   const proc = processBackendOf(p);
   if (proc) {
     useJumper.getState().setSimError(undefined);
     if (!sendLiveCommand("run", { ms: PROCESS_RUN_MS, reset: true })) {
-      refuse(`${proc.name} runs in Renode next to jumper serve, and this page is not connected to it. Fix: wait for the Live bar to say connected (or restart \`jumper serve\`), then press Run again.`);
+      refuse(`${proc.name} runs in ${emulatorName(proc.backend)} next to jumper serve, and this page is not connected to it. Fix: wait for the Live bar to say connected (or restart \`jumper serve\`), then press Run again.`);
       return;
     }
-    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in Renode`, detail: `The firmware runs in the emulator on this computer (Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
+    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in ${emulatorName(proc.backend)}`, detail: `The firmware runs in the emulator on this computer (Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
     return;
   }
   const needsFirmware = !!p.firmware || p.parts.length === 0;

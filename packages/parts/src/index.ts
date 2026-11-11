@@ -66,3 +66,5 @@ export function rankParts(defs: readonly PartDefinition[], query: string): PartD
 }
 export { boardWiring, descriptionForBoard, type BoardWiring, type WiringLine } from "./wiring.ts"; // round 6 canvas
 export { DF, dfFrame, dfChecksum, DfFrameDecoder, parseClips, formatClips, estimateClipMs, normalizeClipKey, WORDS_PER_SECOND } from "./lib/dfplayer.ts"; // round 7 voice
+export { AREA_LABEL, BOARD_SUPPORT, SUPPORT_AREAS, boardSupportOf, boardSupportSummary } from "./board-support.ts";
+export type { BoardSupport, SupportArea, SupportCell, SupportStatus } from "./board-support.ts";

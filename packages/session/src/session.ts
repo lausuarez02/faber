@@ -18,7 +18,7 @@ import {
   firmwareLanguage,
   type FirmwareLanguage,
 } from "@jumper/project-format";
-import { AGENT_MADE_LABEL, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
+import { AGENT_MADE_LABEL, boardSupportOf, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
 import { isProcessBackend, PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
 import { hexToUf2 } from "@jumper/sim-backends";
 import { buildFirmware, CHIP_IMAGE, chipFamily, LANGUAGES, languagesFor, microPythonErrors, outputFormatFor, supportOf, type BuildRequest, type BuildResult } from "@jumper/runner";
@@ -701,6 +701,9 @@ export class ProjectSession {
       state: (spec.bindings ?? []).map((b) => `${b.key} (${b.type})`).filter((s) => !/Transform|Opacity/.test(s)),
       ...(spec.limits ? { limits: spec.limits } : {}),
       fidelity: { level: def.fidelity.level, gaps: def.fidelity.doesNotEmulate.slice(0, 5), test_on_real_device: def.fidelity.testOnRealDevice.slice(0, 4) },
+      // Round 10: a board's emulation per peripheral (docs/boards.md): verified / partial / untested / no / n/a.
+      ...(boardSupportOf(spec.id) ? { emulation: Object.fromEntries(Object.entries(boardSupportOf(spec.id)!.areas).map(([k, c]) => [k, c.status === "verified" ? "verified" : `${c.status}${c.note ? `: ${c.note}` : ""}`])) } : {}),
+      ...(spec.availability ? { availability: spec.availability } : {}),
       wiring: usage.wiring,
       ...(onBoard && boardInst ? { wiring_on_this_board: `${onBoard.text}${onBoard.lines.some((l) => l.note) ? ` ${onBoard.lines.filter((l) => l.note).map((l) => `${l.pin}: ${l.note}`).join("; ")}.` : ""} Use "${boardInst.id}.<pin>" in connect; this overrides any Uno pin names in wiring / example.` } : {}),
       ...(usage.connect ? { typical_connections: usage.connect } : {}),

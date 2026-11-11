@@ -59,7 +59,7 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
   if (typeof out === "number") closeSync(out);
   child.unref();
   const stop = () => {
-    if (name) spawnSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+    if (name) spawnSync("docker", ["rm", "-f", name], { stdio: "ignore", timeout: 15_000 });
     if (child.exitCode === null) child.kill("SIGKILL");
   };
   return { child, name, argv, stop };

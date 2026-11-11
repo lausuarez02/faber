@@ -54,6 +54,12 @@ export async function ensureDocker(): Promise<void> {
       "Build failed: the 'docker' command was not found, and Jumper compiles firmware inside a pinned Docker image. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then build again.",
     );
   }
+  if (res.code !== 0 && res.stderr.includes("[jumper] killed after")) {
+    throw new RunnerError(
+      "docker-not-responding",
+      "Build failed: Docker Desktop is running but not answering (`docker info` took more than 20 s). Why: its engine is stuck, often after the disk filled up. Fix: free some disk space, restart Docker Desktop (whale menu, Restart), then build again.",
+    );
+  }
   if (res.code !== 0) {
     throw new RunnerError(
       "docker-not-running",

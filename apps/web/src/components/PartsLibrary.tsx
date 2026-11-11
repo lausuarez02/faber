@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Search } from "lucide-react";
 import type { PartCategory, PartDefinition } from "@jumper/sim-core";
+import { boardSupportOf, boardSupportSummary } from "@jumper/parts";
 import { CATEGORY_LABEL, CATEGORY_ORDER, partDefinitions, svgDataUrl } from "../lib/parts.ts";
 import { useJumper } from "../lib/app.ts";
 import { PART_MIME } from "./Canvas.tsx";
@@ -85,7 +86,12 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
               {g.defs.map((def) => {
                 // Round 10: a board whose emulator support is not proven yet is shown, not placeable, with the reason.
                 const planned = def.spec.availability?.status === "planned";
-                const where = def.spec.mcu?.backend === "renode" ? " · runs in Renode (Docker, via jumper serve)" : "";
+                const backend = def.spec.mcu?.backend;
+                const emu = backend === "renode" ? "Renode" : backend === "qemu-esp" ? "QEMU" : undefined;
+                const where = emu ? ` · runs in ${emu === "QEMU" ? "Espressif QEMU" : "Renode"} on this computer (Docker, via jumper serve)` : "";
+                // Round 10: what the board's emulator really carries (docs/boards.md), in the tooltip.
+                const support = def.spec.category === "board" ? boardSupportOf(def.spec.id) : undefined;
+                const supportText = support ? `\n\n${boardSupportSummary(support)}\n(docs/boards.md)` : "";
                 return (
                   <li key={def.spec.id}>
                     <button
@@ -97,13 +103,14 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
                       onDragStart={(e) => onDragStart(e, def)}
                       onClick={() => !planned && place(def)}
                       data-testid={`library-${def.spec.id}`}
-                      title={planned ? `Planned, not placeable yet: ${def.spec.availability!.reason}` : `${def.spec.description}${where}\nClick to place, or drag onto the canvas.`}
+                      title={planned ? `Planned, not placeable yet: ${def.spec.availability!.reason}${supportText}` : `${def.spec.description}${where}${supportText}\nClick to place, or drag onto the canvas.`}
+                      data-backend={backend}
                     >
                       <span className="lib-thumb">
                         <img src={thumbs.get(def.spec.id)} alt="" draggable={false} />
                       </span>
                       <span className="lib-name">{def.spec.name}</span>
-                      <span className="lib-meta">{planned ? "Planned" : `${def.spec.pins.length} pins${def.spec.mcu?.backend === "renode" ? " · Renode" : ""}`}</span>
+                      <span className="lib-meta">{planned ? "Planned" : `${def.spec.pins.length} pins${emu ? ` · ${emu}` : ""}`}</span>
                     </button>
                   </li>
                 );
