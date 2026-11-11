@@ -88,3 +88,15 @@ rm -rf $F/build $F/build2
 Toolchain: arduino-cli 1.5.1, `esp32:esp32` 3.3.12 (ESP-IDF v5.5.5, esp-x32 / esp-rv32 2601,
 esptool 5.3.1). sha256 (first 16 hex digits of the .gz): `esp32c3_blink_io.merged.bin.gz`
 09de6aab95b741a7, `esp32_i2c_probe.merged.bin.gz` 0adda1611242ac3e.
+
+## Renode fixtures (round 9)
+
+`renode/bridge_bluepill.elf` (sketch `renode/bridge_stm32/`) and `renode/hello_nano33ble.elf`
+(sketch `renode/hello_nano/`), debug info stripped, symbols kept (Renode finds the vector table
+through them; a fully stripped Nano 33 BLE ELF, linked at 0x10000 behind the bootloader, faults):
+
+    docker run --rm -v $PWD:/src jumper/arduino-stm32:2.11.0-r1 compile \
+      -b STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8 --output-dir /src/out /src/bridge_stm32
+    docker run --rm -v $PWD:/src jumper/arduino-mbed-nano:4.4.1-r1 arduino-cli compile \
+      -b arduino:mbed_nano:nano33ble --output-dir /src/out /src/hello_nano
+    arm-none-eabi-strip --strip-debug -o <name>.elf out/<sketch>.ino.elf

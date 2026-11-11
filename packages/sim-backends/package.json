@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./qemu-esp": "./src/qemu-esp/index.ts"
+    "./qemu-esp": "./src/qemu-esp/index.ts",
+    "./renode": "./src/renode/index.ts"
   },
   "scripts": {
     "test": "vitest run"
