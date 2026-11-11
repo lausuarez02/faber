@@ -5,7 +5,7 @@
   "description": "Tiny generic ESP32-C3 board (22.5 × 18 mm, USB-C, RISC-V at 160 MHz) with Wi-Fi / BLE (not emulated), 4 MB flash, 13 GPIOs, a blue LED on GPIO8 (active low, shared with the default SDA) and a BOOT button on GPIO9. No battery charger. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers. 3.3 V logic only.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-c3-supermini): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-c3-supermini): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
   },
   "pins": [
     {

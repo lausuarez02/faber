@@ -250,8 +250,17 @@ export async function composeMicroPython(opts: { chip: string; board?: string; s
     return { format: "ihex", hex: flashToIntelHex(flash, base), firmware: fw, files: [...files.keys()].sort(), fsBytesUsed: used, fsBytes: fw.layout.fsBytes };
   }
   const flash = padFlash(bytes, fw.layout.flashOffset, fw.layout.flashMB);
-  const vfs = espPartitions(flash).find((p) => p.label === "vfs" || (p.type === 1 && p.subtype === 0x81));
-  if (!vfs) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} has no 'vfs' partition in its partition table, so there is nowhere to put main.py. Fix: report it; this is a Jumper bug.`);
+  // The table sits at flash 0x8000 (the image may start at 0x1000 on the ESP32: padFlash placed it).
+  const parts = espPartitions(flash);
+  let vfs = parts.find((p) => p.label === "vfs" || (p.type === 1 && p.subtype === 0x81));
+  if (!vfs && parts.length) {
+    // Recent MicroPython (1.24+) ships nvs / phy_init / factory only and adds "vfs" at first boot over
+    // the rest of the flash, from the end of the last partition: put the filesystem exactly there.
+    const end = Math.max(...parts.map((p) => p.offset + p.size));
+    const size = (fw.layout.flashMB << 20) - end;
+    if (size >= 64 * 1024) vfs = { type: 1, subtype: 0x81, offset: end, size, label: "vfs" };
+  }
+  if (!vfs) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} has no 'vfs' partition and no free flash after its partitions, so there is nowhere to put main.py. Fix: report it; this is a Jumper bug.`);
   const fs = await buildLittleFs(files, { blockSize: 4096, blockCount: vfs.size / 4096 });
   flash.set(fs, vfs.offset);
   return { format: "esp-flash", binary: flash, firmware: fw, files: [...files.keys()].sort(), fsBytesUsed: used, fsBytes: vfs.size };

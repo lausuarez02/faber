@@ -5189,7 +5189,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "available",
-        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-c3-supermini): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-c3-supermini): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
       },
       "tags": [
         "esp32",
@@ -5283,7 +5283,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-C3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-C3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: with the jb5 emulator, PWM (LEDC), GPIO interrupts, UART1, the ADC and the I2C controller are verified on real firmware on this chip; SPI does not work yet and RMT is untested. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
         },
         "timing": {
           "level": "approx",
@@ -6015,7 +6015,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "available",
-        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-devkitc): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-devkitc): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
       },
       "tags": [
         "esp32",
@@ -6111,7 +6111,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. Wire (I2C0) transactions reach the I2C parts on the default pins (GPIO21 / GPIO22). SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. Wire (I2C0) transactions reach the I2C parts on the default pins (GPIO21 / GPIO22). SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: with the jb5 emulator, PWM (LEDC), GPIO interrupts, UART1, the ADC are verified on real firmware on this chip; SPI does not work yet and RMT is untested. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
         },
         "timing": {
           "level": "approx",
@@ -6886,7 +6886,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "available",
-        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-s3-devkitc-1): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-s3-devkitc-1): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
       },
       "tags": [
         "esp32",
@@ -6997,7 +6997,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-S3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-S3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: the jb5 emulator adds PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have not been run on the S3, so treat them as not emulated here until they are. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
         },
         "timing": {
           "level": "approx",
@@ -13942,7 +13942,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "available",
-        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32c3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32c3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
       },
       "tags": [
         "seeed",
@@ -14040,7 +14040,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-C3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-C3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: with the jb5 emulator, PWM (LEDC), GPIO interrupts, UART1, the ADC and the I2C controller are verified on real firmware on this chip; SPI does not work yet and RMT is untested. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
         },
         "timing": {
           "level": "approx",
@@ -14433,7 +14433,7 @@ export const partDefinitions: PartDefinition[] = [
       },
       "availability": {
         "status": "available",
-        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+        "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
       },
       "tags": [
         "seeed",
@@ -14541,7 +14541,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-S3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) on your computer, in a Docker container, with Jumper's bridge: GPIO outputs and inputs, the chip's internal pull-ups and pull-downs (IO_MUX), and UART0 (Serial) cross to the circuit as time-stamped events. I2C is NOT emulated on the ESP32-S3 (QEMU has no I2C controller model for it): Wire calls fail (endTransmission returns an error) and no part on the bus is reached. SPI peripherals, PWM (LEDC / analogWrite / ledcWrite), RMT (NeoPixel), I2S, the ADC (analogRead), touch, GPIO interrupts (attachInterrupt), deep sleep and the radio are not bridged yet: they do not reach the circuit. Round 10 update: the jb5 emulator adds PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have not been run on the S3, so treat them as not emulated here until they are. docs/boards.md has the current per-peripheral status, which supersedes the lists below."
         },
         "timing": {
           "level": "approx",

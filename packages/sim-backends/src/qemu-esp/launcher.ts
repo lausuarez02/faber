@@ -17,6 +17,14 @@ export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb5";
 export const EMULATOR_LABEL = "jumper.emulator";
 export const OWNER_LABEL = "jumper.owner-pid";
 
+/**
+ * Docker (default) or Jumper's patched QEMU built on this machine (JUMPER_QEMU_ESP_RUNTIME=native:
+ * qemu-system-xtensa / qemu-system-riscv32 on PATH, built from toolchains/qemu-esp's patches).
+ */
+export function qemuRuntime(): "docker" | "native" {
+  return process.env.JUMPER_QEMU_ESP_RUNTIME === "native" ? "native" : "docker";
+}
+
 export interface QemuLaunchOptions {
   chip: EspChip;
   /** Merged 2/4/8/16 MB flash image (esptool merge-bin), e.g. <sketch>.ino.merged.bin. */
@@ -90,7 +98,7 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
   const out = o.logFile ? openSync(o.logFile, "a") : "ignore";
   let argv: string[];
   let name: string | undefined;
-  if ((o.runtime ?? "docker") === "docker") {
+  if ((o.runtime ?? qemuRuntime()) === "docker") {
     name = `jumper-qemu-esp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
     argv = [
       "docker", "run", "--rm", "--name", name,
@@ -116,6 +124,7 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
 
 /** True when `docker` answers and the QEMU image is present. */
 export function qemuImageAvailable(image = QEMU_ESP_IMAGE): boolean {
+  if (qemuRuntime() === "native") return qemuPreflight({ runtime: "native" }) === undefined && qemuPreflight({ runtime: "native", chip: "esp32c3" }) === undefined;
   const r = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 10_000 });
   return r.status === 0;
 }
@@ -125,7 +134,7 @@ export function qemuImageAvailable(image = QEMU_ESP_IMAGE): boolean {
  * missing, QEMU not on PATH). Returns undefined when it can.
  */
 export function qemuPreflight(o: { runtime?: "docker" | "native"; image?: string; chip?: EspChip } = {}): string | undefined {
-  if ((o.runtime ?? "docker") === "native") {
+  if ((o.runtime ?? qemuRuntime()) === "native") {
     const bin = ESP_CHIPS[o.chip ?? "esp32"].qemu;
     const r = spawnSync(bin, ["--version"], { stdio: "ignore", timeout: 10_000 });
     return r.status === 0 ? undefined : `${bin} is not on PATH, so the ESP32 emulator cannot start (runtime "native"). Fix: install Jumper's patched QEMU (toolchains/qemu-esp) or use runtime "docker".`;

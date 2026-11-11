@@ -4,7 +4,7 @@
 // containers a crashed Jumper left behind (by label), and disposes every emulator it started.
 // Ports are never fixed: every bridge listens on a free port the OS picks (never 7780).
 import { spawn } from "node:child_process";
-import { QEMU_ESP_IMAGE, RENODE_IMAGE, EMULATOR_LABEL, OWNER_LABEL, renodeRuntime, renodeUnavailable } from "@jumper/sim-backends/node";
+import { QEMU_ESP_IMAGE, RENODE_IMAGE, EMULATOR_LABEL, OWNER_LABEL, qemuPreflight, qemuRuntime, renodeRuntime, renodeUnavailable } from "@jumper/sim-backends/node";
 import type { McuBackend } from "@jumper/sim-core";
 import { QEMU_ESP_DOCKERFILE_DIR, REPO_ROOT } from "./config.ts";
 import { join } from "node:path";
@@ -46,6 +46,11 @@ export interface EmulatorCheck {
 export async function checkEmulator(backend: ProcessBackendId, board = "this board"): Promise<EmulatorCheck> {
   const info = EMULATORS[backend];
   const t0 = Date.now();
+  if (backend === "qemu-esp" && qemuRuntime() === "native") {
+    // JUMPER_QEMU_ESP_RUNTIME=native: Jumper's patched QEMU built on this machine, no Docker involved.
+    const why = qemuPreflight({ runtime: "native" }) ?? qemuPreflight({ runtime: "native", chip: "esp32c3" });
+    return why ? { ok: false, code: "image-missing", image: "native qemu", message: `Can't run ${board}: ${why}` } : { ok: true, image: "native qemu", dockerMs: Date.now() - t0 };
+  }
   if (backend === "renode" && renodeRuntime() === "native") {
     // JUMPER_RENODE_RUNTIME=native: a Renode 1.17 on this machine, no Docker involved.
     const why = renodeUnavailable();

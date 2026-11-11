@@ -214,7 +214,8 @@ export class QemuEspBackend implements McuBackend {
     if (this._version === 0) return this.info.capabilities;
     if (this._version < 3) return this.opts.chip === "esp32" ? ["gpio", "uart", "i2c", "net"] : ["gpio", "uart", "net"];
     const feat = new Set(this._features);
-    return this.info.capabilities.filter((c) => c === "net" || feat.has(c) || (c === "pulls" && feat.has("pads")));
+    // QEMU names a few features after the peripheral: "ledc" is PWM, "pads" the pull-ups / pull-downs.
+    return this.info.capabilities.filter((c) => c === "net" || feat.has(c) || (c === "pulls" && feat.has("pads")) || (c === "pwm" && feat.has("ledc")));
   }
 
   /** Boots asynchronously (container start + handshake up to t = 0); a later load() of the same image is a no-op. */
@@ -435,6 +436,7 @@ export class QemuEspBackend implements McuBackend {
     }
     this.fresh = true;
     for (let g = 0; g < 64; g++) if ((this.inputs >> BigInt(g)) & 1n) link.send(encodeInput(g, 1));
+    for (const [g, mv] of this.analogMv) link.send(encodeAnalog(g, mv));
     if (this.watchMask) link.send(encodeSyncMask(this.watchMask));
   }
 
@@ -457,7 +459,7 @@ export class QemuEspBackend implements McuBackend {
     this.ledcWaves.clear();
     this.uartBaud.clear();
     this.uartRx.clear();
-    this.analogMv.clear();
+    // analogMv is kept: a pad voltage the circuit set before the boot is sent again after it.
     this.spiMiso.clear();
     this.i2cOpen.clear();
     this.deadlines = [];

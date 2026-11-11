@@ -1,12 +1,12 @@
 // MicroPython on the ESP32 family in Jumper's QEMU: the official firmware + a littlefs image with
-// main.py, booted through the bridge. Needs Docker and jumper/qemu-esp; skipped otherwise.
+// main.py, booted through the bridge. Needs jumper/qemu-esp (Docker) or a native build; skipped otherwise.
 import { afterAll, describe, expect, it } from "vitest";
 import { I2cBus } from "@jumper/sim-core";
-import { QemuEspBackend } from "@jumper/sim-backends/qemu-esp";
-import { imagePresent } from "./docker-guard.ts";
+import { QemuEspBackend, qemuImageAvailable } from "@jumper/sim-backends/qemu-esp";
 import { composeMicroPython } from "./micropython.ts";
 
-const available = imagePresent("jumper/qemu-esp:9.2.2-20260417-jb2");
+// The current QEMU image (Docker), or a native build with JUMPER_QEMU_ESP_RUNTIME=native.
+const available = qemuImageAvailable();
 
 function run(be: QemuEspBackend, ms: number) {
   const end = be.cycles + Math.round((be.cyclesPerSecond * ms) / 1000);
@@ -18,8 +18,10 @@ describe.skipIf(!available)("MicroPython in QEMU (ESP32 family)", { timeout: 180
   afterAll(() => backends.forEach((b) => b.close()));
 
   for (const [chip, led] of [["esp32", 2], ["esp32c3", 8]] as const) {
-    it(`${chip}: main.py from littlefs blinks GPIO${led}${chip === "esp32" ? " and talks I2C0 to a part at 0x3C" : ""}`, async () => {
-      const i2cCode = chip === "esp32" ? `from machine import I2C\ni2c = I2C(0, scl=Pin(22), sda=Pin(21))\nprint("scan", i2c.scan())\ni2c.writeto(0x3C, bytes([0x80, 0xAF]))\n` : "";
+    it(`${chip}: main.py from littlefs blinks GPIO${led} and talks I2C0 to a part at 0x3C`, async () => {
+      // I2C0: the ESP32's controller (round 9), and the C3's (added by the jb5 image, round 10).
+      const [scl, sda] = chip === "esp32" ? [22, 21] : [5, 4];
+      const i2cCode = `from machine import I2C\ni2c = I2C(0, scl=Pin(${scl}), sda=Pin(${sda}))\nprint("scan", i2c.scan())\ni2c.writeto(0x3C, bytes([0x80, 0xAF]))\n`;
       const main = `from machine import Pin\nimport time\nled = Pin(${led}, Pin.OUT)\n${i2cCode}for i in range(4):\n    led.toggle()\n    print("blink", i)\n    time.sleep_ms(100)\nprint("done")\n`;
       const out = await composeMicroPython({ chip, files: new Map([["main.py", main]]) });
       const be = new QemuEspBackend({ chip, network: false });
@@ -38,10 +40,8 @@ describe.skipIf(!available)("MicroPython in QEMU (ESP32 family)", { timeout: 180
       expect(serial).toContain("done");
       expect(serial).not.toContain("Performing initial setup"); // the filesystem Jumper wrote mounted as is
       expect(edges.filter((v, i) => i === 0 || v !== edges[i - 1]).length).toBeGreaterThanOrEqual(4);
-      if (chip === "esp32") {
-        expect(serial).toContain("scan [60]");
-        expect(writes).toEqual([0x80, 0xaf]);
-      }
+      expect(serial).toContain("scan [60]");
+      expect(writes).toEqual([0x80, 0xaf]);
       // The REPL on UART0.
       for (const c of "print(6 * 7)\r") be.writeSerial(c.charCodeAt(0));
       run(be, 300);

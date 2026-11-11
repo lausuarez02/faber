@@ -65,6 +65,8 @@ const T = {
   esp9: "packages/sim-backends/src/qemu-esp/qemu-esp.integration.test.ts",
   espBridge: "packages/sim-backends/src/qemu-esp/bridge.test.ts",
   espNet: "packages/device-net/test/firmware.integration.test.ts",
+  espPeriph: "services/runner/src/lang/esp-peripherals.integration.test.ts",
+  mpyEsp: "services/runner/src/lang/micropython-esp.integration.test.ts",
   renode: "packages/sim-backends/src/renode/boards.integration.test.ts",
   renodeParts: "packages/parts/src/renode.integration.test.ts",
 } as const;
@@ -128,40 +130,48 @@ const rp = (board: string, boots: string): BoardSupport => ({
 
 // ------------------------------------------------------------------------------------------ ESP32 family
 
-const JB5 = "bridged in the jb5 QEMU image and Jumper's backend (fake-QEMU protocol tests pass), but the image was never built and no real firmware has exercised it";
+const JB5 = "bridged in the jb5 QEMU image and Jumper's backend (fake-QEMU protocol tests pass), but no real firmware has exercised it on this chip yet";
+const NATIVE = "on the merged jb5 sources (a native QEMU build: the jb5 Docker image itself was not built, Docker was hung)";
 
-const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => ({
-  board,
-  backend: "qemu-esp",
-  runs: "Espressif QEMU on this computer (Docker image jumper/qemu-esp), started by jumper serve",
-  areas: {
-    boots: v(T.espBoards, "proven on image jb3 (esp-app); not re-run on the merged jb5 image"),
-    gpio: v(T.espBoards, "output, input with the internal pull-up; proven on jb3"),
-    pwm: untested(`LEDC: ${JB5}`),
-    adc: untested(`single-shot ADC fed by the solved pad voltage: ${JB5}`),
-    irq: untested(`GPIO interrupts (edge and level): ${JB5}`),
-    uart: { status: "partial", test: T.espBoards, note: `UART0 (Serial) verified on jb3; UART1 / UART2 ${JB5}` },
-    i2c:
-      chip === "esp32"
-        ? { status: "partial", test: T.esp9, note: `I2C0 verified in round 9 (jb2); I2C1 and the repeated-START fix ${JB5}` }
-        : untested(`QEMU had no I2C controller for the ${chip === "esp32s3" ? "ESP32-S3" : "ESP32-C3"}; jb5 adds one: ${JB5}`),
-    spi: untested(`SPI2 / SPI3 master: ${JB5}`),
-    i2s: no("Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet"),
-    rmt: untested(`RMT transmit (NeoPixel): ${JB5}`),
-    net:
-      chip === "esp32c3"
-        ? { status: "partial", test: T.espNet, note: "an unmodified WiFi.h + HTTPS sketch ran 3x on an ESP32-C3 through the sandbox network (scan, DHCP, DNS, TLS 200, blocked host, weak signal, drop and rejoin) before Docker failed; the committed firmware test never ran. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card" }
-        : untested("the netstack and the r3 Wi-Fi shim are chip-independent, but no firmware for this chip has run through them; the radio itself is not emulated"),
-    ble: no("QEMU has no radio model"),
-  },
-  languages: [
-    { id: "arduino", status: "verified", note: "simulation build jumper/arduino-esp32:3.3.12-r3; device build JUMPER_SIM=0" },
-    chip === "esp32s3"
-      ? { id: "micropython", status: "no", note: "the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build" }
-      : { id: "micropython", status: "partial", note: "the official build booted to its REPL in QEMU and drove a GPIO (spike run); the committed test never ran" },
-    { id: "esp-idf", status: "untested", note: "image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)" },
-  ],
-});
+const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => {
+  const s3 = chip === "esp32s3";
+  // Real-firmware peripheral checks run with MicroPython, which runs on the ESP32 and the C3 (not the S3).
+  const periph = (what: string): SupportCell => (s3 ? untested(`${what}: verified on the ESP32 and ESP32-C3 (same model); not run on the S3: ${JB5}`) : v(T.espPeriph, `${what}, real MicroPython firmware ${NATIVE}`));
+  return {
+    board,
+    backend: "qemu-esp",
+    runs: "Espressif QEMU on this computer (Docker image jumper/qemu-esp, or a native build), started by jumper serve",
+    areas: {
+      boots: v(T.espBoards, `real arduino-esp32 firmware ${NATIVE}`),
+      gpio: v(T.espBoards, "output, input with the internal pull-up"),
+      pwm: periph("LEDC PWM: 1 kHz, 25 % duty to the pin edge"),
+      adc: periph("single-shot ADC of the solved pad voltage (linear model, no calibration eFuse: read_uv fails, raw reads work)"),
+      irq: periph("GPIO interrupt on a falling edge, three presses"),
+      uart: s3 ? { status: "partial", test: T.espBoards, note: `UART0 (Serial) verified; UART1 / UART2 verified on the ESP32 and C3, not run on the S3` } : v(T.espPeriph, "UART0 (Serial) and UART1 bytes"),
+      i2c:
+        chip === "esp32"
+          ? v(T.mpyEsp, `I2C0 scan and write (round 9, and MicroPython ${NATIVE}); the second bus untested`)
+          : chip === "esp32c3"
+            ? v(T.mpyEsp, `the I2C controller jb5 adds to the C3: scan and write from MicroPython ${NATIVE}`)
+            : untested(`jb5 adds an I2C controller to the S3 (verified on the C3): ${JB5}`),
+      spi: { status: "no", note: s3 ? `not run on the S3; on the ESP32 and C3 MicroPython's SPI does not come through the jb5 model (C3: MOSI arrives as 00, ESP32: the transfer hangs) - see ${T.espPeriph}` : `does not work yet: MicroPython's SPI transfer ${chip === "esp32c3" ? "arrives with MOSI 00 00 and MISO unused" : "never returns"} in the jb5 model (asserted as a known gap in ${T.espPeriph}); Arduino SPI not tried` },
+      i2s: no("Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet"),
+      rmt: untested(`RMT transmit (NeoPixel): ${JB5}`),
+      net:
+        chip === "esp32c3"
+          ? { status: "partial", test: T.espNet, note: "an unmodified WiFi.h + HTTPS sketch ran 3x on an ESP32-C3 through the sandbox network (scan, DHCP, DNS, TLS 200, blocked host, weak signal, drop and rejoin) before Docker failed; the committed firmware test never ran. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card" }
+          : untested("the netstack and the r3 Wi-Fi shim are chip-independent, but no firmware for this chip has run through them; the radio itself is not emulated"),
+      ble: no("QEMU has no radio model"),
+    },
+    languages: [
+      { id: "arduino", status: "verified", note: "simulation build jumper/arduino-esp32:3.3.12-r3; device build JUMPER_SIM=0" },
+      s3
+        ? { id: "micropython", status: "no", note: "the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build" }
+        : { id: "micropython", status: "verified", note: "official 1.29.0 build + Jumper's littlefs image with main.py" },
+      { id: "esp-idf", status: "untested", note: "image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)" },
+    ],
+  };
+};
 
 // ------------------------------------------------------------------------------------------ Renode boards
 

@@ -184,16 +184,20 @@ person installs themselves; they are not distributed with Jumper:
               program (https://github.com/espeak-ng/espeak-ng)
   ffmpeg      LGPL 2.1 or GPL depending on the build (https://ffmpeg.org)
 
-ESP32-family boards (round 9 spike, emulator)
+ESP32-family boards (round 9 spike, round 10 emulator)
 ---------------------------------------------
 
 ESP32 / ESP32-S3 / ESP32-C3 firmware runs in Espressif's fork of QEMU
 (https://github.com/espressif/qemu, tag esp-develop-9.2.2-20260417), GNU General
 Public License 2.0. Jumper does not link QEMU: it runs as a separate program in
 the Docker image built by toolchains/qemu-esp/Dockerfile, which compiles that
-tag with Jumper's patches toolchains/qemu-esp/0001-jumper-bridge.patch and 0002-jumper-peripherals.patch (GPL-2.0,
-like the files it modifies; it adds a GPIO/UART/I2C bridge). Anyone receiving
-the image can rebuild it from the Dockerfile, the public tag and the patch.
+tag with Jumper's patches toolchains/qemu-esp/0001-jumper-bridge.patch,
+0002-jumper-peripherals.patch and 0003-jumper-pads.patch (GPL-2.0, like the files
+they modify; they add the GPIO/UART/I2C bridge, the peripheral models LEDC, SPI,
+RMT, ADC, UART1/2, I2C on the S3/C3 and GPIO interrupts, and pad pull tracking).
+Anyone receiving the image can rebuild it from the Dockerfile, the public tag and
+the patches. A native QEMU built from the same sources (runtime "native") is the
+user's own build, run as a separate program.
 packages/sim-backends/src/qemu-esp talks to it over a socket (Apache-2.0).
 
 ESP32 firmware (packages/sim-backends/fixtures/esp32*.merged.bin.gz and

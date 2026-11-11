@@ -133,7 +133,11 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
   | Board | Simulator | Toolchain |
   | --- | --- | --- |
   | Arduino Uno R3, Arduino Nano (ATmega328P, 5 V) | [avr8js](https://github.com/wokwi/avr8js) | arduino-cli `arduino:avr` |
-  | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero (RP2040, 3.3 V) | [rp2040js](https://github.com/wokwi/rp2040js) with Jumper's own boot ROM | arduino-pico 6.3.1 ([docs/rp2040.md](docs/rp2040.md)) |
+  | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero (RP2040, 3.3 V) | [rp2040js](https://github.com/wokwi/rp2040js) with Jumper's own boot ROM | arduino-pico 6.3.1 ([docs/rp2040.md](docs/rp2040.md)); MicroPython 1.29.0 on the Pico / XIAO |
+  | Seeed XIAO ESP32-S3 / ESP32-C3, ESP32-C3 SuperMini, ESP32 DevKitC, ESP32-S3 DevKitC-1 (3.3 V) | Espressif's QEMU 9.2.2 with Jumper's bridge, on your computer (Docker), through `jumper serve` | arduino-esp32 3.3.12 ([docs/esp32-emulator.md](docs/esp32-emulator.md)) |
+  | STM32 Blue Pill, WeAct Black Pill F411, Seeed XIAO nRF52840, Arduino Nano 33 BLE; Nucleo-F401RE planned | [Renode](https://renode.io) 1.17 with Jumper's bridge, on your computer (Docker or native), through `jumper serve` | STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13 ([docs/renode.md](docs/renode.md)) |
+
+  What each board emulates, peripheral by peripheral, and the test that proves it: [docs/boards.md](docs/boards.md). Wi-Fi and BLE radios are not emulated on any board; ESP32 Wi-Fi sketches run through an emulated Ethernet card and Jumper's sandbox network ([docs/network.md](docs/network.md)).
 
 - **Simulation:** the real firmware arduino-cli builds, with I2C and SPI buses and cycle-timed PWM; on RP2040 also the ADC, USB serial, UARTs on pins and PIO.
   - A small DC circuit solver sets each LED's brightness from the actual current through it, so an LED wired without a resistor is flagged.
@@ -146,7 +150,7 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 - **Project format:** one `jumper.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's serial output (Serial.print: UART0 on AVR, USB on RP2040) shows up live next to the canvas.
 
-What is **not** there yet: building firmware without `jumper serve` (Build & Run in the editor goes through the local server and Docker), ESP32 and STM32 boards, the RP2040's second core, Wi-Fi beyond the ESP-01 sandbox, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
+What is **not** there yet: building firmware without `jumper serve` (Build & Run in the editor goes through the local server and Docker), running ESP32 / STM32 / nRF52 boards in the page itself (they run in a local emulator through `jumper serve`), many ESP32 peripherals on real firmware (written, not yet verified: see [docs/boards.md](docs/boards.md)), BLE and the Wi-Fi radio, the RP2040's second core, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
 
 ## Roadmap
 

@@ -60,6 +60,6 @@ export function createNodeBackendFactory(opts: NodeBackendOptions = {}): Backend
 export const nodeBackendFactory: BackendFactory = createNodeBackendFactory();
 
 export { QemuEspBackend, EmulatorError, explainEmulatorLog } from "./qemu-esp/backend.ts";
-export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, boardMac, qemuImageAvailable } from "./qemu-esp/launcher.ts";
+export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, boardMac, qemuImageAvailable, qemuPreflight, qemuRuntime } from "./qemu-esp/launcher.ts";
 export type { QemuNetwork } from "./qemu-esp/launcher.ts";
 export { RENODE_IMAGE, renodeRuntime, renodeUnavailable } from "./renode/launcher.ts";

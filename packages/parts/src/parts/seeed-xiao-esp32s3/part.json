@@ -5,7 +5,7 @@
   "description": "Thumb-sized ESP32-S3 board (21 × 17.8 mm, USB-C) with Wi-Fi / BLE (not emulated), 8 MB flash, 11 GPIOs on the headers (D0 to D10), I2C, SPI and UART, an orange user LED (GPIO21, active low) and a built-in Li-ion charger (SGM40567, 50 mA) with BAT pads underneath. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are the GPIO numbers (GPIO1 = D0 …, GPIO43 = D6); in code use D0…D10 or the GPIO number. 3.3 V logic only.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Proven on image jumper/qemu-esp:9.2.2-20260417-jb3; the merged image jb5 (adds PWM, ADC, SPI, RMT, interrupts, UART1/2, I2C on every chip) has not been built or re-run yet. Other peripherals: see the board's fidelity.json."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Jumper's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Jumper's parts. Run on the merged jb5 emulator sources (a native QEMU build; the jumper/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
   },
   "pins": [
     {
