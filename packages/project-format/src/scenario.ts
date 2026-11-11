@@ -152,6 +152,43 @@ export const SaidStepSchema = z
   })
   .strict();
 
+/** Round 10 (network): the device made this request (HTTP, WebSocket or MQTT) through the sandbox. */
+export const RequestStepSchema = z
+  .object({
+    request: z
+      .object({
+        host: z.string().min(1).describe("Host the device called, e.g. api.example.com."),
+        path: z.string().optional().describe("Path without the query (exact, or a prefix ending in *)."),
+        method: z.string().optional(),
+        status: z.number().int().optional().describe("The status the device got."),
+        count: z.number().int().positive().optional().describe("At least this many (default 1), counted since the scenario started."),
+        kind: z.enum(["http", "ws", "mqtt"]).optional().describe("Default http or ws."),
+      })
+      .strict(),
+    within_ms: Ms.optional(),
+    absent: z.boolean().optional().describe("true: the device must NOT have made it (within within_ms, or so far)."),
+    ...common,
+  })
+  .strict();
+
+/** Round 10 (network): a network fault on the sandbox (not a part): Wi-Fi drop, weak signal, latency, HTTP errors. */
+export const NetworkFaultStepSchema = z
+  .object({
+    network_fault: z
+      .object({
+        kind: z.enum(["wifi_drop", "weak_signal", "latency", "http_error", "timeout", "dns_fail", "clear"]),
+        rssi: z.number().optional(),
+        ms: z.number().positive().optional(),
+        status: z.number().int().optional(),
+        host: z.string().optional(),
+        path: z.string().optional(),
+        count: z.number().int().positive().optional(),
+      })
+      .strict(),
+    ...common,
+  })
+  .strict();
+
 export const ScenarioStepSchema = z.union([
   RunStepSchema,
   WaitStepSchema,
@@ -167,6 +204,8 @@ export const ScenarioStepSchema = z.union([
   ExpectDisplayStepSchema,
   ExpectNoErrorsStepSchema,
   SaidStepSchema,
+  RequestStepSchema,
+  NetworkFaultStepSchema,
 ]);
 
 /** Action key → its schema. Used to give one precise error instead of a union dump. */
@@ -185,6 +224,8 @@ export const STEP_KINDS = {
   expect_display: ExpectDisplayStepSchema,
   expect_no_errors: ExpectNoErrorsStepSchema,
   said: SaidStepSchema,
+  request: RequestStepSchema,
+  network_fault: NetworkFaultStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
 
@@ -205,6 +246,8 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   expect_serial_value: `{ "expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500 }`,
   expect_display: `{ "expect_display": "oled1", "region": [40, 16, 48, 32], "lit": { "min": 20 } } or { "expect_display": "oled1", "matches": "sad-face", "within_ms": 2000 }`,
   expect_no_errors: `{ "expect_no_errors": true }`,
+  request: `{ "request": { "host": "api.example.com", "path": "/v1/now", "status": 200 }, "within_ms": 5000 } (the device made it through the sandbox), or { "request": { "host": "mqtt.example.com", "kind": "mqtt" }, "within_ms": 8000 }, or { "request": { "host": "api.example.com" }, "absent": true }`,
+  network_fault: `{ "network_fault": { "kind": "wifi_drop" } }, then later { "network_fault": { "kind": "clear" } }; or { "network_fault": { "kind": "http_error", "status": 503, "count": 1 } }`,
   said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said, with a speaker wired), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
 };
 

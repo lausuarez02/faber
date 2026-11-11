@@ -34,7 +34,10 @@ export interface NetworkConfig {
   /** Cassette to replay (and record into, in internet mode with record: true). */
   cassette?: string;
   record?: boolean;
-  wifi?: { ssid: string; password?: string };
+  /** The sandbox Wi-Fi network (none: any SSID joins). */
+  wifi?: { ssid: string; password?: string; rssi?: number };
+  /** Mocks file relative to the project (default network/mocks.json). */
+  mocks?: string;
 }
 
 // ------------------------------------------------------------------ mocks
@@ -153,8 +156,23 @@ export function parseNetworkConfig(raw: unknown): NetworkConfig {
     secrets,
     ...(typeof r.cassette === "string" ? { cassette: r.cassette } : {}),
     ...(r.record === true ? { record: true } : {}),
-    ...(r.wifi ? { wifi: r.wifi as { ssid: string; password?: string } } : {}),
+    ...(r.wifi ? { wifi: parseWifi(r.wifi) } : {}),
+    ...(typeof r.mocks === "string" ? { mocks: r.mocks } : {}),
   };
+}
+
+function parseWifi(raw: unknown): { ssid: string; password?: string; rssi?: number } {
+  const w = raw as { ssid?: unknown; password?: unknown; rssi?: unknown };
+  if (typeof w?.ssid !== "string" || !w.ssid || w.ssid.length > 32) {
+    throw new ConfigError("network.wifi.ssid is missing or longer than 32 characters", "the sandbox plays one Wi-Fi network, named by ssid (what the sketch passes to WiFi.begin)", '"wifi": {"ssid": "JumperNet"}, or remove network.wifi to accept any SSID', "network.wifi.ssid");
+  }
+  if (w.password !== undefined && (typeof w.password !== "string" || w.password.length > 64)) {
+    throw new ConfigError("network.wifi.password must be a string of at most 64 characters", "it is only compared with what the sketch sends, to rehearse a wrong password", "remove it to accept any password", "network.wifi.password");
+  }
+  if (w.rssi !== undefined && (typeof w.rssi !== "number" || w.rssi > 0 || w.rssi < -100)) {
+    throw new ConfigError("network.wifi.rssi must be between -100 and 0 dBm", "it is the signal strength WiFi.RSSI() reads", '"rssi": -60', "network.wifi.rssi");
+  }
+  return { ssid: w.ssid, ...(typeof w.password === "string" ? { password: w.password } : {}), ...(typeof w.rssi === "number" ? { rssi: w.rssi } : {}) };
 }
 
 export function hostMatches(pattern: string, host: string): boolean {

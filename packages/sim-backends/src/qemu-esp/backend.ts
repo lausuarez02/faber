@@ -24,7 +24,8 @@ export interface QemuEspBackendOptions {
   runtime?: QemuLaunchOptions["runtime"];
   image?: string;
   icountShift?: number;
-  network?: boolean;
+  /** See QemuLaunchOptions.network: true (QEMU NAT), { framePort } (Jumper's device network), false. */
+  network?: QemuLaunchOptions["network"];
   /** How long one step may wait for QEMU (boot included on the first one). Default 30 s. */
   timeoutMs?: number;
   logFile?: string;

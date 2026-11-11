@@ -9,6 +9,7 @@ import type { Fault, Upstream } from "./gateway.ts";
 import type { HostCommand, HostEvent, HostWorkerData } from "./host-worker.ts";
 import type { NetEvent } from "./log.ts";
 import type { DeviceInfo } from "./netstack/stack.ts";
+import type { ProbeRequest, ProbeResult } from "./probe.ts";
 import { Redactor } from "./secrets.ts";
 
 export interface DeviceNetHostOptions {
@@ -69,6 +70,8 @@ export class DeviceNetHost {
   private mockList: Mock[];
   private closed = false;
   private errors: string[] = [];
+  private nextId = 1;
+  private pending = new Map<number, (r: ProbeResult) => void>();
 
   private constructor(
     private readonly worker: Worker,
@@ -122,6 +125,10 @@ export class DeviceNetHost {
     if (m.t === "ev") this.log.upsert(m.e);
     else if (m.t === "devices") this.devices = m.list;
     else if (m.t === "error") this.errors.push(m.message);
+    else if (m.t === "response") {
+      this.pending.get(m.id)?.(m.result);
+      this.pending.delete(m.id);
+    }
   }
 
   /** Take in everything the worker has sent so far, without waiting for the event loop. */
@@ -170,6 +177,20 @@ export class DeviceNetHost {
   clearFaults(): void {
     this.faults = [];
     this.send({ op: "clear" });
+  }
+
+  /** One HTTP(S) request from inside the sandbox, as a device would make it (try_request). */
+  request(req: ProbeRequest): Promise<ProbeResult> {
+    if (this.closed) return Promise.resolve({ ok: false, error: "the device network is closed" });
+    const id = this.nextId++;
+    this.port.ref();
+    return new Promise((resolve) => {
+      this.pending.set(id, (r) => {
+        if (!this.pending.size) this.port.unref();
+        resolve(r);
+      });
+      this.send({ op: "request", id, req });
+    });
   }
 
   /** Errors the worker reported (a bad command), for diagnostics. */

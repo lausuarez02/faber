@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-55 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+60 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -91,6 +91,11 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`get_case`](#get_case) | Case report | no (read-only) |
 | [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
 | [`read_speech`](#read_speech) | Read what it said | no (read-only) |
+| [`read_network`](#read_network) | Device network log | no (read-only) |
+| [`add_mock_api`](#add_mock_api) | Add or update a mock API | yes (undoable step) |
+| [`inject_network_fault`](#inject_network_fault) | Network fault | simulation only |
+| [`set_network`](#set_network) | Network settings | yes (undoable step) |
+| [`try_request`](#try_request) | Try a request in the sandbox | simulation only |
 
 ### new_project
 
@@ -625,3 +630,56 @@ What the device said out loud in the simulation (DFPlayer Mini clips, whose word
 | --- | --- | --- | --- |
 | `since` | number |  | Index into the list, from a previous next (default 0). |
 | `part` | string |  | Only this talking part (e.g. df1). |
+
+### read_network
+
+Everything the simulated device did on the network (any board with Wi-Fi or Ethernet in the emulator, e.g. ESP32): Wi-Fi joins and drops, DHCP, DNS lookups, HTTP(S) requests (method, host, path, status, bytes, ms, who answered: mock / cassette / internet / fault), WebSocket and MQTT sessions with frame counts and samples, and blocked attempts with why and fix. Secrets show as [secret:NAME], never their value. Also returns mode, allow list, mocks, active faults, the secrets the project names (set or missing on this machine, never values) and the boards on the sandbox LAN. {"since": seq} for new entries only, {"kind": "http" | "ws" | "mqtt" | "dns" | "wifi" | "dhcp" | "blocked" | "connect" | "fault" | "udp"}, {"host": "api.example.com"}. (read_network_log is the older ESP-01 / pet-AI log.)
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `since` | number |  |  |
+| `limit` | number |  |  |
+| `kind` | string |  | one of `dns`, `http`, `ws`, `mqtt`, `connect`, `udp`, `blocked`, `fault`, `wifi`, `dhcp` |
+| `host` | string |  |  |
+
+### add_mock_api
+
+Add or replace a mock in network/mocks.json, live (the running device sees it at once). Any API is just a mock: a weather API, an AI stream, a webhook, a broker. HTTP: {"host", "method"?, "path" (exact, or a prefix ending in *), "response": {"status", "headers", "body" (JSON or text) | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match" (substring or "*"), "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT broker: {"kind": "mqtt", "host", "on_publish": [{"topic" (+ and # wildcards), "reply": [{"topic", "payload"}]}], "retained": [{"topic", "payload"}]}. Mocks never contain secrets. Check it with try_request.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mock` | object | yes | One mock (see above). |
+
+### inject_network_fault
+
+Rehearse a bad network while the device runs: {"kind": "wifi_drop"} (the access point disappears: open connections are lost, the firmware sees WL_CONNECTION_LOST and must reconnect once you clear it), {"kind": "weak_signal", "rssi": -85} (WiFi.RSSI() reads it; traffic is not slowed), {"kind": "latency", "ms": 800}, {"kind": "http_error", "status": 503, "host"?, "path"?, "count"?}, {"kind": "timeout", "host"?} (accepted, never answered), {"kind": "dns_fail", "host"?}, {"kind": "clear"}. In a scenario use {"network_fault": {...}}.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `fault` | object | yes | e.g. {"kind": "wifi_drop"} |
+
+### set_network
+
+Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project's .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}. Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mode` | string |  | one of `offline`, `mock`, `internet` |
+| `allow` | array \| null |  |  |
+| `secrets` | array \| null |  |  |
+| `wifi` | object \| null |  |  |
+| `cassette` | string \| null |  |  |
+| `record` | boolean \| null |  |  |
+| `mocks` | string \| null |  | Mocks file relative to jumper.json (default network/mocks.json). |
+| `why` | string |  |  |
+
+### try_request
+
+Make one HTTP(S) request from inside the sandbox, exactly as the device would (sandbox DNS, TLS through the sandbox CA, the mode, allow list, mocks, secrets and faults apply): {"url": "https://api.example.com/v1/now", "method"?: "GET", "headers"?: {}, "body"?: "..."}. Returns {ok, status, headers, body (16 KB max, secrets masked), bytes, ms} or {ok: false, error, why, fix}. Use it to check a mock or an allow entry before writing firmware. It shows in read_network with User-Agent jumper-try-request.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `url` | string | yes |  |
+| `method` | string |  |  |
+| `headers` | object |  |  |
+| `body` | string |  |  |

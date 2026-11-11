@@ -20,6 +20,8 @@ export {
   EnclosureSchema,
   CaseOutlineSchema,
   CaseSizeSchema,
+  NetworkSchema,
+  NetworkAllowSchema,
 } from "./schema.ts";
 export type {
   Point,
@@ -41,6 +43,7 @@ export type {
   Enclosure,
   CaseOutline,
   CaseSize,
+  NetworkSettings,
 } from "./schema.ts";
 export {
   ProjectParseError,

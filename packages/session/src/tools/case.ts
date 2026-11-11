@@ -1,3 +1,5 @@
+import { factoryNetworkNotes } from "@jumper/device-net";
+import { networkConfigOf } from "../device-network.ts";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { CASE_SHAPES, EnclosureSchema, type Enclosure, type Project } from "@jumper/project-format";
@@ -549,6 +551,12 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   const sd = sdCardFiles(project, reg);
   for (const [p, text] of Object.entries(sd)) writeText(root, `sd-card/${p}`, text);
   if (Object.keys(sd).length) notes.push("sd-card/ holds the clip texts, not audio: run sd-card/make-clips.sh (needs espeak-ng or piper plus ffmpeg, installed by you) or record the clips, then copy them to a FAT32 microSD card (sd-card/CLIPS.md).");
+  // round 10 network: what the real device needs on the network (hosts, ports, secret NAMES, how keys reach it)
+  if (project.network) {
+    const net = factoryNetworkNotes(networkConfigOf(project)).replace(/^## Network/, `# Network: ${project.name}`);
+    writeText(root, "firmware/NETWORK.md", `${net}\n\nBuild: the simulation build adds Jumper's Wi-Fi and TLS shims; the device build must not. With Jumper's ESP32 image: JUMPER_SIM=0 (plain arduino-cli builds never contain them). No secret value is in this pack.\n`);
+    notes.push("firmware/NETWORK.md lists the hosts, ports and secret names the real device needs, and the options for getting a key onto it (no secret values are in the pack).");
+  }
   if (!positions) notes.push("Wire lengths are estimates from the part sizes (no case layout yet); design_case gives lengths from the real positions.");
 
   // ---- firmware

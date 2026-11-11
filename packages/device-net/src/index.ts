@@ -13,3 +13,4 @@ export * from "./flow-server.ts";
 export * from "./netstack/index.ts";
 export * from "./host.ts";
 export type { HostCommand, HostEvent } from "./host-worker.ts";
+export * from "./probe.ts";

@@ -1,11 +1,21 @@
 import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@jumper/project-format";
 import type { PartRegistry, VisualValue } from "@jumper/sim-core";
+import { checkRequest, type Fault, type NetView } from "@jumper/device-net";
 import { fail, JumperError } from "./errors.ts";
 import { findPart, resolvePin, specOf, splitRef } from "./pins.ts";
 import type { Frame, SimHost } from "./sim.ts";
 import { clampRegion, diffFraction, litCount, regionRows, type DisplaySnapshot } from "./snapshots.ts";
 
+/** Round 10 (network): the device network a scenario's request / network_fault steps use. */
+export interface ScenarioNetwork {
+  /** Take in what the network thread did so far (synchronous). */
+  drain(): void;
+  view: NetView;
+}
+
 export interface ScenarioOptions {
+  /** Round 10: the device network (request and network_fault steps). */
+  network?: ScenarioNetwork;
   /** Golden display frames by name (snapshots/<name>.json), for expect_display matches. */
   snapshot?: (name: string) => DisplaySnapshot | undefined;
   /** Stop (as passed) right after this step index: screenshot {scenario, at_step}. */
@@ -161,6 +171,9 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
   const timeout = s.timeout_ms ?? DEFAULT_TIMEOUT_MS;
   let serialCursor = 0;
   let saidCursor = 0; // round 7 voice: utterances already matched by a said step
+  // round 10 network: request steps count only what this scenario's run did
+  opts.network?.drain();
+  const netStartSeq = opts.network ? (opts.network.view.log.since(0).at(-1)?.seq ?? 0) : 0;
   const sim = host.sim;
   const tail = () => sim.serialText().slice(-400);
   const run = (ms: number, until?: () => boolean) => host.run(ms, { ...(until ? { until, stepMs: 1 } : {}), ...(onFrame ? { onFrame, frameMs: 50 } : {}) });
@@ -372,6 +385,42 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         if (!ok) {
           const want = [lit ? `${lit.min ?? 0}..${lit.max ?? "∞"} lit pixels` : "", snap ? `at most ${(tol * 100).toFixed(1)}% different from snapshot '${matches}'` : ""].filter(Boolean).join(" and ");
           detail = `expected ${want} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}; read_display {"part": "${part}"} shows the screen now`;
+        }
+      } else if ("request" in step) {
+        // Round 10 (network): the device made this request through the sandbox.
+        const net = opts.network;
+        if (!net) {
+          ok = false;
+          detail = "this project has no device network: only boards with a network card in the emulator (ESP32 family) make requests; read_network shows what is on the sandbox network";
+        } else {
+          const want = step.request as { host: string; path?: string; method?: string; status?: number; count?: number; kind?: "http" | "ws" | "mqtt" };
+          const check = () => {
+            net.drain();
+            return checkRequest(net.view, { ...want, sinceSeq: netStartSeq });
+          };
+          let r = check();
+          if (step.absent) {
+            if (r.ok === false && typeof step.within_ms === "number") run(step.within_ms, () => check().ok);
+            r = check();
+            ok = !r.ok;
+            detail = ok ? `no ${want.method ?? ""} ${want.host}${want.path ?? ""} request, as expected` : `the device made ${r.matched} matching request(s) but must not`;
+          } else {
+            if (!r.ok && typeof step.within_ms === "number") run(step.within_ms, () => check().ok);
+            r = check();
+            ok = r.ok;
+            detail = ok ? `${r.matched} matching request(s)` : `${r.why}${typeof step.within_ms === "number" ? ` (waited ${step.within_ms} ms)` : " (checked once; add within_ms to wait)"}. Fix: ${r.fix}`;
+          }
+        }
+      } else if ("network_fault" in step) {
+        const net = opts.network;
+        if (!net) {
+          ok = false;
+          detail = "this project has no device network to fault";
+        } else {
+          const f = step.network_fault as Fault | { kind: "clear" };
+          if (f.kind === "clear") net.view.clearFaults();
+          else net.view.inject(f as Fault);
+          detail = `network fault ${f.kind}`;
         }
       } else if ("said" in step) {
         // Round 7 (voice): words a talking part (DFPlayer) played with a speaker wired.

@@ -164,6 +164,8 @@ export function serializeProject(project: Project): string {
   if (project.assembly !== undefined) fields.push(`  "assembly": ${JSON.stringify(project.assembly)}`);
   if (project.power !== undefined) fields.push(`  "power": ${JSON.stringify(project.power as Json)}`);
   if (project.enclosure !== undefined) fields.push(`  "enclosure": ${JSON.stringify(project.enclosure as Json, null, 2).replace(/\n/g, "\n  ")}`);
+  // round 10 network: mode, allow list, secret names, mocks file, Wi-Fi.
+  if (project.network !== undefined) fields.push(`  "network": ${JSON.stringify(project.network as Json, null, 2).replace(/\n/g, "\n  ")}`);
   lines.push(fields.join(",\n"));
   lines.push("}");
   return lines.join("\n") + "\n";

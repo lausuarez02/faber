@@ -45,7 +45,9 @@ import {
 import { autoPlace, overlappingParts, sizeOf } from "./layout.ts";
 import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
-import { runScenario, setPartValue, validateScenario, type ScenarioResult } from "./scenario.ts";
+import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
+import type { DeviceNetHost } from "@jumper/device-net";
+import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
@@ -205,6 +207,11 @@ export class ProjectSession {
   lastVisualReport: VisualReport | undefined;
   /** set_ai_mode, kept across simulation restarts. */
   private aiMode: "mock" | "live" = "mock";
+  /** Round 10: the project's device network (gateway + netstack in a worker), started on first use. */
+  readonly deviceNetwork: SessionDeviceNet = new SessionDeviceNet(
+    () => this.dir,
+    () => this.project,
+  );
   /** What the last commit did to the running simulation (set by pushPropsOrInvalidate). */
   private liveNote: string | undefined;
 
@@ -1390,8 +1397,17 @@ export class ProjectSession {
     return { scenario: s.id, steps: s.steps.length, replaced: exists, ...(normalized.length ? { normalized } : {}), next: "run_tests", step: { id: step.id, why: step.why } };
   }
 
-  private scenarioOptions() {
-    return { snapshot: (name: string) => loadSnapshot(this.dir, name) };
+  private scenarioOptions(net?: DeviceNetHost): ScenarioOptions {
+    return { snapshot: (name: string) => loadSnapshot(this.dir, name), ...(net ? { network: { drain: () => net.drain(), view: net } } : {}) };
+  }
+
+  /**
+   * Round 10: where a board's emulated network card plugs in (QEMU: QemuEspBackend {network}).
+   * Starts the project's device network if needed. `n` numbers the boards on one run (own MACs).
+   */
+  async networkFor(n = 1): Promise<{ framePort: number; mac: string }> {
+    const host = await this.deviceNetwork.ensure();
+    return { framePort: host.framePort, mac: `02:4a:4d:00:${((n >> 8) & 0xff).toString(16).padStart(2, "0")}:${(n & 0xff).toString(16).padStart(2, "0")}` };
   }
 
   async runTests(args: { name?: string; images?: boolean }, ctx: OpCtx): Promise<unknown> {
@@ -1402,6 +1418,10 @@ export class ProjectSession {
     const built = await this.ensureBuilt(ctx);
     const hex = this.loadHex();
     await SimHost.preparePhysics(this.project);
+    // Round 10: tests always run the network in mock mode (deterministic, nothing leaves the machine).
+    const net = this.project.network ? await this.deviceNetwork.ensure() : undefined;
+    const netCfg = net?.config;
+    if (net && netCfg && netCfg.mode !== "mock") net.setConfig({ ...netCfg, mode: "mock" });
     const results: ScenarioResult[] = [];
     const visuals: VisualScenario[] = [];
     // Frames of one representative scenario (the longest up to 2 virtual minutes), for live view / replay.
@@ -1410,8 +1430,9 @@ export class ProjectSession {
     for (const s of pick) {
       const host = new SimHost(this.project, this.registry, hex);
       const mine: Frame[] = [];
+      if (net?.faults.length) net.clearFaults();
       try {
-        const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions());
+        const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions(net));
         results.push(result);
         visuals.push(visual);
       } catch (err) {
@@ -1438,6 +1459,7 @@ export class ProjectSession {
     } catch {
       // A read-only project folder: the report stays in memory only.
     }
+    if (net && netCfg && netCfg.mode !== "mock") net.setConfig(netCfg); // round 10: back to the project's mode
     const frameImages = args.images ? this.writeFrameImages(visuals) : [];
     const pendingSteps = this.acceptAfterTests(results.length - passed, args.name, ctx);
     return {
@@ -1748,6 +1770,7 @@ export class ProjectSession {
   }
 
   dispose(): void {
+    void this.deviceNetwork.close(); // round 10 network
     this.flushPlanning(); // round 6 power
     this.host?.dispose();
     this.host = undefined;

@@ -123,15 +123,17 @@ export interface RequestExpectation {
   /** At least this many (default 1). */
   count?: number;
   kind?: "http" | "ws" | "mqtt";
+  /** Only count log entries after this seq (a scenario's own run). */
+  sinceSeq?: number;
 }
 
 export function checkRequest(net: DeviceNet, x: RequestExpectation): { ok: boolean; matched: number; why?: string; fix?: string } {
   const want = x.count ?? 1;
   const kinds = x.kind ? [x.kind] : ["http", "ws"];
-  const seen = net.log.since(0).filter((e) => kinds.includes(e.kind));
+  const seen = net.log.since(x.sinceSeq ?? 0).filter((e) => kinds.includes(e.kind));
   const m = seen.filter((e) => e.host === x.host.toLowerCase() && (!x.path || (e.path ?? "").split("?")[0] === x.path || (x.path.endsWith("*") && (e.path ?? "").startsWith(x.path.slice(0, -1)))) && (!x.method || e.method === x.method.toUpperCase()) && (x.status === undefined || e.status === x.status));
   if (m.length >= want) return { ok: true, matched: m.length };
-  const blocked = net.log.since(0).filter((e) => e.kind === "blocked" && e.host === x.host.toLowerCase());
+  const blocked = net.log.since(x.sinceSeq ?? 0).filter((e) => e.kind === "blocked" && e.host === x.host.toLowerCase());
   const did = seen.slice(-5).map((e) => e.summary);
   return {
     ok: false,

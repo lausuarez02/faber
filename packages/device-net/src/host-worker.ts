@@ -7,6 +7,7 @@ import { SandboxCA } from "./ca.ts";
 import type { Mock, NetworkConfig } from "./config.ts";
 import { DeviceNet, type Fault, type Upstream } from "./gateway.ts";
 import { createDeviceLan } from "./netstack/lan.ts";
+import { probeRequest, type ProbeRequest, type ProbeResult } from "./probe.ts";
 
 export interface HostWorkerData {
   config: NetworkConfig;
@@ -26,6 +27,7 @@ export type HostCommand =
   | { op: "fault"; fault: Fault }
   | { op: "clear" }
   | { op: "config"; config: NetworkConfig }
+  | { op: "request"; id: number; req: ProbeRequest }
   | { op: "close" };
 
 export type HostEvent =
@@ -33,6 +35,7 @@ export type HostEvent =
   | { t: "ev"; e: import("./log.ts").NetEvent }
   | { t: "devices"; list: import("./netstack/stack.ts").DeviceInfo[] }
   | { t: "error"; message: string }
+  | { t: "response"; id: number; result: ProbeResult }
   | { t: "closed" };
 
 async function main(d: HostWorkerData): Promise<void> {
@@ -65,6 +68,7 @@ async function main(d: HostWorkerData): Promise<void> {
         else if (c.op === "fault") dn.inject(c.fault);
         else if (c.op === "clear") dn.clearFaults();
         else if (c.op === "config") dn.setConfig(c.config);
+        else if (c.op === "request") void probeRequest(dn, c.req).then((result) => send({ t: "response", id: c.id, result }));
         else if (c.op === "close") {
           clearInterval(devTimer);
           dn.close();

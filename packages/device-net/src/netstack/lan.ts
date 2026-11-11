@@ -32,7 +32,7 @@ const WEAK_RSSI = -85;
 export function createNetstack(dn: DeviceNet, o: DeviceLanOptions = {}): Netstack {
   const wifi = dn.config.wifi;
   const aps = o.aps ?? (wifi?.ssid ? [{ ssid: wifi.ssid, ...(wifi.password !== undefined ? { password: wifi.password } : {}) }] : []);
-  const base = o.rssi ?? DEFAULT_RSSI;
+  const base = o.rssi ?? wifi?.rssi ?? DEFAULT_RSSI;
   const stack = new Netstack({
     gateway: dn,
     aps,
