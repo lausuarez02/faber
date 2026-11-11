@@ -1,7 +1,8 @@
 // A synchronous line link to the QEMU bridge socket, so McuBackend.step() can stay synchronous
 // like every other backend. A worker thread owns the TCP server and the socket; the main thread
-// blocks in Atomics.wait until the worker hands over a batch of lines that ends where QEMU itself
-// blocks (lockstep target "T", or an I2C request "IS"/"IR"). QEMU cannot run ahead in between, so
+// blocks in Atomics.wait until the worker hands over a batch of lines that ends where the emulator
+// itself blocks (QEMU: lockstep target "T", or an I2C request "IS"/"IR"; other emulators pass their
+// own `blocking` line prefixes, e.g. the Renode bridge). QEMU cannot run ahead in between, so
 // nothing is lost or reordered and the result is deterministic.
 import { writeSync } from "node:fs";
 import { Worker } from "node:worker_threads";
@@ -30,7 +31,8 @@ function publish() {
   Atomics.add(ctrl, ${CTRL_SEQ}, 1);
   Atomics.notify(ctrl, ${CTRL_SEQ});
 }
-const blocking = (l) => l.startsWith("T ") || l.startsWith("IS ") || l.startsWith("IR ");
+const prefixes = workerData.blocking;
+const blocking = (l) => prefixes.some((p) => l.startsWith(p));
 const server = net.createServer((s) => {
   if (sock) { s.destroy(); return; }
   sock = s; s.setNoDelay(true); s.setEncoding("latin1"); server.close();
@@ -62,14 +64,14 @@ export class SyncBridgeLink {
   private consumed = 0;
 
   /** Starts listening on `host` (127.0.0.1 by default; Docker Desktop forwards host.docker.internal to it). */
-  constructor(opts: { host?: string; bufferBytes?: number; maxLines?: number } = {}) {
+  constructor(opts: { host?: string; bufferBytes?: number; maxLines?: number; blocking?: readonly string[] } = {}) {
     const ctrlBuf = new SharedArrayBuffer(8 * 4);
     const dataBuf = new SharedArrayBuffer(opts.bufferBytes ?? 4 << 20);
     this.ctrl = new Int32Array(ctrlBuf);
     this.data = new Uint8Array(dataBuf);
     this.worker = new Worker(WORKER_SOURCE, {
       eval: true,
-      workerData: { ctrl: ctrlBuf, data: dataBuf, host: opts.host ?? "127.0.0.1", maxLines: opts.maxLines ?? 20000 },
+      workerData: { ctrl: ctrlBuf, data: dataBuf, host: opts.host ?? "127.0.0.1", maxLines: opts.maxLines ?? 20000, blocking: [...(opts.blocking ?? ["T ", "IS ", "IR "])] },
     });
     this.worker.unref();
     if (Atomics.wait(this.ctrl, CTRL_PORT, 0, 5000) === "timed-out" && this.ctrl[CTRL_PORT] === 0) {
