@@ -77,9 +77,9 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "python",
     tool: "micropython",
     chips: {
-      rp2040: { status: "verified", test: "services/runner/src/lang/micropython.integration.test.ts", toolchain: "in-process (official MicroPython UF2 + littlefs image)" },
-      esp32: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image, runs in jumper/qemu-esp" },
-      esp32c3: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image, runs in jumper/qemu-esp" },
+      rp2040: { status: "verified", test: "services/runner/src/lang/lang.test.ts", toolchain: "in-process (official MicroPython UF2 + littlefs image)" },
+      esp32: { status: "planned", why: "the official ESP32_GENERIC build booted to its REPL in jumper/qemu-esp and drove GPIO2 (round 10 spike run); the test with main.py in the littlefs image and I2C0 (services/runner/src/lang/micropython-esp.integration.test.ts) is written, but Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "in-process image, runs in jumper/qemu-esp" },
+      esp32c3: { status: "planned", why: "the official ESP32_GENERIC_C3 build booted to its REPL in jumper/qemu-esp and drove GPIO8 (round 10 spike run); the main.py test is written, but Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run; the C3 machine has no I2C controller model", toolchain: "in-process image, runs in jumper/qemu-esp" },
       esp32s3: { status: "planned", why: "the official ESP32_GENERIC_S3 build stops after 'Failed to set QIE bit' in QEMU (its REPL is on USB-OTG, which QEMU does not model); needs a UART-REPL build" },
       stm32f4: { status: "planned", why: "the official STM32F4DISC build boots in Renode but its REPL is USB-only (no UART output); needs a UART-REPL build, and " + RENODE_SERIAL_IN },
       nrf52840: { status: "planned", why: "the official ARDUINO_NANO_33_BLE_SENSE build is linked after the Arduino bootloader and SoftDevice (loads at 0x26000) and prints nothing in Renode; needs a bare build, and " + RENODE_SERIAL_IN },
@@ -95,8 +95,8 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "cpp",
     tool: "esp-idf",
     chips: {
-      esp32: { status: "verified", test: "services/runner/src/lang/espidf.integration.test.ts", toolchain: "jumper/esp-idf:5.5.5-r1" },
-      esp32c3: { status: "verified", test: "services/runner/src/lang/espidf.integration.test.ts", toolchain: "jumper/esp-idf:5.5.5-r1" },
+      esp32: { status: "planned", why: "the jumper/esp-idf:5.5.5-r1 image built (IDF v5.5.5 on the arduino-esp32 compilers), but no project build ran: Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run (services/runner/src/lang/espidf.integration.test.ts is written)", toolchain: "jumper/esp-idf:5.5.5-r1" },
+      esp32c3: { status: "planned", why: "same as ESP32: image built, project build untested because Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "jumper/esp-idf:5.5.5-r1" },
       esp32s3: { status: "planned", why: "builds; no I2C controller model in QEMU for the S3 yet, and no board part", toolchain: "jumper/esp-idf:5.5.5-r1" },
     },
   },
@@ -108,7 +108,7 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "cpp",
     tool: "platformio",
     chips: {
-      atmega328p: { status: "verified", test: "services/runner/src/lang/platformio.integration.test.ts", toolchain: "jumper/platformio:6.2.0-avr5.3.0-r1" },
+      atmega328p: { status: "planned", why: "the jumper/platformio:6.2.0-avr5.3.0-r1 image built and compiled an Uno blink inside its own build; Jumper's build path and the run on avr8js (services/runner/src/lang/platformio.integration.test.ts) are written, but Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "jumper/platformio:6.2.0-avr5.3.0-r1" },
       rp2040: { status: "planned", why: "the official raspberrypi platform builds with Arduino-Mbed, whose USB serial and boot differ from arduino-pico; the arduino-pico platform is a third-party fork. Use Arduino (arduino-pico) or MicroPython on RP2040 for now" },
       esp32: { status: "planned", why: "platform espressif32 adds about 1.5 GB per image; Arduino and ESP-IDF already cover the ESP32 with the same core" },
       stm32f103: { status: "planned", why: "platform ststm32 is amd64-only for some toolchains; Arduino (STM32duino) covers the Blue Pill" },
