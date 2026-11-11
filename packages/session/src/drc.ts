@@ -1,6 +1,7 @@
 import { buildNets, type PinRef, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
 import { voiceChecks } from "./voice.ts"; // round 7 voice
+import { partsAdvice } from "./advice.ts"; // round 8 parts-advice
 
 /** Design rule checks: static (from the wiring) plus whatever the last simulation reported. */
 
@@ -41,11 +42,14 @@ const POWER_ROLES: Record<string, Record<string, SupplyRole>> = {
   "battery-pack": { POS: "source" },
   "ldo-regulator": { VIN: "input", VOUT: "source" },
   "boost-converter": { "VIN+": "input", "VOUT+": "source" },
+  "charge-boost-5v": { VIN: "input", BAT: "cell", OUT: "source" }, // round 8: charger + 5 V boost on one module
 };
+/** LiPo chargers with a cell (BAT / GND.2) and a load (OUT / GND.3) side (round 8: the charge-boost module too). */
+const CHARGERS = new Set(["tp4056-charger", "charge-boost-5v"]);
 /** Battery-like parts: their POS is a cell, their NEG must go to ground. */
 const BATTERIES = new Set(["lipo-battery", "battery-pack"]);
 /** Pins of power parts that may stay unconnected (the TP4056's USB input: its USB-C socket is the charge port). */
-const OPTIONAL_POWER_PINS: Record<string, string[]> = { "tp4056-charger": ["VIN", "GND.1"], "dfplayer-mini": ["GND.2"] }; // round 7 voice: its second GND is the same ground
+const OPTIONAL_POWER_PINS: Record<string, string[]> = { "tp4056-charger": ["VIN", "GND.1"], "charge-boost-5v": ["VIN", "GND.1"], "dfplayer-mini": ["GND.2"] }; // round 7 voice: its second GND is the same ground
 
 function supplyRole(i: PinInfo): SupplyRole {
   if (i.pin.type !== "power") return "none";
@@ -502,6 +506,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
 
   for (const i of powerPathChecks(project, partSpec, nets, netOf, boardPart)) add(i); // round 6 power
   for (const i of voiceChecks(project, registry, firmwareSource)) add(i); // round 7 voice
+  for (const i of partsAdvice(project, registry)) add(i); // round 8: parts you may not need, smaller parts
 
   const order = { error: 0, warning: 1, info: 2 };
   return issues.sort((a, b) => order[a.severity] - order[b.severity]);
@@ -550,17 +555,17 @@ function powerPinMissing(pid: string, s: PartSpec, x: PinSpec, boardPart: string
   const ref = `${pid}.${x.id}`;
   const board = boardPart ?? "board";
   if (x.type === "ground") {
-    const what = s.id === "tp4056-charger" && x.id === "GND.2" ? `the cell's − (B−): connect ${ref} → the battery's NEG` : `connect ${ref} → ${board}.GND`;
+    const what = CHARGERS.has(s.id) && x.id === "GND.2" ? `the cell's − (B−): connect ${ref} → the battery's NEG` : `connect ${ref} → ${board}.GND`;
     return { severity: "error", code: "unconnected-supply", message: `${ref} (ground) is not connected: ${s.name} needs its ground. Fix: ${what}.`, parts: [pid], pins: [ref] };
   }
   if (BATTERIES.has(s.id)) {
     return { severity: "error", code: "unconnected-supply", message: `${ref} (the battery's +) is not connected, so the battery does nothing. Fix: connect ${ref} → a charger's BAT (B+) (tp4056-charger) and the charger's OUT to the board: ${b && boardPart ? batteryPathAdvice(boardPart, b) : "see get_part tp4056-charger"}.`, parts: [pid], pins: [ref] };
   }
-  if (s.id === "tp4056-charger" && x.id === "BAT") {
+  if (CHARGERS.has(s.id) && x.id === "BAT") {
     return { severity: "error", code: "unconnected-supply", message: `${ref} (B+) has no cell: the charger has nothing to charge and OUT is not a stable supply. Fix: connect the LiPo's POS → ${ref} and its NEG → ${pid}.GND.2.`, parts: [pid], pins: [ref] };
   }
-  if (s.id === "tp4056-charger" && x.id === "OUT") {
-    return { severity: "info", code: "unconnected-supply", message: `${ref} (OUT+, the protected battery output) is not connected, so the battery powers nothing: with USB unplugged the device is off. Fix: ${b && boardPart ? batteryPathAdvice(boardPart, b, pid) : `${ref} → the board's supply input through a switch and a Schottky diode`}. (IN+ / IN− stay unconnected: the module's USB-C socket is the charge port.)`, parts: [pid], pins: [ref] };
+  if (CHARGERS.has(s.id) && x.id === "OUT") {
+    return { severity: "info", code: "unconnected-supply", message: `${ref} (${s.id === "charge-boost-5v" ? "5 V, the boosted battery output" : "OUT+, the protected battery output"}) is not connected, so the battery powers nothing: with USB unplugged the device is off. Fix: ${b && boardPart ? batteryPathAdvice(boardPart, b, pid) : `${ref} → the board's supply input through a switch and a Schottky diode`}. (IN+ / IN− stay unconnected: the module's USB-C socket is the charge port.)`, parts: [pid], pins: [ref] };
   }
   const role = supplyRole({ ref: { part: pid, pin: x.id }, spec: s, pin: x });
   if (role === "input") return { severity: "error", code: "unconnected-supply", message: `${ref} (${s.name} input) is not connected, so it has nothing to convert. Fix: connect ${ref} to the battery side (e.g. the charger's OUT+, after the power switch).`, parts: [pid], pins: [ref] };
@@ -599,7 +604,7 @@ function powerPathChecks(project: Project, partSpec: Map<string, PartSpec>, nets
   const inst = new Map(project.parts.map((p) => [p.id, p]));
   const net = (part: string, pin: string) => netOf.get(`${part}.${pin}`);
   const batteries = project.parts.filter((p) => BATTERIES.has(p.type) && partSpec.get(p.id));
-  const charger = project.parts.find((p) => p.type === "tp4056-charger")?.id;
+  const charger = project.parts.find((p) => CHARGERS.has(p.type))?.id;
   const board = boardPart ? partSpec.get(boardPart) : undefined;
   const usbOn = project.power?.usb !== false;
 
@@ -624,6 +629,7 @@ function powerPathChecks(project: Project, partSpec: Map<string, PartSpec>, nets
         const p = x.ref.part;
         const t = x.spec.id;
         if (t === "tp4056-charger" && x.ref.pin === "BAT") step(net(p, "OUT"), {}, `${p} (BAT → OUT)`);
+        else if (t === "charge-boost-5v" && x.ref.pin === "BAT") step(net(p, "OUT"), { vmax: 5.05, vmin: 5, regulated: true }, `${p} (BAT → 5 V boost)`); // round 8
         else if (t === "slide-switch" || /switch/.test(t) && x.spec.pins.length === 3 && x.spec.category === "input") {
           for (const o of x.spec.pins) if (o.id !== x.ref.pin) step(net(p, o.id), {}, `${p} (switch)`);
         } else if ((t === "schottky-diode" || t === "generic-diode") && x.ref.pin === "A") {
@@ -673,7 +679,7 @@ function powerPathChecks(project: Project, partSpec: Map<string, PartSpec>, nets
       }
       // battery-overvoltage: a full cell above what a pin takes (a 4.2 V LiPo on a 3.3 V pin).
       const max = x.pin.voltage?.max;
-      const isOwn = BATTERIES.has(x.spec.id) || x.spec.id === "tp4056-charger" || x.spec.id === "slide-switch" || /diode/.test(x.spec.id) || (x.spec.category === "power" && supplyRole(x) === "input");
+      const isOwn = BATTERIES.has(x.spec.id) || CHARGERS.has(x.spec.id) || x.spec.id === "slide-switch" || /diode/.test(x.spec.id) || (x.spec.category === "power" && supplyRole(x) === "input");
       if (!isOwn && !r.regulated && max !== undefined && r.vmax > max + 0.3 && x.pin.type !== "ground") {
         once(`ov:${key(x.ref)}`, {
           severity: "error",

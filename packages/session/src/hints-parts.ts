@@ -44,6 +44,12 @@ export const PARTS_R5_HINTS: Record<string, Usage> = {
     example: `// Battery level through a 100 kΩ + 100 kΩ divider (battery + → 100k → A0 → 100k → GND).\nconst float VREF = 5.0;  // 3.3 on a 3.3 V board\nvoid setup() { Serial.begin(115200); }\nvoid loop() {\n  float v = analogRead(A0) * VREF / 1023.0 * 2;\n  Serial.print("battery="); Serial.println(v, 2);\n  if (v < 3.3) Serial.println("low battery: shutting down");\n  delay(1000);\n}`,
     controls: 'interact(part, "press") plugs / unplugs USB. State: mode ("off", "trickle", "CC", "CV", "full"), charging, full, chargemA, protected.',
   },
+  // round 8 parts-advice: one module instead of a TP4056 + MT3608
+  "charge-boost-5v": {
+    wiring: "One module that charges a 1S LiPo from its USB-C socket and gives 5 V: BAT (B+) / GND.2 (B−) to the cell, OUT (5V) / GND.3 to a 5 V board's 5V pin or 5 V loads (servos, LED strips, an Uno / Nano), through a slide-switch; on a XIAO / RP2040-Zero put a schottky-diode (stripe towards the board) before 5V. IN+ / IN− stay unconnected (the socket is the charge port). Two catches: it charges at about 2 A, so use a cell of 2000 mAh or more; and it switches OUT off after 32 s under about 45 mA (press = its KEY wakes it; prop auto_off false for the I2C version). A 3.3 V board that draws little needs neither: run it from the cell through a TP4056 and a diode.",
+    connect: ["pwr1.BAT -> lipobattery1.POS", "pwr1.GND.2 -> lipobattery1.NEG"],
+    controls: 'interact(part, "press") is the KEY (wakes the output); set_part_property usb true plugs USB. State: mode (charging), outOn, off ("", "low battery", "auto-off"), outmA, chargemA.',
+  },
   "vibration-motor": {
     wiring: "Module with its own transistor: VCC → 3V3 or 5V, GND → GND, IN → any GPIO (digitalWrite on/off, analogWrite on a PWM pin for strength). A bare coin motor (60–90 mA) must never go straight on a pin.",
     connect: ["vibrationmotor1.VCC -> uno.5V", "vibrationmotor1.GND -> uno.GND", "vibrationmotor1.IN -> uno.D5"],

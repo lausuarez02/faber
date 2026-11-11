@@ -139,7 +139,7 @@ export function solderedAssemblyMarkdown(project: Project, registry: PartRegistr
   const inst = new Map(project.parts.map((p) => [p.id, p]));
   const name = (id: string) => registry.get(inst.get(id)?.type ?? "")?.spec.name ?? id;
   // The power path (battery, charger, switch, diode, regulators and the wires to the board's supply input) goes first and is tested alone.
-  const PATH = new Set(["lipo-battery", "battery-pack", "tp4056-charger", "slide-switch", "schottky-diode", "generic-diode", "ldo-regulator", "boost-converter"]);
+  const PATH = new Set(["lipo-battery", "battery-pack", "tp4056-charger", "charge-boost-5v", "slide-switch", "schottky-diode", "generic-diode", "ldo-regulator", "boost-converter"]);
   const onPath = (ref: string) => PATH.has(inst.get(ref.slice(0, ref.indexOf(".")))?.type ?? "");
   const power = cuts.filter((c) => isPowerWire(c) && (onPath(c.from) || onPath(c.to)));
   const modulePower = cuts.filter((c) => isPowerWire(c) && !power.includes(c));
