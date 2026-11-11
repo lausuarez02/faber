@@ -51,6 +51,8 @@ export interface RenodeBoard {
    * VectorTableOffset back to 0 on a reset). Use with vectorTableOffset 0.
    */
   bootFrom?: number;
+  /** Peripheral interrupts wake WFE even while masked (SEVONPEND), for firmware that idles in WFE under a SoftDevice. */
+  wakeWfeOnInterrupts?: boolean;
   /** Extra `sysbus.cpu <Property> <value>` settings for this board's runtime. */
   cpuSettings?: readonly string[];
   /** nRF52 "port.pin" (PWM PSEL as the bridge reports it) → board pin id. Built from `pins` when absent. */
@@ -203,9 +205,8 @@ export const RENODE_BOARDS = {
     fqbn: "Seeeduino:nrf52:xiaonRF52840",
     erasedFlash: [{ start: 0, size: 0x100000 }],
     vectorTableOffset: 0,
-    // FreeRTOS's tickless idle waits in WFE for an interrupt the SoftDevice keeps masked; Renode does
-    // not wake WFE for it, so WFE runs as a no-op (the idle loop spins: slower, same virtual timing).
-    cpuSettings: ["WfeAndSevAsNop true"],
+    // FreeRTOS's tickless idle waits in WFE for the RTC interrupt the SoftDevice keeps masked.
+    wakeWfeOnInterrupts: true,
   },
 } as const satisfies Record<string, RenodeBoard>;
 

@@ -20,46 +20,46 @@
   <rect x="326" y="110" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0.25"/>
   <rect x="326" y="110" width="8" height="4" rx="1" fill="#FF4D4D" opacity="0" data-bind="opacity:powered"/>
   <text x="330" y="121" font-family="IBM Plex Mono" font-size="5" fill="#9AA3AF" text-anchor="middle" dominant-baseline="central">PWR</text>
-  <text x="20.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B12</text>
-  <text x="40.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B13</text>
-  <text x="60.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B14</text>
-  <text x="80.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B15</text>
-  <text x="100.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A8</text>
-  <text x="120.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A9/TX</text>
-  <text x="140.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A10/RX</text>
-  <text x="160.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A11</text>
-  <text x="180.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A12</text>
-  <text x="200.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A15</text>
-  <text x="220.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B3</text>
-  <text x="240.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B4</text>
-  <text x="260.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B5</text>
-  <text x="280.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B6/SCL</text>
-  <text x="300.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B7/SDA</text>
-  <text x="320.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B8</text>
-  <text x="340.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B9</text>
-  <text x="360.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">5V</text>
-  <text x="380.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">GND</text>
-  <text x="400.0" y="26" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">3V3</text>
-  <text x="20.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">VB</text>
-  <text x="40.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">C13/LED</text>
-  <text x="60.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">C14</text>
-  <text x="80.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">C15</text>
-  <text x="100.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">R</text>
-  <text x="120.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A0/KEY</text>
-  <text x="140.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A1</text>
-  <text x="160.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A2</text>
-  <text x="180.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A3</text>
-  <text x="200.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A4/SS</text>
-  <text x="220.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A5/SCK</text>
-  <text x="240.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A6/MISO</text>
-  <text x="260.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">A7/MOSI</text>
-  <text x="280.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B0</text>
-  <text x="300.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B1</text>
-  <text x="320.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B2</text>
-  <text x="340.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">B10</text>
-  <text x="360.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">3V3</text>
-  <text x="380.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">GND</text>
-  <text x="400.0" y="138" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="middle" dominant-baseline="central">GND</text>
+  <text x="20" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 20 22)">B12</text>
+  <text x="40" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 40 22)">B13</text>
+  <text x="60" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 60 22)">B14</text>
+  <text x="80" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 80 22)">B15</text>
+  <text x="100" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 100 22)">A8</text>
+  <text x="120" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 120 22)">A9/TX</text>
+  <text x="140" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 140 22)">A10/RX</text>
+  <text x="160" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 160 22)">A11</text>
+  <text x="180" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 180 22)">A12</text>
+  <text x="200" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 200 22)">A15</text>
+  <text x="220" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 220 22)">B3</text>
+  <text x="240" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 240 22)">B4</text>
+  <text x="260" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 260 22)">B5</text>
+  <text x="280" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 280 22)">B6/SCL</text>
+  <text x="300" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 300 22)">B7/SDA</text>
+  <text x="320" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 320 22)">B8</text>
+  <text x="340" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 340 22)">B9</text>
+  <text x="360" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 360 22)">5V</text>
+  <text x="380" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 380 22)">GND</text>
+  <text x="400" y="22" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="end" dominant-baseline="central" transform="rotate(-90 400 22)">3V3</text>
+  <text x="20" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 20 142)">VB</text>
+  <text x="40" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 40 142)">C13/LED</text>
+  <text x="60" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 60 142)">C14</text>
+  <text x="80" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 80 142)">C15</text>
+  <text x="100" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 100 142)">R</text>
+  <text x="120" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 120 142)">A0/KEY</text>
+  <text x="140" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 140 142)">A1</text>
+  <text x="160" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 160 142)">A2</text>
+  <text x="180" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 180 142)">A3</text>
+  <text x="200" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 200 142)">A4/SS</text>
+  <text x="220" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 220 142)">A5/SCK</text>
+  <text x="240" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 240 142)">A6/MISO</text>
+  <text x="260" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 260 142)">A7/MOSI</text>
+  <text x="280" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 280 142)">B0</text>
+  <text x="300" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 300 142)">B1</text>
+  <text x="320" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 320 142)">B2</text>
+  <text x="340" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 340 142)">B10</text>
+  <text x="360" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 360 142)">3V3</text>
+  <text x="380" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 380 142)">GND</text>
+  <text x="400" y="142" font-family="IBM Plex Mono" font-size="6" fill="#E9EDF2" text-anchor="start" dominant-baseline="central" transform="rotate(-90 400 142)">GND</text>
   <circle data-pin="PB12" cx="20.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="PB13" cx="40.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
   <circle data-pin="PB14" cx="60.0" cy="14" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>

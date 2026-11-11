@@ -273,6 +273,7 @@ export class RenodeBackend implements McuBackend {
         // One instruction per core clock cycle, so DWT->CYCCNT and busy loops match the chip's clock.
         `sysbus.cpu PerformanceInMips ${Math.round(this.board.clockHz / 1e6)}`,
         ...(this.board.cpuSettings ?? []).map((c) => `sysbus.cpu ${c}`),
+        ...(this.board.wakeWfeOnInterrupts ? ["sysbus.jumper WakeWfeOnInterrupts"] : []),
         `emulation SetGlobalAdvanceImmediately true`,
         `logLevel ${this.opts.logLevel ?? 3}`,
         `sysbus.jumper SpiNeedsMiso ${this.spi?.needsMiso() ?? true}`,

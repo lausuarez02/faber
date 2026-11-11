@@ -34,7 +34,7 @@ const PROBE_PINS: Record<string, string[]> = {
   "seeed-xiao-nrf52840": ["D0", "D1", "D2", "D3", "D4", "D5", "D8", "D9", "D10"],
 };
 /** What a board's test checks is still missing (docs/renode.md), so the suite fails when it starts working. */
-const KNOWN_GAPS: Record<string, string[]> = { "arduino-nano-33-ble": ["serial-rx"] };
+const KNOWN_GAPS: Record<string, string[]> = { "arduino-nano-33-ble": ["serial-rx"], "stm32-nucleo-f401re": ["pin-irq"] };
 
 /** busprobe's pins per board (fixtures/renode/busprobe/busprobe.ino). */
 const BUS_PINS: Record<string, { adc: string; pwm: string; irq: string }> = {
@@ -152,7 +152,9 @@ for (const board of Object.keys(RENODE_BOARDS)) {
         // reference is 3.6 V (gain 1/6 of the internal 0.6 V), so 1877.
         const expected = Math.round((1.65 / (board === "seeed-xiao-nrf52840" ? 3.6 : 3.3)) * 4096);
         expect(Math.abs(adc - expected)).toBeLessThan(40);
-        expect(last).toMatch(/presses=3\b/);
+        // Known gap: attachInterrupt never fires on the Nucleo-F401RE in Renode (why it stays planned).
+        if (KNOWN_GAPS[board]?.includes("pin-irq")) expect(last).toMatch(/presses=0\b/);
+        else expect(last).toMatch(/presses=3\b/);
         // Known gap: Serial1 RX on the Nano 33 BLE (Mbed's UARTE receive through Renode's UART model) never delivers bytes.
         if (KNOWN_GAPS[board]?.includes("serial-rx")) expect(text).not.toContain("rx hello");
         else expect(text).toContain("rx hello");

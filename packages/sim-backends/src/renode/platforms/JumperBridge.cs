@@ -84,6 +84,31 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             machine.SystemBus.WriteBytes(bytes, 0);
         }
 
+        /// <summary>
+        /// Every peripheral interrupt line wakes a WFE, like a pending interrupt does on the chip with
+        /// SEVONPEND even while the interrupt is masked (Nordic's SoftDevice masks the app's interrupts
+        /// in its critical regions; FreeRTOS's tickless idle then waits in WFE for the RTC). Renode 1.17
+        /// does not wake WFE for a masked interrupt. Returns how many lines it watches.
+        /// </summary>
+        public int WakeWfeOnInterrupts()
+        {
+            var cpu = machine.SystemBus.GetCPUs().FirstOrDefault();
+            var setEvent = cpu?.GetType().GetMethod("SetEventFlag", Type.EmptyTypes);
+            if(setEvent == null) return 0;
+            var n = 0;
+            foreach(var per in machine.GetPeripheralsOfType<IPeripheral>())
+            {
+                foreach(var prop in per.GetType().GetProperties())
+                {
+                    if(prop.PropertyType != typeof(GPIO) || !(prop.Name == "IRQ" || prop.Name.EndsWith("Interrupt"))) continue;
+                    if(!(prop.GetValue(per) is GPIO line)) continue;
+                    line.AddStateChangedHook(v => { if(v) setEvent.Invoke(cpu, null); });
+                    n++;
+                }
+            }
+            return n;
+        }
+
         /// <summary>Fill memory with one byte value (erased flash reads 0xFF; Renode's memory starts at 0).</summary>
         public void Fill(long start, long size, int value)
         {
