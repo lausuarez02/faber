@@ -34,7 +34,7 @@ export const DEVICE_NET_TOOLS = [
     name: "add_mock_api",
     title: "Add or update a mock API",
     description:
-      'Add or replace a mock in network/mocks.json, live. HTTP: {"host", "method", "path" (exact or prefix*), "response": {"status", "headers", "body" | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match", "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT: {"kind": "mqtt", "host", "on_publish": [{"topic", "reply": [{"topic", "payload"}]}], "retained": [...]}. Any API is just a mock: weather, an AI stream, a webhook.',
+      'Add or replace a mock in network/mocks.json, live. HTTP: {"host", "method", "path" (exact or prefix*; add ?k=v&k2=v2 to need those query parameters), "response": {"status", "headers", "body" | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match", "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT: {"kind": "mqtt", "host", "on_publish": [{"topic", "reply": [{"topic", "payload"}]}], "retained": [...]}. Any API is just a mock: weather, an AI stream, a webhook.',
     inputSchema: { type: "object", properties: { mock: { type: "object" } }, required: ["mock"] },
   },
   {

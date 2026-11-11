@@ -10,9 +10,45 @@ import { decodeConnect, decodePublish, decodeSubscribe, enc, readPackets, summar
 
 export type Sleep = (ms: number) => Promise<void>;
 
+/**
+ * A mock's path pattern against a request path (with its query). The path part is exact, or a prefix
+ * ending in "*". A pattern without "?" ignores the request's query. A pattern with "?" also needs
+ * each of its query parameters in the request, in any order, other parameters allowed (a value
+ * ending in "*" is a prefix; a "*" after the last parameter changes nothing).
+ * So "/v1/forecast?latitude=51.51&longitude=-0.13*" answers only that place's forecast.
+ */
 export function pathMatches(pattern: string, path: string): boolean {
-  const p = path.split("?")[0]!;
-  return pattern.endsWith("*") ? p.startsWith(pattern.slice(0, -1)) : p === pattern;
+  const [pathPat, wantQuery] = splitOnce(pattern, "?");
+  const [p, reqQuery = ""] = splitOnce(path, "?");
+  const pathOk = pathPat.endsWith("*") ? p.startsWith(pathPat.slice(0, -1)) : p === pathPat;
+  if (!pathOk || wantQuery === undefined) return pathOk;
+  const have = queryPairs(reqQuery);
+  return queryPairs(wantQuery).every(([k, v]) => {
+    const vals = have.filter(([hk]) => hk === k).map(([, hv]) => hv);
+    return v.endsWith("*") ? vals.some((x) => x.startsWith(v.slice(0, -1))) : vals.includes(v);
+  });
+}
+
+function splitOnce(s: string, sep: string): [string, string | undefined] {
+  const i = s.indexOf(sep);
+  return i < 0 ? [s, undefined] : [s.slice(0, i), s.slice(i + 1)];
+}
+
+function queryPairs(q: string): [string, string][] {
+  const dec = (x: string) => {
+    try {
+      return decodeURIComponent(x.replace(/\+/g, " "));
+    } catch {
+      return x;
+    }
+  };
+  return q
+    .split("&")
+    .filter((kv) => kv && kv !== "*")
+    .map((kv) => {
+      const [k, v = ""] = splitOnce(kv, "=");
+      return [dec(k), dec(v)];
+    });
 }
 
 /** A deterministic binary payload of n bytes (so streamed test data is identical every run). */

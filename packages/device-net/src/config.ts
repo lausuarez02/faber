@@ -58,7 +58,7 @@ export interface HttpMock {
   kind?: "http";
   host: string;
   method?: string;
-  /** Exact path, or a prefix ending in "*". */
+  /** Exact path, or a prefix ending in "*"; with "?k=v&..." the request also needs those query parameters (any order, value may end in "*"). */
   path: string;
   response: HttpMockResponse;
 }
