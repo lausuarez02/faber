@@ -103,7 +103,7 @@ through them; a fully stripped Nano 33 BLE ELF, linked at 0x10000 behind the boo
 
 ## ESP32-family board fixtures (round 10)
 
-`src/qemu-esp/boards.integration.test.ts` boots these in Espressif's QEMU (`jumper/qemu-esp:9.2.2-20260417-jb3`)
+`src/qemu-esp/boards.integration.test.ts` boots these in Espressif's QEMU (`jumper/qemu-esp:9.2.2-20260417-jb5`)
 through the server-side factory with each board's `part.json` mcu block. They are the fixture tests
 the boards' `mcu.verified` names: a board appears in the parts library only while its fixture passes.
 
@@ -123,3 +123,25 @@ node_modules/.bin/tsx packages/sim-backends/fixtures/esp-boards/build.ts
 
 The `.bin.gz` files hold the merged flash image without its trailing 0xFF padding; the backend pads it
 to the board's flash size (`mcu.flash.sizeMB`).
+
+## Renode board fixtures (round 10)
+
+`src/renode/boards.integration.test.ts` and `packages/parts/src/renode.integration.test.ts` boot
+these on the Renode backend. Intel HEX, as every Jumper build keeps firmware; the XIAO nRF52840 ones
+are the simulator image (Nordic MBR + S140 SoftDevice 7.3.0 + the app, see docs/renode.md).
+
+| Sketch | Files | What it does |
+| --- | --- | --- |
+| `renode/pinprobe/` | `renode/pinprobe-<board>.hex` (5 boards) | each listed pin (`pins.h`) HIGH for 2 ms as an output, then as inputs prints `in <bits>` every 10 ms |
+| `renode/busprobe/` | `renode/busprobe-<board>.hex` (5 boards) | I2C scan of 0x46..0x49 and a register read from 0x48, SPI `9F 00`, analogRead, analogWrite 64, attachInterrupt FALLING count, Serial echo |
+| `renode/oled_blackpill/` | `renode/oled_blackpill-stm32-blackpill-f411.hex` | Adafruit SSD1306 at 0x3C on Wire: title, frame counter, a bar; LED on PC13 |
+
+Rebuild through Jumper's own build pipeline (the runner's images, Serial redirection and sim.hex):
+
+    node --import tsx scripts/build-renode-fixtures.ts [pinprobe|busprobe|oled_blackpill]
+
+The committed files were built on 2026-11-11 with the same pinned cores and flags outside Docker
+(Docker Desktop was failing on the build machine): arduino-cli 1.5.1 for macOS, STMicroelectronics:stm32
+2.11.0, arduino:mbed_nano 4.4.1, Seeeduino:nrf52 1.1.13, Adafruit SSD1306 2.5.17 / GFX 1.13.0 /
+BusIO 1.17.4, then toolchains/arduino-nrf52/jumper-sim-hex.py for the XIAO. A Docker rebuild may
+differ in bytes (paths in debug info, host compilers); the tests check behaviour, not bytes.

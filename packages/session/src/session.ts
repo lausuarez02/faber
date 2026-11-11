@@ -645,10 +645,14 @@ export class ProjectSession {
         ...(mentioned.length ? { mentioned_in: mentioned } : {}),
       };
     }
+    // Round 10: boards whose emulator support is not proven yet are listed apart, with the reason.
+    const planned = defs.filter((d) => d.spec.availability?.status === "planned");
+    defs = defs.filter((d) => d.spec.availability?.status !== "planned");
     const results = defs.slice(0, 25).map((d) => ({ type: d.spec.id, name: d.spec.name, category: d.spec.category, fidelity: d.fidelity.origin === "agent-made" ? AGENT_MADE_LABEL : d.fidelity.level, about: d.spec.description.split(/(?<=\.)\s/)[0] }));
     return {
       count: results.length,
       results,
+      ...(planned.length ? { planned: planned.map((d) => ({ type: d.spec.id, name: d.spec.name, why: d.spec.availability!.reason })) } : {}),
       ...(results.length === 0
         ? { hint: `nothing matches '${args.query}'. Try a broader word (e.g. "display", "button", "sensor") or search_parts with no query to list all ${this.registry.list().length} types. If the part really is missing, make it with create_part (a declarative part: pins + a behaviour template; it is marked "${AGENT_MADE_LABEL}"), or use a close built-in as a stand-in and say so.` }
         : {}),
@@ -717,6 +721,14 @@ export class ProjectSession {
   async placePart(args: { type: string; id?: string; x?: number; y?: number; rotation?: number; props?: Record<string, PropValue>; why?: string }, ctx: OpCtx): Promise<unknown> {
     if (!args.type) fail("missing-arg", "place_part needs 'type'", "no part type was given", 'pass a type from search_parts, e.g. { "type": "led" }');
     const spec = this.spec(args.type);
+    if (spec.availability?.status === "planned") {
+      fail(
+        "part-planned",
+        `${spec.name} (${spec.id}) cannot be placed yet`,
+        `it is planned, not available: ${spec.availability.reason}`,
+        "pick an available board from search_parts (category board), e.g. raspberry-pi-pico or arduino-uno; this one becomes placeable once its emulator test passes",
+      );
+    }
     const rotation = (args.rotation ?? 0) as Rotation;
     if (![0, 90, 180, 270].includes(rotation)) fail("bad-rotation", `Rotation ${args.rotation} is not allowed`, "parts rotate in quarter turns", "pass 0, 90, 180 or 270");
     let id = args.id ?? this.nextId(spec.id);
@@ -1745,7 +1757,8 @@ export class ProjectSession {
     writeFileSync(join(out, "TEST-ON-HARDWARE.md"), `# Test these on the real device: ${this.project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n${flaggedText}\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
     files.push("TEST-ON-HARDWARE.md");
     ctx.summary = `exported to ${out}`;
-    return { dir: out, files, assembly: style, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex || bin ? {} : { note: dev && "error" in dev ? `no firmware: ${dev.error}. Fix: ${dev.fix}` : "no firmware.hex: build first to include it" }), ...(dev && "differs" in dev && dev.differs ? { firmware_note: dev.differs } : {}), flash: bin ? (dev && "flash" in dev && dev.flash ? dev.flash : "esptool write_flash 0x0 {bin}").replace("{bin}", join(out, "firmware.bin")).replace("{port}", "<port>") : !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
+    const renodeNote = boardMcu?.backend === "renode" && hex ? { firmware_note: "firmware.hex is the SIMULATOR build: Serial is moved to the hardware UART the simulator reads (and on the XIAO nRF52840 the image includes Nordic's SoftDevice). Build and upload with the board's own core for the real board (see flash)." } : {};
+    return { dir: out, files, assembly: style, bom, ...(flagged.length ? { check_first: flagged.map((p) => (p.standIn ? `${p.id}: STAND-IN for ${p.standIn}` : `${p.id}: agent-made: behavioral, unverified`)) } : {}), ...(hex || bin ? {} : { note: dev && "error" in dev ? `no firmware: ${dev.error}. Fix: ${dev.fix}` : "no firmware.hex: build first to include it" }), ...(dev && "differs" in dev && dev.differs ? { firmware_note: dev.differs } : {}), ...renodeNote, flash: bin ? (dev && "flash" in dev && dev.flash ? dev.flash : "esptool write_flash 0x0 {bin}").replace("{bin}", join(out, "firmware.bin")).replace("{port}", "<port>") : !hex ? undefined : rp2040 ? `hold BOOTSEL while plugging the board into USB, then copy ${join(out, "firmware.uf2")} to the RPI-RP2 drive that appears (or: picotool load -x ${join(out, "firmware.uf2")})` : boardMcu?.backend === "renode" ? `build and upload the sketch for the real board with its own core (the simulator's build prints Serial on the hardware UART and, on the XIAO nRF52840, includes Nordic's SoftDevice): arduino-cli compile --upload --fqbn ${boardMcu.fqbn ?? "<fqbn>"} -p <port> firmware/${this.project.firmware?.sketch?.split("/")[0] ?? "<sketch>"}` : `avrdude -p m328p -c arduino -P <port> -b 115200 -U flash:w:${join(out, "firmware.hex")}:i (or arduino-cli upload)` };
   }
 
   // =================================================================== steps

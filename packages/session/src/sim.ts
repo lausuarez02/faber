@@ -215,7 +215,9 @@ export class SimHost {
     const t0 = Date.now();
     progress?.({ stage: "start", text: `starting ${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"} for ${board.name}` });
     try {
-      await be.prepare!(firmware);
+      // QEMU boots here without blocking; Renode has no prepare() and starts on its first step,
+      // once the parts are attached (it needs their I2C addresses).
+      await be.prepare?.(firmware);
     } catch (err) {
       be.dispose?.();
       untrackEmulator(be);

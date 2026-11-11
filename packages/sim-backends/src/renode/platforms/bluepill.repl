@@ -20,3 +20,8 @@ bitbandPeripherals: Miscellaneous.BitBanding @ sysbus <0x42000000, +0x2000000>
 spi1: SPI.STM32SPI @ sysbus 0x40013000
     series: STM32Series.F4
     IRQ -> nvic@35
+
+// Jumper (round 10): ADC1 (Renode has no F1 ADC; JumperStm32F1Adc.cs). The bridge and the DWT
+// cycle counter are added for every board by the backend.
+adc1: Miscellaneous.JumperStm32F1Adc @ sysbus 0x40012400
+    name: "adc1"

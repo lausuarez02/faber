@@ -273,6 +273,8 @@ interface SpiAttached {
   partId: string;
   device: SpiDevice;
   selected: () => boolean;
+  /** The device's MISO reaches the master (it has a MISO pin and it is wired). */
+  drivesMiso: boolean;
 }
 
 /**
@@ -290,9 +292,12 @@ export class SpiBus {
     this.id = id;
   }
 
-  /** `selected` says whether the device's CS line is active right now. */
-  attach(partId: string, device: SpiDevice, selected: () => boolean): Unsubscribe {
-    const entry = { partId, device, selected };
+  /**
+   * `selected` says whether the device's CS line is active right now. `drivesMiso` (default true):
+   * false for a device whose MISO is not wired (or that has none, like most display modules).
+   */
+  attach(partId: string, device: SpiDevice, selected: () => boolean, drivesMiso = true): Unsubscribe {
+    const entry = { partId, device, selected, drivesMiso };
     this.devices.push(entry);
     return () => {
       this.devices = this.devices.filter((d) => d !== entry);
@@ -313,6 +318,14 @@ export class SpiBus {
 
   faultOf(partId: string): SpiFault | undefined {
     return this.faults.get(partId);
+  }
+
+  /**
+   * true when some attached device drives MISO, so the master must wait for each answer. A backend in
+   * another process (Renode) sends MOSI one way when nothing can answer (display modules).
+   */
+  needsMiso(): boolean {
+    return this.devices.some((d) => d.drivesMiso);
   }
 
   /** Bytes exchanged since the last reset. */

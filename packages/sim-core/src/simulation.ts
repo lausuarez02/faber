@@ -315,6 +315,7 @@ export class Simulation {
     this.detachBuses();
     for (const s of this.slots) s.model.dispose?.();
     this.listeners.clear();
+    this.mcu?.dispose?.();
   }
 
   // ------------------------------------------------------------------ circuit
@@ -752,7 +753,7 @@ export class Simulation {
             return r !== undefined && r.voltages.has(csNode) && !r.isFloating(csNode) && r.voltage(csNode) < 0.3 * vcc;
           };
         }
-        this.busUnsubs.push(this.spi.attach(s.id, s.model.spi, selected));
+        this.busUnsubs.push(this.spi.attach(s.id, s.model.spi, selected, dMiso !== undefined && isWired(s, dMiso)));
         this.spiSelected.set(s.id, { selected, last: false });
       }
     }

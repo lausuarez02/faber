@@ -45,7 +45,7 @@ function inProcessBackend(board: Parameters<BackendFactory>[0]): McuBackend {
     return createRp2040Backend({ board: rp.type, clockHz: board.mcu.clockHz, vcc: board.mcu.vcc });
   }
   if (board.mcu.backend === "qemu-esp" || board.mcu.backend === "renode") {
-    throw new Error(`board '${board.partId}' (${board.type}) runs in a local emulator (${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"}) that only the Jumper server can start, not in this page. Fix: open the project from \`pnpm start\` (jumper serve) and press Run there; the page then follows the server's simulation.`);
+    throw new Error(`board '${board.partId}' (${board.type}, ${board.mcu.chip}) runs in a local emulator (${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"}) on your computer, not in the browser. Fix: open the project from \`jumper serve\` (pnpm start) and press Run there (this page then shows that run), or ask your agent to run it.`);
   }
   throw new Error(`no simulator backend '${board.mcu.backend}' for board '${board.partId}' (${board.type})`);
 }

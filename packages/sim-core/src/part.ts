@@ -94,6 +94,14 @@ export const StrappingPinSchema = z.object({
 });
 export type StrappingPin = z.infer<typeof StrappingPinSchema>;
 
+export const AvailabilitySchema = z.object({
+  status: z.enum(["available", "planned"]),
+  /** Planned: what is missing and why. Available: what proves it (the fixture test). */
+  reason: z.string().min(1),
+});
+export type Availability = z.infer<typeof AvailabilitySchema>;
+
+
 /** Extra block for MCU boards. Round 10 (decision 0006): everything the runtime needs is data. */
 export const McuSpecSchema = z.object({
   /** Backend id the backendFactory understands. Shipped boards use one of BOARD_BACKENDS (tests may use fakes). */
@@ -290,6 +298,12 @@ export const PartSpecSchema = z.object({
   buy_links: z.array(z.object({ vendor: z.string().min(1), url: z.string().regex(/^https:\/\//) })).optional(),
   bindings: z.array(BindingSpecSchema).optional(),
   mcu: McuSpecSchema.optional(),
+  /**
+   * Round 10: whether the part can be placed. A board whose emulator support is not proven by a
+   * fixture test (real firmware boots and its listed buses work) is "planned": the parts library
+   * lists it with the reason, and placing it is refused with that reason. Omitted = available.
+   */
+  availability: AvailabilitySchema.optional(),
   bus: z
     .object({
       /** The part is an I2C target. Its SDA/SCL pins carry protocols "i2c-sda" / "i2c-scl". */

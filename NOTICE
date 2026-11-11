@@ -250,3 +250,31 @@ Firmware fixtures (packages/sim-backends/fixtures/renode/*.elf) are built with
 toolchains/arduino-stm32 (STM32duino core 2.11.0: LGPL-2.1 core, ST HAL / CMSIS
 BSD-3-Clause / Apache-2.0) and toolchains/arduino-mbed-nano (arduino:mbed_nano
 4.4.1: LGPL-2.1 core, Arm Mbed OS Apache-2.0), plus newlib / libgcc as above.
+
+STM32 and nRF52 boards in Renode (round 10)
+-------------------------------------------
+packages/sim-backends/src/renode/platforms holds Jumper's Renode additions, MIT
+like Renode, compiled into the Renode process at start (never linked into
+Jumper): the bridge (JumperBridge.cs), a DWT cycle counter, an STM32F1 ADC, an
+STM32F4 SYSCFG EXTI mux, nRF52840 SAADC / PWM / TWIM / SPIM / UICR models.
+stm32f4x1.repl and xiao-nrf52840.repl contain copies of Renode 1.17's
+platforms/cpus/stm32f4.repl and platforms/cpus/nrf52840.repl (MIT, Antmicro),
+changed as their headers say. A native Renode 1.17 (JUMPER_RENODE_RUNTIME=native)
+is the user's own install, run as a separate process.
+
+Build images (separate processes; the cores are the person's build inputs):
+  toolchains/arduino-stm32      STM32duino 2.11.0 (LGPL-2.1 core; ST HAL / CMSIS
+                                BSD-3-Clause / Apache-2.0), linux/amd64
+  toolchains/arduino-mbed-nano  arduino:mbed_nano 4.4.1 (LGPL-2.1 core; Arm Mbed
+                                OS Apache-2.0)
+  toolchains/arduino-nrf52      Seeeduino:nrf52 1.1.13 (Adafruit nRF52 core,
+                                LGPL-2.1; Nordic nrfx BSD-3-Clause; TinyUSB MIT;
+                                FreeRTOS MIT), adafruit-nrfutil 0.5.3 (BSD-3-Clause)
+The XIAO nRF52840 simulator build (<sketch>.ino.sim.hex, and the fixtures
+packages/sim-backends/fixtures/renode/*-seeed-xiao-nrf52840.hex) contain
+Nordic's MBR and S140 SoftDevice 7.3.0 from the core's own bootloader image,
+as the real board carries them. They are Nordic Semiconductor's binaries under
+Nordic's own license (the "5-Clause Nordic License": redistribution in binary
+form for use with Nordic devices); the Seeed core ships them without a separate
+license file, so check Nordic's terms before shipping a product. The other
+fixtures (*.hex) are STM32duino / Mbed builds of Jumper's own sketches.

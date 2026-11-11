@@ -1,0 +1,52 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Jumper's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Jumper's parts through Jumper's bridge (every signal time-stamped to the instruction). Serial is USB CDC on the real board, which is not emulated: Jumper's simulator build prints Serial on Serial1 (UARTE0, D0 / D1) instead."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Virtual time counts one instruction per core clock cycle at the board's clock (no pipeline, wait-state or cache timing), so delay(), millis() and timers are exact in virtual time and busy loops are close. A part's reaction to a pin edge lands at the next simulation step (1 ms by default), not mid-step."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Pins are ideal sources (standard drive, a few hundred \u03a9) with 13 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead goes through Jumper's SAADC model: the solved voltage on the AIN pin, with the gain, reference and resolution the core sets; no noise, offset or acquisition time."
+    },
+    "power": {
+      "level": "approx",
+      "note": "USB (power.usb) puts 5 V on VUSB (modelled with the VUSB jumper closed) and, through a Schottky, on VIN; the MPM3610 buck makes 3.3 V (typical efficiency). The board draws its typical current. Sleep currents are not simulated."
+    },
+    "radio": {
+      "level": "none",
+      "note": "Bluetooth LE is not emulated. Renode 1.17 has an nRF52840 RADIO model, but Jumper does not connect it to anything: advertising, scanning and connections do nothing (BLE.begin() / Bluefruit.begin() may fail or hang). Test radio code on the real board."
+    }
+  },
+  "emulates": [
+    "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (jumper/renode image)",
+    "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
+    "Serial1 (UARTE0) with per-byte virtual time",
+    "Wire (TWIM0) to the I2C parts on the board's default pins",
+    "SPI (SPIM2) to the SPI parts on the board's default pins",
+    "analogRead through Jumper's SAADC model",
+    "analogWrite / Servo / tone through Jumper's PWM0..3 model (period and duty drawn as exact edges)"
+  ],
+  "doesNotEmulate": [
+    "Bluetooth LE and the 2.4 GHz radio",
+    "USB (the real board's USB CDC Serial, mass storage, HID)",
+    "NFC",
+    "QSPI flash, the file system on it",
+    "Low-power modes (System OFF) and their current",
+    "Wire1 / SPI1 and buses on other pins",
+    "Bus electrical detail (clock stretching, rise times)",
+    "The on-board LSM9DS1 IMU, APDS9960 and HTS221 sensors (Nano 33 BLE Sense) on Wire1",
+    "Arduino's bootloader (the app starts directly at 0x10000)",
+    "Serial1 RX: bytes sent to the board never reach the sketch (Mbed's UARTE receive through Renode's UART model; known gap, tested)"
+  ],
+  "testOnRealDevice": [
+    "Anything Bluetooth",
+    "USB Serial: the real board prints Serial over USB, the simulator build on Serial1",
+    "Analog readings: offset, noise, acquisition time",
+    "Battery life and sleep current"
+  ]
+}

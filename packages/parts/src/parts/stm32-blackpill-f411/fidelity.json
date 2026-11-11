@@ -1,0 +1,56 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "ok",
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Jumper's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Jumper's parts through Jumper's bridge (every signal time-stamped to the instruction)."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Virtual time counts one instruction per core clock cycle at the board's clock (no pipeline, wait-state or cache timing), so delay(), millis() and timers are exact in virtual time and busy loops are close. A part's reaction to a pin edge lands at the next simulation step (1 ms by default), not mid-step. Measured on an M4 Max: about 0.5 to 1x real time with 1 ms steps (busy-wait delay() runs every instruction)."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Pins are ideal sources with about 50 \u03a9 output resistance and 40 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead on ADC1's pins converts the solved net voltage to 12 bits against an ideal 3.3 V reference at once (no sampling time, noise or non-linearity)."
+    },
+    "power": {
+      "level": "approx",
+      "note": "USB (power.usb) puts 5 V on the 5V pin; the on-board LDO makes 3V3 from it (dropout typical). The board draws its typical current; per-pin current above the limit is flagged. Brownout and sleep currents are not simulated."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "No radio on this board."
+    }
+  },
+  "emulates": [
+    "STM32F411CE Cortex-M core and the peripherals Arduino sketches use, in Renode 1.17 (jumper/renode image)",
+    "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
+    "Serial (the board's console UART) with per-byte virtual time",
+    "Wire (I2C master) to the I2C parts on the board's default pins",
+    "SPI (master) to the SPI parts on the board's default pins",
+    "analogRead on ADC1 channels (Jumper's ADC model / Renode's STM32 ADC fed by Jumper)",
+    "analogWrite / Servo / tone through the timers' PWM outputs where Renode routes them to the pin",
+    "DWT cycle counter (delayMicroseconds)",
+    "ADC1 through Renode's STM32 ADC model, fed by Jumper"
+  ],
+  "doesNotEmulate": [
+    "Other UARTs than the console (Serial2, Serial3) reaching parts",
+    "Wire / SPI on other than the default pins (Wire.setSDA, SPI.setMOSI)",
+    "USB (the board's USB device: USB CDC Serial, HID)",
+    "DMA-driven transfers to parts",
+    "Flash / EEPROM emulation persisting across a reset",
+    "Low-power modes and their current",
+    "The reset button and the NRST pin",
+    "The RTC on its 32.768 kHz crystal and VBAT",
+    "Bus electrical detail (clock stretching, rise times)",
+    "The KEY button as a control on the board (wire a pushbutton to PA0 instead)",
+    "The F411's own extras over Renode's F4 platform (written for the F407 family): the platform has peripherals the F411 lacks, which firmware never touches"
+  ],
+  "testOnRealDevice": [
+    "Upload: DFU / ST-LINK / serial bootloader on your computer",
+    "Analog readings: the real ADC has offset, noise and sampling-time effects",
+    "Timing-critical code: the emulator counts one cycle per instruction",
+    "5 V parts: only the FT pins tolerate 5 V as inputs; outputs are 3.3 V",
+    "I2C scanners: on these boards each absent address costs about 130 ms of virtual time in the emulator (Renode's STM32 I2C model plus STM32duino's timeout), so a full scan is slow; addressed devices answer at full speed"
+  ]
+}

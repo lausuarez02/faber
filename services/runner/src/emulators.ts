@@ -4,7 +4,7 @@
 // containers a crashed Jumper left behind (by label), and disposes every emulator it started.
 // Ports are never fixed: every bridge listens on a free port the OS picks (never 7780).
 import { spawn } from "node:child_process";
-import { QEMU_ESP_IMAGE, RENODE_IMAGE, EMULATOR_LABEL, OWNER_LABEL } from "@jumper/sim-backends/node";
+import { QEMU_ESP_IMAGE, RENODE_IMAGE, EMULATOR_LABEL, OWNER_LABEL, renodeRuntime, renodeUnavailable } from "@jumper/sim-backends/node";
 import type { McuBackend } from "@jumper/sim-core";
 import { QEMU_ESP_DOCKERFILE_DIR } from "./config.ts";
 import { exec, RunnerError } from "./docker.ts";
@@ -25,7 +25,7 @@ export interface EmulatorInfo {
 
 export const EMULATORS: Record<ProcessBackendId, EmulatorInfo> = {
   "qemu-esp": { backend: "qemu-esp", image: QEMU_ESP_IMAGE, name: "Espressif QEMU 9.2.2 with the Jumper bridge", setup: "pnpm jumper setup esp32", buildDir: QEMU_ESP_DOCKERFILE_DIR, buildMinutes: 2 },
-  renode: { backend: "renode", image: RENODE_IMAGE, name: "Renode 1.17.0", setup: "docker build -t jumper/renode:1.17.0-r1 toolchains/renode" },
+  renode: { backend: "renode", image: RENODE_IMAGE, name: "Renode 1.17.0", setup: `docker build -t ${RENODE_IMAGE} toolchains/renode` },
 };
 
 export function emulatorOf(backend: string | undefined): EmulatorInfo | undefined {
@@ -45,6 +45,11 @@ export interface EmulatorCheck {
 export async function checkEmulator(backend: ProcessBackendId, board = "this board"): Promise<EmulatorCheck> {
   const info = EMULATORS[backend];
   const t0 = Date.now();
+  if (backend === "renode" && renodeRuntime() === "native") {
+    // JUMPER_RENODE_RUNTIME=native: a Renode 1.17 on this machine, no Docker involved.
+    const why = renodeUnavailable();
+    return why ? { ok: false, code: "image-missing", image: "native renode", message: `Can't run ${board}: ${why}` } : { ok: true, image: "native renode", dockerMs: Date.now() - t0 };
+  }
   let r;
   try {
     r = await exec("docker", ["info", "--format", "{{.ServerVersion}}"], { timeoutMs: 15_000 });

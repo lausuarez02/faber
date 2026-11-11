@@ -1,0 +1,5 @@
+// WeAct Black Pill (STM32F411CEU6, 100 MHz): see stm32f4x1.repl.
+using "/jumper/platforms/stm32f4x1.repl"
+
+nvic:
+    systickFrequency: 100000000

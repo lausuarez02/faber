@@ -1,4 +1,6 @@
 import { engine, useJumper } from "../lib/app.ts";
+import { registry } from "../lib/parts.ts";
+import { sendLiveCommand } from "./command.ts";
 import { useLive } from "./liveStore.ts";
 
 /**
@@ -110,9 +112,34 @@ function refuse(error: string): void {
   s.toast({ kind: "error", title: "Can't run yet", detail: error });
 }
 
+/** Simulator backends that run as a process next to `jumper serve` (Renode in Docker), never in the page. */
+export const PROCESS_BACKENDS = new Set(["renode"]);
+
+/** The firmware board's backend when it runs in another process (the page cannot run it), else undefined. */
+export function processBackendOf(project = useJumper.getState().project): { board: string; backend: string; name: string } | undefined {
+  const board = project.parts.find((x) => x.id === project.firmware?.board) ?? project.parts.find((x) => registry.get(x.type)?.spec.mcu);
+  const spec = board ? registry.get(board.type)?.spec : undefined;
+  const backend = spec?.mcu?.backend;
+  return board && spec && backend && PROCESS_BACKENDS.has(backend) ? { board: board.id, backend, name: spec.name } : undefined;
+}
+
+/** How long one Run of a process backend simulates in the session (virtual ms). */
+export const PROCESS_RUN_MS = 3000;
+
 /** Run pressed on the followed page: latest firmware, then the simulation here. */
 export async function runFollowed(): Promise<void> {
   const p = useJumper.getState().project;
+  // Round 10: a board that runs in Renode runs in the jumper serve session; this page shows that run.
+  const proc = processBackendOf(p);
+  if (proc) {
+    useJumper.getState().setSimError(undefined);
+    if (!sendLiveCommand("run", { ms: PROCESS_RUN_MS, reset: true })) {
+      refuse(`${proc.name} runs in Renode next to jumper serve, and this page is not connected to it. Fix: wait for the Live bar to say connected (or restart \`jumper serve\`), then press Run again.`);
+      return;
+    }
+    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in Renode`, detail: `The firmware runs in the emulator on this computer (Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
+    return;
+  }
   const needsFirmware = !!p.firmware || p.parts.length === 0;
   if (needsFirmware) {
     const fw = await fetchFirmware();
@@ -133,7 +160,7 @@ function restart(): void {
 
 /** A `firmware` event: reload the hex; restart if the device was running here. */
 export async function onFirmwareEvent(hash: string): Promise<void> {
-  if (firmware?.hash === hash) return;
+  if (firmware?.hash === hash || processBackendOf()) return;
   const wasRunning = engine.isLocalRun && useJumper.getState().run === "running";
   const fw = await fetchFirmware();
   if ("error" in fw) return;
@@ -145,7 +172,8 @@ export async function onFirmwareEvent(hash: string): Promise<void> {
 
 /** An `auto-run` event (an agent build / run / run_tests finished ok). */
 export async function onAutoRun(hash?: string): Promise<void> {
-  if (!autoRunEnabled()) return;
+  // A Renode board ran in the session: the canvas already shows that run.
+  if (!autoRunEnabled() || processBackendOf()) return;
   const running = engine.isLocalRun && useJumper.getState().run === "running";
   if (running && hash && firmware?.hash === hash) return; // already alive with this firmware
   const fw = await fetchFirmware();
@@ -166,7 +194,7 @@ let openedOnce = false;
  * project and its firmware, once per page load. Without a build it stays stopped (Run explains).
  */
 export async function autoRunOnOpen(): Promise<void> {
-  if (openedOnce || typeof location === "undefined" || new URLSearchParams(location.search).get("autorun") !== "1") return;
+  if (openedOnce || typeof location === "undefined" || new URLSearchParams(location.search).get("autorun") !== "1" || processBackendOf()) return;
   openedOnce = true;
   const fw = await fetchFirmware();
   if ("error" in fw || engine.isLocalRun) return;

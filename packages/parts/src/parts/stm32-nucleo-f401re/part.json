@@ -1,0 +1,541 @@
+{
+  "id": "stm32-nucleo-f401re",
+  "name": "ST Nucleo-F401RE",
+  "category": "board",
+  "description": "ST Nucleo-64 board with the STM32F401RET6 (84 MHz Cortex-M4F, 512 KB flash, 96 KB RAM) and an on-board ST-LINK, at 3.3 V logic, programmed with STM32duino (Arduino). Runs real firmware in Renode (local Docker). Only the Arduino Uno headers are drawn (D0-D15, A0-A5) plus PC13; pin ids are the chip's port pins (D13 = PA5). Serial = USART2 on D1 / D0 (PA2 / PA3, also over the ST-LINK USB), Wire = D14 / D15 (PB9 / PB8), SPI = D11 / D12 / D13 (SS D10), green LED LD2 on D13, user button B1 on PC13.",
+  "pins": [
+    {
+      "id": "PB8",
+      "label": "D15/SCL",
+      "x": 100.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "i2c-scl",
+        "pwm"
+      ],
+      "description": "PB8; McuBackend pin \"PB8\". 5 V tolerant as a digital input (FT pin), 3.3 V output. I2C1 SCL (Wire)."
+    },
+    {
+      "id": "PB9",
+      "label": "D14/SDA",
+      "x": 120.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "i2c-sda",
+        "pwm"
+      ],
+      "description": "PB9; McuBackend pin \"PB9\". 5 V tolerant as a digital input (FT pin), 3.3 V output. I2C1 SDA (Wire)."
+    },
+    {
+      "id": "GND.2",
+      "label": "GND",
+      "x": 140.0,
+      "y": 14,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "PA5",
+      "label": "D13/SCK",
+      "x": 160.0,
+      "y": 14,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "spi-sck"
+      ],
+      "description": "PA5; McuBackend pin \"PA5\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 5 (analogRead) SPI1 SCK, and the green user LED LD2 (lit when HIGH)."
+    },
+    {
+      "id": "PA6",
+      "label": "D12/MISO",
+      "x": 180.0,
+      "y": 14,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm",
+        "spi-miso"
+      ],
+      "description": "PA6; McuBackend pin \"PA6\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 6 (analogRead) SPI1 MISO."
+    },
+    {
+      "id": "PA7",
+      "label": "D11/MOSI",
+      "x": 200.0,
+      "y": 14,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm",
+        "spi-mosi"
+      ],
+      "description": "PA7; McuBackend pin \"PA7\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 7 (analogRead) SPI1 MOSI."
+    },
+    {
+      "id": "PB6",
+      "label": "D10/SS",
+      "x": 220.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm",
+        "spi-ss"
+      ],
+      "description": "PB6; McuBackend pin \"PB6\". 5 V tolerant as a digital input (FT pin), 3.3 V output. D10: the usual SPI chip select."
+    },
+    {
+      "id": "PC7",
+      "label": "D9",
+      "x": 240.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PC7; McuBackend pin \"PC7\". 3.3 V logic, NOT 5 V tolerant."
+    },
+    {
+      "id": "PA9",
+      "label": "D8",
+      "x": 260.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm"
+      ],
+      "description": "PA9; McuBackend pin \"PA9\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PA8",
+      "label": "D7",
+      "x": 280.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm"
+      ],
+      "description": "PA8; McuBackend pin \"PA8\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PB10",
+      "label": "D6",
+      "x": 300.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PB10; McuBackend pin \"PB10\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PB4",
+      "label": "D5",
+      "x": 320.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PB4; McuBackend pin \"PB4\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PB5",
+      "label": "D4",
+      "x": 340.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PB5; McuBackend pin \"PB5\". 3.3 V logic, NOT 5 V tolerant."
+    },
+    {
+      "id": "PB3",
+      "label": "D3",
+      "x": 360.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PB3; McuBackend pin \"PB3\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PA10",
+      "label": "D2",
+      "x": 380.0,
+      "y": 14,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "pwm"
+      ],
+      "description": "PA10; McuBackend pin \"PA10\". 5 V tolerant as a digital input (FT pin), 3.3 V output."
+    },
+    {
+      "id": "PA2",
+      "label": "D1/TX",
+      "x": 400.0,
+      "y": 14,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm",
+        "uart-tx"
+      ],
+      "description": "PA2; McuBackend pin \"PA2\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 2 (analogRead) USART2 TX: Serial prints here (and over the ST-LINK USB on the real board)."
+    },
+    {
+      "id": "PA3",
+      "label": "D0/RX",
+      "x": 420.0,
+      "y": 14,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm",
+        "uart-rx"
+      ],
+      "description": "PA3; McuBackend pin \"PA3\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 3 (analogRead) USART2 RX: Serial reads here."
+    },
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 150.0,
+      "y": 426,
+      "type": "power",
+      "description": "3.3 V output of the on-board LDO (LD39050, 500 mA)."
+    },
+    {
+      "id": "5V",
+      "label": "5V",
+      "x": 170.0,
+      "y": 426,
+      "type": "power",
+      "description": "5V: from the ST-LINK USB (power.usb, default plugged) or the E5V / VIN regulator; the on-board LDO makes 3.3 V from it."
+    },
+    {
+      "id": "GND.1",
+      "label": "GND",
+      "x": 190.0,
+      "y": 426,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "GND.3",
+      "label": "GND",
+      "x": 210.0,
+      "y": 426,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "VIN",
+      "label": "VIN",
+      "x": 230.0,
+      "y": 426,
+      "type": "power",
+      "description": "VIN: 7 to 12 V in; the board's 5 V regulator (LD1117S50) makes 5 V from it when USB is not plugged."
+    },
+    {
+      "id": "PA0",
+      "label": "A0",
+      "x": 250.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm"
+      ],
+      "description": "PA0; McuBackend pin \"PA0\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 0 (analogRead)"
+    },
+    {
+      "id": "PA1",
+      "label": "A1",
+      "x": 270.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm"
+      ],
+      "description": "PA1; McuBackend pin \"PA1\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 1 (analogRead)"
+    },
+    {
+      "id": "PA4",
+      "label": "A2",
+      "x": 290.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc"
+      ],
+      "description": "PA4; McuBackend pin \"PA4\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 4 (analogRead)"
+    },
+    {
+      "id": "PB0",
+      "label": "A3",
+      "x": 310.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc",
+        "pwm"
+      ],
+      "description": "PB0; McuBackend pin \"PB0\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 8 (analogRead)"
+    },
+    {
+      "id": "PC1",
+      "label": "A4",
+      "x": 330.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc"
+      ],
+      "description": "PC1; McuBackend pin \"PC1\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 11 (analogRead) ADC1 channel 11."
+    },
+    {
+      "id": "PC0",
+      "label": "A5",
+      "x": 350.0,
+      "y": 426,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "adc"
+      ],
+      "description": "PC0; McuBackend pin \"PC0\". 3.3 V logic, NOT 5 V tolerant. ADC1 channel 10 (analogRead) ADC1 channel 10."
+    },
+    {
+      "id": "PC13",
+      "label": "PC13/B1",
+      "x": 370.0,
+      "y": 426,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "PC13; McuBackend pin \"PC13\". 3.3 V logic, NOT 5 V tolerant. User button B1 on the board (pressed = LOW, external pull-up); also on the morpho header CN7-23."
+    }
+  ],
+  "size": {
+    "w": 520,
+    "h": 440
+  },
+  "limits": {
+    "maxCurrentmA": 25,
+    "recommendedPinCurrentmA": 8,
+    "maxTotalCurrentmA": 120,
+    "maxVoltage": 3.6,
+    "max3v3mA": 500,
+    "ldoDropoutV": 0.2,
+    "min3v3V": 1.7,
+    "vinMinV": 7,
+    "vinMaxV": 12
+  },
+  "footprint": "82.5 x 70 mm Nucleo-64, Arduino Uno V3 headers (and ST morpho headers, not drawn)",
+  "dimensions_mm": {
+    "w": 82.5,
+    "h": 70,
+    "d": 15
+  },
+  "mass_g": 30,
+  "current_ma": {
+    "typ": 60,
+    "max": 150
+  },
+  "price_usd": 13.0,
+  "buy_links": [
+    {
+      "vendor": "ST",
+      "url": "https://www.st.com/en/evaluation-tools/nucleo-f401re.html"
+    },
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=NUCLEO-F401RE"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power: USB plugged (power.usb) or a supply on its power pins keeps 3.3 V up; the firmware is held in reset while false."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "led",
+      "type": "number",
+      "description": "Green user LED LD2 (PA5 = D13, lit when HIGH) 0..1."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_PA5 (only on the firmware board)."
+    }
+  ],
+  "mcu": {
+    "backend": "renode",
+    "chip": "stm32f401re",
+    "clockHz": 84000000,
+    "vcc": 3.3,
+    "fqbn": "STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F401RE"
+  },
+  "tags": [
+    "stm32",
+    "nucleo",
+    "f401",
+    "st",
+    "board",
+    "microcontroller",
+    "3.3v",
+    "cortex-m4",
+    "arduino headers",
+    "stm32duino",
+    "renode"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 12,
+    "keepout_bottom_mm": 3,
+    "mounting_holes": [
+      {
+        "x": 4,
+        "y": 4,
+        "d": 3.2
+      },
+      {
+        "x": 78.5,
+        "y": 4,
+        "d": 3.2
+      },
+      {
+        "x": 4,
+        "y": 66,
+        "d": 3.2
+      },
+      {
+        "x": 78.5,
+        "y": 66,
+        "d": 3.2
+      }
+    ],
+    "features": [
+      {
+        "id": "usb",
+        "kind": "connector",
+        "face": "-y",
+        "x": 41,
+        "y": 0,
+        "z": 3,
+        "w": 8,
+        "h": 3,
+        "connector": "mini-usb",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1
+      },
+      {
+        "id": "b1",
+        "kind": "button",
+        "face": "+z",
+        "x": 70,
+        "y": 58,
+        "shape": "round",
+        "d": 5,
+        "travel_mm": 0.3,
+        "expose": false
+      }
+    ],
+    "source": "ST UM1724 (Nucleo-64): 82.5 x 70 mm board, Arduino Uno V3 headers; holes and parts typical"
+  },
+  "sourcing": {
+    "mpn": "NUCLEO-F401RE",
+    "manufacturer": "STMicroelectronics",
+    "package": "board 82.5 x 70 mm",
+    "generic": "ST Nucleo-64 STM32F401RE"
+  },
+  "availability": {
+    "status": "planned",
+    "reason": "Its fixture test does not pass yet: the firmware boots and every listed pin works as an output and an input, Wire, SPI, analogRead, analogWrite and Serial work, but attachInterrupt never fires on this board in Renode (tried PA8, PA10, PB5; the Black Pill F411 on the same platform works; cause not found)."
+  }
+}

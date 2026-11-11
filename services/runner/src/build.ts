@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
-import { cacheDir, imageFor, outputFormatFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
+import { cacheDir, imageFor, outputFormatFor, PINNED_LIBRARIES, platformFor, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
 
@@ -248,9 +248,11 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
  * the exact same command (and the same bytes).
  */
 const SKETCH_SETUP_HEADERS = ["tft_setup.h"];
-export function sketchSetupFlags(sources: Map<string, string>): string[] {
-  if (!SKETCH_SETUP_HEADERS.some((h) => sources.has(h))) return [];
-  return ["--build-property", "compiler.cpp.extra_flags=-I/work/sketch", "--build-property", "compiler.c.extra_flags=-I/work/sketch"];
+export function sketchSetupFlags(sources: Map<string, string>, forceInclude?: string): string[] {
+  const setup = SKETCH_SETUP_HEADERS.some((h) => sources.has(h));
+  if (!setup && !forceInclude) return [];
+  const cpp = [...(setup ? ["-I/work/sketch"] : []), ...(forceInclude ? [`-include ${forceInclude}`] : [])].join(" ");
+  return ["--build-property", `compiler.cpp.extra_flags=${cpp}`, ...(setup ? ["--build-property", "compiler.c.extra_flags=-I/work/sketch"] : [])];
 }
 
 async function compile(
@@ -264,6 +266,7 @@ async function compile(
   t0: number,
 ): Promise<BuildResult> {
   await ensureDocker();
+  const platform = platformFor(req.fqbn);
   const image = imageFor(req.fqbn);
   await ensureImage(log, image);
   const libDirs: string[] = [];
@@ -273,23 +276,26 @@ async function compile(
   const work = join(cacheDir(), "work", hash);
   rmSync(work, { recursive: true, force: true });
   const sketchOut = join(work, "sketch");
-  for (const [rel, content] of sources) {
+  for (const [rel, raw] of sources) {
+    const content = rel === main && platform.simSketchPrelude ? `${platform.simSketchPrelude}#line 1 "/work/sketch/sketch.ino"\n${raw}` : raw;
     const dest = join(sketchOut, rel === main ? "sketch.ino" : rel);
     mkdirSync(join(dest, ".."), { recursive: true });
     writeFileSync(dest, content);
   }
   mkdirSync(join(work, "out"), { recursive: true });
+  // Boards whose Serial is USB CDC (not emulated): the simulator build prints Serial on the hardware UART.
+  if (platform.simSerialHeader) writeFileSync(join(work, "jumper_sim_serial.h"), platform.simSerialHeader);
   const libRoot = join(cacheDir(), "arduino-libs");
   mkdirSync(libRoot, { recursive: true });
 
   const args = [
-    "run", "--rm", ...uidArgs(),
+    "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
     "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
     ...(req.target === "device" ? ["-e", "JUMPER_SIM=0"] : []),
     image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
-    ...sketchSetupFlags(sources),
+    ...sketchSetupFlags(sources, platform.simSerialHeader ? "/work/jumper_sim_serial.h" : undefined),
     ...(req.buildProperties ?? []).flatMap((p) => ["--build-property", p]),
     "/work/sketch",
   ];
@@ -312,7 +318,7 @@ async function compile(
   };
   const diagnostics = refineWithSources(parseCompilerOutput(output, pathMap), sources);
   const format = outputFormatFor(req.fqbn);
-  const hexPath = join(work, "out", format === "bin" ? "sketch.ino.merged.bin" : "sketch.ino.hex");
+  const hexPath = join(work, "out", format === "bin" ? "sketch.ino.merged.bin" : platform.simHex ? "sketch.ino.sim.hex" : "sketch.ino.hex");
   const ok = r.code === 0 && existsSync(hexPath);
   const flash = ok && format === "bin" ? trimFlash(readFileSync(hexPath)) : undefined;
   if (!ok && !diagnostics.some((d) => d.severity === "error")) {
