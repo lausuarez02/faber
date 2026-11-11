@@ -138,7 +138,7 @@ export function cacheDir(): string {
  * `preinstalled` ones are baked into the runner image; others are installed on first use into the cache.
  * `deps` are added automatically (pinned too) so a sketch only has to name the library it includes.
  */
-export const PINNED_LIBRARIES: Record<string, { version: string; preinstalled: boolean; license: string; deps?: string[]; headers: string[] }> = {
+export const PINNED_LIBRARIES: Record<string, { version: string; preinstalled: boolean; license: string; deps?: string[]; headers: string[]; /** Preinstalled only in these build images (FQBN prefixes); installed into the cache elsewhere. */ only?: string[] }> = {
   "Adafruit SSD1306": { version: "2.5.17", preinstalled: true, license: "BSD-3-Clause", deps: ["Adafruit GFX Library", "Adafruit BusIO"], headers: ["Adafruit_SSD1306.h"] },
   "Adafruit GFX Library": { version: "1.13.0", preinstalled: true, license: "BSD-2-Clause", deps: ["Adafruit BusIO"], headers: ["Adafruit_GFX.h", "Fonts/FreeMono9pt7b.h"] },
   "Adafruit BusIO": { version: "1.17.4", preinstalled: true, license: "MIT", headers: ["Adafruit_I2CDevice.h", "Adafruit_BusIO_Register.h"] },
@@ -159,6 +159,12 @@ export const PINNED_LIBRARIES: Record<string, { version: string; preinstalled: b
   FastLED: { version: "3.10.8", preinstalled: true, license: "MIT", headers: ["FastLED.h"] },
   TFT_eSPI: { version: "2.5.43", preinstalled: true, license: "FreeBSD (BSD-2-Clause) + Adafruit BSD / MIT parts (see toolchains/arduino/LIBRARIES.md)", headers: ["TFT_eSPI.h"] },
   "Adafruit NeoPixel": { version: "1.15.5", preinstalled: true, license: "LGPL-3.0 (compiled into your firmware: shipping that binary carries LGPL-3.0 duties, see toolchains/arduino/LIBRARIES.md)", headers: ["Adafruit_NeoPixel.h"] },
+  // Round 11: the network libraries of the ESP32 simulation image (toolchains/arduino-esp32/Dockerfile.sim);
+  // pinned so firmware.libraries "PubSubClient" builds the image's version, not the newest one.
+  PubSubClient: { version: "2.8.0", preinstalled: true, only: ["esp32:esp32:"], license: "MIT", headers: ["PubSubClient.h"] },
+  MQTT: { version: "2.5.3", preinstalled: true, only: ["esp32:esp32:"], license: "MIT", headers: ["MQTT.h", "MQTTClient.h"] },
+  ArduinoJson: { version: "7.4.3", preinstalled: true, only: ["esp32:esp32:"], license: "MIT", headers: ["ArduinoJson.h"] },
+  WebSockets: { version: "2.7.2", preinstalled: true, only: ["esp32:esp32:"], license: "LGPL-2.1 (a build input of your firmware, see NOTICE)", headers: ["WebSocketsClient.h", "WebSocketsServer.h"] },
   NewPing: { version: "1.9.7", preinstalled: false, license: "GPL-3.0 (copyleft: your firmware becomes GPL if you ship it)", headers: ["NewPing.h"] },
 };
 

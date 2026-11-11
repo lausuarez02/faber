@@ -133,12 +133,12 @@ export function resolveLibraries(libs: readonly string[] = []): string[] {
   return [...out.values()].sort();
 }
 
-function isPreinstalled(spec: string): boolean {
+function isPreinstalled(spec: string, fqbn = ""): boolean {
   const at = spec.lastIndexOf("@");
   const name = at > 0 ? spec.slice(0, at) : spec;
   const version = at > 0 ? spec.slice(at + 1) : "";
   const p = PINNED_LIBRARIES[name];
-  return !!p && p.preinstalled && p.version === version;
+  return !!p && p.preinstalled && p.version === version && (!p.only || p.only.some((x) => fqbn.startsWith(x)));
 }
 
 /** `s` without `prefix`, or undefined when it does not start with it. */
@@ -336,7 +336,7 @@ async function compile(
     await ensureImage(log, image);
   }
   const libDirs: string[] = [];
-  for (const lib of libraries) if (!isPreinstalled(lib)) libDirs.push(await ensureLibrary(lib, log, runtime));
+  for (const lib of libraries) if (!isPreinstalled(lib, req.fqbn)) libDirs.push(await ensureLibrary(lib, log, runtime));
 
   // Arduino wants <name>/<name>.ino; we always use "sketch/sketch.ino" and map paths back.
   const work = join(cacheDir(), "work", hash);

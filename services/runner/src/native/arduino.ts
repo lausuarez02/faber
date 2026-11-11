@@ -51,6 +51,8 @@ export interface NativeCore {
   x64Tools?: string;
   /** Folders under data/packages/ the Dockerfile deletes after the install (other chips, debuggers). */
   prune?: string[];
+  /** The core's GCC knows -ffile-prefix-map (GCC 8+), so paths in the firmware read as in the image. */
+  prefixMap?: boolean;
 }
 
 const PICO_INDEX = "https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json";
@@ -62,12 +64,12 @@ export const NATIVE_INDEXES = [PICO_INDEX, ESP32_INDEX, STM_INDEX, SEEED_INDEX];
 /** One entry per Docker build image (services/runner/src/config.ts PLATFORMS), same core versions. */
 export const NATIVE_CORES: Record<NativeFamily, NativeCore> = {
   avr: { family: "avr", label: "Arduino AVR (Uno, Nano)", core: "arduino:avr@1.8.8", prefix: "arduino:avr:", libs: "base", size: "about 190 MB, 1 minute" },
-  rp2040: { family: "rp2040", label: "RP2040 (arduino-pico)", core: "rp2040:rp2040@6.3.1", index: PICO_INDEX, prefix: "rp2040:rp2040:", libs: "base", size: "about 700 MB, 1 minute", prune: ["rp2040/tools/pqt-gcc-riscv", "rp2040/tools/pqt-openocd"] },
-  esp32: { family: "esp32", label: "ESP32 / S3 / C3 (arduino-esp32)", core: "esp32:esp32@3.3.12", index: ESP32_INDEX, prefix: "esp32:esp32:", libs: "esp32", size: "about 2.5 GB, 4 minutes",
+  rp2040: { family: "rp2040", label: "RP2040 (arduino-pico)", core: "rp2040:rp2040@6.3.1", index: PICO_INDEX, prefix: "rp2040:rp2040:", libs: "base", prefixMap: true, size: "about 700 MB, 1 minute", prune: ["rp2040/tools/pqt-gcc-riscv", "rp2040/tools/pqt-openocd"] },
+  esp32: { family: "esp32", label: "ESP32 / S3 / C3 (arduino-esp32)", core: "esp32:esp32@3.3.12", index: ESP32_INDEX, prefix: "esp32:esp32:", libs: "esp32", prefixMap: true, size: "about 2.5 GB, 4 minutes",
     prune: ["esp32c5-libs", "esp32c6-libs", "esp32h2-libs", "esp32p4-libs", "esp32p4_es-libs", "esp32s2-libs", "xtensa-esp-elf-gdb", "riscv32-esp-elf-gdb", "openocd-esp32", "dfu-util"].map((t) => `esp32/tools/${t}`) },
-  stm32: { family: "stm32", label: "STM32 (STM32duino)", core: "STMicroelectronics:stm32@2.11.0", index: STM_INDEX, prefix: "STMicroelectronics:stm32:", libs: "base", size: "about 1.5 GB, 2 minutes" },
+  stm32: { family: "stm32", label: "STM32 (STM32duino)", core: "STMicroelectronics:stm32@2.11.0", index: STM_INDEX, prefix: "STMicroelectronics:stm32:", libs: "base", prefixMap: true, size: "about 1.5 GB, 2 minutes" },
   mbed_nano: { family: "mbed_nano", label: "Arduino Nano 33 BLE (Mbed)", core: "arduino:mbed_nano@4.4.1", prefix: "arduino:mbed_nano:", libs: "base", size: "about 600 MB, 1 minute" },
-  nrf52: { family: "nrf52", label: "Seeed XIAO nRF52840", core: "Seeeduino:nrf52@1.1.13", index: SEEED_INDEX, prefix: "Seeeduino:nrf52:", libs: "base", size: "about 500 MB, 1 minute", x64Tools: "adafruit-nrfutil (the DFU zip step)" },
+  nrf52: { family: "nrf52", label: "Seeed XIAO nRF52840", core: "Seeeduino:nrf52@1.1.13", index: SEEED_INDEX, prefix: "Seeeduino:nrf52:", libs: "base", prefixMap: true, size: "about 500 MB, 1 minute", x64Tools: "adafruit-nrfutil (the DFU zip step)" },
 };
 
 /** Board families `jumper setup` takes (a family can need several cores). */
@@ -387,6 +389,31 @@ function findFirst(dir: string, rel: (v: string) => string): string | undefined 
   return undefined;
 }
 
+/**
+ * Paths the compiler writes into the firmware (__FILE__ in asserts, debug info) as the Docker image
+ * has them: /opt/arduino/data, /opt/arduino/user, /work and the image's build folder. So a native
+ * build never carries the person's home folder, and comes out as close to the image's bytes as the
+ * host compilers allow. Appended to compiler.{c,cpp,S}.extra_flags (merged with any the runner set).
+ */
+export function prefixMapArgs(args: readonly string[], f: NativeFamily, workDir: string, buildPath: string): string[] {
+  if (!NATIVE_CORES[f].prefixMap) return [...args];
+  const d = nativeArduinoDir();
+  const maps = [
+    `-ffile-prefix-map=${join(d, "data")}=/opt/arduino/data`,
+    `-ffile-prefix-map=${join(d, "user", NATIVE_CORES[f].libs)}=/opt/arduino/user`,
+    `-ffile-prefix-map=${buildPath}=/tmp/arduino/sketches/${createHash("md5").update("/work/sketch").digest("hex").toUpperCase()}`,
+    `-ffile-prefix-map=${workDir}=/work`,
+  ].join(" ");
+  const out = [...args];
+  for (const kind of ["c", "cpp", "S"]) {
+    const key = `compiler.${kind}.extra_flags=`;
+    const i = out.findIndex((a, j) => out[j - 1] === "--build-property" && a.startsWith(key));
+    if (i >= 0) out[i] = `${out[i]} ${maps}`;
+    else out.push("--build-property", `${key}${maps}`);
+  }
+  return out;
+}
+
 export interface NativeCompile {
   fqbn: string;
   /** `compile` arguments without the sketch, which comes last. */
@@ -434,6 +461,9 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
       args = [...args, "--build-property", "build.defines=-DJUMPER_SIM=1"];
     }
   }
+  // The build folder is ours (not the OS temp one) so it can be mapped to the image's path.
+  const buildPath = join(c.workDir, "build");
+  args = prefixMapArgs(["--build-path", buildPath, ...args], f, c.workDir, buildPath);
   const r = await run(arduinoCliPath(), ["compile", ...args, sketch], { env: nativeEnv(core.libs, c.purpose === "device" ? { JUMPER_SIM: "0" } : {}), timeoutMs: c.timeoutMs ?? 10 * 60_000 });
   const out = { ...r, stdout: note + r.stdout, ...(sketchCopy ? { sketchCopy } : {}) };
   if (r.code !== 0) return out;
