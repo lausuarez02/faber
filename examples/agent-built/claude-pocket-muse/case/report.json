@@ -63,7 +63,7 @@
       "id": "size-match",
       "ok": true,
       "severity": "info",
-      "message": "Printed bodies match the layout within 0.03 mm (limit 0.1)."
+      "message": "Printed bodies match the layout within 0.00 mm (limit 0.1)."
     },
     {
       "id": "screen-window",
@@ -318,21 +318,21 @@
       "kind": "step",
       "body": "assembly",
       "bytes": 4790265,
-      "sha256": "dad76bd950d769a11ad31a16d39cc2cc36dbb0975cf5c9074e4e6e8e9b9e270a"
+      "sha256": "b02548e683ad0d1503d84d0d2044132ca6903b2d47bfc53f5df415c736f88a97"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
       "bytes": 2980908,
-      "sha256": "2080be7df466574831bcc18f9e7b93670a9646d510b2fa22f3d46759cba1403f"
+      "sha256": "277836ee171effb766284dbcfeba8bd480b07fe33427c1ae3d7cb77bcb6400a0"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
       "bytes": 1607735,
-      "sha256": "9912987b0fe504e6bf33b22493be99a4413ddf688383310109649904fcdda6a7"
+      "sha256": "cc09c3086551952d81368cc7331a1a6186b326bea614f77a5e6efb3701b82f18"
     },
     {
       "path": "renders/front.png",
@@ -374,7 +374,7 @@
       "kind": "pdf",
       "body": "drawing",
       "bytes": 87271,
-      "sha256": "0e16bffb80ea6aa90867ac2b58487dfba6766c2c65685d105d4ec8cea45ba5fd"
+      "sha256": "25bff491efc22c09bdec3c0aa7746dc2f1a78fb12a7cac467b9cf046aebc081a"
     },
     {
       "path": "PRINT.md",
@@ -384,7 +384,7 @@
       "sha256": "2d8b0e1cf0ba7e1112416556661b64c45d27c100db7f88989d14c7fc93255548"
     }
   ],
-  "hash": "1c6c022997580fec",
+  "hash": "9aad7fb809bc484c",
   "notes": [
     "Domed faces: the front rises 1.0 mm and the back 0.9 mm above the flat wall, with a flat 38 mm land around the window and a flat 32 mm pad on the back (each shell prints on its flat).",
     "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
@@ -882,5 +882,46 @@
       35.32,
       -1.81
     ]
-  ]
+  ],
+  "layout": {
+    "goal": "balanced",
+    "asked": "auto",
+    "label": "Balanced (pocket)",
+    "fill_ratio": 0.26,
+    "layers": [
+      {
+        "index": 0,
+        "z_mm": [
+          -7.1,
+          7.2
+        ],
+        "parts": [
+          "eye",
+          "pwr",
+          "pet",
+          "imu",
+          "d1",
+          "squeak"
+        ]
+      },
+      {
+        "index": 1,
+        "z_mm": [
+          -7,
+          -0.3
+        ],
+        "parts": [
+          "chg",
+          "xiao",
+          "bat"
+        ]
+      }
+    ],
+    "why": [
+      "2 layers: chg behind eye and imu, xiao behind eye and d1, bat behind eye.",
+      "Stacking saves 14.3 mm of length (94.3 instead of 108.6 mm) for 2.4 mm more thickness.",
+      "Weighs thickness first (a pocket takes about 18 mm comfortably, 22 tight) and a footprint up to 110 x 70 mm."
+    ],
+    "source": "stacked front to back (round 7)"
+  }
 }

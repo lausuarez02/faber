@@ -1,6 +1,6 @@
 {
-  "hash": "1c6c022997580fec",
-  "engine": "case-3",
+  "hash": "9aad7fb809bc484c",
+  "engine": "case-4",
   "enclosure": {
     "shape": "pebble",
     "params": {
@@ -69,21 +69,21 @@
       "kind": "step",
       "body": "assembly",
       "bytes": 4790265,
-      "sha256": "dad76bd950d769a11ad31a16d39cc2cc36dbb0975cf5c9074e4e6e8e9b9e270a"
+      "sha256": "b02548e683ad0d1503d84d0d2044132ca6903b2d47bfc53f5df415c736f88a97"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
       "bytes": 2980908,
-      "sha256": "2080be7df466574831bcc18f9e7b93670a9646d510b2fa22f3d46759cba1403f"
+      "sha256": "277836ee171effb766284dbcfeba8bd480b07fe33427c1ae3d7cb77bcb6400a0"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
       "bytes": 1607735,
-      "sha256": "9912987b0fe504e6bf33b22493be99a4413ddf688383310109649904fcdda6a7"
+      "sha256": "cc09c3086551952d81368cc7331a1a6186b326bea614f77a5e6efb3701b82f18"
     },
     {
       "path": "renders/front.png",
@@ -125,7 +125,7 @@
       "kind": "pdf",
       "body": "drawing",
       "bytes": 87271,
-      "sha256": "0e16bffb80ea6aa90867ac2b58487dfba6766c2c65685d105d4ec8cea45ba5fd"
+      "sha256": "25bff491efc22c09bdec3c0aa7746dc2f1a78fb12a7cac467b9cf046aebc081a"
     },
     {
       "path": "PRINT.md",
