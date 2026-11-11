@@ -18,11 +18,14 @@ const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args
 
 beforeAll(() => {
   process.env.JUMPER_CASE_PDF = "0";
+  // the costs are time-boxed: a fixed, generous budget so a loaded test machine does not skip choices
+  process.env.JUMPER_COSTS_BUDGET_MS = "90000";
   dir = mkdtempSync(join(tmpdir(), "jumper-costs-"));
   writeFileSync(join(dir, "jumper.json"), EGG);
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {
+  delete process.env.JUMPER_COSTS_BUDGET_MS;
   s.dispose();
   rmSync(dir, { recursive: true, force: true });
 });

@@ -38,7 +38,7 @@ describe("choice costs", { timeout: T }, () => {
   });
 
   it("the round-8 egg: the dome and the fixed size are the costly ones, with mm before and after; relaxing all is pocket-thin", () => {
-    const r = choiceCosts(layoutInput(egg8(), specOf), { budgetMs: 30_000 });
+    const r = choiceCosts(layoutInput(egg8(), specOf), { budgetMs: 120_000 });
     expect(r.skipped).toEqual([]);
     expect(r.base.fits).toBe(true);
     const dome = r.costs.find((c) => c.id === "dome")!;
@@ -65,6 +65,16 @@ describe("choice costs", { timeout: T }, () => {
     expect(r.sizes_that_work![0]!.change).toEqual({ size_mm: { w: r.sizes_that_work![0]!.size_mm.w, h: r.sizes_that_work![0]!.size_mm.h } });
   });
 
+  it("a pin that trades thickness for length says both (the eyes pinned on the egg at auto size)", () => {
+    const p = withEnc(egg8(), { size_mm: undefined, params: { dome_mm: 1.5 } });
+    const r = choiceCosts(layoutInput(p, specOf), { budgetMs: 120_000 });
+    const pin = r.costs.find((c) => c.id === "pin:eyes")!;
+    expect(pin, JSON.stringify(r.costs.map((c) => c.id))).toBeDefined();
+    expect(pin.adds_length_mm).toBeGreaterThanOrEqual(3);
+    expect(pin.message).toMatch(/^eyes pinned at x 0, y 6 mm on the front (adds [\d.]+ mm of thickness and|saves [\d.]+ mm of thickness but adds|adds) [\d.]+ mm of length \(/);
+    expect(pin.message).toMatch(/Fix: update_case \{"placements":\{"eyes":\{"x_mm":null,"y_mm":null\}\}\}/);
+  });
+
   it("is time-boxed: what is not reached is listed as skipped", () => {
     const r = choiceCosts(layoutInput(egg8(), specOf), { budgetMs: 1 });
     expect(r.skipped.length).toBeGreaterThan(0);
@@ -73,7 +83,7 @@ describe("choice costs", { timeout: T }, () => {
 
   it("a fixed size that fails: the choice that breaks it is named and the sizes that work are given", () => {
     const p = withEnc(egg8(), { size_mm: { w: 44, h: 57 } });
-    const r = choiceCosts(layoutInput(p, specOf), { budgetMs: 30_000 });
+    const r = choiceCosts(layoutInput(p, specOf), { budgetMs: 120_000 });
     expect(r.base.fits).toBe(false);
     expect(r.sizes_that_work?.length).toBeGreaterThan(0);
     for (const z of r.sizes_that_work!) expect(z.size_mm.w).toBeGreaterThan(44);

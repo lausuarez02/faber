@@ -73,7 +73,7 @@ export interface CostsReport {
 }
 
 export interface CostOptions {
-  /** Whole budget for the extra searches (ms, default 8000). */
+  /** Whole budget for the extra searches (ms, default 10000). */
   budgetMs?: number;
   /** How many costly choices to return (default 6). */
   top?: number;
@@ -223,7 +223,7 @@ function effects(w: CostSize, wo: CostSize, without: string): string {
   const bits: string[] = [];
   if (dd >= 0.5) bits.push(`adds ${dd} mm of thickness`);
   else if (dd <= -0.5) bits.push(`saves ${-dd} mm of thickness`);
-  if (dl >= 1) bits.push(`${bits.length ? "and " : "adds "}${dl} mm of length`);
+  if (dl >= 1) bits.push(`${!bits.length ? "adds " : dd >= 0.5 ? "and " : "but adds "}${dl} mm of length`);
   else if (dl <= -1) bits.push(`${bits.length ? "but " : ""}keeps it ${-dl} mm shorter`);
   if (!bits.length) bits.push(dv >= 0 ? `adds ${dv} cm³` : `saves ${-dv} cm³`);
   const sizes = Math.abs(dl) < 1 && w.w === wo.w && w.h === wo.h ? `${w.d} -> ${wo.d} mm thick` : `${sizeText(w)} -> ${sizeText(wo)}`;
@@ -238,7 +238,7 @@ const toolCall = (change: Record<string, unknown>) => `update_case ${JSON.string
  */
 export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsReport {
   const t0 = performance.now();
-  const budget = opts.budgetMs ?? 8000;
+  const budget = opts.budgetMs ?? 10000;
   const goal = goalOf(input.enclosure);
   const per = Math.max(600, Math.min(3000, budget / 4));
   const base = measure(input, input.enclosure, goal, per);
@@ -248,6 +248,32 @@ export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsRe
   const skipped: string[] = [];
   const left = () => budget - (performance.now() - t0);
   const fixedWH = input.enclosure.size_mm?.w !== undefined || input.enclosure.size_mm?.h !== undefined;
+  // every choice relaxed at once, first (it says how far the case can go), then one at a time (the pins, faces, dome and size all back to Jumper's defaults)
+  let relax_all: CostsReport["relax_all"];
+  const allR = relax;
+  if (allR.length > 1 && left() > per * 0.5) {
+    let e = input.enclosure;
+    let change: Record<string, unknown> = {};
+    for (const r of allR) {
+      e = r.apply(e);
+      change = mergeChanges(change, r.change);
+    }
+    const wo = measure(input, e, goal, per);
+    const lead = effects(base, wo, "with all of them relaxed");
+    const adds_mm = r1(base.d - wo.d);
+    const adds_cm3 = r1(base.volume_cm3 - wo.volume_cm3);
+    if (wo.fits && (adds_mm >= 0.5 || adds_cm3 >= 3 || !base.fits))
+      relax_all = {
+        without: wo,
+        adds_mm,
+        adds_cm3,
+        choices: allR.map((r) => r.id),
+        message: `Together (${allR.map((r) => r.choice).join("; ")}) they ${lead.replace(/^adds/, "add").replace(/^saves/, "save").replace("keeps it", "keep it")}. Fix: ${toolCall(change)}.`,
+        say: `Letting Jumper decide all of these (${allR.map((r) => r.choice).join("; ")}) makes it ${fmtSay(wo)} instead of ${fmtSay(base)}.`,
+        change,
+        label: "Let Jumper decide all of these",
+      };
+  } else if (allR.length > 1) skipped.push("relax-all");
   const runs: Relax[] = [...relax];
   for (const r of runs) {
     if (left() < per * 0.5) {
@@ -287,32 +313,7 @@ export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsRe
     });
   }
   costs.sort((a, b) => Number(b.breaks_fit) - Number(a.breaks_fit) || b.adds_mm - a.adds_mm || b.adds_cm3 - a.adds_cm3);
-  // every choice relaxed at once (the pins, faces, dome and size all back to Jumper's defaults)
-  let relax_all: CostsReport["relax_all"];
-  const allR = relax;
-  if (allR.length > 1 && left() > per * 0.5) {
-    let e = input.enclosure;
-    let change: Record<string, unknown> = {};
-    for (const r of allR) {
-      e = r.apply(e);
-      change = mergeChanges(change, r.change);
-    }
-    const wo = measure(input, e, goal, per);
-    const lead = effects(base, wo, "with all of them relaxed");
-    const adds_mm = r1(base.d - wo.d);
-    const adds_cm3 = r1(base.volume_cm3 - wo.volume_cm3);
-    if (wo.fits && (adds_mm >= 0.5 || adds_cm3 >= 3 || !base.fits))
-      relax_all = {
-        without: wo,
-        adds_mm,
-        adds_cm3,
-        choices: allR.map((r) => r.id),
-        message: `Together (${allR.map((r) => r.choice).join("; ")}) they ${lead.replace(/^adds/, "add").replace(/^saves/, "save").replace("keeps it", "keep it")}. Fix: ${toolCall(change)}.`,
-        say: `Letting Jumper decide all of these (${allR.map((r) => r.choice).join("; ")}) makes it ${fmtSay(wo)} instead of ${fmtSay(base)}.`,
-        change,
-        label: "Let Jumper decide all of these",
-      };
-  } else if (allR.length > 1) skipped.push("relax-all");
+  costs.sort((a, b) => Number(b.breaks_fit) - Number(a.breaks_fit) || b.adds_mm - a.adds_mm || b.adds_cm3 - a.adds_cm3);
   // a fixed outline size: the sizes the same outline works at, flat and stacked
   let sizes_that_work: CostsReport["sizes_that_work"];
   if (fixedWH && left() > per * 0.5) {

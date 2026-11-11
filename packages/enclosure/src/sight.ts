@@ -46,6 +46,8 @@ function rayBox(o: Vec3, d: Vec3, lo: Vec3, hi: Vec3): number | undefined {
   return t1 < 0 ? undefined : Math.max(0, t0);
 }
 
+const poss = (id: string) => (id.endsWith("s") ? `${id}'` : `${id}'s`);
+
 /** Look through the front part's screen window (undefined when the case has no window or no screen). */
 export function windowSight(L: Pick<Layout, "front" | "placed" | "openings">, grid: [number, number] = [7, 5]): WindowSight | undefined {
   const fp = L.front ? L.placed.find((p) => p.mech.id === L.front) : undefined;
@@ -98,7 +100,7 @@ export function windowSight(L: Pick<Layout, "front" | "placed" | "openings">, gr
           seen++;
           continue;
         }
-        blocked.set(`${fp.mech.id}'s border (outside its active area)`, (blocked.get(`${fp.mech.id}'s border (outside its active area)`) ?? 0) + 1);
+        blocked.set(`${poss(fp.mech.id)} border (outside its active area)`, (blocked.get(`${poss(fp.mech.id)} border (outside its active area)`) ?? 0) + 1);
         continue;
       }
       const by = best?.id ?? "nothing";
@@ -107,7 +109,7 @@ export function windowSight(L: Pick<Layout, "front" | "placed" | "openings">, gr
   const ok = seen === samples && offset_mm <= 0.5;
   const list = [...blocked.entries()].sort((x, y) => y[1] - x[1]).map(([by, count]) => ({ by, count }));
   const message = ok
-    ? `${fp.mech.id}'s active area is behind the window: ${seen} of ${samples} lines of sight through it land on the screen, window centred within ${offset_mm.toFixed(2)} mm.`
-    : `The screen window does not show ${fp.mech.id}'s active area: ${samples - seen} of ${samples} lines of sight through it land on ${list.map((b) => (b.by === "nothing" ? "nothing (the empty inside)" : b.by)).join(", ")}${offset_mm > 0.5 ? `, and the window is ${offset_mm.toFixed(1)} mm off the screen's centre` : ""}. Why: ${list.some((b) => b.by !== "nothing" && !b.by.includes("border")) ? "another part sits between the window and the screen" : "the window is not cut where the screen is"}. Fix: design the case again; if it persists, pin the screen with placements {"${fp.mech.id}": {"face": "front"}} and report it.`;
+    ? `${poss(fp.mech.id)} active area is behind the window: ${seen} of ${samples} lines of sight through it land on the screen, window centred within ${offset_mm.toFixed(2)} mm.`
+    : `The screen window does not show ${poss(fp.mech.id)} active area: ${samples - seen} of ${samples} lines of sight through it land on ${list.map((b) => (b.by === "nothing" ? "nothing (the empty inside)" : b.by)).join(", ")}${offset_mm > 0.5 ? `, and the window is ${offset_mm.toFixed(1)} mm off the screen's centre` : ""}. Why: ${list.some((b) => b.by !== "nothing" && !b.by.includes("border")) ? "another part sits between the window and the screen" : "the window is not cut where the screen is"}. Fix: design the case again; if it persists, pin the screen with placements {"${fp.mech.id}": {"face": "front"}} and report it.`;
   return { ok, samples, seen, blocked: list, offset_mm: Math.round(offset_mm * 100) / 100, message };
 }

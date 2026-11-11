@@ -176,7 +176,7 @@ export const caseTools: ToolModule = {
       }
       const step = x.commit(`design_case ${enc.shape}`, { ...s.project, enclosure: enc });
       const out = await generateInto(s, s.project, join(s.dir, "case"));
-      const costs = await caseCosts(s, enc, 8000);
+      const costs = await caseCosts(s, enc, 10000);
       x.summary(`case: ${enc.shape} ${fmtSize(out.report)}, ${out.report.ok ? "all checks ok" : `${out.report.checks.filter((c) => !c.ok && c.severity === "error").length} problem(s)`}`);
       return { step: step.id, ...answer(s, out, args.images !== false, "case", nextAfter(out.report) + costsNext(costs)), ...(costs ? { costs } : {}) };
     },
@@ -223,7 +223,7 @@ export const caseTools: ToolModule = {
       }
       const step = x.commit(`update_case`, { ...s.project, enclosure: enc });
       const out = await generateInto(s, s.project, join(s.dir, "case"));
-      const costs = await caseCosts(s, enc, 8000);
+      const costs = await caseCosts(s, enc, 10000);
       x.summary(`case: ${enc.shape} ${fmtSize(out.report)}, ${out.report.ok ? "all checks ok" : "has problems"}`);
       return { step: step.id, ...answer(s, out, args.images !== false, "case", nextAfter(out.report) + costsNext(costs)), ...(costs ? { costs } : {}) };
     },
@@ -233,7 +233,7 @@ export const caseTools: ToolModule = {
       if (!has && !s.project.enclosure) fail("no-case", "Nothing to test", "check_fit with no shape tests the saved case, and this project has none", 'pass a shape, e.g. {"shape": "custom", "outline": "M 0 -40 C ... Z", "size_mm": {"w": 58, "h": 75}}');
       const enc = has ? validateEnclosure(s, { ...(s.project.enclosure && !args.shape ? s.project.enclosure : {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
       const r0 = await fitReport(s, enc, { preview: args.preview === true, ...(args.try_suggestions === true ? { budgetMs: 10_000 } : {}) });
-      const costs = args.costs === false ? undefined : await caseCosts(s, enc, 4000);
+      const costs = args.costs === false ? undefined : await caseCosts(s, enc, 5000);
       const r = { ...r0, ...(costs ? { costs, next: r0.next + costsNext(costs) } : {}) };
       x.summary(`fit ${enc.shape}: ${r.fits ? `fits, ${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm` : `${r.misses.length} miss(es), ${r.suggestions.length} suggestion(s)`} (${r.ms} ms)`);
       return r;
@@ -294,7 +294,7 @@ export async function layoutProposals(s: ProjectSession, args: Record<string, un
     rethrowOutline(e);
   }
   const chosen = L.proposal?.id ?? P.best;
-  const costs = opts.costs === false ? undefined : await caseCosts(s, enc, opts.costsBudgetMs ?? 8000);
+  const costs = opts.costs === false ? undefined : await caseCosts(s, enc, opts.costsBudgetMs ?? 10000);
   return {
     ...P,
     chosen,
@@ -309,12 +309,14 @@ export async function layoutProposals(s: ProjectSession, args: Record<string, un
  * closure): the quick search again with that one choice relaxed, and with all of them relaxed.
  * Time-boxed; undefined when there is nothing to relax.
  */
-export async function caseCosts(s: ProjectSession, enc: Enclosure, budgetMs = 8000) {
+export async function caseCosts(s: ProjectSession, enc: Enclosure, budgetMs = 10000) {
   const { choiceCosts, choicesOf, layoutInput } = await import("@jumper/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   if (!input.parts.length || !choicesOf(input).length) return undefined;
+  // (JUMPER_COSTS_BUDGET_MS: a fixed budget, e.g. for tests on a loaded machine)
+  const env = Number(process.env.JUMPER_COSTS_BUDGET_MS);
   try {
-    return choiceCosts(input, { budgetMs });
+    return choiceCosts(input, { budgetMs: Number.isFinite(env) && env > 0 ? env : budgetMs });
   } catch (e) {
     rethrowOutline(e);
   }
