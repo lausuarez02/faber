@@ -105,6 +105,7 @@ function peek(s: Duplex): Promise<Buffer | undefined> {
     s.on("data", onData);
     s.once("end", onEnd);
     s.once("close", onEnd);
+    s.resume();
   });
 }
 
