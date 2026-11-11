@@ -237,11 +237,33 @@ const toolCall = (change: Record<string, unknown>) => `update_case ${JSON.string
  * searches; choices not reached are in `skipped`.
  */
 export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsReport {
+  const it = costSteps(input, opts);
+  for (;;) {
+    const n = it.next();
+    if (n.done) return n.value;
+  }
+}
+
+/**
+ * The same, giving way between the searches (each about a second), so a server keeps answering
+ * other requests while it weighs the choices.
+ */
+export async function choiceCostsAsync(input: LayoutInput, opts: CostOptions = {}): Promise<CostsReport> {
+  const it = costSteps(input, opts);
+  for (;;) {
+    const n = it.next();
+    if (n.done) return n.value;
+    await new Promise((r) => setImmediate(r));
+  }
+}
+
+function* costSteps(input: LayoutInput, opts: CostOptions): Generator<void, CostsReport, void> {
   const t0 = performance.now();
   const budget = opts.budgetMs ?? 10000;
   const goal = goalOf(input.enclosure);
   const per = Math.max(600, Math.min(3000, budget / 4));
   const base = measure(input, input.enclosure, goal, per);
+  yield;
   const relax = choicesOf(input);
   const costs: ChoiceCost[] = [];
   const free: string[] = [];
@@ -258,7 +280,9 @@ export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsRe
       e = r.apply(e);
       change = mergeChanges(change, r.change);
     }
+    yield;
     const wo = measure(input, e, goal, per);
+    yield;
     const lead = effects(base, wo, "with all of them relaxed");
     const adds_mm = r1(base.d - wo.d);
     const adds_cm3 = r1(base.volume_cm3 - wo.volume_cm3);
@@ -281,6 +305,7 @@ export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsRe
       continue;
     }
     const wo = measure(input, r.apply(input.enclosure), goal, per);
+    yield;
     const breaks = !base.fits && wo.fits;
     const adds_mm = r1(base.d - wo.d);
     const adds_cm3 = r1(base.volume_cm3 - wo.volume_cm3);
@@ -317,6 +342,7 @@ export function choiceCosts(input: LayoutInput, opts: CostOptions = {}): CostsRe
   // a fixed outline size: the sizes the same outline works at, flat and stacked
   let sizes_that_work: CostsReport["sizes_that_work"];
   if (fixedWH && left() > per * 0.5) {
+    yield;
     const e = withSize(input.enclosure, ["w", "h"]);
     const cands = autoLayouts({ ...input, enclosure: e }, { iters: 160, depths: 4, timeMs: per });
     const best = new Map<number, { L: Layout; v: number }>();

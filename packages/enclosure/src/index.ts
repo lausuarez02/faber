@@ -9,7 +9,7 @@ export { generateCase, layoutInput, frontOutline, caseHash, pocketVerdict, pocke
 export { stackLayout, autoLayouts, resolveParams, toCase, specWithProps, LIPO_CELLS, type Layout, type LayoutFit, type LayoutOptions, type Placed, type Opening } from "./layout.ts";
 export { parseOutline, presetPoints, presetOutline, svgPathToPolylines, catmullRomClosed, OutlineError, type ParsedOutline, type Pt } from "./outline.ts";
 export { layoutCase, proposeLayouts, proposeWithLayouts, proposalsFor, goalOf, goalCost, layersOf, volumeOf, LAYOUT_GOALS, type LayoutGoal, type LayoutProposal, type LayoutProposals, type ProposalLayer, type ProposalPlacement, type ProposalViews, type ProposeOptions } from "./proposals.ts";
-export { choiceCosts, choicesOf, mergeChanges, type ChoiceCost, type CostsReport, type CostSize, type CostOptions } from "./costs.ts";
+export { choiceCosts, choiceCostsAsync, choicesOf, mergeChanges, type ChoiceCost, type CostsReport, type CostSize, type CostOptions } from "./costs.ts";
 export { checkFit, roleOf, type FitReport, type FitMiss, type FitSuggestion, type FitPreviewPart, type FitInput } from "./fit.ts";
 export { resolveMech, type PartMech } from "./mech.ts";
 export { checkMesh, readStl, stlBinary, weld, type Mesh, type MeshCheck } from "./mesh.ts";

@@ -93,6 +93,7 @@ export const caseTools: ToolModule = {
           dry_run: { type: "boolean", description: "true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit." },
           save: { type: "boolean", description: "Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
           images: { type: "boolean", description: "Default true: return the front and exploded renders inline." },
+          costs: { type: "boolean", description: "Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD." },
           why,
         },
         required: ["shape"],
@@ -105,7 +106,7 @@ export const caseTools: ToolModule = {
       description: `Change the existing case: any of shape, outline, size_mm, params, front, placements, exclude. params, size_mm and placements are merged into what is there; a placement or a size value set to null is removed (back to auto). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"} or {"size_mm": {"w": 64, "h": 84}} or {"outline": {"points": [[0, 40], [24, 16], [28, -4], [13, -32], [-13, -32], [-28, -4], [-24, 16]], "smooth": true}}. Regenerates every file in case/ and returns the CaseReport like design_case (with costs) (or fits: false with misses and suggestions when a fixed size cannot hold the parts; nothing changes then). Fails when there is no case yet (use design_case). ${CANNOT}`,
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, images: { type: "boolean" }, why },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, images: { type: "boolean" }, costs: { type: "boolean", description: "Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD." }, why },
       },
       edits: true,
     },
@@ -176,7 +177,7 @@ export const caseTools: ToolModule = {
       }
       const step = x.commit(`design_case ${enc.shape}`, { ...s.project, enclosure: enc });
       const out = await generateInto(s, s.project, join(s.dir, "case"));
-      const costs = await caseCosts(s, enc, 10000);
+      const costs = args.costs === false ? undefined : await caseCosts(s, enc, 10000);
       x.summary(`case: ${enc.shape} ${fmtSize(out.report)}, ${out.report.ok ? "all checks ok" : `${out.report.checks.filter((c) => !c.ok && c.severity === "error").length} problem(s)`}`);
       return { step: step.id, ...answer(s, out, args.images !== false, "case", nextAfter(out.report) + costsNext(costs)), ...(costs ? { costs } : {}) };
     },
@@ -223,7 +224,7 @@ export const caseTools: ToolModule = {
       }
       const step = x.commit(`update_case`, { ...s.project, enclosure: enc });
       const out = await generateInto(s, s.project, join(s.dir, "case"));
-      const costs = await caseCosts(s, enc, 10000);
+      const costs = args.costs === false ? undefined : await caseCosts(s, enc, 10000);
       x.summary(`case: ${enc.shape} ${fmtSize(out.report)}, ${out.report.ok ? "all checks ok" : "has problems"}`);
       return { step: step.id, ...answer(s, out, args.images !== false, "case", nextAfter(out.report) + costsNext(costs)), ...(costs ? { costs } : {}) };
     },
@@ -310,13 +311,14 @@ export async function layoutProposals(s: ProjectSession, args: Record<string, un
  * Time-boxed; undefined when there is nothing to relax.
  */
 export async function caseCosts(s: ProjectSession, enc: Enclosure, budgetMs = 10000) {
-  const { choiceCosts, choicesOf, layoutInput } = await import("@jumper/enclosure");
+  const { choiceCostsAsync, choicesOf, layoutInput } = await import("@jumper/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   if (!input.parts.length || !choicesOf(input).length) return undefined;
   // (JUMPER_COSTS_BUDGET_MS: a fixed budget, e.g. for tests on a loaded machine)
   const env = Number(process.env.JUMPER_COSTS_BUDGET_MS);
   try {
-    return choiceCosts(input, { budgetMs: Number.isFinite(env) && env > 0 ? env : budgetMs });
+    // (giving way between the searches: a server keeps answering while it weighs them)
+    return await choiceCostsAsync(input, { budgetMs: Number.isFinite(env) && env > 0 ? env : budgetMs });
   } catch (e) {
     rethrowOutline(e);
   }

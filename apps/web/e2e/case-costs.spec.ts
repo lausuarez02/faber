@@ -53,7 +53,7 @@ const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "jumper.json"),
 test("Case view, Layout: what's making it bigger, in plain words, and Apply relaxes the dome", async ({ page }, info) => {
   // (desktop only: the same panel on a phone is the Layout tab's, covered by case-layout)
   test.skip(info.project.name !== "desktop", "desktop only");
-  test.setTimeout(480_000);
+  test.setTimeout(720_000);
   const s = await serve(info);
   try {
     await page.goto(`${s.url}/`);
@@ -79,8 +79,8 @@ test("Case view, Layout: what's making it bigger, in plain words, and Apply rela
     await expect.poll(() => saved(s.dir).enclosure.params.dome_mm, { timeout: 240_000 }).toBe(1.5);
     // the case is rebuilt thinner (same 74 x 96 mm outline)
     await expect
-      .poll(async () => Number(/74 × 96 × ([\d.]+) mm/.exec((await page.getByTestId("case-size").textContent()) ?? "")?.[1] ?? before), { timeout: 240_000 })
-      .toBeLessThan(before - 5);
+      .poll(async () => Number(/74 × 96 × ([\d.]+) mm/.exec((await page.getByTestId("case-size").textContent()) ?? "")?.[1] ?? before), { timeout: 400_000 })
+      .toBeLessThan(before - 5); // (real CAD of a domed egg: 1 to 2 minutes alone, more next to other specs)
     await shot(page, info, "case-costs-applied");
   } finally {
     await s.close();

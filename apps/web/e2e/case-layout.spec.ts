@@ -59,7 +59,7 @@ async function openCase(page: Page, info: TestInfo): Promise<void> {
 const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
 
 test("Case view, Layout: see how the parts are distributed, preview one in 3D, use it, drag a part to pin it, apply a smaller part", async ({ page }, info) => {
-  test.setTimeout(420_000);
+  test.setTimeout(600_000);
   const s = await serve(info);
   try {
     await page.goto(`${s.url}/`);
@@ -105,7 +105,7 @@ test("Case view, Layout: see how the parts are distributed, preview one in 3D, u
     await shot(page, info, "layout-thinnest-preview");
     // use it: the case is rebuilt that way
     await page.getByTestId("case-layout-use").click();
-    await expect(page.getByTestId("case-layout-built-note")).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByTestId("case-layout-built-note")).toBeVisible({ timeout: 300_000 });
     await expect(page.getByTestId("case-size")).toContainText(new RegExp(`× ${thinD} mm`));
     expect(saved(s.dir).enclosure.layout).toBe("thinnest");
     await expect(thin).toContainText("built");
@@ -161,7 +161,7 @@ test("Case view, Layout: see how the parts are distributed, preview one in 3D, u
     if (await use.isVisible()) {
       await expect(use).toBeEnabled({ timeout: 60_000 });
       await use.click();
-      await expect(page.getByTestId("case-layout-built-note")).toBeVisible({ timeout: 180_000 });
+      await expect(page.getByTestId("case-layout-built-note")).toBeVisible({ timeout: 300_000 });
     }
     const enc = saved(s.dir).enclosure;
     expect(typeof enc.placements.bat.x_mm).toBe("number");

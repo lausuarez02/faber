@@ -544,6 +544,7 @@ Pack the project's parts into a two-part printable case and write everything nee
 | `dry_run` | boolean |  | true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit. |
 | `save` | boolean |  | Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only. |
 | `images` | boolean |  | Default true: return the front and exploded renders inline. |
+| `costs` | boolean |  | Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD. |
 | `why` | string |  | Short reason shown in the step list. |
 
 ### update_case
@@ -561,6 +562,7 @@ Change the existing case: any of shape, outline, size_mm, params, front, placeme
 | `exclude` | string[] |  |  |
 | `layout` | string |  | one of `auto`, `thinnest`, `smallest`, `balanced`. How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it. |
 | `images` | boolean |  |  |
+| `costs` | boolean |  | Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD. |
 | `why` | string |  | Short reason shown in the step list. |
 
 ### check_fit

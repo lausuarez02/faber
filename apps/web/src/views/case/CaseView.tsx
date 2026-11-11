@@ -246,7 +246,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
 
   // round 8b: the costs of the saved case's choices, when the Layout tab is open (a few seconds on the server)
   useEffect(() => {
-    if (tab !== "layout" || !saved) return;
+    if (tab !== "layout" || !saved || busy || adviceBusy) return;
     let live = true;
     setCostsBusy(true);
     const t = setTimeout(() => {
@@ -261,7 +261,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, report?.hash, partsTick, epoch, !!saved]);
+  }, [tab, report?.hash, partsTick, epoch, !!saved, !!busy, !!adviceBusy]);
 
   /** Relax one choice (or all of them): the change is the case settings that drop it, saved like Update case. */
   const applyCost = async (id: string, change: Record<string, unknown>) => {

@@ -102,7 +102,8 @@ export const caseRoutes: ApiRoute[] = [
         return ctx.json(res, 400, err("The case request is not JSON", (e as Error).message, 'send {"shape": "pebble", "params": {...}}'));
       }
       const has = !!ctx.session().project.enclosure;
-      const args: Record<string, unknown> = { images: false };
+      // (the Case view asks for the costs on its own, POST /api/case/costs)
+      const args: Record<string, unknown> = { images: false, costs: false };
       for (const k of ["shape", "outline", "size_mm", "params", "front", "placements", "exclude", "layout"]) if (body[k] !== undefined) args[k] = body[k];
       if (!has && !args.shape) return ctx.json(res, 400, err("No case yet", "a new case needs a shape", 'send {"shape": "pebble"} (rounded-box, pill, pebble, puck or keychain)'));
       try {
