@@ -4,14 +4,30 @@ import { basename, join, relative } from "node:path";
 import { cacheDir, imageFor, PINNED_LIBRARIES, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
+import type { FirmwareLanguage } from "@jumper/project-format";
+import type { ImageFormat } from "./lang/registry.ts";
+import { buildMicroPython } from "./lang/build-micropython.ts";
+import { buildEspIdf } from "./lang/build-espidf.ts";
+import { buildPlatformIO } from "./lang/build-platformio.ts";
 
 export interface BuildRequest {
   /** Absolute folder holding the sketch sources: every .ino/.h/.hpp/.c/.cpp/.S in it (and its src/ folder). */
   sketchDir: string;
   /** Main .ino file inside sketchDir. Default: the only .ino, or the one named like the folder. */
   main?: string;
-  /** e.g. "arduino:avr:uno", "rp2040:rp2040:rpipico" (picks the Docker image). */
-  fqbn: string;
+  /** e.g. "arduino:avr:uno", "rp2040:rp2040:rpipico" (picks the Docker image). Arduino only. */
+  fqbn?: string;
+  /** Round 10: the firmware language (default "arduino"); picks the toolchain. */
+  language?: FirmwareLanguage;
+  /** The board's chip (part.json mcu.chip), e.g. "rp2040", "esp32c3": picks the toolchain and image format. */
+  chip?: string;
+  /** The board part type, e.g. "raspberry-pi-pico" (MicroPython picks that board's build). */
+  board?: string;
+  /** MicroPython: firmware build "ID@version" (firmware.build.firmware). */
+  micropythonFirmware?: string;
+  /** ESP-IDF: target (firmware.build.target, default the chip). PlatformIO: env (firmware.build.env). */
+  target?: string;
+  env?: string;
   /** "Name" or "Name@version". Names without a version resolve to Jumper's pinned versions. */
   libraries?: readonly string[];
   /** Prefix for file paths in diagnostics, e.g. "firmware/" so errors read "firmware/pet.ino:12". */
@@ -24,8 +40,16 @@ export interface BuildRequest {
 
 export interface BuildResult {
   ok: boolean;
-  /** Intel HEX text (when ok). */
+  /** Intel HEX text (when ok and the board's emulator loads hex: AVR, RP2040). */
   hex?: string;
+  /** Round 10: what the emulator loads. "ihex" = `hex`; "esp-flash" / "elf" = `binary`. Default "ihex". */
+  format?: ImageFormat;
+  /** The image bytes for "esp-flash" (merged flash padded to its size) and "elf". */
+  binary?: Uint8Array;
+  /** Round 10: the language that built it (default arduino). */
+  language?: FirmwareLanguage;
+  /** One line about what was built, when the size line does not fit (MicroPython). */
+  summary?: string;
   cached: boolean;
   durationMs: number;
   /** Content hash of the inputs (sources + fqbn + libraries + image). */
@@ -180,6 +204,23 @@ async function ensureLibrary(spec: string, log: (l: string) => void): Promise<st
  */
 export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   const t0 = Date.now();
+  switch (req.language ?? "arduino") {
+    case "arduino":
+      return buildArduino(req, t0);
+    case "micropython":
+      return buildMicroPython(req, t0);
+    case "esp-idf":
+      return buildEspIdf(req, t0);
+    case "platformio":
+      return buildPlatformIO(req, t0);
+    default:
+      throw new RunnerError("language-not-built", `Build failed: firmware.language '${req.language}' has no toolchain in Jumper yet. Why: ${req.language === "rust" ? "the Rust (esp-hal / rp-hal) image is planned, not built" : "the Zephyr SDK image is planned, not built"} (docs/firmware-languages.md). Fix: use "arduino", "micropython", "esp-idf" or "platformio".`);
+  }
+}
+
+async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResult> {
+  if (!reqIn.fqbn) throw new RunnerError("missing-fqbn", 'Build failed: an Arduino build needs a board (FQBN). Fix: set firmware.build.fqbn, e.g. "arduino:avr:uno", or set firmware.board to a board part.');
+  const req = reqIn as BuildRequest & { fqbn: string };
   const log = req.log ?? (() => {});
   if (!existsSync(req.sketchDir)) {
     throw new RunnerError("no-sketch", `Build failed: the sketch folder ${req.sketchDir} does not exist. Fix: write the sketch first, e.g. write_file("firmware/main.ino", "...").`);
@@ -218,7 +259,7 @@ export function sketchSetupFlags(sources: Map<string, string>): string[] {
 }
 
 async function compile(
-  req: BuildRequest,
+  req: BuildRequest & { fqbn: string },
   sources: Map<string, string>,
   main: string,
   libraries: string[],

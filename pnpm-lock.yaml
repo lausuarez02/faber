@@ -323,7 +323,23 @@ importers:
   services/ai-gateway: {}
 
   services/runner:
+    dependencies:
+      '@jumper/project-format':
+        specifier: workspace:*
+        version: link:../../packages/project-format
+      '@pybricks/mpy-cross-v6':
+        specifier: 2.0.0
+        version: 2.0.0
+      littlefs:
+        specifier: 0.1.0
+        version: 0.1.0
     devDependencies:
+      '@jumper/sim-backends':
+        specifier: workspace:*
+        version: link:../../packages/sim-backends
+      '@jumper/sim-core':
+        specifier: workspace:*
+        version: link:../../packages/sim-core
       tsx:
         specifier: 4.23.15
         version: 4.23.15
@@ -658,6 +674,9 @@ packages:
     resolution: {integrity: sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==}
     engines: {node: '>=20'}
     hasBin: true
+
+  '@pybricks/mpy-cross-v6@2.0.0':
+    resolution: {integrity: sha512-DJqQgpAyoUR/myQCJFl27WxXfQavVx3nYLMOpEAuxXRcYyDebHLx4fsUOhLV+vK1LfEqeBpzAjMMSh2U4Q+dtA==}
 
   '@react-three/drei@10.7.9':
     resolution: {integrity: sha512-wP4Y6o58KFi+hT1zCfjJarRtPCT6WW/lo53WMiA/aCORuUvBzW916XsCtadnIB1KB+3IQNcDU5JeVh/gYb8MYw==}
@@ -1555,6 +1574,9 @@ packages:
   lightningcss@1.33.0:
     resolution: {integrity: sha512-WkUDrojuJs0xkgGf2udWxa3yGBRxPtxUkB79i6aCZLRgc7PM8fZe9TosfPDcvEpQZbuFASnHYmRLBLUbmLOIIA==}
     engines: {node: '>= 12.0.0'}
+
+  littlefs@0.1.0:
+    resolution: {integrity: sha512-mNwh4CHkuw83HCIAxzNE3KLV59A5IKkxiFbUUCPkA8gIZ9HeAOovFbrfdpAgVwLAX1tJrM5jP/I1cGPSFgBNZw==}
 
   lru-cache@11.5.3:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
@@ -2466,6 +2488,8 @@ snapshots:
     dependencies:
       playwright: 1.65.0
 
+  '@pybricks/mpy-cross-v6@2.0.0': {}
+
   '@react-three/drei@10.7.9(@react-three/fiber@9.8.2(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(three@0.187.0))(@types/react@19.3.0)(@types/three@0.187.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(three@0.187.0)':
     dependencies:
       '@babel/runtime': 7.29.13
@@ -3272,6 +3296,8 @@ snapshots:
       lightningcss-linux-x64-musl: 1.33.0
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
+
+  littlefs@0.1.0: {}
 
   lru-cache@11.5.3: {}
 

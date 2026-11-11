@@ -28,6 +28,13 @@ export interface QemuEspBackendOptions {
   /** How long one step may wait for QEMU (boot included on the first one). Default 30 s. */
   timeoutMs?: number;
   logFile?: string;
+  /**
+   * PSRAM in MB (QEMU `-m`), for firmware built to expect it (MicroPython's generic ESP32-S3
+   * image enables PSRAM and stalls without it). Default: none.
+   */
+  psramMB?: number;
+  /** Extra QEMU arguments, appended as is. */
+  extraArgs?: readonly string[];
 }
 
 /** ESP32 datasheet: VIL max 0.25 × VDD, VIH min 0.75 × VDD. */
@@ -165,6 +172,7 @@ export class QemuEspBackend implements McuBackend {
       icountShift: this.opts.icountShift,
       network: this.opts.network,
       logFile: this.opts.logFile,
+      extraArgs: [...(this.opts.psramMB ? ["-m", `${this.opts.psramMB}M`] : []), ...(this.opts.extraArgs ?? [])],
     });
     // Handshake: QEMU connects, says hello, and parks at virtual time 0 waiting for the first "R".
     this.pump(link);
