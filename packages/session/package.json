@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@jumper/ai-gateway": "workspace:*",
+    "@jumper/device-net": "workspace:*",
     "@jumper/enclosure": "workspace:*",
     "@jumper/parts": "workspace:*",
     "@jumper/physics": "workspace:*",

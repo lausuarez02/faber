@@ -18,6 +18,12 @@ export interface BuildRequest {
   displayPrefix?: string;
   /** Extra `--build-property` values (e.g. "build.cdc_on_boot=0" for a simulator build). */
   buildProperties?: readonly string[];
+  /**
+   * "simulator" (default) or "device". ESP32 images with the simulation shim (jumper/arduino-esp32 r3:
+   * Wi-Fi on the emulated Ethernet card, TLS trusting the sandbox CA) leave it out of a "device" build
+   * (JUMPER_SIM=0), so the factory pack's firmware is plain arduino-cli output.
+   */
+  target?: "simulator" | "device";
   /** Reuse a cached result for identical inputs (default true). */
   cache?: boolean;
   /** Progress lines (image builds, library installs). */
@@ -219,6 +225,7 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
   const h = createHash("sha256");
   h.update(`image=${imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
   if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
+  if (req.target === "device") h.update("target=device\n");
   for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
   const hash = h.digest("hex").slice(0, 24);
 
@@ -278,6 +285,7 @@ async function compile(
   const args = [
     "run", "--rm", ...uidArgs(),
     "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
+    ...(req.target === "device" ? ["-e", "JUMPER_SIM=0"] : []),
     image,
     "compile", "--fqbn", req.fqbn, "--output-dir", "/work/out", "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),

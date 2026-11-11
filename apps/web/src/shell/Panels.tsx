@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Code2, Cpu, Eraser, FileCode2, FlaskConical, Gauge, GraduationCap, Keyboard, MessagesSquare, SlidersHorizontal, SquareTerminal, Upload, CircleCheck, CircleDashed } from "lucide-react";
+import { Globe, Code2, Cpu, Eraser, FileCode2, FlaskConical, Gauge, GraduationCap, Keyboard, MessagesSquare, SlidersHorizontal, SquareTerminal, Upload, CircleCheck, CircleDashed } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { PANEL_ORDER, useIsPhone, useUi, type PanelId } from "../lib/ui.ts";
@@ -10,6 +10,7 @@ import { SerialConsole } from "../components/SerialConsole.tsx";
 import { WorldPanel } from "../components/WorldPanel.tsx";
 import { VisualTestReport } from "../views/tests/VisualTestReport.tsx";
 import { NetworkPanel } from "../views/network/NetworkPanel.tsx";
+import { DeviceNetworkBody } from "../views/network/DeviceNetworkPanel.tsx";
 import { FloatingPanel, IconButton } from "./primitives.tsx";
 import { boardOf, loadHexFile, pickFile } from "./actions.ts";
 import { useFirmwareFiles } from "../projects/files.ts";
@@ -20,6 +21,7 @@ const BODIES: Record<PanelId, () => React.JSX.Element> = {
   inspector: InspectorPanel,
   serial: SerialPanel,
   tests: TestsPanel,
+  network: DeviceNetworkPanel, // round 10 net
   firmware: FirmwarePanel,
   instruments: InstrumentsPanel,
   help: HelpPanel,
@@ -93,6 +95,15 @@ function SerialPanel() {
   return (
     <FloatingPanel id="serial" title="Serial" meta={usb ? "USB" : "UART0"} icon={SquareTerminal} actions={<IconButton icon={Eraser} iconSize={15} className="icon-btn-sm" label="Clear console" onClick={() => engine.clearSerial()} />}>
       <SerialConsole />
+    </FloatingPanel>
+  );
+}
+
+/** Round 10: boards on Jumper's device network (requests, frames, Wi-Fi, faults); needs jumper serve. */
+function DeviceNetworkPanel() {
+  return (
+    <FloatingPanel id="network" title="Network" icon={Globe} testId="panel-device-network">
+      <DeviceNetworkBody />
     </FloatingPanel>
   );
 }

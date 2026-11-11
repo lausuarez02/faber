@@ -4542,7 +4542,7 @@ export const partDefinitions: PartDefinition[] = [
           "GPIO5"
         ],
         "toolchain": {
-          "image": "jumper/arduino-esp32:3.3.12-r2",
+          "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:nologo_esp32c3_super_mini:FlashMode=dio",
           "simBuildProperties": [
             "build.cdc_on_boot=0"
@@ -5367,7 +5367,7 @@ export const partDefinitions: PartDefinition[] = [
           "GPIO27"
         ],
         "toolchain": {
-          "image": "jumper/arduino-esp32:3.3.12-r2",
+          "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:esp32:FlashMode=dio",
           "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the real board.",
           "flash": "esptool --chip esp32 --port {port} --baud 921600 write_flash 0x0 {bin}"
@@ -6234,7 +6234,7 @@ export const partDefinitions: PartDefinition[] = [
           "GPIO20"
         ],
         "toolchain": {
-          "image": "jumper/arduino-esp32:3.3.12-r2",
+          "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:esp32s3:FlashMode=dio,FlashSize=8M",
           "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the board's default build (Serial on UART0, the USB-to-UART port).",
           "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
@@ -13286,7 +13286,7 @@ export const partDefinitions: PartDefinition[] = [
           "GPIO5"
         ],
         "toolchain": {
-          "image": "jumper/arduino-esp32:3.3.12-r2",
+          "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,FlashMode=dio",
           "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash; the factory pack builds the board's own settings (Serial on the USB-C port).",
           "flash": "esptool --chip esp32c3 --port {port} --baud 921600 write_flash 0x0 {bin}"
@@ -13773,7 +13773,7 @@ export const partDefinitions: PartDefinition[] = [
           }
         ],
         "toolchain": {
-          "image": "jumper/arduino-esp32:3.3.12-r2",
+          "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio",
           "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The factory pack builds the board's own settings: Serial on the USB-C port.",
           "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"

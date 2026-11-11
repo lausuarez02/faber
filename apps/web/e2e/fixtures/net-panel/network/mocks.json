@@ -1,0 +1,5 @@
+{
+  "mocks": [
+    { "host": "api.weather.test", "method": "GET", "path": "/v1/now", "response": { "status": 200, "body": { "temp_c": 21.5, "sky": "clear" } } }
+  ]
+}

@@ -212,6 +212,24 @@ openeth.h, esp_openeth.h), Apache-2.0, Copyright (c) 2019-2024 Espressif Systems
 (Shanghai) CO LTD, built into the sketch because the precompiled core leaves
 CONFIG_ETH_USE_OPENETH off; the rest of the library is by the Jumper Authors.
 
+Device network (round 10): the simulation build image jumper/arduino-esp32:3.3.12-r3
+(toolchains/arduino-esp32/Dockerfile.sim) adds the JumperSim library (Wi-Fi and TLS
+shims for simulation builds only; by the Jumper Authors, Apache-2.0) and installs
+these Arduino libraries so the same sketch builds for the simulator and the device.
+They are build inputs of the person's firmware, not part of Jumper:
+
+  PubSubClient 2.8.0 (knolleary)   MIT License
+  MQTT 2.5.3 (256dpi arduino-mqtt) MIT License
+  ArduinoJson 7.4.3 (bblanchon)    MIT License
+  WebSockets 2.7.2 (Links2004)     GNU Lesser General Public License 2.1
+                                   (a firmware binary that links it and is given
+                                   to someone else carries LGPL-2.1 duties)
+
+The device network itself (packages/device-net: gateway, netstack, DHCP, TCP, the
+Wi-Fi control channel) is Jumper's own code. examples/esp32-api-demo replays a
+response recorded from the Open-Meteo API (https://open-meteo.com, weather data
+CC BY 4.0) in network/cassettes/open-meteo.json.
+
 STM32 and nRF52 boards in Renode (round 9 spike)
 ------------------------------------------------
 

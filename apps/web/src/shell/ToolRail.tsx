@@ -7,6 +7,7 @@ import {
   Ellipsis,
   FileCode2,
   FlaskConical,
+  Globe,
   Gauge,
   Hand,
   Maximize2,
@@ -161,6 +162,7 @@ export function ToolRail({ phone }: { phone: boolean }) {
         {jump}
         <RailButton icon={MessagesSquare} label="Agent steps" {...panel("agent")} testId="rail-agent" />
         <RailButton icon={FlaskConical} label="Tests" {...panel("tests")} testId="rail-tests" />
+        <RailButton icon={Globe} label="Network" {...panel("network")} testId="rail-network" />
         <span className="rail-sep" aria-hidden />
         {more}
       </nav>

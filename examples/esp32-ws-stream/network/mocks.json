@@ -1,0 +1,11 @@
+{
+  "mocks": [
+    {
+      "kind": "ws",
+      "host": "stream.example.com",
+      "path": "/v1/stream",
+      "on_open": [{ "text": "{\"ready\":true}" }],
+      "on_message": [{ "match": "start", "send": [{ "bytes": 1024, "delay_ms": 25, "repeat": 40 }, { "text": "{\"done\":true}" }] }]
+    }
+  ]
+}

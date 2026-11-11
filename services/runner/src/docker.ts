@@ -1,5 +1,6 @@
+import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { BASE_DOCKERFILE_DIR, BASE_IMAGE, ESP32_DOCKERFILE_DIR, ESP32_IMAGE, PICO_DOCKERFILE_DIR, PICO_IMAGE, RUNNER_DOCKERFILE_DIR, RUNNER_IMAGE } from "./config.ts";
+import { BASE_DOCKERFILE_DIR, BASE_IMAGE, ESP32_BASE_IMAGE, ESP32_DOCKERFILE_DIR, ESP32_IMAGE, PICO_DOCKERFILE_DIR, PICO_IMAGE, RUNNER_DOCKERFILE_DIR, RUNNER_IMAGE } from "./config.ts";
 
 export interface ExecResult {
   code: number;
@@ -109,10 +110,15 @@ let espReady: Promise<void> | undefined;
 function ensureEsp32Image(log: (line: string) => void): Promise<void> {
   espReady ??= (async () => {
     if ((await exec("docker", ["image", "inspect", ESP32_IMAGE])).code === 0) return;
-    await ensureImage(log, RUNNER_IMAGE);
-    log(`building ESP32 image ${ESP32_IMAGE} (arduino-esp32 core and its compilers, about 1.5 GB to download; first ESP32 build only, 5 to 15 minutes)…`);
-    const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${RUNNER_IMAGE}`, "-t", ESP32_IMAGE, ESP32_DOCKERFILE_DIR], { timeoutMs: 60 * 60_000 });
-    if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 image ${ESP32_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the arduino-esp32 core, about 1.5 GB) and free disk space (6.5 GB), then build again, or run \`pnpm jumper setup esp32\`.`);
+    if ((await exec("docker", ["image", "inspect", ESP32_BASE_IMAGE])).code !== 0) {
+      await ensureImage(log, RUNNER_IMAGE);
+      log(`building ESP32 image ${ESP32_BASE_IMAGE} (arduino-esp32 core and its compilers, about 1.5 GB to download; first ESP32 build only, 5 to 15 minutes)…`);
+      const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${RUNNER_IMAGE}`, "-t", ESP32_BASE_IMAGE, ESP32_DOCKERFILE_DIR], { timeoutMs: 60 * 60_000 });
+      if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 image ${ESP32_BASE_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the arduino-esp32 core, about 1.5 GB) and free disk space (6.5 GB), then build again, or run \`pnpm jumper setup esp32\`.`);
+    }
+    log(`building ESP32 simulation image ${ESP32_IMAGE} (Jumper's Wi-Fi / TLS shim and pinned network libraries, about a minute)…`);
+    const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${ESP32_BASE_IMAGE}`, "-t", ESP32_IMAGE, "-f", join(ESP32_DOCKERFILE_DIR, "Dockerfile.sim"), ESP32_DOCKERFILE_DIR], { timeoutMs: 30 * 60_000 });
+    if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 simulation image ${ESP32_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the Arduino library index) and free disk space, then build again, or run \`pnpm jumper setup esp32\`.`);
   })().catch((err) => {
     espReady = undefined;
     throw err;

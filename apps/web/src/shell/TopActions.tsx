@@ -1,4 +1,4 @@
-import { Bot, Box, ChevronDown, Ellipsis, FlaskConical, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
+import { Bot, Box, ChevronDown, Ellipsis, FlaskConical, Globe, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { RELIABLE_SPEED, SPEEDS } from "../lib/store.ts";
 import { useUi } from "../lib/ui.ts";
@@ -135,6 +135,9 @@ export function PhoneTopActions() {
             </MenuItem>
             <MenuItem icon={FlaskConical} onSelect={() => openPanel("tests")} testId="phone-tests">
               Tests
+            </MenuItem>
+            <MenuItem icon={Globe} onSelect={() => openPanel("network")} testId="phone-network">
+              Network
             </MenuItem>
             <MenuItem icon={Presentation} onSelect={() => ui().setDevice(true)} testId="phone-device">
               Device view

@@ -51,6 +51,13 @@ export function fidelityReport(project: Project, registry: PartRegistry, faultsT
     "All grounds are one node and wires have no resistance or inductance; long wires, motor noise and ground bounce are not modelled.",
     "Supply rails are ideal: brownouts when motors start are not simulated; measure the real supply under load.",
   ];
+  // Round 10 (network): what the device network checks and what it cannot.
+  if (project.network) {
+    global.push(
+      "Network: sockets, DHCP, DNS, TCP, TLS (mbedTLS in the firmware), HTTP, WebSocket and MQTT run for real through Jumper's sandbox; the Wi-Fi radio is not emulated (the simulation build's Wi-Fi shim joins over an emulated Ethernet card): signal, range, interference, roaming, power save and association timing are not modelled, and RSSI is a value Jumper sets. Mocked and recorded APIs answer what they were told; the real API may answer differently.",
+    );
+    toTest.push("Join your real Wi-Fi (2.4 GHz) and call the real API with the device build (JUMPER_SIM=0, real root CA): check signal at the place it will live, reconnects after a router restart, and the real API's answers and rate limits.");
+  }
   if (!faultsTested.length) toTest.push("Unplug each module while running to see how the firmware copes (or rehearse with inject_fault disconnect / i2c_nack).");
   const agentMade = parts.filter((p) => p.level === AGENT_MADE_LABEL);
   if (agentMade.length) {

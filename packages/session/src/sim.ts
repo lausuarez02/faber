@@ -11,7 +11,7 @@ import {
   type VisualState,
 } from "@jumper/sim-core";
 import { isProcessBackend, type BackendFactory, type McuBackend } from "@jumper/sim-core";
-import { createNodeBackendFactory, EmulatorError } from "@jumper/sim-backends/node";
+import { createNodeBackendFactory, EmulatorError, type QemuNetwork } from "@jumper/sim-backends/node";
 import { checkEmulator, emulatorLabels, reapEmulators, trackEmulator, untrackEmulator, type ProcessBackendId } from "@jumper/runner";
 import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
 import { fail } from "./errors.ts";
@@ -168,6 +168,8 @@ export function emulatorFailure(err: unknown): never {
 }
 
 export class SimHost {
+  /** Round 10: called with the virtual time after every step of run() (the device network's clock). */
+  readonly timeListeners = new Set<(timeMs: number) => void>();
   readonly sim: Simulation;
   /** Updated by adoptProps when saved props change while the simulation runs. */
   project: Project;
@@ -203,12 +205,13 @@ export class SimHost {
    * The way to make a host on the server: a local emulator (process backend) is checked and booted
    * first without blocking the event loop (1 to 3 s), then handed to the Simulation.
    */
-  static async create(project: Project, registry: PartRegistry, firmware: string | Uint8Array | undefined, progress?: PrepareProgress): Promise<SimHost> {
+  static async create(project: Project, registry: PartRegistry, firmware: string | Uint8Array | undefined, progress?: PrepareProgress, opts?: { network?: QemuNetwork }): Promise<SimHost> {
     await SimHost.preparePhysics(project);
     const board = firmwareBoardOf(project, registry);
     if (!board || !isProcessBackend(board.mcu.backend) || firmware === undefined) return new SimHost(project, registry, firmware);
     await checkBoardRuntime(project, registry, progress);
-    const be = serverFactory({ partId: board.partId, type: board.type, mcu: board.mcu });
+    const factory = opts?.network ? createNodeBackendFactory({ labels: emulatorLabels(), onProcess: trackEmulator, qemu: { network: opts.network } }) : serverFactory;
+    const be = factory({ partId: board.partId, type: board.type, mcu: board.mcu });
     const t0 = Date.now();
     progress?.({ stage: "start", text: `starting ${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"} for ${board.name}` });
     try {
@@ -393,6 +396,7 @@ export class SimHost {
     while (this.sim.timeMs < end - 1e-9) {
       const dt = Math.min(step, end - this.sim.timeMs, frameMs ? Math.max(0.001, nextFrame - this.sim.timeMs) : Infinity);
       this.sim.runFor(dt);
+      for (const l of this.timeListeners) l(this.sim.timeMs); // round 10: the device network follows virtual time
       this.watchCollisions();
       this.applyNoise();
       if (opts.onFrame && this.sim.timeMs >= nextFrame - 1e-9) {

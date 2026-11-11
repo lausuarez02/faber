@@ -49,7 +49,8 @@ export interface QemuEspBackendOptions {
   runtime?: QemuLaunchOptions["runtime"];
   image?: string;
   icountShift?: number;
-  network?: boolean;
+  /** See QemuLaunchOptions.network: true (QEMU NAT), { framePort } (Jumper's device network), false. */
+  network?: QemuLaunchOptions["network"];
   /** Flash size the image is padded to (MB). Default: the smallest of 2 / 4 / 8 / 16 that holds it. */
   flashSizeMB?: number;
   /** How long one step may wait for QEMU (boot included on the first one). Default 30 s. */

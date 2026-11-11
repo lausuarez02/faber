@@ -26,13 +26,40 @@ export interface QemuLaunchOptions {
   image?: string;
   /** icount shift: one guest instruction = 2^shift ns of virtual time. Default 3 (125 MIPS). Xtensa needs ≥ 2. */
   icountShift?: number;
-  /** Emulated Ethernet (OpenCores MAC, slirp user networking). Default true. */
-  network?: boolean;
+  /**
+   * The emulated network card (OpenCores Ethernet, "open_eth"):
+   *   true (default): QEMU's own user networking (NAT, no Jumper policy);
+   *   { framePort }: plugged into Jumper's device network (DeviceNetHost.framePort), where the
+   *     sandbox DNS, mocks, secrets, faults and the Wi-Fi shim's access point live;
+   *   false: no card.
+   */
+  network?: boolean | QemuNetwork;
   /** Where QEMU's own stdout/stderr go (a file path). Default: discarded. */
   logFile?: string;
   extraArgs?: readonly string[];
   /** Extra Docker labels (key → value). jumper.emulator=1 and jumper.owner-pid=<pid> are always set. */
   labels?: Record<string, string>;
+}
+
+export interface QemuNetwork {
+  /** Port of the device network's frame server on this machine. */
+  framePort: number;
+  /** MAC of the card (QEMU's eFuse has none); give each board on one network its own. */
+  mac?: string;
+}
+
+/** A stable, locally administered MAC for board number `n` on a sandbox network. */
+export function boardMac(n: number): string {
+  return `02:4a:4d:00:${((n >> 8) & 0xff).toString(16).padStart(2, "0")}:${(n & 0xff).toString(16).padStart(2, "0")}`;
+}
+
+function netArgs(net: QemuLaunchOptions["network"], host: string): string[] {
+  if (net === false) return ["-nic", "none"];
+  if (net === undefined || net === true) return ["-nic", "user,model=open_eth"];
+  return [
+    "-netdev", `stream,id=jn,server=off,addr.type=inet,addr.host=${host},addr.port=${net.framePort}`,
+    "-net", `nic,netdev=jn,model=open_eth${net.mac ? `,macaddr=${net.mac}` : ""}`,
+  ];
 }
 
 export interface QemuProcess {
@@ -51,7 +78,7 @@ export function qemuArgs(o: QemuLaunchOptions, flashPathInside: string, bridgeHo
     "-icount", `shift=${o.icountShift ?? 3},align=off,sleep=off`,
     "-rtc", "clock=vm",
     "-drive", `file=${flashPathInside},if=mtd,format=raw`,
-    ...(o.network === false ? ["-nic", "none"] : ["-nic", "user,model=open_eth"]),
+    ...netArgs(o.network, bridgeHost),
     "-chardev", `socket,id=jb,host=${bridgeHost},port=${o.bridgePort},nodelay=on`,
     "-global", `driver=${c.gpioType},property=bridge,value=jb`,
     "-global", `driver=${c.gpioType},property=sync,value=on`,

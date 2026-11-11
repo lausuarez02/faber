@@ -671,7 +671,7 @@
       "GPIO27"
     ],
     "toolchain": {
-      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "image": "jumper/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:esp32:FlashMode=dio",
       "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the real board.",
       "flash": "esptool --chip esp32 --port {port} --baud 921600 write_flash 0x0 {bin}"

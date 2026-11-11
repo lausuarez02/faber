@@ -4,8 +4,21 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { ConfigError, validateMock, type Mock, type NetworkConfig } from "./config.ts";
-import type { DeviceNet, Fault } from "./gateway.ts";
+import type { Fault } from "./gateway.ts";
 import type { NetEvent } from "./log.ts";
+import type { Redactor } from "./secrets.ts";
+
+/** What the tools need of a device network: a DeviceNet in this thread, or a DeviceNetHost mirror. */
+export interface NetView {
+  readonly log: { since(seq?: number): NetEvent[] };
+  readonly config: NetworkConfig;
+  readonly mocks: { list: Mock[]; upsert(m: Mock): "added" | "updated" };
+  readonly faults: Fault[];
+  readonly redactor: Redactor;
+  inject(f: Fault): string;
+  clearFaults(): void;
+}
+type DeviceNet = NetView;
 
 /** Schemas in the shape of session's ToolDef (name, title, description, inputSchema). */
 export const DEVICE_NET_TOOLS = [
@@ -14,7 +27,7 @@ export const DEVICE_NET_TOOLS = [
     title: "Device network log",
     description:
       "Everything the simulated device did on the network: DNS lookups, HTTP requests (method, host, path, status, bytes, time, who answered: mock / cassette / internet / fault), WebSocket and MQTT sessions with frame counts and samples, and blocked attempts with why and fix. Secrets show as [secret:NAME], never their value. Pass since (a seq) for new entries only, kind or host to filter.",
-    inputSchema: { type: "object", properties: { since: { type: "number" }, limit: { type: "number" }, kind: { type: "string", enum: ["dns", "http", "ws", "mqtt", "connect", "udp", "blocked", "fault"] }, host: { type: "string" } } },
+    inputSchema: { type: "object", properties: { since: { type: "number" }, limit: { type: "number" }, kind: { type: "string", enum: ["dns", "http", "ws", "mqtt", "connect", "udp", "blocked", "fault", "wifi", "dhcp"] }, host: { type: "string" } } },
     readOnly: true,
   },
   {
@@ -110,15 +123,17 @@ export interface RequestExpectation {
   /** At least this many (default 1). */
   count?: number;
   kind?: "http" | "ws" | "mqtt";
+  /** Only count log entries after this seq (a scenario's own run). */
+  sinceSeq?: number;
 }
 
 export function checkRequest(net: DeviceNet, x: RequestExpectation): { ok: boolean; matched: number; why?: string; fix?: string } {
   const want = x.count ?? 1;
   const kinds = x.kind ? [x.kind] : ["http", "ws"];
-  const seen = net.log.since(0).filter((e) => kinds.includes(e.kind));
+  const seen = net.log.since(x.sinceSeq ?? 0).filter((e) => kinds.includes(e.kind));
   const m = seen.filter((e) => e.host === x.host.toLowerCase() && (!x.path || (e.path ?? "").split("?")[0] === x.path || (x.path.endsWith("*") && (e.path ?? "").startsWith(x.path.slice(0, -1)))) && (!x.method || e.method === x.method.toUpperCase()) && (x.status === undefined || e.status === x.status));
   if (m.length >= want) return { ok: true, matched: m.length };
-  const blocked = net.log.since(0).filter((e) => e.kind === "blocked" && e.host === x.host.toLowerCase());
+  const blocked = net.log.since(x.sinceSeq ?? 0).filter((e) => e.kind === "blocked" && e.host === x.host.toLowerCase());
   const did = seen.slice(-5).map((e) => e.summary);
   return {
     ok: false,

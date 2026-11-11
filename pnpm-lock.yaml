@@ -176,6 +176,9 @@ importers:
         specifier: 8.22.2
         version: 8.22.2
     devDependencies:
+      '@jumper/sim-backends':
+        specifier: workspace:*
+        version: link:../sim-backends
       '@types/ws':
         specifier: ^8.18.2
         version: 8.18.2
@@ -264,6 +267,9 @@ importers:
       '@jumper/ai-gateway':
         specifier: workspace:*
         version: link:../../services/ai-gateway
+      '@jumper/device-net':
+        specifier: workspace:*
+        version: link:../device-net
       '@jumper/enclosure':
         specifier: workspace:*
         version: link:../enclosure

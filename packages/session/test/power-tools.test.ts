@@ -178,7 +178,9 @@ describe("catalog: no fit, fuzzy ids", () => {
     const z = await call(s, "get_part", { type: "rp2040-zero" });
     expect(z.type).toBe("waveshare-rp2040-zero");
     expect(z.matched).toMatch(/'rp2040-zero' is waveshare-rp2040-zero/);
-    expect((await call(s, "get_part", { type: "xiao" })).type).toBe("seeed-xiao-rp2040");
+    expect((await call(s, "get_part", { type: "xiao-rp2040" })).type).toBe("seeed-xiao-rp2040");
+    // Round 10 added XIAO ESP32-S3 / C3 (and nRF52840): a bare "xiao" is ambiguous and says which ids fit.
+    await expect(call(s, "get_part", { type: "xiao" })).rejects.toThrow(/matches \d+ part types.*seeed-xiao-esp32c3.*seeed-xiao-rp2040/);
     await expect(call(s, "get_part", { type: "transistor" })).rejects.toThrow(/matches 2 part types.*npn-transistor.*pnp-transistor/);
     await expect(call(s, "get_part", { type: "flux-capacitor" })).rejects.toThrow(/No part type 'flux-capacitor'/);
   });

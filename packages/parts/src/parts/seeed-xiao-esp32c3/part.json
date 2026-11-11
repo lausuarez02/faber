@@ -339,7 +339,7 @@
       "GPIO5"
     ],
     "toolchain": {
-      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "image": "jumper/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:XIAO_ESP32C3:CDCOnBoot=cdc,FlashMode=dio",
       "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash; the factory pack builds the board's own settings (Serial on the USB-C port).",
       "flash": "esptool --chip esp32c3 --port {port} --baud 921600 write_flash 0x0 {bin}"

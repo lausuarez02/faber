@@ -50,8 +50,23 @@ static esp_eth_phy_t *stub_phy_new(void) {
   return p;
 }
 
+int jumper_eth_present(void) {
+  return REG_READ(DR_REG_EMAC_BASE) == 0xa000; /* OpenCores MODER reset value: only in the emulator */
+}
+
+void *jumper_eth_install(const uint8_t mac[6]) {
+  if (!jumper_eth_present()) return NULL;
+  eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+  esp_eth_mac_t *m = esp_eth_mac_new_openeth(&mac_config);
+  esp_eth_config_t config = ETH_DEFAULT_CONFIG(m, stub_phy_new());
+  esp_eth_handle_t h = NULL;
+  if (esp_eth_driver_install(&config, &h) != ESP_OK) return NULL;
+  if (mac) esp_eth_ioctl(h, ETH_CMD_S_MAC_ADDR, (void *)mac);
+  return h;
+}
+
 esp_netif_t *jumper_eth_begin(void) {
-  if (REG_READ(DR_REG_EMAC_BASE) != 0xa000) {  /* OpenCores MODER reset value: only in the emulator */
+  if (!jumper_eth_present()) {
     ESP_LOGW("jumper_eth", "no emulated Ethernet MAC here");
     return NULL;
   }

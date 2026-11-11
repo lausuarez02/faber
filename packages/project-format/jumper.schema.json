@@ -728,6 +728,126 @@
                     "said"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "type": "object",
+                      "properties": {
+                        "host": {
+                          "type": "string",
+                          "minLength": 1,
+                          "description": "Host the device called, e.g. api.example.com."
+                        },
+                        "path": {
+                          "description": "Path without the query (exact, or a prefix ending in *).",
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "description": "The status the device got.",
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "count": {
+                          "description": "At least this many (default 1), counted since the scenario started.",
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "kind": {
+                          "description": "Default http or ws.",
+                          "type": "string",
+                          "enum": [
+                            "http",
+                            "ws",
+                            "mqtt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "host"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: the device must NOT have made it (within within_ms, or so far).",
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "request"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "network_fault": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "wifi_drop",
+                            "weak_signal",
+                            "latency",
+                            "http_error",
+                            "timeout",
+                            "dns_fail",
+                            "clear"
+                          ]
+                        },
+                        "rssi": {
+                          "type": "number"
+                        },
+                        "ms": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "status": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "host": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "network_fault"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
@@ -1069,6 +1189,119 @@
       "required": [
         "shape"
       ]
+    },
+    "network": {
+      "description": "Round 10: the device network (Wi-Fi, DNS, mocks, internet allow list, secrets by name). See docs/network.md.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "description": "offline: Wi-Fi up, nothing answers. mock (default; run_tests always uses it): only mocks and cassettes answer. internet: hosts in allow also reach the real internet.",
+          "type": "string",
+          "enum": [
+            "offline",
+            "mock",
+            "internet"
+          ]
+        },
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Host the device may reach in internet mode: \"api.example.com\" or \"*.example.com\" (no scheme, no path)."
+              },
+              "ports": {
+                "description": "Ports (default [443, 80]).",
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                }
+              },
+              "tls": {
+                "description": "inspect (default): Jumper terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate.",
+                "type": "string",
+                "enum": [
+                  "inspect",
+                  "passthrough"
+                ]
+              },
+              "secrets": {
+                "description": "Secret names this host may receive.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "headers": {
+                "description": "Headers added to every request to this host, e.g. {\"Authorization\": \"Bearer {{secret:OPENAI_API_KEY}}\"}. Never a literal key.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "host"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "secrets": {
+          "description": "Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from jumper.json.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+          }
+        },
+        "mocks": {
+          "description": "Mock APIs file, relative to jumper.json (default network/mocks.json).",
+          "type": "string"
+        },
+        "cassette": {
+          "description": "Cassette name (network/cassettes/<name>.json) replayed in mock mode, recorded in internet mode with record: true.",
+          "type": "string"
+        },
+        "record": {
+          "type": "boolean"
+        },
+        "wifi": {
+          "description": "The sandbox Wi-Fi. Leave out: any SSID joins.",
+          "type": "object",
+          "properties": {
+            "ssid": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "The network the sandbox plays; a sketch asking for another SSID finds no access point."
+            },
+            "password": {
+              "description": "Only to rehearse a wrong password: the sandbox refuses a different one. Leave out to accept any.",
+              "type": "string",
+              "maxLength": 64
+            },
+            "rssi": {
+              "description": "Signal strength the firmware reads (default -55 dBm).",
+              "type": "integer",
+              "minimum": -100,
+              "maximum": 0
+            }
+          },
+          "required": [
+            "ssid"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

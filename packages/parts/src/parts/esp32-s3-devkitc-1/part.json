@@ -716,7 +716,7 @@
       "GPIO20"
     ],
     "toolchain": {
-      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "image": "jumper/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:esp32s3:FlashMode=dio,FlashSize=8M",
       "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the board's default build (Serial on UART0, the USB-to-UART port).",
       "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"

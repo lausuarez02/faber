@@ -339,7 +339,7 @@
       "GPIO5"
     ],
     "toolchain": {
-      "image": "jumper/arduino-esp32:3.3.12-r2",
+      "image": "jumper/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:nologo_esp32c3_super_mini:FlashMode=dio",
       "simBuildProperties": [
         "build.cdc_on_boot=0"

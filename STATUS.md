@@ -9,6 +9,55 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 10, track net (2026-11-11): the device network, end to end
+
+Generic network access for emulated boards: any API, any protocol over TCP, no feature built for one
+use. Branch `round10/net`. Guide: [docs/network.md](docs/network.md); decision
+[0007](docs/decisions/0007-device-network-draft.md) (round 10 section).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Netstack | TypeScript netstack between emulated NICs and the gateway: QEMU `-netdev stream` frames, ARP, DHCP (10.0.2.15, .16 per MAC), ICMP echo, DNS / NTP to the gateway, server-side TCP (window, retransmission, zero-window probe), a switch between boards, a Wi-Fi control channel (EtherType 0x88B5). Runs with the gateway in a worker (`DeviceNetHost`) so lockstep emulators do not starve it | `packages/device-net/test/netstack.test.ts` (frame-level test device: DHCP, DNS, TCP, a 50 kB body through a 2920 B window, TLS with the sandbox CA, blocked hosts, Wi-Fi join / wrong password / unknown SSID / scan / drop / RSSI, the worker host) |
+| Firmware | `jumper/arduino-esp32:3.3.12-r3` (`Dockerfile.sim`): simulation builds of sketches that include network headers link JumperSim: `esp_wifi_*` wrapped onto the emulated Ethernet card (WiFi.begin / status / localIP / RSSI / scan, events, auto-reconnect unchanged) and mbedTLS chain verification wrapped to also trust the sandbox CA (sent by the netstack at join). Same source as the device; `JUMPER_SIM=0` builds without. PubSubClient, arduino-mqtt, ArduinoJson, WebSockets pinned in the image | real ESP32-C3 run (below) |
+| Product | jumper.json `network` (mode, allow, secret names, mocks file, cassette, Wi-Fi); tools `read_network`, `add_mock_api`, `inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request` / `network_fault` (run_tests forces mock mode, counts per scenario); firmware/NETWORK.md in the factory pack; fidelity note; delays and log times on the simulation's virtual clock; `QemuEspBackend {network: {framePort, mac}}` and `session.networkFor(n)` | `packages/session/test/network-tools.test.ts`, `packages/device-net/test/vclock.test.ts` |
+| Network panel | Rail → Network (phone menu → Network): Wi-Fi state, mode, secrets by name (set / missing), requests with status / source / time / TLS / secret names, WS and MQTT sessions summarized, Wi-Fi / DHCP / DNS events, blocked with why and fix; Drop Wi-Fi / Weak signal / Clear faults; a Try box (`GET /api/network`, `POST /api/network/fault`, `POST /api/network/try`) | `apps/web/e2e/network-panel.spec.ts`, `apps/web/src/views/network/devnet.test.ts` |
+| Examples | `examples/esp32-api-demo` (XIAO ESP32-S3 + SSD1306: HTTPS JSON from Open-Meteo with the real root CA, replayed from a real recorded cassette; MQTT publish to a mock broker; Wi-Fi drop and 503 scenarios) and `examples/esp32-ws-stream` (XIAO ESP32-C3, 40 binary chunks over wss://) | need the ESP32 boards from round10/esp-app (see gaps) |
+
+Real firmware (earlier in this round, before Docker failed): the `wifi-https` fixture, a plain
+WiFi.h sketch with the ISRG Root X1 CA set, built with the r3 image for the ESP32-C3 and run
+free-running in `jumper/qemu-esp` with its NIC on the netstack: scan finds "JumperNet", joins,
+DHCP 10.0.2.15 / gw 10.0.2.2, DNS → 198.18.0.1, HTTPS GET to a mock → 200 with the body (mbedTLS
+accepted the sandbox CA through the shim; 1.0 to 1.4 s virtual, handshake included), a blocked host
+→ NXDOMAIN with why / fix, weak_signal → `WiFi.RSSI()` -82, wifi_drop → status 5 then 1 with
+refused joins counted, clear → rejoin, DHCP, fetch again 200. Run three times, same outcome.
+
+Checks (worktree `round10/net`): `pnpm gen` no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0,
+1436 passed, 26 skipped (176 files) with the `docker` command stubbed to fail fast, because Docker
+Desktop stopped answering (below); e2e `network-panel` + `projects-flow` on desktop and mobile
+(`E2E_PORT=5840 E2E_HUB_PORT_BASE=11200`): 7 passed, 3 skipped by design, exit 0.
+
+Known gaps (round 10 net):
+- **Docker Desktop hung** mid-round after the disk filled up (I/O errors in its containerd store,
+  then every `docker` call hanging for over an hour; not restarted, other tracks share it). Not run
+  because of it: the committed `test/firmware.integration.test.ts` (ESP32-S3 in lockstep through
+  `DeviceNetHost`: secret injected and masked, MQTT, drop + reconnect; it skips until
+  `fixtures/net-probe.esp32s3.merged.bin.gz` is built, see fixtures/BUILD.md), the r3 image rebuild
+  with the MAC fix (the r3 tag on this machine predates it), and compiling both examples. The
+  WebSockets example (`beginSslWithCA`) and the S3 build were never compiled.
+- **Examples need round10/esp-app**: they use its `seeed-xiao-esp32s3` / `seeed-xiao-esp32c3` parts
+  and its session wiring for ESP32 boards. On this branch alone they list with unknown parts. After
+  the merge: set `ESP32_IMAGE` to `jumper/arduino-esp32:3.3.12-r3` (build it from `Dockerfile.sim`)
+  and pass `network: await session.networkFor(n)` instead of `network: false` to `QemuEspBackend`
+  when `project.network` is set.
+- **OLED on the S3**: QEMU's S3 machine has no I2C controller model (round 9), so the demo's display
+  stays blank unless another track adds it; the firmware says `oled not found` and keeps working.
+- Not emulated: the Wi-Fi radio (signal, range, roaming, power save), soft-AP clients, ESP-NOW,
+  BLE; UDP other than DNS / NTP; IPv6; MQTT secrets in CONNECT; QoS 2. Renode boards have no NIC
+  (not connected; docs/network.md says what it would take).
+- Timing through the network is not bit-exact (frames cross a socket while QEMU is parked);
+  outcomes are deterministic in mock and cassette modes.
+
+
 ## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
 
 Evidence: a real Claude rebuilt the talking egg on round-8 code and got 74 x 96 x 44.4 mm, worse

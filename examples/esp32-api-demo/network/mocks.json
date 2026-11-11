@@ -1,0 +1,9 @@
+{
+  "mocks": [
+    {
+      "kind": "mqtt",
+      "host": "test.mosquitto.org",
+      "on_publish": [{ "topic": "jumper-demo/+/reading", "reply": [{ "topic": "jumper-demo/xiao-s3/ack", "payload": "{\"ok\":true}" }] }]
+    }
+  ]
+}

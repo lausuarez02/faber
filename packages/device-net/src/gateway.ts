@@ -57,7 +57,9 @@ export type Fault =
   | { kind: "latency"; ms: number }
   | { kind: "http_error"; status: number; host?: string; path?: string; count?: number }
   | { kind: "timeout"; host?: string }
-  | { kind: "dns_fail"; host?: string };
+  | { kind: "dns_fail"; host?: string }
+  /** Weak Wi-Fi signal: the RSSI the firmware reads (default -85 dBm). Traffic is not slowed; add a latency fault for that. */
+  | { kind: "weak_signal"; rssi?: number };
 
 interface Decision {
   ok: boolean;
@@ -123,21 +125,40 @@ export class DeviceNet {
   private wss = new WebSocketServer({ noServer: true });
   private clock: Clock;
   private secrets: Map<string, string>;
+  private faultListeners = new Set<(faults: Fault[]) => void>();
 
   constructor(private opts: DeviceNetOptions) {
     this.secrets = opts.secrets ?? new Map();
     this.redactor = new Redactor(this.secrets);
-    this.log = new NetLog(this.redactor);
+
     this.mocks = new MockSet([...(opts.mocks ?? [])]);
     if (opts.cassetteFile) this.cassette = new Cassette(opts.cassetteFile, this.redactor);
     const t0 = Date.now();
     this.clock = opts.clock ?? { now: () => Date.now() - t0, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), wallMs: () => Date.now() };
+    this.log = new NetLog(this.redactor, 2000, () => this.clock.now());
     this.httpServer = http.createServer((req, res) => void this.onRequest(req, res));
     this.httpServer.on("upgrade", (req, socket, head) => void this.onUpgrade(req, socket as Duplex, head));
   }
 
   get config(): NetworkConfig {
     return this.opts.config;
+  }
+
+  /** Change mode / allow list / secrets policy live (set_network). Open flows keep their decision. */
+  setConfig(c: NetworkConfig): void {
+    this.opts.config = c;
+    this.log.push({ kind: "fault", source: "sandbox", summary: `network mode is now ${c.mode}${c.allow.length ? ` (allow: ${c.allow.map((a) => a.host).join(", ")})` : ""}` });
+  }
+
+  /** The sandbox CA (its public certificate goes to firmware built with the Wi-Fi shim). */
+  get ca(): SandboxCA {
+    return this.opts.ca;
+  }
+
+  /** Called whenever faults change (the netstack follows wifi_drop and weak_signal). */
+  onFaults(cb: (faults: Fault[]) => void): () => void {
+    this.faultListeners.add(cb);
+    return () => void this.faultListeners.delete(cb);
   }
 
   // ---------------------------------------------------------------- policy
@@ -238,6 +259,11 @@ export class DeviceNet {
       sock.destroy();
       return;
     }
+    if (dst.ip === "0.0.0.0") {
+      this.blocked({ host, port: dst.port }, "the firmware connected to 0.0.0.0, which is what a failed DNS lookup leaves behind (see the blocked DNS entry before this one)", "check the result of the lookup / connect in the firmware before using the connection, and make the host reachable (a mock, or the allow list in internet mode)", `TCP 0.0.0.0:${dst.port}`);
+      sock.destroy();
+      return;
+    }
     const decision = this.decide(host, dst.port);
     if (!decision.ok) {
       const direct = !this.pool.hostFor(dst.ip);
@@ -265,12 +291,18 @@ export class DeviceNet {
       const handshakeFailed = (e?: Error) => {
         if (secured || failed) return;
         failed = true;
-        this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS handshake with the device failed${e ? `: ${e.message}` : " (the device closed the connection)"}`, why: "the firmware did not accept the Jumper sandbox certificate for this host, or closed during the handshake", fix: "make the simulation build trust the Jumper sandbox CA (client.setCACert(JUMPER_SANDBOX_CA) under #ifdef JUMPER_SIM), or set tls passthrough for this host in network.allow" });
+        this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS handshake with the device failed${e ? `: ${e.message}` : " (the device closed the connection)"}`, why: "the firmware did not accept the Jumper sandbox certificate for this host, or closed during the handshake", fix: "build with Jumper's ESP32 image (its simulation build trusts the sandbox CA next to the sketch's own CAs), or set tls passthrough for this host in network.allow" });
       };
       t.on("error", handshakeFailed);
       t.on("close", () => handshakeFailed());
       const app = await peek(t);
-      if (!app) return;
+      if (!app) {
+        // Some TLS stacks finish the handshake and only then check the certificate, and close.
+        if (secured && !failed) {
+          this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS session with ${host} closed by the device before any request`, why: "the device closed right after the handshake; usually its TLS rejected the Jumper sandbox certificate after checking it", fix: "build with Jumper's ESP32 image (its simulation build trusts the sandbox CA), or set tls passthrough for this host in network.allow" });
+        }
+        return;
+      }
       this.serveApp(t, app, { host, port: dst.port, tls: "inspect", decision });
       return;
     }
@@ -611,6 +643,8 @@ export class DeviceNet {
   inject(f: Fault): string {
     this.faults.push({ ...f });
     this.log.push({ kind: "fault", source: "fault", summary: `fault on: ${JSON.stringify(f)}` });
+    // Listeners first: the netstack takes the link down before the flows die, so their resets are lost like on real Wi-Fi.
+    for (const l of this.faultListeners) l(this.faults);
     if (f.kind === "wifi_drop") for (const s of [...this.flows]) s.destroy();
     return f.kind;
   }
@@ -618,6 +652,7 @@ export class DeviceNet {
   clearFaults(): void {
     this.faults = [];
     this.log.push({ kind: "fault", source: "fault", summary: "faults cleared" });
+    for (const l of this.faultListeners) l(this.faults);
   }
 
   close(): void {

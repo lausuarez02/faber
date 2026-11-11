@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-55 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+60 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -24,7 +24,7 @@ The loop:
 5. write_file firmware/main.ino (Serial.begin(115200) and print what happens); set_libraries if it includes libraries.
 6. run {ms} (builds automatically): read serial, pins, part states; read_display for screens; interact / set_sensor_value to play with it.
 7. write_scenario for each behaviour of the goal, then run_tests; fix firmware or wiring until all pass (then your pending steps are accepted).
-8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer.
+8. inject_fault (disconnect, i2c_nack, noisy, wifi_drop) to check the firmware copes, if it matters. Wi-Fi devices (ESP-01) reach a sandbox network with an AI at http://ai.jumper/v1/pet (add &m=<what the person said> to pass their words): read_network_log shows what they did; set_ai_mode live + run_live lets a real model answer. Boards with Wi-Fi in the emulator (ESP32 family) join Jumper's device network: plain WiFi.begin() / HTTPClient / WebSockets / MQTT sketches work unchanged (write them for the real device, real root CA); set_network (mode mock by default, internet + allow list, secrets by NAME, values in .env), add_mock_api for any API (HTTP, streamed chunks, WebSocket frames, MQTT broker), try_request to check one, read_network for what the device did, inject_network_fault (wifi_drop, weak_signal, latency, http_error, timeout, dns_fail) and scenario steps {"request": ...} / {"network_fault": ...}.
 9. Show it: screenshot returns the picture inline (show it) plus its path; record makes an MP4 of your build and the device running; viewer_url gives a link where the person runs it and presses its buttons. Give links and paths, never a terminal command, to people who did not ask for one.
 10. fidelity_report: tell the person what was verified and, honestly, what the simulation cannot check (plan_device's cannot_check: real feel, sound, battery life, stand-ins). export when done; delete_file removes stale shots or debug sketches.
 11. A real device: when the person wants to hold it (or asks about size, a case, printing or a factory), the flow ends with design_case {"shape": "pebble" | "puck" | "pill" | "rounded-box" | "keychain"} (save: false for side-by-side variants; update_case to change wall, closure, clip). Any other shape the person wants (an egg, a heart, a bean, a character) is shape "custom" with an outline you draw (SVG path in mm, or points with smooth: true) and, if they gave one, size_mm; there is no preset per object. Test it first with check_fit (under a second, no CAD): when the parts do not fit the asked size it lists what misses by how much and smaller parts that would fit (a smaller LiPo cell, a smaller screen or speaker, a board on its edge) or "make it N mm bigger"; tell the person the trade-off and let them choose before design_case. Case choices cost size: do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot; leave dome_mm and the edges on auto (each mm of dome is a mm of thickness per face); call propose_layout before design_case; every check_fit / propose_layout / design_case / update_case answer has costs (what each of your choices adds, with the update_case call that relaxes it): read it and relax the costly choices unless the person asked for them. Pocket and hand-held devices (an egg, a pet, a remote): aim for 20 mm thick or less. Then show its renders and the measured size and checks (pocket verdict, screen window, button travel, USB access), then export_manufacturing: one folder + zip a supplier or a 3D printer can use (STL / 3MF / STEP, drawing, BOM, wiring, netlists, wire cuts, firmware, numbered assembly steps, test plan). Battery devices: set_assembly "soldered" first. Say honestly that the print and the hand feel were not tested.
@@ -91,6 +91,11 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`get_case`](#get_case) | Case report | no (read-only) |
 | [`export_manufacturing`](#export_manufacturing) | Factory pack | simulation only |
 | [`read_speech`](#read_speech) | Read what it said | no (read-only) |
+| [`read_network`](#read_network) | Device network log | no (read-only) |
+| [`add_mock_api`](#add_mock_api) | Add or update a mock API | yes (undoable step) |
+| [`inject_network_fault`](#inject_network_fault) | Network fault | simulation only |
+| [`set_network`](#set_network) | Network settings | yes (undoable step) |
+| [`try_request`](#try_request) | Try a request in the sandbox | simulation only |
 
 ### new_project
 
@@ -625,3 +630,56 @@ What the device said out loud in the simulation (DFPlayer Mini clips, whose word
 | --- | --- | --- | --- |
 | `since` | number |  | Index into the list, from a previous next (default 0). |
 | `part` | string |  | Only this talking part (e.g. df1). |
+
+### read_network
+
+Everything the simulated device did on the network (any board with Wi-Fi or Ethernet in the emulator, e.g. ESP32): Wi-Fi joins and drops, DHCP, DNS lookups, HTTP(S) requests (method, host, path, status, bytes, ms, who answered: mock / cassette / internet / fault), WebSocket and MQTT sessions with frame counts and samples, and blocked attempts with why and fix. Secrets show as [secret:NAME], never their value. Also returns mode, allow list, mocks, active faults, the secrets the project names (set or missing on this machine, never values) and the boards on the sandbox LAN. {"since": seq} for new entries only, {"kind": "http" | "ws" | "mqtt" | "dns" | "wifi" | "dhcp" | "blocked" | "connect" | "fault" | "udp"}, {"host": "api.example.com"}. (read_network_log is the older ESP-01 / pet-AI log.)
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `since` | number |  |  |
+| `limit` | number |  |  |
+| `kind` | string |  | one of `dns`, `http`, `ws`, `mqtt`, `connect`, `udp`, `blocked`, `fault`, `wifi`, `dhcp` |
+| `host` | string |  |  |
+
+### add_mock_api
+
+Add or replace a mock in network/mocks.json, live (the running device sees it at once). Any API is just a mock: a weather API, an AI stream, a webhook, a broker. HTTP: {"host", "method"?, "path" (exact, or a prefix ending in *), "response": {"status", "headers", "body" (JSON or text) | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match" (substring or "*"), "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT broker: {"kind": "mqtt", "host", "on_publish": [{"topic" (+ and # wildcards), "reply": [{"topic", "payload"}]}], "retained": [{"topic", "payload"}]}. Mocks never contain secrets. Check it with try_request.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mock` | object | yes | One mock (see above). |
+
+### inject_network_fault
+
+Rehearse a bad network while the device runs: {"kind": "wifi_drop"} (the access point disappears: open connections are lost, the firmware sees WL_CONNECTION_LOST and must reconnect once you clear it), {"kind": "weak_signal", "rssi": -85} (WiFi.RSSI() reads it; traffic is not slowed), {"kind": "latency", "ms": 800}, {"kind": "http_error", "status": 503, "host"?, "path"?, "count"?}, {"kind": "timeout", "host"?} (accepted, never answered), {"kind": "dns_fail", "host"?}, {"kind": "clear"}. In a scenario use {"network_fault": {...}}.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `fault` | object | yes | e.g. {"kind": "wifi_drop"} |
+
+### set_network
+
+Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project's .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}. Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mode` | string |  | one of `offline`, `mock`, `internet` |
+| `allow` | array \| null |  |  |
+| `secrets` | array \| null |  |  |
+| `wifi` | object \| null |  |  |
+| `cassette` | string \| null |  |  |
+| `record` | boolean \| null |  |  |
+| `mocks` | string \| null |  | Mocks file relative to jumper.json (default network/mocks.json). |
+| `why` | string |  |  |
+
+### try_request
+
+Make one HTTP(S) request from inside the sandbox, exactly as the device would (sandbox DNS, TLS through the sandbox CA, the mode, allow list, mocks, secrets and faults apply): {"url": "https://api.example.com/v1/now", "method"?: "GET", "headers"?: {}, "body"?: "..."}. Returns {ok, status, headers, body (16 KB max, secrets masked), bytes, ms} or {ok: false, error, why, fix}. Use it to check a mock or an allow entry before writing firmware. It shows in read_network with User-Agent jumper-try-request.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `url` | string | yes |  |
+| `method` | string |  |  |
+| `headers` | object |  |  |
+| `body` | string |  |  |

@@ -27,7 +27,13 @@ export const PICO_IMAGE = process.env.JUMPER_PICO_IMAGE ?? "jumper/arduino-pico:
  * arduino-esp32 core 3.3.12 (ESP-IDF 5.5) + JumperEth. Builds write a merged flash image
  * (<sketch>.ino.merged.bin) that the QEMU backend boots. About 6.5 GB: built on the first ESP build.
  */
-export const ESP32_IMAGE = process.env.JUMPER_ESP32_IMAGE ?? "jumper/arduino-esp32:3.3.12-r2";
+export const ESP32_IMAGE = process.env.JUMPER_ESP32_IMAGE ?? "jumper/arduino-esp32:3.3.12-r3";
+/**
+ * The image r3 is built on (toolchains/arduino-esp32/Dockerfile): arduino-cli + the esp32 core +
+ * JumperEth. r3 (Dockerfile.sim, round 10 network) adds the simulation shim (JumperSim) and pinned
+ * network libraries; device builds (target "device") turn the shim off with JUMPER_SIM=0.
+ */
+export const ESP32_BASE_IMAGE = process.env.JUMPER_ESP32_BASE_IMAGE ?? "jumper/arduino-esp32:3.3.12-r2";
 
 /** arduino-cli platforms the images carry, by FQBN prefix. */
 export const PLATFORMS = [

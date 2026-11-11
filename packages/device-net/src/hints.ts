@@ -22,7 +22,8 @@ export const NET_LIBRARIES: NetLibrary[] = [
 export const NETWORK_HINTS = `Network (any API, any protocol the device speaks over TCP):
 - The simulated board joins the sandbox Wi-Fi (SSID from jumper.json network.wifi, default "JumperNet") and gets an address by DHCP. DNS, NTP, TCP and TLS go through Jumper, which decides per project: offline, mock (default; only mocks and recorded cassettes answer) or internet (hosts in network.allow).
 - HTTP(S): WiFiClientSecure + HTTPClient. For a streamed answer read http.getStreamPtr() in a loop instead of http.getString(), so a long body never has to fit in RAM.
-- TLS: in simulation Jumper answers HTTPS for mocked and inspected hosts with its sandbox CA. Write the sketch with a #ifdef JUMPER_SIM branch: client.setCACert(JUMPER_SANDBOX_CA) in the simulator build (Jumper defines both), and the real root CA (or the ESP32 certificate bundle) for the device. Never ship setInsecure().
+- TLS: write the sketch for the real device (client.setCACert(<the API's real root CA>), or the ESP32 certificate bundle). Jumper's simulation build also trusts its sandbox CA, so the same source talks to mocks and inspected hosts in the simulator; the device build does not contain that. Never ship setInsecure().
+- Wi-Fi: plain WiFi.begin(ssid, password) works in the simulator (a Wi-Fi shim in the simulation build joins the sandbox network over the emulated network card). Handle WiFi.status() != WL_CONNECTED and reconnects: inject_network_fault wifi_drop and weak_signal rehearse them.
 - WebSocket: arduinoWebSockets (LGPL-2.1): webSocket.beginSSL(host, 443, path); binary frames arrive in the WStype_BIN event, already split into frames, so a stream of chunks is just many events.
 - MQTT: PubSubClient (MIT) for publish QoS 0 and subscribe; arduino-mqtt (MIT) when publishes need QoS 1. Keep loop() calling client.loop().
 - Keys: never put an API key in the sketch. Declare it in jumper.json network.secrets (name only), put the value in the project's .env, and either send the header as "Bearer {{secret:NAME}}" from the firmware or let network.allow[].headers add it. Jumper replaces it at the edge and shows [secret:NAME] everywhere. On the real device the same request goes to a small relay you run that adds the key.
@@ -33,7 +34,7 @@ export function planNetworkSteps(apiHosts: string[]): string[] {
   return [
     `Declare the network in jumper.json: mode "mock" for tests${apiHosts.length ? `, allow ${apiHosts.join(", ")} for live runs` : ""}, secrets by name only.`,
     "Mock each API the device calls (add_mock_api), including its error answers, before writing firmware against it.",
-    "Firmware: Wi-Fi join with retry, HTTP(S) / WebSocket / MQTT through the libraries in the hints, the sandbox CA under #ifdef JUMPER_SIM.",
+    "Firmware: Wi-Fi join with retry, HTTP(S) / WebSocket / MQTT through the libraries in the hints, the API's real root CA (the simulation build also trusts the sandbox CA by itself).",
     "Scenario tests: assert the requests ({\"request\": ...}) and rehearse wifi_drop, latency and http_error.",
     "Factory pack: the hosts, ports and secrets the real device needs, and how the key reaches it (relay recommended).",
   ];

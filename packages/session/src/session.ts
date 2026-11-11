@@ -45,7 +45,9 @@ import {
 import { autoPlace, overlappingParts, sizeOf } from "./layout.ts";
 import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
-import { runScenario, setPartValue, validateScenario, type ScenarioResult } from "./scenario.ts";
+import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
+import type { DeviceNetHost } from "@jumper/device-net";
+import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
@@ -205,6 +207,11 @@ export class ProjectSession {
   lastVisualReport: VisualReport | undefined;
   /** set_ai_mode, kept across simulation restarts. */
   private aiMode: "mock" | "live" = "mock";
+  /** Round 10: the project's device network (gateway + netstack in a worker), started on first use. */
+  readonly deviceNetwork: SessionDeviceNet = new SessionDeviceNet(
+    () => this.dir,
+    () => this.project,
+  );
   /** What the last commit did to the running simulation (set by pushPropsOrInvalidate). */
   private liveNote: string | undefined;
 
@@ -1196,7 +1203,8 @@ export class ProjectSession {
     if (!info?.sketchDir || !info.sketchAbs) return { error: "the project has no sketch", fix: "write_file the sketch and build" };
     const mcu = this.registry.get(this.project.parts.find((p) => p.id === info.fw.board)?.type ?? "")?.spec.mcu;
     const flash = mcu?.toolchain?.flash;
-    if (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length) {
+    // ESP32 simulator builds carry Jumper's Wi-Fi / TLS shim, so the device build is always separate.
+    if (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length && info.format !== "bin") {
       const st = this.firmwareState();
       const data = this.loadHex();
       if (data === undefined || st !== "fresh") return { error: data === undefined ? "the firmware was never built" : "the sketch changed since the last build", fix: "build (or run) first, then export again" };
@@ -1204,14 +1212,14 @@ export class ProjectSession {
     }
     let r: BuildResult;
     try {
-      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [] });
+      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [], target: "device" });
     } catch (err) {
       return { error: `the build for the real board (${info.deviceFqbn}) could not run: ${(err as Error).message}`, fix: "start Docker Desktop, then export again" };
     }
     if (!r.ok) return { error: `the sketch does not compile for the real board (${info.deviceFqbn}): ${r.diagnostics.filter((d) => d.severity === "error").map(fmtDiag).slice(0, 3).join(" | ")}`, fix: "fix the errors (build shows them), then export again" };
     const data = r.hex ?? (r.bin ? new Uint8Array(Buffer.from(r.bin, "base64")) : undefined);
     if (data === undefined) return { error: "the build wrote no firmware file", fix: "build again; if it repeats, report the build log" };
-    return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
+    return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}${info.format === "bin" ? " without Jumper's simulation shims (JUMPER_SIM=0)" : ""}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
   }
 
   /** The built firmware: Intel HEX text, or the flash image bytes (ESP32 family). */
@@ -1242,19 +1250,30 @@ export class ProjectSession {
   private async getHost(progress?: PrepareProgress): Promise<{ host: SimHost; restarted?: string }> {
     await SimHost.preparePhysics(this.project);
     const key = this.simKey();
-    if (this.host && key === this.hostKey) return { host: this.host };
+    if (this.host && key === this.hostKey) return this.withNetworkClock({ host: this.host });
+    const board = firmwareBoardOf(this.project, this.registry);
     if (!this.host || !this.host.isProcess) {
-      const board = firmwareBoardOf(this.project, this.registry);
-      if (!board || !isProcessBackend(board.mcu.backend)) return this.getHostSync();
+      if (!board || !isProcessBackend(board.mcu.backend)) return this.withNetworkClock(this.getHostSync());
     }
     // A local emulator boots asynchronously (the server keeps answering meanwhile).
     const had = !!this.host;
     this.host?.dispose();
     this.host = undefined;
-    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress);
+    // Round 10: an ESP32's network card plugs into the project's device network (when it has one).
+    const network = this.project.network && board?.mcu.backend === "qemu-esp" ? await this.networkFor(1) : undefined;
+    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress, network ? { network } : undefined);
     this.host = host;
     this.hostKey = key;
-    return { host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
+    return this.withNetworkClock({ host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) });
+  }
+
+  /** Round 10: a project with a device network runs its mocks on the simulation's clock. */
+  private async withNetworkClock(r: { host: SimHost; restarted?: string }): Promise<{ host: SimHost; restarted?: string }> {
+    if (this.project.network && !r.host.timeListeners.size) {
+      const net = await this.deviceNetwork.ensure();
+      r.host.timeListeners.add((t) => net.setVirtualTime(t));
+    }
+    return r;
   }
 
   private getHostSync(): { host: SimHost; restarted?: string } {
@@ -1451,8 +1470,17 @@ export class ProjectSession {
     return { scenario: s.id, steps: s.steps.length, replaced: exists, ...(normalized.length ? { normalized } : {}), next: "run_tests", step: { id: step.id, why: step.why } };
   }
 
-  private scenarioOptions() {
-    return { snapshot: (name: string) => loadSnapshot(this.dir, name) };
+  private scenarioOptions(net?: DeviceNetHost): ScenarioOptions {
+    return { snapshot: (name: string) => loadSnapshot(this.dir, name), ...(net ? { network: { drain: () => net.drain(), view: net } } : {}) };
+  }
+
+  /**
+   * Round 10: where a board's emulated network card plugs in (QEMU: QemuEspBackend {network}).
+   * Starts the project's device network if needed. `n` numbers the boards on one run (own MACs).
+   */
+  async networkFor(n = 1): Promise<{ framePort: number; mac: string }> {
+    const host = await this.deviceNetwork.ensure();
+    return { framePort: host.framePort, mac: `02:4a:4d:00:${((n >> 8) & 0xff).toString(16).padStart(2, "0")}:${(n & 0xff).toString(16).padStart(2, "0")}` };
   }
 
   async runTests(args: { name?: string; images?: boolean }, ctx: OpCtx): Promise<unknown> {
@@ -1463,6 +1491,10 @@ export class ProjectSession {
     const built = await this.ensureBuilt(ctx);
     const hex = this.loadHex();
     await SimHost.preparePhysics(this.project);
+    // Round 10: tests always run the network in mock mode (deterministic, nothing leaves the machine).
+    const net = this.project.network ? await this.deviceNetwork.ensure() : undefined;
+    const netCfg = net?.config;
+    if (net && netCfg && netCfg.mode !== "mock") net.setConfig({ ...netCfg, mode: "mock" });
     const results: ScenarioResult[] = [];
     const visuals: VisualScenario[] = [];
     // Frames of one representative scenario (the longest up to 2 virtual minutes), for live view / replay.
@@ -1471,8 +1503,10 @@ export class ProjectSession {
     for (const s of pick) {
       const host = await SimHost.create(this.project, this.registry, hex);
       const mine: Frame[] = [];
+      if (net?.faults.length) net.clearFaults();
+      if (net) host.timeListeners.add((t) => net.setVirtualTime(t));
       try {
-        const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions());
+        const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions(net));
         results.push(result);
         visuals.push(visual);
       } catch (err) {
@@ -1499,6 +1533,8 @@ export class ProjectSession {
     } catch {
       // A read-only project folder: the report stays in memory only.
     }
+    net?.setVirtualTime(undefined);
+    if (net && netCfg && netCfg.mode !== "mock") net.setConfig(netCfg); // round 10: back to the project's mode
     const frameImages = args.images ? this.writeFrameImages(visuals) : [];
     const pendingSteps = this.acceptAfterTests(results.length - passed, args.name, ctx);
     return {
@@ -1815,6 +1851,7 @@ export class ProjectSession {
   }
 
   dispose(): void {
+    void this.deviceNetwork.close(); // round 10 network
     this.flushPlanning(); // round 6 power
     this.host?.dispose();
     this.host = undefined;

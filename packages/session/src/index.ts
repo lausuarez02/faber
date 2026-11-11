@@ -53,3 +53,6 @@ export { deviceStill, lastLoggedStill, stillKey, type DeviceStill } from "./devi
 export { caseState, caseIsStale, caseMesh, previewFit, layoutProposals, caseCosts, draftCosts } from "./tools/case.ts"; // round 6 case, round 7 fit preview, round 8 layout proposals
 export { adviceNotes, applyOps, opsForApply } from "./advice-notes.ts"; // round 8 view: the parts advice for people
 export type { AdviceNote, AdviceOp } from "./advice-notes.ts";
+// round 10 network
+export { networkSnapshot } from "./tools/network.ts";
+export { SessionDeviceNet, sandboxCaDir, networkConfigOf } from "./device-network.ts";

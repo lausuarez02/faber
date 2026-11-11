@@ -155,6 +155,42 @@ export type Enclosure = z.infer<typeof EnclosureSchema>;
 export type CaseOutline = z.infer<typeof CaseOutlineSchema>;
 export type CaseSize = z.infer<typeof CaseSizeSchema>;
 
+/**
+ * Round 10 (network): how the simulated device reaches the network (packages/device-net). Plain,
+ * committed data: secrets by NAME only (values come from the environment or the git-ignored .env).
+ * Deep checks (with why / fix) are in @jumper/device-net parseNetworkConfig.
+ */
+export const NetworkAllowSchema = z
+  .object({
+    host: z.string().min(1).describe('Host the device may reach in internet mode: "api.example.com" or "*.example.com" (no scheme, no path).'),
+    ports: z.array(z.number().int().min(1).max(65535)).optional().describe("Ports (default [443, 80])."),
+    tls: z.enum(["inspect", "passthrough"]).optional().describe("inspect (default): Jumper terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate."),
+    secrets: z.array(z.string()).optional().describe("Secret names this host may receive."),
+    headers: z.record(z.string(), z.string()).optional().describe('Headers added to every request to this host, e.g. {"Authorization": "Bearer {{secret:OPENAI_API_KEY}}"}. Never a literal key.'),
+  })
+  .strict();
+
+export const NetworkSchema = z
+  .object({
+    mode: z.enum(["offline", "mock", "internet"]).optional().describe("offline: Wi-Fi up, nothing answers. mock (default; run_tests always uses it): only mocks and cassettes answer. internet: hosts in allow also reach the real internet."),
+    allow: z.array(NetworkAllowSchema).optional(),
+    secrets: z.array(z.string().regex(/^[A-Z][A-Z0-9_]{1,63}$/, "secret names are UPPER_SNAKE_CASE, e.g. OPENAI_API_KEY")).optional().describe("Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from jumper.json."),
+    mocks: z.string().optional().describe("Mock APIs file, relative to jumper.json (default network/mocks.json)."),
+    cassette: z.string().optional().describe("Cassette name (network/cassettes/<name>.json) replayed in mock mode, recorded in internet mode with record: true."),
+    record: z.boolean().optional(),
+    wifi: z
+      .object({
+        ssid: z.string().min(1).max(32).describe("The network the sandbox plays; a sketch asking for another SSID finds no access point."),
+        password: z.string().max(64).optional().describe("Only to rehearse a wrong password: the sandbox refuses a different one. Leave out to accept any."),
+        rssi: z.number().int().min(-100).max(0).optional().describe("Signal strength the firmware reads (default -55 dBm)."),
+      })
+      .strict()
+      .optional()
+      .describe("The sandbox Wi-Fi. Leave out: any SSID joins."),
+  })
+  .strict();
+export type NetworkSettings = z.infer<typeof NetworkSchema>;
+
 export const ProjectSchema = z
   .object({
     format: z.literal(FORMAT_VERSION),
@@ -171,6 +207,7 @@ export const ProjectSchema = z
     assembly: AssemblyStyleSchema.optional().describe("How it is built: 'breadboard' (default for Uno / Nano projects) or 'soldered' (hand-wired in a case; default when there is an enclosure or a pocket board)."),
     power: PowerOptionsSchema.optional().describe("Power situation for the simulation and check_design (USB plugged in or not)."),
     enclosure: EnclosureSchema.optional().describe("The case: shape, parameters and where parts go. Written by design_case / update_case; files are generated into case/."),
+    network: NetworkSchema.optional().describe("Round 10: the device network (Wi-Fi, DNS, mocks, internet allow list, secrets by name). See docs/network.md."),
   })
   .superRefine((project, ctx) => {
     const partIds = new Set<string>();

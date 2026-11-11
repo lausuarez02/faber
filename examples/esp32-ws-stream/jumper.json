@@ -1,0 +1,28 @@
+{
+  "format": "jumper/1",
+  "name": "WebSocket stream (XIAO ESP32-C3)",
+  "description": "A Seeed XIAO ESP32-C3 opens a secure WebSocket and receives a stream of binary chunks (any bytes: audio, sensor blocks, model output). The test streams 40 chunks of 1 KiB from a mock and checks every byte arrived.",
+  "parts": [{ "id": "xiao", "type": "seeed-xiao-esp32c3", "x": 0, "y": 0, "rotation": 0 }],
+  "wires": [],
+  "firmware": {
+    "board": "xiao",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.bin",
+    "build": { "tool": "arduino-cli", "fqbn": "esp32:esp32:XIAO_ESP32C3" },
+    "libraries": ["WebSockets"]
+  },
+  "scenarios": [
+    {
+      "id": "streams",
+      "name": "40 binary chunks of 1 KiB arrive over wss://, in order",
+      "steps": [
+        { "expect_serial": "wifi up", "within_ms": 15000 },
+        { "expect_serial": "ws open", "within_ms": 15000 },
+        { "expect_serial": { "regex": "stream done 40 chunks 40960 bytes" }, "within_ms": 15000 },
+        { "request": { "host": "stream.example.com", "path": "/v1/stream", "kind": "ws" } }
+      ]
+    }
+  ],
+  "network": { "mode": "mock", "wifi": { "ssid": "JumperNet" } }
+}
