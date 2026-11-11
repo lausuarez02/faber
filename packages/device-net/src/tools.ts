@@ -17,6 +17,10 @@ export interface NetView {
   readonly redactor: Redactor;
   inject(f: Fault): string;
   clearFaults(): void;
+  /** A mock that answers ahead of the others until setMocks puts the list back (scenario network_mock steps). */
+  scenarioMock(m: Mock): void;
+  /** Replace the whole mock list, live. */
+  setMocks(list: Mock[]): void;
 }
 type DeviceNet = NetView;
 

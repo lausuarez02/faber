@@ -27,6 +27,7 @@ export interface HostWorkerData {
 
 export type HostCommand =
   | { op: "mock"; mock: Mock }
+  | { op: "mocks"; mocks: Mock[] }
   | { op: "fault"; fault: Fault }
   | { op: "clear" }
   | { op: "config"; config: NetworkConfig }
@@ -69,6 +70,7 @@ async function main(d: HostWorkerData): Promise<void> {
     out.on("message", (c: HostCommand) => {
       try {
         if (c.op === "mock") dn.mocks.upsert(c.mock);
+        else if (c.op === "mocks") dn.setMocks(c.mocks);
         else if (c.op === "fault") dn.inject(c.fault);
         else if (c.op === "clear") dn.clearFaults();
         else if (c.op === "config") dn.setConfig(c.config);

@@ -188,6 +188,11 @@ export function parseMocks(raw: unknown): Mock[] {
   return list.map((m, i) => validateMock(m, `mocks[${i}]`));
 }
 
+/** Mocks with the same key replace each other (kind + host + method + path). */
+export function mockKey(x: Mock): string {
+  return `${x.kind ?? "http"} ${x.host} ${(x as { method?: string }).method ?? ""} ${(x as { path?: string }).path ?? ""}`;
+}
+
 export function validateMock(m: Mock, field = "mock"): Mock {
   if (!m || typeof m.host !== "string" || !HOST_RE.test(m.host.toLowerCase())) {
     throw new ConfigError(`${field}.host is missing or not a host`, "a mock answers for one host name the device resolves", '{"host": "api.example.com", "path": "/v1/x", "response": {"body": {}}}', `${field}.host`);

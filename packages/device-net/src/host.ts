@@ -4,7 +4,7 @@
 // tools, scenario checks and the UI read synchronously (pending events are drained with
 // receiveMessageOnPort, so even a synchronous scenario loop sees what happened).
 import { MessageChannel, receiveMessageOnPort, Worker, type MessagePort } from "node:worker_threads";
-import { validateMock, type Mock, type NetworkConfig } from "./config.ts";
+import { mockKey, validateMock, type Mock, type NetworkConfig } from "./config.ts";
 import type { Fault, Upstream } from "./gateway.ts";
 import type { HostCommand, HostEvent, HostWorkerData } from "./host-worker.ts";
 import type { NetEvent } from "./log.ts";
@@ -180,6 +180,17 @@ export class DeviceNetHost {
     this.faults.push({ ...f });
     this.send({ op: "fault", fault: f });
     return f.kind;
+  }
+
+  scenarioMock(m: Mock): void {
+    const v = validateMock(m);
+    this.mockList = [v, ...this.mockList.filter((x) => mockKey(x) !== mockKey(v))];
+    this.send({ op: "mocks", mocks: this.mockList });
+  }
+
+  setMocks(list: Mock[]): void {
+    this.mockList = [...list];
+    this.send({ op: "mocks", mocks: this.mockList });
   }
 
   clearFaults(): void {

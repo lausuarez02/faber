@@ -1643,6 +1643,8 @@ export class ProjectSession {
       const host = await SimHost.create(this.project, this.registry, hex);
       const mine: Frame[] = [];
       if (net?.faults.length) net.clearFaults();
+      // a scenario's network_mock steps last for that scenario only
+      const projectMocks = net ? [...net.mocks.list] : [];
       if (net) host.timeListeners.add((t) => net.setVirtualTime(t));
       try {
         const { result, visual } = runScenarioVisual(host, s, this.project, this.registry, (f) => mine.push(f), this.scenarioOptions(net));
@@ -1654,6 +1656,7 @@ export class ProjectSession {
         visuals.push({ id: s.id, ...(s.name ? { name: s.name } : {}), passed: false, t_ms: round(host.timeMs), reason: je.message, inputs: [], frames: [], replayable: false });
       } finally {
         host.dispose();
+        if (net && (net.mocks.list.length !== projectMocks.length || net.mocks.list.some((m, i) => m !== projectMocks[i]))) net.setMocks(projectMocks);
       }
       const span = mine.length ? mine[mine.length - 1]!.vt - mine[0]!.vt : 0;
       if (mine.length && (framesSpan < 0 || (span > framesSpan && span <= 120_000))) {

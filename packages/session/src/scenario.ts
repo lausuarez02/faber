@@ -1,6 +1,6 @@
 import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@jumper/project-format";
 import type { PartRegistry, VisualValue } from "@jumper/sim-core";
-import { checkRequest, type Fault, type NetView } from "@jumper/device-net";
+import { checkRequest, validateMock, type Fault, type Mock, type NetView } from "@jumper/device-net";
 import { fail, JumperError } from "./errors.ts";
 import { findPart, resolvePin, specOf, splitRef } from "./pins.ts";
 import type { Frame, SimHost } from "./sim.ts";
@@ -146,6 +146,14 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         }
         if (typeof step.matches === "string" && opts.snapshot && !opts.snapshot(step.matches)) {
           fail("no-snapshot", `expect_display matches '${step.matches}'`, `there is no snapshot '${step.matches}' (snapshots/${step.matches}.json)`, `run until the screen shows it, then read_display {"part": "${part.id}", "save_as": "${step.matches}"} (optionally with "region": [x, y, w, h]) to save it`);
+        }
+      }
+      if ("network_mock" in step) {
+        try {
+          validateMock(step.network_mock as Mock, "network_mock");
+        } catch (e) {
+          const ce = e as { message: string; why?: string; fix?: string };
+          fail("bad-mock", `network_mock: ${ce.message}`, ce.why ?? "the mock is not valid", ce.fix ? `use e.g. ${ce.fix}` : 'use the add_mock_api shape: {"host", "path", "response": {...}}');
         }
       }
       if (typeof step.expect_part === "string") {
@@ -410,6 +418,16 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
             ok = r.ok;
             detail = ok ? `${r.matched} matching request(s)` : `${r.why}${typeof step.within_ms === "number" ? ` (waited ${step.within_ms} ms)` : " (checked once; add within_ms to wait)"}. Fix: ${r.fix}`;
           }
+        }
+      } else if ("network_mock" in step) {
+        const net = opts.network;
+        const m = step.network_mock as Mock;
+        if (!net) {
+          ok = false;
+          detail = "this project has no device network to mock: only boards with a network card in the emulator (ESP32 family) make requests";
+        } else {
+          net.view.scenarioMock(m);
+          detail = `mock ${(m as { kind?: string }).kind ?? "http"} ${m.host}${"path" in m && m.path ? m.path : ""} for the rest of this scenario`;
         }
       } else if ("network_fault" in step) {
         const net = opts.network;

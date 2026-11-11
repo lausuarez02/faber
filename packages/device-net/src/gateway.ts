@@ -16,7 +16,7 @@ import tls from "node:tls";
 import { WebSocketServer } from "ws";
 import type { SandboxCA } from "./ca.ts";
 import { Cassette } from "./cassette.ts";
-import { hostMatches, type AllowEntry, type Mock, type MqttMock, type NetworkConfig } from "./config.ts";
+import { hostMatches, mockKey, validateMock, type AllowEntry, type Mock, type MqttMock, type NetworkConfig } from "./config.ts";
 import { buildDnsAnswer, buildNtpReply, FakeIpPool, parseDnsQuery } from "./dns.ts";
 import { NetLog, type NetEvent } from "./log.ts";
 import { answerHttp, MockBroker, MockSet, readBody, runWsMock } from "./mocks.ts";
@@ -647,6 +647,15 @@ export class DeviceNet {
     for (const l of this.faultListeners) l(this.faults);
     if (f.kind === "wifi_drop") for (const s of [...this.flows]) s.destroy();
     return f.kind;
+  }
+
+  scenarioMock(m: Mock): void {
+    const v = validateMock(m);
+    this.mocks.list = [v, ...this.mocks.list.filter((x) => mockKey(x) !== mockKey(v))];
+  }
+
+  setMocks(list: Mock[]): void {
+    this.mocks.list = [...list];
   }
 
   clearFaults(): void {

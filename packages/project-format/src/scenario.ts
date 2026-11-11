@@ -189,6 +189,18 @@ export const NetworkFaultStepSchema = z
   })
   .strict();
 
+/**
+ * Round 10 eval: a mock API answer for the rest of this scenario only (the project's mocks come back
+ * after it), so one test can serve a dry forecast and another a rainy one. Same shape as add_mock_api's
+ * mock; it is checked before mocks.json, so it wins over a project mock for the same request.
+ */
+export const NetworkMockStepSchema = z
+  .object({
+    network_mock: z.record(z.string(), z.unknown()).describe('A mock, as add_mock_api takes it: {"host", "method"?, "path", "response": {...}} (HTTP), or a "ws" / "mqtt" mock.'),
+    ...common,
+  })
+  .strict();
+
 export const ScenarioStepSchema = z.union([
   RunStepSchema,
   WaitStepSchema,
@@ -206,6 +218,7 @@ export const ScenarioStepSchema = z.union([
   SaidStepSchema,
   RequestStepSchema,
   NetworkFaultStepSchema,
+  NetworkMockStepSchema,
 ]);
 
 /** Action key → its schema. Used to give one precise error instead of a union dump. */
@@ -226,6 +239,7 @@ export const STEP_KINDS = {
   said: SaidStepSchema,
   request: RequestStepSchema,
   network_fault: NetworkFaultStepSchema,
+  network_mock: NetworkMockStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
 
@@ -248,6 +262,7 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   expect_no_errors: `{ "expect_no_errors": true }`,
   request: `{ "request": { "host": "api.example.com", "path": "/v1/now", "status": 200 }, "within_ms": 5000 } (the device made it through the sandbox), or { "request": { "host": "mqtt.example.com", "kind": "mqtt" }, "within_ms": 8000 }, or { "request": { "host": "api.example.com" }, "absent": true }`,
   network_fault: `{ "network_fault": { "kind": "wifi_drop" } }, then later { "network_fault": { "kind": "clear" } }; or { "network_fault": { "kind": "http_error", "status": 503, "count": 1 } }`,
+  network_mock: `{ "network_mock": { "host": "api.example.com", "path": "/v1/forecast", "response": { "body": { "rain": 0 } } } } (this answer for the rest of this scenario only, ahead of network/mocks.json)`,
   said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said, with a speaker wired), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
 };
 
