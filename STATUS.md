@@ -9,6 +9,25 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 8 (2026-11-11): Jumper works out how the parts go inside, and shows it
+
+The person saw the talking egg a real Claude built (78.2 x 102 x 34.3 mm, "bulky", though the parts
+are only about 23 cm³) and asked for Jumper itself to work out the best way to distribute the parts,
+and to propose or show it, for any custom shape. Three tracks merged into main (layout-engine, then
+parts-advice, then view; no textual conflicts).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Distribution optimizer (track engine) | Flat first, then 2 or 3 layers, inside the real outline; three proposals (thinnest / smallest / balanced) with `why`, layers, placements, fill ratio and front / side views; `enclosure.layout` picks one (auto = balanced); pins kept. Talking egg: balanced 97.6 x 127.3 x 23 mm, thinnest 21.5 mm, all checks ok (the `dome_mm: 3` costs 6 mm). Tool `propose_layout` (55 tools), `POST /api/case/layouts`. Engine `case-4` | `packages/enclosure/test/optimize.test.ts`, `packages/session/test/round8-layouts.test.ts` |
+| Smaller parts (track parts-advice) | check_design says which parts a device may not need (`boost-not-needed`, `smaller-speaker`, `combine-charge-boost`, `board-bigger-than-needed`, `charger-not-needed`) with the mm; new parts `speaker-20mm`, `speaker-15mm`, `charge-boost-5v`; `plan_device` compact plans and `size_budget` | `packages/session/test/parts-advice.test.ts` |
+| Case view Layout tab (track view) | The three proposals as cards (front view + side cross-section with mm, thickness, pocket badge, fill %, why); select = 3D preview (labelled boxes in the see-through shell); Use builds it; "built" on the layout the case uses (the person's or an agent's); Re-distribute when the built case is older or another way is found. Drag a part (or arrow keys) to keep it there: the rest re-arranges live with the new size; a drop on a part that stays put, or a spot the rest cannot fit around, is refused with the reason. Parts you may not need, with mm saved; Apply for the 20 mm speaker swap and an unneeded boost (remove + place_part + connect as one undo step; `GET /api/case/advice`, `POST /api/case/advice/apply`) | `e2e/case-layout.spec.ts`, `packages/session/test/advice-notes.test.ts`, `packages/enclosure/test/pin-roundtrip.test.ts` |
+| Fixes found on the way (track view) | Each proposal placement carries `pin` values (Layout records its centring shift); the optimizer crashed when every part was pinned and never recovered from a first state that did not fit (2+ pins usually broke the layout); `update_case` removes a placement field set to null; the Case view used a 14-point copy of an agent's SVG outline for its previews and called the case changed (or an ellipse before the case was first built) | same tests |
+
+Checks after the merges (main, local): `pnpm gen` no diff; `pnpm typecheck` 0 errors; `pnpm test`
+1380 passed, 17 skipped, 0 failed (163 files; the skips are toolchain tests while Docker is down,
+not re-checked one by one). e2e (desktop + mobile, `E2E_PORT=5640 E2E_HUB_PORT_BASE=10400`):
+`case-layout`, `case-view`, `case-outline`, 6 passed. The full e2e suite was not run this round.
+
 ## Round 7 (2026-11-10): any case outline, and a part that talks
 
 The person asked for "the shape of an egg, with eyes and a speaker to say stuff", and then made it
