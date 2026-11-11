@@ -24,6 +24,12 @@ Flash image: the merged 4 MB image (`esptool merge-bin`: bootloader at 0x0 (S3/C
 
 ## The bridge (what the patch adds)
 
+> Round 10: protocol version 3 (patch `0002-jumper-peripherals.patch`, image `…-jb3`) adds GPIO
+> matrix routing (`M`/`N`), pin interrupts, LEDC (`L`), SPI (`SX`/`SQ`), RMT (`RM`), ADC (`E`/`AT`),
+> UART1/2 (`V`/`B`/`X`), I2C bus index and S3/C3 controllers, watched-pin parks (`K`) and I2S lines
+> (`ST`/`SR`, QEMU device not written yet). Full list: `packages/sim-backends/src/qemu-esp/protocol.ts`;
+> status and fidelity: `docs/esp32-peripherals.md`. The version-2 lines below are unchanged.
+
 Upstream, the ESP32 GPIO block is a stub (writes dropped, only the strap register reads back),
 so nothing outside QEMU can see a pin. The patch makes `esp32.gpio` (and its S3/C3 subclasses)
 a working block (OUT/ENABLE with W1TS/W1TC, both banks, IN = output when enabled, else the level
