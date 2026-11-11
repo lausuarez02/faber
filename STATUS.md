@@ -9,6 +9,20 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 10, track net (2026-11-11): the device network, end to end
+
+Generic network access for emulated boards: any API, any protocol over TCP, no feature built for one
+use. Branch `round10/net`. Guide: [docs/network.md](docs/network.md); decision
+[0007](docs/decisions/0007-device-network-draft.md) (round 10 section).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Netstack | TypeScript netstack between emulated NICs and the gateway: QEMU `-netdev stream` frames, ARP, DHCP (10.0.2.15, .16 per MAC), ICMP echo, DNS / NTP to the gateway, server-side TCP (window, retransmission, zero-window probe), a switch between boards, a Wi-Fi control channel (EtherType 0x88B5). Runs with the gateway in a worker (`DeviceNetHost`) so lockstep emulators do not starve it | `packages/device-net/test/netstack.test.ts` (frame-level test device: DHCP, DNS, TCP, a 50 kB body through a 2920 B window, TLS with the sandbox CA, blocked hosts, Wi-Fi join / wrong password / unknown SSID / scan / drop / RSSI, the worker host) |
+| Firmware | `jumper/arduino-esp32:3.3.12-r3` (`Dockerfile.sim`): simulation builds of sketches that include network headers link JumperSim: `esp_wifi_*` wrapped onto the emulated Ethernet card (WiFi.begin / status / localIP / RSSI / scan, events, auto-reconnect unchanged) and mbedTLS chain verification wrapped to also trust the sandbox CA (sent by the netstack at join). Same source as the device; `JUMPER_SIM=0` builds without. PubSubClient, arduino-mqtt, ArduinoJson, WebSockets pinned in the image | real ESP32-C3 run (below) |
+| Product | jumper.json `network` (mode, allow, secret names, mocks file, cassette, Wi-Fi); tools `read_network`, `add_mock_api`, `inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request` / `network_fault` (run_tests forces mock mode, counts per scenario); firmware/NETWORK.md in the factory pack; fidelity note; delays and log times on the simulation's virtual clock; `QemuEspBackend {network: {framePort, mac}}` and `session.networkFor(n)` | `packages/session/test/network-tools.test.ts`, `packages/device-net/test/vclock.test.ts` |
+| Network panel | Rail → Network (phone menu → Network): Wi-Fi state, mode, secrets by name (set / missing), requests with status / source / time / TLS / secret names, WS and MQTT sessions summarized, Wi-Fi / DHCP / DNS events, blocked with why and fix; Drop Wi-Fi / Weak signal / Clear faults; a Try box (`GET /api/network`, `POST /api/network/fault`, `POST /api/network/try`) | `apps/web/e2e/network-panel.spec.ts`, `apps/web/src/views/network/devnet.test.ts` |
+| Examples | `examples/esp32-api-demo` (XIAO ESP32-S3 + SSD1306: HTTPS JSON from Open-Meteo with the real root CA, replayed from a real recorded cassette; MQTT publish to a mock broker; Wi-Fi drop and 503 scenarios) and `examples/esp32-ws-stream` (XIAO ESP32-C3, 40 binary chunks over wss://) | need the ESP32 boards from round10/esp-app (see gaps) |
+
 ## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
 
 Evidence: a real Claude rebuilt the talking egg on round-8 code and got 74 x 96 x 44.4 mm, worse

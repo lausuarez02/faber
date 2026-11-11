@@ -1,6 +1,7 @@
-# 0006: Device network, the generic layer (DRAFT, round 9 spike)
+# 0007: Device network, the generic layer
 
-Status: draft · 2026-11-11 · branch `round9/network` · package `packages/device-net`
+Status: round 9 draft, **built end to end in round 10** (branch `round10/net`, see "Round 10" at
+the end) · 2026-11-11 · package `packages/device-net` · user guide [docs/network.md](../network.md)
 
 The person wants emulated boards to reach APIs "in an easy way", as a foundation:
 "it's about having the fundamentals of being able to add an api or something to the requests in
@@ -189,3 +190,30 @@ binary frames that come back through an I2S DAC part. Tests use a `ws` mock whos
 answers with recorded audio frames (`b64` / `bytes`, `delay_ms`), or a cassette of a real session;
 `checkRequest` asserts the request; `latency` and `wifi_drop` rehearse bad networks. Nothing in the
 gateway knows it is audio.
+
+## Round 10: what was built (branch `round10/net`)
+
+The plan above, with two changes found on the way:
+
+- **The netstack is TypeScript, not a Go / gVisor sidecar.** Only the far side of TCP is needed
+  (the device always connects out) and QEMU's stream netdev is a reliable, ordered link, so a small
+  stack in `packages/device-net/src/netstack` (Ethernet, ARP, IPv4, ICMP echo, UDP, a DHCP server,
+  server-side TCP with window, retransmission and zero-window probing, an L2 switch between boards)
+  does the job in one process with the gateway, with no extra toolchain or container. It runs with
+  the gateway in a worker thread (`DeviceNetHost`), so frames keep flowing while a lockstep emulator
+  blocks the main thread.
+- **Firmware trusts the sandbox CA without any `#ifdef`.** The simulation build wraps
+  `mbedtls_x509_crt_verify_restartable`: the sketch's own CAs first, then the sandbox CA, which
+  the board receives from the netstack when it joins. Sketches set the real root CA and stay
+  identical for the device. Wi-Fi is a link-time shim of the `esp_wifi_*` driver API (the station
+  netif is kept; its frames use the emulated Ethernet card), controlled by Jumper over EtherType
+  0x88B5: join / refuse (unknown SSID 201, wrong password 15), drop (beacon timeout 200), RSSI,
+  scans.
+
+Also built: jumper.json `network` in the project schema, tools `read_network`, `add_mock_api`,
+`inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request`
+and `network_fault` (run_tests forces mock mode); firmware/NETWORK.md in the factory pack; the
+Network panel (`GET /api/network`, fault buttons, a Try box); gateway delays and log times on the
+simulation's virtual clock; `QemuEspBackend {network: {framePort, mac}}`; examples
+`esp32-api-demo` (real recorded Open-Meteo cassette, mock MQTT broker) and `esp32-ws-stream`.
+Renode is not connected: its boards here have no network interface (see docs/network.md).
