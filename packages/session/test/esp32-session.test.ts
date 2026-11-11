@@ -112,7 +112,7 @@ describe.skipIf(!ready)("ESP32 boards through the session (real build, real QEMU
     const e = await call(s, "export", {});
     expect(e.files).toContain("firmware.bin");
     expect(e.flash).toMatch(/^esptool --chip esp32s3 --port <port> --baud 921600 write_flash 0x0 .*firmware\.bin$/);
-    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3; the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
+    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3 without Jumper's simulation shims \(JUMPER_SIM=0\); the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
     const bin = readFileSync(join(e.dir, "firmware.bin"));
     expect(bin[0]).toBe(0xe9); // the ESP image magic of the bootloader at 0x0
   });
