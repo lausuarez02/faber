@@ -86,6 +86,8 @@ export interface ProposeOptions extends LayoutOptions {
   goals?: LayoutGoal[];
   /** Safety stop for the search (ms). */
   time_ms?: number;
+  /** Round 8b: a lighter search for comparisons (choice costs): fewer steps, no round-7 stacker, one fitting depth at a fixed size. */
+  light?: boolean;
 }
 
 const LABEL: Record<LayoutGoal, string> = { thinnest: "Thinnest", smallest: "Smallest", balanced: "Balanced (pocket)" };
@@ -129,7 +131,7 @@ function missOf(L: Layout): number {
   return (f.fixed.w || f.fixed.h ? Math.max(0, f.scale - 1) * 1e3 : 0) + (f.depthMiss ? f.depthMiss.needed_mm - f.depthMiss.available_mm : 0);
 }
 
-function pocketOf(s: { w: number; h: number; d: number }): "fits" | "tight" | "no" {
+export function pocketOf(s: { w: number; h: number; d: number }): "fits" | "tight" | "no" {
   const [a, b, c] = [s.w, s.h, s.d].sort((x, y) => y - x) as [number, number, number];
   if (c <= 18 && a <= 110 && b <= 70) return "fits";
   if (c <= 22 && a <= 130 && b <= 80) return "tight";
@@ -142,7 +144,10 @@ export function goalCost(goal: LayoutGoal, L: Layout): number {
   const v = volumeOf(L);
   const d = L.outer.d;
   const [a, b] = [L.outer.w, L.outer.h].sort((x, y) => y - x) as [number, number];
-  if (goal === "thinnest") return base + Math.round(d * 10) * 1e7 + v;
+  // round 8b: at a fixed outline (size_mm w / h) the footprint is given, so the only thing left to
+  // choose is the thickness: balanced takes the thinnest layout that fits (never a deep stack when
+  // a thinner one fits the same outline)
+  if (goal === "thinnest" || (goal === "balanced" && (L.fit?.fixed.w || L.fit?.fixed.h))) return base + Math.round(d * 10) * 1e7 + v;
   if (goal === "smallest") return base + v * 1e3 + d;
   // balanced: a pocket takes about 18 mm comfortably (22 tight) and 110 x 70 mm
   const k = 1 + 0.06 * Math.max(0, d - 18) + 0.12 * Math.max(0, d - 22) + 0.03 * Math.max(0, a - 110) + 0.04 * Math.max(0, b - 70);
@@ -223,12 +228,12 @@ interface Cand {
 /** Everything the goals choose from: the optimizer's layouts (one per depth) and round 7's stacker. */
 function candidates(input: LayoutInput, opts: ProposeOptions): Cand[] {
   const out: Cand[] = [];
-  const auto: AutoCandidate[] = autoLayouts(input, { ...(opts.quick ? { iters: 220, depths: 3 } : {}), ...(opts.time_ms ? { timeMs: opts.time_ms } : {}) });
+  const auto: AutoCandidate[] = autoLayouts(input, { ...(opts.quick ? { iters: 220, depths: 3 } : {}), ...(opts.light ? { iters: 160, depths: 3, fitStop: 1 } : {}), ...(opts.time_ms ? { timeMs: opts.time_ms } : {}) });
   for (const c of auto) out.push({ L: c.layout, source: `optimizer, ${c.D.toFixed(1)} mm deep inside${c.container === "outline" ? "" : ` (${c.container})`}` });
   // round 7's stacker does not know a part pinned by its centre or its layer: it only competes without such pins
   const pins = Object.entries(input.enclosure.placements ?? {}).some(([, pl]) => pl.layer !== undefined || ((pl.x_mm !== undefined || pl.y_mm !== undefined) && !pl.face));
   // (a preset at auto size keeps round 6's fuller search, as before; it forces the quick one itself otherwise)
-  if (!pins || !out.length) out.push({ L: stackLayout(input, { quick: !!opts.quick }), source: "stacked front to back (round 7)" });
+  if ((!pins && !opts.light) || !out.length) out.push({ L: stackLayout(input, { quick: !!opts.quick }), source: "stacked front to back (round 7)" });
   return out;
 }
 

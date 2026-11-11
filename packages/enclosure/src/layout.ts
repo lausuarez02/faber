@@ -30,6 +30,8 @@ export interface OptimizeOptions {
   depths?: number;
   /** Safety stop for the whole search, ms. */
   timeMs?: number;
+  /** Round 8b: at a fixed outline, stop after this many depths that fit (default 2). */
+  fitStop?: number;
 }
 
 /** One finished layout the optimizer made at a cavity depth. */
@@ -263,6 +265,9 @@ function domeRadius(S: number, rp: number, crown: number): number {
 
 /** Rounded front / back edge radius as a share of the outer depth, per shape (a pebble and a pill are round all over, a puck has soft edges). */
 export const EDGE_SHARE: Record<CaseShape, number> = { pebble: 0.44, pill: 0.44, puck: 0.34, keychain: 0.38, "rounded-box": 0, custom: 0.44 };
+
+/** Round 8b: a dome over this (mm, per face) is called out with what it costs in thickness. */
+export const DOME_WARN_MM = 3;
 
 /** Default dome per shape (mm): pebble and custom bulge ~2 % of their span (0.5 to 1 mm), the others are flat. */
 function autoCrown(shape: CaseShape, S: number): number {
@@ -649,7 +654,10 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     else for (const asp of shape === "puck" ? [1] : [1, 0.75]) containers.push({ radial: radialOf(presetPoints(shape, 60, 60 * asp, params.corner_radius_mm), 1, 1), fixed: false, label: `aspect ${asp}` });
     const crownEst = (v: number | "auto") => (v === "auto" ? (shape === "pebble" || shape === "custom" ? 1 : 0) : v);
     const maxD = depthFixed !== undefined ? depthFixed - 2 * t - crownEst(params.dome_mm) - crownEst(params.dome_back_mm) : Infinity;
-    let Ds = depthCandidates(items, g, Number.isFinite(maxD) ? maxD : 60, opts.optimize.depths ?? 5);
+    // round 8b: at a fixed outline (size_mm w / h) the plan cannot grow, so the depth is what gives:
+    // the search keeps going deeper (thinnest first) until a layout fits, then stops after one more
+    const fixedPlan = !!polySpec?.fixed;
+    let Ds = depthCandidates(items, g, Number.isFinite(maxD) ? maxD : 60, fixedPlan ? Math.max(10, opts.optimize.depths ?? 5) : (opts.optimize.depths ?? 5));
     if (Number.isFinite(maxD)) Ds = [...new Set([...Ds.filter((d) => d <= maxD + 1e-6), Math.max(4, Math.round(maxD * 10) / 10)])].sort((a, b) => a - b);
     const seed = hashSeed(items.map((it) => `${it.id}:${it.variants.length}`).join("|") + shape);
     const deadline = performance.now() + (opts.optimize.timeMs ?? 6000);
@@ -669,8 +677,31 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       // area of the container at scale 1 (mm²), for a first guess of the scale
       let a1 = 0;
       for (let k = 0; k < ct.radial.r.length; k++) a1 += 0.5 * ct.radial.r[k]! ** 2 * ((2 * Math.PI) / ct.radial.r.length);
+      let fitting = 0;
       for (const D of Ds) {
-        const r = searchAtDepth(items, env, D, { iters: Math.round((opts.optimize.iters ?? 600) / Math.sqrt(containers.length)), seed, deadline, ...(ct.fixed ? { minScale: 1, startScale: 1 } : { startScale: Math.sqrt(partsArea / Math.max(1, a1)) * 0.9 }) });
+        if (ct.fixed && fitting >= (opts.optimize.fitStop ?? 2)) break;
+        const iters = Math.round((opts.optimize.iters ?? 600) / Math.sqrt(containers.length));
+        let r = searchAtDepth(items, env, D, { iters, seed, deadline, ...(ct.fixed ? { minScale: 1, startScale: 1 } : { startScale: Math.sqrt(partsArea / Math.max(1, a1)) * 0.9 }) });
+        let Lc = finishAt(D, r);
+        // a fixed outline the search filled to the brim, where the finished case (real rims, wall
+        // lip, spot faces) pokes out by a mm or two: search again in a slightly smaller outline
+        for (const k of [0.97, 0.94, 0.91]) {
+          if (!ct.fixed || !Lc || Lc.fit?.fits !== false || r.failed.length || r.size > 1 + 1e-6 || Lc.fit.depthMiss) break;
+          const shrunk: OEnv = { ...env, radial: { r: ct.radial.r.map((v) => v * k), c: ct.radial.c } };
+          const r2 = searchAtDepth(items, shrunk, D, { iters, seed, deadline, minScale: 1, startScale: 1 });
+          if (r2.failed.length || r2.size > 1 + 1e-6) break;
+          const L2 = finishAt(D, r2);
+          if (!L2) break;
+          r = r2;
+          Lc = L2;
+        }
+        if (!Lc) continue;
+        if (Lc.fit?.fits !== false && !Lc.issues.some((i) => i.severity === "error")) fitting++;
+        cands.push({ layout: Lc, D, size: r.size, failed: r.failed.map((k) => items[k]!.id), iters: r.iters, container: ct.label });
+      }
+    }
+    function finishAt(D: number, r: ReturnType<typeof searchAtDepth>): Layout | undefined {
+      {
         const placedL: Placed[] = r.placed.map((q) => {
           const d = vdata[q.item]![q.v]!;
           const min: Vec3 = [q.x, q.y, q.z0];
@@ -683,9 +714,8 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
           const id = items[k]!.id;
           iss.push({ id: "fits", ok: false, severity: "error", message: `${id} could not be placed with the others. Why: at ${D.toFixed(1)} mm of depth there is no spot where it fits, reaches its wall and keeps clear of the other parts. Fix: let the case be deeper (a larger size_mm.d or depth_mm), move it with placements, or exclude it.`, parts: [id] });
         }
-        if (!placedL.length) continue;
-        const Lc = finish(placedL, iss);
-        cands.push({ layout: Lc, D, size: r.size, failed: r.failed.map((k) => items[k]!.id), iters: r.iters, container: ct.label });
+        if (!placedL.length) return undefined;
+        return finish(placedL, iss);
       }
     }
     if (!cands.length) {
@@ -1146,6 +1176,17 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     const smin = Math.min(...rim.map(([px, py]) => Math.hypot(px - plan.cx, py - plan.cy)));
     dome = { front: sc ? mk(sc[0], sc[1], winR + 2.5, "front") : mk(plan.cx, plan.cy, 0.45 * smin, "front"), back: mk(plan.cx, plan.cy, 0.45 * smin, "back") };
     if (!dome.front.crown && !dome.back.crown) dome = null;
+    // round 8b: a big dome is thickness the person holds: say what it costs over the default bulge
+    if (dome && !fixedCrown) {
+      const S = Math.max(...rim.map(([px, py]) => Math.hypot(px - plan.cx, py - plan.cy)));
+      const def = autoCrown(shape, S);
+      const big = ([["front", dome.front.crown], ["back", dome.back.crown]] as const).filter(([, c]) => c > DOME_WARN_MM);
+      if (big.length) {
+        const extra = r1(dome.front.crown + dome.back.crown - 2 * def);
+        const both = big.length === 2 && Math.abs(dome.front.crown - dome.back.crown) < 0.05;
+        issues.push({ id: "dome", ok: false, severity: "warning", message: `The ${both ? `${r1(dome.front.crown)} mm dome on both faces` : big.map(([f, c]) => `${r1(c)} mm dome on the ${f}`).join(" and the ")} adds ${extra} mm of thickness over the default bulge (about ${r1(def)} mm a face). Why: a dome bulges out past the parts, so every mm of it is case thickness to hold. Fix: dome_mm 1.5 (still rounded) or "auto"${big.length === 1 && big[0]![0] === "back" ? ", or dome_back_mm 1.5" : ""}.` });
+      }
+    }
   }
   for (const p of placed) {
     for (const f of p.mech.features) {
