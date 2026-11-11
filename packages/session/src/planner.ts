@@ -1,4 +1,5 @@
 import type { PartDefinition, PartRegistry, PartSpec } from "@jumper/sim-core";
+import { LIPO_CELLS } from "@jumper/enclosure";
 
 /**
  * Round 5, track "agent" (decision 0003, C5 `plan_device`): turn a wish ("a pet that fits in my
@@ -19,6 +20,8 @@ export interface PlanConstraints {
   budget_usd?: number;
   battery_hours?: number;
   board?: string;
+  /** Round 8: pick the smallest parts that do the job (also on for pocket / small / tiny / a named shape). */
+  compact?: boolean;
 }
 
 export type BomSource = "simulated-exactly" | "stand-in" | "agent-made" | "not-simulated";
@@ -51,6 +54,12 @@ export interface DevicePlan {
   bom: BomLine[];
   size_mm: { parts: { w: number; h: number; d: number }; enclosure: { w: number; h: number; d: number }; note: string };
   battery?: { type: string; capacity_mah: number; avg_ma: number; hours: number; note: string };
+  /**
+   * Round 8: what the parts take up, from their own dimensions_mm: the sum of footprints, the side
+   * of a square that holds them laid flat (no air), the thickest part, the parts' own volume, and
+   * (compact plans) each smaller choice made and what it saves.
+   */
+  size_budget: { footprint_mm2: number; flat_mm: number; max_thickness_mm: number; thickest: string; parts_volume_cm3: number; choices: string[]; note: string };
   total_usd: number;
   cannot_check: string[];
   warnings: string[];
@@ -130,6 +139,8 @@ const HELPERS: Record<string, Need> = {
   resistor3: { key: "resistor3", match: /^$/, label: "220 Ω resistor", ids: ["resistor"], why: "one per colour, so each LED leg gets a safe current", qty: () => 3 },
   resistor10k: { key: "resistor10k", match: /^$/, label: "10 kΩ resistor", ids: ["resistor"], why: "forms a divider with the light sensor so the board can read it" },
   speaker: { key: "speaker", match: /^$/, label: "speaker 8 Ω 0.5 W (28 mm)", ids: ["speaker"], why: "the DFPlayer plays its clips through it (SPK_1 / SPK_2)" }, // round 7 voice
+  // round 8: the smallest speaker that is still clearly audible for speech
+  speakerSmall: { key: "speaker", match: /^$/, label: "speaker 8 Ω 0.5 W (20 mm)", ids: ["speaker-20mm", "speaker"], why: "the DFPlayer plays its clips through it (SPK_1 / SPK_2); 20 mm is the smallest that is still clearly audible for speech (speaker-15mm is smaller but quiet)" },
   resistor1k: { key: "resistor1k", match: /^$/, label: "1 kΩ resistor", ids: ["resistor"], why: "in series with the DFPlayer RX: less hiss and a safe 3.3 V input" }, // round 7 voice
 };
 
@@ -156,7 +167,12 @@ function words(d: PartDefinition): string {
 }
 
 /** The part for a need: ids first (built-in or agent-made), then search phrases. */
-function findPart(reg: PartRegistry, need: Need): PartDefinition | undefined {
+function findPart(reg: PartRegistry, need: Need, compact = false): PartDefinition | undefined {
+  if (compact && need.ids.length > 1) {
+    // round 8: the smallest of the parts that do this job
+    const have = need.ids.map((id) => reg.get(id)).filter((d): d is PartDefinition => !!d && !!d.spec.dimensions_mm);
+    if (have.length) return have.sort((a, b) => footprint(a.spec) - footprint(b.spec))[0];
+  }
   for (const id of need.ids) {
     const d = reg.get(id);
     if (d) return d;
@@ -170,12 +186,21 @@ function findPart(reg: PartRegistry, need: Need): PartDefinition | undefined {
   return undefined;
 }
 
+const footprint = (s: PartSpec) => (s.dimensions_mm ? s.dimensions_mm.w * s.dimensions_mm.h : Number.POSITIVE_INFINITY);
+
 /** Physical size: dimensions_mm, or the w × h from the part's footprint text (d unknown). */
 function dims(spec: PartSpec): { w: number; h: number; d?: number; from: "data" | "footprint" } | undefined {
   if (spec.dimensions_mm) return { ...spec.dimensions_mm, from: "data" };
   const m = /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)(?:\s*[×x]\s*(\d+(?:\.\d+)?))?\s*mm/.exec(spec.footprint ?? "");
   if (!m) return undefined;
   return { w: Number(m[1]), h: Number(m[2]), ...(m[3] ? { d: Number(m[3]) } : {}), from: "footprint" };
+}
+
+/** A LiPo line's cell size: the common pouch cell for its capacity (as the case packs it), else the part's own size. */
+function cellDims(reg: PartRegistry, l: BomLine): { w: number; h: number; d: number } | undefined {
+  const cap = Number(l.props?.capacity ?? 500);
+  const c = LIPO_CELLS.find((x) => x.mAh >= cap);
+  return c ? { w: c.w, h: c.h, d: c.d } : reg.get("lipo-battery")?.spec.dimensions_mm;
 }
 
 /** Supply current: current_ma.typ, or a typical figure the part already declares in limits. */
@@ -225,11 +250,15 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const g = ` ${goal.toLowerCase().replace(/\s+/g, " ")} `;
   const c = constraints;
   const pocket = !!c.pocket || /pocket|keychain|key ?ring|wearable|wrist|smart ?watch|badge|tiny|small enough/.test(g);
-  const portable = pocket || c.battery_hours !== undefined || /battery|portable|wireless|on the go|carry|outside|camping/.test(g);
+  let portable = pocket || c.compact === true || !!/\b(egg|keychain|key ?ring|hand-?held|palm)\b/.exec(g) || c.battery_hours !== undefined || /battery|portable|wireless|on the go|carry|outside|camping/.test(g);
   // Round 7: a shape the person names ("shaped like an egg") is a custom outline, never a preset
   const shapeWord = /\b(egg|heart|bean|star|cloud|ghost|cat|bear|frog|fish|leaf|teardrop|guitar pick|kidney|apple|pear|mushroom|shell|blob)\b/.exec(g)?.[1];
   const shapeWish = shapeWord && /sh\w*pe|like|look|form|case/.test(g) ? shapeWord : undefined;
+  if (shapeWish) portable = true; // round 8: a thing shaped like an egg or a heart is held, so it runs on a battery
   const sizeLimit = c.max_size_mm ?? (pocket ? POCKET : undefined);
+  // Round 8: a device to hold (pocket, small, tiny, a keychain, a named shape) gets the smallest parts that do the job.
+  const compact = c.compact ?? (pocket || !!shapeWish || /\b(small|smaller|tiny|little|mini|compact|keychain|key ?ring|palm|hand-?held|egg)\b/.test(g) || (!!c.max_size_mm && c.max_size_mm.w * c.max_size_mm.h < 120 * 80));
+  const choices: string[] = [];
 
   // Which needs the wish names.
   const matched = new Map<string, Need>();
@@ -237,7 +266,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   if (matched.has("light-sensor") && !/\blights? up|\bleds?\b|lamp|glow|night ?light/.test(g)) matched.delete("led");
   for (const n of [...matched.values()]) if (n.unless?.some((k) => matched.has(k))) matched.delete(n.key);
   for (const n of [...matched.values()]) for (const w of n.with ?? []) {
-    const extra = NEEDS.find((x) => x.key === w) ?? HELPERS[w];
+    const extra = NEEDS.find((x) => x.key === w) ?? (compact && w === "speaker" ? HELPERS.speakerSmall : HELPERS[w]);
     if (extra && !matched.has(w)) matched.set(w, extra);
   }
   const rover = matched.has("rover");
@@ -250,7 +279,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
 
   for (const n of matched.values()) {
     const qty = n.qty ? n.qty(g) : 1;
-    const def = findPart(reg, n);
+    const def = findPart(reg, n, compact);
     if (n.cannot) cannot.add(n.cannot);
     if (def) {
       const s = def.spec;
@@ -271,6 +300,15 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
         ...(props ? { props } : {}),
         ...(cur && cur.from === "limits" ? { assumption: "current from the part's typical-current limit (no current_ma yet)" } : {}),
       });
+      // round 8: say when a smaller part than the usual one was picked, and what it saves
+      const usual = n.key === "speaker" ? "speaker" : n.ids[0];
+      const usualDef = usual && usual !== s.id ? reg.get(usual) : undefined;
+      if (compact && usualDef?.spec.dimensions_mm && s.dimensions_mm && footprint(s) < footprint(usualDef.spec)) {
+        const a = usualDef.spec.dimensions_mm;
+        const short = (x: string) => x.replace(/ \(.*\)$/, "");
+        const [mine, theirs] = short(s.name) === short(usualDef.spec.name) ? [s.name, usualDef.spec.name] : [short(s.name), short(usualDef.spec.name)];
+        choices.push(`${mine} (${s.dimensions_mm.w} x ${s.dimensions_mm.h} x ${s.dimensions_mm.d} mm) instead of the ${theirs} (${a.w} x ${a.h} x ${a.d} mm): ${Math.round(footprint(usualDef.spec) - footprint(s))} mm² less${n.key === "speaker" ? "; a bit quieter, still clear for speech" : ""}`);
+      }
       if (def.fidelity.origin === "agent-made") cannot.add(`${s.name} is agent-made: it behaves as the agent described it, unverified against the real part`);
       continue;
     }
@@ -289,7 +327,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   }
 
   // Board.
-  const small = pocket || (!!sizeLimit && sizeLimit.w * sizeLimit.h < 120 * 80);
+  const small = compact || pocket || (!!sizeLimit && sizeLimit.w * sizeLimit.h < 120 * 80);
   const { def: boardDef, why: boardWhy } = chooseBoard(reg, c, needs5v, small);
   const b = boardDef.spec;
   const bcur = currentMa(b);
@@ -305,12 +343,16 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     buy_links: b.buy_links?.length ? b.buy_links : searchLinks(b.name),
   });
   const vcc = b.mcu?.vcc ?? 5;
+  if (compact && !c.board) {
+    const uno = reg.get("arduino-uno")?.spec;
+    if (uno?.dimensions_mm && b.dimensions_mm && b.id !== uno.id) choices.push(`${b.name} (${b.dimensions_mm.w} x ${b.dimensions_mm.h} x ${b.dimensions_mm.d} mm) instead of an Arduino Uno (${uno.dimensions_mm.w} x ${uno.dimensions_mm.h} x ${uno.dimensions_mm.d} mm): ${Math.round(footprint(uno) - footprint(b))} mm² less`);
+  }
   if (vcc < 4.5 && needs5v.length) warnings.push(`${needs5v.join(", ")} need${needs5v.length > 1 ? "" : "s"} 5 V, but the ${b.name} runs at ${vcc} V: power ${needs5v.length > 1 ? "them" : "it"} from 5 V (VBUS / VSYS) and put a level shifter or divider on signals going back into the board`);
 
   // Battery.
   let battery: DevicePlan["battery"];
   if (portable || rover) {
-    const kind = rover ? BATTERIES.lipo2s : pocket ? BATTERIES.lipo1s : BATTERIES.aa4;
+    const kind = rover ? BATTERIES.lipo2s : pocket || compact ? BATTERIES.lipo1s : BATTERIES.aa4;
     const pack = reg.get("battery-pack");
     const cell = kind === BATTERIES.lipo1s ? reg.get("lipo-battery") : undefined;
     const charger = cell ? reg.get("tp4056-charger") : undefined;
@@ -356,6 +398,16 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
         bom.push({ type: null, name: "5 V boost converter (MT3608 or similar)", qty: 1, why: `a 3.7 V cell is below the 5 V the ${b.name} needs on ${in5 ? (in5.label ?? in5.id) : "its supply pin"}; the boost raises it`, source: "not-simulated", price_usd: 2, buy_links: searchLinks("mt3608 boost converter"), assumption: "typical $2, 22 × 17 mm (not a catalog part)" });
       }
       cannot.add("the boost converter's switching noise on the 5 V rail (its efficiency is modelled as a fixed 88 %)");
+      const cb = reg.get("charge-boost-5v")?.spec;
+      const tp = reg.get("tp4056-charger")?.spec;
+      const bo = reg.get("boost-converter")?.spec;
+      if (compact && cb && tp && bo) choices.push(`kept the TP4056 + boost: one charge-boost-5v module (${cb.dimensions_mm!.w} x ${cb.dimensions_mm!.h} mm) would save ${Math.round(footprint(tp) + footprint(bo) - footprint(cb))} mm², but it charges at about 2 A (only for a cell of 2000 mAh or more) and switches off under about 45 mA`);
+    } else if (compact && kind === BATTERIES.lipo1s && reg.get("boost-converter")) {
+      // round 8: say why there is no booster, and what it would have cost
+      const bo = reg.get("boost-converter")!.spec;
+      const fromCell = bom.filter((l) => l.type && reg.get(l.type)?.spec.category !== "board" && (reg.get(l.type)?.spec.current_ma?.typ ?? 0) >= 15 && reg.get(l.type)?.spec.pins.some((p) => p.type === "power" && p.voltage && p.voltage.min <= 3.3 && p.voltage.max >= 4.5)).map((l) => l.name.replace(/ \(.*\)$/, ""));
+      choices.push(`no 5 V boost converter: the ${b.name} takes the cell ${takesCell ? `on ${takesCell.id}` : `on ${usbPin?.id ?? "VBUS"} through the diode`}${fromCell.length ? ` and the ${fromCell.join(", ")} run${fromCell.length > 1 ? "" : "s"} from 3.3 to 4.2 V` : ""}; a boost would add ${bo.dimensions_mm!.w} x ${bo.dimensions_mm!.h} x ${bo.dimensions_mm!.d} mm (${Math.round(footprint(bo))} mm²) and waste about 12 % of the battery`);
+      if (bom.some((l) => l.type === "dfplayer-mini")) warnings.push("power the DFPlayer from the switched battery (after the slide switch, before the diode): it runs from 3.2 to 5 V, a bit quieter than at 5 V, and needs no boost converter");
     }
     let avg = 0;
     const noCurrent: string[] = [];
@@ -371,14 +423,34 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     }
     // round 6 power: a boost from a 3.7 V cell to 5 V takes 5 / 3.7 / 0.88 ≈ 1.5 × the load's current from the cell.
     if (bom.some((l) => l.type === "boost-converter")) avg = avg * (5 / 3.7 / 0.88);
-    const usable = kind.capacity * 0.8;
+    // round 8: a compact device gets the smallest common pouch cell that lasts the asked time (3 h when none is asked)
+    let capacity: number = kind.capacity;
+    const cellLine = bom.find((l) => l.type === "lipo-battery");
+    if (compact && cellLine && avg > 0) {
+      const target = c.battery_hours ?? 3;
+      const needMah = (target * avg) / 0.8;
+      const pick = LIPO_CELLS.find((x) => x.mAh >= needMah) ?? LIPO_CELLS[LIPO_CELLS.length - 1]!;
+      capacity = pick.mAh;
+      cellLine.props = { capacity };
+      cellLine.name = `${reg.get("lipo-battery")!.spec.name}, ${capacity} mAh (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm)`;
+      cellLine.why = `the smallest common pouch cell for about ${target} h${c.battery_hours === undefined ? " (no runtime was asked: pass battery_hours to change it)" : ""}`;
+      const chg = bom.find((l) => l.type === "tp4056-charger");
+      if (chg) {
+        chg.props = { chargeCurrentmA: Math.min(1000, capacity) };
+        const t = reg.get("tp4056-charger")!.spec.dimensions_mm!;
+        choices.push(`real-world alternative, not simulated in Jumper: a XIAO nRF52840 or XIAO ESP32-S3 charges a LiPo on the board itself and would save the TP4056 (${t.w} x ${t.h} x ${t.d} mm); Jumper simulates only AVR and RP2040 boards, so the plan keeps the TP4056`);
+      }
+      const big = LIPO_CELLS.find((x) => x.mAh >= 500);
+      if (big && pick.mAh < big.mAh) choices.push(`a ${pick.mAh} mAh cell (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm) instead of 500 mAh (${big.code}, ${big.w} x ${big.h} x ${big.d} mm): ${Math.round(big.w * big.h - pick.w * pick.h)} mm² less, enough for about ${target} h at ${round1(avg)} mA`);
+    }
+    const usable = capacity * 0.8;
     const hours = avg > 0 ? round1(usable / avg) : 0;
     battery = {
-      type: kind.name,
-      capacity_mah: kind.capacity,
+      type: cellLine ? cellLine.name : kind.name,
+      capacity_mah: capacity,
       avg_ma: round1(avg),
       hours,
-      note: `80 % of ${kind.capacity} mAh at an average ${round1(avg)} mA, everything on all the time${rover ? " (motors and servos at a quarter of the time)" : ""}; sleep modes would stretch it.${noCurrent.length ? ` Not counted (no current figure): ${noCurrent.join(", ")}, so the real time is shorter.` : ""}`,
+      note: `80 % of ${capacity} mAh at an average ${round1(avg)} mA, everything on all the time${rover ? " (motors and servos at a quarter of the time)" : ""}; sleep modes would stretch it.${noCurrent.length ? ` Not counted (no current figure): ${noCurrent.join(", ")}, so the real time is shorter.` : ""}`,
     };
     if (noCurrent.length) missing.push(`current draw: ${noCurrent.join(", ")}`);
     if (c.battery_hours !== undefined && hours < c.battery_hours && avg > 0) {
@@ -396,7 +468,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   let batteryD = 0;
   for (const l of bom) {
     if (l.type === "lipo-battery") {
-      const x = reg.get("lipo-battery") ? dims(reg.get("lipo-battery")!.spec) : undefined;
+      const x = cellDims(reg, l);
       batteryD = Math.max(batteryD, x?.d ?? BATTERIES.lipo1s.dims.d);
       continue;
     }
@@ -431,6 +503,33 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     warnings.push(`the case comes out about ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm, bigger than ${pocket && !c.max_size_mm ? "a pocket" : "your limit"} (${sizeLimit.w} × ${sizeLimit.h} × ${sizeLimit.d} mm)${big.length ? `; the largest parts are ${big.join(", ")}` : ""}${c.board ? "" : ""}`);
   }
 
+  // Round 8: the size budget, from every line's own dimensions_mm (a LiPo at its capacity's cell size).
+  let fp = 0;
+  let vol = 0;
+  let thick = 0;
+  let thickest = "";
+  for (const l of bom) {
+    if (!l.type || l.type === "robot-chassis-2wd" || l.source === "stand-in") continue;
+    const x = l.type === "lipo-battery" ? cellDims(reg, l) : reg.get(l.type)?.spec.dimensions_mm;
+    if (!x) continue;
+    fp += x.w * x.h * l.qty;
+    vol += x.w * x.h * x.d * l.qty;
+    if (x.d > thick) {
+      thick = x.d;
+      thickest = l.name.replace(/ \(.*$/, "").replace(/,.*$/, "");
+    }
+  }
+  const flat = Math.ceil(Math.sqrt(fp));
+  const size_budget = {
+    footprint_mm2: Math.round(fp),
+    flat_mm: flat,
+    max_thickness_mm: thick,
+    thickest,
+    parts_volume_cm3: round1(vol / 1000),
+    choices,
+    note: `The parts cover ${Math.round(fp)} mm² laid flat (a ${flat} x ${flat} mm square with no air) and the thickest is the ${thickest} at ${thick} mm; their own volume is ${round1(vol / 1000)} cm³. A case packs them in two or three layers plus a wall, so expect a few times that volume.${compact ? " Compact plan: each part is the smallest in the library that does the job." : ""}`,
+  };
+
   // Price.
   let total = 0;
   const noPrice: string[] = [];
@@ -458,6 +557,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const listed = bom.slice(1).filter((l) => !/resistor|boost|schottky|slide switch/i.test(l.name)).map((l) => `${l.qty > 1 ? `${l.qty} ` : ""}${l.name.replace(/ \(.*\)$/, "")}`);
   const summary = [
     `${goal.trim().replace(/\.$/, "")}: ${b.name}${listed.length ? ` with ${listed.join(", ")}` : ""}.`,
+    ...(compact ? [`Size budget: the smallest parts that do the job, ${size_budget.footprint_mm2} mm² laid flat (${flat} × ${flat} mm), thickest ${thick} mm (${thickest}).`] : []),
     `About ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm in a case${battery && battery.hours ? `, about ${battery.hours} h per charge` : ""}, ${total > 0 ? `parts about $${total}${noPrice.length ? ` plus ${noPrice.length} unpriced line${noPrice.length > 1 ? "s" : ""}` : ""}` : "price not known yet (the parts have no price data)"}.`,
     `${simulated} of ${bom.length} lines are parts Jumper simulates as themselves${others.length ? `; ${others.map((l) => `${l.name} (${l.source})`).join(", ")}` : ""}.`,
   ].join(" ");
@@ -482,6 +582,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     board: { type: b.id, name: b.name, why: boardWhy },
     bom,
     size_mm: { parts: partsBox, enclosure, note: sizeNote },
+    size_budget,
     ...(battery ? { battery } : {}),
     total_usd: total,
     cannot_check: [...cannot],

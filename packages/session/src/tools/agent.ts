@@ -40,7 +40,7 @@ export const agentTools: ToolModule = {
       name: "plan_device",
       title: "Plan a device before building it",
       description:
-        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Jumper simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
+        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Jumper simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, size_budget {footprint_mm2, flat_mm, max_thickness_mm, thickest, parts_volume_cm3, choices} (compact plans: each smaller choice and the mm it saves), total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
       inputSchema: {
         type: "object",
         properties: {
@@ -54,6 +54,7 @@ export const agentTools: ToolModule = {
               budget_usd: { type: "number" },
               battery_hours: { type: "number", description: "Hours it should run on one charge." },
               board: { type: "string", description: 'Force a board type, e.g. "arduino-nano".' },
+              compact: { type: "boolean", description: "Pick the smallest parts that do the job (smallest board, screen, speaker and LiPo cell for the runtime, no boost converter unless something needs 5 V). On by itself when the goal says pocket, small, tiny, keychain or names a shape (an egg, a heart): those are custom outlines." },
             },
           },
         },
