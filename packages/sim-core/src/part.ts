@@ -544,28 +544,38 @@ export function createRegistry(defs: Iterable<PartDefinition>): PartRegistry {
 }
 
 /**
- * How a part looks before anything runs (no circuit solved, no firmware): its model's own
- * visualState() for these props. A blue LED shows a blue lens, not the drawing's default red
- * (round 10 eval: the canvas and screenshots drew every idle LED red). Undefined when the model
+ * How a part's props change its look before anything runs (no circuit solved, no firmware): the keys
+ * of its model's visualState() that differ from the same model with default props. A blue LED gives
+ * its blue lens (round 10 eval: the canvas and screenshots drew every idle LED red); a board gives
+ * nothing, so it does not look powered before a run. Undefined when nothing differs or the model
  * cannot be created without a simulation.
  */
 export function restVisualState(def: PartDefinition, id: string, props?: Record<string, PropValue>): VisualState | undefined {
-  try {
-    const model = def.create({
-      id,
-      spec: def.spec,
-      props: resolveProps(def.spec, props),
-      node: (pin) => `${id}:${pin}`,
-      internalNode: (name) => `${id}#${name}`,
-      requestSolve: () => {},
-      now: () => 0,
-    } as PartContext);
-    const state = model.visualState?.();
-    model.dispose?.();
-    return state;
-  } catch {
-    return undefined;
-  }
+  if (!props || !Object.keys(props).length) return undefined;
+  const look = (p: Record<string, PropValue> | undefined): VisualState | undefined => {
+    try {
+      const model = def.create({
+        id,
+        spec: def.spec,
+        props: resolveProps(def.spec, p),
+        node: (pin) => `${id}:${pin}`,
+        internalNode: (name) => `${id}#${name}`,
+        requestSolve: () => {},
+        now: () => 0,
+      } as PartContext);
+      const state = model.visualState();
+      model.dispose?.();
+      return state;
+    } catch {
+      return undefined;
+    }
+  };
+  const mine = look(props);
+  const base = look(undefined);
+  if (!mine || !base) return undefined;
+  const out: VisualState = {};
+  for (const [k, v] of Object.entries(mine)) if (JSON.stringify(v) !== JSON.stringify(base[k])) out[k] = v;
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** spec.props defaults overlaid with instance props. */

@@ -8,12 +8,14 @@ import { composeSvg } from "../src/screenshot.ts";
 describe("parts at rest look like their props", () => {
   it("restVisualState: a blue LED has a blue lens and is off", () => {
     const led = registry.get("led")!;
-    expect(restVisualState(led, "led1", { color: "blue" })).toMatchObject({ lens: "#12305A", brightness: 0, on: false });
-    expect(restVisualState(led, "led1")).toMatchObject({ lens: "#5A1712" });
+    expect(restVisualState(led, "led1", { color: "blue" })).toMatchObject({ lens: "#12305A", color: "#4DA3FF" });
+    expect(restVisualState(led, "led1")).toBeUndefined();
+    expect(restVisualState(led, "led1", { color: "red" })).toBeUndefined();
   });
 
-  it("a board model that needs a simulation gives no rest state instead of throwing", () => {
-    for (const d of registry.list()) expect(() => restVisualState(d, "x")).not.toThrow();
+  it("never throws, and a board does not look powered before a run", () => {
+    for (const d of registry.list()) expect(() => restVisualState(d, "x", { anything: 1 })).not.toThrow();
+    expect(restVisualState(registry.get("stm32-blackpill-f411")!, "pill", {})).toBeUndefined();
   });
 
   it("composeSvg before any run draws the blue LED's lens blue", () => {
