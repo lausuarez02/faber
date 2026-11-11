@@ -40,7 +40,8 @@
     "Wire1 / SPI1 and buses on other pins",
     "Bus electrical detail (clock stretching, rise times)",
     "The on-board LSM9DS1 IMU, APDS9960 and HTS221 sensors (Nano 33 BLE Sense) on Wire1",
-    "Arduino's bootloader (the app starts directly at 0x10000)"
+    "Arduino's bootloader (the app starts directly at 0x10000)",
+    "Serial1 RX: bytes sent to the board never reach the sketch (Mbed's UARTE receive through Renode's UART model; known gap, tested)"
   ],
   "testOnRealDevice": [
     "Anything Bluetooth",

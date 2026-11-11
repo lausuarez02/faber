@@ -26,12 +26,13 @@
     "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (jumper/renode image)",
     "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
     "Serial1 (UARTE0) with per-byte virtual time",
-    "Wire (TWIM0) to the I2C parts on the board's default pins",
-    "SPI (SPIM2) to the SPI parts on the board's default pins",
+    "Wire (TWIM0, Jumper's model: real address ACK / NACK) to the I2C parts on the board's default pins",
+    "SPI (SPIM3, Jumper's model) to the SPI parts on the board's default pins",
     "analogRead through Jumper's SAADC model",
     "analogWrite / Servo / tone through Jumper's PWM0..3 model (period and duty drawn as exact edges)",
     "The BQ25101 LiPo charger: CC at 50 mA (100 mA with P0.13 LOW) then CV at 4.2 V, ~CHG on P0.17, the charge LED; the battery runs the board without USB",
-    "VBAT on P0.31 through the 1M / 510k divider while P0.14 is LOW"
+    "VBAT on P0.31 through the 1M / 510k divider while P0.14 is LOW",
+    "Nordic's MBR + S140 SoftDevice boot, FreeRTOS tickless idle (interrupts wake WFE as on the chip): about 5x real time on an idle sketch"
   ],
   "doesNotEmulate": [
     "Bluetooth LE and the 2.4 GHz radio",
@@ -43,8 +44,7 @@
     "Bus electrical detail (clock stretching, rise times)",
     "The UF2 bootloader and double-tap reset",
     "The XIAO nRF52840 Sense's IMU and microphone",
-    "The charger's thermal regulation, safety timers and termination detail",
-    "Speed: FreeRTOS's idle loop spins in the emulator (WFE runs as a no-op), so idle-heavy sketches run slower than real time"
+    "The charger's thermal regulation, safety timers and termination detail"
   ],
   "testOnRealDevice": [
     "Anything Bluetooth",

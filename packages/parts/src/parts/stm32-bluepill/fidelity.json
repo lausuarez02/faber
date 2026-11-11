@@ -7,7 +7,7 @@
     },
     "timing": {
       "level": "approx",
-      "note": "Virtual time counts one instruction per core clock cycle at the board's clock (no pipeline, wait-state or cache timing), so delay(), millis() and timers are exact in virtual time and busy loops are close. A part's reaction to a pin edge lands at the next simulation step (1 ms by default), not mid-step."
+      "note": "Virtual time counts one instruction per core clock cycle at the board's clock (no pipeline, wait-state or cache timing), so delay(), millis() and timers are exact in virtual time and busy loops are close. A part's reaction to a pin edge lands at the next simulation step (1 ms by default), not mid-step. Measured on an M4 Max: about 0.5 to 1x real time with 1 ms steps (busy-wait delay() runs every instruction)."
     },
     "analog": {
       "level": "approx",
@@ -50,6 +50,7 @@
     "Upload: DFU / ST-LINK / serial bootloader on your computer",
     "Analog readings: the real ADC has offset, noise and sampling-time effects",
     "Timing-critical code: the emulator counts one cycle per instruction",
-    "5 V parts: only the FT pins tolerate 5 V as inputs; outputs are 3.3 V"
+    "5 V parts: only the FT pins tolerate 5 V as inputs; outputs are 3.3 V",
+    "I2C scanners: on these boards each absent address costs about 130 ms of virtual time in the emulator (Renode's STM32 I2C model plus STM32duino's timeout), so a full scan is slow; addressed devices answer at full speed"
   ]
 }
