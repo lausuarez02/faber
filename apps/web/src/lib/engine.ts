@@ -1,4 +1,4 @@
-import { Simulation, applyVisualState, type VisualState } from "@jumper/sim-core";
+import { Simulation, applyVisualState, restVisualState, type VisualState } from "@jumper/sim-core";
 import { backendFactory } from "@jumper/sim-backends";
 import type { Project, PropValue } from "@jumper/project-format";
 import { registry, tftTypeFor } from "./parts.ts";
@@ -750,16 +750,18 @@ export class Engine {
     const view = this.parts.get(id);
     const sim = this.sim;
     const ext = this.external && !this.localRun;
-    if (!view || (!sim && !ext)) return;
+    if (!view) return;
     let state: VisualState | undefined;
     if (ext) state = this.external!.get(id);
-    else {
+    else if (sim) {
       try {
-        state = sim!.partState(id);
+        state = sim.partState(id);
       } catch {
         state = undefined;
       }
     }
+    // Round 10 eval: before anything runs, a part looks the way its props make it (a blue LED's lens is blue).
+    state ??= this.restState(id);
     if (!state) return;
     const sig = JSON.stringify(state);
     if (!force && sig === view.last) return; // only touch parts whose state changed
@@ -770,6 +772,17 @@ export class Engine {
     this.tfts.paint(id, state);
     paintStateAttrs(view.el, state);
     this.voice.update(id, state); // round 7 voice: speech bubble + the browser's voice
+  }
+
+  private restStates = new Map<string, VisualState | undefined>();
+
+  private restState(id: string): VisualState | undefined {
+    const part = this.store.getState().project.parts.find((p) => p.id === id);
+    const def = part && registry.get(part.type);
+    if (!part || !def) return undefined;
+    const key = `${id}|${part.type}|${JSON.stringify(part.props ?? {})}`;
+    if (!this.restStates.has(key)) this.restStates.set(key, restVisualState(def, id, part.props as Record<string, PropValue> | undefined));
+    return this.restStates.get(key);
   }
 
   private paintIdle(): void {

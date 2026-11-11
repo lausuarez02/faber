@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { colorFrameToPng, decodeMonoFrame, monoPixel, parseBindings, routePath, routeWire, type ColorFrame, type PartRegistry, type RouteBox, type VisualState } from "@jumper/sim-core";
+import { colorFrameToPng, decodeMonoFrame, monoPixel, parseBindings, restVisualState, routePath, routeWire, type ColorFrame, type PartRegistry, type RouteBox, type VisualState } from "@jumper/sim-core";
 import type { Project, Rotation } from "@jumper/project-format";
 import { drawArm, drawWorld, type WorldSnapshot } from "@jumper/physics";
 import { sizeOf } from "./layout.ts";
@@ -210,7 +210,9 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     const { spec } = b.def;
     const state = opts.states?.[b.p.id];
     let svg = b.def.svg.replace(/<\?xml[^>]*>/, "");
-    if (state) svg = bindSvgString(svg, state);
+    // before a run, the part as its props make it look (a blue LED's lens is blue)
+    const bound = state ?? restVisualState(b.def, b.p.id, b.p.props);
+    if (bound) svg = bindSvgString(svg, bound);
     // Make ids unique per instance so gradients/filters of two copies do not collide.
     svg = svg.replace(/\bid="([^"]+)"/g, `id="${b.p.id}--$1"`).replace(/url\(#([^)]+)\)/g, `url(#${b.p.id}--$1)`).replace(/href="#([^"]+)"/g, `href="#${b.p.id}--$1"`);
     svg = svg.replace(/<svg\b([^>]*)>/, (_m, attrs: string) => `<svg${attrs.replace(/\s(width|height|x|y)="[^"]*"/g, "")} x="0" y="0" width="${spec.size.w}" height="${spec.size.h}">`);

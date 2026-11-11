@@ -543,6 +543,31 @@ export function createRegistry(defs: Iterable<PartDefinition>): PartRegistry {
   return { get: (t) => map.get(t), list: () => sorted.slice() };
 }
 
+/**
+ * How a part looks before anything runs (no circuit solved, no firmware): its model's own
+ * visualState() for these props. A blue LED shows a blue lens, not the drawing's default red
+ * (round 10 eval: the canvas and screenshots drew every idle LED red). Undefined when the model
+ * cannot be created without a simulation.
+ */
+export function restVisualState(def: PartDefinition, id: string, props?: Record<string, PropValue>): VisualState | undefined {
+  try {
+    const model = def.create({
+      id,
+      spec: def.spec,
+      props: resolveProps(def.spec, props),
+      node: (pin) => `${id}:${pin}`,
+      internalNode: (name) => `${id}#${name}`,
+      requestSolve: () => {},
+      now: () => 0,
+    } as PartContext);
+    const state = model.visualState?.();
+    model.dispose?.();
+    return state;
+  } catch {
+    return undefined;
+  }
+}
+
 /** spec.props defaults overlaid with instance props. */
 export function resolveProps(spec: PartSpec, props?: Record<string, PropValue>): Record<string, PropValue> {
   const out: Record<string, PropValue> = {};

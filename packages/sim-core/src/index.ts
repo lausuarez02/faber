@@ -44,6 +44,7 @@ export {
   FidelitySchema,
   createRegistry,
   resolveProps,
+  restVisualState,
 } from "./part.ts";
 export type {
   PartCategory,
