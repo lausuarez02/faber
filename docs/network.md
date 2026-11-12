@@ -123,3 +123,16 @@ frames from any source, so a Renode frame bridge would be the only new piece.
 Mock and cassette answers are the same every run, and the scenario steps check outcomes. Timing is
 not bit-exact: frames cross a socket while QEMU is parked in lockstep, gateway delays (`delay_ms`,
 `latency`) are wall-clock, and the emulator runs at about 0.7 to 2x real time.
+
+## Streaming downloads (round 13)
+
+A device that reads slowly (it plays audio while it downloads, say) used to stall a streamed body
+for good or for seconds: frames that arrived together while QEMU was parked overflowed the Ethernet
+driver's few RX buffers (each drop cost the sender a 1 s retransmission timeout), and a zero-window
+probe byte the device kept was never accounted for, so its ACKs looked bogus and nothing more was
+sent. Now QEMU's OpenCores Ethernet holds a frame until the driver frees a buffer (patch
+`toolchains/qemu-esp/0005-jumper-eth-rx.patch`, what an access point's buffering looks like to the
+device) and the netstack's probe takes its sequence number. Checked by
+`packages/device-net/test/audio-stream.integration.test.ts` (PCM and a chunked WAV played as they
+arrive, no gaps) and the zero-window unit test in `test/netstack.test.ts`. Firmware should still
+buffer a little before it starts playing: a real network has jitter too.

@@ -24,6 +24,13 @@ Flash image: the merged 4 MB image (`esptool merge-bin`: bootloader at 0x0 (S3/C
 
 ## The bridge (what the patch adds)
 
+> Round 13: protocol version 6 (patch `0004-jumper-i2s.patch`, tag `…-jb6`) adds the QEMU I2S device
+> behind `ST` / `SR` (ESP32 I2S0/1 with their DMA, S3 I2S0/1 and C3 I2S0 through GDMA) and silent
+> blocks as `z<nbytes>`; patch `0005-jumper-eth-rx.patch` makes the OpenCores Ethernet hold an RX
+> frame in QEMU's queue until the driver frees a descriptor (bursts delivered while the CPU is parked
+> used to overflow its few RX buffers and cost the sender a 1 s retransmission). See
+> `docs/esp32-peripherals.md` ("I2S").
+
 > Round 10: protocol version 3 (patch `0002-jumper-peripherals.patch`, image `…-jb3`) adds GPIO
 > matrix routing (`M`/`N`), pin interrupts, LEDC (`L`), SPI (`SX`/`SQ`), RMT (`RM`), ADC (`E`/`AT`),
 > UART1/2 (`V`/`B`/`X`), I2C bus index and S3/C3 controllers, watched-pin parks (`K`) and I2S lines
@@ -97,9 +104,7 @@ on the QEMU chardev cut the TS backend's 1 ms step from 2.5 to ~1.6-2.2 ms. Xten
   (JumperEth). Plan: a WiFi shim in the build (link-time wraps of `esp_wifi_*` that bring up the
   OpenCores MAC and post `WIFI_EVENT_STA_CONNECTED` / `IP_EVENT_STA_GOT_IP`, so unmodified
   `WiFi.begin()` + `HTTPClient` sketches work), not tried in this round.
-- **I2S**: no model. ESP32: `i2s.begin()` returns 1, `i2s.write()` returns 0 after its 1 s
-  timeout. S3: `begin()` returns 0. Needs a QEMU I2S device that walks the DMA descriptors and
-  streams samples over the bridge (`S <ns> <hex>`), same shape as UART.
+- **I2S**: modelled since round 13 (jb6); see `docs/esp32-peripherals.md`.
 - **Not bridged**: LEDC/PWM (modelled by QEMU on ESP32, levels not exported), RMT (NeoPixel),
   SPI peripherals (only flash/PSRAM), ADC, GPIO interrupts (`attachInterrupt`), pin matrix routing
   (a pin driven by a peripheral is not reported), deep sleep, touch.

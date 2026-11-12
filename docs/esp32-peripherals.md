@@ -37,7 +37,7 @@ fixture tests listed at the end pass.
 | RMT TX (NeoPixel / FastLED RMT) | 8 ch | 4 ch | 2 ch | channel RAM read at transmit time, ping-pong threshold interrupt, wrap, end marker, `tx_end`; `RM` symbols drawn as edges | ✓ (WS2812 bit timing) | not run |
 | ADC (`analogRead`, `analogReadMilliVolts`) | SAR1+SAR2 (SENS) | SAR1+SAR2 (SENS) | APB_SARADC oneshot | pad voltage from the circuit (`E`), linear, full scale per attenuation (table below) | ✓ (`E` sent) | not run |
 | UART1 / UART2 | UART1+2 | UART1+2 | UART1 | bytes `V` drawn as 8N1 frames at the configured baud (`B`, from CLKDIV and the clock source); frames a part drives on the RX pin decoded at the stop bit and fed in (`X`) | ✓ (both ways) | not run |
-| I2S TX / RX | protocol + TS + parts only | same | same | `ST` / `SR` lines → `I2sBus`; **the QEMU I2S + DMA device is not written** (ESP32 lldesc DMA, S3/C3 GDMA) | ✓ (bus, parts) | **not emulated** |
+| I2S TX / RX (round 13, jb6) | I2S0+1, own lldesc DMA | I2S0+1 via GDMA | I2S0 via GDMA | `hw/misc/jumper_i2s.c` (patch 0004): `ST` frames out / `SR` frames in → `I2sBus`; rate from the clock registers; see "I2S" below | ✓ | **verified** (`esp-audio.integration.test.ts`, all three chips) |
 | Touch | – | – | – | not bridged | – | not emulated |
 | Wi-Fi / BT radio | – | – | – | not emulated (Ethernet MAC instead, round 9) | – | – |
 
@@ -70,8 +70,60 @@ NeoPixel). Pins per chip: `esp_pins.h`.
    UART loopback with a part, WS2812 colours via the ws2812-strip part); then the library-level
    ones with existing parts (SSD1306 / BME280 / MPU6050 on Wire, ILI9341 / ST7735 / GC9A01 on SPI,
    DFPlayer on Serial1).
-3. QEMU I2S device (ESP32 I2S DMA with lldesc; S3/C3 through `esp_gdma`) emitting `ST` / `SR`.
+3. ~~QEMU I2S device~~ done in round 13 (patch 0004, below).
 4. Lockstep speed: profile the ESP32 (0.6–0.8× in round 9); candidates are the second core's idle
    loop under icount and the 1 kHz FreeRTOS tick on both cores. Not started.
-5. Browser audio for `max98357a` (WebAudio from `I2sBus.onBlock`, muted under test drivers) and
-   the browser mic into `inmp441.clip_b64` with permission. Not started.
+5. Browser audio for `max98357a`: done in round 13 (each `run` keeps a WAV of the I2S stream, the
+   followed page plays it with WebAudio, muted under test drivers). The browser mic into
+   `inmp441.clip_b64` with permission: not started.
+
+## I2S (round 13, track audio): emulated, verified on real firmware
+
+`toolchains/qemu-esp/0004-jumper-i2s.patch` adds `hw/misc/jumper_i2s.c` (bridge v6, image / native
+tag `9.2.2-20260417-jb6`). What it models, for ESP-IDF's `i2s_std` / `i2s_pdm` / `i2s_tdm` drivers
+and arduino-esp32's `ESP_I2S` (`I2SClass`) on top of them:
+
+| | ESP32 | ESP32-S3 | ESP32-C3 |
+| --- | --- | --- | --- |
+| Controllers | I2S0 (0x3FF4F000), I2S1 (0x3FF6D000), HW v1 | I2S0 (0x6000F000), I2S1 (0x6002D000), HW v2 | I2S0 (0x6002D000), HW v2 |
+| DMA | the I2S block's own (OUT_LINK / IN_LINK, lldesc ring) with its OUT_EOF / IN_SUC_EOF interrupt | the GDMA channel whose PERI_SEL is I2S0 (3) / I2S1 (4); OUT_EOF / IN_SUC_EOF and the EOF descriptor address raised on that channel | same as the S3 |
+| Sample rate | PLL_D2 160 MHz / (N + b/a) / BCK div / (2 × bits); APLL assumed at the requested rate | source (XTAL 40 / PLL 160 / PLL 240 MHz) / (N + fractional x,y,z,yn1) / (BCK div + 1) / (slot bits × slots) | same, PLL 160 MHz |
+| Formats | 16 / 32-bit, mono or stereo (FIFO mode) | 8 / 16 / 24 / 32-bit, mono (copy), slot masks, TDM slots | same |
+| PDM | RX (PDM-to-PCM, ÷64 or ÷128) and TX as PCM | RX (PDM-to-PCM: the XIAO ESP32-S3 Sense's mic, GPIO42 / 41) and TX (PCM-to-PDM) as PCM | raw PDM RX only on the chip: bit rate reported, data are PCM |
+
+How a block moves: on TX start the device walks the descriptor ring; each descriptor takes
+`length / (bytes × channels) / rate` of virtual time; when it has played its buffer is read (the
+DMA reads progressively, so a firmware filling it just ahead of the DMA is heard in full), sent as
+`ST <port> <ns> <rate> <bits> <chans> <hex>` (all-zero blocks as `z<nbytes>`), and the EOF interrupt
+returns the buffer to the driver, which is what makes `i2s.write()` block at the sample rate. RX asks
+Jumper for the block's frames (`SR …`, answered `Q <hex>` by the first source on the `I2sBus`, e.g.
+the `inmp441` part), writes them into the descriptor, sets its length and SUC_EOF and interrupts.
+Samples cross as 16-bit (2 bytes) or 24 / 32-bit (4 bytes, sign-extended) little-endian.
+
+Verified (`services/runner/src/lang/esp-audio.integration.test.ts`, fixture `esp_audio` on all three
+chips): `begin()` true; a 1 kHz sine at 16 kHz mono 16-bit with the right frequency (±1 %), length
+and peak; `write()` returns every byte and blocks for as long as the samples take; `playWAV()` from
+flash (440 Hz); 8, 22.05 and 44.1 kHz; 48 kHz stereo 32-bit with the right channel silent; a
+microphone read (PDM on the S3, standard I2S elsewhere) returning the source's 500 Hz at its level.
+`esp_mp3` (S3, built at test time): `playMP3()` decodes on the device and plays a 1 kHz tone.
+`packages/device-net/test/audio-stream.integration.test.ts`: raw PCM (content-length) and a WAV
+(chunked, uneven pieces) streamed from a mock API over HTTP into I2S, gap-free, the API's samples.
+`packages/session/test/esp32-audio-session.test.ts`: XIAO ESP32-S3 + MAX98357A + 20 mm speaker
+through the session (real build): the amp's level is the samples' RMS, the speaker sounds, the run's
+recording is the 1 kHz tone. `apps/web/e2e/esp32-audio.spec.ts`: the same on the followed page.
+
+Behaviour reproduced from the drivers, not emulator artefacts (asserted in the tests):
+- after a ring ran dry, arduino-esp32's ESP32 (HW v1) mono path writes in 128-frame chunks and
+  ESP-IDF gives each chunk a fresh DMA buffer while its queue is nearly full: the first buffer
+  plays 128 frames then 112 of silence;
+- `configureTX()` / `end()` right after `write()` cut what is still in the DMA ring (up to
+  `dma_desc_num × dma_frame_num` = 1440 frames with ESP_I2S's defaults); the tail plays at the new
+  rate when the channel starts again. Wait out the ring before reconfiguring.
+
+Not modelled: BCK / WS / data pin edges (the pins are routed but idle), slave mode timing, ETM
+start, A-law / u-law, bit order and byte swaps, the ESP32's 16-bit half-word order, the APLL's real
+frequency, raw PDM bit streams, I2S interrupts other than the EOFs, TX "stop when FIFO empty". The
+emulated CPU runs at 125 MIPS (`-icount shift=3`), slower than a 240 MHz ESP32 / S3: a sketch that
+computes every sample (`sinf()` per sample) can underrun in the emulator where the chip might not;
+a table (as the fixtures use) is cheap on both. The C3 has no FPU, so per-sample float math is slow
+there on the chip as well (not measured on hardware).
