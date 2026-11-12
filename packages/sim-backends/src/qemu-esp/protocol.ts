@@ -25,6 +25,11 @@
 //   SR <port> <ns> <rate> <bits> <chans> <frames>              I2S frames wanted (answer Q)
 //   P <pu0> <pu1> <pd0> <pd1> <ns>                             pad pull-up / pull-down masks (IO_MUX / RTC_IO);
 //                                                              in lockstep QEMU waits for "A 0" after it
+//   CC <ns> <cmd> <a0> … <a7>                                  camera port command (patch 0004, hw/misc/jumper_camera.c;
+//                                                              answer Q: up to 8 little-endian words). cmd 1 init,
+//                                                              2 capture, 3 deinit; argument and answer layout:
+//                                                              toolchains/arduino-esp32/libraries/JumperCamera
+//   CD <offset> <n>                                            camera frame bytes [offset, offset + n) (answer Q <hex>)
 
 export type BridgeEvent =
   | { kind: "hello"; version: number; type: string; features: string[] }
@@ -47,6 +52,8 @@ export type BridgeEvent =
   | { kind: "i2s-out"; port: number; ns: bigint; rate: number; bits: number; channels: number; data: Uint8Array }
   | { kind: "i2s-in"; port: number; ns: bigint; rate: number; bits: number; channels: number; frames: number }
   | { kind: "pads"; pullUp: bigint; pullDown: bigint; ns: bigint }
+  | { kind: "camera"; ns: bigint; cmd: number; args: number[] }
+  | { kind: "camera-data"; offset: number; length: number }
   | { kind: "unknown"; line: string };
 
 const hex = (s: string | undefined) => BigInt(`0x${s || "0"}`);
@@ -108,6 +115,10 @@ export function parseBridgeLine(line: string): BridgeEvent {
       return { kind: "adc", gpio: num(f[1]), atten: num(f[2]), bits: num(f[3]), raw: num(f[4]), ns: hex(f[5]) };
     case "ST":
       return { kind: "i2s-out", port: num(f[1]), ns: hex(f[2]), rate: num(f[3]), bits: num(f[4]), channels: num(f[5]), data: hexBytes(f[6] ?? "") };
+    case "CC":
+      return { kind: "camera", ns: hex(f[1]), cmd: num(f[2]), args: f.slice(3, 11).map((x) => num(x) >>> 0) };
+    case "CD":
+      return { kind: "camera-data", offset: num(f[1]), length: num(f[2]) };
     case "SR":
       return { kind: "i2s-in", port: num(f[1]), ns: hex(f[2]), rate: num(f[3]), bits: num(f[4]), channels: num(f[5]), frames: num(f[6]) };
     default:
@@ -143,5 +154,12 @@ export function encodeSerialN(uart: number, bytes: Iterable<number>): string {
 }
 
 /** Lines QEMU blocks on until Jumper answers (or the lockstep target "T"). Keep in sync with sync-link.ts. */
-export const BLOCKING_PREFIXES = ["T ", "IS ", "IR ", "SQ ", "SR ", "P "] as const;
+export const BLOCKING_PREFIXES = ["T ", "IS ", "IR ", "SQ ", "SR ", "P ", "CC ", "CD "] as const;
+/** Words an answer to "CC" carries (encodeWords). */
+export const encodeWords = (words: readonly number[]) => {
+  const b = new Uint8Array(words.length * 4);
+  const dv = new DataView(b.buffer);
+  words.forEach((w, i) => dv.setUint32(4 * i, w >>> 0, true));
+  return encodeAnswer(b);
+};
 export const isBlockingLine = (line: string) => BLOCKING_PREFIXES.some((p) => line.startsWith(p));

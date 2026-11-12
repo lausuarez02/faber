@@ -15,6 +15,9 @@
 //   RMT     = TX symbols drawn as edges (WS2812 / NeoPixel)
 //   ADC     = the pad voltage the circuit solved, converted by QEMU's ADC model
 //   I2S     = frames out to the attached I2sBus, frames in from it
+//   camera  = round 13: the firmware's esp32-camera calls (wrapped in simulation builds) reach the
+//             attached CameraBus through QEMU's Jumper camera port (patch 0004): init with the
+//             pins, whole frames on capture. The DVP bus, XCLK and SCCB traffic are not emulated.
 // Not emulated: Wi-Fi / Bluetooth radios (networking runs over an emulated Ethernet MAC), touch
 // sensing, deep sleep, RMT receive, pulse counter, MCPWM. See docs/esp32-peripherals.md.
 // The 1 to 3 s container start happens in prepare() without blocking the event loop.
@@ -22,7 +25,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { I2cBus, I2sBus, McuBackend, McuBusPins, McuCapability, PinState, SpiBus, Unsubscribe } from "@jumper/sim-core";
+import { CAMERA_FRAME_SIZES, CAMERA_PIXFORMATS, CAMERA_SENSORS as SENSOR_INFO, DEFAULT_CAMERA_SETTINGS, type CameraBus, type CameraPinRole, type I2cBus, type I2sBus, type McuBackend, type McuBusPins, type McuCapability, type PinState, type SpiBus, type Unsubscribe } from "@jumper/sim-core";
 import { ESP_CHIPS, espGpioOf, espOutputSource, espPinId, type EspChip, type EspChipInfo, type EspOutputSource } from "./chips.ts";
 import { launchQemu, QEMU_ESP_IMAGE, type QemuLaunchOptions, type QemuProcess } from "./launcher.ts";
 import {
@@ -35,6 +38,7 @@ import {
   encodeSerial,
   encodeSerialN,
   encodeSyncMask,
+  encodeWords,
   parseBridgeLine,
   type BridgeEvent,
 } from "./protocol.ts";
@@ -140,6 +144,11 @@ export class QemuEspBackend implements McuBackend {
   private spi?: SpiBus;
   private spiMiso = new Map<number, number[]>();
   private i2s?: I2sBus;
+  private camera?: CameraBus;
+  /** The last frame handed to the firmware's camera port (read in chunks with "CD"). */
+  private cameraFrame: Uint8Array = new Uint8Array(0);
+  private cameraSeq = 0;
+  private cameraXclk = 20_000_000;
   private link?: SyncBridgeLink;
   private proc?: QemuProcess;
   private workDir?: string;
@@ -166,7 +175,7 @@ export class QemuEspBackend implements McuBackend {
   private _version = 0;
   private _features: string[] = [];
   /** Counts of bridged events since load, for tests and the fidelity report. */
-  readonly stats = { gpio: 0, ledc: 0, spi: 0, rmt: 0, adc: 0, uart: 0, i2c: 0, i2sOut: 0, i2sIn: 0, parks: 0 };
+  readonly stats = { gpio: 0, ledc: 0, spi: 0, rmt: 0, adc: 0, uart: 0, i2c: 0, i2sOut: 0, i2sIn: 0, parks: 0, cameraFrames: 0 };
   /** The handshake line QEMU sent ("H jumper-esp32-bridge 5 esp32c3.gpio sync=1 feat=..."). */
   hello = "";
   /** Wall ms from launch to parked at t = 0 (the last boot). */
@@ -215,7 +224,8 @@ export class QemuEspBackend implements McuBackend {
     if (this._version < 3) return this.opts.chip === "esp32" ? ["gpio", "uart", "i2c", "net"] : ["gpio", "uart", "net"];
     const feat = new Set(this._features);
     // QEMU names a few features after the peripheral: "ledc" is PWM, "pads" the pull-ups / pull-downs.
-    return this.info.capabilities.filter((c) => c === "net" || feat.has(c) || (c === "pulls" && feat.has("pads")) || (c === "pwm" && feat.has("ledc")));
+    // The camera port (patch 0004) is not announced in the hello line: it comes with the emulator build.
+    return this.info.capabilities.filter((c) => c === "net" || c === "camera" || feat.has(c) || (c === "pulls" && feat.has("pads")) || (c === "pwm" && feat.has("ledc")));
   }
 
   /** Boots asynchronously (container start + handshake up to t = 0); a later load() of the same image is a no-op. */
@@ -370,6 +380,10 @@ export class QemuEspBackend implements McuBackend {
 
   attachI2s(bus: I2sBus): void {
     this.i2s = bus;
+  }
+
+  attachCamera(bus: CameraBus): void {
+    this.camera = bus;
   }
 
   pinWatched(pinId: string): void {
@@ -654,6 +668,11 @@ export class QemuEspBackend implements McuBackend {
         this.at(ev.ns);
         this.stats.i2sIn++;
         return { answer: this.i2sIn(ev) };
+      case "camera":
+        this.at(ev.ns);
+        return { answer: encodeWords(this.cameraCommand(ev.cmd, ev.args)) };
+      case "camera-data":
+        return { answer: encodeAnswer(this.cameraFrame.subarray(ev.offset, ev.offset + ev.length)) };
       default:
         return undefined;
     }
@@ -815,6 +834,73 @@ export class QemuEspBackend implements McuBackend {
     const dv = new DataView(ev.data.buffer, ev.data.byteOffset, ev.data.byteLength);
     for (let i = 0; i < n; i++) samples[i] = bytesPer === 2 ? dv.getInt16(2 * i, true) : dv.getInt32(4 * i, true);
     this.i2s.send({ cycle: this._cycles, sampleRate: ev.rate, bits: ev.bits, channels: ev.channels, samples });
+  }
+
+  /**
+   * The camera shim's commands (toolchains/arduino-esp32/libraries/JumperCamera/src/jumper_sim_camera.c).
+   * Answer words: init → [status, pid, mid, ver, max frame size, sccb address, init µs];
+   * capture → [status, length, width, height, pixformat, capture µs, sequence]. Status 0 = ok,
+   * 1 = no camera answers, 2 = not supported, 3 = frame size too large.
+   */
+  private cameraCommand(cmd: number, a: number[]): number[] {
+    const fmtOf = (i: number) => CAMERA_PIXFORMATS[i] ?? "unknown";
+    if (cmd === 1) {
+      const pin = (w: number, shift: number) => {
+        const g = (a[w]! >>> shift) & 0xff;
+        return g === 0xff ? undefined : espPinId(g);
+      };
+      const pins: Partial<Record<CameraPinRole, string>> = {};
+      const put = (role: CameraPinRole, v: string | undefined) => {
+        if (v) pins[role] = v;
+      };
+      put("pwdn", pin(0, 0));
+      put("reset", pin(0, 8));
+      put("xclk", pin(0, 16));
+      put("sda", pin(0, 24));
+      put("scl", pin(1, 0));
+      put("vsync", pin(1, 8));
+      put("href", pin(1, 16));
+      put("pclk", pin(1, 24));
+      for (let i = 0; i < 8; i++) put(`d${i}` as CameraPinRole, pin(2 + (i >> 2), 8 * (i & 3)));
+      this.cameraXclk = a[4] || 20_000_000;
+      const r = this.camera?.init({
+        cycle: this._cycles,
+        pins,
+        xclkHz: this.cameraXclk,
+        format: fmtOf(a[5]! & 0xff),
+        frameSize: (a[5]! >>> 8) & 0xff,
+        quality: (a[5]! >>> 16) & 0xff,
+        fbCount: (a[5]! >>> 24) & 0xff,
+        fbInPsram: (a[6]! & 0xff) === 0,
+      });
+      if (!r || !r.ok || !r.sensor) return [r?.code === "bad-size" ? 3 : r?.code === "not-supported" ? 2 : 1, 0, 0, 0, 0, 0, r?.latencyUs ?? 300_000];
+      const s = SENSOR_INFO[r.sensor];
+      return [0, s.pid, s.mid, s.ver, CAMERA_FRAME_SIZES.findIndex((f) => f.id === s.maxSize), s.sccbAddr, r.latencyUs];
+    }
+    if (cmd === 2) {
+      const fx = a[4]!;
+      const settings = {
+        ...DEFAULT_CAMERA_SETTINGS,
+        hmirror: (fx & 1) !== 0,
+        vflip: (fx & 2) !== 0,
+        colorbar: (fx & 4) !== 0,
+        brightness: ((fx >>> 4) & 0xf) - 2,
+        contrast: ((fx >>> 8) & 0xf) - 2,
+        saturation: ((fx >>> 12) & 0xf) - 2,
+        effect: (fx >>> 16) & 0xf,
+        aeLevel: ((fx >>> 20) & 0xf) - 2,
+      };
+      const frame = this.camera?.capture({ cycle: this._cycles, format: fmtOf(a[0]!), width: a[1]!, height: a[2]!, quality: a[3]!, settings, capacity: a[5]!, xclkHz: this.cameraXclk });
+      if (!frame) {
+        this.cameraFrame = new Uint8Array(0);
+        return [1, 0, 0, 0, 0, 0, 0];
+      }
+      this.cameraFrame = frame.data;
+      this.stats.cameraFrames++;
+      return [0, frame.data.length, frame.width, frame.height, CAMERA_PIXFORMATS.indexOf(frame.format), frame.latencyUs, ++this.cameraSeq];
+    }
+    if (cmd === 3) this.camera?.deinit();
+    return [0];
   }
 
   private i2sIn(ev: Extract<BridgeEvent, { kind: "i2s-in" }>): string {

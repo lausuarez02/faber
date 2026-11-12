@@ -8,7 +8,7 @@ import type { McuCapability } from "@jumper/sim-core";
 export type EspChip = "esp32" | "esp32s3" | "esp32c3";
 
 /** Peripherals a backend carries across the bridge (decision 0006 "capabilities"). */
-export type EspCapability = Extract<McuCapability, "gpio" | "pulls" | "irq" | "uart" | "i2c" | "spi" | "pwm" | "adc" | "rmt" | "i2s" | "net">;
+export type EspCapability = Extract<McuCapability, "gpio" | "pulls" | "irq" | "uart" | "i2c" | "spi" | "pwm" | "adc" | "rmt" | "i2s" | "net" | "camera">;
 
 export interface EspSignals {
   /** GPIO matrix output selector meaning "plain GPIO_OUT register". */
@@ -95,7 +95,7 @@ export const ESP_CHIPS: Record<EspChip, EspChipInfo> = {
       // Standard (Philips) mode uses the 24-bit parallel lane 23 for data out and lane 15 for data in.
       i2s0: { bck: 23, ws: 25, dout: 163, din: 155 },
     },
-    capabilities: ALL,
+    capabilities: [...ALL, "camera"],
   },
   esp32s3: {
     chip: "esp32s3",
@@ -124,7 +124,7 @@ export const ESP_CHIPS: Record<EspChip, EspChipInfo> = {
       spi: { 2: { clk: 101, miso: 102, mosi: 103, cs0: 110 }, 3: { clk: 66, miso: 67, mosi: 68, cs0: 71 } },
       i2s0: { bck: 22, ws: 24, dout: 25, din: 25 },
     },
-    capabilities: ALL,
+    capabilities: [...ALL, "camera"],
   },
   esp32c3: {
     chip: "esp32c3",

@@ -289,7 +289,7 @@ function autoCrown(shape: CaseShape, S: number): number {
 function priority(f: LocalFeature, isFront: boolean): number {
   if (!f.expose) return -1;
   if (f.kind === "screen") return isFront ? 100 : 40;
-  return { connector: 90, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
+  return { connector: 90, camera: 85, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
 }
 
 /** Distance kept between a feature's tip and the inner wall surface, by kind. */
