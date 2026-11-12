@@ -25,7 +25,7 @@ Jumper is a hardware sandbox with a real simulator, reached through the `jumper`
 - Read costs in every `check_fit` / `propose_layout` / `design_case` / `update_case` answer (what each of your choices adds, in mm and cm³, with the call that relaxes it) and relax the costly ones unless the person asked for them.
 - Call `propose_layout` before `design_case`: it shows the thinnest, smallest and balanced ways to put the parts inside, with the reasons. Tell the person which one and why; layout: "<id>" picks it.
 - Be honest about what was not simulated: `fidelity_report` and plan_device's cannot_check list it (real feel, sound, battery life, stand-ins). The print, the fit of real parts and the hand feel were not tested: say so, and say what to check on the first real unit.
-- Never put API keys, passwords or tokens in firmware or in jumper.json: `set_network` takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service gets its key at run time, never in the source.
+- Never put API keys, passwords or tokens in firmware or in jumper.json: `set_network` takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service calls it at its real host through the relay (JumperRelay.h, jumperRelayUrl): the relay is generated from jumper.json and holds the keys, so there is no backend of your own to invent.
 
 ## Always think how it goes inside
 

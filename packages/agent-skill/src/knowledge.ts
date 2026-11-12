@@ -93,7 +93,7 @@ export const RULES: Rule[] = [
   },
   {
     id: "no-keys-in-firmware",
-    text: `Never put API keys, passwords or tokens in firmware or in jumper.json: ${tool("set_network")} takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service gets its key at run time, never in the source.`,
+    text: `Never put API keys, passwords or tokens in firmware or in jumper.json: ${tool("set_network")} takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service calls it at its real host through the relay (JumperRelay.h, jumperRelayUrl): the relay is generated from jumper.json and holds the keys, so there is no backend of your own to invent.`,
     short: "Never put API keys in firmware: secrets by name (set_network), values in .env.",
     mustSay: [/[Nn]ever put API keys/],
     mustNotSay: [/(?:paste|put|hard-?code) (?:the|your) (?:API )?key (?:in|into) (?:the )?(?:firmware|sketch)/i],

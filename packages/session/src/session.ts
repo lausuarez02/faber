@@ -51,7 +51,7 @@ import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
 import { relayBuildSources } from "./relay-build.ts"; // round 13 relay
-import { DEVICE_HEADER } from "@jumper/device-net";
+import { DEVICE_HEADER, NETWORK_HINTS } from "@jumper/device-net";
 import type { DeviceNetHost } from "@jumper/device-net";
 import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
@@ -737,6 +737,8 @@ export class ProjectSession {
       ...(usage.libraries ? { libraries: usage.libraries } : {}),
       ...(usage.controls ? { controls: usage.controls } : {}),
       ...(usage.example ? { example: usage.example } : {}),
+      // Round 13: a board that joins Jumper's device network gets the network guide (APIs through the relay, keys by name).
+      ...(spec.category === "board" && spec.tags?.includes("wifi") && spec.mcu?.backend === "qemu-esp" ? { network: NETWORK_HINTS } : {}),
     };
   }
 
