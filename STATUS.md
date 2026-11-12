@@ -30,7 +30,18 @@ The three tracks below are merged on main and joined:
   Guide: [docs/agent-skill.md](docs/agent-skill.md); kit: [docs/build-kit.md](docs/build-kit.md).
 
 Checks (worktree `jumper-wt-r12-main`, native runtimes, Docker down, machine load average 40 to 70):
-CHECKS_PLACEHOLDER
+`pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **212 files passed, 2 skipped;
+1761 tests passed, 5 expected fail, 5 skipped**. Full e2e (desktop + mobile, `E2E_PORT=6260
+E2E_HUB_PORT_BASE=12600`, 2 workers): first run exit 1, 102 passed, 4 failed (build-kit on both: it
+expected the derived "Put the parts in the case" step, fixed to the plan's steps; rp2040 live track on
+both: fixed, see below), 16 skipped, 2 did not run. Final run exit 1: **104 passed, 2 failed, 16
+skipped, 2 did not run**; the 2 failed were desktop case-view ("Loading the case…" past 30 s) and
+micropython (editor still in C++ mode) at load average 64; both specs re-run alone with 1 worker:
+4 passed, exit 0. micropython failed the same way on plain main in the skill track's runs.
+
+The rp2040 live-track test (failed in the assembly and skill tracks' runs, and once alone here) was a
+real test bug: the previous test's `jumper serve` was still closing when the next one started on the
+same port with `--strict-port`; afterEach now waits for it to exit (6/6 three times after the fix).
 
 Gaps (round 12, all tracks): no live Claude Code run over MCP has used `get_assembly_plan` /
 `get_build_kit` yet (the skill runs predate the merge); wires are not routed as paths; nothing was
