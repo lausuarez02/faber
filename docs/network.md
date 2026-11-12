@@ -85,6 +85,15 @@ a wrong password), like a scan / handshake would.
   `add_mock_api`. Cassettes: `network/cassettes/<name>.json`, recorded in internet mode with
   `record: true` (or `packages/device-net/scripts/record-cassette.mts`), replayed in mock mode.
 
+## The real device: the API relay (round 13)
+
+The simulator adds keys at the sandbox; a real device calls the project's **API relay** instead, made
+from this same `network` config (allow list, secret names, header templates, `network.relay` limits):
+a Node server or a Cloudflare Worker that holds the keys, accepts one revocable token per device and
+streams answers back. Firmware written with `JumperRelay.h` calls `relay.sandbox.jumper` in the
+simulator (the sandbox applies the relay's own checks) and the person's relay on the device. Guide:
+[relay.md](relay.md).
+
 ## Agent tools
 
 | Tool | What it does |

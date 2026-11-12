@@ -38,6 +38,16 @@ export interface NetworkConfig {
   wifi?: { ssid: string; password?: string; rssi?: number };
   /** Mocks file relative to the project (default network/mocks.json). */
   mocks?: string;
+  /** Round 13: limits of the API relay (the real device's relay and the simulator's, the same). */
+  relay?: RelayOptions;
+}
+
+/** The API relay's limits, per device (jumper.json network.relay). Defaults in relay-core.mjs DEFAULT_LIMITS. */
+export interface RelayOptions {
+  requests_per_minute?: number;
+  max_request_kb?: number;
+  max_response_kb?: number;
+  max_stream_seconds?: number;
 }
 
 // ------------------------------------------------------------------ mocks
@@ -158,7 +168,31 @@ export function parseNetworkConfig(raw: unknown): NetworkConfig {
     ...(r.record === true ? { record: true } : {}),
     ...(r.wifi ? { wifi: parseWifi(r.wifi) } : {}),
     ...(typeof r.mocks === "string" ? { mocks: r.mocks } : {}),
+    ...(r.relay !== undefined ? { relay: parseRelayOptions(r.relay) } : {}),
   };
+}
+
+const RELAY_LIMITS: Record<keyof RelayOptions, [number, number, string]> = {
+  requests_per_minute: [1, 6000, "requests a device may send per minute"],
+  max_request_kb: [1, 100 * 1024, "the largest request body, in KiB"],
+  max_response_kb: [1, 1024 * 1024, "the largest answer (or WebSocket stream), in KiB"],
+  max_stream_seconds: [1, 3600, "how long one answer or WebSocket may stream, in seconds"],
+};
+
+function parseRelayOptions(raw: unknown): RelayOptions {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new ConfigError("network.relay must be an object", "it holds the relay's limits per device", '"relay": {"requests_per_minute": 30}', "network.relay");
+  }
+  const out: RelayOptions = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const lim = RELAY_LIMITS[k as keyof RelayOptions];
+    if (!lim) throw new ConfigError(`network.relay.${k} is not a relay setting`, `the relay settings are ${Object.keys(RELAY_LIMITS).join(", ")}`, `remove ${k}`, `network.relay.${k}`);
+    if (typeof v !== "number" || !Number.isInteger(v) || v < lim[0] || v > lim[1]) {
+      throw new ConfigError(`network.relay.${k} must be a whole number from ${lim[0]} to ${lim[1]}`, `it is ${lim[2]}`, `"${k}": ${Math.min(lim[1], Math.max(lim[0], 60))}`, `network.relay.${k}`);
+    }
+    out[k as keyof RelayOptions] = v;
+  }
+  return out;
 }
 
 function parseWifi(raw: unknown): { ssid: string; password?: string; rssi?: number } {

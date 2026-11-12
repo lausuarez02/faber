@@ -29,6 +29,8 @@ export interface NetEvent {
   why?: string;
   fix?: string;
   open?: boolean;
+  /** Round 13: through the sandbox relay (the simulator playing the project's API relay). */
+  via?: "relay";
   summary: string;
 }
 

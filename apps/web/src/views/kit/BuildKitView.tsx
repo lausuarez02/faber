@@ -3,21 +3,23 @@
  * in four tabs: Buy (the shopping list with store links, totals and tools), Print (each part of the
  * case with material, orientation, grams and time, or a print service), Assemble (step by step into
  * the case, with pictures, wires and checks, then troubleshooting) and Flash (how to put the program
- * on the board). Ticks are remembered in this browser. Downloads: the whole kit as a zip, a PDF, or
+ * on the board), plus Connect (round 13) for a device that reaches APIs: its keys by name, the relay
+ * that holds them, a token per device, Wi-Fi, and what calls cost. Ticks are remembered in this browser. Downloads: the whole kit as a zip, a PDF, or
  * one page. Esc closes.
  */
 import "./kit.css";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardCopy, Cpu, Download, ExternalLink, FileText, Loader2, Package, Printer, ShoppingCart, Wrench, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardCopy, Cpu, Wifi, Download, ExternalLink, FileText, Loader2, Package, Printer, ShoppingCart, Wrench, X } from "lucide-react";
 import { kitApi, loadRegion, loadTicks, saveRegion, saveTicks, type BuildKit, type KitFiles, type ShopLine } from "../../kit/api.ts";
 import { useKit } from "../../kit/store.ts";
 
-type Tab = "buy" | "print" | "assemble" | "flash";
+type Tab = "buy" | "print" | "assemble" | "flash" | "connect";
 const TABS: { id: Tab; label: string; icon: typeof ShoppingCart }[] = [
   { id: "buy", label: "Buy", icon: ShoppingCart },
   { id: "print", label: "Print", icon: Printer },
   { id: "assemble", label: "Assemble", icon: Wrench },
   { id: "flash", label: "Flash", icon: Cpu },
+  { id: "connect", label: "Connect", icon: Wifi },
 ];
 const REGIONS: { id: string; label: string }[] = [
   { id: "global", label: "Anywhere" },
@@ -200,7 +202,7 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
             </div>
           ) : null}
           <div className="kv-tabs" role="tablist" aria-label="Build it">
-            {TABS.map((t) => {
+            {TABS.filter((t) => t.id !== "connect" || kit.connect).map((t) => {
               const count = t.id === "buy" ? progress("buy:", kit.shopping.lines.length) : t.id === "print" ? progress("print:", kit.print.items.length) : t.id === "assemble" ? progress("step:", kit.steps.length) : "";
               return (
                 <button key={t.id} type="button" role="tab" id={`kv-tab-${t.id}`} aria-selected={tab === t.id} aria-controls="kv-pane" className={tab === t.id ? "is-on" : ""} data-testid={`kit-tab-${t.id}`} onClick={() => setTab(t.id)}>
@@ -215,6 +217,7 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
             {tab === "print" ? <PrintTab kit={kit} ticks={ticks} tick={tick} /> : null}
             {tab === "assemble" ? <AssembleTab kit={kit} ticks={ticks} tick={tick} /> : null}
             {tab === "flash" ? <FlashTab kit={kit} copy={copy} copied={copied} /> : null}
+            {tab === "connect" && kit.connect ? <ConnectTab plan={kit.connect} copy={copy} copied={copied} /> : null}
           </div>
         </>
       )}
@@ -499,6 +502,57 @@ function FlashTab({ kit, copy, copied }: { kit: BuildKit; copy(t: string): void;
         </div>
       ))}
       {f.needs.length ? <p className="kv-note">You need: {f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.</p> : null}
+    </div>
+  );
+}
+
+function ConnectTab({ plan, copy, copied }: { plan: NonNullable<BuildKit["connect"]>; copy(t: string): void; copied?: string }) {
+  return (
+    <div data-testid="kit-connect">
+      {plan.warning ? <div className="kv-missing">{plan.warning}</div> : null}
+      <p className="kv-meta">{plan.summary}</p>
+      {plan.secrets.length ? (
+        <ul className="kv-bullets" aria-label="API keys">
+          {plan.secrets.map((x) => (
+            <li key={x.name}>
+              <code>{x.name}</code> {x.hosts.length ? <>for {x.hosts.join(", ")}: </> : ": "}
+              {x.set ? <span className="kv-ok">set on this computer</span> : <span className="kv-warn">not set yet (add it to the project's .env)</span>}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {plan.steps.map((st, i) => (
+        <section key={st.title} className="kv-connect-step">
+          <h3>
+            {i + 1}. {st.title}
+          </h3>
+          <ul className="kv-bullets">
+            {st.do.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+          {(st.commands ?? []).map((c) => (
+            <div key={c.cmd} className="kv-cmd">
+              <div className="kv-cmd-label">{c.label}</div>
+              <pre>{c.cmd}</pre>
+              <button type="button" className="kv-btn kv-copy" onClick={() => copy(c.cmd)} aria-label={`Copy: ${c.label}`}>
+                <ClipboardCopy size={13} aria-hidden /> {copied === c.cmd ? "Copied" : "Copy"}
+              </button>
+            </div>
+          ))}
+        </section>
+      ))}
+      <h3>What it costs</h3>
+      <ul className="kv-bullets">
+        {plan.cost.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+      {plan.notes.map((n) => (
+        <p key={n} className="kv-note">
+          {n}
+        </p>
+      ))}
     </div>
   );
 }

@@ -67,6 +67,18 @@ export interface KitStep {
   check?: string;
   minutes?: number;
 }
+export interface ConnectPlan {
+  /** Said first when the board cannot reach the network at all (no Wi-Fi). */
+  warning?: string;
+  summary: string;
+  needs_relay: boolean;
+  hosts: { host: string; secrets: string[]; relayed: boolean }[];
+  secrets: { name: string; hosts: string[]; set: boolean }[];
+  devices: string[];
+  steps: { title: string; do: string[]; commands?: { label: string; cmd: string }[] }[];
+  cost: string[];
+  notes: string[];
+}
 export interface BuildKit {
   project: string;
   style: "soldered" | "breadboard";
@@ -89,6 +101,8 @@ export interface BuildKit {
   steps: KitStep[];
   steps_source: string;
   flash: { board: string; language: string; method: string; file?: string; kit_file?: string; built: string; steps: string[]; commands: { label: string; cmd: string }[]; needs: string[]; cable?: string; why_missing?: string };
+  /** Round 13: how the device reaches its APIs (only for projects on the network). */
+  connect?: ConnectPlan;
   troubleshooting: { problem: string; why: string; fix: string; source: string }[];
   missing: { item: string; why: string; fix: string; say: string }[];
   /** The design check's errors and warnings about the circuit (older servers leave it out). */

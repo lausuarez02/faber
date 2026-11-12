@@ -21,6 +21,7 @@
 - [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
 - [Cases and the factory pack](enclosures.md): any case shape, the parts laid out inside, print and factory files.
 - [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
+- [The device network](network.md) and [the API relay](relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `jumper relay`).
 - [The hardware skill](agent-skill.md): how the design-for-assembly know-how reaches Claude and other agents (server instructions, prompts, project skill, CLAUDE.md, plugin).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.
 - [PWM](../packages/sim-core/PWM.md): cycle-timed PWM measurement and the part hooks it adds.

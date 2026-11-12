@@ -23,6 +23,8 @@ import { answerHttp, MockBroker, MockSet, readBody, runWsMock } from "./mocks.ts
 import { readPackets, summarizePacket } from "./mqtt.ts";
 import { expandSecrets, MissingSecretError, Redactor } from "./secrets.ts";
 import { FrameReader, opName } from "./ws-frames.ts";
+import { relaySpecFrom } from "./relay.ts";
+import { authorize, RateLimiter, RelayError, sha256Hex, SIM_DEVICE_TOKEN, SIM_RELAY_HOST, TOKEN_HEADER, type RelayTarget } from "./relay/relay-core.mjs";
 
 export interface Clock {
   /** ms since the network started (virtual time when a backend drives it). */
@@ -74,7 +76,12 @@ interface FlowCtx {
   port: number;
   tls: "inspect" | "passthrough" | "none";
   decision: Decision;
+  /** Round 13: the request came through the sandbox relay (relay.sandbox.jumper/<host>/<path>). */
+  via?: "relay";
 }
+
+/** What the sandbox relay decided for one request: the target's flow, or the relay's own answer. */
+type RelayUnwrap = { ctx: FlowCtx; device: string; maxBody: number } | { error: RelayError };
 
 const HOP = new Set(["connection", "keep-alive", "proxy-connection", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade"]);
 const HTTP_START = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /;
@@ -126,6 +133,8 @@ export class DeviceNet {
   private clock: Clock;
   private secrets: Map<string, string>;
   private faultListeners = new Set<(faults: Fault[]) => void>();
+  private relayLimiter: RateLimiter | undefined;
+  private relayTokens: Promise<string> | undefined;
 
   constructor(private opts: DeviceNetOptions) {
     this.secrets = opts.secrets ?? new Map();
@@ -147,6 +156,7 @@ export class DeviceNet {
   /** Change mode / allow list / secrets policy live (set_network). Open flows keep their decision. */
   setConfig(c: NetworkConfig): void {
     this.opts.config = c;
+    this.relayLimiter = undefined;
     this.log.push({ kind: "fault", source: "sandbox", summary: `network mode is now ${c.mode}${c.allow.length ? ` (allow: ${c.allow.map((a) => a.host).join(", ")})` : ""}` });
   }
 
@@ -174,6 +184,8 @@ export class DeviceNet {
     if (mode === "offline") {
       return { ok: false, why: `the project's network mode is offline: the device has Wi-Fi but no host answers (this is how a test checks the no-internet path)`, fix: `set jumper.json network.mode to "mock" and ${mockHint}, or to "internet" with {"host": "${host}"} in network.allow` };
     }
+    // Round 13: the simulator plays the project's API relay (same allow list, token and limits as the real one).
+    if (host === SIM_RELAY_HOST) return { ok: true };
     const sandbox = this.mocks.hasHost(host) || this.cassette?.hasHost(host);
     const entry = allow.find((a) => hostMatches(a.host, host));
     if (mode === "internet" && entry) {
@@ -357,14 +369,60 @@ export class DeviceNet {
     return { headers, used: [...new Set(used)] };
   }
 
+  /**
+   * Round 13: a request to the sandbox relay. The same checks as the real relay (relay-core.mjs
+   * authorize: device token, rate, allow list, ports, size), then the request continues as one to the
+   * target host, so mocks, cassettes, faults, secrets and the log work as for a direct request.
+   */
+  private async relayUnwrap(req: IncomingMessage, _ctx: FlowCtx): Promise<RelayUnwrap> {
+    const spec = relaySpecFrom(this.opts.config, "simulator");
+    this.relayLimiter ??= new RateLimiter(spec.limits.requests_per_minute, () => this.clock.now());
+    this.relayTokens ??= sha256Hex(SIM_DEVICE_TOKEN).then((h) => `simulator:${h}`);
+    let a: Awaited<ReturnType<typeof authorize>>;
+    try {
+      const header = (n: string) => {
+        const v = req.headers[n];
+        return v === undefined ? null : Array.isArray(v) ? v.join(", ") : v;
+      };
+      a = await authorize({ method: req.method ?? "GET", url: req.url ?? "/", header }, { spec, env: { RELAY_DEVICE_TOKENS: await this.relayTokens }, limiter: this.relayLimiter });
+    } catch (e) {
+      if (e instanceof RelayError) return { error: e };
+      throw e;
+    }
+    delete req.headers[TOKEN_HEADER];
+    const t: RelayTarget = a.target;
+    req.url = t.path;
+    req.headers.host = t.port === 443 || t.port === 80 ? t.host : `${t.host}:${t.port}`;
+    return { ctx: { host: t.host, port: t.port, tls: t.scheme === "https" ? "inspect" : "none", decision: this.decide(t.host, t.port), via: "relay" }, device: a.device, maxBody: a.limits.max_request_bytes };
+  }
+
+  private relayRefused(e: RelayError, method: string, path: string, write: (status: number, headers: Record<string, string>, body: string) => void): void {
+    const body = JSON.stringify(e.body());
+    write(e.status, { "content-type": "application/json", "content-length": String(Buffer.byteLength(body)), ...e.headers }, body);
+    this.log.push({ kind: "http", host: SIM_RELAY_HOST, method, path, status: e.status, source: "sandbox", via: "relay", why: e.why, fix: e.fix, summary: `relay refused ${method} ${path} → ${e.status} ${e.code}` });
+  }
+
   private async onRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const ctx = this.ctxOf(req.socket);
+    let ctx = this.ctxOf(req.socket);
+    let maxBody = Infinity;
+    if (ctx.host === SIM_RELAY_HOST) {
+      const r = await this.relayUnwrap(req, ctx);
+      if ("error" in r) {
+        req.resume();
+        return this.relayRefused(r.error, req.method ?? "GET", req.url ?? "/", (st, h, b) => {
+          res.writeHead(st, h);
+          res.end(b);
+        });
+      }
+      ctx = r.ctx;
+      maxBody = r.maxBody;
+    }
     const t0 = this.clock.now();
     const method = req.method ?? "GET";
     const path = req.url ?? "/";
-    const e = this.log.push({ kind: "http", host: ctx.host, port: ctx.port, tls: ctx.tls, method, path, open: true, summary: `${method} ${ctx.host}${path}` });
+    const e = this.log.push({ kind: "http", host: ctx.host, port: ctx.port, tls: ctx.tls, method, path, open: true, ...(ctx.via ? { via: ctx.via } : {}), summary: `${ctx.via ? "relay → " : ""}${method} ${ctx.host}${path}` });
     const finish = (status: number, source: NetEvent["source"], bytes_in: number, extra: Partial<NetEvent> = {}) =>
-      this.log.update(e, { status, source, bytes_in, duration_ms: Math.round(this.clock.now() - t0), open: false, summary: `${method} ${ctx.host}${path} → ${status} (${source}, ${bytes_in} B)`, ...extra });
+      this.log.update(e, { status, source, bytes_in, duration_ms: Math.round(this.clock.now() - t0), open: false, summary: `${ctx.via ? "relay → " : ""}${method} ${ctx.host}${path} → ${status} (${source}, ${bytes_in} B)`, ...extra });
     res.on("close", () => {
       if (e.open) this.log.update(e, { open: false, duration_ms: Math.round(this.clock.now() - t0), summary: `${method} ${ctx.host}${path} → closed before an answer` });
     });
@@ -385,6 +443,21 @@ export class DeviceNet {
     const mock = this.mocks.http(ctx.host, method, path);
     const reqBody = await readBody(req);
     e.bytes_out = reqBody.length;
+    if (ctx.via && reqBody.length > maxBody) {
+      const err = new RelayError(413, "request-too-large", `the request body is ${reqBody.length} bytes, over the relay's limit of ${maxBody}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in jumper.json");
+      const body = Buffer.from(JSON.stringify(err.body()));
+      res.writeHead(413, { "content-type": "application/json", "content-length": String(body.length) });
+      res.end(body);
+      finish(413, "sandbox", body.length, { why: err.why, fix: err.fix });
+      return;
+    }
+    if (ctx.via && !ctx.decision.ok && !mock) {
+      const body = Buffer.from(JSON.stringify({ error: "blocked", why: ctx.decision.why, fix: ctx.decision.fix }));
+      res.writeHead(502, { "content-type": "application/json", "content-length": String(body.length) });
+      res.end(body);
+      finish(502, "sandbox", body.length, { why: ctx.decision.why!, fix: ctx.decision.fix! });
+      return;
+    }
     if (mock) {
       const n = await answerHttp(mock, res, (ms) => this.clock.sleep(ms));
       finish(res.statusCode, "mock", n);
@@ -464,10 +537,26 @@ export class DeviceNet {
   // ---------------------------------------------------------------- WebSocket
 
   private async onUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
-    const ctx = this.ctxOf(socket);
+    let ctx = this.ctxOf(socket);
+    if (ctx.host === SIM_RELAY_HOST) {
+      const r = await this.relayUnwrap(req, ctx);
+      if ("error" in r) {
+        return this.relayRefused(r.error, "WS", req.url ?? "/", (st, h, b) => {
+          socket.end(`HTTP/1.1 ${st} ${http.STATUS_CODES[st] ?? "Error"}\r\n${Object.entries(h).map(([k, v]) => `${k}: ${v}\r\n`).join("")}connection: close\r\n\r\n${b}`);
+        });
+      }
+      ctx = r.ctx;
+      this.ctx.set(socket, ctx);
+      if (!ctx.decision.ok && !this.mocks.ws(ctx.host, req.url ?? "/")) {
+        const body = JSON.stringify({ error: "blocked", why: ctx.decision.why, fix: ctx.decision.fix });
+        socket.end(`HTTP/1.1 502 Bad Gateway\r\ncontent-type: application/json\r\ncontent-length: ${Buffer.byteLength(body)}\r\nconnection: close\r\n\r\n${body}`);
+        this.log.push({ kind: "ws", host: ctx.host, port: ctx.port, path: req.url ?? "/", status: 502, source: "sandbox", via: "relay", why: ctx.decision.why!, fix: ctx.decision.fix!, summary: `relay → WebSocket ${ctx.host}${req.url ?? "/"} → blocked` });
+        return;
+      }
+    }
     const path = req.url ?? "/";
     const t0 = this.clock.now();
-    const e = this.log.push({ kind: "ws", host: ctx.host, port: ctx.port, tls: ctx.tls, path, open: true, summary: `WebSocket ${ctx.host}${path}` });
+    const e = this.log.push({ kind: "ws", host: ctx.host, port: ctx.port, tls: ctx.tls, path, open: true, ...(ctx.via ? { via: ctx.via } : {}), summary: `${ctx.via ? "relay → " : ""}WebSocket ${ctx.host}${path}` });
     const sample = (dir: "in" | "out", d: string | Buffer) => this.log.sample(e, `${dir === "out" ? "device →" : "→ device"} ${typeof d === "string" ? `text ${JSON.stringify(d.length > 64 ? `${d.slice(0, 64)}…` : d)}` : `binary ${d.length} B`}`, dir, typeof d === "string" ? Buffer.byteLength(d) : d.length);
     const closeEntry = (source: NetEvent["source"]) => {
       const f = e.frames;

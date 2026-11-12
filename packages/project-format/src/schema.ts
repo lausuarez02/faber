@@ -221,6 +221,16 @@ export const NetworkSchema = z
       .strict()
       .optional()
       .describe("The sandbox Wi-Fi. Leave out: any SSID joins."),
+    relay: z
+      .object({
+        requests_per_minute: z.number().int().min(1).max(6000).optional().describe("Requests one device may send per minute (default 60)."),
+        max_request_kb: z.number().int().min(1).max(102400).optional().describe("Largest request body in KiB (default 1024)."),
+        max_response_kb: z.number().int().min(1).max(1048576).optional().describe("Largest answer or WebSocket stream in KiB (default 32768)."),
+        max_stream_seconds: z.number().int().min(1).max(3600).optional().describe("How long one answer or WebSocket may stream (default 300 s)."),
+      })
+      .strict()
+      .optional()
+      .describe("Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/relay.md."),
   })
   .strict();
 export type NetworkSettings = z.infer<typeof NetworkSchema>;

@@ -51,7 +51,7 @@ export const DEVICE_NET_TOOLS = [
 
 export function compact(e: NetEvent): Record<string, unknown> {
   const o: Record<string, unknown> = { seq: e.seq, t_ms: Math.round(e.t_ms), kind: e.kind, summary: e.summary };
-  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
+  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "via", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
   if (e.frames) o.frames = e.frames;
   if (e.open) o.open = true;
   return o;
@@ -161,7 +161,7 @@ export function factoryNetworkNotes(config: NetworkConfig): string {
     lines.push(
       "",
       `Secrets (${config.secrets.join(", ")}): the simulation added them at the Jumper sandbox, so the firmware never contained them. On the real device, choose one:`,
-      "1. A small relay you run (a serverless function or a home server) that holds the key and adds the header; the device calls the relay. Recommended.",
+      "1. The API relay in relay/ (generated from this project: a Node server or a Cloudflare Worker) holds the keys and adds them; the device calls it with its own revocable token (jumper relay token add, jumper relay device-header). Recommended; relay/README.md has the steps.",
       "2. Short-lived tokens: the relay (or the provider, where it offers ephemeral client tokens) hands the device a token that expires in minutes.",
       "3. The key compiled into the firmware. Anyone with the device can read it out of flash; only for a private prototype, and rotate the key afterwards.",
     );

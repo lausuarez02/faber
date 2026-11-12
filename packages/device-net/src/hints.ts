@@ -26,7 +26,8 @@ export const NETWORK_HINTS = `Network (any API, any protocol the device speaks o
 - Wi-Fi: plain WiFi.begin(ssid, password) works in the simulator (a Wi-Fi shim in the simulation build joins the sandbox network over the emulated network card). Handle WiFi.status() != WL_CONNECTED and reconnects: inject_network_fault wifi_drop and weak_signal rehearse them.
 - WebSocket: arduinoWebSockets (LGPL-2.1): webSocket.beginSSL(host, 443, path); binary frames arrive in the WStype_BIN event, already split into frames, so a stream of chunks is just many events.
 - MQTT: PubSubClient (MIT) for publish QoS 0 and subscribe; arduino-mqtt (MIT) when publishes need QoS 1. Keep loop() calling client.loop().
-- Keys: never put an API key in the sketch. Declare it in jumper.json network.secrets (name only), put the value in the project's .env, and either send the header as "Bearer {{secret:NAME}}" from the firmware or let network.allow[].headers add it. Jumper replaces it at the edge and shows [secret:NAME] everywhere. On the real device the same request goes to a small relay you run that adds the key.
+- Keys: never put an API key in the sketch. Declare it in jumper.json network.secrets (name only), put the value in the project's .env, and either send the header as "Bearer {{secret:NAME}}" from the firmware or let network.allow[].headers add it. Jumper replaces it at the edge and shows [secret:NAME] everywhere. On the real device the key lives in a relay the person runs or deploys (jumper relay init: a Node server or a Cloudflare Worker made from the same network config).
+- API calls that need a key: write them through the relay so the same firmware works in the simulator and on the device: #include "JumperRelay.h", client.setCACert(JUMPER_RELAY_ROOT_CA), http.begin(client, jumperRelayUrl("api.example.com", "/v1/...")), http.addHeader(JUMPER_TOKEN_HEADER, JUMPER_DEVICE_TOKEN), WiFi.begin(JUMPER_WIFI_SSID, JUMPER_WIFI_PASSWORD); check jumperRelayReady() first (print jumperRelayWhy() when false). WebSocket clients: jumperRelayEndpoint(host, path) gives host / port / tls / path. The simulation build points it at the sandbox relay (same allow list, token check and limits; mocks answer); the device gets its relay URL, token and Wi-Fi from jumper_device.h (jumper relay device-header, git-ignored). The host must be in network.allow.
 - Test it: mocks in network/mocks.json (add_mock_api), scenario steps {"request": {"host": ..., "path": ...}} and faults (inject_network_fault wifi_drop / latency / http_error / timeout / dns_fail). read_network shows every request with status, bytes and timing.`;
 
 /** For plan_device: what a network feature adds to the plan, independent of the API. */
@@ -36,6 +37,6 @@ export function planNetworkSteps(apiHosts: string[]): string[] {
     "Mock each API the device calls (add_mock_api), including its error answers, before writing firmware against it.",
     "Firmware: Wi-Fi join with retry, HTTP(S) / WebSocket / MQTT through the libraries in the hints, the API's real root CA (the simulation build also trusts the sandbox CA by itself).",
     "Scenario tests: assert the requests ({\"request\": ...}) and rehearse wifi_drop, latency and http_error.",
-    "Factory pack: the hosts, ports and secrets the real device needs, and how the key reaches it (relay recommended).",
+    "Factory pack: the hosts, ports and secrets the real device needs, and relay/ (the API relay that holds the keys; the device gets a revocable token).",
   ];
 }
