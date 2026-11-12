@@ -527,7 +527,15 @@ export async function assemblyPlanFor(s: ProjectSession) {
   }
   // round 13: the firmware decides whether a board's own card slot gets a card, so a plan made for other firmware is stale too
   const fw = firmwareText(s);
-  const current = !!plan && plan.wires_key === E.wiresKey(s.project) && (fw === undefined || plan.firmware_card === E.firmwareUsesCard(fw));
+  const boards = new Set(s.project.parts.filter((p) => s.registry.get(p.type)?.spec.category === "board").map((p) => p.id));
+  const cardFits = (pl: import("@jumper/enclosure").AssemblyPlan) => {
+    if (fw === undefined) return true;
+    const uses = E.firmwareUsesCard(fw);
+    if (pl.firmware_card !== undefined) return pl.firmware_card === uses;
+    // a plan from before round 13: stale only when it puts a card into a board whose firmware never reads one
+    return uses || !pl.steps.some((st) => [...boards].some((b) => st.title === `Put the microSD card into ${b}` || st.title === `Put the SD card into ${b}`));
+  };
+  const current = !!plan && plan.wires_key === E.wiresKey(s.project) && cardFits(plan);
   if (!plan || !current) {
     const L = E.layoutCase(E.layoutInput(s.project, specOf));
     plan = E.assemblyPlan({ project: s.project, layout: L, specOf, title: s.project.name, wires: planWires(s.project, s.registry)(L), ...(fw !== undefined ? { firmwareText: fw } : {}) });
