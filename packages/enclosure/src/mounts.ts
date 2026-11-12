@@ -70,8 +70,8 @@ export interface MountContext {
   zBack: number;
   split: number;
   tol: number;
-  /** Not overlapping any part but `ignore` (0.3 mm clear) and inside the cavity at its depth. */
-  free(b: Box, ignore?: Placed): boolean;
+  /** Not overlapping any part but `ignore` (g mm clear, default 0.3). */
+  free(b: Box, ignore?: Placed, g?: number): boolean;
   /** Inside the cavity's plan at the box's depth (the rim round-over and the snap lip kept clear). */
   inside(b: Box): boolean;
   /** Inside the cavity at the box's depth, the lip ignored (a part going into the back shell before the front one is on). */
@@ -206,14 +206,16 @@ export function designMounts(c: MountContext): Mount[] {
         let n = 0;
         for (const sx of [-1, 1])
           for (const sy of [-1, 1]) {
-            const cx = sx < 0 ? p.bodyMin[0] - 0.6 : p.bodyMax[0] + 0.6;
-            const cy = sy < 0 ? p.bodyMin[1] - 0.6 : p.bodyMax[1] + 0.6;
+            // (a cell keeps 0.25 mm all round: it is soft and may be a little larger than typical)
+            const CR = 1.0;
+            const cx = sx < 0 ? p.bodyMin[0] - 0.25 : p.bodyMax[0] + 0.25;
+            const cy = sy < 0 ? p.bodyMin[1] - 0.25 : p.bodyMax[1] + 0.25;
             // two arms that overlap in the corner square (an L, one solid: never two boxes touching on an edge)
-            const qx: [number, number] = sx < 0 ? [cx - RIB, cx] : [cx, cx + RIB];
-            const qy: [number, number] = sy < 0 ? [cy - RIB, cy] : [cy, cy + RIB];
+            const qx: [number, number] = sx < 0 ? [cx - CR, cx] : [cx, cx + CR];
+            const qy: [number, number] = sy < 0 ? [cy - CR, cy] : [cy, cy + CR];
             const a: Box = { min: [Math.min(qx[0], cx - sx * 4), qy[0], bz0], max: [Math.max(qx[1], cx - sx * 4), qy[1], bz1] };
             const b: Box = { min: [qx[0], Math.min(qy[0], cy - sy * 4), bz0], max: [qx[1], Math.max(qy[1], cy - sy * 4), bz1] };
-            if ([a, b].every((x) => clear(x, p))) {
+            if ([a, b].every((x) => c.free(x, p, 0.2) && !overlaps(x, env(p), -0.01) && !insertBoxes.some((q) => overlaps(q, x)) && !made.some((q) => overlaps(q, x, 0.2)) && c.inside(x))) {
               for (const x of [a, b]) {
                 c.ribs.push({ min: x.min, max: x.max, shell, why: `corner of ${id}`, part: id, kind: "corner" });
                 made.push(x);
@@ -224,7 +226,7 @@ export function designMounts(c: MountContext): Mount[] {
         if (n >= 2) {
           how.push("corners");
           features.push(`${n} corner locators for ${id}`);
-        } else missing.push(`no room for a cradle or corner locators round the cell (they need 1.8 mm beside it)`);
+        } else missing.push(`no room for a cradle or corner locators round the cell (a corner locator needs 1.45 mm free beside two of its corners)`);
         how.push("strap");
       }
       how.push("foam-pad");
@@ -256,12 +258,7 @@ export function designMounts(c: MountContext): Mount[] {
           const top = shell === "back" ? nearFaceBody - 0.05 : nearFaceBody + 0.05;
           let n = 0;
           const ins = 1.8;
-          for (const [x, y] of [
-            [p.bodyMin[0] + ins, p.bodyMin[1] + ins],
-            [p.bodyMax[0] - ins, p.bodyMax[1] - ins],
-            [p.bodyMax[0] - ins, p.bodyMin[1] + ins],
-            [p.bodyMin[0] + ins, p.bodyMax[1] - ins],
-          ] as [number, number][]) {
+          for (const [x, y] of spots(p, ins)) {
             if (n >= 4) break;
             const b = colBox(x, y, SEAT_D, wallZ, top);
             if (!c.free(b, p) || insertBoxes.some((q) => overlaps(q, b)) || made.some((q) => overlaps(q, b, 0.2)) || !c.inside(b)) continue;
@@ -326,16 +323,15 @@ export function designMounts(c: MountContext): Mount[] {
         const end = shell === "back" ? farFace + 0.3 : farFace - 0.3;
         let n = 0;
         const ins = 2.5;
-        for (const [x, y] of [
-          [p.bodyMin[0] + ins, p.bodyMin[1] + ins],
-          [p.bodyMax[0] - ins, p.bodyMax[1] - ins],
-          [p.bodyMax[0] - ins, p.bodyMin[1] + ins],
-          [p.bodyMin[0] + ins, p.bodyMax[1] - ins],
-        ] as [number, number][]) {
+        const used: [number, number][] = [];
+        for (const [x, y] of spots(p, ins)) {
           if (n >= 2) break;
+          // (two hold-downs far apart, not side by side)
+          if (used.some(([ux, uy]) => Math.hypot(ux - x, uy - y) < Math.max(4, Math.min(p.bodyMax[0] - p.bodyMin[0], p.bodyMax[1] - p.bodyMin[1]) * 0.5))) continue;
           const b = colBox(x, y, HOLD_D, wallZ, end);
           if (!c.free(b, p) || insertBoxes.some((q) => overlaps(q, b)) || made.some((q) => overlaps(q, b, 0.2)) || !c.inside(b)) continue;
           c.posts.push({ x, y, z0: Math.min(wallZ, end), z1: Math.max(wallZ, end), d: HOLD_D, shell: other, why: `holds down ${id}`, part: id, kind: "hold-down" });
+          used.push([x, y]);
           made.push(b);
           n++;
         }
@@ -442,6 +438,25 @@ export function designMounts(c: MountContext): Mount[] {
     out.push({ part: id, shell, how, insert, ...(slide ? { slide } : {}), features, say: partSay(id, how, shell, insert), ...(missing.length ? { missing: missing.join("; ") } : {}) });
   }
   return out;
+}
+
+/** Where posts may land on a part, best first: the four corners (inset), then the middles of the edges, then the centre. */
+function spots(p: Placed, ins: number): [number, number][] {
+  const [x0, y0, x1, y1] = [p.bodyMin[0] + ins, p.bodyMin[1] + ins, p.bodyMax[0] - ins, p.bodyMax[1] - ins];
+  const mx = (x0 + x1) / 2;
+  const my = (y0 + y1) / 2;
+  const out: [number, number][] = [
+    [x0, y0],
+    [x1, y1],
+    [x1, y0],
+    [x0, y1],
+    [mx, y0],
+    [mx, y1],
+    [x0, my],
+    [x1, my],
+    [mx, my],
+  ];
+  return x1 > x0 && y1 > y0 ? out : [[(p.bodyMin[0] + p.bodyMax[0]) / 2, (p.bodyMin[1] + p.bodyMax[1]) / 2]];
 }
 
 function cellSay(id: string, how: MountHow[]): string {

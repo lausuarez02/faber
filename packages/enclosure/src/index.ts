@@ -15,6 +15,9 @@ export { resolveMech, type PartMech } from "./mech.ts";
 export { checkMesh, readStl, stlBinary, weld, type Mesh, type MeshCheck } from "./mesh.ts";
 export { renderPng } from "./render.ts";
 export { windowSight, type WindowSight } from "./sight.ts";
+export { assemblyPlan, pinPositionsOf, wiresKey, type AssemblyAction, type AssemblyCamera, type AssemblyCheck, type AssemblyInput, type AssemblyPlan, type AssemblyStep, type AssemblyWire } from "./assembly.ts";
+export { renderAssemblySteps, barMesh } from "./assembly-render.ts";
+export type { Mount, MountHow } from "./mounts.ts";
 
 /** Smallest wall the engine generates for FDM (mm). */
 export const MIN_WALL_MM = 1.2;

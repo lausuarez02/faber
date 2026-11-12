@@ -1404,7 +1404,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     zBack,
     split,
     tol,
-    free: (b, ignore) => !placed.some((p) => p !== ignore && overlap(p, b, 0.3)),
+    free: (b, ignore, g = 0.3) => !placed.some((p) => p !== ignore && overlap(p, b, g)),
     inside: (b) => {
       const inset = intrusion(b.min[2], b.max[2]) + (lipBand(b) ? lip.t + tol + 0.3 : 0) + 0.3;
       for (const x of [b.min[0], b.max[0]]) for (const y of [b.min[1], b.max[1]]) if (!contains(plan, x, y, inset)) return false;
