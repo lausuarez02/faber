@@ -1,8 +1,0 @@
-{
-  "_comment": "A plan in the shape packages/session/src/kit/steps.ts AssemblyPlanLike documents (round 12 track assembly). Wires by id or by ends; images relative to case/.",
-  "steps": [
-    { "id": "power", "title": "Power first", "do": ["Solder the battery path."], "parts": ["bat", "chg", "pwr", "d1"], "wires": ["w17", "w18", { "from": "chg.OUT", "to": "pwr.2" }], "image": "renders/inside.png", "cautions": ["Battery unplugged."], "check": "No beep between + and -." },
-    { "id": "screen", "title": "The eye", "text": "Wire the round screen.", "parts": ["eye"], "wires": ["w1", "w2", "w3"], "images": ["renders/front.png"], "caution": "Glass is fragile.", "checkpoint": "The screen lights up." },
-    { "id": "close", "title": "Close it", "instructions": ["Snap the back on."], "picture": "renders/exploded.png", "test": "Seam even all round.", "minutes": 4, "extra_field_from_a_later_version": true }
-  ]
-}

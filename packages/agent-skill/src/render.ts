@@ -114,7 +114,7 @@ export function renderInstructionsBlock(o: RenderOptions): string {
   return [
     `Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print. If your client lists the ${SKILL_NAME} skill (Claude Code in a Jumper project), load it first.`,
     ...RULES.filter((r) => r.short).map((r) => `- ${r.short}`),
-    `- Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety${o.tools.includes("get_assembly_plan") ? " (get_assembly_plan)" : ""}.`,
+    `- Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety.${o.tools.includes("get_assembly_plan") ? " After it, get_assembly_plan works out the shell, holder and order of every part with a picture per step: fix what its assembly-* checks flag." : ""}`,
     `- "What do I need to build it?": ${kit}, then answer Buy / Print / Assemble / Flash with totals.`,
     `Hardware guide: resource jumper://docs/hardware; prompts ${PROMPTS.map((p) => p.name).join(", ")}.`,
   ].join("\n");

@@ -11,7 +11,6 @@ import { writeKitFiles } from "../src/kit/files.ts";
 import { detectSlicer, parseGcodeEstimate, printPlan } from "../src/kit/print-plan.ts";
 import { kitHtml, kitMarkdown } from "../src/kit/render.ts";
 import { regionalLink, shoppingCsv } from "../src/kit/shopping.ts";
-import { adaptAssemblyPlan, planFrom } from "../src/kit/steps.ts";
 import { boxStl, stlStats } from "../src/kit/stl.ts";
 
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse", import.meta.url));
@@ -64,13 +63,13 @@ function checkKit(s: ProjectSession, kit: BuildKit) {
   for (const i of kit.print.items) expect(i.material && i.orientation && i.layer_mm > 0 && i.infill_pct > 0, i.file).toBeTruthy();
   expect(kit.print.total_grams).toBeCloseTo(kit.print.items.reduce((a, i) => a + i.grams, 0), 0);
   // every wire is soldered in exactly one step (the cut list is the one exception)
-  const placedWires = kit.steps.filter((st) => !/^Cut and strip/.test(st.title)).flatMap((st) => st.wires.map((w) => w.wire));
+  const placedWires = kit.steps.filter((st) => !/^Cut(,| and) strip/.test(st.title)).flatMap((st) => st.wires.map((w) => w.wire));
   expect(placedWires.sort()).toEqual(p.wires.map((w) => w.id).sort());
   for (const st of kit.steps) for (const w of st.wires) expect(w.length_mm, w.wire).toBeGreaterThan(0);
   // each step says how to know it worked; numbered 1..n
   kit.steps.forEach((st, i) => expect(st.n).toBe(i + 1));
   expect(kit.steps.every((st) => !!st.check)).toBe(true);
-  expect(kit.steps.some((st) => /Put the parts in the case/.test(st.title))).toBe(true);
+  expect(kit.steps.some((st) => (kit.steps_source === "assembly-plan" ? /^Put .* into the (front|back) shell/ : /Put the parts in the case/).test(st.title))).toBe(true);
   // troubleshooting from the project's own risks
   expect(kit.troubleshooting.some((t) => t.source === "fidelity")).toBe(true);
   expect(kit.tools.items.some((t) => t.need === "required")).toBe(true);
@@ -159,11 +158,12 @@ describe("build kit", () => {
     expect(kit.missing).toEqual([]);
     expect(kit.shopping.lines.some((l) => l.links.some((k) => k.url.startsWith("https://www.amazon.de/")))).toBe(true);
     expect(kit.shopping.lines.find((l) => l.refs === "chg")!.why).toMatch(/Charge current/);
-    const place = kit.steps.find((st) => /Put the parts/.test(st.title))!;
-    expect(place.do.join(" ")).toMatch(/xiao .*USB-C port at the opening in the \w+ wall/);
-    expect(place.image).toBe("case/renders/inside.png");
+    // the case engine's plan: the board goes into its shell with its port in its opening, a picture per step
+    const place = kit.steps.find((st) => /^Put xiao into the (front|back) shell/.test(st.title))!;
+    expect(place.do.join(" ")).toMatch(/port .* sits in its opening/);
+    expect(place.image).toMatch(/^case\/assembly\/step-\d\d\.png$/);
     const f = await writeKitFiles(s, kit, { pdf: false });
-    for (const rel of ["kit.html", "KIT.md", "SHOPPING.csv", "SHOPPING.md", "PRINT-LIST.md", "case/stl/front.stl", "case/stl/cap-pet.stl", "case/case.3mf", "case/renders/inside.png", "firmware/firmware.uf2", "firmware/firmware.hex"]) expect(existsSync(join(f.dir, rel)), rel).toBe(true);
+    for (const rel of ["kit.html", "KIT.md", "SHOPPING.csv", "SHOPPING.md", "PRINT-LIST.md", "case/stl/front.stl", "case/stl/cap-pet.stl", "case/case.3mf", "case/renders/inside.png", place.image!, "firmware/firmware.uf2", "firmware/firmware.hex"]) expect(existsSync(join(f.dir, rel)), rel).toBe(true);
     expect(f.zip && existsSync(f.zip)).toBe(true);
     expect(readFileSync(f.html, "utf8")).toContain("data:image/png;base64,");
   }, 90_000);
@@ -177,47 +177,37 @@ describe("build kit", () => {
     expect(kit.shopping.lines.find((l) => l.refs === "ldo")!.variant).toMatch(/MCP1700-3\.3/);
   }, 60_000);
 
-  it("uses the case engine's assembly plan when the case has one (documented shape, extra fields ignored)", async () => {
+  it("the Muse: its committed case-6 plan is the kit's steps, tools and consumables (what get_assembly_plan returns)", async () => {
     const s = open(MUSE);
-    const plan = JSON.parse(readFileSync(join(FIX, "assembly-plan.json"), "utf8"));
-    expect(planFrom({ assembly_plan: plan })).toBe(plan);
-    expect(planFrom({ assembly: { steps: [] } })).toBeUndefined();
-    writeFileSync(join(s.dir, "case/assembly.json"), JSON.stringify(plan));
+    const plan = (await s.call("get_assembly_plan", {})) as { steps: { title: string; wires: { id: string }[]; image?: string }[]; consumables: { item: string }[]; tools: string[] };
     const kit = await buildKit(s, { slicer: "off" });
+    checkKit(s, kit);
     expect(kit.steps_source).toBe("assembly-plan");
-    expect(kit.steps.map((st) => st.title)).toEqual(["Power first", "The eye", "Close it"]);
-    const [power, eye, close] = kit.steps;
-    expect(power!.wires.map((w) => w.wire)).toEqual(["w17", "w18", "w20"]);
-    expect(power!.wires[0]).toMatchObject({ color: "red", gauge_awg: 24 });
-    expect(power!.wires[0]!.length_mm).toBeGreaterThan(0);
-    expect(power!.image).toBe("case/renders/inside.png");
-    expect(eye).toMatchObject({ do: ["Wire the round screen."], cautions: ["Glass is fragile."], check: "The screen lights up.", image: "case/renders/front.png" });
-    expect(close).toMatchObject({ do: ["Snap the back on."], check: "Seam even all round.", minutes: 4, image: "case/renders/exploded.png" });
-    const direct = adaptAssemblyPlan(plan, { cuts: [], label: (r) => r, caseRel: "case" });
-    expect(direct[1]!.wires).toEqual([]);
-  }, 60_000);
-
-  it("reads the case engine's round-12 plan (case/assembly/plan.json named by report.assembly.plan)", async () => {
-    const s = open(MUSE);
-    mkdirSync(join(s.dir, "case/assembly"), { recursive: true });
-    cpSync(join(FIX, "assembly-plan-case6.json"), join(s.dir, "case/assembly/plan.json"));
-    const rp = join(s.dir, "case/report.json");
-    const report = JSON.parse(readFileSync(rp, "utf8"));
-    writeFileSync(rp, JSON.stringify({ ...report, assembly: { steps: 21, plan: "assembly/plan.json", images: [], hinge: "left", order: { front: [], back: [] }, errors: 0, warnings: 0 } }));
-    const kit = await buildKit(s, { slicer: "off" });
-    expect(kit.steps_source).toBe("assembly-plan");
-    expect(kit.steps).toHaveLength(21);
-    const first = kit.steps[0]!;
-    expect(first.title).toBe("Check the printed parts");
-    expect(first.do[0]).toMatch(/press the two shells together/);
-    expect(first.do.at(-1)).toBe("Tools: flush cutters, hobby knife.");
-    expect(first.image).toBe("case/assembly/step-01.png");
+    expect(kit.steps.map((st) => st.title)).toEqual(plan.steps.map((st) => st.title));
+    expect(kit.steps[0]!.image).toBe(`case/${plan.steps[0]!.image}`);
+    // every wire of the plan, with its colour in words and its book-slack length
     const wired = kit.steps.flatMap((st) => st.wires);
-    expect(wired.find((w) => w.wire === "w1")).toMatchObject({ color: "red", gauge_awg: 24, length_mm: 75 });
     expect(new Set(wired.map((w) => w.wire))).toEqual(new Set(s.project.wires.map((w) => w.id)));
-    // a stale case never uses the old plan
-    expect(planFrom({ assembly: { plan: "assembly/plan.json" } }, undefined, () => undefined)).toBeUndefined();
-  }, 60_000);
+    for (const w of wired) expect(w.color).not.toMatch(/^#/);
+    // the plan's foam pad under the cell is something to buy; its Kapton reason joins the Kapton line
+    expect(kit.shopping.lines.some((l) => /foam pad/i.test(l.name))).toBe(true);
+    expect(kit.shopping.lines.find((l) => l.id === "extra:kapton")!.why).toMatch(/the assembly plan/);
+    // its tools are on the tool list once (consumables stay on the shopping list)
+    expect(kit.tools.items.filter((t) => /knife/i.test(t.name))).toHaveLength(1);
+    expect(kit.tools.items.some((t) => /^(Solder|Flux|Kapton tape|USB cable|1 mm foam pad)$/i.test(t.name))).toBe(false);
+  }, 120_000);
+
+  it("a stale case never uses its plan (the steps are derived and the kit says the case is old)", async () => {
+    const s = open(MUSE);
+    const p = s.project;
+    p.enclosure!.params = { ...(p.enclosure!.params ?? {}), wall_mm: 2.4 };
+    writeFileSync(join(s.dir, "jumper.json"), JSON.stringify(p, null, 2));
+    const s2 = new ProjectSession({ dir: s.dir, builder: noBuild, actor: "test" });
+    sessions.push(s2);
+    const kit = await buildKit(s2, { slicer: "off" });
+    expect(kit.steps_source).toBe("derived");
+    expect(kit.missing.some((m) => m.item === "up-to-date case files")).toBe(true);
+  }, 120_000);
 
   it("Amazon searches follow the region; product pages stay", () => {
     expect(regionalLink("Amazon", "https://www.amazon.com/s?k=lipo", "uk")).toMatchObject({ url: "https://www.amazon.co.uk/s?k=lipo", region: "UK", kind: "search" });

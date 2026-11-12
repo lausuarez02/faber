@@ -155,13 +155,17 @@ export const LOOP: LoopStep[] = [
   },
   {
     title: "Think assembly",
-    needs: ["get_assembly_plan"],
-    text: () => `Think how it goes together before the case exists: ${tool("get_assembly_plan")} gives what mounts where, the insertion order, the wire room and the access checks; read it, fix what it flags (change the layout or a part), and tell the person the order in a few steps.`,
-    fallback: () => `Think how it goes together before the case exists, using propose_layout's placements and layers: what mounts where, the insertion order, the wire room, access to USB / buttons / switch, battery safety (the checklist below). If a part cannot go in, change the layout or the part now.`,
+    text: () => `Think how it goes together before the case exists, using ${tool("propose_layout")}'s placements and layers: what mounts where, the insertion order, the wire room, access to USB / buttons / switch, battery safety (the checklist below). If a part cannot go in, change the layout or the part now.`,
   },
   {
     title: "Design the case",
     text: () => `${tool("design_case")} with the chosen layout (any shape: a preset or "custom" with an outline you draw), show the renders and the measured size and checks (pocket verdict, screen window, button travel, USB access). ${tool("update_case")} to change it.`,
+  },
+  {
+    title: "How it goes together",
+    needs: ["get_assembly_plan"],
+    text: () => `${tool("get_assembly_plan")} on the designed case: which shell each part goes into and what holds it (the case adds seat posts, hold-downs, backstops and cell corners), the insertion order, when each wire is soldered, the battery last, a test before closing, a picture per step. Fix what its assembly-* checks flag (${tool("update_case")}, another layout or a part) before printing, and tell the person the order in a few steps.`,
+    fallback: () => `Check the case against the checklist below with ${tool("get_case")}'s placements: what holds each part, the order it goes in, wire room, access, battery safety; change the layout or a part if one cannot go in.`,
   },
   {
     title: "Firmware and tests",

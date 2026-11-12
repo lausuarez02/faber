@@ -14,10 +14,11 @@ Jumper is a hardware sandbox with a real simulator, reached through the `jumper`
 1. **Goal.** Say back what the device does in one sentence in the person's words. If the wish is ambiguous (or they changed their mind mid-sentence: take the last version), ask ONE question and wait.
 2. **Plan.** `plan_device` {goal, constraints} first (pocket: true for anything carried), then tell the person the plan in plain words: what it does, the board and parts and why, size, battery life, price, and what is simulated. One project per idea: `new_project` {"folder": true, "name": …}.
 3. **Smallest parts that fit.** Choose the smallest parts that do the job (`search_parts`, `get_part`), place and wire them (`place_part`, `connect`), `check_design` until it is clean. Before any case: `check_fit` with the shape and size the person wants, then `propose_layout`; read costs and relax what is costly.
-4. **Think assembly.** Think how it goes together before the case exists, using propose_layout's placements and layers: what mounts where, the insertion order, the wire room, access to USB / buttons / switch, battery safety (the checklist below). If a part cannot go in, change the layout or the part now.
+4. **Think assembly.** Think how it goes together before the case exists, using `propose_layout`'s placements and layers: what mounts where, the insertion order, the wire room, access to USB / buttons / switch, battery safety (the checklist below). If a part cannot go in, change the layout or the part now.
 5. **Design the case.** `design_case` with the chosen layout (any shape: a preset or "custom" with an outline you draw), show the renders and the measured size and checks (pocket verdict, screen window, button travel, USB access). `update_case` to change it.
-6. **Firmware and tests.** `write_file` the firmware, `run` it, `write_scenario` for each behaviour of the goal and `run_tests` until they pass; `fidelity_report` for what the simulation cannot check.
-7. **The build kit.** `export_manufacturing` writes the build pack (BOM with prices, case files and PRINT.md, wiring and wire cuts, ASSEMBLY.md, firmware and FLASHING.md); read its parts with `read_file` and summarise (see "What do I need to build it?").
+6. **How it goes together.** `get_assembly_plan` on the designed case: which shell each part goes into and what holds it (the case adds seat posts, hold-downs, backstops and cell corners), the insertion order, when each wire is soldered, the battery last, a test before closing, a picture per step. Fix what its assembly-* checks flag (`update_case`, another layout or a part) before printing, and tell the person the order in a few steps.
+7. **Firmware and tests.** `write_file` the firmware, `run` it, `write_scenario` for each behaviour of the goal and `run_tests` until they pass; `fidelity_report` for what the simulation cannot check.
+8. **The build kit.** `get_build_kit`: everything to buy, print, assemble and flash, with totals; `export_manufacturing` when the person wants the files for a supplier or a printer.
 
 ## Rules of thumb
 
@@ -45,7 +46,7 @@ Before the case exists, and again when the person asks how to build it:
 
 ## What do I need to build it?
 
-There is no single build-kit tool in this Jumper yet. Make sure there is a case (`get_case`; if none, `check_fit` → `propose_layout` → `design_case`), set `set_assembly` "soldered" for a battery device, then `export_manufacturing`. Its answer lists the files: `read_file` the pack's BOM.md, enclosure/PRINT.md (or case/PRINT.md), assembly/ASSEMBLY.md and firmware/FLASHING.md (paths relative to the project, e.g. "manufacturing/<pack>/BOM.md"), and answer in four short parts, with totals:
+Call `get_build_kit` (after `design_case`; it says what is missing when there is no case yet) and answer in four short parts, with totals:
 
 - **Buy:** each part with quantity, price and where, plus wire, heat-shrink and screws; the total price. Name the real part when a stand-in was simulated.
 - **Print:** each printed body (front, back, plungers, light pipes) with the material, layer height and supports from PRINT.md, and print time or grams when given; where the STL / 3MF files are.

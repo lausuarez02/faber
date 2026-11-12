@@ -1,88 +1,43 @@
 /**
  * Round 12, track kit: how to put it together, flash it and fix it. The steps come from the case
- * engine's assembly plan when the case has one (round12/assembly, read through `adaptAssemblyPlan`),
+ * engine's assembly plan when the case has one (the plan get_assembly_plan returns, read through `planSteps`),
  * otherwise they are derived here from the case report (which part sits where, in which layer,
  * facing which wall), the wire cuts and the tests. Flashing, tools, skill, time and troubleshooting
  * are rules over the part data, the same for every project.
  */
 import { buildNets, firmwareLanguage, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec } from "@jumper/sim-core";
-import type { CaseReport } from "@jumper/enclosure";
+import type { AssemblyStep, CaseReport } from "@jumper/enclosure";
 import { colorName, type WireCut } from "../assembly.ts";
 import type { FlashPlan, KitStep, KitTool, KitWire, TroubleRow } from "./types.ts";
 
-// ------------------------------------------------------------------ the assembly plan (adapter)
+// ------------------------------------------------------------------ the assembly plan
 
 /**
- * The shape the kit reads from the case engine's assembly plan (packages/enclosure `assemblyPlan`,
- * round 12 track assembly). Only these fields are read; unknown ones are ignored, so the plan can
- * grow. Where it is found: `report.assembly_plan` / `report.assemblyPlan` / `report.assembly` in
- * case/report.json, or case/assembly.json.
+ * The case engine's assembly plan (packages/enclosure `assemblyPlan`, read through the session's
+ * `assemblyPlanFor`, the same plan get_assembly_plan returns) as kit steps: the plan's plain words
+ * first, wire colours in words, images under case/ (a plan made again after a rewire has none).
  */
-export interface AssemblyPlanLike {
-  steps: {
-    id?: string;
-    title: string;
-    text?: string | string[];
-    do?: string[];
-    instructions?: string[];
-    parts?: string[];
-    /** Plain words for a person (the case engine's plan, round 12 track assembly). */
-    say?: string;
-    /** Tools this step needs and fasteners it uses (the case engine's plan). */
-    tools?: string[];
-    fasteners?: { kind: string; size: string; qty: number }[];
-    wires?: (string | { wire?: string; id?: string; from: string; to: string; color?: string; length_mm?: number; gauge_awg?: number; gauge?: number })[];
-    image?: string;
-    images?: string[];
-    picture?: string;
-    cautions?: string[];
-    caution?: string;
-    warnings?: string[];
-    check?: string;
-    checkpoint?: string;
-    test?: string;
-    minutes?: number;
-  }[];
-}
+/** How to know a plan step worked, by what the step does (the plan's test steps say it themselves). */
+const PLAN_CHECK: Record<AssemblyStep["action"], string> = {
+  place: "It sits flat in its place and does not move when you tilt the shell.",
+  "press-fit": "It is pressed fully down on its pins and does not move when you tilt the shell.",
+  tape: "It sits flat in its place and does not move when you tilt the shell.",
+  glue: "The glue has set and the part does not move.",
+  screw: "Every screw is snug (not forced) and the part does not move.",
+  solder: "Tug each wire gently: no joint moves, the joints are shiny, no bare copper touches another pad.",
+  "route-wire": "No wire crosses the seam or the lip, and nothing is pulled tight when the case folds shut.",
+  flash: "The computer sees the board and the firmware starts.",
+  close: "The seam is even all round, nothing rattles and no wire shows at the seam.",
+  test: "It does what the step says.",
+};
 
-/**
- * The plan from a report, when it has one with steps: inline (`assembly_plan` / `assemblyPlan` /
- * `assembly`), the file the report names (`assembly.plan`, e.g. "assembly/plan.json", the case
- * engine's round-12 layout) read with `read`, or a loaded case/assembly.json.
- */
-export function planFrom(report: unknown, file?: unknown, read?: (caseRel: string) => unknown): AssemblyPlanLike | undefined {
-  const r = report as Record<string, unknown> | undefined;
-  const named = (r?.assembly as { plan?: unknown } | undefined)?.plan;
-  const fromFile = typeof named === "string" && read ? read(named) : undefined;
-  for (const c of [r?.assembly_plan, r?.assemblyPlan, r?.assembly, fromFile, file]) {
-    const p = c as AssemblyPlanLike | undefined;
-    if (p && Array.isArray(p.steps) && p.steps.length && p.steps.every((s) => s && typeof s.title === "string")) return p;
-  }
-  return undefined;
-}
-
-/** The plan's steps as kit steps: wires get the cut list's colour, length and gauge; images keep their case/ path. */
-export function adaptAssemblyPlan(plan: AssemblyPlanLike, ctx: { cuts: WireCut[]; label: (ref: string) => string; caseRel: string }): KitStep[] {
-  const byId = new Map(ctx.cuts.map((c) => [c.wire, c]));
-  const byEnds = new Map(ctx.cuts.flatMap((c) => [[`${c.from}|${c.to}`, c], [`${c.to}|${c.from}`, c]] as const));
-  return plan.steps.map((st, i) => {
-    const text = Array.isArray(st.text) ? st.text : st.text ? [st.text] : [];
-    const wires: KitWire[] = (st.wires ?? []).flatMap((w) => {
-      const cut = typeof w === "string" ? byId.get(w) : (byId.get(w.wire ?? w.id ?? "") ?? byEnds.get(`${w.from}|${w.to}`));
-      const from = typeof w === "string" ? cut?.from : w.from;
-      const to = typeof w === "string" ? cut?.to : w.to;
-      if (!from || !to) return [];
-      const o: { color?: string; length_mm?: number; gauge_awg?: number; gauge?: number } = typeof w === "string" ? {} : w;
-      const color = o.color ? (o.color.startsWith("#") ? colorName(o.color) : o.color) : (cut?.color ?? "any");
-      return [{ wire: cut?.wire ?? (typeof w === "string" ? w : (w.wire ?? w.id ?? `${from}-${to}`)), from, to, from_label: ctx.label(from), to_label: ctx.label(to), color, length_mm: o.length_mm ?? cut?.length_mm ?? 0, gauge_awg: o.gauge_awg ?? o.gauge ?? cut?.gauge_awg ?? 26 }];
-    });
-    const img = st.image ?? st.images?.[0] ?? st.picture;
-    const image = img ? (/^(case|build-kit)\//.test(img) || img.startsWith("/") ? img : `${ctx.caseRel}/${img}`) : undefined;
-    const cautions = [...(st.cautions ?? []), ...(st.caution ? [st.caution] : []), ...(st.warnings ?? [])];
-    const check = st.check ?? st.checkpoint ?? st.test;
-    const extra = [...(st.fasteners?.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${f.size} ${f.kind}`).join(", ")}.`] : []), ...(st.tools?.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
-    return { n: i + 1, title: st.title, do: [...(st.say ? [st.say] : []), ...(st.do ?? []), ...(st.instructions ?? []), ...text, ...extra], ...(image ? { image, image_alt: st.title } : {}), parts: st.parts ?? [], wires, cautions, ...(check ? { check } : {}), ...(st.minutes ? { minutes: st.minutes } : {}) };
+export function planSteps(steps: AssemblyStep[], ctx: { label: (ref: string) => string; caseRel: string }): KitStep[] {
+  return steps.map((st, i) => {
+    const wires: KitWire[] = st.wires.map((w) => ({ wire: w.id, from: w.from, to: w.to, from_label: ctx.label(w.from), to_label: ctx.label(w.to), color: w.color.startsWith("#") ? colorName(w.color) : w.color, length_mm: w.length_mm, gauge_awg: w.gauge }));
+    const image = st.image ? `${ctx.caseRel}/${st.image}` : undefined;
+    const extra = [...(st.fasteners.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${f.size} ${f.kind}`).join(", ")}.`] : []), ...(st.tools.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
+    return { n: i + 1, title: st.title, do: [st.say, ...extra].filter(Boolean), ...(image ? { image, image_alt: st.title } : {}), parts: st.parts, wires, cautions: [...st.cautions], check: st.action === "test" ? st.say : PLAN_CHECK[st.action] };
   });
 }
 
@@ -391,7 +346,7 @@ export function flashPlan(project: Project, registry: PartRegistry, built: Flash
 
 // ------------------------------------------------------------------ tools, skill and time
 
-export function toolsFor(project: Project, registry: PartRegistry, o: { soldered: boolean; hasCase: boolean; screws: boolean; inserts: boolean; printMinutes: number; steps: KitStep[]; cell: boolean }): { items: KitTool[]; skill: "beginner" | "intermediate" | "experienced"; skill_why: string; time: { print_h: number; build_h: number; total_h: number; note: string } } {
+export function toolsFor(project: Project, registry: PartRegistry, o: { soldered: boolean; hasCase: boolean; screws: boolean; inserts: boolean; printMinutes: number; steps: KitStep[]; cell: boolean; planTools?: string[] }): { items: KitTool[]; skill: "beginner" | "intermediate" | "experienced"; skill_why: string; time: { print_h: number; build_h: number; total_h: number; note: string } } {
   const items: KitTool[] = [{ name: "A computer with a USB port", why: "to flash the board", need: "required" }];
   const specs = project.parts.map((p) => registry.get(p.type)?.spec).filter((s): s is PartSpec => !!s);
   const castellated = specs.some((s) => /castellated/i.test(`${s.sourcing?.generic ?? ""} ${s.sourcing?.package ?? ""} ${s.footprint ?? ""}`));
@@ -419,6 +374,14 @@ export function toolsFor(project: Project, registry: PartRegistry, o: { soldered
   if (o.inserts) items.push({ name: "Heat-set insert tip for the iron (or an old tip)", why: "to press the brass inserts into the front shell", need: "recommended" });
   if (o.screws) items.push({ name: "Small Phillips screwdriver (PH0 / PH1)", why: "for the M2 screws", need: "required" });
   items.push({ name: "Safety glasses and an open window or a fan", why: "solder spits and its fumes", need: o.soldered ? "recommended" : "optional" });
+  // the assembly plan's tools that the rules above did not name (consumables such as solder, tape or a cable are on the shopping list)
+  for (const t of o.planTools ?? []) {
+    const name = t.replace(/\s*\(.*?\)/g, "").replace(/\s+for the .*$/, "").trim();
+    if (/solder\b(?!ing)|flux|tape|foam|cable|kapton|wire\b(?! strip)/i.test(name)) continue;
+    const last = name.split(" ").at(-1)!.toLowerCase().replace(/s$/, "");
+    if (items.some((i) => i.name.toLowerCase().includes(last))) continue;
+    items.push({ name: name[0]!.toUpperCase() + name.slice(1), why: "the assembly steps use it", need: "recommended" });
+  }
 
   const wires = o.steps.reduce((a, s) => a + s.wires.length, 0);
   const many = project.wires.length > 40;

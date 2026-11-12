@@ -4,16 +4,16 @@
  * firmware; what is stale or missing is said, with the fix.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import type { CaseReport } from "@jumper/enclosure";
-import { assemblyStyle, wireCuts, type WireCut } from "../assembly.ts";
+import { assemblyStyle, colorName, wireCuts, type WireCut } from "../assembly.ts";
 import { fidelityReport } from "../fidelity.ts";
 import { pinPositions } from "../manufacturing.ts";
 import type { ProjectSession } from "../session.ts";
 import { sdCardFiles } from "../voice.ts";
 import { printPlan } from "./print-plan.ts";
 import { shoppingList, type Region } from "./shopping.ts";
-import { adaptAssemblyPlan, derivedSteps, flashPlan, peopleWords, planFrom, refLabel, toolsFor, troubleshooting } from "./steps.ts";
+import { derivedSteps, flashPlan, peopleWords, planSteps, refLabel, toolsFor, troubleshooting } from "./steps.ts";
 import type { BuildKit } from "./types.ts";
 
 export type { BuildKit } from "./types.ts";
@@ -21,7 +21,7 @@ export { kitCsv, kitHtml, kitMarkdown, printListMd, shoppingMd } from "./render.
 export { shoppingCsv } from "./shopping.ts";
 export { stlStats } from "./stl.ts";
 export { detectSlicer, parseGcodeEstimate, MESH_METHOD } from "./print-plan.ts";
-export { adaptAssemblyPlan, planFrom, type AssemblyPlanLike } from "./steps.ts";
+export { planSteps } from "./steps.ts";
 
 export interface KitOptions {
   region?: Region;
@@ -91,8 +91,18 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     }
   } else missing.push({ item: "case", why: "the project has no case yet, so there is nothing to print and the parts are not placed", fix: 'design_case {"shape": "pebble"} (or any shape), then get_build_kit again', say: "open the Case view, pick a shape and press Design case" });
   const soldered = assemblyStyle(project, reg) === "soldered";
+  // the case engine's assembly plan (get_assembly_plan's), only for a case that is current: a stale one is never used
+  let plan: Awaited<ReturnType<typeof import("../tools/case.ts").assemblyPlanFor>> | undefined;
+  if (report?.assembly && !stale && soldered) {
+    try {
+      plan = await (await import("../tools/case.ts")).assemblyPlanFor(s);
+    } catch (e) {
+      missing.push({ item: "assembly plan", why: `the case's assembly plan could not be read (${(e as Error).message.split("\n")[0]}), so the steps below are worked out from the case report instead`, fix: "get_assembly_plan (its error says what to change), then get_build_kit again", say: "open the Case view's Build tab to see why, then open Build it again" });
+    }
+  }
   const layout = report && !stale ? await casePositions(s, report) : undefined;
-  const cuts: WireCut[] = wireCuts(project, reg, layout?.positions);
+  // the plan's own cut list when there is one (its lengths include the open-like-a-book slack), else the wiring's
+  const cuts: WireCut[] = plan ? plan.wires.map((w) => ({ wire: w.id, from: w.from, to: w.to, color: w.color.startsWith("#") ? colorName(w.color) : w.color, length_mm: w.length_mm, gauge_awg: w.gauge })) : wireCuts(project, reg, layout?.positions);
   const screwsOn = project.enclosure?.params?.closure === "screws";
   const screws = screwsOn ? { count: layout?.bosses || 4, size: "M2 x 6 mm pan head (length: enclosure PRINT.md)", inserts: "M2 x 3 mm brass heat-set insert" } : undefined;
 
@@ -105,7 +115,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     const w = specWithProps(spec, props);
     return w !== spec && w.mechanical?.source ? w.mechanical.source.split(";")[0]!.replace(/, typical\)/, ")") : undefined;
   };
-  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
+  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(plan ? { consumables: plan.consumables } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
 
   const built = s.firmwareState();
   const flash = flashPlan(project, reg, built);
@@ -116,10 +126,9 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   }
 
   const label = refLabel(project, reg);
-  const plan = report && !stale ? planFrom(report, readJson(join(caseDir, "assembly.json")), (rel) => (relative(caseDir, join(caseDir, rel)).startsWith("..") ? undefined : readJson(join(caseDir, rel)))) : undefined;
-  const steps = plan ? adaptAssemblyPlan(plan, { cuts, label, caseRel: "case" }) : derivedSteps({ project, registry: reg, report, cuts, estimatedCuts: !layout, soldered, screws: !!screws, flash, has });
+  const steps = plan ? planSteps(plan.steps, { label, caseRel: "case" }) : derivedSteps({ project, registry: reg, report, cuts, estimatedCuts: !layout, soldered, screws: !!screws, flash, has });
   const cell = project.parts.some((p) => reg.get(p.type)?.spec.mechanical?.soft);
-  const tools = toolsFor(project, reg, { soldered, hasCase: !!report, screws: !!screws, inserts: !!screws, printMinutes: print.total_minutes, steps, cell });
+  const tools = toolsFor(project, reg, { soldered, hasCase: !!report, screws: !!screws, inserts: !!screws, printMinutes: print.total_minutes, steps, cell, ...(plan ? { planTools: plan.tools } : {}) });
   const drc = ((await s.checkDesign()) as { issues?: string[] }).issues ?? [];
   const fid = fidelityReport(project, reg);
   const { TOOLS } = await import("../catalog.ts");

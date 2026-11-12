@@ -101,7 +101,20 @@ export interface ShoppingInput {
   sizeOf?: (type: string, props: Record<string, unknown> | undefined) => string | undefined;
   /** Grams of filament the print list needs (0 / undefined: no case to print). */
   filament?: { grams: number; material: string; color: string };
+  /** The case engine's assembly plan consumables (Kapton, the foam pad under a cell, ...): joined into the matching line, or a line of their own. */
+  consumables?: { item: string; qty: number | string; why: string }[];
 }
+
+/** Which kit line a plan consumable is (by what it is, not by project); unmatched ones get a line of their own. */
+const CONSUMABLE_LINE: [RegExp, string][] = [
+  [/hook-?up wire|stranded wire|\bwire\b.*AWG/i, "extra:wire"],
+  [/heat-?shrink/i, "extra:heat-shrink"],
+  [/^solder\b/i, "extra:solder"],
+  [/kapton/i, "extra:kapton"],
+  [/foam tape/i, "extra:foam-tape"],
+  [/\bscrews?\b/i, "extra:screws"],
+  [/inserts?\b/i, "extra:inserts"],
+];
 
 export function shoppingList(inp: ShoppingInput): Shopping {
   const { project, registry, region } = inp;
@@ -220,6 +233,20 @@ export function shoppingList(inp: ShoppingInput): Shopping {
       const g = Math.ceil(inp.filament.grams);
       lines.push({ id: "extra:filament", section: "case", qty: 1, name: `${inp.filament.material} filament`, variant: `${inp.filament.color}, 1.75 mm; this case uses about ${g} g`, ask_for: `${inp.filament.material} filament 1.75mm ${inp.filament.color}`, refs: "", unit_usd: round2(g * 0.022), ext_usd: round2(g * 0.022), price_note: "the grams it uses at about 22 USD per kg spool (a whole spool costs 15 to 25 USD)", links: searchLinks(`${inp.filament.material} filament 1.75mm ${inp.filament.color}`, region), alternatives: ["A print service prints it for you instead (see the print list): skip the filament then"], why: "only if you print it yourself", may_have: true, source: "case" });
     }
+  }
+
+  // ---- the assembly plan's consumables: its reason joins the matching line; what the kit had no line for gets one
+  for (const c of inp.consumables ?? []) {
+    const key = CONSUMABLE_LINE.find(([re]) => re.test(c.item))?.[1];
+    const awg = /(\d+)\s*AWG/i.exec(c.item)?.[1];
+    const line = key ? (lines.find((l) => awg && l.id === `${key}-${awg}`) ?? lines.find((l) => l.id === key || l.id.startsWith(`${key}-`))) : undefined;
+    if (line) {
+      if (!(line.why ?? "").includes(c.why)) line.why = [line.why, `the assembly plan: ${c.why} (${c.qty})`].filter(Boolean).join("; ");
+      continue;
+    }
+    if (key) continue; // e.g. screws on a snap-fit case: the kit's own rules decided there is nothing to buy
+    const slug = c.item.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    extra("build", `plan-${slug}`, 1, c.item, String(c.qty), c.item.replace(/\s*\(.*?\)/g, ""), 2, c.why, false);
   }
 
   lines.forEach((l) => {
