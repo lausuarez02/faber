@@ -109,7 +109,9 @@ test("Build it: buy, print, assemble, flash; ticks are remembered; zip, PDF and 
     await page.getByTestId("kit-tab-assemble").click();
     const steps = page.getByTestId("kit-step");
     expect(await steps.count()).toBeGreaterThanOrEqual(8);
-    await expect(view).toContainText("Put the parts in the case");
+    // the case engine's plan: each part into its shell, the shells' wires joined with the case open like a book
+    await expect(view).toContainText(/Put xiao into the (front|back) shell/);
+    await expect(view).toContainText("Open it like a book");
     await expect(view).toContainText(/w1 .* mm, 24 AWG/);
     const img = view.locator(".kv-step-img").first();
     await img.scrollIntoViewIfNeeded();

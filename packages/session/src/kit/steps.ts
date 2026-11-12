@@ -32,12 +32,18 @@ const PLAN_CHECK: Record<AssemblyStep["action"], string> = {
   test: "It does what the step says.",
 };
 
+/** A test step's check: its sentence saying what should happen (else its last sentence), not the whole step again. */
+function testCheck(say: string): string {
+  const sentences = say.split(/(?<=[.!?])\s+(?=[A-Z])/).map((x) => x.trim()).filter(Boolean);
+  return sentences.find((x) => /\bshould\b/i.test(x)) ?? sentences.at(-1) ?? say;
+}
+
 export function planSteps(steps: AssemblyStep[], ctx: { label: (ref: string) => string; caseRel: string }): KitStep[] {
   return steps.map((st, i) => {
     const wires: KitWire[] = st.wires.map((w) => ({ wire: w.id, from: w.from, to: w.to, from_label: ctx.label(w.from), to_label: ctx.label(w.to), color: w.color.startsWith("#") ? colorName(w.color) : w.color, length_mm: w.length_mm, gauge_awg: w.gauge }));
     const image = st.image ? `${ctx.caseRel}/${st.image}` : undefined;
     const extra = [...(st.fasteners.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${f.size} ${f.kind}`).join(", ")}.`] : []), ...(st.tools.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
-    return { n: i + 1, title: st.title, do: [st.say, ...extra].filter(Boolean), ...(image ? { image, image_alt: st.title } : {}), parts: st.parts, wires, cautions: [...st.cautions], check: st.action === "test" ? st.say : PLAN_CHECK[st.action] };
+    return { n: i + 1, title: st.title, do: [st.say, ...extra].filter(Boolean), ...(image ? { image, image_alt: st.title } : {}), parts: st.parts, wires, cautions: [...st.cautions], check: st.action === "test" ? testCheck(st.say) : PLAN_CHECK[st.action] };
   });
 }
 
