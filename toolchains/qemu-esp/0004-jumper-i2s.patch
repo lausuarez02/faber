@@ -32,10 +32,10 @@ index b73f166..05c4b3c 100644
              s->sync_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, jumper_sync_cb, s);
 diff --git a/hw/misc/jumper_i2s.c b/hw/misc/jumper_i2s.c
 new file mode 100644
-index 0000000..ac16432
+index 0000000..0444db7
 --- /dev/null
 +++ b/hw/misc/jumper_i2s.c
-@@ -0,0 +1,791 @@
+@@ -0,0 +1,778 @@
 +/*
 + * Jumper I2S: register-level model of the ESP32-family I2S controllers whose audio crosses the
 + * Jumper bridge as time-stamped blocks of sample frames (hw/gpio/esp32_gpio.c documents the lines):
@@ -437,19 +437,30 @@ index 0000000..ac16432
 +    timer_del(d->timer);
 +}
 +
-+/* TX: send the descriptor in flight as ST lines (time-stamped from its start). */
-+static bool tx_emit(JumperI2sState *s, JumperI2sDir *d)
++/* Reads the descriptor in flight: its length (TX) or size (RX) and its link. */
++static bool desc_load(JumperI2sDir *d, I2sDesc *desc)
 +{
-+    I2sDesc desc;
-+    if (!desc_read(d->desc, &desc)) {
++    if (!desc_read(d->desc, desc)) {
 +        return false;
 +    }
-+    d->next = desc.next;
-+    d->len = DESC_LENGTH(desc);
++    d->next = desc->next;
++    d->len = d->tx && DESC_LENGTH(*desc) ? DESC_LENGTH(*desc) : DESC_SIZE(*desc);
 +    if (!d->len) {
-+        d->len = DESC_SIZE(desc);
++        d->len = I2S_DESC_MAX - 4;
 +    }
-+    if (!d->len) {
++    return true;
++}
++
++/*
++ * TX: the descriptor in flight has played; send what it held as ST lines stamped from its start.
++ * Read at the end of the block, not the start: the DMA reads the buffer progressively while it
++ * plays, so a firmware still filling it just ahead of the DMA (ESP-IDF hands out the next buffer to
++ * play when the ring has run dry) is heard in full, as on the chip.
++ */
++static bool tx_send(JumperI2sState *s, JumperI2sDir *d)
++{
++    I2sDesc desc;
++    if (!desc_load(d, &desc)) {
 +        return false;
 +    }
 +    uint8_t raw[I2S_DESC_MAX];
@@ -488,14 +499,10 @@ index 0000000..ac16432
 +static bool rx_fill(JumperI2sState *s, JumperI2sDir *d)
 +{
 +    I2sDesc desc;
-+    if (!desc_read(d->desc, &desc)) {
++    if (!desc_load(d, &desc)) {
 +        return false;
 +    }
-+    d->next = desc.next;
-+    uint32_t size = DESC_SIZE(desc);
-+    if (!size) {
-+        size = I2S_DESC_MAX - 4;
-+    }
++    uint32_t size = d->len;
 +    int fbr = (int)frame_bytes(d);
 +    int frames = size / fbr;
 +    int fb = norm_bytes(d) * d->chans;
@@ -534,7 +541,7 @@ index 0000000..ac16432
 +        return;
 +    }
 +    uint32_t done = d->desc;
-+    if (!d->tx && !rx_fill(s, d)) {
++    if (!(d->tx ? tx_send(s, d) : rx_fill(s, d))) {
 +        dir_stop(d);
 +        return;
 +    }
@@ -544,21 +551,12 @@ index 0000000..ac16432
 +        dir_stop(d);
 +        return;
 +    }
++    I2sDesc desc;
 +    d->desc = d->next;
 +    d->t0 = d->t_end;
-+    if (d->tx) {
-+        if (!tx_emit(s, d)) {
-+            dir_stop(d);
-+            return;
-+        }
-+    } else {
-+        I2sDesc desc;
-+        if (!desc_read(d->desc, &desc)) {
-+            dir_stop(d);
-+            return;
-+        }
-+        d->next = desc.next;
-+        d->len = DESC_SIZE(desc) ? DESC_SIZE(desc) : I2S_DESC_MAX - 4;
++    if (!desc_load(d, &desc)) {
++        dir_stop(d);
++        return;
 +    }
 +    d->t_end = d->t0 + dur_ns(d, d->len);
 +    timer_mod(d->timer, d->t_end);
@@ -601,24 +599,13 @@ index 0000000..ac16432
 +        d->desc = link_to_addr(s, link);
 +    }
 +    latch_format(s, d);
++    I2sDesc desc;
++    if (!desc_load(d, &desc)) {
++        warn_report("jumper.i2s%u: %s descriptor at 0x%08x is not readable", s->port, d->tx ? "TX" : "RX", d->desc);
++        return;
++    }
 +    d->running = true;
 +    d->t0 = now_ns();
-+    if (d->tx) {
-+        if (!tx_emit(s, d)) {
-+            warn_report("jumper.i2s%u: TX descriptor at 0x%08x is not readable", s->port, d->desc);
-+            dir_stop(d);
-+            return;
-+        }
-+    } else {
-+        I2sDesc desc;
-+        if (!desc_read(d->desc, &desc)) {
-+            warn_report("jumper.i2s%u: RX descriptor at 0x%08x is not readable", s->port, d->desc);
-+            dir_stop(d);
-+            return;
-+        }
-+        d->next = desc.next;
-+        d->len = DESC_SIZE(desc) ? DESC_SIZE(desc) : I2S_DESC_MAX - 4;
-+    }
 +    d->t_end = d->t0 + dur_ns(d, d->len);
 +    timer_mod(d->timer, d->t_end);
 +}

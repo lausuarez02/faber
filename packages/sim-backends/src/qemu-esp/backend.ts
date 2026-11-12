@@ -814,7 +814,9 @@ export class QemuEspBackend implements McuBackend {
     const samples = new Int32Array(n);
     const dv = new DataView(ev.data.buffer, ev.data.byteOffset, ev.data.byteLength);
     for (let i = 0; i < n; i++) samples[i] = bytesPer === 2 ? dv.getInt16(2 * i, true) : dv.getInt32(4 * i, true);
-    this.i2s.send({ cycle: this._cycles, sampleRate: ev.rate, bits: ev.bits, channels: ev.channels, samples });
+    // The block is reported once it has played (QEMU reads the DMA buffer at its end); its first
+    // frame left at ev.ns.
+    this.i2s.send({ cycle: Math.round((Number(ev.ns) * this.cyclesPerSecond) / 1e9), sampleRate: ev.rate, bits: ev.bits, channels: ev.channels, samples });
   }
 
   private i2sIn(ev: Extract<BridgeEvent, { kind: "i2s-in" }>): string {
