@@ -42,6 +42,7 @@ export type FitCheckId =
   | "screen-window" // screen active area centred under the window within tolerance, bezel not cut
   | "buttons-reachable" // every button cap reaches through its hole with travel to spare
   | "connector-access" // USB etc. opening lines up with the receptacle, plug clearance kept
+  | "camera-view" // round 14: a camera lens has its hole, and the field of view clears the wall
   | "min-wall" // every wall >= min (1.2 mm FDM)
   | "printable" // no overhang needing support except where listed
   | "watertight" // every STL is a closed 2-manifold with volume > 0

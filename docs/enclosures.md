@@ -297,6 +297,7 @@ assembled.
 | `screen-window` | window sized to the active area, not cutting past the bezel, and (round 8b) looked through: lines of sight straight in through the window must land on the display's active area, so a window off the screen, another part in front of it or nothing behind it fail, naming what is seen |
 | `buttons-reachable` | each plunger goes through its hole, stands proud for the switch's travel |
 | `connector-access` | the plug reaches: receptacle ≤ 2.5 mm inside the outer surface, opening on a flat |
+| `camera-view` | round 14: each camera lens has its hole, with its size and position, wide enough for the lens' field of view at its depth behind the wall (warning when the wall shows at the photo's edges) |
 | `min-wall` | wall measured between the outer and inner surfaces in OpenCascade (and at the snap groove), ≥ 1.2 mm |
 | `printable` | prints on its outer face without supports; overhang area of the rounded edge near the bed |
 | `watertight` | every STL is a closed 2-manifold with volume > 0 (re-checked from the file bytes in tests) |

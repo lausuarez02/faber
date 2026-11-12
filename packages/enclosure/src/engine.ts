@@ -181,6 +181,17 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     const ok = ins.protrude >= ins.travel + 0.3 && ins.length <= 14;
     checks.push({ id: "buttons-reachable", ok, severity: ok ? "info" : "warning", message: ok ? `${o.part}: plunger Ø${ins.d.toFixed(1)} through a Ø${o.u.toFixed(1)} hole on the ${o.face}, ${ins.length.toFixed(1)} mm long, stands ${ins.protrude.toFixed(1)} mm proud for ${ins.travel} mm of travel.` : `${o.part}: the plunger is ${ins.length.toFixed(1)} mm long${ins.length > 14 ? " and may wobble" : ""}. Why: the switch sits ${o.standoff.toFixed(1)} mm from the wall. Fix: move it to a face with placements, or accept a longer plunger.`, parts: [o.part] });
   }
+  // ---- camera lenses (round 14): say the hole is there, where, and that the field of view clears the wall,
+  // so an agent reading the report does not have to infer it from the drawing
+  for (const o of L.openings.filter((x) => x.kind === "lens")) {
+    const feat = L.placed.find((p) => p.mech.id === o.part)?.mech.features.find((f) => f.id === o.feature);
+    const fov = feat?.fov ?? 66;
+    const behind = Math.max(0, o.standoff) + o.depth;
+    const need = (feat?.u ?? 0) + 2 * behind * Math.tan((fov * Math.PI) / 360);
+    const ok = o.u + 0.05 >= need;
+    const where = `(${o.at[0].toFixed(1)}, ${o.at[1].toFixed(1)}) mm from the centre`;
+    checks.push({ id: "camera-view", ok, severity: ok ? "info" : "warning", facts: { hole_mm: Math.round(o.u * 10) / 10, behind_mm: Math.round(behind * 10) / 10, fov_deg: fov }, message: ok ? `${o.part}.${o.feature}: Ø${o.u.toFixed(1)} mm lens hole on the ${o.face} at ${where}, lens ${behind.toFixed(1)} mm behind the outer surface: its ${fov}° field of view clears the wall.` : `${o.part}.${o.feature}: the Ø${o.u.toFixed(1)} mm lens hole on the ${o.face} at ${where} is narrower than the ${need.toFixed(1)} mm its ${fov}° field of view needs ${behind.toFixed(1)} mm behind the surface, so the wall shows at the photo's edges. Why: the lens sits deep behind the wall. Fix: a thinner wall (wall_mm), or place ${o.part} closer to the ${o.face}.`, parts: [o.part] });
+  }
   // ---- connectors (the layout's own estimate is replaced by this check on the real bodies)
   for (let i = checks.length - 1; i >= 0; i--) if (checks[i]!.id === "connector-access" && L.openings.some((o) => o.kind === "connector" && checks[i]!.parts?.includes(o.part))) checks.splice(i, 1);
   for (const o of L.openings.filter((x) => x.kind === "connector")) {
