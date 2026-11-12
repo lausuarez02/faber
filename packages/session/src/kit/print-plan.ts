@@ -202,7 +202,7 @@ export async function printPlan(inp: PrintPlanInput): Promise<PrintPlan> {
         slicerInfo.used = true;
       } else if (inp.slicer === "cached" && !slicerInfo.why) slicerInfo.why = `${found.name} is installed: ask for the build kit from your agent (or download it) to slice with it; until then the numbers are estimated from the meshes`;
     }
-    items.push({ ...base, grams: Math.round(grams * 10) / 10, minutes: Math.max(1, Math.round(minutes)), volume_cm3: Math.round(V / 100) / 10, height_mm: Math.round(H * 10) / 10, source });
+    items.push({ ...base, grams: Math.round(grams * 10) / 10, minutes: Math.max(1, Math.round(minutes)), volume_cm3: Math.round(V / 100) / 10, height_mm: Math.round(H * 10) / 10, size_mm: [0, 1, 2].map((k) => Math.round((st.max[k]! - st.min[k]!) * 10) / 10) as [number, number, number], source });
   }
   if (cacheChanged && inp.cacheFile) {
     mkdirSync(dirname(inp.cacheFile), { recursive: true });

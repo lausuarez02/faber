@@ -88,6 +88,8 @@ export interface PrintItem {
   /** Mesh numbers behind the estimate. */
   volume_cm3?: number;
   height_mm?: number;
+  /** The STL's measured bounding box as it lies on the bed: [width x, depth y, print height z] in mm. */
+  size_mm?: [number, number, number];
   /** "mesh" (estimated from the STL), "slicer:<name>" (sliced on this computer), "report" (no STL: from the case report's mass), "none". */
   source: string;
   note?: string;

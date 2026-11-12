@@ -359,6 +359,7 @@ function PrintTab({ kit, ticks, tick }: TabProps) {
               </div>
               <div className="kv-variant">
                 {i.color_hex ? <span className="kv-swatch" style={{ background: i.color_hex }} aria-hidden /> : null}
+                {i.size_mm ? <span data-testid="kit-print-size">{i.size_mm.join(" × ")} mm · </span> : null}
                 {i.material}, {i.color} · {i.layer_mm} mm layers · {i.infill_pct} % infill · {i.supports ? "with supports" : "no supports"}
               </div>
               <div className="kv-why">Lay it: {i.orientation}</div>

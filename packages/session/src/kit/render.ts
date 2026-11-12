@@ -43,12 +43,17 @@ export function printListMd(k: BuildKit): string {
     out.push("Nothing to print yet: the project has no case.", "");
     return out.join("\n");
   }
-  out.push("| ✓ | File | Material | Colour | Lay it | Supports | Layer | Infill | About | Time |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
-  for (const i of p.items) out.push(`| [ ] | case/${i.file} (${i.label}) | ${i.material} | ${i.color}${i.color_hex ? ` ${i.color_hex}` : ""} | ${mdCell(i.orientation)} | ${i.supports ? "yes" : "no"} | ${i.layer_mm} mm | ${i.infill_pct} % | ${i.grams} g | ${fmtMin(i.minutes)} |`);
-  out.push("", `Total about **${Math.round(p.total_grams)} g** and **${fmtMin(p.total_minutes)}**.${p.plate ? ` Or open \`case/${p.plate}\`: one build plate with every part already laid out.` : ""}`, "", `*${p.method}*`, "");
+  out.push("| ✓ | File | Size (mm) | Material | Colour | Lay it | Supports | Layer | Infill | About | Time |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const i of p.items) out.push(`| [ ] | case/${i.file} (${i.label}) | ${sizeWords(i.size_mm)} | ${i.material} | ${i.color}${i.color_hex ? ` ${i.color_hex}` : ""} | ${mdCell(i.orientation)} | ${i.supports ? "yes" : "no"} | ${i.layer_mm} mm | ${i.infill_pct} % | ${i.grams} g | ${fmtMin(i.minutes)} |`);
+  out.push("", "Size: measured from each STL as it lies on the bed, width × depth × print height.", "", `Total about **${Math.round(p.total_grams)} g** and **${fmtMin(p.total_minutes)}**.${p.plate ? ` Or open \`case/${p.plate}\`: one build plate with every part already laid out.` : ""}`, "", `*${p.method}*`, "");
   if (p.slicer.why) out.push(`> ${p.slicer.why}`, "");
   out.push("## Settings", "", ...p.settings.map((s) => `- ${s}`), "", "## Or send it to a print service", "", ...p.service.say.map((s) => `- ${s}`), "");
   return out.join("\n");
+}
+
+/** A printed part's measured size: "100.4 × 102.4 × 13.4" (as it lies on the bed: width × depth × print height). */
+export function sizeWords(size: [number, number, number] | undefined): string {
+  return size ? size.join(" × ") : "–";
 }
 
 export function fmtMin(m: number): string {
@@ -164,8 +169,8 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
   const alts = k.shopping.lines.filter((l) => l.alternatives.length);
   const p = k.print;
   const printSec = p.items.length
-    ? `${p.stale ? `<div class="box warn"><b>${h(p.stale)}</b></div>` : ""}<div class="table"><table><thead><tr><th></th><th>File</th><th>Material, colour</th><th>Lay it</th><th>Supports</th><th>Layer / infill</th><th>About</th></tr></thead><tbody>${p.items
-        .map((i) => `<tr><td>${cb(`print:${i.file}`)}</td><td><b>${h(i.label)}</b><div class="why">case/${h(i.file)}</div></td><td>${h(i.material)}, ${h(i.color)}${i.color_hex ? ` <span class="muted">${h(i.color_hex)}</span>` : ""}</td><td>${h(i.orientation)}</td><td>${i.supports ? "yes" : "no"}</td><td>${i.layer_mm} mm, ${i.infill_pct} %</td><td class="num">${i.grams} g<br>${fmtMin(i.minutes)}</td></tr>`)
+    ? `${p.stale ? `<div class="box warn"><b>${h(p.stale)}</b></div>` : ""}<div class="table"><table><thead><tr><th></th><th>File</th><th>Size (mm)</th><th>Material, colour</th><th>Lay it</th><th>Supports</th><th>Layer / infill</th><th>About</th></tr></thead><tbody>${p.items
+        .map((i) => `<tr><td>${cb(`print:${i.file}`)}</td><td><b>${h(i.label)}</b><div class="why">case/${h(i.file)}</div></td><td class="num">${h(sizeWords(i.size_mm))}</td><td>${h(i.material)}, ${h(i.color)}${i.color_hex ? ` <span class="muted">${h(i.color_hex)}</span>` : ""}</td><td>${h(i.orientation)}</td><td>${i.supports ? "yes" : "no"}</td><td>${i.layer_mm} mm, ${i.infill_pct} %</td><td class="num">${i.grams} g<br>${fmtMin(i.minutes)}</td></tr>`)
         .join("")}</tbody></table></div><p>Total about <b>${Math.round(p.total_grams)} g</b> and <b>${fmtMin(p.total_minutes)}</b>.${p.plate ? ` Or open <code>case/${h(p.plate)}</code>: one build plate with every part already laid out.` : ""}</p><p class="why">${h(p.method)}</p>${p.slicer.why ? `<p class="why">${h(p.slicer.why)}</p>` : ""}<h3>Settings</h3><ul>${p.settings.map((s) => `<li>${h(s)}</li>`).join("")}</ul><h3>Or send it to a print service</h3><ul>${p.service.say.map((s) => `<li>${h(s)}</li>`).join("")}</ul>`
     : `<p class="muted">Nothing to print yet: the project has no case.</p>`;
   const steps = k.steps

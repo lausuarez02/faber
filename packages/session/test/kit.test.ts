@@ -102,6 +102,10 @@ describe("build kit", () => {
     const p = await printPlan({ caseDir: dir, report, slicer: "auto" });
     // V 8000, area 2400 -> solid 2400 + 20 % of 5600 = 3520 mm³; 3.52 cm³ x 1.24 x 1.05 = 4.58 g; (3520 / 4 + 100 layers x 3 s) / 60 = 19.7 min
     expect(p.items[0]).toMatchObject({ grams: 4.6, minutes: 20, source: "mesh", material: "PLA", color: "ivory", layer_mm: 0.2, infill_pct: 20, supports: false });
+    // round 13: each printed file's measured size (its STL's bounding box as it lies on the bed), in the list too
+    writeFileSync(join(dir, "stl/front.stl"), boxStl(30, 20, 12.5));
+    expect((await printPlan({ caseDir: dir, report, slicer: "auto" })).items[0]!.size_mm).toEqual([30, 20, 12.5]);
+    writeFileSync(join(dir, "stl/front.stl"), boxStl(20, 20, 20));
     expect(p.plate).toBe("case.3mf");
     expect(p.method).toMatch(/4 mm³ per second/);
     // a fake PrusaSlicer: its G-code footer is read, the result cached
@@ -167,6 +171,10 @@ describe("build kit", () => {
     for (const rel of ["kit.html", "KIT.md", "SHOPPING.csv", "SHOPPING.md", "PRINT-LIST.md", "case/stl/front.stl", "case/stl/cap-pet.stl", "case/case.3mf", "case/renders/inside.png", place.image!, "firmware/firmware.uf2", "firmware/firmware.hex"]) expect(existsSync(join(f.dir, rel)), rel).toBe(true);
     expect(f.zip && existsSync(f.zip)).toBe(true);
     expect(readFileSync(f.html, "utf8")).toContain("data:image/png;base64,");
+    // every printed file says its measured size (mm) in the print list
+    const front = kit.print.items.find((i) => i.body === "front")!;
+    expect(front.size_mm).toHaveLength(3);
+    expect(readFileSync(join(f.dir, "PRINT-LIST.md"), "utf8")).toContain(`| ${front.size_mm!.join(" × ")} |`);
   }, 90_000);
 
   it("the star keychain: the agent's custom case, every line and print", async () => {

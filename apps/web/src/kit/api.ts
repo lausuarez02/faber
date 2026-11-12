@@ -42,6 +42,8 @@ export interface PrintItem {
   walls: number;
   grams: number;
   minutes: number;
+  /** Measured from the STL as it lies on the bed: width, depth, print height (mm). */
+  size_mm?: [number, number, number];
   source: string;
   note?: string;
 }
