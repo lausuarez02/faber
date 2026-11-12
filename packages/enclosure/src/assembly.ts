@@ -78,6 +78,8 @@ export interface AssemblyPlan {
   mounts: { part: string; shell: "front" | "back"; how: string[]; insert: string; say: string; missing?: string }[];
   /** sha-free summary of the wiring the plan was made for (part.pin pairs), to spot a stale plan. */
   wires_key: string;
+  /** Round 13: whether the firmware reads a memory card (undefined: not known); a board's own slot gets a card step only then. */
+  firmware_card?: boolean;
 }
 
 export interface AssemblyInput {
@@ -87,6 +89,13 @@ export interface AssemblyInput {
   /** The cut list (session's wireCuts on this layout); estimated here from the pin positions when absent. */
   wires?: AssemblyWire[];
   title?: string;
+  /** Round 13: the firmware's source text: a board's own card slot (XIAO ESP32-S3 Sense) gets a card only when it reads one. */
+  firmwareText?: string;
+}
+
+/** Round 13: firmware that reads a memory card (SD / SD_MMC / SdFat). */
+export function firmwareUsesCard(text: string): boolean {
+  return /#\s*include\s*[<"](SD|SD_MMC|SdFat)\.h[>"]|\bSD(_MMC)?\.begin\s*\(/.test(text);
 }
 
 interface Box {
@@ -401,6 +410,8 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
       const role = p.mech.id === board?.id ? "flashing and power" : p.mech.category === "power" ? "charging" : "its cable";
       // a card slot inside is fine: the card goes in before closing (a step of the plan)
       if (!opened && /sd/i.test(f.connector ?? "")) {
+        // a board's own slot is optional: a card only when the firmware reads one (modules with a slot, DFPlayer, need theirs)
+        if (p.mech.category === "board" && input.firmwareText !== undefined && !firmwareUsesCard(input.firmwareText)) continue;
         cards.push({ part: p.mech.id, what: f.connector === "microsd" ? "microSD card" : "SD card" });
         continue;
       }
@@ -560,6 +571,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
     wires,
     mounts: [...mounts.values()].map((m) => ({ part: m.part, shell: m.shell, how: m.how, insert: m.insert, say: m.say, ...(m.missing ? { missing: m.missing } : {}) })),
     wires_key: wiresKey(project),
+    ...(input.firmwareText !== undefined ? { firmware_card: firmwareUsesCard(input.firmwareText) } : {}),
   };
 }
 

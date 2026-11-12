@@ -6,6 +6,7 @@
  * each connector needs, wire / heat-shrink / solder / tape for a soldered build, headers and a
  * breadboard for a breadboard build, screws and inserts for a screwed case, filament for the case.
  */
+import { firmwareUsesCard } from "@jumper/enclosure";
 import { buildNets, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec } from "@jumper/sim-core";
 import { wireTotals, type WireCut } from "../assembly.ts";
@@ -185,7 +186,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
   // ---- things people forget (rules over the part data)
   // a card slot (DFPlayer, SD modules) needs its card
   // A board with a slot (XIAO ESP32-S3 Sense) needs a card only when its firmware reads one (SD / SD_MMC / FFat on a card).
-  const usesCard = inp.firmwareText === undefined || /#\s*include\s*[<"](SD|SD_MMC|SdFat)\.h[>"]|\bSD(_MMC)?\.begin\s*\(/.test(inp.firmwareText);
+  const usesCard = inp.firmwareText === undefined || firmwareUsesCard(inp.firmwareText);
   const cardParts = project.parts.filter((p) => {
     const spec = registry.get(p.type)?.spec;
     return /micro\s?-?SD|TF card/i.test(words(spec)) && (spec?.category !== "board" || usesCard);

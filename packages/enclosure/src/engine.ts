@@ -41,6 +41,8 @@ export interface GenerateOptions {
   wires?: (L: Layout) => AssemblyWire[];
   /** Round 12: render one picture per assembly step (default: with the renders). */
   stepImages?: boolean;
+  /** Round 13: the firmware's source text, for the assembly plan (a board's own card slot needs a card only when it reads one). */
+  firmwareText?: string;
 }
 
 export interface Generated {
@@ -249,7 +251,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   }
 
   // ---- round 12: how it goes together (the assembly plan), its checks, and a picture per step
-  const plan = assemblyPlan({ project, layout: L, specOf, title, ...(opts.wires ? { wires: opts.wires(L) } : {}) });
+  const plan = assemblyPlan({ project, layout: L, specOf, title, ...(opts.wires ? { wires: opts.wires(L) } : {}), ...(opts.firmwareText !== undefined ? { firmwareText: opts.firmwareText } : {}) });
   checks.push(...plan.checks.map(({ facts, ...c }) => ({ ...c, ...(facts ? { facts } : {}) })));
   if (opts.renders !== false && opts.stepImages !== false) {
     const front = B.bodies.find((b) => b.name === "front")!;

@@ -12,6 +12,7 @@ import { fidelityReport } from "../fidelity.ts";
 import { wireCuts, wireCutsCsv } from "../assembly.ts"; // round 6: one wire-cut model (power track)
 import { bomCsv, bomLines, bomMd, clearDir, copyTree, kicadNetlist, listFiles, netlistCsv, pinPositions, writeText, zipFolder } from "../manufacturing.ts";
 import { sdCardFiles } from "../voice.ts"; // round 7 voice
+import { firmwareText } from "../firmware-text.ts"; // round 13
 import { projectSlug } from "../projects-registry.ts";
 import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
@@ -481,7 +482,8 @@ export function planWires(project: Project, reg: ProjectSession["registry"]) {
 
 async function generateInto(s: ProjectSession, project: Project, caseDir: string): Promise<Out> {
   const { generateCase, writeCaseFiles, writeMeshCache } = await import("@jumper/enclosure");
-  const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg, wires: planWires(project, s.registry) });
+  const fw = firmwareText(s);
+  const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg, wires: planWires(project, s.registry), ...(fw !== undefined ? { firmwareText: fw } : {}) });
   writeCaseFiles(caseDir, g.files);
   if (caseDir === join(s.dir, "case")) writeMeshCache(join(s.dir, ".jumper", "case-mesh.json"), g.mesh);
   return { report: g.report, dir: caseDir, missing: g.missing };
@@ -523,10 +525,12 @@ export async function assemblyPlanFor(s: ProjectSession) {
   } catch {
     plan = undefined;
   }
-  const current = !!plan && plan.wires_key === E.wiresKey(s.project);
+  // round 13: the firmware decides whether a board's own card slot gets a card, so a plan made for other firmware is stale too
+  const fw = firmwareText(s);
+  const current = !!plan && plan.wires_key === E.wiresKey(s.project) && (fw === undefined || plan.firmware_card === E.firmwareUsesCard(fw));
   if (!plan || !current) {
     const L = E.layoutCase(E.layoutInput(s.project, specOf));
-    plan = E.assemblyPlan({ project: s.project, layout: L, specOf, title: s.project.name, wires: planWires(s.project, s.registry)(L) });
+    plan = E.assemblyPlan({ project: s.project, layout: L, specOf, title: s.project.name, wires: planWires(s.project, s.registry)(L), ...(fw !== undefined ? { firmwareText: fw } : {}) });
   }
   const report = st.report;
   const print = report.files.filter((f) => f.kind === "stl").map((f) => ({ file: `case/${f.path}`, body: f.body, face_down: f.print?.face_down ?? "flat", supports: f.print?.supports ?? false, note: f.print?.note ?? "" }));

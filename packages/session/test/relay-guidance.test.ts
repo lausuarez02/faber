@@ -11,6 +11,7 @@ import { registry } from "@jumper/parts";
 import { planDevice, ProjectSession } from "../src/index.ts";
 import { AGENT_LOOP as AGENT_INSTRUCTIONS } from "../src/catalog.ts";
 import { buildKit } from "../src/kit/index.ts";
+import * as E from "@jumper/enclosure";
 
 const SEE_AND_SAY = fileURLToPath(new URL("../../../examples/see-and-say", import.meta.url));
 const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
@@ -64,5 +65,16 @@ describe("a board's own card slot", () => {
     writeFileSync(join(s.dir, "firmware/sd.cpp"), '#include <SD_MMC.h>\nvoid mountCard() { SD_MMC.begin(); }\n');
     const withCard = await buildKit(s, { slicer: "off" });
     expect(withCard.shopping.lines.map((l) => l.name)).toContain("microSD card");
+  });
+
+  it("the assembly plan puts a card into the board's slot only when the firmware reads one", () => {
+    const s = open(SEE_AND_SAY);
+    const project = { ...s.project, enclosure: { shape: "rounded-box" } } as typeof s.project;
+    const specOf = (t: string) => s.registry.get(t)?.spec;
+    const L = E.layoutCase(E.layoutInput(project, specOf));
+    const cardStep = (fw?: string) => E.assemblyPlan({ project, layout: L, specOf, ...(fw !== undefined ? { firmwareText: fw } : {}) }).steps.some((st) => /microSD card into/.test(st.title));
+    expect(cardStep("void setup() {}\nvoid loop() {}")).toBe(false);
+    expect(cardStep('#include "SD_MMC.h"\nvoid setup() { SD_MMC.begin(); }')).toBe(true);
+    expect(E.assemblyPlan({ project, layout: L, specOf, firmwareText: "void setup() {}" }).firmware_card).toBe(false);
   });
 });
