@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-12 (round 13 audio: real I2S on ESP32 / S3 / C3 in QEMU, API audio streamed to I2S, the page plays runs' sound; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-12 (round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,60 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 13, integrated on main (2026-11-12): a device that sees, calls an API and says the answer
+
+The three tracks below (camera, audio, relay) are merged on main and joined. All three are general
+capabilities; the "funny keychain" is a project built from them, `examples/see-and-say`.
+
+- **One QEMU series, tag jb7.** Both the camera and audio tracks added a patch `0004`. The series is
+  now `0001` bridge, `0002` peripherals, `0003` pads, `0004` I2S, `0005` Ethernet RX queueing,
+  `0006` camera port (the camera patch rebased onto the I2S tree: both hook the ESP32 / S3 machine
+  files and `hw/misc/meson.build`, the conflicts were one line each, the MMIO windows do not overlap).
+  Bridge protocol v6 plus the camera's `CC` / `CD` lines. `NATIVE_QEMU_TAG` / `QEMU_ESP_IMAGE`
+  `9.2.2-20260417-jb7`, `QEMU_SRC_BRANCH` `jumper-jb7` (new branch in the spike QEMU repo; 0001-0006
+  applied to Espressif's tag reproduce it file for file, checked with `diff -r`). Built natively with
+  `jumper setup esp32` (JUMPER_QEMU_SRC) in 50 s; every camera, I2S, audio-stream and relay firmware
+  test passes on it (19/19 run together, plus the full suite).
+- **`examples/see-and-say`** (XIAO ESP32-S3 Sense + GC9A01 + MAX98357A + 20 mm speaker + button): a
+  press captures a 320 × 240 JPEG, POSTs it base64 in an OpenAI-compatible chat-completions body to
+  a vision API through `jumperRelayUrl()`, sends the answer to an OpenAI-compatible `/audio/speech`
+  (`response_format: pcm`, 24 kHz) through the relay, and streams the PCM into I2S at 50 % volume.
+  Offline: the vision API is a mock, the speech API a cassette; both are written by
+  `scripts/make-network.mjs` and are **not recordings of a real provider** (the audio is a generated
+  chirp). Scenarios `see-and-say` and `vision-down` pass (`jumper test`, 3/3 runs);
+  `packages/session/test/see-and-say.test.ts` also checks both calls went through the relay (mock,
+  then cassette), the run's recording peaks at the firmware's volume, and the device build has no
+  relay settings. README: parts, pins, what is emulated / shimmed / mocked, real APIs, the relay.
+- **Docs:** [docs/cameras.md](docs/cameras.md) (was camera.md), [docs/audio.md](docs/audio.md) (new),
+  [docs/api-relay.md](docs/api-relay.md) (was relay.md); links, schema text and CLI help updated.
+- **Fixes found while joining:** a scenario's `network_fault` stayed active after `run_tests` when it
+  was in the last scenario (the next manual run still got the 503); it now ends with its scenario.
+  The examples gallery e2e expects 10 examples.
+
+Emulated vs shimmed vs not, for the joined project: the firmware, PSRAM, SPI to the screen, I2S + DMA
+to the amplifier and the Wi-Fi / TLS / HTTP stack are the real arduino-esp32 code in QEMU; the
+esp32-camera calls are shimmed in the simulation build (frames rendered by Jumper; DVP / LCD_CAM, SCCB
+and XCLK not emulated); the Wi-Fi radio is not emulated (an Ethernet card carries it); the APIs are a
+mock and a cassette.
+
+Checks (worktree `jumper-wt-r13-main`, native runtimes, Docker down, load average 6 to 460 from other
+work): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **228 files passed,
+2 skipped; 1864 tests passed, 5 expected fail, 5 skipped** (the first run after the merges, before the
+example: exit 0, 227 / 1860). Full e2e, desktop + mobile (`E2E_PORT=6360 E2E_HUB_PORT_BASE=13100`, 2
+workers): first run exit 1, 110 passed, 2 failed (projects-flow on both: the gallery count, a real
+test change from the new example), 16 skipped, 2 did not run; after the fix, projects-flow alone 6/6
+and the final full run **exit 0: 114 passed, 0 failed, 16 skipped**.
+
+Gaps (round 13, integrated): the jb7 Docker image is not built (Docker broken here), so anyone without
+a native jb7 must run `jumper setup esp32` again, and older emulators lack I2S or the camera; the
+user's server (port 7780, proof/star-r12) still runs jb5 code; nothing was run on a real Sense,
+amplifier or speaker, and no real vision / TTS provider was called (the shapes follow the
+OpenAI-compatible APIs; other providers need `describe()` / `say()` changed); the star keychain's
+XIAO RP2040 has no Wi-Fi, camera or I2S in Jumper, so a seeing, talking star needs the XIAO ESP32-S3
+Sense; in the simulation build `Serial` is on UART0 (GPIO43 / 44), so a sketch using D6 / D7 as GPIO
+silences the Serial panel (the real board uses USB serial; no design check for it yet); the browser
+microphone does not feed the Sense's mic.
 
 ## Round 13, track relay (2026-11-12): the real device reaches APIs the way the simulator does, with no key in it
 
