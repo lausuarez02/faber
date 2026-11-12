@@ -20,6 +20,7 @@ import { apply, envelopeZ, FACE_DIR, faceAxes, I3, type LocalFeature, type Mat3,
 import { contains, type Flat, growPlan, withFastOutline, type Need, outline, type Plan, type PlanKind, planBounds, polyDistance, polyOuter, rayExit, sizePlan, sizePoly } from "./plan.ts";
 import { outlineFeatureIssues, parseOutline, presetOutline, presetPoints, type ParsedOutline } from "./outline.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
+import { designMounts } from "./mounts.ts";
 import { depthCandidates, hashSeed, type OEnv, type OItem, type OVariant, radialOf, searchAtDepth, type ZMode } from "./optimize.ts";
 
 /** Round 8: the optimizer's settings for one layout run. */
@@ -160,6 +161,9 @@ export interface Rib {
   max: Vec3;
   shell: "front" | "back";
   why: string;
+  /** Round 12: the part it holds and what it does (locator round the part, backstop behind a side part, guide beside one, corner of a cell). */
+  part?: string;
+  kind?: "locator" | "backstop" | "guide" | "corner";
 }
 
 export interface Post {
@@ -173,6 +177,9 @@ export interface Post {
   pin_d?: number;
   shell: "front" | "back";
   why: string;
+  /** Round 12: the part it holds; standoff (a pin in a mounting hole), seat (the part rests on it) or hold-down (stops it lifting, from the other shell). */
+  part?: string;
+  kind?: "standoff" | "seat" | "hold-down";
 }
 
 export interface Boss {
@@ -206,7 +213,9 @@ export interface Layout {
   ribs: Rib[];
   posts: Post[];
   bosses: Boss[];
-  cradles: { part: string; min: Vec3; max: Vec3; wall: number; h: number }[];
+  cradles: { part: string; min: Vec3; max: Vec3; wall: number; h: number; slots?: { min: Vec3; max: Vec3 }[] }[];
+  /** Round 12: how each part is held, which shell it goes into and how it goes in (the assembly plan reads it). */
+  mounts: Mount[];
   /**
    * Domed front / back faces (pebble): each face rises by up to `crown` mm above its flat wall plane
    * along a sphere that meets the plane at the rim, with a flat plateau of radius `plateau` around
@@ -229,6 +238,9 @@ export interface Layout {
 }
 
 const SIDE_FACES: CaseFaceName[] = ["right", "left", "top", "bottom"];
+
+export type { Mount, MountHow } from "./mounts.ts";
+import type { Mount } from "./mounts.ts";
 
 /** One domed face: sphere of radius R about the axis (x, y), flat plateau of radius `plateau` at `crown` above the wall plane, meeting the plane at distance S. */
 export interface Dome {
@@ -1332,8 +1344,8 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
         const top = toCase(p, [hole.x, hole.y, p.mech.d]);
         const near = Math.max(c[2], top[2]);
         const far = Math.min(c[2], top[2]);
-        const back: Post = { x: c[0], y: c[1], z0: zBack, z1: far, d: hole.d + 2.4, pin_d: hole.d - 0.3, shell: "back", why: `standoff + pin for ${p.mech.id}` };
-        const frontP: Post = { x: c[0], y: c[1], z0: near, z1: zFront, d: hole.d + 2.4, pin_d: hole.d - 0.3, shell: "front", why: `standoff + pin for ${p.mech.id}` };
+        const back: Post = { x: c[0], y: c[1], z0: zBack, z1: far, d: hole.d + 2.4, pin_d: hole.d - 0.3, shell: "back", why: `standoff + pin for ${p.mech.id}`, part: p.mech.id, kind: "standoff" };
+        const frontP: Post = { x: c[0], y: c[1], z0: near, z1: zFront, d: hole.d + 2.4, pin_d: hole.d - 0.3, shell: "front", why: `standoff + pin for ${p.mech.id}`, part: p.mech.id, kind: "standoff" };
         for (const post of [back, frontP]) {
           if (post.z1 - post.z0 < 0.4) continue;
           const b: Box = { min: [post.x - post.d / 2, post.y - post.d / 2, post.z0], max: [post.x + post.d / 2, post.y + post.d / 2, post.z1] };
@@ -1375,10 +1387,35 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
         cand.push({ min: [cx - ribL / 2, p.bodyMin[1] - c0 - rw, z0], max: [cx + ribL / 2, p.bodyMin[1] - c0, z1] });
         cand.push({ min: [cx - ribL / 2, p.bodyMax[1] + c0, z0], max: [cx + ribL / 2, p.bodyMax[1] + c0 + rw, z1] });
       }
-      for (const b of cand) if (freeBox(b, p)) ribs.push({ min: b.min, max: b.max, shell, why: `locates ${p.mech.id}` });
+      for (const b of cand) if (freeBox(b, p)) ribs.push({ min: b.min, max: b.max, shell, why: `locates ${p.mech.id}`, part: p.mech.id, kind: "locator" });
     }
   }
   void boxes;
+  // round 12: every part held (seat posts, locators off the wall, hold-downs, backstops and guides
+  // for side parts, cradle strap slots), and which shell it goes into and how
+  const lipBand = (b: Box) => b.max[2] > split - lip.h - 0.3 && b.min[2] < split + 0.8;
+  const mounts = designMounts({
+    placed,
+    openings,
+    ribs,
+    posts,
+    cradles,
+    zFront,
+    zBack,
+    split,
+    tol,
+    free: (b, ignore) => !placed.some((p) => p !== ignore && overlap(p, b, 0.3)),
+    inside: (b) => {
+      const inset = intrusion(b.min[2], b.max[2]) + (lipBand(b) ? lip.t + tol + 0.3 : 0) + 0.3;
+      for (const x of [b.min[0], b.max[0]]) for (const y of [b.min[1], b.max[1]]) if (!contains(plan, x, y, inset)) return false;
+      return true;
+    },
+    cavity: (b) => {
+      const inset = intrusion(b.min[2], b.max[2]) + 0.05;
+      for (const x of [b.min[0], b.max[0]]) for (const y of [b.min[1], b.max[1]]) if (!contains(plan, x, y, inset)) return false;
+      return true;
+    },
+  });
 
   // ---- 10. screw bosses
   const bosses: Boss[] = [];
@@ -1393,7 +1430,9 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       if (d <= 0) continue;
       const b: Boss = { x: plan.cx + ux * d, y: plan.cy + uy * d, od };
       const col: Box = { min: [b.x - od / 2, b.y - od / 2, zBack], max: [b.x + od / 2, b.y + od / 2, zFront] };
-      if (!placed.some((q) => overlap(q, col, 0.3)) && ![...openings].some((o) => Math.hypot(o.at[0] - b.x, o.at[1] - b.y) < Math.max(o.u, o.v) / 2 + od / 2 + 0.5)) cands.push(b);
+      // (round 12: nor on a rib or post: two solids touching on a face leave the shell open there)
+      const feats: Box[] = [...ribs.map((r) => ({ min: r.min, max: r.max })), ...posts.map((q) => ({ min: [q.x - q.d / 2, q.y - q.d / 2, q.z0] as Vec3, max: [q.x + q.d / 2, q.y + q.d / 2, q.z1] as Vec3 }))];
+      if (!placed.some((q) => overlap(q, col, 0.3)) && !feats.some((f) => overlap(f, col, 0.3)) && ![...openings].some((o) => Math.hypot(o.at[0] - b.x, o.at[1] - b.y) < Math.max(o.u, o.v) / 2 + od / 2 + 0.5)) cands.push(b);
     }
     // up to 4, spread out
     while (bosses.length < 4 && cands.length) {
@@ -1456,6 +1495,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   for (const cr of cradles) {
     cr.min = mv(cr.min);
     cr.max = mv(cr.max);
+    if (cr.slots) for (const sl of cr.slots) Object.assign(sl, { min: mv(sl.min), max: mv(sl.max) });
   }
   if (dome)
     for (const d of [dome.front, dome.back]) {
@@ -1515,6 +1555,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     posts,
     bosses,
     cradles,
+    mounts,
     dome,
     ...(tab ? { tab } : {}),
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },

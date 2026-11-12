@@ -268,7 +268,9 @@ export async function buildCase(L: Layout): Promise<Built> {
   for (const c of L.cradles) {
     const z0 = L.zBack - 0.3;
     const z1 = L.zBack + c.h;
-    const ring = r.makeBox([c.min[0] - c.wall, c.min[1] - c.wall, z0], [c.max[0] + c.wall, c.max[1] + c.wall, z1]).cut(r.makeBox([c.min[0], c.min[1], z0 - 1], [c.max[0], c.max[1], z1 + 1]));
+    let ring = r.makeBox([c.min[0] - c.wall, c.min[1] - c.wall, z0], [c.max[0] + c.wall, c.max[1] + c.wall, z1]).cut(r.makeBox([c.min[0], c.min[1], z0 - 1], [c.max[0], c.max[1], z1 + 1]));
+    // round 12: two strap slots through the long walls (a Kapton strap over the cell)
+    for (const sl of c.slots ?? []) ring = ring.cut(r.makeBox([sl.min[0], sl.min[1], z0 - 1], [sl.max[0], sl.max[1], z1 + 1]));
     addB.push(clip(ring));
   }
   const fuseAll = (shell: Solid, pieces: Solid[]) => {
