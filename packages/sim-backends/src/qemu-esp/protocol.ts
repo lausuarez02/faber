@@ -1,6 +1,7 @@
 // The Jumper bridge line protocol spoken by the patched QEMU GPIO block (toolchains/qemu-esp,
 // hw/gpio/esp32_gpio.c). One event per line, hex numbers without 0x (except "I": decimal).
-// Version 5 (jumper/qemu-esp:9.2.2-20260417-jb5) adds everything after the I2C lines plus "P"; version 2
+// Version 5 (jumper/qemu-esp:9.2.2-20260417-jb5) adds everything after the I2C lines plus "P"; version 6
+// (jb6, round 13) adds the I2S device behind ST / SR and "z<nbytes>" silence in ST. Version 2
 // images send a subset and keep working with this parser. Reference: docs/esp32-emulator.md.
 //
 //   QEMU → Jumper                                      Jumper → QEMU
@@ -21,7 +22,8 @@
 //   SQ <host>                                                  MISO of the last transaction?
 //   RM <ch> <ns> <tick_ps> <idle> <hex words>                  RMT symbols sent
 //   AT <gpio> <atten> <bits> <raw> <ns>                        ADC conversion (information)
-//   ST <port> <ns> <rate> <bits> <chans> <hex>                 I2S frames out
+//   ST <port> <ns> <rate> <bits> <chans> <hex | z<nbytes>>     I2S frames out (2 or 4 bytes per sample, LE;
+//                                                              z = that many bytes of silence)
 //   SR <port> <ns> <rate> <bits> <chans> <frames>              I2S frames wanted (answer Q)
 //   P <pu0> <pu1> <pd0> <pd1> <ns>                             pad pull-up / pull-down masks (IO_MUX / RTC_IO);
 //                                                              in lockstep QEMU waits for "A 0" after it
@@ -107,7 +109,7 @@ export function parseBridgeLine(line: string): BridgeEvent {
     case "AT":
       return { kind: "adc", gpio: num(f[1]), atten: num(f[2]), bits: num(f[3]), raw: num(f[4]), ns: hex(f[5]) };
     case "ST":
-      return { kind: "i2s-out", port: num(f[1]), ns: hex(f[2]), rate: num(f[3]), bits: num(f[4]), channels: num(f[5]), data: hexBytes(f[6] ?? "") };
+      return { kind: "i2s-out", port: num(f[1]), ns: hex(f[2]), rate: num(f[3]), bits: num(f[4]), channels: num(f[5]), data: f[6]?.startsWith("z") ? new Uint8Array(parseInt(f[6].slice(1), 16) || 0) : hexBytes(f[6] ?? "") };
     case "SR":
       return { kind: "i2s-in", port: num(f[1]), ns: hex(f[2]), rate: num(f[3]), bits: num(f[4]), channels: num(f[5]), frames: num(f[6]) };
     default:

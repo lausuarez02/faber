@@ -88,8 +88,8 @@ export function pickRuntime(o: { override?: string; nativeInstalled: () => boole
 
 // ---------------------------------------------------------------- native emulators
 
-/** Espressif QEMU 9.2.2 (tag esp-develop-9.2.2-20260417) + Jumper's patches 0001-0003 (bridge v5). */
-export const NATIVE_QEMU_TAG = "9.2.2-20260417-jb5";
+/** Espressif QEMU 9.2.2 (tag esp-develop-9.2.2-20260417) + Jumper's patches 0001-0004 (bridge v6: + I2S). */
+export const NATIVE_QEMU_TAG = "9.2.2-20260417-jb6";
 export const RENODE_VERSION = "1.17.0";
 
 /** ~/.jumper/emulators/qemu-esp/<tag>: `bin/qemu-system-xtensa`, `bin/qemu-system-riscv32`. */

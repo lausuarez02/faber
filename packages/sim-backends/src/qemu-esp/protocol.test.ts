@@ -17,6 +17,16 @@ describe("qemu-esp bridge protocol", () => {
     expect(isBlockingLine("T 0") && isBlockingLine("IR 3c") && isBlockingLine("SQ 2") && isBlockingLine("P 4 0 0 0 10") && !isBlockingLine("IW 3c 1")).toBe(true);
     expect(parseBridgeLine("P 4 10000 0 0 3e8")).toEqual({ kind: "pads", pullUp: (0x10000n << 32n) | 4n, pullDown: 0n, ns: 1000n });
   });
+  it("parses I2S frames out, spelled out or as silence (bridge v6), and frames wanted", () => {
+    const st = parseBridgeLine("ST 1 3e8 3e80 10 1 0100ff7f");
+    expect(st).toMatchObject({ kind: "i2s-out", port: 1, ns: 1000n, rate: 16000, bits: 16, channels: 1 });
+    if (st.kind === "i2s-out") expect([...st.data]).toEqual([1, 0, 0xff, 0x7f]);
+    const z = parseBridgeLine("ST 0 3e8 bb80 20 2 z3c0");
+    expect(z).toMatchObject({ kind: "i2s-out", rate: 48000, bits: 32, channels: 2 });
+    if (z.kind === "i2s-out") expect(z.data.length === 0x3c0 && z.data.every((b) => b === 0)).toBe(true);
+    expect(parseBridgeLine("SR 0 0 3e80 10 1 f0")).toEqual({ kind: "i2s-in", port: 0, ns: 0n, rate: 16000, bits: 16, channels: 1, frames: 240 });
+    expect(isBlockingLine("SR 0 0 3e80 10 1 f0") && !isBlockingLine("ST 0 3e8 3e80 10 1 z4")).toBe(true);
+  });
   it("encodes commands", () => {
     expect(encodeRun(1_000_000n)).toBe("R f4240\n");
     expect(encodeInput(4, 1)).toBe("I 4 1\n");
