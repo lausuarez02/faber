@@ -152,6 +152,8 @@ describe("Node relay (jumper relay serve / server.mjs)", () => {
       expect((await call("/plain.example.com:80/x", a.token, { "x-k": "{{secret:OTHER_KEY}}" })).body.error).toBe("secret-over-http");
       expect((await call("/api.example.com/x", a.token, { "x-k": "{{secret:OTHER_KEY}}" })).body.error).toBe("secret-not-for-host");
       expect((await call("/not-a-host/x", a.token)).body.error).toBe("bad-host");
+      expect((await call("/%E0%A4%A/x", a.token)).body.error).toBe("bad-host");
+      expect((await call("/api.example.com@evil.example.org/x", a.token)).body.error).toBe("bad-host");
       expect(hits).toHaveLength(0); // nothing refused ever reached an API
       expect((await call("/x.stream.example.com/ok", b.token)).status).toBe(200);
       await r.close();

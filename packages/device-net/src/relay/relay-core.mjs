@@ -73,7 +73,13 @@ export function parseTarget(pathAndQuery) {
   if (!m) throw new RelayError(400, "no-host-in-path", `the request path '${raw.slice(0, 80)}' does not start with the API host the relay should call`, `put the API's host first: <RELAY_URL>${example} (jumperRelayUrl("api.example.com", "/v1/forecast") in the firmware builds it)`);
   let [hostPart, rest] = [m[1], m[2] || "/"];
   if (!rest.startsWith("/")) rest = `/${rest}`;
-  const hp = /^([^:]+)(?::(\d{1,5}))?$/.exec(decodeURIComponent(hostPart).toLowerCase());
+  let decoded;
+  try {
+    decoded = decodeURIComponent(hostPart).toLowerCase();
+  } catch {
+    decoded = "";
+  }
+  const hp = /^([^:]+)(?::(\d{1,5}))?$/.exec(decoded);
   if (!hp || !HOST_RE.test(hp[1]) || !hp[1].includes(".")) {
     throw new RelayError(400, "bad-host", `'${hostPart.slice(0, 80)}' is not a host name`, `the first part of the path is the API host, e.g. ${example}`);
   }
