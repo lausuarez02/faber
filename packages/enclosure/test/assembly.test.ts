@@ -67,8 +67,21 @@ describe("assembly plan: a physically possible order on any shape", () => {
       for (const [i, s] of plan.steps.entries()) {
         if (s.action !== "solder" || (s.shell !== "front" && s.shell !== "back")) continue;
         const before = new Set(plan.steps.slice(0, i).flatMap((x) => (["place", "press-fit", "tape"].includes(x.action) ? x.parts : [])));
-        for (const w of s.wires) for (const e of [w.from, w.to]) expect(before.has(e.split(".")[0]!), `step ${s.n}: ${e} is in before ${w.id} is soldered`).toBe(true);
+        // (an end on a part riding in the wiring, a resistor in line, was soldered on the bench)
+        for (const w of s.wires) for (const e of [w.from, w.to]) if (ids.includes(e.split(".")[0]!)) expect(before.has(e.split(".")[0]!), `step ${s.n}: ${e} is in before ${w.id} is soldered`).toBe(true);
       }
+      // a wire to a part riding in the wiring has its other end soldered once that end's part is in (not only on the bench)
+      for (const w of plan.wires.filter((x) => x.route === "harness")) {
+        const placedEnds = [w.from, w.to].filter((e) => ids.includes(e.split(".")[0]!));
+        if (!placedEnds.length) continue;
+        expect(plan.steps.some((x) => x.shell !== "bench" && x.wires.some((y) => y.id === w.id)), `${w.id} (${w.from} to ${w.to}) is soldered to its part in a step`).toBe(true);
+      }
+      // the tests name only what this device has
+      const look = plan.steps.filter((x) => x.action === "test" && /USB before the battery|Final test/.test(x.title)).map((x) => x.say).join(" ");
+      const kinds = new Set(L.placed.flatMap((q) => q.mech.features.filter((f) => f.expose !== false).map((f) => f.kind)));
+      if (!kinds.has("screen")) expect(look).not.toMatch(/screen/);
+      if (!kinds.has("button")) expect(look).not.toMatch(/button/);
+      if (!kinds.has("grille")) expect(look).not.toMatch(/sound/);
       const usbTest = n((s) => s.action === "test" && /USB before the battery/.test(s.title));
       const battery = n((s) => /battery/i.test(s.title) && s.action === "tape");
       const close = n((s) => s.action === "close" || s.action === "screw");

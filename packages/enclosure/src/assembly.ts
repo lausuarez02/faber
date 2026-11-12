@@ -304,7 +304,12 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   const BATTERY = t + 2;
   for (const id of deferred) placeTime.set(id, BATTERY);
   const solderAt = (w: AssemblyWire): number => {
-    if (w.route === "harness" || w.route === "outside") return -1;
+    if (w.route === "outside") return -1;
+    // a wire to a part riding in the wiring (a resistor, a diode): its end on a placed part is soldered when that part is in
+    if (w.route === "harness") {
+      const placed = [partOf(w.from), partOf(w.to)].filter((p) => placeTime.has(p));
+      return placed.length ? Math.max(...placed.map((p) => placeTime.get(p)!)) : -1;
+    }
     if (w.route === "battery") return BATTERY;
     if (w.route === "between") return BOOK;
     return Math.max(placeTime.get(partOf(w.from)) ?? 0, placeTime.get(partOf(w.to)) ?? 0);
@@ -502,7 +507,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
       if (m?.how.includes("foam-tape")) cautions.push(`Why tape: ${m.missing ?? "no room for a printed clip"}.`);
       const how = m ? m.say : `${id} goes into the ${shell} shell.`;
       add({ title: `${action === "press-fit" ? "Press" : m?.insert === "slide" ? "Slide" : "Put"} ${id} into the ${shell} shell`, say: `${how}${after.length ? ` It goes in before ${after.join(", ")}, which ${after.length > 1 ? "cover" : "covers"} it.` : ""}`, shell, parts: [id], action, tools: m?.how.includes("foam-tape") ? ["1 mm double-sided foam tape"] : [], cautions, view: { camera: shell === "front" ? "front-shell" : "back-shell", explode: 8, highlight: [id] } });
-      const now = (solderSteps.get(placeTime.get(id)!) ?? []).filter((w) => w.route === shell);
+      const now = (solderSteps.get(placeTime.get(id)!) ?? []).filter((w) => w.route === shell || w.route === "harness");
       if (now.length) add({ title: `Solder the wires to ${id}`, say: `With ${id} in place, solder ${now.map((w) => `${w.id} (${w.from} to ${w.to}, ${w.color}, ${w.length_mm} mm)`).join(", ")}. Run each along the wall or the edge of a part, through the wiring room, never over the seam.`, shell, parts: [...new Set(now.flatMap((w) => [partOf(w.from), partOf(w.to)]))], action: "solder", wires: now, tools: solderTools, cautions: ["Point the iron away from the plastic: PLA softens at about 60 °C.", "Cover any bare joint near another one with heat-shrink or Kapton."], view: { camera: shell === "front" ? "front-shell" : "back-shell", explode: 0, highlight: [id] } });
     }
   }
@@ -510,8 +515,13 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   if (book.length) add({ title: "Open it like a book and join the two shells' wires", say: `Lay the front shell face down next to the back shell on its ${hinge} side, both open sides up, as if the case were a book opened on the ${hinge}. Solder the ${book.length} wires that run between them: ${book.map((w) => `${w.id} (${w.from} to ${w.to}, ${w.length_mm} mm)`).join(", ")}. ${splices.length ? `Join the leads of ${splices.map((s) => s.wire.id).join(", ")} with a splice and heat-shrink. ` : ""}Bundle them with a strip of Kapton near the ${hinge} wall so they fold in when the case closes.`, shell: "both", parts: [...new Set(book.flatMap((w) => [partOf(w.from), partOf(w.to)]))], action: "route-wire", wires: book, tools: [...solderTools, "Kapton tape"], cautions: ["Keep the bundle away from the lip and the screw bosses."], view: { camera: "open-book", explode: 0, highlight: [...new Set(book.flatMap((w) => [partOf(w.from), partOf(w.to)]))] } });
   for (const c of cards) add({ title: `Put the ${c.what} into ${c.part}`, say: `Copy the files from sd-card/ onto the ${c.what} (sd-card/CLIPS.md), then push it into ${name(c.part)} until it clicks. It stays inside the closed case: to change it later, open the case.`, shell: shellOf(c.part), parts: [], action: "place", tools: [], cautions: ["Format it FAT32 first; copy the files in order."], view: { camera: shellOf(c.part) === "front" ? "front-shell" : "back-shell", explode: 0, highlight: [c.part] } });
   const hasBattery = L.placed.some((p) => p.mech.soft);
+  // what the person can check from outside: only what this device has (a screen, buttons, a switch, sound, lights)
+  const kinds = new Set(L.placed.flatMap((p) => p.mech.features.filter((f) => f.expose !== false).map((f) => f.kind)));
+  const seen = [kinds.has("screen") ? "the screen" : "", kinds.has("button") ? "the buttons" : "", kinds.has("switch") ? "the switch" : "", kinds.has("knob") ? "the knob" : "", kinds.has("grille") ? "the sound" : "", kinds.has("led") ? "the lights" : ""].filter(Boolean);
+  const seenWords = seen.length > 1 ? `${seen.slice(0, -1).join(", ")} and ${seen.at(-1)}` : seen[0];
+  const closedChecks = [caps.some((o) => o.insert!.kind === "cap") ? "press every button through its plunger" : kinds.has("button") ? "press every button" : "", kinds.has("switch") ? "slide the switch both ways" : "", kinds.has("screen") ? "check the screen through the window" : ""].filter(Boolean);
   const usb = access.find((a) => a.startsWith(`${board?.id}.`)) ?? access[0];
-  add({ title: "Test it on USB before the battery", say: `${usb ? `Plug a USB cable into ${usb.split(" (")[0]}` : "Power it"} with the case still open${hasBattery ? " and the battery not connected" : ""}. Run through test/TEST-PLAN.md: the screen, buttons and sounds should behave as in the simulation. Fix anything now, while every joint is easy to reach.`, shell: "both", parts: board ? [board.id] : [], action: "test", tools: ["USB cable", "multimeter"], cautions: ["Look for a hot part in the first seconds: unplug at once if anything warms up."], view: { camera: "open-book", explode: 0, highlight: board ? [board.id] : [] } });
+  add({ title: "Test it on USB before the battery", say: `${usb ? `Plug a USB cable into ${usb.split(" (")[0]}` : "Power it"} with the case still open${hasBattery ? " and the battery not connected" : ""}. Run through test/TEST-PLAN.md: ${seenWords ? `${seenWords} should behave` : "it should behave"} as in the simulation. Fix anything now, while every joint is easy to reach.`, shell: "both", parts: board ? [board.id] : [], action: "test", tools: ["USB cable", "multimeter"], cautions: ["Look for a hot part in the first seconds: unplug at once if anything warms up."], view: { camera: "open-book", explode: 0, highlight: board ? [board.id] : [] } });
   const cells = L.placed.filter((p) => p.mech.soft);
   for (const c of cells) {
     const m = mounts.get(c.mech.id);
@@ -521,7 +531,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   const sw = L.placed.find((p) => p.mech.features.some((f) => f.kind === "switch"));
   if (cells.length) add({ title: "Test it on the battery", say: `Unplug USB${sw ? ` and switch it on with ${sw.mech.id}` : ""}: it should start from the battery. Then plug USB into the charging port and check the charge light.`, shell: "both", parts: cells.map((c) => c.mech.id), action: "test", tools: ["multimeter"], cautions: ["If it does not start, switch off and check the battery wiring before anything else."], view: { camera: "open-book", explode: 0, highlight: cells.map((c) => c.mech.id) } });
   add({ title: "Close the case", say: `Fold the wires in so none crosses the seam${L.lip ? " or the lip" : ""}, line the front shell up with the back and ${L.bosses.length ? `fit the ${L.bosses.length} M2 screws from the back into the inserts, finger tight (they strip plastic easily)` : "press it on evenly all round until the lip clicks"}. Nothing should need force: if it does, a wire or a part is in the way.`, shell: "closed", parts: [], action: L.bosses.length ? "screw" : "close", fasteners: L.bosses.length ? [{ kind: "screw", size: "M2 pan head (length in enclosure/PRINT.md)", qty: L.bosses.length }] : [], tools: L.bosses.length ? ["PH0 screwdriver (or 1.5 mm hex)"] : [], cautions: ["A pinched wire can short: look along the seam before the last press."], view: { camera: "exploded", explode: 1, highlight: [] } });
-  add({ title: "Final test, closed", say: `With the case closed: ${access.length ? `plug a cable into ${access.map((a) => a.split(" (")[0]).join(" and ")}` : "power it on"}; press every button through its plunger; check the screen through the window; then run test/TEST-PLAN.md and test/TEST-ON-HARDWARE.md once more.`, shell: "closed", parts: [], action: "test", tools: ["USB cable"], cautions: ["Peel the screen's film last."], view: { camera: "closed", explode: 0, highlight: [] } });
+  add({ title: "Final test, closed", say: `With the case closed: ${access.length ? `plug a cable into ${access.map((a) => a.split(" (")[0]).join(" and ")}` : "power it on"}; ${closedChecks.length ? `${closedChecks.join("; ")}; ` : ""}then run test/TEST-PLAN.md and test/TEST-ON-HARDWARE.md once more.`, shell: "closed", parts: [], action: "test", tools: ["USB cable"], cautions: ["Peel the screen's film last."], view: { camera: "closed", explode: 0, highlight: [] } });
 
   // ---------------------------------------------------------------- 10. consumables and tools
   const byGauge = new Map<number, number>();
