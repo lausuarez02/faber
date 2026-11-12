@@ -35,6 +35,7 @@ describe("jumper serve: case routes", () => {
     const m = await fetch(`${srv.url}/api/case/mesh`);
     expect(m.status).toBe(404);
     expect((await m.json()).error).toMatch(/No case yet\. Why: .*Fix: /);
+    expect(await (await fetch(`${srv.url}/api/device/case`)).json()).toEqual({ case: null });
   });
 
   it("GET lists the shapes made with save: false (case/variants/<shape>/report.json)", async () => {
@@ -85,5 +86,41 @@ describe("jumper serve: case routes", () => {
       expect((await fetch(`${srv.url}/api/manufacturing/..%2Fjumper.zip`)).status).toBe(404);
     },
     240_000,
+  );
+
+  it(
+    "GET /api/device/case: the built case with its openings; a changed project shows it as built, stale, without rebuilding",
+    async () => {
+      const g = await (await fetch(`${srv.url}/api/case`)).json();
+      const d = (await (await fetch(`${srv.url}/api/device/case`)).json()).case;
+      expect(d.hash).toBe(g.report.hash);
+      expect(d.stale).toBe(false);
+      expect(d.color).toBe("#2B3038");
+      expect(d.mesh.bodies.find((b: { body: string }) => b.body === "front").kind).toBe("shell");
+      const win = d.openings.find((o: { kind: string }) => o.kind === "window");
+      expect(win.part).toBe("eye");
+      expect(win.screen.u).toBeGreaterThan(20);
+      const btn = d.openings.find((o: { kind: string; part: string }) => o.kind === "button" && o.part === "pet");
+      expect(btn.insert.kind).toBe("cap");
+      expect(d.mesh.bodies.some((b: { body: string }) => b.body === "cap-pet")).toBe(true);
+      // a part changes: the Device view still gets the case as built, marked stale, and case/ is untouched
+      const before = readFileSync(join(root, "proj", "case", "manifest.json"), "utf8");
+      const p = JSON.parse(readFileSync(join(root, "proj", "jumper.json"), "utf8"));
+      p.parts = p.parts.filter((x: { id: string }) => x.id !== "imu");
+      p.wires = (p.wires ?? []).filter((w: { from: { part: string }; to: { part: string } }) => w.from.part !== "imu" && w.to.part !== "imu");
+      writeFileSync(join(root, "proj", "jumper.json"), JSON.stringify(p, null, 2));
+      const s = (await (await fetch(`${srv.url}/api/device/case`)).json()).case;
+      expect(s.stale).toBe(true);
+      expect(s.stale_reason).toMatch(/changed since/);
+      expect(s.hash).toBe(d.hash);
+      // the openings stay where the built meshes have them (each moved back by how far its part moved)
+      const sw = s.openings.find((o: { kind: string }) => o.kind === "window");
+      for (const k of [0, 1, 2]) expect(sw.at[k]).toBeCloseTo(win.at[k], 1);
+      const sb = s.openings.find((o: { kind: string; part: string }) => o.kind === "button" && o.part === "pet");
+      for (const k of [0, 1, 2]) expect(sb.at[k]).toBeCloseTo(btn.at[k], 1);
+      expect(s.openings.some((o: { part: string }) => o.part === "imu")).toBe(false);
+      expect(readFileSync(join(root, "proj", "case", "manifest.json"), "utf8")).toBe(before);
+    },
+    120_000,
   );
 });

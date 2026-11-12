@@ -1,8 +1,61 @@
-// Picks how the Device view presents a project: a handheld (screen + buttons), a robot in its
-// arena, an arm on a table, or the board on a desk. Pure, so it is unit-tested.
+// Picks how the Device view presents a project: its own designed case (when the Case view built
+// one), a generic handheld (screen + buttons, no case yet), a robot in its arena, an arm on a
+// table, or the board on a desk. Pure, so it is unit-tested.
 import type { Project } from "@jumper/project-format";
 
-export type DeviceKind = "handheld" | "rover" | "arm" | "board";
+export type DeviceKind = "case" | "handheld" | "rover" | "arm" | "board";
+
+/** One opening of the built case (case frame, mm), from GET /api/device/case. */
+export interface CaseOpening {
+  part: string;
+  feature: string;
+  kind: string;
+  face: string;
+  /** Outward normal. */
+  n: [number, number, number];
+  /** Centre on the cavity's inner surface (outer surface = at + n * depth). */
+  at: [number, number, number];
+  shape: "rect" | "round";
+  u: number;
+  v: number;
+  uAxis: [number, number, number];
+  vAxis: [number, number, number];
+  depth: number;
+  standoff: number;
+  /** window: the display's active area behind it. */
+  screen?: { u: number; v: number; shape: string };
+  insert?: { kind: string; d: number; travel: number; protrude: number; length: number };
+  holes?: number;
+}
+
+/** The built case as the Device view gets it (GET /api/device/case; meshes stay base64 until drawn). */
+export interface CaseModel {
+  hash: string;
+  engine: string;
+  stale: boolean;
+  stale_reason?: string;
+  shape: string;
+  color?: string;
+  size_mm: { w: number; h: number; d: number };
+  mesh: { hash: string; bodies: { body: string; kind: "shell" | "cap" | "part" | "insert"; color: string; positions: string; indices: string; explode: [number, number, number] }[] };
+  openings: CaseOpening[];
+  ms?: number;
+}
+
+/** The project's parts mapped onto the built case: what goes in which opening. */
+export interface CaseFit {
+  model: CaseModel;
+  /** The display behind the window (no window: the screen is not shown). */
+  screen?: { id: string; type: string; window?: CaseOpening };
+  /** Same order as DeviceLayout.buttons (keys 1-9); opening / cap body when the case has one for it. */
+  buttons: { id: string; opening?: CaseOpening; cap?: string }[];
+  /** LEDs with a light pipe (or a hole) to shine through. */
+  leds: { id: string; color: string; opening: CaseOpening; pipe?: string }[];
+  /** Speaker grilles (rings while their part or a buzzer sounds). */
+  grilles: CaseOpening[];
+  /** USB and other connector openings. */
+  connectors: CaseOpening[];
+}
 
 export const SCREEN_TYPES: Record<string, { kind: "oled" | "lcd" | "tft"; screen: string; aspect: number }> = {
   "ssd1306-oled-i2c": { kind: "oled", screen: "128x64", aspect: 2 },
@@ -29,9 +82,47 @@ export interface DeviceLayout {
   board?: { id: string; type: string };
   /** Short reason, shown in the HUD ("OLED + 3 buttons → handheld"). */
   why: string;
+  /** kind "case": the parts in their real openings of the designed case. */
+  case?: CaseFit;
 }
 
-export function classifyProject(project: Project): DeviceLayout {
+const SHAPE_LABEL: Record<string, string> = { pebble: "Pebble", puck: "Puck", "rounded-box": "Box", pill: "Pill", keychain: "Keychain", custom: "Custom" };
+
+/** "Custom case", "Pebble case": the HUD's name for a designed case. */
+export function caseLabel(shape: string): string {
+  return `${SHAPE_LABEL[shape] ?? shape.charAt(0).toUpperCase() + shape.slice(1)} case`;
+}
+
+/** Map the project's buttons, screen, LEDs and speakers onto the built case's openings and bodies. */
+export function fitToCase(base: Pick<DeviceLayout, "buttons" | "leds" | "screen">, model: CaseModel): CaseFit {
+  const bodies = new Set(model.mesh.bodies.map((b) => b.body));
+  const of = (part: string, kinds: string[]) => model.openings.find((o) => o.part === part && kinds.includes(o.kind));
+  const window = base.screen ? of(base.screen.id, ["window"]) : undefined;
+  return {
+    model,
+    ...(base.screen ? { screen: { ...base.screen, ...(window ? { window } : {}) } } : {}),
+    buttons: base.buttons.map((b) => {
+      const opening = of(b.id, ["button"]);
+      const cap = bodies.has(`cap-${b.id}`) ? `cap-${b.id}` : undefined;
+      return { id: b.id, ...(opening ? { opening } : {}), ...(cap ? { cap } : {}) };
+    }),
+    leds: base.leds.flatMap((l) => {
+      const opening = of(l.id, ["light-pipe", "hole"]);
+      if (!opening) return [];
+      const pipe = bodies.has(`light-pipe-${l.id}`) ? `light-pipe-${l.id}` : undefined;
+      return [{ ...l, opening, ...(pipe ? { pipe } : {}) }];
+    }),
+    grilles: model.openings.filter((o) => o.kind === "grille"),
+    connectors: model.openings.filter((o) => o.kind === "connector"),
+  };
+}
+
+/**
+ * How the Device view shows the project. With `built` (the case the Case view built, from
+ * GET /api/device/case) any project that is not a robot or an arm is shown as that case; without
+ * one, a screen makes the generic handheld.
+ */
+export function classifyProject(project: Project, built?: CaseModel | null): DeviceLayout {
   const parts = project.parts;
   const screenPart = parts.find((p) => SCREEN_TYPES[p.type]);
   const buttons = parts.filter((p) => BUTTON_TYPES.has(p.type)).sort((a, b) => a.x - b.x || a.y - b.y).map((p) => ({ id: p.id }));
@@ -50,6 +141,10 @@ export function classifyProject(project: Project): DeviceLayout {
     return { ...base, kind: "rover", why: "robot chassis with a world → rover in its arena" };
   }
   if (world?.arm !== undefined) return { ...base, kind: "arm", why: "arm block in the world → arm on a table" };
+  if (built && project.enclosure) {
+    const has = [screenPart ? SCREEN_TYPES[screenPart.type]!.kind.toUpperCase() : "", buttons.length ? `${buttons.length} button${buttons.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" + ");
+    return { ...base, kind: "case", case: fitToCase(base, built), why: `${caseLabel(built.shape)} from the Case view${has ? ` · ${has}` : ""}` };
+  }
   if (screenPart && buttons.length > 0) {
     return { ...base, kind: "handheld", why: `${SCREEN_TYPES[screenPart.type]!.kind.toUpperCase()} + ${buttons.length} button${buttons.length === 1 ? "" : "s"} → handheld` };
   }

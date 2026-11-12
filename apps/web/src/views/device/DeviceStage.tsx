@@ -1,18 +1,22 @@
 // The 3D device stage: the project as the physical thing, running live, with a floating HUD.
 // It reads the simulation through a DeviceSource and never steps it.
-//   - handheld / pet: shell, live screen, pressable buttons (mouse or keys 1-9), LEDs, buzzer rings
+//   - case: the project's own designed case (Case view meshes), live screen in its window, caps
+//     pressable at their openings, LEDs at their light pipes, rings at the grille
+//   - handheld / pet (no case yet): generic shell, live screen, pressable buttons (mouse or keys 1-9), LEDs, buzzer rings
 //   - rover: arena from jumper.json, modeled 2WD robot, sonar cone, trail, follow camera
 //   - arm: servo arm on a table, targets light up when reached
 //   - anything else: the board on a desk with its LEDs
 import "./device.css";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 import { Camera, ChevronDown, Crosshair, Maximize2, Palette, Pause, Play, X } from "lucide-react";
 import { DeviceSourceContext, ReadoutsContext, type Readouts } from "./context.ts";
 import type { DeviceSource } from "./source.ts";
-import { classifyProject, lastSerialLine, serialStats, type DeviceKind } from "./classify.ts";
+import { caseLabel, classifyProject, lastSerialLine, serialStats, type DeviceKind } from "./classify.ts";
+import { useDeviceCase, type CaseLoad } from "./caseModel.ts";
+import { CaseDevice, type CaseFinish } from "./scene/CaseDevice.tsx";
 import { StudioFloor, StudioLights } from "./scene/Studio.tsx";
 import { Handheld, SHELLS, type ShellFinish } from "./scene/Handheld.tsx";
 import { Arena, CameraRig, RoverRobot, type RoverCamera, type RoverHandle } from "./scene/Rover.tsx";
@@ -32,6 +36,8 @@ export interface DeviceStageProps {
   finish?: ShellFinish;
   /** Space kept free at the bottom (px) for a timeline under the stage. */
   bottomInset?: number;
+  /** Opens the Case view (the HUD's "Design a case" / "Update case"). */
+  onOpenCase?: (() => void) | undefined;
 }
 
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
@@ -72,8 +78,10 @@ function useSourceTick(source: DeviceSource): number {
   return useSyncExternalStore(sub, () => ver.current);
 }
 
-function cameraFor(kind: DeviceKind, source: DeviceSource, mobile: boolean): { position: [number, number, number]; target: [number, number, number]; fov: number } {
+function cameraFor(kind: DeviceKind, source: DeviceSource, mobile: boolean, side = 0): { position: [number, number, number]; target: [number, number, number]; fov: number } {
   const k = mobile ? 1.55 : 1;
+  // a designed case: a three-quarter view toward the side its first button is on, so the cap shows
+  if (kind === "case") return { position: [(side === 0 ? 5.2 : 9.5 * side) * k, 7, 20.5 * k], target: [0, mobile ? 3.2 : 3.6, 0], fov: 30 };
   if (kind === "handheld") return { position: [5.2 * k, 7.4, 22 * k], target: [0, mobile ? 3.2 : 3.7, 0], fov: 30 };
   if (kind === "arm") return { position: [3.5 * k, 6.8, 19 * k], target: [0.6, 2.6, 0], fov: 32 };
   if (kind === "rover") {
@@ -84,10 +92,18 @@ function cameraFor(kind: DeviceKind, source: DeviceSource, mobile: boolean): { p
   return { position: [2.2 * k, 7.5, 10.5 * k], target: [0.5, 0, 0], fov: 30 };
 }
 
-export function DeviceStage({ source, onClose, capture = false, hud = true, camera: cameraInit = "track", finish: finishInit = "ceramic", bottomInset = 0 }: DeviceStageProps) {
+const loadCaseOf = (source: DeviceSource) => (source.loadCase ? () => source.loadCase!() : undefined);
+
+export function DeviceStage({ source, onClose, onOpenCase, capture = false, hud = true, camera: cameraInit = "track", finish: finishInit = "ceramic", bottomInset = 0 }: DeviceStageProps) {
   useSourceTick(source);
   const project = source.project();
-  const layout = useMemo(() => classifyProject(project), [project]);
+  const loader = useMemo(() => loadCaseOf(source), [source]);
+  const caseLoad = useDeviceCase(project, loader);
+  const built = caseLoad.status === "ready" ? caseLoad.model : undefined;
+  const layout = useMemo(() => classifyProject(project, built), [project, built]);
+  const [caseFinish, setCaseFinish] = useState<CaseFinish>("design");
+  // a case is on its way: show it rather than flash the generic handheld first
+  const casePending = caseLoad.status === "loading" && layout.kind !== "rover" && layout.kind !== "arm";
   const world = source.world();
   const dark = useIsDark();
   const [finish, setFinish] = useState<ShellFinish>(finishInit);
@@ -99,11 +115,13 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
   const pressKey = useRef<((i: number, down: boolean) => void) | null>(null);
   const mobile = typeof window !== "undefined" && window.innerWidth < 640;
   const cam = useMemo(() => {
-    const c = cameraFor(layout.kind, source, mobile);
+    const n0 = layout.case?.buttons.find((b) => b.opening)?.opening?.n;
+    const c = cameraFor(layout.kind, source, mobile, n0 && Math.abs(n0[0]) > 0.5 ? Math.sign(n0[0]) : 0);
     // Keep the device clear of a timeline under the stage: aim a little lower so it sits higher.
     if (bottomInset && layout.kind !== "rover") return { ...c, target: [c.target[0], c.target[1] - bottomInset / 110, c.target[2]] as [number, number, number] };
     return c;
-  }, [layout.kind, source, mobile, bottomInset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout.kind, source, mobile, bottomInset, layout.case?.model.hash]);
 
   // Keys: Esc closes, Space runs / pauses, 1-9 press the device's buttons, F toggles follow.
   useEffect(() => {
@@ -145,7 +163,7 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
   return (
     <DeviceSourceContext.Provider value={source}>
       <ReadoutsContext.Provider value={readouts}>
-        <div className="dv-root" data-testid="device-stage" data-kind={layout.kind} data-dark={dark} style={{ ["--dv-bottom" as string]: `${bottomInset}px` }}>
+        <div className="dv-root" data-testid="device-stage" data-kind={layout.kind} data-case={caseLoad.status === "ready" ? (caseLoad.model.stale ? "stale" : "current") : caseLoad.status} data-dark={dark} style={{ ["--dv-bottom" as string]: `${bottomInset}px` }}>
           <Canvas
             className="dv-canvas"
             shadows={{ type: THREE.PCFShadowMap }}
@@ -163,7 +181,13 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
             {!capture ? <PerformanceMonitor onDecline={() => setDpr((d) => Math.max(1, d - 0.5))} onIncline={() => setDpr((d) => Math.min(2, window.devicePixelRatio || 1, d + 0.25))} /> : null}
             <Suspense fallback={null}>
               {layout.kind === "rover" ? <StudioLights shadowSize={20} keyPos={[10, 24, 12]} /> : <StudioLights shadowSize={10} castShadow={layout.kind === "arm"} />}
-              {layout.kind === "handheld" ? (
+              {layout.kind === "case" && layout.case ? (
+                <>
+                  <StudioFloor radius={22} color={floor} receiveShadow={false} />
+                  <CaseDevice fit={layout.case} finish={caseFinish} onPressKey={(fn) => void (pressKey.current = fn)} />
+                </>
+              ) : null}
+              {layout.kind === "handheld" && !casePending ? (
                 <>
                   <StudioFloor radius={22} color={floor} receiveShadow={false} />
                   <Handheld layout={layout} finish={finish} onPressKey={(fn) => void (pressKey.current = fn)} />
@@ -182,13 +206,14 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
                   <ArmScene binding={world} />
                 </>
               ) : null}
-              {layout.kind === "board" ? (
+              {layout.kind === "board" && !casePending ? (
                 <>
                   <StudioFloor radius={20} color={floor} receiveShadow={false} />
                   <BoardDesk layout={layout} />
                 </>
               ) : null}
             </Suspense>
+            <CameraTo position={cam.position} />
             <OrbitControls
               makeDefault
               enabled={!follow}
@@ -200,6 +225,12 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
               maxPolarAngle={Math.PI * 0.49}
             />
           </Canvas>
+          {casePending ? (
+            <div className="dv-empty" data-testid="device-case-loading">
+              <strong>Loading the case…</strong>
+              <span>The first time, Jumper tessellates the case the Case view built (a few seconds); then it is kept.</span>
+            </div>
+          ) : null}
           {needsWorld && !world ? (
             <div className="dv-empty" data-testid="device-empty">
               <strong>Press Run to build the world</strong>
@@ -217,13 +248,34 @@ export function DeviceStage({ source, onClose, capture = false, hud = true, came
               setRcam={setRcam}
               readouts={readouts}
               onClose={onClose}
-              buttons={layout.kind === "handheld" ? layout.buttons.map((b) => b.id) : []}
+              buttons={layout.kind === "handheld" || layout.kind === "case" ? layout.buttons.map((b) => b.id) : []}
+              caseLoad={caseLoad}
+              hasEnclosure={!!project.enclosure}
+              caseFinish={caseFinish}
+              setCaseFinish={setCaseFinish}
+              onOpenCase={onOpenCase}
             />
           ) : null}
         </div>
       </ReadoutsContext.Provider>
     </DeviceSourceContext.Provider>
   );
+}
+
+/** Moves the camera when the framing changes after the canvas exists (the case arrives after the first frame). */
+function CameraTo({ position }: { position: [number, number, number] }) {
+  const camera = useThree((s) => s.camera);
+  const first = useRef(true);
+  const key = position.join(",");
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    camera.position.set(position[0], position[1], position[2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, camera]);
+  return null;
 }
 
 export function fmtClock(ms: number): string {
@@ -244,9 +296,54 @@ interface HudProps {
   readouts: React.MutableRefObject<Readouts>;
   onClose: (() => void) | undefined;
   buttons: string[];
+  caseLoad: CaseLoad;
+  hasEnclosure: boolean;
+  caseFinish: CaseFinish;
+  setCaseFinish: (f: CaseFinish) => void;
+  onOpenCase: (() => void) | undefined;
 }
 
-function Hud({ source, kind, why, finish, setFinish, rcam, setRcam, readouts, onClose, buttons }: HudProps) {
+/** The HUD's line about the case: out of date, none yet, or could not load. */
+function CaseNote({ kind, caseLoad, hasEnclosure, onOpenCase }: { kind: DeviceKind; caseLoad: CaseLoad; hasEnclosure: boolean; onOpenCase: (() => void) | undefined }) {
+  if (kind === "rover" || kind === "arm") return null;
+  const open = (label: string) =>
+    onOpenCase ? (
+      <button type="button" className="dv-note-btn" onClick={onOpenCase} data-testid="device-open-case">
+        {label}
+      </button>
+    ) : null;
+  if (kind === "case" && caseLoad.status === "ready" && caseLoad.model.stale)
+    return (
+      <div className="dv-note is-warn" data-testid="device-case-note" title={`Shown as built: ${caseLoad.model.stale_reason ?? "the project changed since"}.`}>
+        <span>Case out of date{caseLoad.model.stale_reason ? `: ${caseLoad.model.stale_reason}` : ""}</span>
+        {open("Update case")}
+      </div>
+    );
+  if (caseLoad.status === "error")
+    return (
+      <div className="dv-note is-warn" data-testid="device-case-note" title={caseLoad.error}>
+        <span>The case could not load, showing a stand-in. {caseLoad.error.split(" Fix: ")[0]}</span>
+        {open("Open the Case view")}
+      </div>
+    );
+  if (!hasEnclosure && (kind === "handheld" || kind === "board"))
+    return (
+      <div className="dv-note" data-testid="device-case-note">
+        <span>No case yet - design one in the Case view</span>
+        {open("Design a case")}
+      </div>
+    );
+  if (hasEnclosure && caseLoad.status === "none" && kind !== "case")
+    return (
+      <div className="dv-note" data-testid="device-case-note">
+        <span>The case is not built yet - press Update case in the Case view</span>
+        {open("Open the Case view")}
+      </div>
+    );
+  return null;
+}
+
+function Hud({ source, kind, why, finish, setFinish, rcam, setRcam, readouts, onClose, buttons, caseLoad, hasEnclosure, caseFinish, setCaseFinish, onOpenCase }: HudProps) {
   const clock = useRef<HTMLSpanElement>(null);
   const [vals, setVals] = useState<{ key: string; value: string }[]>([]);
   const [line, setLine] = useState("");
@@ -282,10 +379,11 @@ function Hud({ source, kind, why, finish, setFinish, rcam, setRcam, readouts, on
           <span className="dv-name">{project.name}</span>
           <span className="dv-chip">Device</span>
         </div>
-        <div className="dv-sub">{why}</div>
+        <div className="dv-sub" data-testid="device-why">{why}</div>
+        <CaseNote kind={kind} caseLoad={caseLoad} hasEnclosure={hasEnclosure} onOpenCase={onOpenCase} />
       </header>
 
-      {kind === "rover" || kind === "handheld" || onClose ? (
+      {kind === "rover" || kind === "handheld" || kind === "case" || onClose ? (
       <div className="dv-float dv-tools" role="toolbar" aria-label="View">
         {kind === "rover" ? (
           <>
@@ -310,9 +408,18 @@ function Hud({ source, kind, why, finish, setFinish, rcam, setRcam, readouts, on
             ))}
           </>
         ) : null}
+        {kind === "case" && caseLoad.status === "ready" ? (
+          <>
+            <Palette size={15} strokeWidth={1.6} className="dv-muted-icon" aria-hidden />
+            <button className={`dv-swatch ${caseFinish === "design" ? "on" : ""}`} style={{ background: caseLoad.model.color ?? "#e7e5df" }} onClick={() => setCaseFinish("design")} title={`As designed (${caseLabel(caseLoad.model.shape)})`} aria-label="Case colour as designed" aria-pressed={caseFinish === "design"} data-testid="device-finish-design" />
+            {(Object.keys(SHELLS) as ShellFinish[]).map((f) => (
+              <button key={f} className={`dv-swatch ${caseFinish === f ? "on" : ""}`} style={{ background: SHELLS[f].color }} onClick={() => setCaseFinish(f)} title={SHELLS[f].label} aria-label={`${SHELLS[f].label} case`} aria-pressed={caseFinish === f} />
+            ))}
+          </>
+        ) : null}
         {onClose ? (
           <>
-            {kind === "rover" || kind === "handheld" ? <span className="dv-div" /> : null}
+            {kind === "rover" || kind === "handheld" || kind === "case" ? <span className="dv-div" /> : null}
             <button className="dv-ghost" onClick={onClose} title="Back to canvas (Esc)" aria-label="Close device view" data-testid="device-close">
               <X size={16} strokeWidth={1.6} />
             </button>

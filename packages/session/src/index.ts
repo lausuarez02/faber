@@ -50,7 +50,7 @@ export { powerReport } from "./tools/power.ts";
 export type { PowerReport } from "./tools/power.ts";
 export { batteryPathAdvice } from "./drc.ts";
 export { deviceStill, lastLoggedStill, stillKey, type DeviceStill } from "./device-still.ts"; // round 6 frames
-export { caseState, caseIsStale, caseMesh, previewFit, layoutProposals, caseCosts, draftCosts } from "./tools/case.ts"; // round 6 case, round 7 fit preview, round 8 layout proposals
+export { caseState, caseIsStale, caseMesh, deviceCase, previewFit, layoutProposals, caseCosts, draftCosts } from "./tools/case.ts"; // round 6 case, round 7 fit preview, round 8 layout proposals
 export { adviceNotes, applyOps, opsForApply } from "./advice-notes.ts"; // round 8 view: the parts advice for people
 export type { AdviceNote, AdviceOp } from "./advice-notes.ts";
 // round 10 network
