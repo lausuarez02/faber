@@ -1,4 +1,4 @@
-import { factoryNetworkNotes } from "@jumper/device-net";
+import { factoryNetworkNotes, relayPack, relayUseful } from "@jumper/device-net";
 import { networkConfigOf } from "../device-network.ts";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -641,6 +641,12 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     const net = factoryNetworkNotes(networkConfigOf(project)).replace(/^## Network/, `# Network: ${project.name}`);
     writeText(root, "firmware/NETWORK.md", `${net}\n\nBuild: the simulation build adds Jumper's Wi-Fi and TLS shims; the device build must not. With Jumper's ESP32 image: JUMPER_SIM=0 (plain arduino-cli builds never contain them). No secret value is in this pack.\n`);
     notes.push("firmware/NETWORK.md lists the hosts, ports and secret names the real device needs, and the options for getting a key onto it (no secret values are in the pack).");
+    // round 13: the API relay the real device calls (Node server + Cloudflare Worker), generated from the same config
+    const cfg = networkConfigOf(project);
+    if (relayUseful(cfg)) {
+      for (const [rel, text] of Object.entries(relayPack(cfg, project.name))) writeText(root, `relay/${rel}`, text);
+      notes.push("relay/ is the API relay for the real device (run it with Node or deploy it to Cloudflare Workers; relay/README.md): the device holds a revocable token for it, never an API key. The firmware in this pack has no token or Wi-Fi password.");
+    }
   }
   if (!positions) notes.push("Wire lengths are estimates from the part sizes (no case layout yet); design_case gives lengths from the real positions.");
 

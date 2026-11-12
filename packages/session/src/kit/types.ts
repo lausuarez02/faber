@@ -163,6 +163,22 @@ export interface FlashPlan {
   why_missing?: string;
 }
 
+/** Round 13: how the device reaches its APIs on the real network (keys, relay, tokens, Wi-Fi, cost). */
+export interface ConnectPlan {
+  summary: string;
+  /** False when no host needs a key (the device calls the APIs directly). */
+  needs_relay: boolean;
+  hosts: { host: string; secrets: string[]; relayed: boolean }[];
+  /** Secret names with whether they are set on this machine (.env or environment); never values. */
+  secrets: { name: string; hosts: string[]; set: boolean }[];
+  /** Devices that have a token (names from .env RELAY_DEVICE_TOKENS). */
+  devices: string[];
+  steps: { title: string; do: string[]; commands?: { label: string; cmd: string }[] }[];
+  /** Cost per call, in general terms, and the worst case the relay's rate limit allows. */
+  cost: string[];
+  notes: string[];
+}
+
 export interface TroubleRow {
   problem: string;
   why: string;
@@ -184,6 +200,8 @@ export interface BuildKit {
   /** "assembly-plan" when the case engine's plan was used, else "derived" (from the case report and the wiring). */
   steps_source: string;
   flash: FlashPlan;
+  /** Round 13: present when the project reaches the network (jumper.json network). */
+  connect?: ConnectPlan;
   troubleshooting: TroubleRow[];
   missing: { item: string; why: string; fix: string; say: string }[];
   /** The design check's errors and warnings about the circuit: fix them (or accept them knowingly) before buying. */

@@ -13,6 +13,8 @@ import { projectSlug } from "../projects-registry.ts";
 import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
 import { sdCardFiles } from "../voice.ts";
+import { relayPack } from "@jumper/device-net";
+import { networkConfigOf } from "../device-network.ts";
 import { kitHtml, kitMarkdown, printListMd, shoppingMd } from "./render.ts";
 import { shoppingCsv } from "./shopping.ts";
 import type { BuildKit } from "./types.ts";
@@ -115,6 +117,14 @@ export async function writeKitFiles(s: ProjectSession, kit: BuildKit, o: { into?
     }
   }
   if (!o.into) for (const [p, text] of Object.entries(sdCardFiles(s.project, s.registry))) put(`sd-card/${p}`, text);
+  // round 13: the relay the Connect section sets up (the factory pack has it at ../relay already)
+  if (!o.into && kit.connect?.needs_relay) {
+    try {
+      for (const [p, text] of Object.entries(relayPack(networkConfigOf(s.project), s.project.name))) put(`relay/${p}`, text);
+    } catch {
+      // a bad network config is reported by the Connect section's own checks
+    }
+  }
   const html = kitHtml(kit, kitImages(s.dir, kit));
   put("kit.html", html);
   put("KIT.md", kitMarkdown(kit));

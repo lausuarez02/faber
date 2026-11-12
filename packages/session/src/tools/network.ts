@@ -71,7 +71,7 @@ export const networkTools: ToolModule = {
       name: "set_network",
       title: "Network settings",
       description:
-        'Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project\'s .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}. Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.',
+        'Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project\'s .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}, {"relay": {"requests_per_minute": 30}} (limits of the API relay the real device uses and the simulator plays at relay.sandbox.jumper; jumper relay init writes it). Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.',
       inputSchema: {
         type: "object",
         properties: {
@@ -80,6 +80,7 @@ export const networkTools: ToolModule = {
           secrets: { type: ["array", "null"], items: { type: "string" } },
           wifi: { type: ["object", "null"] },
           cassette: { type: ["string", "null"] },
+          relay: { type: ["object", "null"], description: "Limits per device for the API relay (the real device's and the simulator's): requests_per_minute, max_request_kb, max_response_kb, max_stream_seconds." },
           record: { type: ["boolean", "null"] },
           mocks: { type: ["string", "null"], description: "Mocks file relative to jumper.json (default network/mocks.json)." },
           why: { type: "string" },
@@ -130,7 +131,7 @@ export const networkTools: ToolModule = {
     async set_network(args, x) {
       const s = x.session;
       const cur: Record<string, unknown> = { ...(s.project.network ?? {}) };
-      for (const k of ["mode", "allow", "secrets", "wifi", "cassette", "record", "mocks"]) {
+      for (const k of ["mode", "allow", "secrets", "wifi", "cassette", "record", "mocks", "relay"]) {
         if (!(k in args)) continue;
         if (args[k] === null) delete cur[k];
         else cur[k] = args[k];

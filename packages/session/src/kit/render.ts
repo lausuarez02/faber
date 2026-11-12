@@ -78,6 +78,7 @@ export function kitMarkdown(k: BuildKit): string {
   out.push(printListMd(k).replace(/^# .*\n/, "## Print\n").replace(/^## (?!Print)/gm, "### "));
   out.push("## Assemble", "", ...k.steps.flatMap(stepMd));
   out.push(...flashMd(k));
+  out.push(...connectMd(k));
   out.push("## If something does not work", "", "| Problem | Why | Fix |", "| --- | --- | --- |", ...k.troubleshooting.map((t) => `| ${mdCell(t.problem)} | ${mdCell(t.why)} | ${mdCell(t.fix)} |`), "");
   return out.join("\n");
 }
@@ -90,6 +91,28 @@ function flashMd(k: BuildKit): string[] {
   for (const c of f.commands) out.push(`${c.label}:`, "", "```sh", c.cmd, "```", "");
   if (f.needs.length) out.push(`You need: ${f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.`, "");
   return out;
+}
+
+function connectMd(k: BuildKit): string[] {
+  const c = k.connect;
+  if (!c) return [];
+  const out = ["## Connect", "", c.summary, ""];
+  c.steps.forEach((st, i) => {
+    out.push(`### ${i + 1}. ${st.title}`, "", ...st.do.map((d) => `- ${d}`), "");
+    for (const cmd of st.commands ?? []) out.push(`${cmd.label}:`, "", "```sh", cmd.cmd, "```", "");
+  });
+  out.push("### What it costs", "", ...c.cost.map((x) => `- ${x}`), "");
+  if (c.notes.length) out.push(...c.notes.map((n) => `> ${n}`), "");
+  return out;
+}
+
+function connectHtml(k: BuildKit): string {
+  const c = k.connect;
+  if (!c) return "";
+  const steps = c.steps
+    .map((st, i) => `<section class="step" id="connect-${i + 1}"><h3>${i + 1}. ${h(st.title)}</h3><ul>${st.do.map((d) => `<li>${h(d)}</li>`).join("")}</ul>${(st.commands ?? []).map((cmd) => `<p>${h(cmd.label)}:</p><pre>${h(cmd.cmd)}</pre>`).join("")}</section>`)
+    .join("");
+  return `<h2 id="connect">6. Connect</h2><p>${h(c.summary)}</p>${steps}<h3>What it costs</h3><ul>${c.cost.map((x) => `<li>${h(x)}</li>`).join("")}</ul>${c.notes.map((n) => `<p class="why">${h(n)}</p>`).join("")}`;
 }
 
 /** The whole kit as one CSV (the shopping list; the other parts are tables in KIT.md). */
@@ -171,12 +194,13 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
   const key = `jumper-kit:${k.project}`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${h(k.project)} build kit</title><style>${CSS}</style></head><body><main>
 ${hero}<h1>Build it yourself: ${h(k.project)}</h1><p class="summary">${h(k.summary)}</p>
-<nav class="noprint"><a href="#buy">Buy</a><a href="#tools">Tools</a><a href="#print">Print</a><a href="#assemble">Assemble</a><a href="#flash">Flash</a><a href="#help">If it does not work</a></nav>${missing}${checkFirst}
+<nav class="noprint"><a href="#buy">Buy</a><a href="#tools">Tools</a><a href="#print">Print</a><a href="#assemble">Assemble</a><a href="#flash">Flash</a>${k.connect ? '<a href="#connect">Connect</a>' : ""}<a href="#help">If it does not work</a></nav>${missing}${checkFirst}
 <h2 id="buy">1. Buy</h2>${shop}<h3>Totals</h3>${totals}${alts.length ? `<h3>Alternatives</h3><ul>${alts.map((l) => `<li><b>${h(l.name)}</b>: ${l.alternatives.map((a) => h(a)).join("; ")}</li>`).join("")}</ul>` : ""}${k.shopping.notes.map((n) => `<p class="why">${h(n)}</p>`).join("")}
 <h2 id="tools">2. Tools</h2><ul>${k.tools.items.map((t) => `<li>${cb(`tool:${t.name}`)} <b>${h(t.name)}</b> <span class="tag">${t.need}</span> <span class="why">${h(t.why)}</span></li>`).join("")}</ul><p><b>Skill:</b> ${h(k.tools.skill_why)}</p><p><b>Time:</b> ${h(k.tools.time.note)}</p>
 <h2 id="print">3. Print</h2>${printSec}
 <h2 id="assemble">4. Assemble</h2>${steps}
 <h2 id="flash">5. Flash</h2>${flash}
+${connectHtml(k)}
 <h2 id="help">If something does not work</h2>${trouble}
 <p class="why">Made by Jumper. Ticks are remembered in this browser only.</p>
 </main><script>(function(){var K=${JSON.stringify(key)};var s={};try{s=JSON.parse(localStorage.getItem(K)||"{}")||{}}catch(e){s={}}document.querySelectorAll("input[data-tick]").forEach(function(c){var id=c.getAttribute("data-tick");c.checked=!!s[id];c.addEventListener("change",function(){s[id]=c.checked;try{localStorage.setItem(K,JSON.stringify(s))}catch(e){}})})})();</script></body></html>`;
