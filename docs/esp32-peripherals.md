@@ -38,7 +38,7 @@ fixture tests listed at the end pass.
 | ADC (`analogRead`, `analogReadMilliVolts`) | SAR1+SAR2 (SENS) | SAR1+SAR2 (SENS) | APB_SARADC oneshot | pad voltage from the circuit (`E`), linear, full scale per attenuation (table below) | ✓ (`E` sent) | not run |
 | UART1 / UART2 | UART1+2 | UART1+2 | UART1 | bytes `V` drawn as 8N1 frames at the configured baud (`B`, from CLKDIV and the clock source); frames a part drives on the RX pin decoded at the stop bit and fed in (`X`) | ✓ (both ways) | not run |
 | I2S TX / RX (round 13, jb6) | I2S0+1, own lldesc DMA | I2S0+1 via GDMA | I2S0 via GDMA | `hw/misc/jumper_i2s.c` (patch 0004): `ST` frames out / `SR` frames in → `I2sBus`; rate from the clock registers; see "I2S" below | ✓ | **verified** (`esp-audio.integration.test.ts`, all three chips) |
-| Camera (esp32-camera) | ✓ | ✓ | – (no camera interface) | round 13: QEMU patch 0006 camera port (`CC` / `CD` lines); the driver API is wrapped in simulation builds, frames rendered by Jumper ([camera.md](camera.md)); the LCD_CAM / I2S camera hardware itself is not modelled | ✓ | ✓ (`camera.integration.test.ts`: S3 Sense pins, ESP32 ESP32-CAM pins) |
+| Camera (esp32-camera) | ✓ | ✓ | – (no camera interface) | round 13: QEMU patch 0006 camera port (`CC` / `CD` lines); the driver API is wrapped in simulation builds, frames rendered by Jumper ([cameras.md](cameras.md)); the LCD_CAM / I2S camera hardware itself is not modelled | ✓ | ✓ (`camera.integration.test.ts`: S3 Sense pins, ESP32 ESP32-CAM pins) |
 | Touch | – | – | – | not bridged | – | not emulated |
 | Wi-Fi / BT radio | – | – | – | not emulated (Ethernet MAC instead, round 9) | – | – |
 
@@ -80,8 +80,8 @@ NeoPixel). Pins per chip: `esp_pins.h`.
 
 ## I2S (round 13, track audio): emulated, verified on real firmware
 
-`toolchains/qemu-esp/0004-jumper-i2s.patch` adds `hw/misc/jumper_i2s.c` (bridge v6, image / native
-tag `9.2.2-20260417-jb6`). What it models, for ESP-IDF's `i2s_std` / `i2s_pdm` / `i2s_tdm` drivers
+`toolchains/qemu-esp/0004-jumper-i2s.patch` adds `hw/misc/jumper_i2s.c` (bridge v6; image / native tag `9.2.2-20260417-jb6`
+when it landed, now `jb7` = patches 0001-0006 with the camera port). What it models, for ESP-IDF's `i2s_std` / `i2s_pdm` / `i2s_tdm` drivers
 and arduino-esp32's `ESP_I2S` (`I2SClass`) on top of them:
 
 | | ESP32 | ESP32-S3 | ESP32-C3 |

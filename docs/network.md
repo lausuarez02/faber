@@ -92,7 +92,7 @@ from this same `network` config (allow list, secret names, header templates, `ne
 a Node server or a Cloudflare Worker that holds the keys, accepts one revocable token per device and
 streams answers back. Firmware written with `JumperRelay.h` calls `relay.sandbox.jumper` in the
 simulator (the sandbox applies the relay's own checks) and the person's relay on the device. Guide:
-[relay.md](relay.md).
+[api-relay.md](api-relay.md).
 
 ## Agent tools
 

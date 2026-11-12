@@ -444,7 +444,7 @@ check is instant.
 | sensor / prop | `{"set": "pot1.position", "value": 0.8}` |
 | serial input | `{"serial_write": "feed\n"}` |
 | fault | `{"inject_fault": "oled1", "kind": "i2c_nack"}` |
-| camera | `{"camera_frame": "face"}` (a test scene), `{"camera_frame": {"image": "tests/cat.jpg"}, "part": "cam1"}` (a PNG / JPEG in the project): what the camera sees from now on in this test ([camera.md](camera.md)) |
+| camera | `{"camera_frame": "face"}` (a test scene), `{"camera_frame": {"image": "tests/cat.jpg"}, "part": "cam1"}` (a PNG / JPEG in the project): what the camera sees from now on in this test ([cameras.md](cameras.md)) |
 | serial output | `{"expect_serial": "LED on", "within_ms": 1100}`, regex INSIDE expect_serial: `{"expect_serial": {"regex": "t=\\d+"}, "within_ms": 1100}`, `"absent": true` |
 | printed number | `{"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500}` (latest `energy=64` / `energy: 64`; robust to tick timing) |
 | screen | `{"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}}`, or a golden frame: `read_display {"part": "oled1", "save_as": "sad-face"}` then `{"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000}` (2 % of pixels may differ; `tolerance` changes it) |

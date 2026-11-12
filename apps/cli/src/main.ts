@@ -63,7 +63,7 @@ Agents
                                           Code loads it in that folder), <project>/AGENTS.md (Codex and
                                           others) and <project>/CLAUDE.md (imports AGENTS.md); files you
                                           wrote yourself are kept unless --force
-Real device: API access without keys in the firmware (docs/relay.md)
+Real device: API access without keys in the firmware (docs/api-relay.md)
   relay init [--out D]                    write relay/ (Node server, Cloudflare Worker + wrangler.toml, README,
                                           JumperRelay.h) from jumper.json network; no secret values in it
   relay serve [--port 8787] [--host H]    run the relay on this computer (reads the project's .env)

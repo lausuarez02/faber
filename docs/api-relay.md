@@ -114,3 +114,12 @@ someone else on another network. Jumper does not generate one yet: the Wi-Fi rad
   are not filled in; use a header. Secrets echoed inside WebSocket frames are not masked.
 - The sandbox relay checks a content length after reading the body; a chunked upload over the limit is
   refused at the end, not cut mid-stream as the real relay does.
+
+## An example that uses it
+
+`examples/see-and-say` sends a camera picture to a vision API and the answer to a speech API, both
+through `jumperRelayUrl()`, and streams the speech (raw PCM, `http.useHTTP10(true)`) into I2S. Its
+network config lists both hosts with a secret each (`Authorization: Bearer {{secret:...}}`) and tighter
+relay limits; its README walks through `jumper relay init / token add / serve / device-header` for it.
+The sandbox relay answers the vision call from a mock and the speech call from a cassette, so the tests
+pass offline (`packages/session/test/see-and-say.test.ts`).

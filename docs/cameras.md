@@ -129,3 +129,11 @@ that the camera is on) use the existing `led` kind with `expose: true`.
 - The Sense's PDM microphone: the I2S receive path now works (patch 0004, PDM RX on the S3 is verified with a fixture source); a live browser microphone into it is not done.
 - `esp_camera_save_to_nvs` / `load_from_nvs` return `ESP_ERR_NOT_SUPPORTED` in the simulator.
 - Nothing was bought or run on a real XIAO ESP32-S3 Sense or OV2640.
+
+## With audio and APIs
+
+A camera is one general part; a device that sees and speaks is a project. `examples/see-and-say`
+(XIAO ESP32-S3 Sense + GC9A01 + MAX98357A + speaker + button) captures a JPEG on a press, POSTs it to a
+vision API through the relay ([api-relay.md](api-relay.md)), sends the answer to a speech API and plays
+the audio over I2S ([audio.md](audio.md)). Its tests run offline (a mock and a cassette) on the real
+firmware in QEMU with the camera port and the I2S device together (jb7).

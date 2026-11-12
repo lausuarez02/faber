@@ -230,7 +230,7 @@ export const NetworkSchema = z
       })
       .strict()
       .optional()
-      .describe("Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/relay.md."),
+      .describe("Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md."),
   })
   .strict();
 export type NetworkSettings = z.infer<typeof NetworkSchema>;

@@ -1397,7 +1397,7 @@
           "additionalProperties": false
         },
         "relay": {
-          "description": "Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/relay.md.",
+          "description": "Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md.",
           "type": "object",
           "properties": {
             "requests_per_minute": {

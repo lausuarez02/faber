@@ -20,9 +20,11 @@
 - [Contracts](contracts.md): the APIs of every package.
 - [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
 - [Cases and the factory pack](enclosures.md): any case shape, the parts laid out inside, print and factory files.
-- [Cameras](camera.md): cameras as a general capability (esp32-camera on ESP32 / ESP32-S3): the XIAO ESP32-S3 Sense and the OV2640 module, what is emulated vs shimmed, scenes / images / webcam, tests, case lens holes.
+- [Cameras](cameras.md): cameras as a general capability (esp32-camera on ESP32 / ESP32-S3): the XIAO ESP32-S3 Sense and the OV2640 module, what is emulated vs shimmed, scenes / images / webcam, tests, case lens holes.
+- [Audio](audio.md): I2S out and in as a general capability (ESP32 / S3 / C3 emulated; RP2040 not), amplifier / speaker / microphone parts, the page playing a run's sound, amp checks, audio from an API, decoder licences.
+- [See and say](../examples/see-and-say/README.md): one project that joins them: camera → vision API → speech API → speaker, through the relay, tested offline.
 - [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
-- [The device network](network.md) and [the API relay](relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `jumper relay`).
+- [The device network](network.md) and [the API relay](api-relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `jumper relay`).
 - [The hardware skill](agent-skill.md): how the design-for-assembly know-how reaches Claude and other agents (server instructions, prompts, project skill, CLAUDE.md, plugin).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.
 - [PWM](../packages/sim-core/PWM.md): cycle-timed PWM measurement and the part hooks it adds.
