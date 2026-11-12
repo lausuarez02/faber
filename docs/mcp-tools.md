@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-63 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+64 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -113,6 +113,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`set_network`](#set_network) | Network settings | yes (undoable step) |
 | [`try_request`](#try_request) | Try a request in the sandbox | simulation only |
 | [`get_build_kit`](#get_build_kit) | Build kit | no (read-only) |
+| [`set_camera_frame`](#set_camera_frame) | Show the camera something | simulation only |
 
 ### new_project
 
@@ -120,7 +121,7 @@ Start a project from a template. For a new idea pass folder: true (or a folder n
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `xiao-esp32s3`, `xiao-esp32c3`, `esp32-c3-supermini`, `esp32`, `esp32-s3`, `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `blink`. Default blank. |
+| `template` | string |  | one of `blank`, `uno`, `nano`, `pico`, `xiao-rp2040`, `rp2040-zero`, `xiao-esp32s3`, `xiao-esp32s3-sense`, `xiao-esp32c3`, `esp32-c3-supermini`, `esp32`, `esp32-s3`, `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `blink`. Default blank. |
 | `name` | string |  | Project name (default: folder name). |
 | `folder` | boolean \| string |  | true: a new folder named after name; a string: that folder name (slugged, e.g. "plant-waterer"). Created under the server's projects folder; a taken name gets -2, -3… |
 | `overwrite` | boolean |  | Replace an existing jumper.json in the current folder (throws the old project away). |
@@ -735,3 +736,13 @@ Everything a person needs to build the device themselves, as one kit: shopping (
 | `slicer` | string |  | one of `auto`, `cached`, `off`. Print estimates: "auto" (default) slices with PrusaSlicer when it is installed on this computer (else estimated from the meshes), "off" always estimates. |
 | `write` | boolean |  | Default true: write the kit's files and zip. false returns only the data. |
 | `pdf` | boolean |  | Default true: also print kit.pdf (needs Playwright's Chromium). |
+
+### set_camera_frame
+
+What the camera sees in the simulator, from now on (the running device and the next runs, until set again; never saved in jumper.json): a test scene "test-card", "color-bars", "face", "gradient", "checker", "black", "white", "dark-room" with {"scene": "face"}, or a still image in the project (PNG or baseline JPEG) with {"image": "tests/cat.jpg"}. {"part": "cam1"} picks the camera when there are several. The firmware reads frames with esp_camera_fb_get() at its own frame size and format; the canvas shows the last picture in the lens. In tests use the scenario step {"camera_frame": "face"} or {"camera_frame": {"image": "tests/cat.jpg"}} instead (each test starts from the test card). The person can also drop an image on the camera or use their webcam in the canvas.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `scene` | string |  | one of `test-card`, `color-bars`, `face`, `gradient`, `checker`, `black`, `white`, `dark-room`. A test scene. |
+| `image` | string |  | A PNG / JPEG path inside the project (e.g. "tests/cat.jpg"), or a data:image/png\|jpeg;base64 URL. |
+| `part` | string |  | The camera part (default: the only one). |
