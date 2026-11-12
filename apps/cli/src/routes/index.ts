@@ -3,6 +3,7 @@ import { agentpartsHooks, agentpartsRoutes } from "./agentparts.ts";
 import { caseHooks, caseRoutes } from "./case.ts"; // round 6 case
 import { networkRoutes } from "./network.ts"; // round 10 net
 import { runtimeRoutes } from "./runtime.ts"; // round 11 native builds
+import { kitRoutes } from "./kit.ts"; // round 12 kit
 import { liveHooks, liveRoutes } from "./live.ts";
 import { projectsHooks, projectsRoutes } from "./projects.ts";
 import type { ApiRoute, ServerHook } from "./types.ts";
@@ -18,6 +19,7 @@ export const ROUTES: ApiRoute[] = [
   ...caseRoutes, // round 6 case
   ...networkRoutes, // round 10 net
   ...runtimeRoutes, // round 11 native builds
+  ...kitRoutes, // round 12 kit
 ];
 
 /** Every round-5 server hook. Append-only: one line per track. */
