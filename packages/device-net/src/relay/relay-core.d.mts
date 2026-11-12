@@ -5,6 +5,8 @@ export interface RelayAllow {
   ports?: number[];
   secrets?: string[];
   headers?: Record<string, string>;
+  /** Round 14: where this host is really reached (an origin, e.g. "http://127.0.0.1:7821"); the device keeps calling the host's name. */
+  to?: string;
 }
 
 export interface RelayLimits {
@@ -86,5 +88,5 @@ export function authorize(
   req: { method: string; url: string; header(name: string): string | null },
   ctx: Pick<RelayCtx, "spec" | "env" | "limiter">,
 ): Promise<{ device: string; limits: RelayLimits; entry: RelayAllow; target: RelayTarget }>;
-export function originOf(ctx: Pick<RelayCtx, "upstream">, target: RelayTarget): string;
+export function originOf(ctx: Pick<RelayCtx, "upstream">, target: RelayTarget, entry?: RelayAllow): string;
 export function handleRelay(request: Request, ctx: RelayCtx): Promise<Response>;

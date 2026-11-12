@@ -45,7 +45,7 @@ export function relaySpecFrom(config: NetworkConfig, project: string): RelaySpec
     project,
     allow: config.allow
       .filter((a) => a.tls !== "passthrough")
-      .map((a) => ({ host: a.host, ...(a.ports ? { ports: a.ports } : {}), ...(a.secrets?.length ? { secrets: a.secrets } : {}), ...(a.headers && Object.keys(a.headers).length ? { headers: a.headers } : {}) })),
+      .map((a) => ({ host: a.host, ...(a.ports ? { ports: a.ports } : {}), ...(a.secrets?.length ? { secrets: a.secrets } : {}), ...(a.headers && Object.keys(a.headers).length ? { headers: a.headers } : {}), ...(a.to ? { to: a.to } : {}) })),
     secrets: [...config.secrets],
     limits: {
       requests_per_minute: r.requests_per_minute ?? DEFAULT_LIMITS.requests_per_minute,
@@ -198,7 +198,8 @@ export function relayPack(config: NetworkConfig, project: string): Record<string
 }
 
 function relayReadme(spec: RelaySpec, slug: string): string {
-  const hosts = spec.allow.map((a) => `| ${a.host} | ${(a.ports ?? [443, 80]).join(", ")} | ${a.secrets?.join(", ") || "none"} | ${Object.keys(a.headers ?? {}).join(", ") || "none"} |`);
+  const hosts = spec.allow.map((a) => `| ${a.host} | ${(a.ports ?? [443, 80]).join(", ")} | ${a.secrets?.join(", ") || "none"} | ${Object.keys(a.headers ?? {}).join(", ") || "none"} | ${a.to ? `\`${a.to}\`` : "the host itself"} |`);
+  const routed = spec.allow.filter((a) => a.to);
   const l = spec.limits;
   const perDay = worstCaseCallsPerDay(spec);
   return `# API relay: ${spec.project}
@@ -218,10 +219,10 @@ device ── https://<relay>/<api host>/<path> + X-Device-Token ──▶ relay
 - Same rules as Jumper's simulator, which plays this relay at \`${SIM_RELAY_URL}\`: firmware that works
   there gets the same answers (and the same refusals) here.
 
-| Host | Ports | Keys it receives | Headers the relay adds |
-| --- | --- | --- | --- |
-${hosts.join("\n") || "| (none: add hosts to network.allow in jumper.json, then jumper relay init) | | | |"}
-${spec.direct?.length ? `\nNot relayed (TLS passthrough; the device calls them directly): ${spec.direct.map((d) => d.host).join(", ")}.\n` : ""}
+| Host | Ports | Keys it receives | Headers the relay adds | Sent to |
+| --- | --- | --- | --- | --- |
+${hosts.join("\n") || "| (none: add hosts to network.allow in jumper.json, then jumper relay init) | | | | |"}
+${routed.length ? `\n**Sent to**: the device keeps calling ${routed.map((a) => a.host).join(", ")}; the relay sends those requests to the address in the last column (\`to\` in relay.config.mjs, from jumper.json). An address on 127.0.0.1 or your home network works only when the relay runs on that computer or network (2a); a relay in the cloud (2b) needs the service's public https URL there instead.\n` : ""}${spec.direct?.length ? `\nNot relayed (TLS passthrough; the device calls them directly): ${spec.direct.map((d) => d.host).join(", ")}.\n` : ""}
 Limits per device: ${l.requests_per_minute} requests a minute, requests up to ${Math.round(l.max_request_bytes / 1024)} KiB,
 answers and WebSocket streams up to ${Math.round(l.max_response_bytes / 1024)} KiB and ${l.max_stream_seconds} s
 (jumper.json \`network.relay\`; regenerate after changing them).

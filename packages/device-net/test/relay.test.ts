@@ -102,6 +102,39 @@ describe("relay config from the project's network", () => {
 });
 
 describe("Node relay (jumper relay serve / server.mjs)", () => {
+  it("sends a host with \"to\" to that address (a service the person runs), the key added, the device keeping its own name", async () => {
+    const config = parseNetworkConfig({ mode: "mock", secrets: ["API_KEY"], allow: [{ host: "social.local", local: true, to: `http://127.0.0.1:${upPort}`, secrets: ["API_KEY"], headers: { Authorization: "Bearer {{secret:API_KEY}}" } }] });
+    const spec = relaySpecFrom(config, "Cam");
+    expect(spec.allow[0]).toMatchObject({ host: "social.local", to: `http://127.0.0.1:${upPort}` });
+    const pack = relayPack(config, "Cam");
+    expect(pack["README.md"]).toContain(`| social.local | 443, 80 | API_KEY | Authorization | \`http://127.0.0.1:${upPort}\` |`);
+    expect(pack["README.md"]).toContain("a relay in the cloud (2b) needs the service's public https URL");
+    const { token, hash } = newDeviceToken();
+    const env = { API_KEY: KEY, RELAY_DEVICE_TOKENS: deviceTokensWith("", "cam-1", hash) };
+    const logs: Array<Record<string, unknown>> = [];
+    const r = await startRelay({ spec, env, port: 0, host: "127.0.0.1", log: (e) => logs.push(e) });
+    try {
+      hits = [];
+      const res = await fetch(`${r.url}/social.local/api/v1/posts?caption=hi`, { method: "POST", headers: { "x-device-token": token, "content-type": "image/jpeg" }, body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]) });
+      expect(res.status).toBe(200);
+      expect(hits[0]!.url).toBe("/api/v1/posts?caption=hi");
+      expect(hits[0]!.headers.authorization).toBe(`Bearer ${KEY}`);
+      // the service is down: the error says where it was sent and how to fix it
+      const down = await startRelay({ spec: { ...spec, allow: [{ ...spec.allow[0]!, to: "http://127.0.0.1:1" }] }, env, port: 0, host: "127.0.0.1", log: () => {} });
+      try {
+        const bad = await fetch(`${down.url}/social.local/api/v1/posts`, { method: "POST", headers: { "x-device-token": token }, body: "x" });
+        expect(bad.status).toBe(502);
+        const text = await bad.text();
+        expect(text).toContain("sent to http://127.0.0.1:1");
+        expect(text).toContain("public https URL");
+      } finally {
+        await down.close();
+      }
+    } finally {
+      await r.close();
+    }
+  });
+
   it("forwards to an allowed host with the key injected, redacted in the logs and masked on the way back", async () => {
     const { token, hash } = newDeviceToken();
     const r = await relayWith(relaySpecFrom(CONFIG, "Star"), [["star-1", hash]]);

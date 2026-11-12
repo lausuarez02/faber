@@ -43,7 +43,7 @@ async function websocket(request, ctx) {
   const headers = { ...sent.headers, upgrade: "websocket" };
   // the runtime makes its own handshake with the API
   for (const k of ["sec-websocket-key", "sec-websocket-version", "sec-websocket-extensions", "accept-encoding"]) delete headers[k];
-  const origin = originOf(ctx, target).replace(/^ws/, "http");
+  const origin = originOf(ctx, target, a.entry).replace(/^ws/, "http");
   let resp;
   try {
     resp = await (ctx.fetch || fetch)(origin + target.path, { headers });

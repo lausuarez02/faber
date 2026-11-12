@@ -359,9 +359,14 @@ export async function authorize(req, ctx) {
   }
 }
 
-/** Where the target is really reached (tests point it at a local server). */
-export function originOf(ctx, target) {
+/**
+ * Where the target is really reached: the allow entry's "to" (a service the person runs, e.g. a dev
+ * server or their own backend at another address; the device keeps calling its own name), else the
+ * host itself (tests point it at a local server with ctx.upstream).
+ */
+export function originOf(ctx, target, entry) {
   if (ctx.upstream) return ctx.upstream(target.host, target.port, target.scheme);
+  if (entry && entry.to) return String(entry.to).replace(/\/+$/, "");
   const def = (target.scheme === "https" && target.port === 443) || (target.scheme === "http" && target.port === 80);
   return `${target.scheme}://${target.host}${def ? "" : `:${target.port}`}`;
 }
@@ -397,7 +402,7 @@ export async function handleRelay(request, ctx) {
     log(logEntry(redact, { kind: "refused", device, method: request.method, host: target.host, path: target.path, status: e.status, error: e.code, why: e.why }));
     return e.response();
   }
-  const upstreamUrl = originOf(ctx, target) + target.path;
+  const upstreamUrl = originOf(ctx, target, entry) + target.path;
   const method = request.method;
   let body;
   let bytesOut = 0;
@@ -416,7 +421,7 @@ export async function handleRelay(request, ctx) {
   try {
     up = await doFetch(upstreamUrl, init);
   } catch (err) {
-    const e = err instanceof RelayError ? err : new RelayError(502, "upstream-unreachable", `${target.host} could not be reached from the relay (${redact(String(err && err.message ? err.message : err))})`, "check the host name and that the API is up; try again later");
+    const e = err instanceof RelayError ? err : new RelayError(502, "upstream-unreachable", entry.to ? `${target.host} (sent to ${entry.to}) could not be reached from the relay (${redact(String(err && err.message ? err.message : err))})` : `${target.host} could not be reached from the relay (${redact(String(err && err.message ? err.message : err))})`, entry.to ? `start the service at ${entry.to}, or set "to" in relay.config.mjs to an address this relay can reach (a relay in the cloud cannot reach 127.0.0.1 or your home network: use the service's public https URL)` : "check the host name and that the API is up; try again later");
     log(logEntry(redact, { kind: "http", device, method, host: target.host, path: target.path, status: e.status, error: e.code, why: e.why, secrets_used: sent.used, ms: Date.now() - t0 }));
     return e.response();
   }

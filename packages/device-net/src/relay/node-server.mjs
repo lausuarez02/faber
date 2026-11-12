@@ -98,7 +98,7 @@ export function startRelay(opts) {
       return;
     }
     const { device, target } = a;
-    const origin = new URL(originOf(ctx, target));
+    const origin = new URL(originOf(ctx, target, a.entry));
     const port = Number(origin.port || (origin.protocol === "https:" ? 443 : 80));
     const up = origin.protocol === "https:" ? tls.connect({ host: origin.hostname, port, servername: net.isIP(origin.hostname) ? undefined : origin.hostname, ...(opts.upstreamCa ? { ca: opts.upstreamCa } : {}) }) : net.connect({ host: origin.hostname, port });
     const hostHeader = (target.scheme === "https" && target.port === 443) || (target.scheme === "http" && target.port === 80) ? target.host : `${target.host}:${target.port}`;
