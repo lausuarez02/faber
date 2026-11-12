@@ -700,6 +700,10 @@ export function compactState(s: VisualState): Record<string, unknown> {
   for (const [k, v] of Object.entries(s)) {
     if (/Transform$|^lens$|Opacity$/.test(k)) continue;
     if (/^pin_/.test(k)) continue;
+    if (typeof v === "string" && v.startsWith("data:image/")) {
+      o[k] = `<picture, ${v.length} chars; screenshot shows it>`; // round 13: a camera preview
+      continue;
+    }
     if (typeof v === "string" && v.length > 64) {
       o[k] = `<${v.length} chars; use read_display>`;
       continue;

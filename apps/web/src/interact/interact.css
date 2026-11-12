@@ -303,3 +303,15 @@
 .ix-headrow .ix-chev {
   margin-left: 0;
 }
+
+/* Round 13: camera section in the Inspector and the webcam pill */
+.insp-camera { border: 1px solid var(--line, #2a303a); border-radius: 8px; padding: 8px 10px; margin: 8px 0; display: grid; gap: 6px; }
+.insp-camera.is-over { border-color: var(--accent, #4da3ff); background: color-mix(in srgb, var(--accent, #4da3ff) 8%, transparent); }
+.insp-camera .insp-summary { display: flex; align-items: center; gap: 6px; }
+.insp-camera select { width: 100%; }
+.insp-webcam-on { display: flex; align-items: center; gap: 6px; color: var(--text, inherit); }
+.insp-error { color: var(--danger, #ff6b5a); }
+.rec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ff3b2f; flex: none; animation: rec-blink 1.2s ease-in-out infinite; }
+@keyframes rec-blink { 50% { opacity: 0.35; } }
+.webcam-pill { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid #ff3b2f; background: var(--panel, #141a22); color: var(--text, #e8ecf1); font: inherit; font-size: 12px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }

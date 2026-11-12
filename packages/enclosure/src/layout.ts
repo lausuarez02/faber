@@ -124,7 +124,7 @@ export interface Placed {
   bound?: { face: CaseFaceName; feature: LocalFeature; offset: number };
 }
 
-export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot";
+export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot" | "lens";
 
 export interface Opening {
   part: string;
@@ -1302,6 +1302,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
           // so the wall stays out of the picture (the field of view is a cone from the lens)
           const half = ((f.fov ?? 66) * Math.PI) / 360;
           const behind = Math.max(0, wallDist) + depthAlong;
+          o.kind = "lens";
           o.shape = "round";
           o.u = o.v = Math.round((f.u + 2 * behind * Math.tan(half) + 2 * tol) * 10) / 10;
           break;

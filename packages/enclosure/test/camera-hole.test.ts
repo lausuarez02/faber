@@ -23,6 +23,7 @@ describe("camera lens holes", () => {
       const o = L.openings.find((x) => x.part === "sense" && x.feature === "lens");
       expect(o, JSON.stringify(L.openings.map((x) => `${x.part}.${x.feature}`))).toBeDefined();
       expect(o!.shape).toBe("round");
+      expect(o!.kind).toBe("lens");
       const behind = Math.max(0, o!.standoff) + o!.depth;
       expect(o!.u).toBeGreaterThan(6 + 2 * behind * Math.tan((33 * Math.PI) / 180));
       expect(o!.u).toBeLessThan(6 + 2 * behind * Math.tan((33 * Math.PI) / 180) + 1.5);
