@@ -422,7 +422,7 @@ export class DeviceNet {
     const path = req.url ?? "/";
     const e = this.log.push({ kind: "http", host: ctx.host, port: ctx.port, tls: ctx.tls, method, path, open: true, ...(ctx.via ? { via: ctx.via } : {}), summary: `${ctx.via ? "relay → " : ""}${method} ${ctx.host}${path}` });
     const finish = (status: number, source: NetEvent["source"], bytes_in: number, extra: Partial<NetEvent> = {}) =>
-      this.log.update(e, { status, source, bytes_in, duration_ms: Math.round(this.clock.now() - t0), open: false, summary: `${method} ${ctx.host}${path} → ${status} (${source}, ${bytes_in} B)`, ...extra });
+      this.log.update(e, { status, source, bytes_in, duration_ms: Math.round(this.clock.now() - t0), open: false, summary: `${ctx.via ? "relay → " : ""}${method} ${ctx.host}${path} → ${status} (${source}, ${bytes_in} B)`, ...extra });
     res.on("close", () => {
       if (e.open) this.log.update(e, { open: false, duration_ms: Math.round(this.clock.now() - t0), summary: `${method} ${ctx.host}${path} → closed before an answer` });
     });

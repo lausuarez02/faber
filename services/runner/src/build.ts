@@ -43,6 +43,11 @@ export interface BuildRequest {
    * (JUMPER_SIM=0), so the factory pack's firmware is plain arduino-cli output.
    */
   purpose?: "simulator" | "device";
+  /**
+   * Round 13: files added to the sketch for this build only (path in the sketch → text), e.g. the
+   * simulation's jumper_device.h (the sandbox relay) or JumperRelay.h when the sketch includes it.
+   */
+  extraSources?: Readonly<Record<string, string>>;
   /** Reuse a cached result for identical inputs (default true). */
   cache?: boolean;
   /** Progress lines (image builds, library installs). */
@@ -76,6 +81,8 @@ export interface BuildResult {
 }
 
 const SOURCE_EXT = /\.(ino|pde|h|hpp|hh|c|cc|cpp|cxx|S|s)$/;
+/** The person's own device settings (relay token, Wi-Fi password): never in a build Jumper makes. */
+export const DEVICE_SECRETS_HEADER = "jumper_device.h";
 const inflight = new Map<string, Promise<BuildResult>>();
 
 /**
@@ -261,6 +268,10 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
     throw new RunnerError("no-sketch", `Build failed: the sketch folder ${req.sketchDir} does not exist. Fix: write the sketch first, e.g. write_file("firmware/main.ino", "...").`);
   }
   const sources = collectSources(req.sketchDir);
+  // Round 13: a person's jumper_device.h holds their device token and Wi-Fi password; Jumper's own
+  // builds (simulator, factory pack, build kit) never compile it. A simulation build gets its own.
+  sources.delete(DEVICE_SECRETS_HEADER);
+  for (const [rel, text] of Object.entries(req.extraSources ?? {})) sources.set(rel, text);
   const main = pickMain(sources, req.sketchDir, req.main);
   const libraries = resolveLibraries(req.libraries);
 

@@ -50,6 +50,8 @@ import { autoPlace, overlappingParts, sizeOf } from "./layout.ts";
 import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
+import { relayBuildSources } from "./relay-build.ts"; // round 13 relay
+import { DEVICE_HEADER } from "@jumper/device-net";
 import type { DeviceNetHost } from "@jumper/device-net";
 import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
@@ -1161,7 +1163,8 @@ export class ProjectSession {
   private sourceFiles(info: NonNullable<ReturnType<ProjectSession["firmwareInfo"]>>): string[] {
     if (!info.sketchDir || !existsSync(info.sketchDir)) return [];
     const ext = info.language === "arduino" ? SOURCE_EXT : LANGUAGES[info.language].sourceExt;
-    if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f)).sort();
+    // jumper_device.h (the person's relay token and Wi-Fi password) is never built by Jumper, so it never makes the firmware stale
+    if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f) && f !== DEVICE_HEADER).sort();
     const out: string[] = [];
     const walk = (d: string) => {
       for (const n of readdirSync(d).sort()) {
@@ -1307,6 +1310,7 @@ export class ProjectSession {
       ...(b?.env ? { env: b.env } : {}),
       libraries: info.fw.libraries ?? [],
       displayPrefix,
+      ...(info.language === "arduino" ? relayBuildSources(this.project, info.sketchDir!, "simulator") : {}),
       ...(args.force ? { cache: false } : {}),
     });
     // Hints are written for any project; name this project's real sketch folder.
@@ -1372,7 +1376,7 @@ export class ProjectSession {
     }
     let r: BuildResult;
     try {
-      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [], purpose: "device" });
+      r = await this.builder({ sketchDir: info.sketchDir, main: basename(info.sketchAbs), fqbn: info.deviceFqbn, libraries: info.fw.libraries ?? [], purpose: "device", ...relayBuildSources(this.project, info.sketchDir, "device") });
     } catch (err) {
       return { error: `the build for the real board (${info.deviceFqbn}) could not run: ${(err as Error).message}`, fix: "start Docker Desktop, then export again" };
     }

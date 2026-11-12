@@ -51,7 +51,7 @@ export const DEVICE_NET_TOOLS = [
 
 export function compact(e: NetEvent): Record<string, unknown> {
   const o: Record<string, unknown> = { seq: e.seq, t_ms: Math.round(e.t_ms), kind: e.kind, summary: e.summary };
-  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
+  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "via", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
   if (e.frames) o.frames = e.frames;
   if (e.open) o.open = true;
   return o;
