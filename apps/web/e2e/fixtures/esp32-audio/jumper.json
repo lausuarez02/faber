@@ -1,0 +1,31 @@
+{
+  "format": "jumper/1",
+  "name": "Beeper",
+  "parts": [
+    { "id": "xiao", "type": "seeed-xiao-esp32s3", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "amp", "type": "max98357a", "x": 40, "y": -200, "rotation": 0 },
+    { "id": "spk", "type": "speaker-20mm", "x": 220, "y": -220, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "amp", "pin": "VIN" }, "to": { "part": "xiao", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "amp", "pin": "GND" }, "to": { "part": "xiao", "pin": "GND" }, "color": "#2B3038" },
+    { "id": "w3", "from": { "part": "amp", "pin": "BCLK" }, "to": { "part": "xiao", "pin": "GPIO2" }, "color": "#F2E14A" },
+    { "id": "w4", "from": { "part": "amp", "pin": "LRC" }, "to": { "part": "xiao", "pin": "GPIO3" }, "color": "#B47CFF" },
+    { "id": "w5", "from": { "part": "amp", "pin": "DIN" }, "to": { "part": "xiao", "pin": "GPIO4" }, "color": "#E9EDF2" },
+    { "id": "w6", "from": { "part": "spk", "pin": "+" }, "to": { "part": "amp", "pin": "OUT+" }, "color": "#5CF2A1" },
+    { "id": "w7", "from": { "part": "spk", "pin": "-" }, "to": { "part": "amp", "pin": "OUT-" }, "color": "#FFB23F" }
+  ],
+  "firmware": {
+    "board": "xiao",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.bin",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "esp32:esp32:XIAO_ESP32S3"
+    }
+  },
+  "scenarios": [
+    { "id": "boots", "name": "Firmware boots", "steps": [{ "expect_serial": "ready", "within_ms": 1500 }] }
+  ]
+}

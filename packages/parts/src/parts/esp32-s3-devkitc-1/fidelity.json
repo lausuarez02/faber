@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
     },
     "timing": {
       "level": "approx",
@@ -27,12 +27,13 @@
     "Digital I/O with the chip's internal pull-ups / pull-downs, 3.3 V thresholds",
     "Serial (UART0) as the console, with virtual time stamps",
     "Per-pin over-current check (40 mA)",
-    "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)"
+    "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)",
+    "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
   ],
   "doesNotEmulate": [
     "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
     "analogRead (ADC) and touch pads: the ADC is modelled but not yet run on the S3",
-    "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3; I2S is not emulated",
+    "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3",
     "GPIO interrupts (attachInterrupt): modelled but not yet run on the S3; poll with digitalRead to be safe",
     "I2C (Wire): the jb5 I2C controller for the S3 is verified on the ESP32-C3 but not yet on the S3",
     "Deep sleep, light sleep and their currents",

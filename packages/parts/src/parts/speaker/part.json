@@ -2,10 +2,10 @@
   "id": "speaker",
   "name": "Speaker 8 Ω 0.5 W (28 mm round)",
   "category": "output",
-  "description": "Small round speaker for voice and sounds. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA). Not polarised for sound, but keep + / - the same when you use two.",
+  "description": "Small round speaker for voice and sounds. Drive it from an amplifier: the DFPlayer Mini's SPK_1 (+) and SPK_2 (-), or an I2S amplifier's OUT+ / OUT- (MAX98357A); never straight from a board pin (8 Ω would pull 600 mA). Not polarised for sound, but keep + / - the same when you use two.",
   "pins": [
-    { "id": "+", "label": "+", "x": 40, "y": 116, "type": "passive", "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)." },
-    { "id": "-", "label": "-", "x": 80, "y": 116, "type": "passive", "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)." }
+    { "id": "+", "label": "+", "x": 40, "y": 116, "type": "passive", "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)." },
+    { "id": "-", "label": "-", "x": 80, "y": 116, "type": "passive", "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)." }
   ],
   "size": { "w": 120, "h": 120 },
   "props": [

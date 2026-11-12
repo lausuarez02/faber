@@ -12,7 +12,7 @@ import { nativeQemuBinary, nativeQemuDir, nativeQemuInstalled, pickRuntime, prob
  * LEDC, SPI, RMT, ADC (round 10 esp-periph) and pad pull-ups / pull-downs answered in lockstep
  * (round 10 esp-app). Override with JUMPER_QEMU_ESP_IMAGE.
  */
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb5";
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb6";
 
 /** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
 export const EMULATOR_LABEL = "jumper.emulator";

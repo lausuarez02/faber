@@ -861,6 +861,8 @@ function paintStateAttrs(el: HTMLElement, state: VisualState): void {
     if (k === "brightness" && typeof v === "number" && v > 0.05) lit = true;
     if ((k === "lit" || k === "on") && v) lit = true;
   }
+  // Round 13 (audio): an amplifier's loudness drives its level bar (canvas.css).
+  if (typeof state.level === "number") el.style.setProperty("--level", String(Math.min(1, Math.max(0, state.level))));
   const b = state.brightness;
   if (typeof b === "number") {
     el.style.setProperty("--glow-alpha", String(Math.min(1, Math.max(0, b))));

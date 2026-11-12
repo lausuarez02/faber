@@ -1,5 +1,6 @@
 import { buildNets, type PinRef, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
+import { audioChecks } from "./audio-checks.ts";
 import { voiceChecks } from "./voice.ts"; // round 7 voice
 import { partsAdvice } from "./advice.ts"; // round 8 parts-advice
 
@@ -506,6 +507,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
 
   for (const i of powerPathChecks(project, partSpec, nets, netOf, boardPart)) add(i); // round 6 power
   for (const i of voiceChecks(project, registry, firmwareSource)) add(i); // round 7 voice
+  for (const i of audioChecks(project, registry)) add(i); // round 13 audio: I2S amplifier + speaker
   for (const i of partsAdvice(project, registry)) add(i); // round 8: parts you may not need, smaller parts
 
   const order = { error: 0, warning: 1, info: 2 };

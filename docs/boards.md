@@ -18,11 +18,11 @@ A board is placeable in the parts library only when its fixture test proves it b
 | [Raspberry Pi Pico](#raspberry-pi-pico) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ✅ |
 | [Seeed XIAO RP2040](#seeed-xiao-rp2040) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ✅ |
 | [Waveshare RP2040-Zero](#waveshare-rp2040-zero) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ⚪ |
-| [Seeed XIAO ESP32-S3](#seeed-xiao-esp32s3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ❌ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
-| [Seeed XIAO ESP32-C3](#seeed-xiao-esp32c3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ❌ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32-C3 SuperMini](#esp32-c3-supermini) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ❌ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32 DevKitC (WROOM-32)](#esp32-devkitc) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ❌ | ✅ | ⚪ | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32-S3 DevKitC-1](#esp32-s3-devkitc-1) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ❌ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
+| [Seeed XIAO ESP32-S3](#seeed-xiao-esp32s3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
+| [Seeed XIAO ESP32-C3](#seeed-xiao-esp32c3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32-C3 SuperMini](#esp32-c3-supermini) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32 DevKitC (WROOM-32)](#esp32-devkitc) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ⚪ | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32-S3 DevKitC-1](#esp32-s3-devkitc-1) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
 | [STM32 Blue Pill (F103C8)](#stm32-bluepill) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
 | [WeAct Black Pill (STM32F411CE)](#stm32-blackpill-f411) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
 | [ST Nucleo-F401RE](#stm32-nucleo-f401re) (planned) | Renode | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
@@ -143,7 +143,7 @@ Part `seeed-xiao-esp32s3`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -151,7 +151,7 @@ Part `seeed-xiao-esp32s3`, backend `qemu-esp`: Espressif QEMU on this computer (
 | UART | ✅ verified | Serial (UART0), Serial1 and Serial2 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | I2C | ✅ verified | Wire and Wire1 on two buses: scan, write, repeated-START read (the controllers jb5 adds to the S3) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython does not run on the S3 | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
-| I2S | ❌ no | Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet |  |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 / I2S1 through GDMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (PDM, the XIAO Sense's mic pins); an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network. Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ✅ verified | net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
@@ -164,7 +164,7 @@ Part `seeed-xiao-esp32c3`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -172,7 +172,7 @@ Part `seeed-xiao-esp32c3`, backend `qemu-esp`: Espressif QEMU on this computer (
 | UART | ✅ verified | Serial (UART0), Serial1 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | I2C | ✅ verified | Wire: scan, write, repeated-START read (the controller jb5 adds to the C3) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython's SPI (DMA) still fails (MOSI arrives as 00 00), asserted as a known gap in services/runner/src/lang/esp-peripherals.integration.test.ts | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
-| I2S | ❌ no | Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet |  |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 through GDMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (standard I2S). Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | 🟡 partial | the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
@@ -185,7 +185,7 @@ Part `esp32-c3-supermini`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -193,7 +193,7 @@ Part `esp32-c3-supermini`, backend `qemu-esp`: Espressif QEMU on this computer (
 | UART | ✅ verified | Serial (UART0), Serial1 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | I2C | ✅ verified | Wire: scan, write, repeated-START read (the controller jb5 adds to the C3) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython's SPI (DMA) still fails (MOSI arrives as 00 00), asserted as a known gap in services/runner/src/lang/esp-peripherals.integration.test.ts | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
-| I2S | ❌ no | Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet |  |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 through GDMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (standard I2S). Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | 🟡 partial | the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
@@ -206,7 +206,7 @@ Part `esp32-devkitc`, backend `qemu-esp`: Espressif QEMU on this computer (Docke
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -214,7 +214,7 @@ Part `esp32-devkitc`, backend `qemu-esp`: Espressif QEMU on this computer (Docke
 | UART | ✅ verified | Serial (UART0), Serial1 and Serial2 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | I2C | ✅ verified | Wire and Wire1 on two buses: scan, write, repeated-START read | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython's SPI (DMA) still fails (the transfer never returns), asserted as a known gap in services/runner/src/lang/esp-peripherals.integration.test.ts | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
-| I2S | ❌ no | Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet |  |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 / I2S1 with their own DMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (standard I2S). Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ⚪ untested | the netstack and the r3 Wi-Fi shim are chip-independent (verified on the S3), but no firmware for this chip has run through them; the radio itself is not emulated |  |
 | BLE | ❌ no | QEMU has no radio model |  |
@@ -227,7 +227,7 @@ Part `esp32-s3-devkitc-1`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -235,7 +235,7 @@ Part `esp32-s3-devkitc-1`, backend `qemu-esp`: Espressif QEMU on this computer (
 | UART | ✅ verified | Serial (UART0), Serial1 and Serial2 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | I2C | ✅ verified | Wire and Wire1 on two buses: scan, write, repeated-START read (the controllers jb5 adds to the S3) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython does not run on the S3 | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
-| I2S | ❌ no | Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet |  |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 / I2S1 through GDMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (PDM, the XIAO Sense's mic pins); an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network. Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ✅ verified | net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
@@ -349,6 +349,6 @@ Part `arduino-nano-33-ble`, backend `renode`: Renode 1.17 on this computer (Dock
 ## Gaps across boards
 
 - **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.
-- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb5 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say "image missing" with the fix.
+- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb6 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say "image missing" with the fix.
 - **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.
 - **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.

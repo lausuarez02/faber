@@ -2,7 +2,7 @@
   "id": "speaker-15mm",
   "name": "Speaker 8 Ω 0.25 W (15 mm round)",
   "category": "output",
-  "description": "Tiny 15 mm round speaker for the smallest cases: speech is understandable at arm's length but noticeably quieter and thinner than 20 or 28 mm speakers; keep the DFPlayer volume at 20 or below (0.25 W). Drive it from an amplifier (DFPlayer SPK_1 / SPK_2), never straight from a board pin.",
+  "description": "Tiny 15 mm round speaker for the smallest cases: speech is understandable at arm's length but noticeably quieter and thinner than 20 or 28 mm speakers; keep the DFPlayer volume at 20 or below (0.25 W). Drive it from an amplifier (DFPlayer SPK_1 / SPK_2, or a MAX98357A's OUT+ / OUT-), never straight from a board pin.",
   "pins": [
     {
       "id": "+",
@@ -10,7 +10,7 @@
       "x": 40,
       "y": 116,
       "type": "passive",
-      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)."
     },
     {
       "id": "-",
@@ -18,7 +18,7 @@
       "x": 80,
       "y": 116,
       "type": "passive",
-      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)."
     }
   ],
   "size": {

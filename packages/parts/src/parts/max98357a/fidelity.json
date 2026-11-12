@@ -1,13 +1,43 @@
 {
   "level": "behavioral",
   "areas": {
-    "logic": { "level": "approx", "note": "The I2S stream is received as whole blocks of samples with their sample rate, bit depth and channel count (whatever the board's I2S peripheral sent); BCLK / LRC edges, clock jitter and frame-sync errors are not simulated." },
-    "timing": { "level": "approx", "note": "Blocks arrive at the virtual time the board's DMA moved them, not sample by sample." },
-    "analog": { "level": "approx", "note": "Output is the block's RMS level × gain as an RMS voltage across OUT+ / OUT- (solved as DC into the speaker's coil resistance). No filtering, distortion, clipping shape or click/pop suppression." },
-    "power": { "level": "approx", "note": "Supply current follows output power at ~85 % efficiency plus 2.4 mA quiescent." },
-    "radio": { "level": "n/a", "note": "" }
+    "logic": {
+      "level": "approx",
+      "note": "The I2S stream is received as whole blocks of samples with their sample rate, bit depth and channel count (whatever the board's I2S peripheral sent); BCLK / LRC edges, clock jitter and frame-sync errors are not simulated."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "Blocks arrive at the virtual time the board's DMA moved them, not sample by sample."
+    },
+    "analog": {
+      "level": "approx",
+      "note": "Output is the block's RMS level × gain as an RMS voltage across OUT+ / OUT- (solved as DC into the speaker's coil resistance). No filtering, distortion, clipping shape or click/pop suppression."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Supply current follows output power at ~85 % efficiency plus 2.4 mA quiescent."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": ""
+    }
   },
-  "emulates": ["Whether the board sends I2S audio and how loud it is", "Channel select and shutdown from the SD pin", "Gain from the GAIN strap", "Driving a speaker part (sounding, power)"],
-  "doesNotEmulate": ["The waveform on the speaker (frequency response, distortion)", "I2S clock or format mismatches (a wrong bit depth on real hardware sounds like noise)", "Thermal and overcurrent shutdown"],
-  "testOnRealDevice": ["Listen for hiss and pops at start-up; keep the speaker wires short", "Check the I2S format (Philips, 16 or 32 bit) matches what the library sends", "Never wire OUT- to GND: the output is bridge-tied"]
+  "emulates": [
+    "Whether the board sends I2S audio and how loud it is",
+    "Channel select and shutdown from the SD pin",
+    "Gain from the GAIN strap",
+    "Driving a speaker part (sounding, power)",
+    "The sound itself on the page that follows jumper serve: each run's I2S stream is kept as a WAV and played with WebAudio in step with the run (mono, 16 kHz; never under a test driver; the speaker's frequency response is not applied)"
+  ],
+  "doesNotEmulate": [
+    "The waveform on the speaker (frequency response, distortion)",
+    "I2S clock or format mismatches (a wrong bit depth on real hardware sounds like noise)",
+    "Thermal and overcurrent shutdown"
+  ],
+  "testOnRealDevice": [
+    "Listen for hiss and pops at start-up; keep the speaker wires short",
+    "Check the I2S format (Philips, 16 or 32 bit) matches what the library sends",
+    "Never wire OUT- to GND: the output is bridge-tied",
+    "Loudness: a full-scale signal at 5 V can push more watts than a small speaker takes (check_design says how far to scale the samples)"
+  ]
 }

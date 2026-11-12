@@ -2,6 +2,7 @@ import type { Project } from "@jumper/project-format";
 import type { VisualState } from "@jumper/sim-core";
 import { nextCursorN, noteStepActors, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
 import { setColorFrames, type ColorFrameImage } from "../lib/colorFrames.ts"; // round 6 frames
+import { playRunAudio, type RunAudioRef } from "./runAudio.ts"; // round 13 audio
 
 /**
  * Applies action-log entries (from the live hub or a replay file) to the canvas, and paces a replay.
@@ -33,6 +34,8 @@ export interface LogEntry {
   project?: Project;
   file?: { path: string; content: string | null };
   frames?: LogFrame[];
+  /** Round 13 audio: what the board played over I2S during a run (served at /api/audio/<file>). */
+  audio?: RunAudioRef;
   steps?: LiveStep[];
   result?: unknown;
 }
@@ -287,6 +290,8 @@ export class FollowPlayer {
       this.cancelFrames();
       const span = framesSpan(frames);
       this.cancelFrames = playFrames(frames, Math.min(span, 10_000), this.port);
+      // Round 13 audio: the run's sound, in step with its frames (only when they play at real speed).
+      if (e.audio && span <= 10_000) void playRunAudio(e.audio, frames[0]!.vt);
     }
   }
 }

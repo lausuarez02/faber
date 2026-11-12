@@ -40,7 +40,7 @@ export const create: PartModelFactory = (ctx): PartModel => {
         out.push({
           severity: peakW > rated * 3 ? "error" : "warning",
           code: "speaker-overpower",
-          message: `The speaker gets ${peakW.toFixed(2)} W but is rated ${rated} W. Why: more power than rated distorts it and can burn the coil. Fix: lower the volume (DFPlayer: volume 20 instead of 30), use a ${rated < 1 ? "1 W or bigger" : "bigger"} speaker, or never wire it straight to a supply or a board pin.`,
+          message: `The speaker gets ${peakW.toFixed(2)} W but is rated ${rated} W. Why: more power than rated distorts it and can burn the coil. Fix: lower the volume (DFPlayer: volume 20 instead of 30; an I2S amplifier such as the MAX98357A: scale the samples down in the firmware or strap its GAIN lower), use a ${rated < 1 ? "1 W or bigger" : "bigger"} speaker, or never wire it straight to a supply or a board pin.`,
         });
       }
       return out;

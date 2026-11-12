@@ -5283,7 +5283,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
         },
         "timing": {
           "level": "approx",
@@ -5309,12 +5309,13 @@ export const partDefinitions: PartDefinition[] = [
         "I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt), UART1 and the ADC (analogRead), verified on real firmware",
         "Per-pin over-current check (40 mA)",
         "Blue LED (GPIO8, active low; LED_BUILTIN)",
-        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))"
+        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))",
+        "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
         "Touch pads",
-        "The SPI peripheral (SPI transfers do not come through yet) and I2S; RMT (NeoPixel / WS2812) is untested",
+        "The SPI peripheral (SPI transfers do not come through yet); RMT (NeoPixel / WS2812) is untested",
         "Deep sleep, light sleep and their currents",
         "Pull-ups / pull-downs the chip applies at reset before the firmware sets them (only the ones the firmware sets are seen)",
         "Reset and boot from the EN / RST and BOOT pins, and the strapping levels themselves (check_design checks them instead)",
@@ -6111,7 +6112,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts on GPIO21 / GPIO22, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts on GPIO21 / GPIO22, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
         },
         "timing": {
           "level": "approx",
@@ -6136,12 +6137,13 @@ export const partDefinitions: PartDefinition[] = [
         "Serial (UART0) as the console, with virtual time stamps",
         "I2C0 (Wire) to the I2C parts on GPIO21 / GPIO22, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt), UART1 and the ADC (analogRead), verified on real firmware",
         "Per-pin over-current check (40 mA)",
-        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32 yet)"
+        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32 yet)",
+        "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
         "Touch pads",
-        "The SPI peripheral (SPI transfers do not come through yet) and I2S; RMT (NeoPixel / WS2812) is untested",
+        "The SPI peripheral (SPI transfers do not come through yet); RMT (NeoPixel / WS2812) is untested",
         "Deep sleep, light sleep and their currents",
         "Pull-ups / pull-downs the chip applies at reset before the firmware sets them (only the ones the firmware sets are seen)",
         "Reset and boot from the EN / RST and BOOT pins, and the strapping levels themselves (check_design checks them instead)",
@@ -6997,7 +6999,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
         },
         "timing": {
           "level": "approx",
@@ -7021,12 +7023,13 @@ export const partDefinitions: PartDefinition[] = [
         "Digital I/O with the chip's internal pull-ups / pull-downs, 3.3 V thresholds",
         "Serial (UART0) as the console, with virtual time stamps",
         "Per-pin over-current check (40 mA)",
-        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)"
+        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)",
+        "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
         "analogRead (ADC) and touch pads: the ADC is modelled but not yet run on the S3",
-        "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3; I2S is not emulated",
+        "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3",
         "GPIO interrupts (attachInterrupt): modelled but not yet run on the S3; poll with digitalRead to be safe",
         "I2C (Wire): the jb5 I2C controller for the S3 is verified on the ESP32-C3 but not yet on the S3",
         "Deep sleep, light sleep and their currents",
@@ -10051,7 +10054,8 @@ export const partDefinitions: PartDefinition[] = [
         "Whether the board sends I2S audio and how loud it is",
         "Channel select and shutdown from the SD pin",
         "Gain from the GAIN strap",
-        "Driving a speaker part (sounding, power)"
+        "Driving a speaker part (sounding, power)",
+        "The sound itself on the page that follows jumper serve: each run's I2S stream is kept as a WAV and played with WebAudio in step with the run (mono, 16 kHz; never under a test driver; the speaker's frequency response is not applied)"
       ],
       "doesNotEmulate": [
         "The waveform on the speaker (frequency response, distortion)",
@@ -10061,7 +10065,8 @@ export const partDefinitions: PartDefinition[] = [
       "testOnRealDevice": [
         "Listen for hiss and pops at start-up; keep the speaker wires short",
         "Check the I2S format (Philips, 16 or 32 bit) matches what the library sends",
-        "Never wire OUT- to GND: the output is bridge-tied"
+        "Never wire OUT- to GND: the output is bridge-tied",
+        "Loudness: a full-scale signal at 5 V can push more watts than a small speaker takes (check_design says how far to scale the samples)"
       ]
     },
     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 116 104\" width=\"116\" height=\"104\">\n  <rect x=\"2\" y=\"14\" width=\"112\" height=\"76\" rx=\"4\" fill=\"#15181D\" stroke=\"#3A4250\" stroke-width=\"1.5\"/>\n  <rect x=\"26\" y=\"2\" width=\"68\" height=\"18\" rx=\"2\" fill=\"#1C2027\" stroke=\"#3A4250\" stroke-width=\"1\"/>\n  <rect x=\"44\" y=\"38\" width=\"28\" height=\"28\" rx=\"2\" fill=\"#0D0F12\" stroke=\"#2B313B\" stroke-width=\"1\"/>\n  <text x=\"58\" y=\"34\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"7\" fill=\"#E9EDF2\">MAX98357A</text>\n  <text x=\"58\" y=\"55\" text-anchor=\"middle\" font-family=\"IBM Plex Mono\" font-size=\"6\" fill=\"#8A93A0\">I2S AMP</text>\n  <g font-family=\"IBM Plex Mono\" font-size=\"5\" fill=\"#8A93A0\" text-anchor=\"middle\">\n    <text x=\"10\" y=\"86\">LRC</text><text x=\"26\" y=\"86\">BCLK</text><text x=\"42\" y=\"86\">DIN</text><text x=\"58\" y=\"86\">GAIN</text>\n    <text x=\"74\" y=\"86\">SD</text><text x=\"90\" y=\"86\">GND</text><text x=\"106\" y=\"86\">VIN</text>\n  </g>\n  <g display=\"none\" data-bind=\"visible:playing,opacity:level\">\n    <path d=\"M78 44 A12 12 0 0 1 78 60 M84 38 A20 20 0 0 1 84 66\" fill=\"none\" stroke=\"#5CF2A1\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>\n  </g>\n  <circle data-pin=\"LRC\" cx=\"10\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"BCLK\" cx=\"26\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"DIN\" cx=\"42\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GAIN\" cx=\"58\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"SD\" cx=\"74\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"GND\" cx=\"90\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"VIN\" cx=\"106\" cy=\"96\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT+\" cx=\"40\" cy=\"8\" r=\"3\" fill=\"#C9CED6\"/>\n  <circle data-pin=\"OUT-\" cx=\"80\" cy=\"8\" r=\"3\" fill=\"#C9CED6\"/>\n</svg>",
@@ -14041,7 +14046,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
         },
         "timing": {
           "level": "approx",
@@ -14067,12 +14072,13 @@ export const partDefinitions: PartDefinition[] = [
         "I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt), UART1 and the ADC (analogRead), verified on real firmware",
         "Per-pin over-current check (40 mA)",
         "On-board Li-ion charger (ETA4054S2F, 380 mA) and the battery power path",
-        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))"
+        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))",
+        "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
         "Touch pads",
-        "The SPI peripheral (SPI transfers do not come through yet) and I2S; RMT (NeoPixel / WS2812) is untested",
+        "The SPI peripheral (SPI transfers do not come through yet); RMT (NeoPixel / WS2812) is untested",
         "Deep sleep, light sleep and their currents",
         "Pull-ups / pull-downs the chip applies at reset before the firmware sets them (only the ones the firmware sets are seen)",
         "Reset and boot from the EN / RST and BOOT pins, and the strapping levels themselves (check_design checks them instead)",
@@ -14542,7 +14548,7 @@ export const partDefinitions: PartDefinition[] = [
       "areas": {
         "logic": {
           "level": "ok",
-          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb5), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. I2S and touch are not emulated. docs/boards.md has the per-peripheral status with the test behind each cell."
+          "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
         },
         "timing": {
           "level": "approx",
@@ -14568,12 +14574,13 @@ export const partDefinitions: PartDefinition[] = [
         "Per-pin over-current check (40 mA)",
         "On-board Li-ion charger (SGM40567, 50 mA) and the battery power path",
         "User LED (orange, GPIO21, active low; LED_BUILTIN)",
-        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)"
+        "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)",
+        "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
         "analogRead (ADC) and touch pads: the ADC is modelled but not yet run on the S3",
-        "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3; I2S is not emulated",
+        "analogWrite / LEDC PWM and tone(), RMT (NeoPixel / WS2812) and SPI: modelled but not yet run on the S3",
         "GPIO interrupts (attachInterrupt): modelled but not yet run on the S3; poll with digitalRead to be safe",
         "I2C (Wire): the jb5 I2C controller for the S3 is verified on the ESP32-C3 but not yet on the S3",
         "Deep sleep, light sleep and their currents",
@@ -15913,7 +15920,7 @@ export const partDefinitions: PartDefinition[] = [
       "id": "speaker",
       "name": "Speaker 8 Ω 0.5 W (28 mm round)",
       "category": "output",
-      "description": "Small round speaker for voice and sounds. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA). Not polarised for sound, but keep + / - the same when you use two.",
+      "description": "Small round speaker for voice and sounds. Drive it from an amplifier: the DFPlayer Mini's SPK_1 (+) and SPK_2 (-), or an I2S amplifier's OUT+ / OUT- (MAX98357A); never straight from a board pin (8 Ω would pull 600 mA). Not polarised for sound, but keep + / - the same when you use two.",
       "pins": [
         {
           "id": "+",
@@ -15921,7 +15928,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 40,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)."
         },
         {
           "id": "-",
@@ -15929,7 +15936,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 80,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)."
         }
       ],
       "size": {
@@ -16095,7 +16102,7 @@ export const partDefinitions: PartDefinition[] = [
       "id": "speaker-15mm",
       "name": "Speaker 8 Ω 0.25 W (15 mm round)",
       "category": "output",
-      "description": "Tiny 15 mm round speaker for the smallest cases: speech is understandable at arm's length but noticeably quieter and thinner than 20 or 28 mm speakers; keep the DFPlayer volume at 20 or below (0.25 W). Drive it from an amplifier (DFPlayer SPK_1 / SPK_2), never straight from a board pin.",
+      "description": "Tiny 15 mm round speaker for the smallest cases: speech is understandable at arm's length but noticeably quieter and thinner than 20 or 28 mm speakers; keep the DFPlayer volume at 20 or below (0.25 W). Drive it from an amplifier (DFPlayer SPK_1 / SPK_2, or a MAX98357A's OUT+ / OUT-), never straight from a board pin.",
       "pins": [
         {
           "id": "+",
@@ -16103,7 +16110,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 40,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)."
         },
         {
           "id": "-",
@@ -16111,7 +16118,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 80,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)."
         }
       ],
       "size": {
@@ -16278,7 +16285,7 @@ export const partDefinitions: PartDefinition[] = [
       "id": "speaker-20mm",
       "name": "Speaker 8 Ω 0.5 W (20 mm round)",
       "category": "output",
-      "description": "Small round 20 mm speaker for voice in tight cases (an egg, a keychain): a bit quieter than the 28 mm one but clear for speech. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA).",
+      "description": "Small round 20 mm speaker for voice in tight cases (an egg, a keychain): a bit quieter than the 28 mm one but clear for speech. Drive it from an amplifier: the DFPlayer Mini's SPK_1 (+) and SPK_2 (-), or an I2S amplifier's OUT+ / OUT- (MAX98357A); never straight from a board pin (8 Ω would pull 600 mA).",
       "pins": [
         {
           "id": "+",
@@ -16286,7 +16293,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 40,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+          "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)."
         },
         {
           "id": "-",
@@ -16294,7 +16301,7 @@ export const partDefinitions: PartDefinition[] = [
           "x": 80,
           "y": 116,
           "type": "passive",
-          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+          "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)."
         }
       ],
       "size": {

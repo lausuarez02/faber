@@ -65,3 +65,7 @@ export type { BuildKit, KitOptions } from "./kit/index.ts";
 export { writeKitFiles, htmlToPdf } from "./kit/files.ts";
 // Round 13: the API relay for the real device (jumper relay ..., factory pack relay/, kit Connect)
 export { ensureSecretsIgnored, relayConfigOf, relayTokenAdd, relayTokenList, relayTokenRevoke, serveRelay, writeDeviceHeader, writeRelayFolder } from "./relay-tools.ts";
+// round 13 audio: what a run played over I2S (the page plays it), and the I2S amplifier checks
+export { runAudioFile, mixRunAudio, RUN_AUDIO_RATE } from "./run-audio.ts";
+export type { RunAudio } from "./run-audio.ts";
+export { audioChecks, I2S_AMPS } from "./audio-checks.ts";
