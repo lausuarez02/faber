@@ -12,6 +12,8 @@ import { gunzipSync } from "node:zlib";
 import { afterAll, describe, expect, it } from "vitest";
 import { I2sBus, type I2sBlock } from "@jumper/sim-core";
 import { QemuEspBackend, qemuImageAvailable } from "@jumper/sim-backends/qemu-esp";
+import { buildFirmware, flashImageOf } from "../build.ts";
+import { canBuildArduino } from "../runtime.ts";
 
 const FIX = fileURLToPath(new URL("../../../../packages/sim-backends/fixtures/esp32/", import.meta.url));
 const available = qemuImageAvailable() && existsSync(`${FIX}esp_audio.esp32s3.bin.gz`);
@@ -114,7 +116,7 @@ export function toneOf(b: Burst): { hz: number; peak: number; frames: number; ga
   return { hz, peak, frames: end, gapFrames };
 }
 
-function boot(chip: Chip) {
+function boot(chip: Chip, image?: Uint8Array) {
   const be = new QemuEspBackend({ chip, network: false });
   let serial = "";
   be.onSerial((b) => (serial += String.fromCharCode(b)));
@@ -131,7 +133,7 @@ function boot(chip: Chip) {
     },
   });
   be.attachI2s(bus);
-  be.load(new Uint8Array(gunzipSync(readFileSync(`${FIX}esp_audio.${chip}.bin.gz`))));
+  be.load(image ?? new Uint8Array(gunzipSync(readFileSync(`${FIX}esp_audio.${chip}.bin.gz`))));
   const until = (text: string, maxMs: number) => {
     const step = Math.round(be.cyclesPerSecond / 200);
     for (let i = 0; i < maxMs / 5 && !serial.includes(text); i++) be.step(step);
@@ -202,4 +204,39 @@ describe.skipIf(!available)("I2S audio on real ESP firmware (ESP_I2S, QEMU jb6)"
       expect(s.bus.stats.inFormat).toMatchObject({ sampleRate: 16000, bits: 16 });
     });
   }
+
+  // MP3 decoded on the device: ESP_I2S::playMP3() uses libhelix-mp3 (RealNetworks RPSL / RCSL,
+  // prebuilt in arduino-esp32 3.x), so no image linking it is committed: built here when a toolchain
+  // is ready (Docker image or `jumper setup esp32`), then run.
+  const mp3Build = canBuildArduino("esp32:esp32:esp32s3");
+  it.skipIf(!mp3Build.ok)("esp32s3: an MP3 (1 kHz, 16 kHz mono) decoded on the device plays through I2S", async () => {
+    const { cpSync, mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const work = mkdtempSync(join(tmpdir(), "jumper-mp3-"));
+    cpSync(`${FIX}esp_mp3`, join(work, "esp_mp3"), { recursive: true });
+    const r = await buildFirmware({ sketchDir: join(work, "esp_mp3"), fqbn: "esp32:esp32:esp32s3:FlashMode=dio" });
+    rmSync(work, { recursive: true, force: true });
+    expect(r.ok, r.logTail).toBe(true);
+    const s = boot("esp32s3", flashImageOf(r)!);
+    backends.push(s.be);
+    expect(s.until("mp3 done", 10_000), s.serial()).toBe(true);
+    expect(s.serial()).toMatch(/mp3 played 1 in \d+ ms/);
+    const bursts = burstsOf(s.blocks).map((b) => ({ ...b, ...toneOf(b) }));
+    console.log(`mp3: ${bursts.map((b) => `${b.rate}/${b.bits}/${b.channels} ${b.hz.toFixed(1)} Hz peak ${b.peak} ${b.frames} frames`).join("; ")}`);
+    expect(bursts).toHaveLength(1);
+    expect(bursts[0]).toMatchObject({ rate: 16000, bits: 16, channels: 1 });
+    // The codec's first frame is its priming (quiet, noisy): measure where the tone is loud.
+    const x = bursts[0]!.left;
+    const loud = (v: number) => Math.abs(v) > bursts[0]!.peak / 2;
+    const a = x.findIndex(loud);
+    const z = x.length - 1 - [...x].reverse().findIndex(loud);
+    const toneHz = toneOf({ ...bursts[0]!, left: x.slice(a, z + 1) }).hz;
+    expect(Math.abs(toneHz - 1000)).toBeLessThan(5);
+    // Lossy at 32 kbit/s: near half scale, and about half a second (plus the codec's padding).
+    expect(bursts[0]!.peak).toBeGreaterThan(16384 * 0.8);
+    expect(bursts[0]!.peak).toBeLessThan(16384 * 1.25);
+    expect(bursts[0]!.frames).toBeGreaterThan(7600);
+    expect(bursts[0]!.frames).toBeLessThan(9600);
+  });
 });
