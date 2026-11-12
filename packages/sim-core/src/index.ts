@@ -98,3 +98,4 @@ export type { RoutePoint, RouteBox } from "./route.ts";
 export { DirtyTracker, rgb565ToRgb, rgbToRgb565, colorFrameToRgba, colorFrameStats, colorFrameAverage, colorFrameToPng, encodePng } from "./color.ts";
 export type { ColorFrame, DirtyRect } from "./color.ts";
 export type { SandboxNetwork, SandboxSocket, SandboxAccessPoint, SandboxJoinCode, SimServices } from "./network.ts";
+export * from "./camera.ts";
