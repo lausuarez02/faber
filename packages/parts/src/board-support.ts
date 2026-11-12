@@ -68,6 +68,7 @@ const T = {
   espPeriph: "services/runner/src/lang/esp-peripherals.integration.test.ts",
   mpyEsp: "services/runner/src/lang/micropython-esp.integration.test.ts",
   espArduino: "services/runner/src/lang/esp-arduino-peripherals.integration.test.ts",
+  espAudio: "services/runner/src/lang/esp-audio.integration.test.ts",
   renode: "packages/sim-backends/src/renode/boards.integration.test.ts",
   renodeParts: "packages/parts/src/renode.integration.test.ts",
 } as const;
@@ -131,7 +132,7 @@ const rp = (board: string, boots: string): BoardSupport => ({
 
 // ------------------------------------------------------------------------------------------ ESP32 family
 
-const NATIVE = "on Jumper's native QEMU (the jb5 sources built on this machine by `jumper setup esp32`; the jb5 Docker image has not been built yet)";
+const NATIVE = "on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet)";
 
 const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => {
   const s3 = chip === "esp32s3";
@@ -149,7 +150,10 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
       uart: v(T.espArduino, `Serial (UART0), Serial1${chip === "esp32c3" ? "" : " and Serial2"} on matrix pins, both directions`),
       i2c: v(T.espArduino, chip === "esp32c3" ? "Wire: scan, write, repeated-START read (the controller jb5 adds to the C3)" : `Wire and Wire1 on two buses: scan, write, repeated-START read${s3 ? " (the controllers jb5 adds to the S3)" : ""}`),
       spi: { status: "partial", test: T.espArduino, note: `Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; ${s3 ? "MicroPython does not run on the S3" : `MicroPython's SPI (DMA) still fails (${chip === "esp32c3" ? "MOSI arrives as 00 00" : "the transfer never returns"}), asserted as a known gap in ${T.espPeriph}`}` },
-      i2s: no("Jumper's I2S bus and the MAX98357A / INMP441 parts exist, but QEMU has no I2S + DMA device yet"),
+      i2s: v(
+        T.espAudio,
+        `ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, ${chip === "esp32" ? "I2S0 / I2S1 with their own DMA" : chip === "esp32s3" ? "I2S0 / I2S1 through GDMA" : "I2S0 through GDMA"}): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (${s3 ? "PDM, the XIAO Sense's mic pins" : "standard I2S"})${s3 ? "; an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network" : ""}. Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps`,
+      ),
       rmt: v(T.espArduino, "Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin"),
       net: s3
         ? v(T.espNet, "net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card")
@@ -281,7 +285,7 @@ export function boardSupportMarkdown(names: Record<string, { name: string; avail
   out.push("## Gaps across boards");
   out.push("");
   out.push("- **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.");
-  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb5 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
+  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb6 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
   out.push("- **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.");
   out.push("- **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.");
   out.push("");

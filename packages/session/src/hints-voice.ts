@@ -51,7 +51,7 @@ export const VOICE_HINTS: Record<string, Usage> = {
       'State: saying (words playing now), speaking (heard through a wired speaker), lastSaid, track, volume, playing, busy, badFrames, lastCommand. read_speech lists everything it said with times. In scenarios: {"said": "dizzy", "within_ms": 500} or {"expect_part": "df1.speaking", "value": true}. interact set track = N plays a clip by hand.',
   },
   speaker: {
-    wiring: "+ → DFPlayer SPK_1, - → DFPlayer SPK_2 (bridged amplifier: neither lead goes to GND). Never wire a speaker straight to a board pin or a supply: 8 Ω pulls 600 mA from 5 V. Mount it facing the case's grille.",
+    wiring: "+ → the amplifier's + output, - → its - output: DFPlayer SPK_1 / SPK_2, or an I2S amplifier's OUT+ / OUT- (MAX98357A, for audio the board makes or downloads). Both are bridged amplifiers: neither lead goes to GND. Never wire a speaker straight to a board pin or a supply: 8 Ω pulls 600 mA from 5 V. Mount it facing the case's grille.",
     connect: ["spk1.+ -> df1.SPK_1", "spk1.- -> df1.SPK_2"],
     controls: "State: sounding, volume (0..1 of its rated power), powerW, currentmA.",
   },

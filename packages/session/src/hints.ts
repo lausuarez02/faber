@@ -6,6 +6,7 @@ import type { PartSpec } from "@jumper/sim-core";
 import { BOARDS_R5_HINTS } from "./hints-boards.ts";
 import { PARTS_R5_HINTS } from "./hints-parts.ts";
 import { VOICE_HINTS } from "./hints-voice.ts"; // round 7 voice
+import { AUDIO_HINTS } from "./hints-audio.ts"; // round 13 audio
 
 /**
  * Wiring hints and minimal Arduino examples for get_part. A part folder may ship its own
@@ -105,7 +106,7 @@ const CORE: Record<string, Usage> = {
 };
 
 /** Core table + round-5 tables (each track owns its own file; decision 0003, C7). */
-const BUILTIN: Record<string, Usage> = { ...CORE, ...PARTS_R5_HINTS, ...BOARDS_R5_HINTS, ...VOICE_HINTS };
+const BUILTIN: Record<string, Usage> = { ...CORE, ...PARTS_R5_HINTS, ...BOARDS_R5_HINTS, ...VOICE_HINTS, ...AUDIO_HINTS };
 
 function readIfExists(path: string): string | undefined {
   try {

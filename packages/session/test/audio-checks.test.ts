@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseProject } from "@jumper/project-format";
 import { registry } from "@jumper/parts";
 import { checkDesign } from "../src/index.ts";
+import { usageFor } from "../src/hints.ts";
 
 const w = (id: string, a: string, b: string) => {
   const [ap, aq] = a.split(".");
@@ -61,5 +62,19 @@ describe("check_design: I2S amplifier and speaker", () => {
   it("OUT- on ground is a short (bridge-tied output); a 2 ohm speaker is below its minimum load", () => {
     expect(codes(project({ extra: [w("g", "amp.OUT-", "xiao.GND")] })).map((i) => i.code)).toContain("amp-out-shorted");
     expect(codes(project({ speaker: "speaker", spkProps: { ohms: "2" } })).map((i) => i.code)).toContain("amp-speaker-impedance");
+  });
+});
+
+describe("get_part hints for audio parts", () => {
+  it("the amplifier says how to play what an API returns, and which decoders are GPL", () => {
+    const u = usageFor(registry.get("max98357a")!.spec);
+    expect(u.example).toContain("i2s.setPins(D1, D2, D3)");
+    expect(u.example).toContain("useHTTP10(true)");
+    expect(u.wiring).toMatch(/minimp3 \(CC0/);
+    expect(u.wiring).toMatch(/libhelix-mp3.*RPSL/);
+    expect(u.wiring).toMatch(/ESP32-audioI2S, ESP8266Audio and arduino-audio-tools are GPL-3\.0/);
+  });
+  it("the microphone covers the XIAO ESP32-S3 Sense's PDM mic", () => {
+    expect(usageFor(registry.get("inmp441")!.spec).wiring).toMatch(/setPinsPdmRx\(42, 41\)/);
   });
 });
