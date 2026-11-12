@@ -57,6 +57,12 @@ Firmware and simulation
   export [dir]                            BOM, wiring table, firmware.hex
 History
   steps | undo | redo | accept [step] | reject <step>
+Agents
+  skill print [--target skill|agents|guide|instructions]   print Jumper's hardware guide for agents
+  skill install [--project D] [--force]   write <project>/.claude/skills/jumper-hardware/SKILL.md (Claude
+                                          Code loads it in that folder), <project>/AGENTS.md (Codex and
+                                          others) and <project>/CLAUDE.md (imports AGENTS.md); files you
+                                          wrote yourself are kept unless --force
 Any tool
   call <tool> [json-args]                 e.g. jumper call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
   tools                                   list tools
@@ -135,6 +141,7 @@ function parse(argv: string[]): Parsed {
       svg: { type: "string" },
       "no-svg": { type: "boolean" },
       since: { type: "string" },
+      target: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -358,6 +365,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
   if (p.cmd === "render-device") return renderDeviceCommand(p);
   if (p.cmd === "setup") return setupCommand(p.pos[0]);
+  if (p.cmd === "skill") return skillCommand(p);
   let mapped: Awaited<ReturnType<typeof toOp>>;
   try {
     mapped = await toOp(p);
@@ -434,6 +442,54 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
   }
   process.stdout.write(`${n} frame(s) in ${outDir}${every && !msList.length ? `; video: ffmpeg -framerate ${Math.round(1000 / every)} -i ${outDir}/frame-%05d.png -pix_fmt yuv420p device.mp4` : ""}\n`);
   return 0;
+}
+
+/**
+ * Round 12 skill: `jumper skill print|install`. The same guide the MCP server sends, as files an agent
+ * opened in the project folder reads by itself. Writes inside the project only, never the person's
+ * global agent config.
+ */
+async function skillCommand(p: Parsed): Promise<number> {
+  const sk = await import("@jumper/agent-skill");
+  const tools = TOOLS.map((t) => t.name);
+  const sub = p.pos[0];
+  if (sub === "print") {
+    const target = typeof p.opts.target === "string" ? p.opts.target : "skill";
+    const out: Record<string, () => string> = {
+      skill: () => sk.renderSkillMd({ tools }),
+      agents: () => sk.renderAgentsMd({ tools }),
+      guide: () => sk.renderGuide({ tools }),
+      instructions: () => sk.renderInstructionsBlock({ tools }),
+    };
+    const fn = out[target];
+    if (!fn) {
+      process.stderr.write(`jumper skill print: no target '${target}'. Why: the guide prints as ${Object.keys(out).join(", ")}. Fix: jumper skill print --target skill\n`);
+      return 2;
+    }
+    process.stdout.write(fn());
+    return 0;
+  }
+  if (sub === "install") {
+    const dir = projectDir(p.opts);
+    let name: string | undefined;
+    try {
+      name = (JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { name?: string }).name;
+    } catch {
+      name = undefined;
+    }
+    try {
+      mkdirSync(dir, { recursive: true });
+      const r = sk.installProjectFiles(dir, { tools, ...(name ? { projectName: name } : {}), force: !!p.opts.force });
+      if (p.opts.json) process.stdout.write(JSON.stringify(r) + "\n");
+      else for (const f of r.files) process.stdout.write(`${f.action.padEnd(9)} ${join(dir, f.path)}${f.why ? `\n          ${f.why}` : ""}\n`);
+      return 0;
+    } catch (err) {
+      process.stderr.write(`jumper skill install: could not write the agent files in ${dir}. Why: ${(err as Error).message}. Fix: check the folder exists and is writable, or pass --project <dir>.\n`);
+      return 1;
+    }
+  }
+  process.stderr.write(`jumper skill: say what to do. Why: '${sub ?? ""}' is not print or install. Fix: jumper skill print, or jumper skill install --project <dir>.\n`);
+  return 2;
 }
 
 /**

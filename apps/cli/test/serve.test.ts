@@ -197,6 +197,10 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
     expect(dry.command).toMatch(/^cd '.+' && claude --mcp-config '.+jumper-mcp-\d+\.json' '/);
     expect(dry.osascript.at(-1)).toMatch(/^tell application "Terminal" to do script "cd /);
     expect(JSON.parse(readFileSync(dry.mcpConfigFile, "utf8"))).toEqual({ mcpServers: { jumper: { type: "http", url: srv.mcpUrl } } });
+    // round 12 skill: Claude Code starts in the project folder, where the project skill now is
+    expect(info.starterPrompt).toMatch(/jumper-hardware skill in this folder/);
+    expect(readFileSync(join(srv.dir, ".claude/skills/jumper-hardware/SKILL.md"), "utf8")).toMatch(/^---\nname: jumper-hardware\n/);
+    expect(readFileSync(join(srv.dir, "AGENTS.md"), "utf8")).toMatch(/Written by Jumper/);
   });
 
   it("jumper mcp --attach: a stdio client drives the same live session", async () => {

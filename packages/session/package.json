@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@jumper/agent-skill": "workspace:*",
     "@jumper/ai-gateway": "workspace:*",
     "@jumper/device-net": "workspace:*",
     "@jumper/enclosure": "workspace:*",

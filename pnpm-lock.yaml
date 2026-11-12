@@ -39,6 +39,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@jumper/agent-skill':
+        specifier: workspace:*
+        version: link:../../packages/agent-skill
       '@jumper/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
@@ -170,6 +173,8 @@ importers:
         specifier: 8.3.6
         version: 8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1)
 
+  packages/agent-skill: {}
+
   packages/device-net:
     dependencies:
       '@peculiar/x509':
@@ -210,6 +215,9 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@jumper/agent-skill':
+        specifier: workspace:*
+        version: link:../agent-skill
       '@jumper/session':
         specifier: workspace:*
         version: link:../session
@@ -267,6 +275,9 @@ importers:
 
   packages/session:
     dependencies:
+      '@jumper/agent-skill':
+        specifier: workspace:*
+        version: link:../agent-skill
       '@jumper/ai-gateway':
         specifier: workspace:*
         version: link:../../services/ai-gateway

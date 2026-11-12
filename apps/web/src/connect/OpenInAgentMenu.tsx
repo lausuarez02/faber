@@ -8,7 +8,8 @@ const STROKE = 1.6;
 
 const FALLBACK_PROMPT = `You are connected to Jumper, a hardware sandbox with a real simulator, through the "jumper" MCP server.
 The person is watching the live canvas; pass a short "why" on every change.
-Loop: search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report.
+Loop: plan_device → search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report.
+A device to hold: think how the parts go inside; check_fit → propose_layout before design_case; say what to buy, print, assemble and flash.
 Goal: <describe the device>`;
 
 /**
@@ -72,7 +73,7 @@ export function OpenInAgentMenu({ onClose }: { onClose(): void }) {
         </p>
       ) : null}
       <CopyBlock text={info?.launch.command ?? "pnpm start   # then use this menu again"} testId="launch-command" caption={withPrompt ? "Runs this, plus the prompt" : "Runs exactly this"} />
-      {info ? <p className="menu-text cx-muted">The command points Claude Code at a small MCP config ({info.launch.mcpConfigFile}) with this server, so your own Claude settings stay untouched.</p> : null}
+      {info ? <p className="menu-text cx-muted">The command points Claude Code at a small MCP config ({info.launch.mcpConfigFile}) with this server, and the project folder gets Jumper's hardware skill (.claude/skills/jumper-hardware) and an AGENTS.md, so your own Claude settings stay untouched.</p> : null}
     </div>
   );
 }
