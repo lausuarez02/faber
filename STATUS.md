@@ -9,6 +9,48 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 12, track skill (2026-11-12): Jumper's hardware know-how injected into every agent
+
+The person asked: "can I ask Claude for all the pieces I need to build it, and what to print, and
+always think how I'm going to put the stuff inside". The know-how is now written once
+(`packages/agent-skill`: the loop, rules of thumb, a how-it-goes-inside checklist, how to answer
+"what do I need to build it") and every agent gets it without touching the person's global config:
+
+| Face | What | Check it with |
+| --- | --- | --- |
+| MCP, every client | server instructions end with a "Design for assembly" block; prompts `design-device` (goal), `build-kit`, `design-for-assembly`; resource `jumper://docs/hardware` | `packages/mcp/test/mcp.test.ts` |
+| Project folder | `new_project`, `jumper new`, Open in Agent → Launch and `jumper skill install --project <dir>` write `.claude/skills/jumper-hardware/SKILL.md`, `AGENTS.md` and `CLAUDE.md` (imports AGENTS.md, so Claude Code always has the guide); files the person wrote are kept unless `--force`; `JUMPER_AGENT_FILES=0` turns it off | `packages/agent-skill/test`, `apps/cli/test/cli.test.ts`, `serve.test.ts` |
+| Plugin | `plugins/jumper` (skill + the running app's MCP) and `.claude-plugin/marketplace.json`; the person installs it (`claude --plugin-dir …/plugins/jumper`); `claude plugin validate` passes | `plugins/jumper/README.md` |
+| CLI | `jumper skill print [--target skill\|agents\|guide\|instructions]`, `jumper skill install` | `apps/cli/test/cli.test.ts` |
+| Sync | a test fails when the skill names a tool that does not exist, mentions get_build_kit / get_assembly_plan before they exist (each has a fallback), or a rule contradicts the instructions, AGENTS.md or a tool description (one pocket number: 20 mm) | `packages/session/test/agent-skill-sync.test.ts` |
+| read_file | reads the case and build pack's text files (`case/PRINT.md`, `manufacturing/<pack>/BOM.md`, ASSEMBLY.md, FLASHING.md), so an agent with only the tools can summarise buy / print / assemble / flash | same test |
+
+Real headless Claude Code (Opus, `claude -p`, only `mcp__jumper` + Skill allowed, empty project, the
+keychain-with-a-smiley wish with a mind change), three runs, each about $1.1 to $1.3 and 2.5 to 3 min:
+
+- Every run: plan_device first, the last version of the wish, firmware tested, propose_layout →
+  set_assembly soldered → design_case → export_manufacturing → read_file of BOM / PRINT / ASSEMBLY /
+  FLASHING, and an answer in Buy (with a total) / Print / Assemble (insertion order, battery last,
+  battery safety) / Flash / not tested.
+- Run 3 (with CLAUDE.md and the charger rule) swapped plan_device's XIAO RP2040 + TP4056 for a XIAO
+  ESP32-S3 with its built-in charger ("fewer parts and fewer wires inside"); case 39 × 77 × 17.7 mm.
+- The project skill is listed to the model (and the prompts appear as slash commands), but the model
+  never called the Skill tool by itself; CLAUDE.md is what puts the guide in context (a no-tool probe
+  quoted it exactly).
+- None of the runs called check_fit: propose_layout (which also tests the fit) always came before
+  design_case.
+
+Checks (2026-11-12, local): `pnpm gen` no diff; `pnpm typecheck` 0; `pnpm test` 207 files, 1729
+passed (exit 0); `pnpm test:e2e` desktop + mobile 95 passed, 5 failed, 16 skipped (exit 1) while two
+headless Claude runs and a Jumper server ran beside it: device-case, micropython, renode-board,
+rp2040, switch-projects (desktop). Re-run as the same 5-spec set, plain main fails micropython and
+switch-projects too (same load flake); device-case, renode-board and rp2040 pass on this branch when
+re-run (rp2040 twice alone).
+
+Gaps: get_build_kit / get_assembly_plan are another track's; until they merge the skill uses
+export_manufacturing + read_file. plan_device itself still picks a charger-less board for a
+battery pocket device; the agent swaps it only because the skill says so.
+
 ## Round 11 (2026-11-11): native builds, firmware and emulators without Docker
 
 Docker Desktop on this Mac is broken (its VM disk has EXT4 errors), so Jumper now builds and runs
