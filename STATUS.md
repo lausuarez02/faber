@@ -14,7 +14,7 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 The person wants a keychain that sees (camera) and says things through an API. This track is the general
 piece the REAL device needs for any API: a relay that holds the keys, generated from the project's
 `jumper.json` `network` (allow list, secret names, header templates, new `network.relay` limits). No
-camera / voice / star code. Branch `round13/relay`. Guide: [docs/relay.md](docs/relay.md).
+camera / voice / star code. Branch `round13/relay`. Guide: [docs/api-relay.md](docs/api-relay.md).
 
 | Area | What works | Check it with |
 | --- | --- | --- |
@@ -109,7 +109,7 @@ Gaps (round 13 audio):
 The person asked for "a camera so it can see and send info through an API" for their star
 keychain. Built as a general capability (any part with a camera, Espressif's esp32-camera driver on
 an ESP32 / ESP32-S3), not a star feature. Branch `round13/camera` (worktree, not merged). Guide:
-[docs/camera.md](docs/camera.md).
+[docs/cameras.md](docs/cameras.md).
 
 | Area | What works | Check it with |
 | --- | --- | --- |
