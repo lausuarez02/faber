@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-12 (round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-12 (round 13 audio: real I2S on ESP32 / S3 / C3 in QEMU, API audio streamed to I2S, the page plays runs' sound; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,69 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 13, track audio (2026-11-12): real I2S on the ESP32 family, and the page plays it
+
+Branch `round13/audio`. General capability, nothing built for one device: any ESP32 / S3 / C3 sketch
+that uses I2S (arduino-esp32's ESP_I2S, ESP-IDF's i2s_std / i2s_pdm) now runs in the emulator, any
+I2S part on the board's bus hears it or feeds it, and the page plays what a run played. A device
+that says things an API returns is a project built from these (Wi-Fi + HTTP + I2S + MAX98357A +
+speaker), not a feature. Guide: [docs/esp32-peripherals.md](docs/esp32-peripherals.md) ("I2S").
+
+| Area | What works | Emulated / shimmed / not | Check it with |
+| --- | --- | --- | --- |
+| QEMU I2S device | patch `0004-jumper-i2s.patch` (`hw/misc/jumper_i2s.c`, bridge v6, tag `9.2.2-20260417-jb6`): ESP32 I2S0/I2S1 with their own lldesc DMA + interrupt; S3 I2S0/I2S1 and C3 I2S0 through the GDMA channel bound to them (EOF descriptor + interrupt on that channel). Rate from the clock registers (fractional MCLK, BCK, slots); 8/16/24/32-bit, mono / stereo / TDM; PDM RX (the XIAO Sense mic) and PDM TX as PCM. `ST` frames out (silence as `z<n>`), `SR` frames in | **emulated** at register + DMA level; frames (not BCK / WS edges) cross to Jumper; APLL rate, slave timing, A/u-law, bit-order swaps not modelled | `services/runner/src/lang/esp-audio.integration.test.ts` (ESP32, S3, C3: tones at 8 / 16 / 22.05 / 44.1 / 48 kHz with frequency, length and level checked, 32-bit stereo, a WAV from flash, write() paced by the DMA, a mic read; an MP3 decoded on the S3) |
+| Audio from an API | raw PCM and a chunked WAV streamed from a mock API over HTTP into I2S, gap-free | the network path is the generic device network (mocks / cassettes / allow list) | `packages/device-net/test/audio-stream.integration.test.ts` |
+| Network fixes found | a slow reader stalled streamed downloads: QEMU's OpenCores Ethernet now queues RX frames until the driver frees a buffer (patch `0005-jumper-eth-rx.patch`), and the netstack's zero-window probe takes its sequence number | general, not audio-specific | `test/netstack.test.ts` (probe), the stream test |
+| Session + page | each `run` keeps a WAV of what the board played over I2S (`.jumper/audio/run-<seq>.wav`, last 20), names it in the log entry and the result (`audio`), `GET /api/audio/<file>`; the followed page plays it with WebAudio in step with the run's frames, never under a test driver, hidden tab or muted page (`window.__jumperAudio` counts); a level bar under any part reporting `playing` + `level` | the sound is the I2S stream (mono, 16 kHz), not the amp's analog output or the speaker's response | `packages/session/test/esp32-audio-session.test.ts`, `apps/web/e2e/esp32-audio.spec.ts` |
+| Parts and checks | MAX98357A: an unwired GAIN pin read 0 V (12 dB) and is now 9 dB (floating); check_design `amp-speaker-overpower` (watts at full scale vs the speaker's rating, with the safe level in % / dBFS and the fixes), `amp-no-speaker`, `amp-out-shorted`, `amp-speaker-impedance`; speaker texts name the I2S amp; get_part hints for the MAX98357A and INMP441 (PCM / WAV streaming, the Sense's PDM mic, decoder licences) | | `packages/session/test/audio-checks.test.ts`, `packages/parts/src/i2s.integration.test.ts` |
+| Runner fix | two processes building the same sketch at once deleted each other's work folder (the second browser's run never played); work folders are now per process | general | the e2e (failed 2/2 cold without the fix, passed 2/2 with it) |
+
+Licences: QEMU stays GPL-2.0 in its own process (patches 0004 / 0005 are GPL like the rest of the
+series). Nothing new is shipped in Jumper's code. The MP3 test links arduino-esp32's prebuilt
+libhelix-mp3 (RealNetworks RPSL / RCSL), so it is built at test time and no image with it is
+committed. Hints say: minimp3 is CC0 (fine to bundle); ESP32-audioI2S, ESP8266Audio and
+arduino-audio-tools are GPL-3.0 (not shipped, and they make firmware GPL); WebSockets is LGPL-2.1.
+
+Behaviour of the drivers the emulator reproduces (asserted, not bugs of the model): on the ESP32
+(HW v1) arduino-esp32's mono workaround plus ESP-IDF's "queue almost full" rule play the first
+128 frames after an idle ring then 112 of silence; reconfiguring right after `write()` cuts what is
+still in the DMA ring (up to 1440 frames) and plays its tail at the new rate.
+
+Checks (worktree `jumper-wt-r13-audio`, native runtimes, Docker down, load average 40 to 150 from
+other tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` (JUMPER_RUNTIME=native)
+first run exit 1 (3 failed: the boot test still expected bridge v5, fixed; the stream test lost a
+WAV when the wall-clock network paused it past the sketch's 3 s idle timeout under load, fixed by
+checking every sample with pauses allowed; a CLI test hit vitest's 5 s timeout under load, passed
+on re-run), final run exit 0: **216 files passed, 2 skipped; 1778 tests passed, 5 expected fail, 5
+skipped**. The stream test then passed 8 / 8 in a row. e2e full suite, desktop + mobile
+(`E2E_PORT=6320 E2E_HUB_PORT_BASE=12900`, 2 workers): exit 1, **102 passed, 6 failed, 16 skipped**;
+the 6 were desktop only (agentparts, case-view, micropython, projects-flow, switch-projects x2) and
+all 10 tests of those specs passed re-run alone (1 worker, exit 0). `esp32-audio.spec.ts` passed on
+both in the full run, and 2 / 2 with a cold build cache in parallel. The native QEMU installer
+(`installNativeQemu`, JUMPER_QEMU_SRC = the spike repo, branch `jumper-jb6`) built jb6 from source.
+
+Gaps (round 13 audio):
+- **The star keychain's board (XIAO RP2040) has no I2S in Jumper**: the RP2040 does I2S with PIO,
+  which rp2040js runs but Jumper does not turn into audio. A talking device should use an ESP32-S3
+  (the XIAO ESP32-S3 Sense also has the camera and a PDM mic) + MAX98357A + a 20 mm 8 ohm speaker.
+- No Docker image was built (Docker Desktop is broken here): `jumper/qemu-esp:9.2.2-20260417-jb6`
+  is only built natively; the Dockerfile applies 0001-0005 and the series was checked to rebuild the
+  branch exactly (`git apply` on the upstream tag = `jumper-jb6`), but `docker build` never ran.
+- Machines with only jb5 installed need `jumper setup esp32` (it builds jb6). The person's server on
+  port 7780 (worktree jumper-wt-r12-star) still uses jb5 until it is restarted from code with jb6.
+- The emulated CPU runs at 125 MIPS (icount shift 3), slower than a 240 MHz ESP32 / S3: per-sample
+  math can underrun in the emulator where the chip might not. Not changed (it is every test's time base).
+- WebSocket audio was not run as audio (the WebSocket path itself is round 10's `esp32-ws-stream`).
+- Browser playback is mono 16 kHz of the I2S stream: the amp's gain / channel select and the
+  speaker's response are not applied; replays (not the live follow) do not play sound.
+- The browser microphone into `inmp441.clip_b64` is not done. No real hardware was used: nothing
+  here was compared against a MAX98357A on a bench.
+- On the followed page, a run that fails in the session (e.g. a build error) shows no toast: the
+  e2e saw only "waiting" when the build race hit. Not fixed in this track.
+- Camera track overlap: it also adds a 0004 patch (`0004-jumper-camera.patch`) and edits the S3
+  machine file; the two patches touch different files except `hw/xtensa/esp32s3.c` / `esp32.c` and
+  meson.build (one line each) and must be renumbered / rebased into one series at integration.
 
 ## Round 12, integrated on main (2026-11-12): "ask Claude for all the pieces, what to print, and how it goes inside"
 
