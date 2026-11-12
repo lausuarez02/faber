@@ -206,6 +206,8 @@ export interface BuildKit {
   flash: FlashPlan;
   /** Round 13: present when the project reaches the network (jumper.json network). */
   connect?: ConnectPlan;
+  /** Round 14: battery life from each load's duty cycle (when the device has a LiPo cell). */
+  power?: import("../power-budget.ts").PowerBudget;
   troubleshooting: TroubleRow[];
   missing: { item: string; why: string; fix: string; say: string }[];
   /** The design check's errors and warnings about the circuit: fix them (or accept them knowingly) before buying. */

@@ -78,6 +78,17 @@ NeoPixel). Pins per chip: `esp_pins.h`.
    followed page plays it with WebAudio, muted under test drivers). The browser mic into
    `inmp441.clip_b64` with permission: not started.
 
+## Flash that survives a reboot, and a seeded RNG (round 14)
+
+QEMU writes the firmware's flash writes to the flash file (no `-snapshot`), and a reboot inside a run
+(`reset_board`, a power cycle: `McuBackend.reboot()`) keeps that file, so LittleFS, SPIFFS and NVS /
+Preferences data survive like on the chip; `reset()` (a new run, `run {reset: true}`, a new test) and a
+new image start from the built image. `QemuEspBackend {seed}` passes `-seed`: the RNG peripheral
+(`esp_random`, Arduino `random()`) repeats per seed, seed + n after the n-th reboot. Tests:
+`packages/sim-backends/src/qemu-esp/flash-seed.test.ts` (fake QEMU) and
+`packages/session/test/random-photo.integration.test.ts` (real firmware: a LittleFS queue across
+`reset_board`). The microSD card is not emulated.
+
 ## I2S (round 13, track audio): emulated, verified on real firmware
 
 `toolchains/qemu-esp/0004-jumper-i2s.patch` adds `hw/misc/jumper_i2s.c` (bridge v6; image / native tag `9.2.2-20260417-jb6`

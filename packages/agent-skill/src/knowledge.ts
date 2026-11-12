@@ -98,6 +98,25 @@ export const RULES: Rule[] = [
     mustSay: [/[Nn]ever put API keys/],
     mustNotSay: [/(?:paste|put|hard-?code) (?:the|your) (?:API )?key (?:in|into) (?:the )?(?:firmware|sketch)/i],
   },
+  {
+    id: "test-behaviour-over-time",
+    text: `Test behaviour that happens over time, at random or offline as scenarios, not by hand: each test seeds the board's random numbers from its id (esp_random / random() repeat; ${tool("write_scenario")} "seed" tries another sequence, ${tool("run")} {"seed"} live), so "at a random moment" is repeatable. Check order and timing with "preceded_by" ({"expect_capture": "cam", "preceded_by": {"said": "picture in 10", "min_ms": 9000, "max_ms": 11000}}); "said" also matches the text firmware sends to a speech API; check uploads by what they carry ({"request": {"host", "method", "path", "content_type", "body_json"}}); go offline and back with {"network_fault": {"kind": "wifi_drop"}} / "clear", and reboot with {"reset_board": true} (flash files survive) to prove "it posts later". Mock any API from its OpenAPI file (${tool("add_mock_api")} {"kind": "openapi", "spec": "network/api.yaml"}): requests that do not fit the spec get 400 with why. A service you run on this computer is reachable only when its host opts in (${tool("set_network")} allow {"host", "local": true, "to": "http://127.0.0.1:<port>"}).`,
+    short: "Test random / timed / offline behaviour with scenarios: seeded per test, preceded_by for timing, wifi_drop + reset_board for offline queues, OpenAPI mocks.",
+    mustSay: [/preceded_by/],
+  },
+  {
+    id: "camera-privacy",
+    text: `A device with a camera shows when it is about to take, and is taking, a picture: an LED or the screen while it captures (check_design camera-indicator warns otherwise), ideally a spoken or on-screen countdown first with a way to cancel it, and photos kept on the device until their owner chooses to share them (review before publishing, no location data). Say this to the person when you design one; a camera must never be concealed.`,
+    short: "Cameras: a visible capture indicator, a countdown with cancel, owner review before anything is published.",
+    mustSay: [/capture indicator|camera-indicator/],
+    mustNotSay: [/(?:make|build|design) a hidden camera/i],
+  },
+  {
+    id: "battery-target",
+    text: `For a battery device, ask (or assume and say) how long it should run, then ${tool("estimate_power")}: battery life from each load's datasheet current and duty cycle (camera always on vs per picture, Wi-Fi connected vs bursts, the speaker, sleep). Save the target and the real pattern with ${tool("set_power")} {"target_hours", "duty"}; check_design then warns (battery-life) under the target with the cell that would make it. It is an estimate: say so.`,
+    short: "Battery devices: estimate_power with the real duty cycles, set_power target_hours, and say it is an estimate.",
+    mustSay: [/estimate_power/],
+  },
 ];
 
 /** What to think through before the case exists: how every part goes inside (generic, any device). */

@@ -2,6 +2,7 @@ import { buildNets, type Project } from "@jumper/project-format";
 import { Simulation, type PartRegistry, type VisualValue } from "@jumper/sim-core";
 import { assemblyReason, assemblyStyle } from "../assembly.ts";
 import { fail } from "../errors.ts";
+import { checkDuty, powerBudget, type Duty, type PowerProfile } from "../power-budget.ts";
 import type { ToolModule } from "./types.ts";
 
 /**
@@ -82,11 +83,28 @@ export const powerTools: ToolModule = {
         type: "object",
         properties: {
           usb: { type: "boolean", description: "true = a USB cable is plugged into the board; false = it runs from its battery path only." },
+          target_hours: { type: ["number", "null"], description: "Round 14: hours the device should run on one charge (jumper.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it." },
+          duty: { type: ["object", "null"], description: 'Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Merged into power.duty; null clears it.' },
+          sleep: { type: ["string", "null"], enum: ["none", "light", "deep", null], description: "Round 14: what the board does between active moments." },
           why,
         },
-        required: ["usb"],
       },
       edits: true,
+    },
+    {
+      name: "estimate_power",
+      title: "Battery life from duty cycles",
+      description:
+        'Round 14: how long the battery lasts, from each load\'s datasheet current and how much of the time it is on: the board CPU (and its sleep), Wi-Fi (connected vs bursts), cameras, screens, audio amplifiers, any part with a current figure. Loads without a duty in jumper.json power.duty are guessed from the firmware (listed in assumptions: correct them). Try other patterns without saving: {"duty": {"camera": {"on_s": 2, "every_s": 600}, "wifi": {"on_s": 10, "every_s": 3600}}, "target_hours": 24}. Returns {summary, battery {part, capacity_mah, usable_mah}, avg_ma, peak_ma, hours, target_hours, loads [{load, part, active_ma, idle_ma, duty, duty_text, avg_ma, share, source}], assumptions, suggestions (the cell that meets the target, and what to duty-cycle)}. Save a pattern with set_power {duty, target_hours}. Estimates, not measurements: measure a real unit.',
+      inputSchema: {
+        type: "object",
+        properties: {
+          target_hours: { type: "number", description: "Hours on one charge to compare against (default: power.target_hours)." },
+          duty: { type: "object", description: 'What-if duty per role or part id: "always", "off" or {"on_s", "every_s"}.' },
+          sleep: { type: "string", enum: ["none", "light", "deep"] },
+        },
+      },
+      readOnly: true,
     },
     {
       name: "set_assembly",
@@ -105,9 +123,50 @@ export const powerTools: ToolModule = {
     },
   ],
   ops: {
-    set_power(args, x) {
-      if (typeof args.usb !== "boolean") fail("bad-arg", "set_power needs usb: true or false", `got ${JSON.stringify(args.usb)}`, 'pass {"usb": false} to run from the battery, {"usb": true} for a USB cable');
+    estimate_power(args, x) {
       const s = x.session;
+      const duty = (args.duty ?? undefined) as Record<string, Duty> | undefined;
+      for (const [k, d] of Object.entries(duty ?? {})) {
+        const why = checkDuty(k, d);
+        if (why) fail("bad-arg", `estimate_power: duty.${k} is not valid`, why, 'pass e.g. {"duty": {"camera": {"on_s": 2, "every_s": 600}}}');
+      }
+      if (args.target_hours !== undefined && !(Number(args.target_hours) > 0)) fail("bad-arg", "estimate_power: target_hours must be a positive number", `got ${JSON.stringify(args.target_hours)}`, 'pass e.g. {"target_hours": 24}');
+      const b = powerBudget(s.project, s.registry, s.firmwareSource(), { ...(duty ? { duty } : {}), ...(typeof args.target_hours === "number" ? { target_hours: args.target_hours } : {}), ...(typeof args.sleep === "string" ? { sleep: args.sleep as PowerProfile["sleep"] } : {}) });
+      x.summary(b.summary);
+      return { ...b, next: b.assumptions.length ? "correct the guesses with set_power {duty: {...}} (saved in jumper.json power.duty), then check_design" : "check_design reports battery-life against power.target_hours" };
+    },
+    set_power(args, x) {
+      const s = x.session;
+      if (args.usb === undefined && args.target_hours === undefined && args.duty === undefined && args.sleep === undefined) fail("bad-arg", "set_power needs usb, target_hours, duty or sleep", "nothing to change was given", 'pass {"usb": false} to run from the battery, or {"target_hours": 24, "duty": {"camera": "always"}}');
+      if (args.usb === undefined) {
+        // Round 14: the battery-life profile (target, duty cycles, sleep), an undoable edit
+        const cur = { ...(s.project.power ?? {}) } as Record<string, unknown>;
+        if (args.target_hours !== undefined) {
+          if (args.target_hours === null) delete cur.target_hours;
+          else if (!(Number(args.target_hours) > 0)) fail("bad-arg", "set_power: target_hours must be a positive number", `got ${JSON.stringify(args.target_hours)}`, 'pass e.g. {"target_hours": 24}, or null to remove it');
+          else cur.target_hours = Number(args.target_hours);
+        }
+        if (args.duty !== undefined) {
+          if (args.duty === null) delete cur.duty;
+          else {
+            for (const [k, d] of Object.entries(args.duty as Record<string, unknown>)) {
+              const why = checkDuty(k, d);
+              if (why) fail("bad-arg", `set_power: duty.${k} is not valid`, why, 'pass e.g. {"duty": {"camera": {"on_s": 2, "every_s": 600}}}');
+            }
+            cur.duty = { ...((cur.duty as object) ?? {}), ...(args.duty as object) };
+          }
+        }
+        if (args.sleep !== undefined) {
+          if (args.sleep === null) delete cur.sleep;
+          else if (!["none", "light", "deep"].includes(String(args.sleep))) fail("bad-arg", `set_power: sleep '${String(args.sleep)}' is not a sleep mode`, "the modes are none, light and deep", 'pass {"sleep": "light"}');
+          else cur.sleep = args.sleep;
+        }
+        x.commit("set_power profile", { ...s.project, power: cur as NonNullable<Project["power"]> });
+        const b = powerBudget(s.project, s.registry, s.firmwareSource());
+        x.summary(b.summary);
+        return { power: cur, estimate: b };
+      }
+      if (typeof args.usb !== "boolean") fail("bad-arg", "set_power needs usb: true or false", `got ${JSON.stringify(args.usb)}`, 'pass {"usb": false} to run from the battery, {"usb": true} for a USB cable');
       const usb = args.usb as boolean;
       const was = s.project.power?.usb !== false;
       if (was !== usb || s.project.power?.usb === undefined) x.commit(`set_power usb=${usb}`, { ...s.project, power: { ...s.project.power, usb } });

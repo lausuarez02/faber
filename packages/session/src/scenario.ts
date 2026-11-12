@@ -1,11 +1,12 @@
-import { cameraProps, cameraSourceSpec, pickCamera } from "./camera.ts";
+import { cameraParts, cameraProps, cameraSourceSpec, pickCamera } from "./camera.ts";
 import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@jumper/project-format";
 import type { PartRegistry, VisualValue } from "@jumper/sim-core";
-import { checkRequest, validateMock, type Fault, type Mock, type NetView } from "@jumper/device-net";
+import { checkRequest, resolveMocks, validateMock, type Fault, type Mock, type NetView } from "@jumper/device-net";
 import { fail, JumperError } from "./errors.ts";
 import { findPart, resolvePin, specOf, splitRef } from "./pins.ts";
 import type { Frame, SimHost } from "./sim.ts";
 import { clampRegion, diffFraction, litCount, regionRows, type DisplaySnapshot } from "./snapshots.ts";
+import { precededWhy, spokenSoFar, type PrecededBy } from "./scenario-events.ts";
 
 /** Round 10 (network): the device network a scenario's request / network_fault steps use. */
 export interface ScenarioNetwork {
@@ -128,16 +129,22 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         resolvePin(part, specOf(registry, findPart(project, part)), rest);
       }
       if (typeof step.set === "string") findPart(project, splitRef(step.set).part);
-      if ("said" in step) {
-        // Round 7 (voice): only parts with a clip table can say anything.
+      const pb = step.preceded_by as PrecededBy | undefined;
+      if ("said" in step || pb?.said !== undefined) {
+        // Round 7 (voice): only parts with a clip table can say anything; round 14: or the device
+        // speaks through a speech API (the text it sends counts), which needs a device network.
         const talkers = project.parts.filter((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips"));
-        if (typeof step.part === "string") {
+        if ("said" in step && typeof step.part === "string") {
           const part = findPart(project, step.part);
-          if (!talkers.includes(part)) fail("cannot-talk", `said … part ${part.id}`, `${part.id} is a ${part.type}, which cannot say anything`, talkers.length ? `use "part": "${talkers[0]!.id}" or leave "part" out` : "place a dfplayer-mini and a speaker first");
-        } else if (!talkers.length) {
-          fail("cannot-talk", "said", "no part in this project can talk (only a dfplayer-mini with its clips says words)", 'place_part dfplayer-mini and a speaker (search_parts "voice"), wire SPK_1 / SPK_2 to the speaker, and set its clips ("1: hello!")');
+          if (!talkers.includes(part)) fail("cannot-talk", `said … part ${part.id}`, `${part.id} is a ${part.type}, which cannot say anything`, talkers.length ? `use "part": "${talkers[0]!.id}" or leave "part" out` : "place a dfplayer-mini and a speaker first, or leave \"part\" out to check what the device sent to a speech API");
+        } else if (!talkers.length && !project.network) {
+          fail("cannot-talk", "said", "no part in this project can talk (a dfplayer-mini with its clips says words) and it has no device network (the text a device sends to a speech API such as /v1/audio/speech also counts)", 'place_part dfplayer-mini and a speaker (search_parts "voice") and set its clips ("1: hello!"), or give the project a network (set_network) and a speech API mock, then the words the firmware sends are what it said');
         }
       }
+      if ("expect_capture" in step && typeof step.expect_capture === "string") pickCamera(project, registry, step.expect_capture);
+      else if ("expect_capture" in step && !cameraParts(project, registry).length) pickCamera(project, registry);
+      if (typeof pb?.capture === "string") pickCamera(project, registry, pb.capture);
+      if ("reset_board" in step && !project.firmware) fail("no-firmware", "reset_board", "this project has no firmware board to reboot", "write firmware first (write_file) and point jumper.json firmware at the board");
       if (typeof step.expect_display === "string") {
         const part = findPart(project, step.expect_display);
         const spec = specOf(registry, part);
@@ -159,7 +166,8 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
       }
       if ("network_mock" in step) {
         try {
-          validateMock(step.network_mock as Mock, "network_mock");
+          const nm = validateMock(step.network_mock as Mock, "network_mock");
+          if (nm.kind === "openapi") resolveMocks([nm], opts.projectDir ?? ".", "network_mock");
         } catch (e) {
           const ce = e as { message: string; why?: string; fix?: string };
           fail("bad-mock", `network_mock: ${ce.message}`, ce.why ?? "the mock is not valid", ce.fix ? `use e.g. ${ce.fix}` : 'use the add_mock_api shape: {"host", "path", "response": {...}}');
@@ -187,11 +195,16 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
   const warnings: string[] = [];
   const timeout = s.timeout_ms ?? DEFAULT_TIMEOUT_MS;
   let serialCursor = 0;
-  let saidCursor = 0; // round 7 voice: utterances already matched by a said step
   // round 10 network: request steps count only what this scenario's run did
   opts.network?.drain();
   const netStartSeq = opts.network ? (opts.network.view.log.since(0).at(-1)?.seq ?? 0) : 0;
   const sim = host.sim;
+  // round 14: the NTP clock this test starts from (deterministic dates), and the event timeline
+  if (s.clock && opts.network?.view.setClock) opts.network.view.setClock(Date.parse(s.clock));
+  const evCtx = { host, ...(opts.network ? { net: { view: opts.network.view, drain: () => opts.network!.drain() } } : {}), netStartSeq };
+  let saidFloor = -Infinity; // round 14: utterances are matched in time order (clips and speech-API text)
+  const saidUsed = new Set<string>();
+  const captureCursor = new Map<string, number>();
   const tail = () => sim.serialText().slice(-400);
   const run = (ms: number, until?: () => boolean) => host.run(ms, { ...(until ? { until, stepMs: 1 } : {}), ...(onFrame ? { onFrame, frameMs: 50 } : {}) });
   const done = (passed: boolean, failed?: number, reason?: string): ScenarioResult => ({
@@ -403,6 +416,58 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
           const want = [lit ? `${lit.min ?? 0}..${lit.max ?? "∞"} lit pixels` : "", snap ? `at most ${(tol * 100).toFixed(1)}% different from snapshot '${matches}'` : ""].filter(Boolean).join(" and ");
           detail = `expected ${want} but ${detail}${typeof step.within_ms === "number" ? ` after waiting ${step.within_ms} ms` : once(tCheck)}; read_display {"part": "${part}"} shows the screen now`;
         }
+      } else if ("reset_board" in step) {
+        // Round 14: reboot the board now; time, parts, logs and flash go on.
+        host.resetBoard();
+        detail = `rebooted the board at ${Math.round(sim.timeMs)} ms (flash kept)`;
+      } else if ("set_clock" in step) {
+        const net = opts.network;
+        if (!net?.view.setClock) {
+          ok = false;
+          detail = "this project has no device network, so the device gets no time from NTP: set_clock sets what the sandbox's NTP answers. Fix: give the project a network (set_network) and call configTime() in the firmware";
+        } else {
+          net.view.setClock(Date.parse(step.set_clock as string));
+          detail = `NTP now answers ${new Date(Date.parse(step.set_clock as string)).toISOString()} (advancing with virtual time)`;
+        }
+      } else if ("expect_capture" in step) {
+        // Round 14: pictures the camera took (each esp_camera_fb_get), with their times.
+        const cam = typeof step.expect_capture === "string" ? step.expect_capture : undefined;
+        const key = cam ?? "*";
+        const want = typeof step.count === "number" ? step.count : 1;
+        const pb = step.preceded_by as PrecededBy | undefined;
+        const camLabel = cam ?? (host.cameraParts().length === 1 ? host.cameraParts()[0]! : "the camera");
+        if (step.absent) {
+          const from = host.captures(cam).length;
+          const t0 = sim.timeMs;
+          const newOnes = () => host.captures(cam).slice(from);
+          if (typeof step.within_ms === "number") run(step.within_ms, () => newOnes().length > 0);
+          const n = newOnes();
+          ok = n.length === 0;
+          detail = ok ? `no picture from ${camLabel} in ${Math.round(sim.timeMs - t0)} ms, as expected` : `${camLabel} took a picture at ${Math.round(n[0]!.t_ms)} ms (${Math.round(n[0]!.t_ms - t0)} ms after this step began) but must not`;
+          captureCursor.set(key, host.captures(cam).length);
+        } else {
+          const from = captureCursor.get(key) ?? 0;
+          const fitting = () => {
+            const list = host.captures(cam).slice(from);
+            if (!pb) return { list, good: list };
+            return { list, good: list.filter((c) => precededWhy(pb, c.t_ms, evCtx, "the picture") === undefined) };
+          };
+          let f = fitting();
+          const t0 = sim.timeMs;
+          if (f.good.length < want && typeof step.within_ms === "number") run(step.within_ms, () => (f = fitting()).good.length >= want);
+          f = fitting();
+          ok = f.good.length >= want;
+          if (ok) {
+            const last = f.good[want - 1]!;
+            captureCursor.set(key, host.captures(cam).indexOf(last) + 1);
+            detail = `${camLabel} took ${want > 1 ? `${want} pictures, the last` : "a picture"} at ${Math.round(last.t_ms)} ms${pb ? " (preceded as required)" : ""}`;
+          } else if (f.list.length >= want && pb) {
+            detail = f.list.map((c) => precededWhy(pb, c.t_ms, evCtx, `the picture`)).filter(Boolean).slice(-2).join("; ");
+            detail += `. Fix: the firmware must ${pb.said !== undefined ? "say it" : "do that"} ${pb.min_ms ?? 0}${pb.max_ms !== undefined ? ` to ${pb.max_ms}` : "+"} ms before it takes the picture, or change preceded_by`;
+          } else {
+            detail = `${camLabel} took ${f.list.length} picture(s)${want > 1 ? `, ${want} wanted` : ""}${typeof step.within_ms === "number" ? ` in ${Math.round(sim.timeMs - t0)} ms` : " (checked once; add within_ms to wait)"}${host.captures(cam).length ? `; ${host.captures(cam).length} since the start, the last at ${Math.round(host.captures(cam).at(-1)!.t_ms)} ms` : ""}. Fix: check the firmware reaches esp_camera_fb_get() (read_serial), or wait longer`;
+          }
+        }
       } else if ("request" in step) {
         // Round 10 (network): the device made this request through the sandbox.
         const net = opts.network;
@@ -410,10 +475,16 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
           ok = false;
           detail = "this project has no device network: only boards with a network card in the emulator (ESP32 family) make requests; read_network shows what is on the sandbox network";
         } else {
-          const want = step.request as { host: string; path?: string; method?: string; status?: number; count?: number; kind?: "http" | "ws" | "mqtt" };
+          const want = step.request as Parameters<typeof checkRequest>[1];
+          const pb = step.preceded_by as PrecededBy | undefined;
           const check = () => {
             net.drain();
-            return checkRequest(net.view, { ...want, sinceSeq: netStartSeq });
+            const r = checkRequest(net.view, { ...want, sinceSeq: netStartSeq });
+            if (!pb || !r.entries?.length) return r;
+            // round 14: of the matching requests, at least `count` must follow the named event in time
+            const good = r.entries.filter((e) => precededWhy(pb, e.t_ms, evCtx, "the request") === undefined);
+            if (good.length >= (want.count ?? 1)) return { ...r, matched: good.length };
+            return { ok: false, matched: good.length, why: r.entries.map((e) => precededWhy(pb, e.t_ms, evCtx, `${e.method ?? ""} ${e.host}${e.path ?? ""}`)).filter(Boolean).slice(-2).join("; "), fix: "make the firmware do it in that order and timing, or change preceded_by" };
           };
           let r = check();
           if (step.absent) {
@@ -461,12 +532,15 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         const needle = (typeof m === "string" ? m : (m.contains ?? "")).toLowerCase();
         const who = step.part as string | undefined;
         const want = re ? `/${re.source}/i` : JSON.stringify(needle);
-        const all = () => sim.speech();
+        // round 14: clips and the text sent to speech APIs, in time order
+        const all = () => spokenSoFar(host, opts.network, netStartSeq);
         const hits = (u: { text: string }) => (re ? re.test(u.text) : u.text.toLowerCase().includes(needle));
+        const uKey = (u: { partId: string; t_ms: number; text: string }) => `${u.partId}|${u.t_ms}|${u.text}`;
         const find = (): number => {
           const l = all();
-          for (let k = saidCursor; k < l.length; k++) {
+          for (let k = 0; k < l.length; k++) {
             const u = l[k]!;
+            if (u.t_ms < saidFloor || saidUsed.has(uKey(u))) continue;
             if ((!who || u.partId === who) && u.audible && hits(u)) return k;
           }
           return -1;
@@ -474,9 +548,7 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         const t0 = sim.timeMs;
         let hit = find();
         if (hit < 0 && typeof step.within_ms === "number") run(step.within_ms, () => (hit = find()) >= 0);
-        const recent = all()
-          .slice(saidCursor)
-          .filter((u) => !who || u.partId === who);
+        const recent = all().filter((u) => u.t_ms >= saidFloor && !saidUsed.has(uKey(u)) && (!who || u.partId === who));
         const heard = recent.filter((u) => u.audible).map((u) => `${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms`);
         const unheard = recent.filter((u) => !u.audible);
         const unheardNote = unheard.length
@@ -492,8 +564,9 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
           ok = hit >= 0;
           if (ok) {
             const u = all()[hit]!;
-            saidCursor = hit + 1;
-            detail = `${u.partId} said ${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms (${(u.dur_ms / 1000).toFixed(2)} s), ${Math.round(sim.timeMs - t0)} ms after this step began`;
+            saidFloor = u.t_ms;
+            saidUsed.add(uKey(u));
+            detail = `${u.partId} said ${JSON.stringify(u.text)} at ${Math.round(u.t_ms)} ms (${u.via === "speech-api" ? "text sent to a speech API" : `${(u.dur_ms / 1000).toFixed(2)} s`}), ${Math.round(sim.timeMs - t0)} ms after this step began`;
           } else {
             detail = `nothing said matched ${want}${typeof step.within_ms === "number" ? ` within ${step.within_ms} ms` : " (checked once; add within_ms to wait)"}; said since the last match: ${heard.length ? heard.join(", ") : "nothing"}${unheardNote}`;
           }

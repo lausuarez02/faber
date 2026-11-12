@@ -1,5 +1,7 @@
 // The project's network section (jumper.json "network") and its mock file (network/mocks.json).
 // Plain data, git-friendly, no secret values anywhere: secrets are referenced by name only.
+import { parseLocalTarget, type LocalTarget } from "./local.ts";
+import type { OpenApiMock } from "./openapi.ts";
 
 /**
  * offline  : Wi-Fi is up but no host answers (DNS fails for everything): tests the "no internet" path.
@@ -24,6 +26,18 @@ export interface AllowEntry {
   secrets?: string[];
   /** Headers added to every request to this host, e.g. {"Authorization": "Bearer {{secret:OPENAI_API_KEY}}"}. */
   headers?: Record<string, string>;
+  /**
+   * Round 14: this host may reach this computer or the local network (a dev server, a service the
+   * person runs). Without it, a host that resolves to a loopback / private / link-local address is
+   * refused. Per host only (no wildcards).
+   */
+  local?: boolean;
+  /**
+   * Round 14: send this host's traffic to a service here instead, e.g. "http://127.0.0.1:7821" (needs
+   * "local": true). Works in mock mode too (nothing leaves this computer); mocks still answer first.
+   * The device keeps calling its own name (http://api.mystar.test/...), as it will on the real network.
+   */
+  to?: string;
 }
 
 export interface NetworkConfig {
@@ -101,7 +115,7 @@ export interface MqttMock {
   retained?: Array<{ topic: string; payload: string }>;
 }
 
-export type Mock = HttpMock | WsMock | MqttMock;
+export type Mock = HttpMock | WsMock | MqttMock | OpenApiMock;
 
 export interface MocksFile {
   mocks: Mock[];
@@ -154,6 +168,23 @@ export function parseNetworkConfig(raw: unknown): NetworkConfig {
     }
     if (a.tls === "passthrough" && (a.headers || a.secrets?.length)) {
       throw new ConfigError(`${field}: ${a.host} is passthrough but asks for headers / secrets`, "with tls passthrough the request is encrypted end to end, so Jumper cannot add a header", 'use "tls": "inspect" (the default) for hosts that need a secret', `${field}.tls`);
+    }
+    if (a.local !== undefined && typeof a.local !== "boolean") throw new ConfigError(`${field}.local must be true or false`, "it opts one host in to reaching this computer or the local network", '"local": true', `${field}.local`);
+    if ((a.local || a.to !== undefined) && a.host.startsWith("*.")) {
+      throw new ConfigError(`${field}: ${a.host} is a wildcard, so it cannot use "local" or "to"`, "reaching this computer or the local network is opted in per host name, never for a whole domain", `name the one host, e.g. {"host": "${a.host.slice(2)}", "local": true${a.to ? `, "to": "${a.to}"` : ""}}`, `${field}.host`);
+    }
+    if (a.to !== undefined) {
+      if (typeof a.to !== "string") throw new ConfigError(`${field}.to must be a URL string`, '"to" says where this host\'s traffic goes', '"to": "http://127.0.0.1:7821"', `${field}.to`);
+      let t: LocalTarget;
+      try {
+        t = parseLocalTarget(a.to, `${field}.to`);
+      } catch (err) {
+        throw new ConfigError((err as Error).message.split(". Why:")[0]!, (err as Error).message.split("Why: ")[1]?.split(" Fix:")[0] ?? "it is not a usable URL", (err as Error).message.split("Fix: ")[1] ?? '"to": "http://127.0.0.1:7821"', `${field}.to`);
+      }
+      if (a.local !== true) {
+        throw new ConfigError(`${field}: ${a.host} sends its traffic to ${a.to} but does not say "local": true`, `"to" points the device at a service on this computer or the local network (${t.host}), which the sandbox only does for a host that opts in`, `add "local": true to this entry: {"host": "${a.host}", "local": true, "to": "${a.to}"}`, `${field}.local`);
+      }
+      if (a.tls === "passthrough") throw new ConfigError(`${field}: ${a.host} uses "to" with tls passthrough`, "passthrough sends the device's encrypted bytes unchanged, so they cannot be re-sent to another address and certificate", 'remove "tls": "passthrough" (inspect, the default, works with "to")', `${field}.tls`);
     }
     return { ...a, host: a.host.toLowerCase() };
   });
@@ -238,8 +269,13 @@ export function validateMock(m: Mock, field = "mock"): Mock {
     if (!h.response) throw new ConfigError(`${field}.response is missing`, "an HTTP mock says what to answer", '"response": {"status": 200, "body": {"ok": true}}', `${field}.response`);
   } else if (kind === "ws") {
     if (typeof (m as WsMock).path !== "string") throw new ConfigError(`${field}.path is missing`, "a WebSocket mock answers one path", '"path": "/v1/stream"', `${field}.path`);
+  } else if (kind === "openapi") {
+    const o = m as OpenApiMock;
+    if (!(typeof o.spec === "string" && o.spec) && !(o.spec && typeof o.spec === "object")) {
+      throw new ConfigError(`${field}.spec is missing`, "an openapi mock answers from the API's OpenAPI 3 description", '{"kind": "openapi", "host": "api.example.com", "spec": "network/api.openapi.yaml"}', `${field}.spec`);
+    }
   } else if (kind !== "mqtt") {
-    throw new ConfigError(`${field}.kind '${String(kind)}' is not a mock kind`, "mock kinds are http, ws and mqtt", '"kind": "http"', `${field}.kind`);
+    throw new ConfigError(`${field}.kind '${String(kind)}' is not a mock kind`, "mock kinds are http, ws, mqtt and openapi", '"kind": "http"', `${field}.kind`);
   }
   return { ...m, host: m.host.toLowerCase() } as Mock;
 }

@@ -2,6 +2,7 @@
 // (frames and packets summarized, with counts and bytes), blocked attempt (with why / fix) and
 // fault. Every entry is redacted before it is stored, so neither the agent (read_network) nor the
 // UI (Network panel) can ever see a secret value.
+import type { BodyInfo } from "./body.ts";
 import type { Redactor } from "./secrets.ts";
 
 export type Source = "mock" | "cassette" | "internet" | "sandbox" | "fault";
@@ -29,6 +30,10 @@ export interface NetEvent {
   why?: string;
   fix?: string;
   open?: boolean;
+  /** Round 14: the request's Content-Type header. */
+  content_type?: string;
+  /** Round 14: what the request body carried (text start, JSON / form / multipart fields), redacted. */
+  body?: BodyInfo;
   /** Round 13: through the sandbox relay (the simulator playing the project's API relay). */
   via?: "relay";
   summary: string;

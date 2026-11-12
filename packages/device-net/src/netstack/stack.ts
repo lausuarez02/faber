@@ -44,6 +44,8 @@ import { AUTH_OPEN, AUTH_WPA2_PSK, bssidFor, decideJoin, decodeWifi, encodeWifi,
 /** What the netstack needs from the gateway (DeviceNet implements it). */
 export interface NetstackGateway {
   udp(dstIp: string, dstPort: number, payload: Buffer): Buffer | undefined;
+  /** Round 14: answer a multicast DNS question (a ".local" name), or stay silent like mDNS does. */
+  mdns?(payload: Buffer): Buffer | undefined;
   connect(dst: { ip: string; port: number }): Duplex;
 }
 
@@ -243,6 +245,13 @@ export class Netstack {
       const u = parseUdp(ip.payload);
       if (!u) return;
       if (u.dstPort === 67) return this.onDhcp(dev, u.payload);
+      // Round 14: a ".local" lookup (mDNS, 224.0.0.251:5353) for a host the project opted in is answered
+      // by the sandbox (unicast to the asking port, as RFC 6762 answers a one-shot query).
+      if (ip.dst === "224.0.0.251" && u.dstPort === 5353 && u.srcPort !== 5353) {
+        const reply = this.o.gateway.mdns?.(Buffer.from(u.payload));
+        if (reply) this.sendIp(dev, dev.mac, this.gatewayIp, ip.src, PROTO_UDP, buildUdp(this.gatewayIp, ip.src, 5353, u.srcPort, reply));
+        return;
+      }
       // Broadcasts and multicasts (mDNS, SSDP, ...) stay on the LAN; the switch already forwarded them.
       if (ip.dst === "255.255.255.255" || ip.dst.endsWith(".255") || Number(ip.dst.split(".")[0]) >= 224) return;
       const reply = this.o.gateway.udp(ip.dst, u.dstPort, Buffer.from(u.payload));

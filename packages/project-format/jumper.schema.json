@@ -801,6 +801,28 @@
                             "ws",
                             "mqtt"
                           ]
+                        },
+                        "content_type": {
+                          "description": "Round 14: the Content-Type contains this, e.g. \"multipart/form-data\" or \"application/json\".",
+                          "type": "string"
+                        },
+                        "body_contains": {
+                          "description": "Round 14: the body (its text, a field value, a multipart part's name or file name) contains this, case-insensitive.",
+                          "type": "string"
+                        },
+                        "body_json": {
+                          "description": "Round 14: these fields of a JSON, form or multipart body have these values: nested objects or dot paths (\"messages.0.role\"); \"x*\" = starts with x, \"?\" = present and not empty. A multipart file part has <name>.filename, <name>.content_type, <name>.bytes.",
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "min_bytes": {
+                          "description": "Round 14: the body has at least this many bytes.",
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         }
                       },
                       "required": [
@@ -815,6 +837,121 @@
                     "absent": {
                       "description": "true: the device must NOT have made it (within within_ms, or so far).",
                       "type": "boolean"
+                    },
+                    "preceded_by": {
+                      "description": "Round 14: something that must have happened shortly before the matching request.",
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "description": "Words said out loud (a clip's words, or the text the device sent to a speech API).",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "serial": {
+                          "description": "Text printed on serial.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Substring the serial output must contain."
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "capture": {
+                          "description": "A picture the camera took (part id, or true: any camera).",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                            },
+                            {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          ]
+                        },
+                        "request": {
+                          "description": "A request the device made.",
+                          "type": "object",
+                          "properties": {
+                            "host": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "host"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "min_ms": {
+                          "description": "At least this long before (default 0).",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max_ms": {
+                          "description": "At most this long before (default: any time since the scenario started).",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
                     },
                     "name": {
                       "description": "Optional label shown in test results.",
@@ -944,6 +1081,197 @@
                     "camera_frame"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_capture": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                        },
+                        {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      ],
+                      "description": "The camera part (or true: the only / any camera)."
+                    },
+                    "count": {
+                      "description": "At least this many pictures (default 1), counted since the last matched expect_capture (or the start of the test).",
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "within_ms": {
+                      "description": "Keep simulating up to this long until it happens.",
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: NO picture may be taken from this step on (within within_ms).",
+                      "type": "boolean"
+                    },
+                    "preceded_by": {
+                      "description": "Something that must have happened shortly before the picture, e.g. {\"said\": \"picture\", \"min_ms\": 9000, \"max_ms\": 11000}.",
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "description": "Words said out loud (a clip's words, or the text the device sent to a speech API).",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "serial": {
+                          "description": "Text printed on serial.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Substring the serial output must contain."
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "capture": {
+                          "description": "A picture the camera took (part id, or true: any camera).",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                            },
+                            {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          ]
+                        },
+                        "request": {
+                          "description": "A request the device made.",
+                          "type": "object",
+                          "properties": {
+                            "host": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "host"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "min_ms": {
+                          "description": "At least this long before (default 0).",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max_ms": {
+                          "description": "At most this long before (default: any time since the scenario started).",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_capture"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "reset_board": {
+                      "type": "boolean",
+                      "const": true,
+                      "description": "Reboot the firmware board, keeping its flash."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reset_board"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "set_clock": {
+                      "type": "string",
+                      "description": "ISO 8601 date-time, e.g. \"2026-12-24T09:00:00Z\"."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set_clock"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
@@ -952,6 +1280,16 @@
             "description": "Abort when virtual time passes this (default 60000).",
             "type": "number",
             "minimum": 0
+          },
+          "seed": {
+            "description": "Round 14: seed of the board's hardware random numbers (esp_random, random()) for this test; the default is fixed per scenario id, so 'random' firmware repeats every run. Change it to try another sequence.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "clock": {
+            "description": "Round 14: the date and time NTP gives the device at the start of this test (advancing with virtual time). Default: this computer's clock.",
+            "type": "string"
           }
         },
         "required": [
@@ -983,6 +1321,56 @@
         "usb": {
           "description": "A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only.",
           "type": "boolean"
+        },
+        "target_hours": {
+          "description": "Round 14: hours the device should run on one charge; check_design warns (battery-life) when the estimate is under it and says what cell would make it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "duty": {
+          "description": "Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: \"always\", \"off\" or {\"on_s\": 2, \"every_s\": 600}. Unset loads are guessed from the firmware (estimate_power lists the guesses).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "always",
+                  "off"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "on_s": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "every_s": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "on_s",
+                  "every_s"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "sleep": {
+          "description": "Round 14: what the board does between active moments (default: guessed from the firmware).",
+          "type": "string",
+          "enum": [
+            "none",
+            "light",
+            "deep"
+          ]
         }
       }
     },
@@ -1342,6 +1730,14 @@
                 "additionalProperties": {
                   "type": "string"
                 }
+              },
+              "local": {
+                "description": "Round 14: this one host may reach this computer or the local network (a service you run). Without it, a host that resolves to a loopback / private / link-local address is refused in every mode. Not on wildcards.",
+                "type": "boolean"
+              },
+              "to": {
+                "description": "Round 14: send this host's requests to a service here instead, e.g. \"http://127.0.0.1:7821\" (needs \"local\": true; works in mock mode too; mocks still answer first). The device keeps calling its own host name.",
+                "type": "string"
               }
             },
             "required": [

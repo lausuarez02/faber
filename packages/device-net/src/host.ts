@@ -198,6 +198,11 @@ export class DeviceNetHost {
     this.send({ op: "clear" });
   }
 
+  /** Round 14: the time NTP gives the device from now on (unix ms, advancing with the clock); undefined: wall time. */
+  setClock(unixMs: number | undefined): void {
+    this.send({ op: "clock", unixMs: unixMs ?? null });
+  }
+
   /**
    * The simulation's virtual time in ms, after each step: mock delays, latency faults and log
    * times follow it. undefined: back to wall time (no simulation drives the network).

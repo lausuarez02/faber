@@ -4,6 +4,7 @@
 //   camera-unwired    a camera module's signal pins are not all on board GPIOs
 //   camera-psram      frame buffers in PSRAM on a board without PSRAM, or PSRAM turned off in the build
 //   camera-battery    camera + Wi-Fi bursts against what the cell can give, with a battery-life estimate
+//   camera-indicator  (round 14) nothing on the device (LED, screen, the board's LED in the firmware) shows the camera is in use
 import { buildNets, type Project } from "@jumper/project-format";
 import { CAMERA_PIN_ROLES, CAMERA_REQUIRED_ROLES, CAMERA_SENSORS, type CameraPinRole, type CameraSensorId, type PartRegistry, type PartSpec } from "@jumper/sim-core";
 import type { DesignIssue } from "./drc.ts";
@@ -58,6 +59,28 @@ export function cameraChecks(project: Project, registry: PartRegistry, firmwareS
     const b = net?.pins.find((x) => x.part === boardPart.id && board.pins.find((pp) => pp.id === x.pin && (pp.type === "digital" || pp.type === "analog")));
     return b?.pin;
   };
+
+  // Round 14 (privacy): people near a camera should be able to see when it takes a picture. Any
+  // project with a camera needs something on the device that shows it: an LED, a screen, or the
+  // board's own LED driven by the firmware.
+  const indicators = project.parts.filter((p) => {
+    if (cams.includes(p) && !spec(p.type)?.bindings?.some((b) => /^led/.test(b.key))) return false;
+    const sp = spec(p.type);
+    if (!sp) return false;
+    if (sp.category === "display" || /data-screen="/.test(registry.get(p.type)?.svg ?? "")) return true;
+    if (sp.category === "board") return false;
+    return /(^|-)(led|leds|neopixel|ws2812|sk6812|apa102)(-|$)/.test(p.type) || (sp.tags ?? []).some((t) => /^(led|neopixel|indicator|light)$/.test(t)) || !!sp.bindings?.some((b) => b.key === "brightness" || b.key === "on");
+  });
+  const boardLed = board?.bindings?.find((b) => /^led/.test(b.key));
+  const firmwareUsesBoardLed = !!boardLed && /\bLED_BUILTIN\b|\bBUILTIN_LED\b/.test(firmwareSource);
+  if (!indicators.length && !firmwareUsesBoardLed) {
+    issues.push({
+      severity: "warning",
+      code: "camera-indicator",
+      message: `${cams.map((c) => c.id).join(", ")} can take pictures, but nothing on the device shows when it does: no LED, no screen${boardLed ? `, and the firmware does not drive ${boardPart!.id}'s own LED (LED_BUILTIN)` : ""}. People near a camera should be able to see that it is about to take, or is taking, a picture (it is a matter of trust and privacy, and some places require a visible signal). Fix: add an LED with its resistor on a free GPIO (place_part led, then connect) and light it while the camera is on; or show it on a screen${boardLed ? `; or drive LED_BUILTIN (${boardLed.description?.split(";")[0] ?? "the board's LED"}) while capturing` : ""}. A spoken or on-screen countdown before each picture helps too.`,
+      parts: cams.map((c) => c.id),
+    });
+  }
 
   // which chip runs it
   if (board?.mcu && !CAMERA_CHIPS.has(board.mcu.chip)) {

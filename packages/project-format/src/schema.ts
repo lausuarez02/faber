@@ -109,6 +109,15 @@ export const PowerOptionsSchema = z.object({
     .boolean()
     .optional()
     .describe("A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only."),
+  target_hours: z.number().positive().optional().describe("Round 14: hours the device should run on one charge; check_design warns (battery-life) when the estimate is under it and says what cell would make it."),
+  duty: z
+    .record(
+      z.string(),
+      z.union([z.enum(["always", "off"]), z.object({ on_s: z.number().nonnegative(), every_s: z.number().positive() }).strict()]),
+    )
+    .optional()
+    .describe('Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Unset loads are guessed from the firmware (estimate_power lists the guesses).'),
+  sleep: z.enum(["none", "light", "deep"]).optional().describe("Round 14: what the board does between active moments (default: guessed from the firmware)."),
 });
 
 /**
@@ -201,6 +210,8 @@ export const NetworkAllowSchema = z
     tls: z.enum(["inspect", "passthrough"]).optional().describe("inspect (default): Jumper terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate."),
     secrets: z.array(z.string()).optional().describe("Secret names this host may receive."),
     headers: z.record(z.string(), z.string()).optional().describe('Headers added to every request to this host, e.g. {"Authorization": "Bearer {{secret:OPENAI_API_KEY}}"}. Never a literal key.'),
+    local: z.boolean().optional().describe("Round 14: this one host may reach this computer or the local network (a service you run). Without it, a host that resolves to a loopback / private / link-local address is refused in every mode. Not on wildcards."),
+    to: z.string().optional().describe('Round 14: send this host\'s requests to a service here instead, e.g. "http://127.0.0.1:7821" (needs "local": true; works in mock mode too; mocks still answer first). The device keeps calling its own host name.'),
   })
   .strict();
 

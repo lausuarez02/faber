@@ -41,6 +41,13 @@ USB / button access, battery safety) and, when asked what is needed, say what to
 assemble and flash with totals: [docs/hardware-guide.md](docs/hardware-guide.md) (also the MCP
 resource `jumper://docs/hardware`, the prompts `design-device` / `build-kit` / `design-for-assembly`,
 and the project skill `jumper skill install --project <dir>` writes).
+Behaviour over time (things that happen at random, a spoken countdown before a picture, an offline
+queue that posts later, battery life from duty cycles) is tested with scenarios too: each test seeds the
+board's random numbers, `preceded_by` checks order and timing, `expect_capture` pictures, `request`
+what an upload carried, `network_fault` wifi_drop / clear and `reset_board` (flash survives) the offline
+path; `add_mock_api` {"kind": "openapi"} mocks any API from its spec; a local service is reached only
+with `"local": true` + `"to"`; `estimate_power` / `set_power {target_hours, duty}` for battery life:
+[docs/behaviour-tests.md](docs/behaviour-tests.md).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 

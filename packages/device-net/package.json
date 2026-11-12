@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@peculiar/x509": "1.14.3",
-    "ws": "8.22.2"
+    "ws": "8.22.2",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@jumper/sim-backends": "workspace:*",

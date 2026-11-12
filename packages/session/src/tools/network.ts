@@ -1,4 +1,4 @@
-import { addMockApi, factoryNetworkNotes, injectNetworkFault, readNetwork, type Fault, type Mock } from "@jumper/device-net";
+import { addMockApi, ConfigError, resolveMocks, factoryNetworkNotes, injectNetworkFault, readNetwork, type Fault, type Mock } from "@jumper/device-net";
 import type { NetworkSettings } from "@jumper/project-format";
 import { fail } from "../errors.ts";
 import { networkConfigOf } from "../device-network.ts";
@@ -71,7 +71,7 @@ export const networkTools: ToolModule = {
       name: "set_network",
       title: "Network settings",
       description:
-        'Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project\'s .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}, {"relay": {"requests_per_minute": 30}} (limits of the API relay the real device uses and the simulator plays at relay.sandbox.jumper; jumper relay init writes it). Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.',
+        'Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}, "local"?: true, "to"?: "http://127.0.0.1:7821"}]} (round 14: "local": true opts ONE host in to reaching this computer or the LAN (without it a host that resolves to a loopback / private address is refused in every mode); "to" sends that host\'s requests to a service you run here, also in mock mode, while the device keeps calling its own name; mocks still answer first), {"secrets": ["API_KEY"]} (names only: the value goes in the project\'s .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}, {"relay": {"requests_per_minute": 30}} (limits of the API relay the real device uses and the simulator plays at relay.sandbox.jumper; jumper relay init writes it). Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.',
       inputSchema: {
         type: "object",
         properties: {
@@ -110,7 +110,17 @@ export const networkTools: ToolModule = {
       const dn = netOf(x);
       if (!args.mock || typeof args.mock !== "object") fail("bad-arg", "add_mock_api needs a mock", "the mock object is missing", 'pass {"mock": {"host": "api.example.com", "path": "/v1/now", "response": {"body": {"ok": true}}}}');
       const host = await dn.ensure();
-      const r = addMockApi(host, args.mock as Mock, dn.mocksFile());
+      let mock = args.mock as Mock;
+      // round 14: an OpenAPI mock reads its spec from the project now (errors say which field and why)
+      if (mock.kind === "openapi") {
+        try {
+          mock = resolveMocks([mock], x.session.dir, "mock")[0]!;
+        } catch (e) {
+          if (e instanceof ConfigError) fail("bad-mock", `add_mock_api: ${e.message}`, e.why, e.fix, e.field ? { field: e.field } : undefined);
+          throw e;
+        }
+      }
+      const r = addMockApi(host, mock, dn.mocksFile());
       if (!r.ok) fail("bad-mock", `add_mock_api: ${String(r.error)}`, String(r.why), String(r.fix), r.field ? { field: r.field } : undefined);
       const m = r.mock as Mock;
       x.summary(`mock ${m.kind ?? "http"} ${m.host}${"path" in m ? (m as { path: string }).path : ""} (${String(r.result)})`);

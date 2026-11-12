@@ -4,6 +4,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { ConfigError, validateMock, type Mock, type NetworkConfig } from "./config.ts";
+import { bodyMismatch } from "./body.ts";
+import { listOperations, storedOpenApiMock } from "./openapi.ts";
 import type { Fault } from "./gateway.ts";
 import type { NetEvent } from "./log.ts";
 import type { Redactor } from "./secrets.ts";
@@ -21,6 +23,8 @@ export interface NetView {
   scenarioMock(m: Mock): void;
   /** Replace the whole mock list, live. */
   setMocks(list: Mock[]): void;
+  /** Round 14: the time NTP gives the device from now on (unix ms); undefined: wall time. */
+  setClock?(unixMs: number | undefined): void;
 }
 type DeviceNet = NetView;
 
@@ -38,7 +42,7 @@ export const DEVICE_NET_TOOLS = [
     name: "add_mock_api",
     title: "Add or update a mock API",
     description:
-      'Add or replace a mock in network/mocks.json, live. HTTP: {"host", "method", "path" (exact or prefix*; add ?k=v&k2=v2 to need those query parameters), "response": {"status", "headers", "body" | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match", "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT: {"kind": "mqtt", "host", "on_publish": [{"topic", "reply": [{"topic", "payload"}]}], "retained": [...]}. Any API is just a mock: weather, an AI stream, a webhook.',
+      'Add or replace a mock in network/mocks.json, live. HTTP: {"host", "method", "path" (exact or prefix*; add ?k=v&k2=v2 to need those query parameters), "response": {"status", "headers", "body" | "body_b64" | "chunks": [{"data" | "b64" | "bytes", "delay_ms"}], "delay_ms"}}. WebSocket: {"kind": "ws", "host", "path", "on_open": [frames], "on_message": [{"match", "send": [{"text" | "b64" | "bytes", "delay_ms", "repeat"}], "close"}]}. MQTT: {"kind": "mqtt", "host", "on_publish": [{"topic", "reply": [{"topic", "payload"}]}], "retained": [...]}. Round 14, any API from its OpenAPI 3 file: {"kind": "openapi", "host", "spec": "network/api.openapi.yaml" (JSON or YAML in the project), "base_path"? (default: servers[0] path), "validate"? (default true), "responses"? {"<operationId or METHOD /path>": {"status": 503}}}: every operation answers its example (or one made from its schema), and each request is checked against the operation (path, method, Content-Type, required body, JSON schema, multipart parts); a request that does not fit gets 400 with the problems, and the log says why. Any API is just a mock: weather, an AI stream, a webhook, a social network.',
     inputSchema: { type: "object", properties: { mock: { type: "object" } }, required: ["mock"] },
   },
   {
@@ -51,7 +55,7 @@ export const DEVICE_NET_TOOLS = [
 
 export function compact(e: NetEvent): Record<string, unknown> {
   const o: Record<string, unknown> = { seq: e.seq, t_ms: Math.round(e.t_ms), kind: e.kind, summary: e.summary };
-  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "via", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
+  for (const k of ["host", "port", "tls", "method", "path", "status", "source", "bytes_out", "bytes_in", "duration_ms", "headers", "secrets_used", "via", "content_type", "body", "why", "fix"] as const) if (e[k] !== undefined) o[k] = e[k];
   if (e.frames) o.frames = e.frames;
   if (e.open) o.open = true;
   return o;
@@ -98,12 +102,14 @@ export function addMockApi(net: DeviceNet, mock: Mock, file?: string): Record<st
     const cur = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as { mocks: Mock[] }) : { mocks: [] };
     const key = (x: Mock) => `${x.kind ?? "http"} ${x.host} ${(x as { method?: string }).method ?? ""} ${(x as { path?: string }).path ?? ""}`;
     const i = cur.mocks.findIndex((x) => key(x) === key(m));
-    if (i >= 0) cur.mocks[i] = m;
-    else cur.mocks.push(m);
+    // round 14: an OpenAPI mock is stored with its spec's path, never the parsed document
+    const stored = m.kind === "openapi" ? storedOpenApiMock(m) : m;
+    if (i >= 0) cur.mocks[i] = stored;
+    else cur.mocks.push(stored);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, `${JSON.stringify(cur, null, 2)}\n`);
   }
-  return { ok: true, result, mock: m, note: net.config.mode === "offline" ? "network.mode is offline: the mock will not be reached until the mode is mock or internet" : undefined };
+  return { ok: true, result, mock: m.kind === "openapi" ? { ...storedOpenApiMock(m), operations: listOperations(m.spec_doc as never) } : m, note: net.config.mode === "offline" ? "network.mode is offline: the mock will not be reached until the mode is mock or internet" : undefined };
 }
 
 export function injectNetworkFault(net: DeviceNet, f: Fault | { kind: "clear" }): string {
@@ -129,14 +135,34 @@ export interface RequestExpectation {
   kind?: "http" | "ws" | "mqtt";
   /** Only count log entries after this seq (a scenario's own run). */
   sinceSeq?: number;
+  /** Round 14: the Content-Type header contains this (case-insensitive), e.g. "multipart/form-data". */
+  content_type?: string;
+  /** Round 14: the body (its text, a field value or a multipart part's name / file name) contains this. */
+  body_contains?: string;
+  /** Round 14: these JSON / form / multipart fields have these values (nested objects or dot paths; "x*" = starts with x, "?" = present and not empty). */
+  body_json?: Record<string, unknown>;
+  /** Round 14: the body has at least this many bytes (a photo upload is not empty). */
+  min_bytes?: number;
 }
 
-export function checkRequest(net: DeviceNet, x: RequestExpectation): { ok: boolean; matched: number; why?: string; fix?: string } {
+export function checkRequest(net: DeviceNet, x: RequestExpectation): { ok: boolean; matched: number; why?: string; fix?: string; entries?: NetEvent[] } {
   const want = x.count ?? 1;
   const kinds = x.kind ? [x.kind] : ["http", "ws"];
   const seen = net.log.since(x.sinceSeq ?? 0).filter((e) => kinds.includes(e.kind));
-  const m = seen.filter((e) => e.host === x.host.toLowerCase() && (!x.path || (e.path ?? "").split("?")[0] === x.path || (x.path.endsWith("*") && (e.path ?? "").startsWith(x.path.slice(0, -1)))) && (!x.method || e.method === x.method.toUpperCase()) && (x.status === undefined || e.status === x.status));
-  if (m.length >= want) return { ok: true, matched: m.length };
+  const route = seen.filter((e) => e.host === x.host.toLowerCase() && (!x.path || (e.path ?? "").split("?")[0] === x.path || (x.path.endsWith("*") && (e.path ?? "").startsWith(x.path.slice(0, -1)))) && (!x.method || e.method === x.method.toUpperCase()) && (x.status === undefined || e.status === x.status));
+  const checksBody = x.content_type !== undefined || x.body_contains !== undefined || x.body_json !== undefined || x.min_bytes !== undefined;
+  const mismatches: string[] = [];
+  const m = checksBody
+    ? route.filter((e) => {
+        const why = bodyMismatch(e, x);
+        if (why) mismatches.push(`${e.method ?? ""} ${e.host}${e.path ?? ""}: ${why}`);
+        return !why;
+      })
+    : route;
+  if (m.length >= want) return { ok: true, matched: m.length, entries: m };
+  if (checksBody && route.length) {
+    return { ok: false, matched: m.length, entries: m, why: `the device made ${route.length} ${x.method ?? ""} ${x.host}${x.path ?? ""} request(s), but ${m.length >= 1 ? `only ${m.length} of them carried` : "none carried"} what the test expects: ${mismatches.slice(-3).join("; ")}`, fix: "check what the firmware sends (read_network shows each request's content_type and body fields), or loosen the expectation" };
+  }
   const blocked = net.log.since(x.sinceSeq ?? 0).filter((e) => e.kind === "blocked" && e.host === x.host.toLowerCase());
   const did = seen.slice(-5).map((e) => e.summary);
   return {

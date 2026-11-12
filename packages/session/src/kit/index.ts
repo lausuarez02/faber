@@ -15,6 +15,7 @@ import { printPlan } from "./print-plan.ts";
 import { shoppingList, type Region } from "./shopping.ts";
 import { cellPlugs, derivedSteps, flashPlan, kitWords, peopleWords, planSteps, refLabel, refWords, toolsFor, troubleshooting } from "./steps.ts";
 import type { BuildKit } from "./types.ts";
+import { powerBudget } from "../power-budget.ts";
 import { connectPlan } from "./connect.ts";
 
 export type { BuildKit, ConnectPlan } from "./types.ts";
@@ -163,6 +164,8 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   }
 
   const connect = connectPlan(project, reg, s.dir);
+  // Round 14: battery life from duty cycles (datasheet typicals), when the device has a LiPo cell
+  const power = project.parts.some((p) => p.type === "lipo-battery") ? powerBudget(project, reg, firmwareText(s) ?? "") : undefined;
   const board = flash.board;
   const n = shopping.lines.filter((l) => l.section === "electronics" && l.refs).reduce((a, l) => a + l.qty, 0);
   const summary = `${project.name}: ${n} parts${board && board !== "no board" ? ` around a ${board}` : ""}, ${soldered ? "hand-soldered" : "on a breadboard"}${report ? `, in a printed ${report.shape} case ${report.size_mm.w} x ${report.size_mm.h} x ${report.size_mm.d} mm` : ""}. About ${shopping.to_buy_usd.toFixed(0)} USD of parts${print.items.length ? `, ${Math.round(print.total_grams)} g of filament (${(print.total_minutes / 60).toFixed(1)} h of printing)` : ""}, ${tools.time.build_h} h to build. ${tools.skill_why}`;
@@ -178,6 +181,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     steps_source: plan ? "assembly-plan" : "derived",
     flash,
     ...(connect ? { connect } : {}),
+    ...(power ? { power } : {}),
     troubleshooting: trouble,
     missing,
     check_first,

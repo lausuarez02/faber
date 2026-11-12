@@ -13,6 +13,7 @@ import {
   loadSecrets,
   parseMocks,
   parseNetworkConfig,
+  resolveMocks,
   type Mock,
   type NetworkConfig,
 } from "@jumper/device-net";
@@ -40,7 +41,7 @@ export function mocksFileOf(dir: string, cfg: NetworkConfig): string {
   return join(dir, cfg.mocks ?? DEFAULT_MOCKS_FILE);
 }
 
-export function loadMocksFile(file: string): Mock[] {
+export function loadMocksFile(file: string, projectDir?: string): Mock[] {
   if (!existsSync(file)) return [];
   let raw: unknown;
   try {
@@ -49,7 +50,9 @@ export function loadMocksFile(file: string): Mock[] {
     fail("bad-mocks", `${file} is not valid JSON`, (e as Error).message, 'fix the JSON (it holds {"mocks": [...]}), or remove the file and use add_mock_api');
   }
   try {
-    return parseMocks(raw);
+    const list = parseMocks(raw);
+    // round 14: OpenAPI mocks read their spec file (relative to the project folder)
+    return projectDir ? resolveMocks(list, projectDir, file) : list;
   } catch (e) {
     if (e instanceof ConfigError) fail("bad-mocks", `${file}: ${e.message}`, e.why, e.fix, { field: e.field });
     throw e;
@@ -100,7 +103,7 @@ export class SessionDeviceNet {
     this.key = key;
     this.starting = DeviceNetHost.start({
       config: cfg,
-      mocks: loadMocksFile(this.mocksFile()),
+      mocks: loadMocksFile(this.mocksFile(), this.dir()),
       secrets: values,
       caDir: sandboxCaDir(),
       ...(cfg.cassette ? { cassetteFile: join(this.dir(), "network", "cassettes", `${cfg.cassette}.json`) } : {}),

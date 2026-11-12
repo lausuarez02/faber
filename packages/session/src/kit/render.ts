@@ -84,6 +84,7 @@ export function kitMarkdown(k: BuildKit): string {
   out.push("## Assemble", "", ...k.steps.flatMap(stepMd));
   out.push(...flashMd(k));
   out.push(...connectMd(k));
+  out.push(...powerMd(k));
   out.push("## If something does not work", "", "| Problem | Why | Fix |", "| --- | --- | --- |", ...k.troubleshooting.map((t) => `| ${mdCell(t.problem)} | ${mdCell(t.why)} | ${mdCell(t.fix)} |`), "");
   return out.join("\n");
 }
@@ -96,6 +97,13 @@ function flashMd(k: BuildKit): string[] {
   for (const c of f.commands) out.push(`${c.label}:`, "", "```sh", c.cmd, "```", "");
   if (f.needs.length) out.push(`You need: ${f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.`, "");
   return out;
+}
+
+/** Round 14: the battery budget, in a few lines. */
+function powerMd(k: BuildKit): string[] {
+  const p = k.power;
+  if (!p) return [];
+  return ["## Battery", "", p.summary, "", "| Load | On | Average |", "| --- | --- | --- |", ...p.loads.map((l) => `| ${l.load} | ${l.duty_text} | ${l.avg_ma} mA (${l.share} %) |`), "", ...p.suggestions.map((x) => `- ${x}`), ...(p.assumptions.length ? ["", `Assumed: ${p.assumptions.join("; ")}.`] : []), ""];
 }
 
 function connectMd(k: BuildKit): string[] {

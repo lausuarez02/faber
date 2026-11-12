@@ -19,6 +19,9 @@ import { Cassette } from "./cassette.ts";
 import { hostMatches, mockKey, validateMock, type AllowEntry, type Mock, type MqttMock, type NetworkConfig } from "./config.ts";
 import { buildDnsAnswer, buildNtpReply, FakeIpPool, parseDnsQuery } from "./dns.ts";
 import { NetLog, type NetEvent } from "./log.ts";
+import { describeBody } from "./body.ts";
+import { guardedLookup, LocalAddressRefused, parseLocalTarget } from "./local.ts";
+import { listOperations, validateRequest } from "./openapi.ts";
 import { answerHttp, MockBroker, MockSet, readBody, runWsMock } from "./mocks.ts";
 import { readPackets, summarizePacket } from "./mqtt.ts";
 import { expandSecrets, MissingSecretError, Redactor } from "./secrets.ts";
@@ -39,6 +42,10 @@ export interface Upstream {
   port: number;
   /** Extra CA to trust for this upstream (tests use a local server). */
   ca?: string;
+  /** Round 14: an allow entry's "to" decides the scheme (http to a local dev server behind an https name). */
+  protocol?: "http:" | "https:";
+  /** Round 14: resolve with the local-address guard (unset for a test's fixed upstream). */
+  lookup?: ReturnType<typeof guardedLookup>;
 }
 
 export interface DeviceNetOptions {
@@ -82,6 +89,9 @@ interface FlowCtx {
 
 /** What the sandbox relay decided for one request: the target's flow, or the relay's own answer. */
 type RelayUnwrap = { ctx: FlowCtx; device: string; maxBody: number } | { error: RelayError };
+
+/** Public time servers firmware asks for by name (configTime, SNTP); the sandbox answers NTP itself. */
+const NTP_HOST = /^((\d+|[a-z]{2,3})\.)?(pool\.ntp\.org|[a-z0-9-]+\.pool\.ntp\.org)$|^time\.(google|cloudflare|windows|apple|nist|facebook)\.com$|^time\.nist\.gov$|^(ntp|time)\d?\.[a-z0-9-]+\.(com|org|net|gov)$/;
 
 const HOP = new Set(["connection", "keep-alive", "proxy-connection", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade"]);
 const HTTP_START = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /;
@@ -177,6 +187,15 @@ export class DeviceNet {
     return this.faults.find((f) => f.kind === kind && (!("host" in f) || !f.host || (host !== undefined && hostMatches(f.host, host)))) as Extract<Fault, { kind: K }> | undefined;
   }
 
+  /** Round 14: NTP time set by a test (unix ms at the network clock's atMs), else wall time. */
+  private ntpClock: { unixMs: number; atMs: number } | undefined;
+
+  /** Round 14: the time NTP gives the device from now on (unix ms, advancing with the network clock); undefined: wall time. */
+  setClock(unixMs: number | undefined): void {
+    this.ntpClock = unixMs === undefined ? undefined : { unixMs, atMs: this.clock.now() };
+    if (unixMs !== undefined) this.log.push({ kind: "udp", port: 123, source: "sandbox", summary: `clock set: NTP answers ${new Date(unixMs).toISOString()} from now on` });
+  }
+
   /** May the device reach host:port, and who answers? */
   decide(host: string, port?: number): Decision {
     const { mode, allow } = this.opts.config;
@@ -195,6 +214,9 @@ export class DeviceNet {
       }
       return { ok: true, internet: entry };
     }
+    // Round 14: a host opted in to a service on this computer ("local": true, "to") works in mock mode
+    // too: nothing leaves this computer. Mocks and cassettes still answer first.
+    if (mode === "mock" && entry?.local && entry.to) return { ok: true, internet: entry };
     if (sandbox) return { ok: true };
     if (mode === "mock") {
       return { ok: false, why: `${host} has no mock and no recorded cassette, and mode "mock" never reaches the internet`, fix: `${mockHint}, or set network.mode "internet" and add {"host": "${host}"} to network.allow` };
@@ -219,6 +241,13 @@ export class DeviceNet {
       this.blocked({ host, source: "fault" }, `a dns_fail fault is active for ${host}`, "clear the fault to restore DNS", `DNS ${host}`);
       return undefined;
     }
+    // Round 14: time servers are part of the sandbox (it answers NTP itself, with the test's clock or
+    // this computer's), so configTime("pool.ntp.org") works in mock mode too; offline has no internet.
+    if (NTP_HOST.test(host) && this.opts.config.mode !== "offline" && !this.opts.config.allow.some((a) => hostMatches(a.host, host))) {
+      const ip = this.pool.ipFor(host);
+      this.log.push({ kind: "dns", host, source: "sandbox", summary: `DNS ${host} → ${ip} (the sandbox's NTP server)` });
+      return ip;
+    }
     const d = this.decide(host);
     if (!d.ok) {
       this.blocked({ host }, d.why!, d.fix!, `DNS ${host} → NXDOMAIN`);
@@ -227,6 +256,22 @@ export class DeviceNet {
     const ip = this.pool.ipFor(host);
     this.log.push({ kind: "dns", host, source: d.internet ? "internet" : "mock", summary: `DNS ${host} → ${ip}` });
     return ip;
+  }
+
+  /**
+   * Round 14: a multicast DNS question from the device ("mystar.local", how firmware finds a computer
+   * on the LAN). Answered only for a host the sandbox serves (an allow entry with "local" / "to", or a
+   * mock); otherwise silence, as on a LAN where nobody has that name.
+   */
+  mdns(payload: Buffer): Buffer | undefined {
+    const q = parseDnsQuery(payload);
+    if (!q || (q.qtype !== 1 && q.qtype !== 255) || !q.name.endsWith(".local")) return undefined;
+    if (!this.decide(q.name).ok) {
+      this.log.push({ kind: "dns", host: q.name, source: "sandbox", summary: `mDNS ${q.name}: no answer`, why: `nothing on the sandbox LAN is called ${q.name}`, fix: `add {"host": "${q.name}", "local": true, "to": "http://127.0.0.1:<port>"} to network.allow (a service on this computer), or a mock for ${q.name}` });
+      return undefined;
+    }
+    const ip = this.resolve(q.name);
+    return ip ? buildDnsAnswer({ ...q, qtype: 1 }, ip) : undefined;
   }
 
   /** A UDP datagram from the device. Returns the reply datagram (DNS on 53, SNTP on 123) or undefined. */
@@ -238,7 +283,8 @@ export class DeviceNet {
       return buildDnsAnswer(q, ip);
     }
     if (dstPort === 123) {
-      const ms = this.clock.wallMs?.() ?? Date.now();
+      const set = this.ntpClock;
+      const ms = set ? set.unixMs + (this.clock.now() - set.atMs) : (this.clock.wallMs?.() ?? Date.now());
       this.log.push({ kind: "udp", port: 123, source: "sandbox", summary: `NTP → ${new Date(ms).toISOString()}` });
       return buildNtpReply(payload, ms);
     }
@@ -290,7 +336,7 @@ export class DeviceNet {
     const sandboxAnswers = this.mocks.hasHost(host) || this.cassette?.hasHost(host);
     if (first[0] === 0x16) {
       if (decision.internet?.tls === "passthrough" && !sandboxAnswers) {
-        this.passthrough(sock, host, dst.port);
+        this.passthrough(sock, host, dst.port, decision.internet);
         return;
       }
       const ctx = await this.opts.ca.contextFor(host);
@@ -344,8 +390,28 @@ export class DeviceNet {
 
   // ---------------------------------------------------------------- HTTP
 
-  private upstream(host: string, port: number): Upstream {
-    return this.opts.upstream?.(host, port) ?? { host, port };
+  /**
+   * Where a forwarded flow goes: a test's fixed upstream, an allow entry's "to" (a service on this
+   * computer), or the host itself, resolved with the local-address guard (round 14).
+   */
+  private upstream(host: string, port: number, entry?: AllowEntry): Upstream {
+    const fixed = this.opts.upstream?.(host, port);
+    if (fixed) return fixed;
+    if (entry?.to) {
+      const t = parseLocalTarget(entry.to);
+      return { host: t.host, port: t.port, protocol: t.protocol, lookup: guardedLookup(true) };
+    }
+    return { host, port, lookup: guardedLookup(entry?.local === true) };
+  }
+
+  /** The why / fix of a failed upstream connection (a refused local address says how to opt in). */
+  private upstreamError(ctx: { host: string; port: number }, err: Error, up: Upstream): { why: string; fix: string } {
+    if (err instanceof LocalAddressRefused) return { why: err.why, fix: err.fix };
+    const where = up.protocol ? `${up.protocol}//${up.host}:${up.port} (network.allow "to" of ${ctx.host})` : `the real ${ctx.host}:${ctx.port}`;
+    return {
+      why: `${where} could not be reached from this machine (${err.message})`,
+      fix: up.protocol ? `start the service on ${up.host}:${up.port} (is it running? is the port right?), or change "to" in the ${ctx.host} entry of network.allow` : "check this computer's internet connection, or record a cassette while online and replay it",
+    };
   }
 
   /** The headers sent upstream: device headers ({{secret:X}} expanded), plus the allow entry's templates. */
@@ -427,6 +493,13 @@ export class DeviceNet {
       if (e.open) this.log.update(e, { open: false, duration_ms: Math.round(this.clock.now() - t0), summary: `${method} ${ctx.host}${path} → closed before an answer` });
     });
 
+    // Round 14: the body first (a device sends it before it waits for an answer), so the log says
+    // what every request carried, faults included; tests check it (content type, fields, parts).
+    const reqBody = await readBody(req);
+    e.bytes_out = reqBody.length;
+    const contentType = typeof req.headers["content-type"] === "string" ? req.headers["content-type"] : undefined;
+    const bodyInfo = describeBody(contentType, reqBody);
+    if (contentType || bodyInfo) this.log.update(e, { ...(contentType ? { content_type: contentType } : {}), ...(bodyInfo ? { body: bodyInfo } : {}) });
     if (this.fault("timeout", ctx.host)) {
       this.log.update(e, { source: "fault", summary: `${method} ${ctx.host}${path} → no answer (timeout fault)` });
       return; // never answer; the device's own timeout fires
@@ -441,8 +514,6 @@ export class DeviceNet {
       return;
     }
     const mock = this.mocks.http(ctx.host, method, path);
-    const reqBody = await readBody(req);
-    e.bytes_out = reqBody.length;
     if (ctx.via && reqBody.length > maxBody) {
       const err = new RelayError(413, "request-too-large", `the request body is ${reqBody.length} bytes, over the relay's limit of ${maxBody}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in jumper.json");
       const body = Buffer.from(JSON.stringify(err.body()));
@@ -458,6 +529,32 @@ export class DeviceNet {
       finish(502, "sandbox", body.length, { why: ctx.decision.why!, fix: ctx.decision.fix! });
       return;
     }
+    if (mock && "openapi" in mock) {
+      // Round 14: an OpenAPI mock checks the request against the operation before answering.
+      const { mock: om, hit } = mock.openapi;
+      if (!om.spec_doc) {
+        const why = `the OpenAPI mock for ${om.host} has no loaded spec (${typeof om.spec === "string" ? om.spec : "inline"})`;
+        const fix = "add it with add_mock_api or network/mocks.json in the project, so Jumper reads the spec file";
+        const body = Buffer.from(JSON.stringify({ error: "mock spec not loaded", why, fix }));
+        res.writeHead(500, { "content-type": "application/json", "content-length": String(body.length) });
+        res.end(body);
+        finish(500, "mock", body.length, { why, fix });
+        return;
+      }
+      const problems = om.validate === false ? [] : validateRequest(om, hit, path, contentType, reqBody, bodyInfo);
+      if (problems.length) {
+        const why = `${method} ${path} does not match the API's ${hit.key} operation (${hit.method.toUpperCase()} ${hit.template}): ${problems.slice(0, 6).join("; ")}`;
+        const fix = "change what the firmware sends to match the OpenAPI spec (or fix the spec if the API really takes it)";
+        const body = Buffer.from(JSON.stringify({ error: "request does not match the API", operation: hit.key, problems, fix }));
+        res.writeHead(400, { "content-type": "application/json", "content-length": String(body.length) });
+        res.end(body);
+        finish(400, "mock", body.length, { why, fix });
+        return;
+      }
+      const n = await answerHttp(mock, res, (ms) => this.clock.sleep(ms));
+      finish(res.statusCode, "mock", n);
+      return;
+    }
     if (mock) {
       const n = await answerHttp(mock, res, (ms) => this.clock.sleep(ms));
       finish(res.statusCode, "mock", n);
@@ -469,6 +566,17 @@ export class DeviceNet {
       res.writeHead(rec.response.status, { ...rec.response.headers, "content-length": String(body.length) });
       res.end(body);
       finish(rec.response.status, "cassette", body.length);
+      return;
+    }
+    const api = this.mocks.openapi(ctx.host);
+    if (api && !ctx.decision.internet) {
+      const ops = api.spec_doc ? listOperations(api.spec_doc as Parameters<typeof listOperations>[0]) : [];
+      const why = `${method} ${path} is not an operation of the API's OpenAPI spec for ${ctx.host}${ops.length ? ` (it has ${ops.slice(0, 10).join(", ")}${ops.length > 10 ? ", …" : ""})` : ""}`;
+      const fix = "call one of those operations from the firmware (check the method, the path and the base path), or add the operation to the spec";
+      const body = Buffer.from(JSON.stringify({ error: "no such operation", why, fix }));
+      res.writeHead(404, { "content-type": "application/json", "content-length": String(body.length) });
+      res.end(body);
+      finish(404, "mock", body.length, { why, fix });
       return;
     }
     if (!ctx.decision.internet) {
@@ -496,13 +604,12 @@ export class DeviceNet {
       return;
     }
     sent.headers["content-length"] = String(reqBody.length);
-    const up = this.upstream(ctx.host, ctx.port);
-    const mod = ctx.tls === "none" ? http : https;
-    const upReq = mod.request({ host: up.host, port: up.port, method: req.method, path: req.url, headers: sent.headers, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}) });
+    const up = this.upstream(ctx.host, ctx.port, ctx.decision.internet);
+    const mod = (up.protocol ? up.protocol === "http:" : ctx.tls === "none") ? http : https;
+    const upReq = mod.request({ host: up.host, port: up.port, method: req.method, path: req.url, headers: sent.headers, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}), ...(up.lookup ? { lookup: up.lookup } : {}) });
     this.log.update(e, { headers: sent.headers, secrets_used: sent.used, source: "internet" });
     upReq.on("error", (err) => {
-      const why = `the real ${ctx.host}:${ctx.port} could not be reached from this machine (${err.message})`;
-      const fix = "check this computer's internet connection, or record a cassette while online and replay it";
+      const { why, fix } = this.upstreamError(ctx, err, up);
       if (!res.headersSent) {
         const body = Buffer.from(JSON.stringify({ error: "upstream unreachable", why, fix }));
         res.writeHead(502, { "content-type": "application/json", "content-length": String(body.length) });
@@ -590,9 +697,9 @@ export class DeviceNet {
     }
     sent.headers.connection = "Upgrade";
     sent.headers.upgrade = "websocket";
-    const up = this.upstream(ctx.host, ctx.port);
-    const mod = ctx.tls === "none" ? http : https;
-    const upReq = mod.request({ host: up.host, port: up.port, path, headers: sent.headers, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}) });
+    const up = this.upstream(ctx.host, ctx.port, ctx.decision.internet);
+    const mod = (up.protocol ? up.protocol === "http:" : ctx.tls === "none") ? http : https;
+    const upReq = mod.request({ host: up.host, port: up.port, path, headers: sent.headers, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}), ...(up.lookup ? { lookup: up.lookup } : {}) });
     this.log.update(e, { headers: sent.headers, secrets_used: sent.used, source: "internet" });
     upReq.on("upgrade", (upRes, upSock, upHead) => {
       const lines = [`HTTP/1.1 101 Switching Protocols`];
@@ -663,10 +770,11 @@ export class DeviceNet {
 
   /** Relay bytes to the real host (re-encrypting when TLS was inspected). MQTT packets are summarized. */
   private forwardRaw(s: Duplex, ctx: FlowCtx, kind: "mqtt" | "connect"): void {
-    const up = this.upstream(ctx.host, ctx.port);
+    const up = this.upstream(ctx.host, ctx.port, ctx.decision.internet);
     const t0 = this.clock.now();
     const e = this.log.push({ kind, host: ctx.host, port: ctx.port, tls: ctx.tls, source: "internet", open: true, summary: `${kind === "mqtt" ? "MQTT" : "TCP"} ${ctx.host}:${ctx.port}` });
-    const upSock: net.Socket = ctx.tls === "inspect" ? tls.connect({ host: up.host, port: up.port, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}) }) : net.connect(up.port, up.host);
+    const look = up.lookup ? { lookup: up.lookup } : {};
+    const upSock: net.Socket = (up.protocol ? up.protocol === "https:" : ctx.tls === "inspect") ? tls.connect({ host: up.host, port: up.port, servername: ctx.host, ...(up.ca ? { ca: up.ca } : {}), ...look }) : net.connect({ port: up.port, host: up.host, ...look });
     let bufOut: Buffer = Buffer.alloc(0);
     let bufIn: Buffer = Buffer.alloc(0);
     const count = (dir: "in" | "out", c: Buffer) => {
@@ -697,17 +805,18 @@ export class DeviceNet {
     s.on("close", end);
     upSock.on("close", end);
     upSock.on("error", (err) => {
-      this.log.update(e, { why: `could not reach ${ctx.host}:${ctx.port}: ${err.message}`, fix: "check this computer's connection" });
+      this.log.update(e, this.upstreamError(ctx, err, up));
       end();
     });
   }
 
   /** TLS passthrough: bytes go end to end; only host, port, bytes and timing are known. */
-  private passthrough(s: Duplex, host: string, port: number): void {
-    const up = this.upstream(host, port);
+  private passthrough(s: Duplex, host: string, port: number, entry?: AllowEntry): void {
+    const up = this.upstream(host, port, entry);
     const t0 = this.clock.now();
     const e = this.log.push({ kind: "connect", host, port, tls: "passthrough", source: "internet", open: true, bytes_out: 0, bytes_in: 0, summary: `TLS passthrough ${host}:${port}` });
-    const upSock = net.connect(up.port, up.host);
+    const upSock = net.connect({ port: up.port, host: up.host, ...(up.lookup ? { lookup: up.lookup } : {}) });
+    upSock.on("error", (err) => this.log.update(e, this.upstreamError({ host, port }, err, up)));
     s.on("data", (c: Buffer) => {
       e.bytes_out! += c.length;
       upSock.write(c);
