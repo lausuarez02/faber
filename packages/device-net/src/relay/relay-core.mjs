@@ -149,7 +149,10 @@ export class RateLimiter {
     const t = this.now();
     const cap = Math.max(1, this.perMinute);
     const b = this.buckets.get(key) || { tokens: cap, t };
-    b.tokens = Math.min(cap, b.tokens + ((t - b.t) / 60000) * cap);
+    // a clock that went back (the simulator starts a new test or run at 0 ms; a wall clock set back)
+    // starts the bucket full instead of draining it by the negative gap
+    if (t < b.t) b.tokens = cap;
+    else b.tokens = Math.min(cap, b.tokens + ((t - b.t) / 60000) * cap);
     b.t = t;
     this.buckets.set(key, b);
     if (b.tokens >= 1) {

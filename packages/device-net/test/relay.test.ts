@@ -12,7 +12,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { SandboxCA } from "../src/ca.ts";
 import { parseMocks, parseNetworkConfig, type NetworkConfig } from "../src/config.ts";
 import { DeviceNet } from "../src/gateway.ts";
-import { deviceHeader, deviceTokensWith, newDeviceToken, relayPack, relaySpecFrom, setEnvVar, simDeviceHeader, startRelay, SIM_DEVICE_TOKEN, SIM_RELAY_HOST, type RelaySpec } from "../src/relay.ts";
+import { deviceHeader, deviceTokensWith, newDeviceToken, RateLimiter, relayPack, relaySpecFrom, setEnvVar, simDeviceHeader, startRelay, SIM_DEVICE_TOKEN, SIM_RELAY_HOST, type RelaySpec } from "../src/relay.ts";
 import { request, wsTo } from "./harness.ts";
 
 const KEY = "sk-live-relaytest-0123456789abcdefKEY";
@@ -520,5 +520,20 @@ describe("the simulator plays the same relay", () => {
     ws.close();
     expect(n).toBe(3);
     expect(net2.log.since().some((x) => x.kind === "ws" && x.via === "relay" && x.host === "api.example.com")).toBe(true);
+  });
+});
+
+describe("relay rate limit", () => {
+  it("a clock that goes back (the simulator's next test starts at 0 ms) starts full, not drained", () => {
+    let now = 0;
+    const l = new RateLimiter(3, () => now);
+    now = 138_000;
+    for (let i = 0; i < 3; i++) expect(l.take("dev").ok).toBe(true);
+    expect(l.take("dev").ok).toBe(false);
+    now = 500; // a new test run: virtual time restarts
+    for (let i = 0; i < 3; i++) expect(l.take("dev").ok, `request ${i + 1} after the clock went back`).toBe(true);
+    expect(l.take("dev")).toEqual({ ok: false, retry_after_s: 20 });
+    now = 20_500; // refills at 3 a minute as before
+    expect(l.take("dev").ok).toBe(true);
   });
 });
