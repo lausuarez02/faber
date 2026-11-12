@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@jumper/agent-skill": "workspace:*",
     "@jumper/mcp": "workspace:*",
     "@jumper/runner": "workspace:*",
     "@jumper/session": "workspace:*",

@@ -6,7 +6,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createLiveHub, ProjectSession, projectId, type AgentPresence, type CallMeta, type LiveHubCore } from "@jumper/session";
+import { createLiveHub, ProjectSession, projectId, TOOLS, type AgentPresence, type CallMeta, type LiveHubCore } from "@jumper/session";
+import { installProjectFiles } from "@jumper/agent-skill";
 import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@jumper/mcp";
 import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts";
 
@@ -132,7 +133,8 @@ export function starterPrompt(url: string, dir: string, session: ProjectSession)
     `You are connected to Jumper, a hardware sandbox with a real simulator, through the "jumper" MCP server.`,
     `The person is watching the live canvas at ${url}; every part you place, wire you connect, sketch you write and test you run appears there as you do it, with your "why" as the caption, so always pass a short "why".`,
     `Project folder: ${dir}. ${p.parts.length ? `It has ${p.parts.length} parts (${parts}) and ${p.wires.length} wires; call get_project first.` : "It is empty: start with search_parts."}`,
-    `Loop: search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report. Every error says what failed, why, and the fix: do what it says.`,
+    `Loop: plan_device → search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report. Every error says what failed, why, and the fix: do what it says.`,
+    `A device to hold: think how the parts go inside (mounting, insertion order, wire room, USB and button access, battery safety): check_fit → propose_layout before design_case, and when asked what is needed, say what to buy, print, assemble and flash, with totals. The full guide is the jumper-hardware skill in this folder (.claude/skills/jumper-hardware/SKILL.md) and the MCP resource jumper://docs/hardware.`,
     `Goal: <describe the device, e.g. "a tamagotchi on an OLED with feed / play buttons" or "a rover that avoids obstacles">.`,
   ].join("\n");
 }
@@ -283,14 +285,21 @@ export async function startJumperServer(opts: JumperServerOptions): Promise<Jump
       return json(res, 400, { ok: false, error: "The body must be JSON like {\"withPrompt\": true}." });
     }
     writeFileSync(mcpConfigFile, JSON.stringify({ mcpServers: { jumper: { type: "http", url: `${base()}/mcp` } } }, null, 2));
+    // Round 12 skill: Claude Code starts in the project folder, so the project's skill (and AGENTS.md) load there.
+    let agentFiles: string[] = [];
+    try {
+      agentFiles = installProjectFiles(dir, { tools: TOOLS.map((t) => t.name), projectName: session.project.name }).files.filter((f) => f.action === "written" || f.action === "updated").map((f) => f.path);
+    } catch {
+      agentFiles = []; // the launch still works without the skill; jumper skill install --project <dir> retries it
+    }
     const command = body.withPrompt ? `${launchCommand()} ${sq(starterPrompt(base(), dir, session))}` : launchCommand();
     const script = command.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     const args = ["-e", 'tell application "Terminal" to activate', "-e", `tell application "Terminal" to do script "${script}"`];
-    if (body.dryRun) return json(res, 200, { ok: true, dryRun: true, command, osascript: args, mcpConfigFile });
+    if (body.dryRun) return json(res, 200, { ok: true, dryRun: true, command, osascript: args, mcpConfigFile, agentFiles });
     if (process.platform !== "darwin") return json(res, 501, { ok: false, error: "Launching a terminal is macOS-only for now.", fix: `Run this in a terminal: ${command}`, command });
     try {
       await run("osascript", args);
-      return json(res, 200, { ok: true, command, mcpConfigFile });
+      return json(res, 200, { ok: true, command, mcpConfigFile, agentFiles });
     } catch (err) {
       return json(res, 500, { ok: false, error: `Could not open Terminal: ${(err as Error).message}. Why: macOS may be asking for permission to control Terminal (System Settings → Privacy & Security → Automation). Fix: allow it, or run the command yourself.`, command });
     }
