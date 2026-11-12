@@ -102,6 +102,27 @@ describe("TcpConn", () => {
     expect(sent.filter((s) => s.len).at(-1)).toEqual({ seq: 2101, len: 1000 });
     c.reset();
   });
+
+  it("probes a zero window with one byte the device may keep, and goes on from its ACK (a slow reader)", async () => {
+    const sent: Array<{ seq: number; len: number }> = [];
+    const c = new TcpConn({ emit: (s) => sent.push({ seq: s.seq, len: s.payload?.length ?? 0 }), iss: 100, onClosed: () => {}, rtoMs: 20 });
+    c.open({ srcPort: 1, dstPort: 2, seq: 5000, ack: 0, flags: SYN, window: 1000, mss: 1000, payload: Buffer.alloc(0) });
+    const d = new PassThrough();
+    c.attach(d);
+    c.input({ srcPort: 1, dstPort: 2, seq: 5001, ack: 101, flags: ACK, window: 1000, payload: Buffer.alloc(0) });
+    d.write(Buffer.alloc(2500, 7));
+    await new Promise((r) => setTimeout(r, 5));
+    // The device takes 1000 bytes and closes its window (it is busy playing audio, say).
+    c.input({ srcPort: 1, dstPort: 2, seq: 5001, ack: 1101, flags: ACK, window: 0, payload: Buffer.alloc(0) });
+    await new Promise((r) => setTimeout(r, 30));
+    const probe = sent.filter((s) => s.len).at(-1)!;
+    expect(probe).toEqual({ seq: 1101, len: 1 });
+    // Its window opened meanwhile: it kept the probe byte and acknowledges it with room for more.
+    c.input({ srcPort: 1, dstPort: 2, seq: 5001, ack: 1102, flags: ACK, window: 2000, payload: Buffer.alloc(0) });
+    expect(sent.filter((s) => s.len).slice(-2)).toEqual([{ seq: 1102, len: 1000 }, { seq: 2102, len: 499 }]);
+    c.input({ srcPort: 1, dstPort: 2, seq: 5001, ack: 2601, flags: ACK, window: 2000, payload: Buffer.alloc(0) });
+    c.reset();
+  });
 });
 
 describe("netstack + gateway", () => {

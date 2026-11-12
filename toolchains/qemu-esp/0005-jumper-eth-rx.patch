@@ -1,0 +1,32 @@
+diff --git a/hw/net/opencores_eth.c b/hw/net/opencores_eth.c
+index 574dff8..9afd736 100644
+--- a/hw/net/opencores_eth.c
++++ b/hw/net/opencores_eth.c
+@@ -378,7 +378,15 @@ static bool open_eth_can_receive(NetClientState *nc)
+ {
+     OpenEthState *s = qemu_get_nic_opaque(nc);
+ 
+-    return GET_REGBIT(s, MODER, RXEN) && (s->regs[TX_BD_NUM] < 0x80);
++    /*
++     * Jumper: also wait for a free (empty) RX descriptor. Upstream drops a frame that finds the ring
++     * full (BUSY), as the chip would; under Jumper the network delivers frames while the CPU is
++     * parked, so a burst of TCP segments overflowed the driver's few RX buffers and every overflow
++     * cost the sender a retransmission timeout. Holding the frame in QEMU's queue until the driver
++     * hands a buffer back is what a Wi-Fi access point's buffering looks like to the device.
++     */
++    return GET_REGBIT(s, MODER, RXEN) && (s->regs[TX_BD_NUM] < 0x80) &&
++           (rx_desc(s)->len_flags & RXD_E);
+ }
+ 
+ static ssize_t open_eth_receive(NetClientState *nc,
+@@ -727,6 +735,10 @@ static void open_eth_desc_write(void *opaque,
+     trace_open_eth_desc_write((uint32_t)addr, (uint32_t)val);
+     memcpy((uint8_t *)s->desc + addr, &val, size);
+     open_eth_check_start_xmit(s);
++    /* Jumper: an RX buffer handed back may let a queued frame in (see open_eth_can_receive). */
++    if (open_eth_can_receive(qemu_get_queue(s->nic))) {
++        qemu_flush_queued_packets(qemu_get_queue(s->nic));
++    }
+ }
+ 
+ 

@@ -10,6 +10,7 @@
 #   0002 GPIO matrix + interrupts, LEDC, GP-SPI, RMT, ADC, UART1/2, I2C on S3/C3 and I2C1 (round 10, esp-periph)
 #   0003 pad pull-up / pull-down tracking (IO_MUX, RTC_IO), lockstep waits for Jumper after a pull change (round 10, esp-app)
 #   0004 I2S: ESP32 I2S0/I2S1 with their DMA, S3 I2S0/I2S1 and C3 I2S0 through GDMA; TX/RX frames as ST/SR (round 13, audio)
+#   0005 OpenCores Ethernet: an RX frame waits in QEMU's queue for a free descriptor instead of being dropped (round 13)
 # Bridge protocol v6 = all of the above. Protocol: hw/gpio/esp32_gpio.c, packages/sim-backends/src/qemu-esp/protocol.ts.
 ARG QEMU_TAG=esp-develop-9.2.2-20260417
 FROM debian:bookworm-slim AS build
@@ -20,9 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 --branch ${QEMU_TAG} https://github.com/espressif/qemu /src
 WORKDIR /src
-COPY 0001-jumper-bridge.patch 0002-jumper-peripherals.patch 0003-jumper-pads.patch 0004-jumper-i2s.patch /tmp/
+COPY 0001-jumper-bridge.patch 0002-jumper-peripherals.patch 0003-jumper-pads.patch 0004-jumper-i2s.patch 0005-jumper-eth-rx.patch /tmp/
 RUN git apply /tmp/0001-jumper-bridge.patch && git apply /tmp/0002-jumper-peripherals.patch && git apply /tmp/0003-jumper-pads.patch \
- && git apply /tmp/0004-jumper-i2s.patch
+ && git apply /tmp/0004-jumper-i2s.patch && git apply /tmp/0005-jumper-eth-rx.patch
 RUN ./configure --prefix=/opt/qemu --target-list=xtensa-softmmu,riscv32-softmmu \
       --enable-gcrypt --enable-slirp --disable-sdl --disable-gtk --disable-vnc --disable-capstone \
       --disable-docs --disable-tools --disable-user --disable-werror \

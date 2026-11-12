@@ -256,9 +256,13 @@ export class TcpConn {
       return;
     }
     if (this.sndWnd === 0 && this.buf.length > seqDiff(this.sndNxt, this.sndUna)) {
-      // Zero-window probe: one byte past the window.
+      // Zero-window probe: one byte past the window. It takes its sequence number (as BSD does): a
+      // device whose window opened meanwhile keeps the byte and acknowledges it, and that ACK must
+      // not look like one for data never sent (round 13: a slow reader, I2S playback of a streamed
+      // download, stalled for good here). A dropped probe is sent again by go-back-N.
       const inflight = seqDiff(this.sndNxt, this.sndUna);
       this.o.emit({ seq: this.sndNxt, ack: this.rcvNxt, flags: ACK, window: OUR_WINDOW, payload: this.buf.subarray(inflight, inflight + 1) });
+      this.sndNxt = seqAdd(this.sndNxt, 1);
       this.arm();
       return;
     }
