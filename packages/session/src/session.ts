@@ -1734,6 +1734,9 @@ export class ProjectSession {
         visuals.push({ id: s.id, ...(s.name ? { name: s.name } : {}), passed: false, t_ms: round(host.timeMs), reason: je.message, inputs: [], frames: [], replayable: false });
       } finally {
         host.dispose();
+        // a scenario's network_fault steps last for that scenario only (the last one's used to stay
+        // active for the next run / live session)
+        if (net?.faults.length) net.clearFaults();
         if (net && (net.mocks.list.length !== projectMocks.length || net.mocks.list.some((m, i) => m !== projectMocks[i]))) net.setMocks(projectMocks);
       }
       const span = mine.length ? mine[mine.length - 1]!.vt - mine[0]!.vt : 0;
