@@ -95,7 +95,8 @@ describe("new_project gives the project the skill", () => {
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       const r = (await s.call("new_project", { template: "blank", name: "Smiley keychain" })) as { agent_files?: string[] };
-      expect(r.agent_files).toEqual([SKILL_PATH, "AGENTS.md"]);
+      expect(r.agent_files).toEqual([SKILL_PATH, "AGENTS.md", "CLAUDE.md"]);
+      expect(readFileSync(join(dir, "CLAUDE.md"), "utf8")).toMatch(/@AGENTS\.md/);
       expect(readFileSync(join(dir, SKILL_PATH), "utf8")).toMatch(/^---\nname: jumper-hardware\n/);
       expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).toMatch(/AGENTS.md: Smiley keychain/);
       const steps = (await s.call("list_steps", {})) as { steps: { label?: string; changes?: unknown }[] };

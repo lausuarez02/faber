@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { MARKER, renderAgentsMd, renderSkillMd, SKILL_NAME, type RenderOptions } from "./render.ts";
+import { MARKER, renderAgentsMd, renderClaudeMd, renderSkillMd, SKILL_NAME, type RenderOptions } from "./render.ts";
 
 export const SKILL_PATH = `.claude/skills/${SKILL_NAME}/SKILL.md`;
 export const AGENTS_PATH = "AGENTS.md";
+export const CLAUDE_PATH = "CLAUDE.md";
 
 export interface AgentFile {
   /** Path relative to the project folder. */
@@ -21,6 +22,8 @@ export function projectAgentFiles(o: RenderOptions & { projectName?: string }): 
   return [
     { path: SKILL_PATH, content: renderSkillMd(o) },
     { path: AGENTS_PATH, content: renderAgentsMd(o, o.projectName) },
+    // Claude Code always loads a project's CLAUDE.md (a skill only when the model picks it): it imports AGENTS.md.
+    { path: CLAUDE_PATH, content: renderClaudeMd() },
   ];
 }
 

@@ -165,7 +165,9 @@ reaches every agent without touching your global config:
   `jumper://docs/hardware` with the whole guide ([hardware-guide.md](hardware-guide.md)).
 - **Claude Code in a project folder**: `<project>/.claude/skills/jumper-hardware/SKILL.md`, which
   Claude Code loads by itself. `new_project`, `jumper new`, Open in Agent → Launch and
-  `jumper skill install --project <dir>` write it (and `<project>/AGENTS.md` for Codex and others).
+  `jumper skill install --project <dir>` write it, `<project>/AGENTS.md` for Codex and others, and
+  `<project>/CLAUDE.md`, which imports AGENTS.md so Claude Code always has the guide in context (a
+  skill is only loaded when the model picks it).
   A file you wrote yourself is kept unless `--force`; `JUMPER_AGENT_FILES=0` turns it off.
   `jumper skill print [--target skill|agents|guide|instructions]` prints it.
 - **Claude Code anywhere**: the plugin in [plugins/jumper](../plugins/jumper/README.md) (the skill

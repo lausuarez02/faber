@@ -44,7 +44,7 @@ describe("jumper CLI", () => {
     expect(jumper("skill", "frob")).toMatchObject({ code: 2, err: expect.stringMatching(/print or install.*Fix:/) });
     writeFileSync(join(dir, "own", "AGENTS.md"), "# mine\n");
     const inst = JSON.parse(jumper("skill", "install", "--project", "own", "--json").out) as { files: { path: string; action: string }[] };
-    expect(inst.files.map((f) => `${f.path}:${f.action}`)).toEqual([".claude/skills/jumper-hardware/SKILL.md:written", "AGENTS.md:kept"]);
+    expect(inst.files.map((f) => `${f.path}:${f.action}`)).toEqual([".claude/skills/jumper-hardware/SKILL.md:written", "AGENTS.md:kept", "CLAUDE.md:written"]);
     expect(readFileSync(join(dir, "own", "AGENTS.md"), "utf8")).toBe("# mine\n");
     expect(jumper("skill", "install", "--project", "own", "--force").out).toMatch(/updated +.*AGENTS.md/);
   });

@@ -60,8 +60,9 @@ History
 Agents
   skill print [--target skill|agents|guide|instructions]   print Jumper's hardware guide for agents
   skill install [--project D] [--force]   write <project>/.claude/skills/jumper-hardware/SKILL.md (Claude
-                                          Code loads it in that folder) and <project>/AGENTS.md (Codex and
-                                          others); files you wrote yourself are kept unless --force
+                                          Code loads it in that folder), <project>/AGENTS.md (Codex and
+                                          others) and <project>/CLAUDE.md (imports AGENTS.md); files you
+                                          wrote yourself are kept unless --force
 Any tool
   call <tool> [json-args]                 e.g. jumper call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
   tools                                   list tools

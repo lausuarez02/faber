@@ -25,7 +25,7 @@ or, in two steps: `/plugin marketplace add /path/to/jumper` then `/plugin instal
 
 ## Without the plugin
 
-Every Jumper project already carries the skill: `new_project`, `jumper new`, the app's **Open in Agent → Launch Claude Code** and `jumper skill install --project <dir>` write `<project>/.claude/skills/jumper-hardware/SKILL.md` (Claude Code loads it when it runs in that folder) and `<project>/AGENTS.md` (Codex and other agents). Files you wrote yourself are kept. Any MCP client also gets the same know-how from the server: its instructions, the prompts `design-device`, `build-kit` and `design-for-assembly`, and the resource `jumper://docs/hardware`.
+Every Jumper project already carries the skill: `new_project`, `jumper new`, the app's **Open in Agent → Launch Claude Code** and `jumper skill install --project <dir>` write `<project>/.claude/skills/jumper-hardware/SKILL.md` (Claude Code loads it when it runs in that folder) `<project>/AGENTS.md` (Codex and other agents) and `<project>/CLAUDE.md` (imports AGENTS.md, so Claude Code always has the guide in context). Files you wrote yourself are kept. Any MCP client also gets the same know-how from the server: its instructions, the prompts `design-device`, `build-kit` and `design-for-assembly`, and the resource `jumper://docs/hardware`.
 
 ## Privacy
 

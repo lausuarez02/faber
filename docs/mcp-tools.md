@@ -31,7 +31,7 @@ The loop:
 
 Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print. If your client lists the jumper-hardware skill (Claude Code in a Jumper project), load it first.
 - Pocket and hand-held devices: aim for 20 mm thick or less.
-- Smallest parts that fit: check_fit before design_case; tell the person each trade-off.
+- Smallest parts that fit: check_fit (the size the person wants, or the shape's own) then propose_layout, both before design_case, even when it looks like it fits; tell the person each trade-off.
 - Battery devices: prefer a board with a built-in charger (search_parts {"query": "charger", "category": "board"}); if plan_device picked one without, offer the swap.
 - Do not pin positions unless the person asked for that spot.
 - Leave dome_mm and the edges on auto.

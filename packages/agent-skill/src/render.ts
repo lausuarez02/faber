@@ -91,6 +91,23 @@ export function renderAgentsMd(o: RenderOptions, projectName?: string): string {
   ].join("\n");
 }
 
+/**
+ * <project>/CLAUDE.md: Claude Code loads it into every session in the folder, so the guide is always
+ * in context (the skill is only loaded when the model chooses to). It imports AGENTS.md.
+ */
+export function renderClaudeMd(): string {
+  return [
+    `<!-- ${MARKER} Regenerate with: jumper skill install --project <dir>. -->`,
+    "",
+    "# Jumper project",
+    "",
+    `This folder is a Jumper hardware project: build it with the \`jumper\` MCP tools. Jumper's hardware guide is imported below (the same guide is the \`${SKILL_NAME}\` skill): from the first answer, think how the person will put the parts inside, what they will buy and what they will print.`,
+    "",
+    "@AGENTS.md",
+    "",
+  ].join("\n");
+}
+
 /** A few lines appended to the MCP server instructions (AGENT_LOOP): the rules in short, and where the rest is. */
 export function renderInstructionsBlock(o: RenderOptions): string {
   const kit = (BUILD_KIT_ANSWER.needs ?? []).every((n) => o.tools.includes(n)) ? "get_build_kit" : "export_manufacturing (then read_file its BOM.md, PRINT.md, ASSEMBLY.md)";

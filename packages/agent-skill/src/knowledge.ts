@@ -49,7 +49,7 @@ export const RULES: Rule[] = [
   {
     id: "smallest-parts",
     text: `Pick the smallest parts that do the job, then prove they fit: ${tool("check_fit")} (under a second, nothing written) says what misses by how many mm and which smaller parts would fit (a smaller cell, a smaller screen, a board on its edge). Tell the person the trade-off (a smaller cell means shorter battery life) and let them choose.`,
-    short: `Smallest parts that fit: check_fit before design_case; tell the person each trade-off.`,
+    short: `Smallest parts that fit: check_fit (the size the person wants, or the shape's own) then propose_layout, both before design_case, even when it looks like it fits; tell the person each trade-off.`,
     mustSay: [/check_fit/],
   },
   {
