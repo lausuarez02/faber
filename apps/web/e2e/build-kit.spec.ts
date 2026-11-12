@@ -52,8 +52,14 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
 async function openApp(page: Page, url: string) {
   await page.goto(`${url}/`);
   await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
+  await closeHome(page);
+}
+
+/** A new browser (and a reload) lands on the Projects page: wait for it and go back to the project. */
+async function closeHome(page: Page) {
   const home = page.getByTestId("projects-home");
-  if (await home.isVisible({ timeout: 15_000 }).catch(() => false)) {
+  const shown = await home.waitFor({ state: "visible", timeout: 30_000 }).then(() => true, () => false);
+  if (shown) {
     await home.getByTestId("projects-close").click();
     await expect(home).toHaveCount(0);
   }
@@ -121,8 +127,7 @@ test("Build it: buy, print, assemble, flash; ticks are remembered; zip, PDF and 
     // ticks survive a reload (this browser only)
     await page.reload();
     await expect(page.getByTestId("app")).toBeVisible({ timeout: 30_000 });
-    const home = page.getByTestId("projects-home");
-    if (await home.isVisible({ timeout: 5_000 }).catch(() => false)) await home.getByTestId("projects-close").click();
+    await closeHome(page);
     await openKit(page, info);
     await expect(page.getByTestId("kit-total-to-buy")).toHaveText(after!);
     await expect(page.getByTestId("kit-buy-line").first().getByTestId("kit-tick")).toBeChecked();

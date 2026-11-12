@@ -40,7 +40,6 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
   const [making, setMaking] = useState<string | undefined>();
   const [fileError, setFileError] = useState<string | undefined>();
   const [copied, setCopied] = useState<string | undefined>();
-  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -173,7 +172,7 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
         </div>
       ) : (
         <>
-          <p className={`kv-summary ${summaryOpen ? "is-open" : ""}`} data-testid="kit-summary" onClick={() => setSummaryOpen(true)}>
+          <p className="kv-summary" data-testid="kit-summary">
             {kit.summary}
           </p>
           {kit.missing.length ? (

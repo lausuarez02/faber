@@ -221,8 +221,7 @@
   .kv-tabs { position: sticky; top: 0; z-index: 2; background: #0d0f12; padding: 8px 8px 0; gap: 0; justify-content: space-between; }
   .kv-tabs button { padding: 8px 6px; gap: 4px; }
   .kv-tabs button svg { display: none; }
-  .kv-summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .kv-summary.is-open { display: block; }
+  .kv-summary { flex-shrink: 0; }
   .kv-head { padding: 10px 16px; }
   .kv-head-actions { width: 100%; }
   .kv-head-actions .kv-region { flex: 1; }
