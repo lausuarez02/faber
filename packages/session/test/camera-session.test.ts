@@ -37,6 +37,8 @@ describe.skipIf(!ready)("a camera through the session (XIAO ESP32-S3 Sense, real
   it("runs: the firmware gets frames of the test card, the part shows a preview", async () => {
     const r = await call(s, "run", { ms: 1500 });
     expect(r.serial).toContain("ready");
+    // the board's 8 MB octal PSRAM is in the emulator too (frame buffers in PSRAM, as on the board)
+    expect(r.serial).not.toMatch(/PSRAM enabled but initialization failed/);
     const m = means(r.serial);
     expect(m.length).toBeGreaterThanOrEqual(2);
     // the test card's mean brightness at 160x120 grayscale

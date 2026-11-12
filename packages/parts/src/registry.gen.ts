@@ -15546,14 +15546,14 @@ export const partDefinitions: PartDefinition[] = [
         "toolchain": {
           "image": "jumper/arduino-esp32:3.3.12-r3",
           "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio,PSRAM=opi",
-          "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The emulator has no PSRAM for Arduino builds: psramFound() is false in the simulator and camera frame buffers go in internal RAM. The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
+          "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The 8 MB octal PSRAM is emulated (QEMU's SPI PSRAM model, psramFound() is true). The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
           "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
         },
-        "verified": "packages/sim-backends/src/qemu-esp/camera.integration.test.ts"
+        "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts (boot, GPIO, Serial with the PSRAM=opi simulator FQBN); camera: packages/sim-backends/src/qemu-esp/camera.integration.test.ts"
       },
       "availability": {
         "status": "available",
-        "reason": "Same ESP32-S3 emulation as the XIAO ESP32-S3 (its fixture test). Round 13: the camera fixture (packages/sim-backends/fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Jumper through the esp32-camera API on the native QEMU jb5-cam1 (packages/sim-backends/src/qemu-esp/camera.integration.test.ts)."
+        "reason": "Its fixture test passed on 2026-11-12 on the native QEMU jb5-cam1 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3-sense: boot, GPIO out, GPIO in with the pull-up, Serial). The camera fixture (fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Jumper through the esp32-camera API (camera.integration.test.ts). The jumper/qemu-esp Docker image with the camera port is not built."
       },
       "tags": [
         "3.3v",
@@ -15765,7 +15765,8 @@ export const partDefinitions: PartDefinition[] = [
         "User LED (orange, GPIO21, active low; LED_BUILTIN)",
         "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (no firmware has run through it on the ESP32-S3 yet)",
         "Camera (OV2640 / OV3660 on the Sense board) through the esp32-camera API in Jumper's simulation build: esp_camera_init with the pins checked, frame buffers in RAM (fb_count, returned with esp_camera_fb_return, FB-OVF when a frame does not fit), JPEG / RGB565 / grayscale / YUV422 / RGB888 frames at every frame size up to the sensor's largest, mirror / flip / brightness / contrast / saturation / special effects / colour bars, capture time per frame size",
-        "What the camera sees: a test scene, a still image, or the person's webcam (frames rendered and encoded by Jumper)"
+        "What the camera sees: a test scene, a still image, or the person's webcam (frames rendered and encoded by Jumper)",
+        "8 MB octal PSRAM (QEMU's SPI PSRAM model): psramFound() is true and camera frame buffers can live in PSRAM; PSRAM speed is not modelled"
       ],
       "doesNotEmulate": [
         "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
@@ -15780,7 +15781,6 @@ export const partDefinitions: PartDefinition[] = [
         "The native USB port (USB CDC): in the simulator Serial is UART0",
         "The camera interface itself (LCD_CAM DVP, DMA, XCLK on its pin, SCCB register traffic): the frames come from Jumper through the wrapped driver API; sensor register writes (set_reg) change nothing",
         "Auto exposure, white balance, noise, motion blur and lens distortion of the real sensor",
-        "PSRAM: psramFound() is false in the simulator (camera frame buffers go in internal RAM there); the board has 8 MB",
         "The PDM microphone, until the emulator's I2S receive path works; the microSD card"
       ],
       "testOnRealDevice": [

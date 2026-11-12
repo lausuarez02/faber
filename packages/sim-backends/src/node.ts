@@ -38,6 +38,8 @@ export function createNodeBackendFactory(opts: NodeBackendOptions = {}): Backend
         vcc: board.mcu.vcc,
         network: false,
         ...(board.mcu.flash?.sizeMB ? { flashSizeMB: board.mcu.flash.sizeMB } : {}),
+        // Round 13: the board's PSRAM (camera frame buffers): QEMU's SPI PSRAM, octal on the S3 boards that have it
+        ...(board.mcu.psram ? { psramMB: board.mcu.psram.sizeMB, ...(board.mcu.psram.mode === "octal" ? { extraArgs: ["-global", "driver=ssi_psram,property=is_octal,value=true"] } : {}) } : {}),
         ...opts.qemu,
         ...(opts.labels ? { labels: opts.labels } : {}),
       });

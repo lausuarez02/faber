@@ -116,5 +116,7 @@ export type BackendFactory = (board: {
     flash?: { sizeMB: number; mode?: string | undefined } | undefined;
     platform?: string | undefined;
     console?: string | undefined;
+    /** Round 13: PSRAM on the board (the emulator gets the same, when it can model it). */
+    psram?: { sizeMB: number; mode?: "quad" | "octal" | undefined } | undefined;
   };
 }) => McuBackend;

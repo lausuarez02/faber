@@ -433,7 +433,7 @@
     "toolchain": {
       "image": "jumper/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio,PSRAM=opi",
-      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The emulator has no PSRAM for Arduino builds: psramFound() is false in the simulator and camera frame buffers go in internal RAM. The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
+      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The 8 MB octal PSRAM is emulated (QEMU's SPI PSRAM model, psramFound() is true). The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
       "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
     },
     "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts (boot, GPIO, Serial with the PSRAM=opi simulator FQBN); camera: packages/sim-backends/src/qemu-esp/camera.integration.test.ts",
