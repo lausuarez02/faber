@@ -45,8 +45,14 @@ export interface McuBackend {
   onSerial(cb: (byte: number, cycle: number) => void): Unsubscribe;
   /** Optional: feed a byte into the default UART RX. */
   writeSerial?(byte: number): void;
-  /** Reset CPU and peripherals, keep the loaded program, cycles → 0. */
+  /** Reset CPU and peripherals, keep the loaded program, cycles → 0 (a fresh run: flash as loaded). */
   reset(): void;
+  /**
+   * Round 14, optional: reboot in the middle of a run (power cycle, reset button): like reset(), but
+   * what the firmware wrote to flash stays (a backend that has no writable flash leaves it out and
+   * reset() is used).
+   */
+  reboot?(): void;
   /** Optional: which pins the hardware I2C / SPI peripherals use (McuBackend pin ids). */
   readonly busPins?: McuBusPins;
   /**

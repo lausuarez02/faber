@@ -1187,7 +1187,7 @@ export class ProjectSession {
     return out;
   }
 
-  private firmwareSource(): string {
+  firmwareSource(): string {
     const info = this.firmwareInfo();
     if (!info?.sketchDir || !existsSync(info.sketchDir)) return "";
     return this.sourceFiles(info)
@@ -1417,8 +1417,11 @@ export class ProjectSession {
 
   private simKey(project: Project = this.project): string {
     const fw = this.loadHex() ?? "";
-    return topologyKey(project) + "|" + fw.length + ":" + createHash("sha1").update(fw).digest("hex").slice(0, 8);
+    return topologyKey(project) + "|" + fw.length + ":" + createHash("sha1").update(fw).digest("hex").slice(0, 8) + (this.liveSeed !== undefined ? `|seed ${this.liveSeed}` : "");
   }
+
+  /** Round 14: run {seed}: the live simulation's hardware RNG seed (undefined: random, like a chip). */
+  private liveSeed: number | undefined;
 
   private async getHost(progress?: PrepareProgress): Promise<{ host: SimHost; restarted?: string }> {
     await SimHost.preparePhysics(this.project);
@@ -1432,7 +1435,7 @@ export class ProjectSession {
     const had = !!this.host;
     this.host?.dispose();
     this.host = undefined;
-    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress, await this.boardNetwork());
+    const host = await SimHost.create(this.project, this.registry, this.loadHex(), progress, { ...(await this.boardNetwork()), ...(this.liveSeed !== undefined ? { seed: this.liveSeed } : {}) });
     this.host = host;
     this.hostKey = key;
     return this.withNetworkClock({ host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) });
@@ -1489,14 +1492,27 @@ export class ProjectSession {
     return { host: this.host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
   }
 
-  async run(args: { ms?: number; duration_ms?: number; speed?: number; reset?: boolean; frames?: boolean; serial_write?: string }, ctx: OpCtx): Promise<unknown> {
+  async run(args: { ms?: number; duration_ms?: number; speed?: number; reset?: boolean; frames?: boolean; serial_write?: string; seed?: number | null; reset_board?: boolean; clock?: string | null }, ctx: OpCtx): Promise<unknown> {
     const ms = Number(args.ms ?? args.duration_ms ?? 1000);
+    // Round 14: the hardware RNG seed (a change restarts at 0 ms), NTP's clock, a board reboot.
+    if (args.seed !== undefined) {
+      if (args.seed !== null && (!Number.isInteger(args.seed) || args.seed < 0)) fail("bad-arg", `run: seed ${String(args.seed)} is not valid`, "the seed is a whole number from 0 (the board's random numbers repeat for one seed)", 'pass e.g. {"seed": 7}, or {"seed": null} for truly random numbers');
+      this.liveSeed = args.seed ?? undefined;
+    }
+    const clockMs = typeof args.clock === "string" ? Date.parse(args.clock) : undefined;
+    if (clockMs !== undefined && Number.isNaN(clockMs)) fail("bad-arg", `run: clock '${args.clock}' is not a date-time`, "it is the time NTP gives the device from now on", 'pass e.g. {"clock": "2026-12-24T09:00:00Z"}, or null for this computer\'s clock');
     if (!Number.isFinite(ms) || ms <= 0) fail("bad-arg", `run: duration ${args.ms ?? args.duration_ms} is not valid`, "it must be a positive number of milliseconds", "pass e.g. { \"ms\": 3000 }");
     if (ms > 600_000) fail("bad-arg", `run: ${ms} ms is too long for one call`, "one call is capped at 600000 ms (10 virtual minutes)", "run in several calls, or write a scenario");
     const built = await this.ensureBuilt(ctx);
     const { host, restarted } = await this.getHost();
     const faults = Object.keys(host.faults()).length;
     if (args.reset && !restarted) host.reset();
+    if (args.clock !== undefined) {
+      const net = this.project.network ? await this.deviceNetwork.ensure() : undefined;
+      if (!net) fail("no-network", "run: clock needs a device network", "the clock is what the sandbox's NTP answers, and this project has no network", "give it one with set_network, and call configTime() in the firmware");
+      net.setClock(clockMs);
+    }
+    if (args.reset_board) host.resetBoard();
     const serialFrom = host.serialCursor;
     const t0 = host.timeMs;
     // Round 10: type into the console first (a MicroPython REPL line, a command an Arduino sketch reads).
@@ -1671,7 +1687,7 @@ export class ProjectSession {
 
   // =================================================================== tests
 
-  async writeScenario(args: { id: string; name?: string; description?: string; steps: unknown[]; timeout_ms?: number; why?: string }, ctx: OpCtx): Promise<unknown> {
+  async writeScenario(args: { id: string; name?: string; description?: string; steps: unknown[]; timeout_ms?: number; seed?: number; clock?: string; why?: string }, ctx: OpCtx): Promise<unknown> {
     if (!args.id || !Array.isArray(args.steps)) fail("missing-arg", "write_scenario needs 'id' and 'steps'", "one is missing", 'pass e.g. { "id": "blinks", "steps": [{ "expect_serial": "LED on", "within_ms": 1100 }] }');
     const normalized: string[] = [];
     const steps = args.steps.map((raw, i) => {
@@ -1679,7 +1695,7 @@ export class ProjectSession {
       if (n.note) normalized.push(`step ${i}: ${n.note}`);
       return n.step;
     });
-    const s: Scenario = { id: args.id, ...(args.name ? { name: args.name } : {}), ...(args.description ? { description: args.description } : {}), steps, ...(args.timeout_ms ? { timeout_ms: args.timeout_ms } : {}) } as Scenario;
+    const s: Scenario = { id: args.id, ...(args.name ? { name: args.name } : {}), ...(args.description ? { description: args.description } : {}), steps, ...(args.timeout_ms ? { timeout_ms: args.timeout_ms } : {}), ...(args.seed !== undefined ? { seed: args.seed } : {}), ...(args.clock !== undefined ? { clock: args.clock } : {}) } as Scenario;
     validateScenario(s, this.project, this.registry, this.scenarioOptions());
     const exists = this.project.scenarios.some((x) => x.id === s.id);
     const next = { ...this.project, scenarios: exists ? this.project.scenarios.map((x) => (x.id === s.id ? s : x)) : [...this.project.scenarios, s] };
@@ -1720,7 +1736,8 @@ export class ProjectSession {
     let framesSpan = -1;
     const boardNet = await this.boardNetwork();
     for (const s of pick) {
-      const host = await SimHost.create(this.project, this.registry, hex, undefined, boardNet);
+      // Round 14: the board's random numbers repeat per test (seed from the scenario, or fixed by its id).
+      const host = await SimHost.create(this.project, this.registry, hex, undefined, { ...boardNet, seed: scenarioSeed(s) });
       const mine: Frame[] = [];
       if (net?.faults.length) net.clearFaults();
       // a scenario's network_mock steps last for that scenario only
@@ -1739,6 +1756,7 @@ export class ProjectSession {
         // a scenario's network_fault steps last for that scenario only (the last one's used to stay
         // active for the next run / live session)
         if (net?.faults.length) net.clearFaults();
+        net?.setClock(undefined); // round 14: a scenario's clock / set_clock lasts for that scenario only
         if (net && (net.mocks.list.length !== projectMocks.length || net.mocks.list.some((m, i) => m !== projectMocks[i]))) net.setMocks(projectMocks);
       }
       const span = mine.length ? mine[mine.length - 1]!.vt - mine[0]!.vt : 0;
@@ -1872,7 +1890,7 @@ export class ProjectSession {
       if (!Number.isInteger(at) || at < 0 || at > last) fail("bad-arg", `screenshot: at_step ${args.at_step} is out of range`, `scenario '${sc.id}' has steps 0..${last}`, `pass a step index between 0 and ${last} (or leave at_step out for the end)`);
       await this.ensureBuilt(ctx);
       await SimHost.preparePhysics(this.project);
-      tmpHost = await SimHost.create(this.project, this.registry, this.loadHex(), undefined, await this.boardNetwork());
+      tmpHost = await SimHost.create(this.project, this.registry, this.loadHex(), undefined, { ...(await this.boardNetwork()), seed: scenarioSeed(sc) });
       const r = runScenario(tmpHost, sc, this.project, this.registry, undefined, { ...this.scenarioOptions(), stopAfter: at });
       host = tmpHost;
       scenarioNote = { scenario: sc.id, at_step: at, step: JSON.stringify(sc.steps[at]), ...(r.passed ? {} : { note: `the scenario failed before step ${at}: ${r.reason}; the picture shows the moment it failed` }) };
@@ -2221,4 +2239,15 @@ export function runSummary(ranMs: number, nowMs: number): string {
     return `${text} s`;
   };
   return Math.abs(nowMs - ranMs) < 1 ? `ran the device for ${secs(ranMs)}` : `ran ${secs(ranMs)} more (device clock at ${secs(nowMs)})`;
+}
+
+/**
+ * Round 14: the seed of a test's hardware random numbers: the scenario's own "seed", else a fixed
+ * number from its id, so firmware that acts "at random" does the same thing every run.
+ */
+export function scenarioSeed(s: { id: string; seed?: number }): number {
+  if (typeof s.seed === "number") return s.seed;
+  let h = 2166136261;
+  for (const ch of s.id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return h % 1_000_000;
 }

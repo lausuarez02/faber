@@ -6,6 +6,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { WebSocket } from "ws";
 import type { HttpMock, HttpMockResponse, Mock, MqttMock, WsFrame, WsMock } from "./config.ts";
 import { hostMatches } from "./config.ts";
+import { answerFor, matchOperation, type OpenApiMatch, type OpenApiMock } from "./openapi.ts";
+
+/** Round 14: an HTTP answer made from an OpenAPI operation (the gateway validates the request first). */
+export type OpenApiAnswer = HttpMock & { openapi: { mock: OpenApiMock; hit: OpenApiMatch } };
 import { decodeConnect, decodePublish, decodeSubscribe, enc, readPackets, summarizePacket, topicMatches, type MqttPacket } from "./mqtt.ts";
 
 export type Sleep = (ms: number) => Promise<void>;
@@ -66,8 +70,24 @@ export class MockSet {
     return this.list.some((m) => hostMatches(m.host, host));
   }
 
-  http(host: string, method: string, path: string): HttpMock | undefined {
-    return this.list.find((m): m is HttpMock => (m.kind ?? "http") === "http" && hostMatches(m.host, host) && (!(m as HttpMock).method || (m as HttpMock).method!.toUpperCase() === method.toUpperCase()) && pathMatches((m as HttpMock).path, path));
+  http(host: string, method: string, path: string): HttpMock | OpenApiAnswer | undefined {
+    for (const m of this.list) {
+      if (!hostMatches(m.host, host)) continue;
+      const kind = m.kind ?? "http";
+      if (kind === "http") {
+        const h = m as HttpMock;
+        if ((!h.method || h.method.toUpperCase() === method.toUpperCase()) && pathMatches(h.path, path)) return h;
+      } else if (kind === "openapi") {
+        const hit = matchOperation(m as OpenApiMock, method, path);
+        if (hit) return { ...answerFor(m as OpenApiMock, hit), openapi: { mock: m as OpenApiMock, hit } };
+      }
+    }
+    return undefined;
+  }
+
+  /** Round 14: the OpenAPI mock for a host (to say which operations it has when none fits). */
+  openapi(host: string): OpenApiMock | undefined {
+    return this.list.find((m): m is OpenApiMock => m.kind === "openapi" && hostMatches(m.host, host));
   }
 
   ws(host: string, path: string): WsMock | undefined {

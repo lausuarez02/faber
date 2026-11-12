@@ -2,7 +2,7 @@
 
 <!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @jumper/mcp gen:docs`. Do not edit by hand. -->
 
-64 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
+65 tools. The same operations are CLI subcommands (`jumper <tool> --json`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).
 
 ## Recommended loop (sent as the server's instructions)
 
@@ -39,6 +39,9 @@ Design for assembly (any device a person will hold): always think how the stuff 
 - Call propose_layout before design_case.
 - Say honestly what was not simulated: the print, the real fit and the hand feel were not tested.
 - Never put API keys in firmware: secrets by name (set_network), values in .env.
+- Test random / timed / offline behaviour with scenarios: seeded per test, preceded_by for timing, wifi_drop + reset_board for offline queues, OpenAPI mocks.
+- Cameras: a visible capture indicator, a countdown with cancel, owner review before anything is published.
+- Battery devices: estimate_power with the real duty cycles, set_power target_hours, and say it is an estimate.
 - Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety. After it, get_assembly_plan works out the shell, holder and order of every part with a picture per step: fix what its assembly-* checks flag.
 - "What do I need to build it?": get_build_kit, then answer Buy / Print / Assemble / Flash with totals.
 Hardware guide: resource jumper://docs/hardware; prompts design-device, build-kit, design-for-assembly.
@@ -98,6 +101,7 @@ Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every er
 | [`mark_stand_in`](#mark_stand_in) | Mark a part as a stand-in | yes (undoable step) |
 | [`restore_version`](#restore_version) | Restore an earlier version | yes (undoable step) |
 | [`set_power`](#set_power) | Plug or unplug the board's USB cable | yes (undoable step) |
+| [`estimate_power`](#estimate_power) | Battery life from duty cycles | no (read-only) |
 | [`set_assembly`](#set_assembly) | Say how the device is built (breadboard or soldered) | yes (undoable step) |
 | [`design_case`](#design_case) | Design a printable case | yes (undoable step) |
 | [`update_case`](#update_case) | Change the case | yes (undoable step) |
@@ -291,6 +295,9 @@ Run the simulation for ms of virtual time (deterministic, faster than real time;
 | `reset` | boolean |  | Restart from 0 ms first. |
 | `serial_write` | string |  | Text sent to the board's console before running, e.g. "print(2 + 2)\n" at a MicroPython REPL. |
 | `speed` | number |  | Ignored headless (always as fast as possible); kept for compatibility. |
+| `seed` | number \| null |  | Round 14: seed the board's hardware random numbers (esp_random, random()) so 'random' behaviour repeats; a new seed restarts at 0 ms; null = random again. Scenarios are seeded per test automatically. |
+| `reset_board` | boolean |  | Round 14: reboot the board before running (reset button / power cycle) without restarting the simulation: what the firmware wrote to flash (LittleFS, SPIFFS, NVS) stays. |
+| `clock` | string \| null |  | Round 14: the date-time NTP gives the device from now on, e.g. "2026-12-24T09:00:00Z" (advances with virtual time); null = this computer's clock. Needs a device network. |
 
 ### read_serial
 
@@ -354,7 +361,7 @@ Break something on purpose to harden the firmware: "disconnect" (module unplugge
 
 ### write_scenario
 
-Add or replace a deterministic test in jumper.json. Steps run in order, one action per step. Inputs: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"). Checks: serial text {"expect_serial": "LED on", "within_ms": 1100}; serial regular expression, with the pattern INSIDE expect_serial: {"expect_serial": {"regex": "hunger=\\d+"}, "within_ms": 1100}; "absent": true forbids the text; a printed number {"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500} (reads the latest "energy=64" / "energy: 64", so tests do not break on tick timing); a pin {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}); a part state {"expect_part": "buzzer1.on", "op": "==", "value": true, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"); a screen {"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}} or against a golden frame saved with read_display {save_as} {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000} (tolerance 0.02 = 2% of pixels may differ; animations: within_ms waits for a matching frame); robots {"expect_part": "world.collisions", "op": "==", "value": 0} (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached). Assert a real safety margin, e.g. world.min_clearance_cm >= 3, not > 0 (any gap counts as no collision). {"expect_no_errors": true}. Words a talking device (DFPlayer Mini + speaker) said: {"said": "dizzy", "within_ms": 500} (case-insensitive part of the clip's words; {"said": {"regex": "^hi"}}; "part": "df1" picks one DFPlayer; "absent": true forbids it; only clips heard through a wired speaker count, and each said step matches clips after the previous match). Timing: within_ms = keep simulating up to that long until it holds, and it passes the moment it holds, so after an input wait for the side the value moves TOWARD (e.g. "<" when it should drop): a condition that was already true before the input passes at 0 ms and tests nothing (run_tests warns). Without within_ms the check is instant. expect_serial only matches text printed after the previous expect_serial match. Write scenarios from the user's goal, one per behaviour.
+Add or replace a deterministic test in jumper.json. Steps run in order, one action per step. Inputs: {"run_ms": 500}, {"press": "btn1", "hold_ms": 50}, {"release": "btn1"}, {"set": "pot1.position", "value": 0.8}, {"serial_write": "feed\n"}, {"inject_fault": "oled1", "kind": "disconnect"} (noisy also takes "field" and "amplitude"). Checks: serial text {"expect_serial": "LED on", "within_ms": 1100}; serial regular expression, with the pattern INSIDE expect_serial: {"expect_serial": {"regex": "hunger=\\d+"}, "within_ms": 1100}; "absent": true forbids the text; a printed number {"expect_serial_value": "energy", "op": ">=", "value": 60, "within_ms": 1500} (reads the latest "energy=64" / "energy: 64", so tests do not break on tick timing); a pin {"expect_pin": "uno.D13", "level": "high", "within_ms": 50} (or "voltage": {"min": 2, "max": 3}); a part state {"expect_part": "buzzer1.on", "op": "==", "value": true, "within_ms": 500} (ops == != > >= < <= contains matches; fields from get_part "state"); a screen {"expect_display": "oled1", "region": [40, 16, 48, 32], "lit": {"min": 20}} or against a golden frame saved with read_display {save_as} {"expect_display": "oled1", "matches": "sad-face", "within_ms": 3000} (tolerance 0.02 = 2% of pixels may differ; animations: within_ms waits for a matching frame); robots {"expect_part": "world.collisions", "op": "==", "value": 0} (world fields: collisions, min_clearance_cm, travelled_cm, x, y, heading, speed, sonar_cm, touching; arm: gripper_x, gripper_y, reached). Assert a real safety margin, e.g. world.min_clearance_cm >= 3, not > 0 (any gap counts as no collision). {"expect_no_errors": true}. Words a talking device (DFPlayer Mini + speaker) said: {"said": "dizzy", "within_ms": 500} (case-insensitive part of the clip's words; {"said": {"regex": "^hi"}}; "part": "df1" picks one DFPlayer; "absent": true forbids it; only clips heard through a wired speaker count, and each said step matches clips after the previous match). Timing: within_ms = keep simulating up to that long until it holds, and it passes the moment it holds, so after an input wait for the side the value moves TOWARD (e.g. "<" when it should drop): a condition that was already true before the input passes at 0 ms and tests nothing (run_tests warns). Without within_ms the check is instant. expect_serial only matches text printed after the previous expect_serial match. Round 14, devices that act at random, cameras, speech APIs, offline queues: each test seeds the board's hardware random numbers (esp_random, random()) from its id, so "random" timing repeats ("seed" picks another sequence); "said" also matches the text the firmware sends to a speech API (/v1/audio/speech "input" and similar); pictures {"expect_capture": "cam", "within_ms": 60000} or {"expect_capture": true, "absent": true, "within_ms": 12000}; order and timing {"preceded_by": {"said": "picture in 10", "min_ms": 9000, "max_ms": 11000}} on expect_capture or request (or {"serial": ...}, {"capture": true}, {"request": {"host", "path"}}); what a request carried {"request": {"host", "method", "path", "status", "content_type": "multipart/form-data", "body_json": {"photo.content_type": "image/jpeg", "caption": "?"}, "body_contains": "...", "min_bytes": 1000}}; {"network_fault": {"kind": "wifi_drop"}} then {"network_fault": {"kind": "clear"}} for offline / back online; {"reset_board": true} reboots the board keeping its flash (LittleFS, NVS), so a saved queue survives; {"set_clock": "2026-12-24T09:00:00Z"} (or the scenario's "clock") is what NTP answers. Idle firmware runs about 10x faster than real time, so minutes of virtual time are fine (raise timeout_ms). Write scenarios from the user's goal, one per behaviour.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -363,6 +370,8 @@ Add or replace a deterministic test in jumper.json. Steps run in order, one acti
 | `description` | string |  |  |
 | `steps` | object[] | yes |  |
 | `timeout_ms` | number |  | Virtual-time limit (default 60000). |
+| `seed` | number |  | Round 14: seed of the board's hardware random numbers (esp_random, random()) for this test. Default: fixed per scenario id, so firmware that acts 'at random' does the same thing every run; another seed tries another sequence. |
+| `clock` | string |  | Round 14: the date-time NTP gives the device when the test starts, e.g. "2026-12-24T09:00:00Z" (advances with virtual time). Default: this computer's clock. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "add a current-limiting resistor for the LED". Consecutive edits with the same why form one undoable step. |
 
 ### run_tests
@@ -553,8 +562,21 @@ Say whether a USB cable is plugged into the board (jumper.json power.usb; defaul
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `usb` | boolean | yes | true = a USB cable is plugged into the board; false = it runs from its battery path only. |
+| `usb` | boolean |  | true = a USB cable is plugged into the board; false = it runs from its battery path only. |
+| `target_hours` | number \| null |  | Round 14: hours the device should run on one charge (jumper.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it. |
+| `duty` | object \| null |  | Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Merged into power.duty; null clears it. |
+| `sleep` | string \| null |  | one of `none`, `light`, `deep`, `null`. Round 14: what the board does between active moments. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "check it runs from the battery". |
+
+### estimate_power
+
+Round 14: how long the battery lasts, from each load's datasheet current and how much of the time it is on: the board CPU (and its sleep), Wi-Fi (connected vs bursts), cameras, screens, audio amplifiers, any part with a current figure. Loads without a duty in jumper.json power.duty are guessed from the firmware (listed in assumptions: correct them). Try other patterns without saving: {"duty": {"camera": {"on_s": 2, "every_s": 600}, "wifi": {"on_s": 10, "every_s": 3600}}, "target_hours": 24}. Returns {summary, battery {part, capacity_mah, usable_mah}, avg_ma, peak_ma, hours, target_hours, loads [{load, part, active_ma, idle_ma, duty, duty_text, avg_ma, share, source}], assumptions, suggestions (the cell that meets the target, and what to duty-cycle)}. Save a pattern with set_power {duty, target_hours}. Estimates, not measurements: measure a real unit.
+
+| Argument | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `target_hours` | number |  | Hours on one charge to compare against (default: power.target_hours). |
+| `duty` | object |  | What-if duty per role or part id: "always", "off" or {"on_s", "every_s"}. |
+| `sleep` | string |  | one of `none`, `light`, `deep` |
 
 ### set_assembly
 
@@ -701,7 +723,7 @@ Rehearse a bad network while the device runs: {"kind": "wifi_drop"} (the access 
 
 ### set_network
 
-Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}}]}, {"secrets": ["API_KEY"]} (names only: the value goes in the project's .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}, {"relay": {"requests_per_minute": 30}} (limits of the API relay the real device uses and the simulator plays at relay.sandbox.jumper; jumper relay init writes it). Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.
+Change jumper.json "network" (undoable) and apply it live. {"mode": "offline" | "mock" | "internet"} (mock is the default and what run_tests uses; internet reaches only hosts in allow), {"allow": [{"host": "api.example.com", "ports"?: [443], "tls"?: "inspect" | "passthrough", "secrets"?: ["API_KEY"], "headers"?: {"Authorization": "Bearer {{secret:API_KEY}}"}, "local"?: true, "to"?: "http://127.0.0.1:7821"}]} (round 14: "local": true opts ONE host in to reaching this computer or the LAN (without it a host that resolves to a loopback / private address is refused in every mode); "to" sends that host's requests to a service you run here, also in mock mode, while the device keeps calling its own name; mocks still answer first), {"secrets": ["API_KEY"]} (names only: the value goes in the project's .env or the environment, never in jumper.json), {"wifi": {"ssid": "Home", "password"?: "...", "rssi"?: -60}} (the sandbox access point; leave out to accept any SSID), {"cassette": "name", "record": true}, {"relay": {"requests_per_minute": 30}} (limits of the API relay the real device uses and the simulator plays at relay.sandbox.jumper; jumper relay init writes it). Only the fields you pass change; null removes one. A literal key in a header is refused with the fix.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |

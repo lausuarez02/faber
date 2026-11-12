@@ -31,7 +31,8 @@ export type SimEvent =
   | { type: "serial"; byte: number; cycle: number }
   | { type: "run"; tMs: number }
   | { type: "stopped" }
-  | { type: "reset" };
+  | { type: "reset" }
+  | { type: "board-reset"; tMs: number };
 
 export interface SimDiagnostic extends Diagnostic {
   partId: string;
@@ -113,6 +114,8 @@ export class Simulation {
   private _lastSolve: SolveResult | undefined;
   private _trace: TraceEntry[] = [];
   private serialBytes: number[] = [];
+  /** Round 14: [byte offset in serialText(), virtual ms] at every line end, for "when was this printed". */
+  private serialLineEnds: [number, number][] = [];
   private listeners = new Set<(e: SimEvent) => void>();
   private solving = false;
   private solveAgain = false;
@@ -296,6 +299,7 @@ export class Simulation {
     this.runTarget = 0;
     this._trace = [];
     this.serialBytes = [];
+    this.serialLineEnds = [];
     this.circuit = new Circuit();
     this.mcu?.reset();
     this.mcuOffset = 0;
@@ -382,12 +386,28 @@ export class Simulation {
     } else this.applyPower();
   }
 
+  /**
+   * Round 14: reboot the firmware board now (its reset button / EN pin, or a power cycle), keeping the
+   * virtual clock, the parts and the serial log. What the firmware wrote to flash stays when the
+   * backend keeps it (the ESP32 emulator does: LittleFS, SPIFFS, NVS survive). Returns false when
+   * there is no firmware board.
+   */
+  resetBoard(): boolean {
+    if (!this.mcu) return false;
+    if (this.stepping) throw new Error("resetBoard() was called while the firmware was running a step. Fix: call it between runFor() calls.");
+    this.applyPower();
+    this.emit({ type: "board-reset", tMs: this.timeMs });
+    return true;
+  }
+
   /** Reset the MCU at the current cycle: on power loss its pins let go; on power-on it boots from the start. */
   private applyPower(): void {
     this.powerPending = false;
     if (!this.mcu) return;
     this.mcuOffset = this.clock.cycles;
-    this.mcu.reset();
+    // a power cycle mid-run keeps what the firmware wrote to flash (round 14); reset() starts a fresh run
+    if (this.mcu.reboot) this.mcu.reboot();
+    else this.mcu.reset();
     this.solve();
   }
 
@@ -572,6 +592,22 @@ export class Simulation {
   /** Hash of the pin/serial trace. Same project + inputs → same hash. */
   traceHash(): string {
     return hashString(JSON.stringify(this._trace));
+  }
+
+  /**
+   * Round 14: virtual ms when the byte at `offset` of serialText() was printed, to the line: the time of
+   * the line end after it (or now, for an unfinished last line).
+   */
+  serialTimeAt(offset: number): number {
+    const ends = this.serialLineEnds;
+    let lo = 0;
+    let hi = ends.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (ends[mid]![0] <= offset) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo < ends.length ? ends[lo]![1] : this.timeMs;
   }
 
   /** Everything the firmware printed on the default UART, as latin-1 text. */
@@ -1063,6 +1099,7 @@ export class Simulation {
   private handleSerial(byte: number, cycle: number): void {
     this._trace.push({ cycle, kind: "serial", byte });
     this.serialBytes.push(byte);
+    if (byte === 10) this.serialLineEnds.push([this.serialBytes.length, this.clock.toMs(cycle)]);
     this.emit({ type: "serial", byte, cycle });
   }
 

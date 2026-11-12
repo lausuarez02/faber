@@ -152,6 +152,25 @@ export const SaidStepSchema = z
   })
   .strict();
 
+const SaidMatch = z.union([z.string(), z.object({ contains: z.string() }).strict(), z.object({ regex: z.string() }).strict()]);
+
+/**
+ * Round 14: "this happened before the event, this long before": a modifier of expect_capture and
+ * request. One of said / serial / capture / request, plus the gap: the last such event before the
+ * checked one must be between min_ms and max_ms earlier (e.g. a spoken "picture in 10 seconds" 9 to
+ * 11 s before the capture).
+ */
+export const PrecededBySchema = z
+  .object({
+    said: SaidMatch.optional().describe("Words said out loud (a clip's words, or the text the device sent to a speech API)."),
+    serial: SerialMatch.optional().describe("Text printed on serial."),
+    capture: z.union([PartRef, z.literal(true)]).optional().describe("A picture the camera took (part id, or true: any camera)."),
+    request: z.object({ host: z.string().min(1), path: z.string().optional(), method: z.string().optional() }).strict().optional().describe("A request the device made."),
+    min_ms: Ms.optional().describe("At least this long before (default 0)."),
+    max_ms: Ms.optional().describe("At most this long before (default: any time since the scenario started)."),
+  })
+  .strict();
+
 /** Round 10 (network): the device made this request (HTTP, WebSocket or MQTT) through the sandbox. */
 export const RequestStepSchema = z
   .object({
@@ -163,10 +182,47 @@ export const RequestStepSchema = z
         status: z.number().int().optional().describe("The status the device got."),
         count: z.number().int().positive().optional().describe("At least this many (default 1), counted since the scenario started."),
         kind: z.enum(["http", "ws", "mqtt"]).optional().describe("Default http or ws."),
+        content_type: z.string().optional().describe('Round 14: the Content-Type contains this, e.g. "multipart/form-data" or "application/json".'),
+        body_contains: z.string().optional().describe("Round 14: the body (its text, a field value, a multipart part's name or file name) contains this, case-insensitive."),
+        body_json: z.record(z.string(), z.unknown()).optional().describe('Round 14: these fields of a JSON, form or multipart body have these values: nested objects or dot paths ("messages.0.role"); "x*" = starts with x, "?" = present and not empty. A multipart file part has <name>.filename, <name>.content_type, <name>.bytes.'),
+        min_bytes: z.number().int().nonnegative().optional().describe("Round 14: the body has at least this many bytes."),
       })
       .strict(),
     within_ms: Ms.optional(),
     absent: z.boolean().optional().describe("true: the device must NOT have made it (within within_ms, or so far)."),
+    preceded_by: PrecededBySchema.optional().describe("Round 14: something that must have happened shortly before the matching request."),
+    ...common,
+  })
+  .strict();
+
+/** Round 14: a picture the camera took (the firmware's esp_camera_fb_get), or that it did not. */
+export const ExpectCaptureStepSchema = z
+  .object({
+    expect_capture: z.union([PartRef, z.literal(true)]).describe("The camera part (or true: the only / any camera)."),
+    count: z.number().int().positive().optional().describe("At least this many pictures (default 1), counted since the last matched expect_capture (or the start of the test)."),
+    within_ms: Ms.optional().describe("Keep simulating up to this long until it happens."),
+    absent: z.boolean().optional().describe("true: NO picture may be taken from this step on (within within_ms)."),
+    preceded_by: PrecededBySchema.optional().describe('Something that must have happened shortly before the picture, e.g. {"said": "picture", "min_ms": 9000, "max_ms": 11000}.'),
+    ...common,
+  })
+  .strict();
+
+/**
+ * Round 14: reboot the firmware board now (reset button / power cycle) without restarting the test:
+ * virtual time, the parts and the network log go on; what the firmware wrote to flash (LittleFS,
+ * SPIFFS, NVS / Preferences) stays, as on the chip.
+ */
+export const ResetBoardStepSchema = z
+  .object({ reset_board: z.literal(true).describe("Reboot the firmware board, keeping its flash."), ...common })
+  .strict();
+
+/**
+ * Round 14: the date and time the device gets from NTP (configTime / SNTP) from now on, advancing with
+ * virtual time, so clock-based behaviour (a post at 9:00, a daily limit) is testable.
+ */
+export const SetClockStepSchema = z
+  .object({
+    set_clock: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "must be a date-time such as 2026-12-24T09:00:00Z").describe('ISO 8601 date-time, e.g. "2026-12-24T09:00:00Z".'),
     ...common,
   })
   .strict();
@@ -237,6 +293,9 @@ export const ScenarioStepSchema = z.union([
   NetworkFaultStepSchema,
   NetworkMockStepSchema,
   CameraFrameStepSchema,
+  ExpectCaptureStepSchema,
+  ResetBoardStepSchema,
+  SetClockStepSchema,
 ]);
 
 /** Action key → its schema. Used to give one precise error instead of a union dump. */
@@ -259,6 +318,9 @@ export const STEP_KINDS = {
   network_fault: NetworkFaultStepSchema,
   network_mock: NetworkMockStepSchema,
   camera_frame: CameraFrameStepSchema,
+  expect_capture: ExpectCaptureStepSchema,
+  reset_board: ResetBoardStepSchema,
+  set_clock: SetClockStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
 
@@ -283,7 +345,10 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   network_fault: `{ "network_fault": { "kind": "wifi_drop" } }, then later { "network_fault": { "kind": "clear" } }; or { "network_fault": { "kind": "http_error", "status": 503, "count": 1 } }`,
   network_mock: `{ "network_mock": { "host": "api.example.com", "path": "/v1/forecast", "response": { "body": { "rain": 0 } } } } (this answer for the rest of this scenario only, ahead of network/mocks.json)`,
   camera_frame: `{ "camera_frame": "face" } (a test scene: test-card, color-bars, face, gradient, checker, black, white, dark-room), or { "camera_frame": { "image": "tests/cat.jpg" }, "part": "cam1" } (a PNG / JPEG in the project); then e.g. { "expect_part": "cam1.camera_frames", "op": ">=", "value": 1, "within_ms": 2000 }`,
-  said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said, with a speaker wired), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
+  said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said with a speaker wired, or text the device sent to a speech API such as /v1/audio/speech), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
+  expect_capture: `{ "expect_capture": "cam", "within_ms": 60000, "preceded_by": { "said": "picture", "min_ms": 9000, "max_ms": 11000 } } (a picture taken, 9 to 11 s after it said so), or { "expect_capture": true, "absent": true, "within_ms": 12000 } (no picture)`,
+  reset_board: `{ "reset_board": true } (reboot the board now; flash files survive), then e.g. { "expect_serial": "queue: 1 photo", "within_ms": 3000 }`,
+  set_clock: `{ "set_clock": "2026-12-24T09:00:00Z" } (the time NTP gives the device from now on)`,
 };
 
 /**
@@ -355,6 +420,22 @@ export function parseScenarioStep(raw: unknown, path = "step"): { ok: true; step
         }
       }
     }
+    const pb = (step as { preceded_by?: z.infer<typeof PrecededBySchema> }).preceded_by;
+    if (pb) {
+      const events = (["said", "serial", "capture", "request"] as const).filter((k) => pb[k] !== undefined);
+      if (events.length !== 1) return { ok: false, issues: [{ path: `${path}.preceded_by`, message: `needs exactly one of said, serial, capture, request (got ${events.length ? events.join(", ") : "none"}); e.g. {"preceded_by": {"said": "picture", "min_ms": 9000, "max_ms": 11000}}` }] };
+      if (pb.min_ms !== undefined && pb.max_ms !== undefined && pb.min_ms > pb.max_ms) return { ok: false, issues: [{ path: `${path}.preceded_by`, message: `min_ms ${pb.min_ms} is more than max_ms ${pb.max_ms}; swap them` }] };
+      for (const k of ["said", "serial"] as const) {
+        const m = pb[k];
+        if (m && typeof m === "object" && "regex" in m) {
+          try {
+            new RegExp(m.regex, "i");
+          } catch (err) {
+            return { ok: false, issues: [{ path: `${path}.preceded_by.${k}.regex`, message: `invalid regular expression: ${(err as Error).message}` }] };
+          }
+        }
+      }
+    }
     if (kind === "said") {
       const m = (step as z.infer<typeof SaidStepSchema>).said;
       if (typeof m === "object" && "regex" in m) {
@@ -396,6 +477,17 @@ export const ScenarioSchema = z
     description: z.string().optional(),
     steps: z.array(z.unknown()).default([]).describe("Steps run in order. See ScenarioStep."),
     timeout_ms: Ms.optional().describe("Abort when virtual time passes this (default 60000)."),
+    seed: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .describe("Round 14: seed of the board's hardware random numbers (esp_random, random()) for this test; the default is fixed per scenario id, so 'random' firmware repeats every run. Change it to try another sequence."),
+    clock: z
+      .string()
+      .refine((v) => !Number.isNaN(Date.parse(v)), "must be a date-time such as 2026-12-24T09:00:00Z")
+      .optional()
+      .describe("Round 14: the date and time NTP gives the device at the start of this test (advancing with virtual time). Default: this computer's clock."),
   })
   .catchall(z.unknown())
   .superRefine((s, ctx) => {

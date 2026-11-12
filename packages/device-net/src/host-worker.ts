@@ -30,6 +30,7 @@ export type HostCommand =
   | { op: "mocks"; mocks: Mock[] }
   | { op: "fault"; fault: Fault }
   | { op: "clear" }
+  | { op: "clock"; unixMs: number | null }
   | { op: "config"; config: NetworkConfig }
   | { op: "request"; id: number; req: ProbeRequest }
   | { op: "close" };
@@ -73,6 +74,7 @@ async function main(d: HostWorkerData): Promise<void> {
         else if (c.op === "mocks") dn.setMocks(c.mocks);
         else if (c.op === "fault") dn.inject(c.fault);
         else if (c.op === "clear") dn.clearFaults();
+        else if (c.op === "clock") dn.setClock(c.unixMs ?? undefined);
         else if (c.op === "config") dn.setConfig(c.config);
         else if (c.op === "request") void probeRequest(dn, c.req).then((result) => send({ t: "response", id: c.id, result }));
         else if (c.op === "close") {

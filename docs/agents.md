@@ -452,6 +452,16 @@ check is instant.
 | part state | `{"expect_part": "oled1.lit", "op": ">", "value": 0}`; ops `== != > >= < <= contains matches` |
 | robot world | `{"expect_part": "world.collisions", "op": "==", "value": 0}` (see Robots) |
 | no damage | `{"expect_no_errors": true}` (overcurrent and similar error diagnostics) |
+| said | `{"said": "picture in 10", "within_ms": 30000}`: a DFPlayer clip's words, or (round 14) the text the firmware sent to a speech API |
+| pictures (round 14) | `{"expect_capture": "cam", "within_ms": 60000}`, `{"expect_capture": true, "absent": true, "within_ms": 12000}` |
+| order and timing (round 14) | `"preceded_by": {"said": "picture in 10", "min_ms": 9000, "max_ms": 11000}` on `expect_capture` / `request` (or `serial`, `capture`, `request`) |
+| what a request carried (round 14) | `{"request": {"host", "method", "path", "status", "content_type": "multipart/form-data", "body_json": {"photo.content_type": "image/jpeg"}, "min_bytes": 1000}}` |
+| reboot, clock (round 14) | `{"reset_board": true}` (flash files survive), `{"set_clock": "2026-12-24T09:00:00Z"}` (what NTP answers) |
+| offline | `{"network_fault": {"kind": "wifi_drop"}}` ... `{"network_fault": {"kind": "clear"}}` |
+
+Round 14: each test seeds the board's random numbers from its id, so firmware that acts "at random"
+repeats (`"seed"` on the scenario picks another sequence; `run {"seed": 7}` live). Full guide with
+an offline photo queue, OpenAPI mocks and local services: [behaviour-tests.md](behaviour-tests.md).
 
 `expect_serial` only matches text printed after the previous `expect_serial` match, so a sequence
 of them checks order. A `within_ms` check passes the moment it holds, so after an input wait for the

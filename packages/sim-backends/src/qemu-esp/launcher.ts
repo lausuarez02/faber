@@ -53,6 +53,17 @@ export interface QemuLaunchOptions {
   /** Where QEMU's own stdout/stderr go (a file path). Default: discarded. */
   logFile?: string;
   extraArgs?: readonly string[];
+  /**
+   * Round 14: seed QEMU's guest random numbers (`-seed`): the chip's hardware RNG (esp_random(),
+   * Arduino's random() without randomSeed(), the RNG register) then returns the same sequence every
+   * run, so firmware that does things "at random times" is testable. Undefined: truly random.
+   */
+  seed?: number;
+  /**
+   * Round 14: flash writes persist in the flash image file (LittleFS, SPIFFS, NVS / Preferences
+   * survive a reset or power cycle, like on the chip). false: QEMU's -snapshot (writes are lost).
+   */
+  persistFlash?: boolean;
   /** Extra Docker labels (key → value). jumper.emulator=1 and jumper.owner-pid=<pid> are always set. */
   labels?: Record<string, string>;
 }
@@ -90,7 +101,8 @@ export function qemuArgs(o: QemuLaunchOptions, flashPathInside: string, bridgeHo
     c.qemu,
     "-M", c.machine,
     "-display", "none", "-monitor", "none", "-serial", "none",
-    "-snapshot",
+    ...(o.persistFlash === false ? ["-snapshot"] : []),
+    ...(o.seed !== undefined ? ["-seed", String(Math.trunc(o.seed) >>> 0)] : []),
     "-icount", `shift=${o.icountShift ?? 3},align=off,sleep=off`,
     "-rtc", "clock=vm",
     "-drive", `file=${flashPathInside},if=mtd,format=raw`,
@@ -113,7 +125,7 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
       "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "jumper.backend=qemu-esp",
       ...Object.entries(o.labels ?? {}).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
       "--add-host=host.docker.internal:host-gateway",
-      "-v", `${dirname(o.flashImage)}:/fw:ro`,
+      "-v", `${dirname(o.flashImage)}:/fw${o.persistFlash === false ? ":ro" : ""}`,
       o.image ?? QEMU_ESP_IMAGE,
       ...qemuArgs(o, `/fw/${basename(o.flashImage)}`, "host.docker.internal"),
     ];

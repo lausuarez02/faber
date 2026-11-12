@@ -24,6 +24,7 @@
 - [Audio](audio.md): I2S out and in as a general capability (ESP32 / S3 / C3 emulated; RP2040 not), amplifier / speaker / microphone parts, the page playing a run's sound, amp checks, audio from an API, decoder licences.
 - [See and say](../examples/see-and-say/README.md): one project that joins them: camera → vision API → speech API → speaker, through the relay, tested offline.
 - [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
+- [Behaviour over time](behaviour-tests.md): random moments made repeatable (seeds), the NTP clock, pictures and speech in order (`expect_capture`, `preceded_by`), request bodies, offline queues on flash (`reset_board`), OpenAPI mocks, real services on this computer (`local` / `to`).
 - [The device network](network.md) and [the API relay](api-relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `jumper relay`).
 - [The hardware skill](agent-skill.md): how the design-for-assembly know-how reaches Claude and other agents (server instructions, prompts, project skill, CLAUDE.md, plugin).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.

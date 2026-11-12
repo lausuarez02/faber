@@ -76,6 +76,9 @@ export function createCameraPart(ctx: PartContext, opts: { sensor: CameraSensorI
         camera_on: on,
         camera_ready: inited,
         camera_frames: frames,
+        // round 14: when the last picture was taken (virtual ms; -1 before the first), for tests that
+        // check what happened before a capture (a spoken countdown) and for the capture indicator
+        camera_last_ms: frames ? Math.round(lastMs * 1000) / 1000 : -1,
         camera_preview: preview,
         has_preview: preview !== "",
         camera_size: last ? `${last.width}×${last.height} ${last.format.toUpperCase()}` : "",

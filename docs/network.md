@@ -94,6 +94,22 @@ streams answers back. Firmware written with `JumperRelay.h` calls `relay.sandbox
 simulator (the sandbox applies the relay's own checks) and the person's relay on the device. Guide:
 [api-relay.md](api-relay.md).
 
+## Round 14: request bodies, OpenAPI mocks, local services, NTP
+
+- Every HTTP log entry keeps the request's `content_type` and a `body` description (`bytes`, the start
+  of a text body, JSON / form / multipart `fields` by dot path, multipart `parts` with file name, type
+  and size; redacted like the rest). The `request` step checks them (`content_type`, `body_contains`,
+  `body_json`, `min_bytes`).
+- `{"kind": "openapi", "host", "spec": "network/api.yaml"}` mocks: answers from the spec's examples and
+  checks each request against its operation (400 with the problems when it does not fit).
+- `allow` entries take `"local": true` (this one host may reach this computer or the LAN; without it an
+  address that resolves locally is refused in every mode) and `"to": "http://127.0.0.1:7821"` (send it
+  to a service here, in mock mode too). `.local` names are answered over mDNS for opted-in hosts.
+- NTP: time server names resolve in mock mode (the sandbox answers NTP); a test sets the time with the
+  scenario's `clock` or `{"set_clock": ...}`.
+
+Guide and safety model: [behaviour-tests.md](behaviour-tests.md).
+
 ## Agent tools
 
 | Tool | What it does |

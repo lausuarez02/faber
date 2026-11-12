@@ -97,6 +97,30 @@ cell; switches OUT off after 32 s under about 45 mA, woken by a press = its KEY 
 `auto_off: false` for the I2C version). Each has its datasheet figures in `limits`, physical data, `mechanical`
 and `sourcing` (no LCSC numbers: none were checked), fidelity notes and model tests.
 
+## Battery life from duty cycles (round 14)
+
+`estimate_power` adds every load at its datasheet current for the part of the time it is on: the board
+CPU (and light / deep sleep between active moments), Wi-Fi (connected in modem-sleep vs bursts to
+connect and upload), cameras (on vs standby), screens, I2S amplifiers (quiescent vs speech at about a
+tenth of full-scale power into the speaker), any part with `current_ma`. Each load names its source
+(ESP32 / S3 / C3 and RP2040 datasheets, the OV2640 and MAX98357A datasheets, part data). Duty cycles
+come from `jumper.json` `power.duty` (by role `cpu`, `wifi`, `camera`, `display`, `audio`, or part id:
+`"always"`, `"off"`, `{"on_s": 2, "every_s": 600}`) and `power.sleep`; the rest are guessed from the
+firmware (`esp_camera_deinit`, `WiFi.mode(WIFI_OFF)`, `esp_deep_sleep_start`, ...) and listed in
+`assumptions`. Usable capacity is 80 % of the cell.
+
+`set_power {"target_hours": 24, "duty": {...}}` saves the target and the pattern. `check_design` then
+reports `battery-life`: a warning under the target, with the pouch cell that would make it
+(`set_part_property bat capacity 1000`) and the duty change that helps most (e.g. powering the camera
+down between pictures), or info when it is met. `get_build_kit` carries the same budget (`power`, and
+a Battery section in KIT.md). Estimates from typicals, not measurements: measure a real unit.
+
+| Field | Meaning |
+| --- | --- |
+| `power.target_hours` | Hours on one charge the device should last. |
+| `power.duty` | On-time per role or part id. |
+| `power.sleep` | `none`, `light` or `deep` between active moments. |
+
 ## What it does not model
 
 Inrush and capacitors, regulator current limits and thermal shutdown, light-load efficiency of

@@ -3,6 +3,7 @@ import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
 import { audioChecks } from "./audio-checks.ts";
 import { voiceChecks } from "./voice.ts"; // round 7 voice
 import { cameraChecks } from "./drc-camera.ts"; // round 13 camera
+import { powerChecks } from "./power-budget.ts"; // round 14
 import { partsAdvice } from "./advice.ts"; // round 8 parts-advice
 
 /** Design rule checks: static (from the wiring) plus whatever the last simulation reported. */
@@ -510,6 +511,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
   for (const i of voiceChecks(project, registry, firmwareSource)) add(i); // round 7 voice
   for (const i of audioChecks(project, registry)) add(i); // round 13 audio: I2S amplifier + speaker
   for (const i of cameraChecks(project, registry, firmwareSource)) add(i); // round 13 camera
+  for (const i of powerChecks(project, registry, firmwareSource)) add(i); // round 14 battery life vs power.target_hours
   for (const i of partsAdvice(project, registry)) add(i); // round 8: parts you may not need, smaller parts
 
   const order = { error: 0, warning: 1, info: 2 };

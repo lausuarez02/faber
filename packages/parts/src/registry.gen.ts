@@ -11093,6 +11093,11 @@ export const partDefinitions: PartDefinition[] = [
           "description": "Frames the firmware captured since the run started."
         },
         {
+          "key": "camera_last_ms",
+          "type": "number",
+          "description": "Virtual ms when the firmware took its last picture (-1 before the first). Scenario steps expect_capture / preceded_by use it."
+        },
+        {
           "key": "camera_preview",
           "type": "string",
           "description": "A small JPEG data URL of the last captured picture (what the device sees)."
@@ -15481,6 +15486,11 @@ export const partDefinitions: PartDefinition[] = [
           "key": "camera_frames",
           "type": "number",
           "description": "Frames the firmware captured since the run started."
+        },
+        {
+          "key": "camera_last_ms",
+          "type": "number",
+          "description": "Virtual ms when the firmware took its last picture (-1 before the first). Scenario steps expect_capture / preceded_by use it."
         },
         {
           "key": "camera_preview",

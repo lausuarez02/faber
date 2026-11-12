@@ -9,6 +9,32 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 14, track gaps (2026-11-12): behaviour over time, testable and general
+
+Branch `round14/gaps`. What a "takes a picture at a random moment, says so 10 s before, posts it later"
+device needs from Jumper, built as general capabilities (the star keychain is only a test case). Guide:
+[docs/behaviour-tests.md](docs/behaviour-tests.md).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Randomness / time | QEMU `-seed` per test (scenario `seed`, default from its id; `run {seed}`), seed + n per mid-run reboot; NTP answers a set clock (scenario `clock`, step `set_clock`, `run {clock}`) and time-server names resolve in mock mode | `flash-seed.test.ts`, `random-photo.integration.test.ts` (same seed → same "random" wait; year from the set clock) |
+| Steps | `expect_capture` (with `count`, `absent`), `preceded_by` (said / serial / capture / request within min..max ms before) on `expect_capture` and `request`; `said` also matches text sent to speech APIs; `request` checks `content_type`, `body_contains`, `body_json`, `min_bytes`; `reset_board`; `set_clock` | `round14-checks.test.ts`, `round14.test.ts` (device-net), the integration test |
+| APIs | OpenAPI 3 mocks (`{"kind": "openapi", "spec"}`, JSON / YAML): examples or schema-made answers, request validation (400 with problems); local services by explicit per-host opt-in (`"local": true`, `"to"`), loopback / private addresses refused otherwise in every mode; mDNS `.local` answered for opted-in hosts | `packages/device-net/test/round14.test.ts`; real firmware reaching `http://mystar.local/` through `to` |
+| Flash | ESP32 flash writes persist across a reboot (`McuBackend.reboot`, `reset_board`, power cycle): LittleFS / SPIFFS / NVS; a new run or image starts fresh | `flash-seed.test.ts`; the offline queue across `reset_board` in the integration test |
+| Power | `estimate_power`, `set_power {target_hours, duty, sleep}`, `check_design` `battery-life` (warning under the target with the cell and duty change that help), `get_build_kit` `power` + KIT.md Battery; datasheet sources per load | `round14-checks.test.ts` |
+| Privacy | `check_design` `camera-indicator` for any camera without an LED, a screen or `LED_BUILTIN` in the firmware | `round14-checks.test.ts` |
+| Agents | skill rules (test-behaviour-over-time, camera-privacy, battery-target), tool descriptions, AGENTS.md, docs | `agent-skill-sync.test.ts` |
+
+Checks (worktree `jumper-wt-r14-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
+exit 0; `pnpm test` exit 0, **233 files passed, 2 skipped; 1896 tests passed, 5 expected fail, 5 skipped**
+(includes the real-QEMU random-photo test: three scenarios, about 25 s).
+
+Gaps: no fast-forward that skips firmware execution (idle firmware already runs about 10x real time;
+a bigger lockstep quantum measured no faster); microSD not emulated; speech is checked as the text sent
+to the API (the I2S audio separately), not as sound; `wifi_drop` is a clean link loss (no roaming /
+power-save timing); battery figures are datasheet typicals, not measured; a local service must run in
+its own process (tests run the simulation synchronously); e2e not run (no UI change).
+
 ## Round 13, integrated on main (2026-11-12): a device that sees, calls an API and says the answer
 
 The three tracks below (camera, audio, relay) are merged on main and joined. All three are general

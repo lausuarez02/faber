@@ -72,6 +72,17 @@ export interface QemuEspBackendOptions {
   psramMB?: number;
   /** Extra QEMU arguments, appended as is. */
   extraArgs?: readonly string[];
+  /**
+   * Round 14: seed for the chip's hardware random number generator (QEMU -seed): esp_random() and
+   * Arduino's random() give the same sequence every run. Undefined: random, like a real chip.
+   */
+  seed?: number;
+  /**
+   * Round 14 (default true): flash writes survive reset() and a power cycle (LittleFS, SPIFFS, NVS /
+   * Preferences), like the chip; load() of a different image starts from that image (a fresh
+   * flash, as flashing with "erase all" does). false: every boot starts from the image.
+   */
+  persistFlash?: boolean;
 }
 
 /** ESP32 datasheet: VIL max 0.25 × VDD, VIH min 0.75 × VDD. */
@@ -155,6 +166,12 @@ export class QemuEspBackend implements McuBackend {
   private logPath?: string;
   private flash?: Uint8Array;
   private flashHash = "";
+  /** Round 14: the flash file QEMU writes to; kept across reset() so data written to flash survives. */
+  private flashDir?: string;
+  /** The flash file holds this.flash as loaded (no reboot since load); a new image rewrites it. */
+  private flashStale = true;
+  /** Reboots since load (a seeded RNG gets seed + boots, so a reboot does not replay the same numbers). */
+  private boots = 0;
   /** True from a finished boot until the first step: load() of the same image is then a no-op. */
   private fresh = false;
   private exited = false;
@@ -270,19 +287,50 @@ export class QemuEspBackend implements McuBackend {
     this.start();
   }
 
+  /** A fresh run from the loaded image: flash as built, the RNG from its seed (cycles → 0). */
   reset(): void {
-    if (this.flash) this.start();
+    if (!this.flash) return;
+    this.boots = 0;
+    this.flashStale = true;
+    this.start();
+  }
+
+  /**
+   * Round 14: reboot mid-run (reset button, power cycle): what the firmware wrote to flash stays
+   * (persistFlash), and a seeded RNG moves on to seed + reboots (a real chip does not replay its numbers).
+   */
+  reboot(): void {
+    if (!this.flash) return;
+    this.boots++;
+    this.start();
+  }
+
+  /**
+   * Round 14: the flash as it is now (the image plus what the firmware wrote: LittleFS, NVS...), or
+   * undefined before a load. Read while QEMU is parked; the file is what QEMU last wrote.
+   */
+  readFlash(): Uint8Array | undefined {
+    const f = this.flashDir ? join(this.flashDir, "flash.bin") : undefined;
+    if (f && existsSync(f) && !this.flashStale) return new Uint8Array(readFileSync(f));
+    return this.flash;
   }
 
   /** Stops QEMU and the bridge. The backend can be load()ed again. */
   close(): void {
+    this.stopProcess();
+    this.fresh = false;
+    if (this.workDir) rmSync(this.workDir, { recursive: true, force: true });
+    this.workDir = undefined;
+    if (this.flashDir) rmSync(this.flashDir, { recursive: true, force: true });
+    this.flashDir = undefined;
+    this.flashStale = true;
+  }
+
+  private stopProcess(): void {
     this.proc?.stop();
     this.link?.close();
     this.proc = undefined;
     this.link = undefined;
-    this.fresh = false;
-    if (this.workDir) rmSync(this.workDir, { recursive: true, force: true });
-    this.workDir = undefined;
   }
 
   /** Same as close(): process backends must be disposed (decision 0006). */
@@ -423,8 +471,10 @@ export class QemuEspBackend implements McuBackend {
   }
 
   private setImage(image: Uint8Array): void {
+    this.boots = 0;
     this.flash = image;
     this.flashHash = hashOf(image);
+    this.flashStale = true;
   }
 
   /** Starts QEMU for the current image and blocks until it parks at t = 0 (the synchronous load()). */
@@ -456,7 +506,10 @@ export class QemuEspBackend implements McuBackend {
 
   /** Stops what runs, resets the state and launches QEMU for the current image. */
   private launch(): SyncBridgeLink {
-    this.close();
+    this.stopProcess();
+    this.fresh = false;
+    if (this.workDir) rmSync(this.workDir, { recursive: true, force: true });
+    this.workDir = undefined;
     this._cycles = 0;
     this.t = 0;
     this.out = 0n;
@@ -479,8 +532,13 @@ export class QemuEspBackend implements McuBackend {
     this.deadlines = [];
     for (const k of Object.keys(this.stats) as (keyof typeof this.stats)[]) this.stats[k] = 0;
     this.workDir = mkdtempSync(join(tmpdir(), "jumper-qemu-esp-"));
-    const flashImage = join(this.workDir, "flash.bin");
-    writeFileSync(flashImage, this.flash!);
+    // Round 14: the flash file lives in its own folder that a reboot keeps, so what the firmware wrote
+    // (LittleFS, NVS) is there after reset(); a new image (load) or persistFlash false starts over.
+    const persist = this.opts.persistFlash !== false;
+    if (!this.flashDir) this.flashDir = mkdtempSync(join(tmpdir(), "jumper-qemu-flash-"));
+    const flashImage = join(this.flashDir, "flash.bin");
+    if (!persist || this.flashStale || !existsSync(flashImage)) writeFileSync(flashImage, this.flash!);
+    this.flashStale = false;
     this.logPath = this.opts.logFile ?? join(this.workDir, "qemu.log");
     const link = new SyncBridgeLink();
     this.link = link;
@@ -493,6 +551,8 @@ export class QemuEspBackend implements McuBackend {
       icountShift: this.opts.icountShift,
       network: this.opts.network,
       logFile: this.logPath,
+      persistFlash: persist,
+      ...(this.opts.seed !== undefined ? { seed: this.opts.seed + this.boots } : {}),
       ...(this.opts.labels ? { labels: this.opts.labels } : {}),
       extraArgs: [...(this.opts.psramMB ? ["-m", `${this.opts.psramMB}M`] : []), ...(this.opts.extraArgs ?? [])],
     });

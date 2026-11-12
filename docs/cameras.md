@@ -101,6 +101,12 @@ off in the FQBN) and `camera-battery` (the camera and Wi-Fi bursts, up to about 
 against what the cell gives at 1C, with a battery-life estimate). The plan's battery note gives the
 burst current and picks a cell that can give it.
 
+Round 14: `camera-indicator` (warning, any project with a camera): nothing on the device shows when
+the camera is about to take or is taking a picture (no LED, no screen, and the firmware does not drive
+`LED_BUILTIN`). Fix: an LED on a free GPIO lit while capturing, the screen, or the board's LED; a
+spoken or on-screen countdown with a way to cancel helps too. Tests: `{"expect_capture": "cam"}` and
+`preceded_by` ([behaviour-tests.md](behaviour-tests.md)); the part state has `camera_last_ms`.
+
 ## Cases
 
 The lens is a mechanical feature of kind `camera` with `fov_deg`. The case engine exposes it by
