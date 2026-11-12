@@ -70,6 +70,16 @@ describe("I2S parts on the board's I2S bus", () => {
     expect(sim.partState("amp")?.playing).toBe(false);
   });
 
+  it("an unwired GAIN pin is 9 dB (floating), GAIN to GND 12 dB: the level follows the strap (round 13 fix)", () => {
+    const sine = Int32Array.from({ length: 240 }, (_, i) => Math.round(8192 * Math.sin((2 * Math.PI * i) / 16)));
+    const { sim, mcu } = rig();
+    mcu.bus!.send({ cycle: mcu.cycles, sampleRate: 16000, bits: 16, channels: 1, samples: sine });
+    sim.runFor(1);
+    // A quarter-scale sine: RMS 0.177 of full scale.
+    expect(sim.partState("amp")?.level).toBeCloseTo(0.177, 3);
+    expect(sim.partState("spk")?.sounding).toBe(true);
+  });
+
   it("an amp with BCLK / LRC unwired is not attached and says what to wire", () => {
     const { sim } = rig(false);
     expect(sim.i2s.list().map((d) => d.partId)).toEqual(["mic"]);

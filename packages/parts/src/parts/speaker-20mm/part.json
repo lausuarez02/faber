@@ -2,7 +2,7 @@
   "id": "speaker-20mm",
   "name": "Speaker 8 Ω 0.5 W (20 mm round)",
   "category": "output",
-  "description": "Small round 20 mm speaker for voice in tight cases (an egg, a keychain): a bit quieter than the 28 mm one but clear for speech. Drive it from an amplifier, such as the DFPlayer Mini's SPK_1 (+) and SPK_2 (-); never straight from a board pin (8 Ω would pull 600 mA).",
+  "description": "Small round 20 mm speaker for voice in tight cases (an egg, a keychain): a bit quieter than the 28 mm one but clear for speech. Drive it from an amplifier: the DFPlayer Mini's SPK_1 (+) and SPK_2 (-), or an I2S amplifier's OUT+ / OUT- (MAX98357A); never straight from a board pin (8 Ω would pull 600 mA).",
   "pins": [
     {
       "id": "+",
@@ -10,7 +10,7 @@
       "x": 40,
       "y": 116,
       "type": "passive",
-      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1)."
+      "description": "Speaker lead +. To the amplifier output + (DFPlayer SPK_1, MAX98357A OUT+)."
     },
     {
       "id": "-",
@@ -18,7 +18,7 @@
       "x": 80,
       "y": 116,
       "type": "passive",
-      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, which is not ground)."
+      "description": "Speaker lead -. To the amplifier output - (DFPlayer SPK_2, MAX98357A OUT-; neither is ground)."
     }
   ],
   "size": {

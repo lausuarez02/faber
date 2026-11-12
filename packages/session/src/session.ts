@@ -54,6 +54,7 @@ import type { DeviceNetHost } from "@jumper/device-net";
 import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
+import { recordI2s, saveRunAudio, type RunAudio } from "./run-audio.ts"; // round 13 audio
 import { clampRegion, litCount, loadSnapshot, regionRows, saveSnapshot } from "./snapshots.ts";
 import { compactState, FAULT_KINDS, firmwareBoardOf, SimHost, type Frame, type PrepareProgress } from "./sim.ts";
 import { TEMPLATE_SOURCES, TEMPLATES } from "./templates.ts";
@@ -109,6 +110,8 @@ export interface ActionEntry {
   project?: Project;
   file?: { path: string; content: string | null };
   frames?: Frame[];
+  /** Round 13 audio: what the board played over I2S during a run (a WAV the page plays with the frames). */
+  audio?: RunAudio;
   steps?: ReturnType<typeof stepSummary>[];
   /**
    * Firmware hex after a successful build (replay loads it for live LEDs). Round 5 (decision 0003,
@@ -140,6 +143,7 @@ interface OpCtx {
   project?: boolean;
   file?: { path: string; content: string | null };
   frames?: Frame[];
+  audio?: RunAudio;
   steps?: boolean;
   firmware?: { artifact: string; hash?: string; source?: string };
   /** The step this op's changes went into (the person's own step is not the open one). */
@@ -431,6 +435,7 @@ export class ProjectSession {
         ...(ctx.project ? { project: this.project } : {}),
         ...(ctx.file ? { file: ctx.file } : {}),
         ...(ctx.frames?.length ? { frames: ctx.frames } : {}),
+        ...(ctx.audio ? { audio: ctx.audio } : {}),
         ...(ctx.steps || ctx.project || ctx.file ? { steps: this.history.steps.slice(-30).map(stepSummary) } : {}),
         ...(ctx.firmware ? { firmware: ctx.firmware } : {}),
         ...(LOG_RESULT_OPS.has(op) ? { result: smallResult(result) } : {}),
@@ -1475,9 +1480,14 @@ export class ProjectSession {
     const frames: Frame[] = [];
     const frameMs = Math.max(20, Math.ceil(ms / 400 / 10) * 10);
     const wall0 = Date.now();
+    // Round 13 audio: what the board plays over I2S during this run, for the page's speaker.
+    const sinks = host.sim.i2s.list().filter((d) => d.sink).map((d) => d.partId);
+    const rec = sinks.length ? recordI2s(host.sim, host.timeMs) : undefined;
     await host.runAsync(ms, { frameMs, onFrame: (f) => frames.push(f) });
     const wallMs = Date.now() - wall0;
     ctx.frames = limitColorFrames(frames); // round 6 frames: colour screens, thinned for the log
+    const audio = rec ? saveRunAudio(this.dir, ctx.seq, rec.stop(), host.timeMs - t0, sinks) : undefined;
+    if (audio) ctx.audio = audio;
     const serial = host.serialSince(serialFrom);
     host.serialCursor = host.sim.serialText().length;
     const diags = host.sim.diagnostics();
@@ -1492,6 +1502,7 @@ export class ProjectSession {
     const said = host.sim.speech().filter((u) => u.t_ms >= t0 - 1e-6);
     return {
       ...(said.length ? { said: said.slice(-20).map((u) => `${round(u.t_ms)} ms ${u.partId}: ${JSON.stringify(u.text)}${u.audible ? "" : " (nobody heard it: no speaker wired)"}`) } : {}),
+      ...(audio ? { audio: `${audio.parts.join(", ")} played I2S audio (peak ${Math.round(20 * Math.log10(Math.max(audio.peak, 1e-6)))} dBFS); the page plays it with the run (GET /api/audio/${audio.file})` } : {}),
       t_ms: round(host.timeMs),
       ran_ms: round(host.timeMs - t0),
       speed: `${round(ms / Math.max(1, wallMs))}x real time`,

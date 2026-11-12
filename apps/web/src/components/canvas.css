@@ -152,3 +152,19 @@
   gap: 2px;
   font-size: 11.5px;
 }
+
+/* Round 13 (audio): a part that plays sound (an I2S amplifier: state playing + level 0..1) shows a
+   level bar under it while it plays; the width follows the level the simulation reports. */
+.part[data-state-playing="true"]::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  bottom: -7px;
+  height: 4px;
+  width: calc((100% - 8px) * var(--level, 0));
+  min-width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  transition: width 80ms linear;
+}

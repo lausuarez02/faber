@@ -71,6 +71,9 @@ export const create: PartModelFactory = (ctx): PartModel => {
       c.resistor(ctx.node("VIN"), GROUND, vin > 0 ? vin / (0.0024 + (outVrms * outVrms) / 8 / 0.85 / Math.max(vin, 1)) : 1e6, { id: "supply" });
       c.voltageSource(ctx.node("OUT+"), ctx.node("OUT-"), mode() === "off" ? 0 : outVrms, 0.1, { id: "out" });
       c.resistor(ctx.node("SD"), ctx.node("VIN"), 1_000_000, { id: "sd-pullup" });
+      // A sense element on GAIN so an unwired GAIN pin reads as floating (9 dB), not as 0 V (12 dB):
+      // a pin with no element at all is not in the solved circuit and reads 0 V (round 13 fix).
+      c.resistor(ctx.node("GAIN"), ctx.internalNode("gain-sense"), 1e9, { id: "gain-sense" });
     },
     onSolved(r) {
       vin = r.voltage(ctx.node("VIN")) - r.voltage(ctx.node("GND"));

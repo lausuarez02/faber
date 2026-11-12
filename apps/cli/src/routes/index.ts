@@ -4,6 +4,7 @@ import { caseHooks, caseRoutes } from "./case.ts"; // round 6 case
 import { networkRoutes } from "./network.ts"; // round 10 net
 import { runtimeRoutes } from "./runtime.ts"; // round 11 native builds
 import { kitRoutes } from "./kit.ts"; // round 12 kit
+import { audioRoutes } from "./audio.ts"; // round 13 audio
 import { liveHooks, liveRoutes } from "./live.ts";
 import { projectsHooks, projectsRoutes } from "./projects.ts";
 import type { ApiRoute, ServerHook } from "./types.ts";
@@ -20,6 +21,7 @@ export const ROUTES: ApiRoute[] = [
   ...networkRoutes, // round 10 net
   ...runtimeRoutes, // round 11 native builds
   ...kitRoutes, // round 12 kit
+  ...audioRoutes, // round 13 audio
 ];
 
 /** Every round-5 server hook. Append-only: one line per track. */

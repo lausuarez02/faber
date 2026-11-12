@@ -63,3 +63,7 @@ export { canBuildArduino, runtimeSummary, nativeStatus } from "@jumper/runner";
 export { buildKit, kitHtml, kitMarkdown, shoppingCsv, stlStats, detectSlicer, planSteps } from "./kit/index.ts";
 export type { BuildKit, KitOptions } from "./kit/index.ts";
 export { writeKitFiles, htmlToPdf } from "./kit/files.ts";
+// round 13 audio: what a run played over I2S (the page plays it), and the I2S amplifier checks
+export { runAudioFile, mixRunAudio, RUN_AUDIO_RATE } from "./run-audio.ts";
+export type { RunAudio } from "./run-audio.ts";
+export { audioChecks, I2S_AMPS } from "./audio-checks.ts";
