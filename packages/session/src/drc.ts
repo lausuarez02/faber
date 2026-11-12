@@ -1,6 +1,7 @@
 import { buildNets, type PinRef, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
 import { voiceChecks } from "./voice.ts"; // round 7 voice
+import { cameraChecks } from "./drc-camera.ts"; // round 13 camera
 import { partsAdvice } from "./advice.ts"; // round 8 parts-advice
 
 /** Design rule checks: static (from the wiring) plus whatever the last simulation reported. */
@@ -506,6 +507,7 @@ export function checkDesign(project: Project, registry: PartRegistry, firmwareSo
 
   for (const i of powerPathChecks(project, partSpec, nets, netOf, boardPart)) add(i); // round 6 power
   for (const i of voiceChecks(project, registry, firmwareSource)) add(i); // round 7 voice
+  for (const i of cameraChecks(project, registry, firmwareSource)) add(i); // round 13 camera
   for (const i of partsAdvice(project, registry)) add(i); // round 8: parts you may not need, smaller parts
 
   const order = { error: 0, warning: 1, info: 2 };

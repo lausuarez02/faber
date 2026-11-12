@@ -129,7 +129,8 @@ const NEEDS: Need[] = [
   { key: "clock", match: /\bclock|time of day|alarm clock|calendar|schedule|every morning|at \d/, label: "DS3231 real-time clock", ids: ["ds3231-rtc"], search: ["rtc"], why: "keeps the real time, even when unplugged (coin cell)", cannot: "clock drift over weeks" },
   { key: "wifi", match: /wi-?fi|internet|online|\bai\b|\bchat|talks? back|answers?\b|\bcloud|\bapi\b|forecast|telegram|notification to (my|the) phone/, label: "ESP-01 Wi-Fi module", ids: ["esp01-wifi"], search: ["wifi"], why: "gets on Wi-Fi to ask an AI or the internet", cannot: "real Wi-Fi range and the real internet (the sandbox network answers instead)" },
   { key: "gps", match: /\bgps|location|where (it|i) (is|am)|tracker/, label: "GPS module (NEO-6M)", ids: ["gps-neo6m", "neo-6m-gps"], search: ["gps"], why: "knows where it is from satellites", behavior: "uart-device", cannot: "a real satellite fix (needs open sky) and position accuracy" },
-  { key: "camera", match: /camera|\bphoto(graph)?s? of|video|face recogn|see (who|what)/, label: "camera module", ids: [], search: ["camera"], why: "takes pictures", cannot: "anything a camera sees: Jumper does not simulate cameras" },
+  // round 13: cameras are a general capability (esp32-camera on ESP32 / ESP32-S3); a board with one built in is preferred
+  { key: "camera", match: /\bcam(era)?s?\b|\bphoto(graph)?s?\b|\bpictures? of\b|\btakes? (a )?(picture|pic|photo|snapshot)|\bselfie|\bsnapshot|\bvideo\b|\bwebcam|face (recogn|detect)|\b(it|that|which|to) (can )?(see|sees)\b|\bsees? (me|you|who|what|people|things|faces?|objects?|around)|\bseeing\b|\blooks? at (me|you|people|things|what|who)\b|\blooking at\b|\bwatch(es|ing)? (me|people|the|who|what)|\bvision\b|\bwhat it sees\b/, label: "OV2640 camera module", ids: ["ov2640-camera"], search: ["camera"], why: "sees: the firmware takes pictures (esp32-camera) to look at or to send to an API", cannot: "picture quality, exposure, low light and the real frame rate (in Jumper the camera sees a test scene, an image or your webcam)" },
   { key: "flight", match: /\bdrone|propeller|quadcopter|\bfly(ing)?\b|\besc\b/, label: "flight parts (brushless motors, ESCs, flight controller)", ids: [], why: "a drone needs fast brushless motors and a flight controller", cannot: "flight: Jumper does not simulate aerodynamics, propellers or brushless motors" },
   { key: "mic", match: /microphone|\bhears?\b|\bvoice\b|\blisten|clap/, label: "sound sensor (microphone module)", ids: ["sound-sensor", "microphone"], search: ["microphone"], why: "hears claps and noise levels (not words)", behavior: "analog-sensor", cannot: "real sound; speech recognition is far beyond these boards" },
   { key: "presence", match: /\bpir\b|someone (walks|comes|is)|people (walk|come)|presence|intruder|motion sensor|detects? (people|someone|movement)|when (someone|a person)/, label: "PIR motion sensor (HC-SR501)", ids: ["pir-motion"], search: ["pir"], why: "notices a person moving nearby (body heat)", behavior: "digital-input", cannot: "real detection range, sensitivity and false triggers from heat sources" },
@@ -245,7 +246,7 @@ export function resolveBoard(boards: readonly PartDefinition[], name: string): P
   throw new Error(`no board '${name}' in the catalog; boards are: ${boards.map((b) => b.spec.id).join(", ")}`);
 }
 
-function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean, wantsLang?: string): { def: PartDefinition; why: string } {
+function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], small: boolean, wantsLang?: string, camera = false): { def: PartDefinition; why: string } {
   const all = reg.list().filter((d) => d.spec.category === "board" && d.spec.mcu);
   if (!all.length) throw new Error("the catalog has no boards");
   // Picked on its own, a board must be placeable and run in the page (avr8js, rp2040js); boards that run
@@ -269,7 +270,17 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
   const area = (d: PartDefinition) => {
     const x = dims(d.spec);
     return x ? x.w * x.h : Number.POSITIVE_INFINITY;
-  };
+  };  // Round 13: a device that sees needs a camera interface (ESP32 / ESP32-S3); a board with the camera
+  // built in is the fewest parts and wires (and it has Wi-Fi to send what it sees, a mic and a charger).
+  if (camera) {
+    const withCam = all.filter((d) => d.spec.camera && d.spec.availability?.status !== "planned").sort((a, b) => area(a) - area(b));
+    const best = withCam[0];
+    if (best) {
+      const x = dims(best.spec);
+      return { def: best, why: `it has a camera built in (${best.spec.camera!.sensor}${best.spec.camera!.alternatives?.length ? ` or ${best.spec.camera!.alternatives.join(" / ")}` : ""}, Espressif's esp32-camera driver), so the camera needs no wires${x ? `; ${x.w} × ${x.h} × ${x.d} mm with the camera` : ""}; Wi-Fi to send what it sees${best.spec.tags?.includes("charger") ? ", a battery charger" : ""}${best.spec.tags?.includes("microphone") ? " and a microphone" : ""} too. It runs in Jumper's ESP32 emulator (jumper setup esp32)` };
+    }
+  }
+
   if (small) {
     const fits = boards.filter((b) => !needs5v.length || (b.spec.mcu?.vcc ?? 5) >= 4.5);
     const pool = fits.length ? fits : boards;
@@ -283,6 +294,15 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
   const uno = reg.get("arduino-uno");
   if (uno) return { def: uno, why: "the classic beginner board: plugs into USB, 5 V like most hobby modules, and has the most examples and help online" };
   return { def: boards[0]!, why: "the first board in the catalog" };
+}
+
+/** Round 13: the burst current of a plan with a camera (board max, plus a camera module's), 0 without one. */
+function cameraPeakMa(bom: BomLine[], reg: PartRegistry): number {
+  const specs = bom.flatMap((l) => (l.type ? [reg.get(l.type)?.spec] : [])).filter((s) => !!s);
+  if (!specs.some((s) => s.camera)) return 0;
+  const board = specs.find((s) => s.mcu);
+  const module = specs.find((s) => s.camera && !s.mcu);
+  return Math.round((board?.current_ma?.max ?? 0) + (module ? (module.camera?.activeMa ?? 40) : 0));
 }
 
 /** The plan for a wish. Throws an Error with a readable message on a bad board constraint. */
@@ -305,6 +325,8 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   for (const n of NEEDS) if (n.match.source !== "^$" && n.match.test(g)) matched.set(n.key, n);
   if (matched.has("light-sensor") && !/\blights? up|\bleds?\b|lamp|glow|night ?light/.test(g)) matched.delete("led");
   for (const n of [...matched.values()]) if (n.unless?.some((k) => matched.has(k))) matched.delete(n.key);
+  // round 13: "takes photos" is a camera, not a colour screen to show photos on
+  if (matched.has("camera") && matched.has("color-display") && !/screen|display|\btft\b|\blcd\b|colou?r|\bgif/.test(g)) matched.delete("color-display");
   for (const n of [...matched.values()]) for (const w of n.with ?? []) {
     const extra = NEEDS.find((x) => x.key === w) ?? (compact && w === "speaker" ? HELPERS.speakerSmall : HELPERS[w]);
     if (extra && !matched.has(w)) matched.set(w, extra);
@@ -375,7 +397,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   // Board.
   const small = compact || pocket || (!!sizeLimit && sizeLimit.w * sizeLimit.h < 120 * 80);
   const wantsLang = /\b(micro ?python|python|\.py)\b/.test(g) ? "micropython" : /\besp-?idf\b/.test(g) ? "esp-idf" : /\bplatform ?io\b/.test(g) ? "platformio" : undefined;
-  const { def: boardDef, why: boardWhy } = chooseBoard(reg, c, needs5v, small, wantsLang);
+  const { def: boardDef, why: boardWhy } = chooseBoard(reg, c, needs5v, small, wantsLang, matched.has("camera"));
   const b = boardDef.spec;
   const bcur = currentMa(b);
   bom.unshift({
@@ -395,6 +417,22 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     bom.splice(wifiLine, 1);
     choices.push(`no Wi-Fi module: the ${b.name} has Wi-Fi built in (in Jumper its Wi-Fi sketches reach the sandbox network: mocks, cassettes, faults)`);
   }
+  // Round 13: a board with its own camera (or microphone) needs no camera (or microphone) module.
+  const camLine = bom.findIndex((l) => l.type === "ov2640-camera");
+  if (camLine >= 0 && b.camera) {
+    bom.splice(camLine, 1);
+    choices.push(`no camera module: the ${b.name} has its camera built in (${b.camera.sensor}; in Jumper it sees a test scene, an image or your webcam)`);
+  } else if (camLine >= 0 && b.mcu && !["esp32", "esp32s3"].includes(b.mcu.chip)) {
+    warnings.push(`the ${b.name} (${b.mcu.chip}) cannot run a camera: esp32-camera needs an ESP32 or ESP32-S3 (the XIAO ESP32-S3 Sense has one built in)`);
+  } else if (camLine >= 0) {
+    warnings.push(`wire the OV2640's 16 signals (D0-D7, PCLK, VSYNC, HREF, XCLK, SIOD, SIOC, plus 3V3 / GND) to free GPIOs of the ${b.name} and use the same numbers in camera_config_t; keep the wires short (the pixel bus runs at 10 to 20 MHz). A board with the camera built in (XIAO ESP32-S3 Sense) needs none of this`);
+  }
+  const micLine = bom.findIndex((l) => l.type === "sound-sensor" || l.type === "microphone");
+  if (micLine >= 0 && b.tags?.includes("microphone")) {
+    bom.splice(micLine, 1);
+    choices.push(`no microphone module: the ${b.name} has a digital microphone built in (read with the I2S driver; in Jumper its sound is set on the board)`);
+  }
+  if (b.camera || bom.some((l) => l.type === "ov2640-camera")) cannot.add("picture quality, exposure, low light and the real frame rate: in Jumper the camera sees a test scene, an image or your webcam (set_camera_frame, a camera_frame test step)");
   const vcc = b.mcu?.vcc ?? 5;
   if (compact && !c.board) {
     const uno = reg.get("arduino-uno")?.spec;
@@ -408,7 +446,10 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     const kind = rover ? BATTERIES.lipo2s : pocket || compact ? BATTERIES.lipo1s : BATTERIES.aa4;
     const pack = reg.get("battery-pack");
     const cell = kind === BATTERIES.lipo1s ? reg.get("lipo-battery") : undefined;
-    const charger = cell ? reg.get("tp4056-charger") : undefined;
+    // round 13: a board that charges a cell on its own BAT pads (XIAO ESP32-S3 / Sense) needs no TP4056
+    const boardCharges = !!b.tags?.includes("charger") && b.pins.some((p) => p.id === "BAT");
+    const charger = cell && !boardCharges ? reg.get("tp4056-charger") : undefined;
+    if (cell && boardCharges) choices.push(`no charger module: the ${b.name} charges the cell on its BAT pads from USB-C (solder the cell's + to BAT+, − to BAT−; a slide switch in the + lead turns it off)`);
     if (cell) {
       // The catalog's own 1S LiPo and TP4056 charger (parts with physical data), simulated as themselves.
       bom.push({ type: cell.spec.id, name: `${cell.spec.name}, 500 mAh`, qty: 1, why: "a thin rechargeable cell fits a pocket", source: "simulated-exactly", fidelity: fidelityOf(cell), props: { capacity: 500 }, ...(cell.spec.price_usd !== undefined ? { price_usd: cell.spec.price_usd } : {}), buy_links: cell.spec.buy_links?.length ? cell.spec.buy_links : searchLinks(kind.buy) });
@@ -482,7 +523,10 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     if (compact && cellLine && avg > 0) {
       const target = c.battery_hours ?? 3;
       const needMah = (target * avg) / 0.8;
-      const pick = LIPO_CELLS.find((x) => x.mAh >= needMah) ?? LIPO_CELLS[LIPO_CELLS.length - 1]!;
+      // round 13: camera + Wi-Fi bursts (a photo, an upload) must not exceed what the cell gives at 1C
+      const peak = cameraPeakMa(bom, reg);
+      const pick = LIPO_CELLS.find((x) => x.mAh >= needMah && x.mAh >= peak) ?? LIPO_CELLS[LIPO_CELLS.length - 1]!;
+      if (peak && pick.mAh >= peak && LIPO_CELLS.some((x) => x.mAh >= needMah && x.mAh < peak)) choices.push(`a ${pick.mAh} mAh cell rather than a smaller one: the camera and Wi-Fi draw up to about ${peak} mA in bursts, and a small pouch cell gives about its capacity in mA (1C) before its voltage sags and the board resets`);
       capacity = pick.mAh;
       cellLine.props = { capacity };
       cellLine.name = `${reg.get("lipo-battery")!.spec.name}, ${capacity} mAh (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm)`;
@@ -503,7 +547,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       capacity_mah: capacity,
       avg_ma: round1(avg),
       hours,
-      note: `80 % of ${capacity} mAh at an average ${round1(avg)} mA, everything on all the time${rover ? " (motors and servos at a quarter of the time)" : ""}; sleep modes would stretch it.${noCurrent.length ? ` Not counted (no current figure): ${noCurrent.join(", ")}, so the real time is shorter.` : ""}`,
+      note: `80 % of ${capacity} mAh at an average ${round1(avg)} mA, everything on all the time${rover ? " (motors and servos at a quarter of the time)" : ""}; sleep modes would stretch it.${cameraPeakMa(bom, reg) ? ` The camera${bom.some((l) => l.type && reg.get(l.type)?.spec.tags?.includes("wifi")) ? " and Wi-Fi" : ""} draw up to about ${cameraPeakMa(bom, reg)} mA in bursts (a photo, an upload): a picture every 10 s with deep sleep in between averages far less (estimate it with your duty cycle; not simulated).` : ""}${noCurrent.length ? ` Not counted (no current figure): ${noCurrent.join(", ")}, so the real time is shorter.` : ""}`,
     };
     if (noCurrent.length) missing.push(`current draw: ${noCurrent.join(", ")}`);
     if (c.battery_hours !== undefined && hours < c.battery_hours && avg > 0) {
