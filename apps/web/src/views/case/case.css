@@ -527,7 +527,7 @@
 
 .cv-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 4px;
   padding: 3px;
   border-radius: 10px;
@@ -1033,3 +1033,144 @@
 .cv-layout-why { line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .cv-layout-miss { color: var(--danger, #ff6b6b); }
 .cv-layout .cv-pocket { align-self: flex-start; }
+
+/* Round 12: the Build tab, how it goes together step by step */
+.cv-asm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cv-asm-ok {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-asm-ok svg {
+  color: var(--accent, #3ddc97);
+}
+
+.cv-asm-step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-asm-step img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--border, #232323);
+  background: #f3f4f6;
+}
+
+.cv-asm-noimg {
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong, #2e2e2e);
+}
+
+.cv-asm-title {
+  font-weight: 600;
+  color: var(--fg, #ededed);
+  line-height: 1.35;
+}
+
+.cv-asm-action {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-right: 4px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-2, #b4b4b4);
+  border: 1px solid var(--border-strong, #2e2e2e);
+}
+
+.cv-asm-say {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-2, #b4b4b4);
+}
+
+.cv-asm-caution {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted, #8a8a8a);
+}
+
+.cv-asm-caution svg {
+  margin-top: 2px;
+  color: var(--warn, #f5a524);
+}
+
+.cv-asm-list {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-2, #b4b4b4);
+  overflow-wrap: anywhere;
+}
+
+.cv-asm-list a {
+  color: var(--fg, #ededed);
+}
+
+.cv-asm-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cv-asm-nav .cv-secondary {
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong, #2e2e2e);
+  background: transparent;
+  color: var(--fg, #ededed);
+}
+
+.cv-asm-nav .cv-secondary:disabled {
+  opacity: 0.4;
+}
+
+.cv-asm-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cv-asm-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--border-strong, #2e2e2e);
+  cursor: pointer;
+}
+
+.cv-asm-dots button.is-on {
+  background: var(--fg, #ededed);
+}
+
+.cv-asm-more summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg, #ededed);
+}

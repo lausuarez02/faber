@@ -52,6 +52,8 @@ export interface FitCheck {
   id: FitCheckId | string;
   ok: boolean;
   severity: "error" | "warning" | "info";
+  /** Round 12 (assembly checks): the sizes and positions behind it, mm. */
+  facts?: Record<string, number | string>;
   /** What failed, why, how to fix (errors-say-why-and-fix), e.g. "The USB-C opening misses the XIAO's port by 1.2 mm. Why: … Fix: …". */
   message: string;
   parts?: string[];
@@ -81,6 +83,8 @@ export interface CaseReport {
   fit?: { fits: boolean; needed_mm: { w: number; h: number; d: number }; asked_mm?: { w?: number; h?: number; d?: number }; scale: number };
   /** Round 7: the outer outline seen from the front (case frame, mm): the real silhouette, for previews. */
   outline_mm?: [number, number][];
+  /** Round 12: how it goes together: the plan (case/assembly/plan.json), a picture per step, the side it opens on like a book, the order per shell, and how many of its checks failed. */
+  assembly?: { steps: number; plan: string; images: string[]; hinge: string; order: { front: string[]; back: string[] }; errors: number; warnings: number };
   /** Round 8: the distribution proposal the case was built from (enclosure.layout; "auto" = balanced), its fill ratio (parts' volume / cavity) and layers. */
   layout?: { goal: string; asked: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string };
 }

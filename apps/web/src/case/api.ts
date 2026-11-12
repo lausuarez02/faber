@@ -115,6 +115,34 @@ export interface AdviceNote {
   parts: string[];
   apply?: { label: string; result: string };
 }
+/** Round 12: POST /api/case/assembly, how to build it (what to buy and print, the steps with their pictures, the checks). */
+export interface AssemblyStepView {
+  n: number;
+  title: string;
+  say: string;
+  shell: string;
+  parts: string[];
+  action: string;
+  fasteners: { kind: string; size: string; qty: number }[];
+  wires: { id: string; from: string; to: string; length_mm: number; gauge: number; color: string }[];
+  tools: string[];
+  cautions: string[];
+  view: { explode: number; highlight: string[]; camera: string };
+  image_url?: string;
+}
+export interface AssemblyResult {
+  title: string;
+  pictures: string;
+  buy: { qty: number; name: string; value?: string; generic?: string; notes?: string; refs?: string }[];
+  print: { file: string; body: string; face_down: string; supports: boolean; note: string }[];
+  consumables: { item: string; qty: number | string; why: string }[];
+  tools: string[];
+  steps: AssemblyStepView[];
+  mounts: { part: string; shell: string; how: string[]; insert: string; say: string; missing?: string }[];
+  opens_on: string;
+  checks: FitCheck[];
+  problems: string[];
+}
 export interface CaseMesh {
   hash: string;
   bodies: { body: string; kind: "shell" | "cap" | "part" | "insert"; color: string; positions: string; indices: string; explode: [number, number, number] }[];
@@ -154,6 +182,7 @@ export const caseApi = {
   advice: () => req<{ notes: AdviceNote[] }>("GET", "/api/case/advice"),
   applyAdvice: (id: string) => req<{ applied: string; result: string; notes: AdviceNote[] }>("POST", "/api/case/advice/apply", { id }),
   pack: () => req<{ dir: string; zip?: string; url?: string; files: string[]; missing: { item: string; why: string; fix: string; say?: string }[] }>("POST", "/api/manufacturing", {}),
+  assembly: () => req<AssemblyResult>("POST", "/api/case/assembly", {}),
   fileUrl: (path: string) => `/api/case/file?path=${encodeURIComponent(path)}`,
 };
 

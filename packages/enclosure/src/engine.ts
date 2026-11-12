@@ -17,10 +17,13 @@ import { contains, outline } from "./plan.ts";
 import { materialFor, printMd } from "./print.ts";
 import { occt } from "./occt.ts";
 import { windowSight } from "./sight.ts";
+import { assemblyPlan, pinPositionsOf, type AssemblyWire } from "./assembly.ts";
+import { renderAssemblySteps } from "./assembly-render.ts";
 import { renderPng, type RenderItem, VIEWS } from "./render.ts";
 import type { CaseFile, CaseMesh, CaseReport, FitCheck, PlacedPart, Vec3 } from "./types.ts";
 
-export const ENGINE_VERSION = "case-5"; // round 8b: fixed sizes thinnest first, the window sight test, the front-held parts explode with the front
+export const ENGINE_VERSION = "case-6"; // round 12: every part held (mounts), the assembly plan and its checks, a picture per step
+// (case-5, round 8b: fixed sizes thinnest first, the window sight test, the front-held parts explode with the front)
 export const MIN_WALL = 1.2;
 
 export interface GenerateOptions {
@@ -34,6 +37,10 @@ export interface GenerateOptions {
   tolerance?: number;
   /** A layout already made for this project and enclosure (design_case checks the fit first). */
   layout?: Layout;
+  /** Round 12: the wire cut list for this layout (session's wireCuts); estimated from the pin positions when absent. */
+  wires?: (L: Layout) => AssemblyWire[];
+  /** Round 12: render one picture per assembly step (default: with the renders). */
+  stepImages?: boolean;
 }
 
 export interface Generated {
@@ -241,6 +248,25 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     files.set("renders/inside.png", renderPng(inside, VIEWS.inside));
   }
 
+  // ---- round 12: how it goes together (the assembly plan), its checks, and a picture per step
+  const plan = assemblyPlan({ project, layout: L, specOf, title, ...(opts.wires ? { wires: opts.wires(L) } : {}) });
+  checks.push(...plan.checks.map(({ facts, ...c }) => ({ ...c, ...(facts ? { facts } : {}) })));
+  if (opts.renders !== false && opts.stepImages !== false) {
+    const front = B.bodies.find((b) => b.name === "front")!;
+    const back = B.bodies.find((b) => b.name === "back")!;
+    const stepFiles = renderAssemblySteps(plan, L, {
+      front: meshes.get("front")!,
+      back: meshes.get("back")!,
+      color: front.color,
+      inserts: new Map(B.bodies.filter((b) => b.kind === "cap" || b.kind === "light-pipe").map((b) => [b.name, { mesh: meshes.get(b.name)!, color: b.color }])),
+      parts: new Map(envMeshes.map((e) => [e.id, { mesh: e.mesh, color: e.color }])),
+      pins: pinPositionsOf(L.placed, specOf),
+      explode: { front: front.explode, back: back.explode },
+    });
+    for (const [p, b] of stepFiles) files.set(p, b);
+  }
+  files.set("assembly/plan.json", new TextEncoder().encode(JSON.stringify(plan, null, 2) + "\n"));
+
   // ---- drawing, PRINT.md
   const mat = materialFor(L.params.process);
   let shellVol = 0;
@@ -285,6 +311,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     notes: [...(L.outlineNotes ?? []), ...notes],
     ...(L.fit ? { fit: { fits: L.fit.fits, needed_mm: L.fit.needed_mm, ...(L.fit.asked_mm ? { asked_mm: L.fit.asked_mm } : {}), scale: L.fit.scale } } : {}),
     outline_mm: frontOutline(L),
+    assembly: { steps: plan.steps.length, plan: "assembly/plan.json", images: plan.steps.flatMap((st) => (st.image ? [st.image] : [])), hinge: plan.hinge, order: plan.order, errors: plan.checks.filter((c) => !c.ok && c.severity === "error").length, warnings: plan.checks.filter((c) => c.severity === "warning").length },
     ...(L.proposal ? { layout: { goal: L.proposal.id, asked: L.proposal.asked, label: L.proposal.label, fill_ratio: L.proposal.fill_ratio, layers: L.proposal.layers, why: L.proposal.why, source: L.proposal.source } } : {}),
   };
   const reportBytes = new TextEncoder().encode(JSON.stringify(report, null, 2) + "\n");

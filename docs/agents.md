@@ -221,9 +221,15 @@ The people asking for a device are often beginners. The server instructions say 
     person the choice in plain words ("one flat layer: 17.5 mm thick but 131 mm tall; or the cell
     behind the screen: ...") and build it with `design_case` / `update_case {"layout": "<id>"}`
     (default `auto` = balanced; pin a part with `placements` to move it). Show the front and exploded renders it returns, the measured size and the checks (pocket
-    verdict, screen window, button travel, USB access). Then `export_manufacturing`: one folder +
+    verdict, screen window, button travel, USB access). Round 12: then `get_assembly_plan`, how to
+    build it for that case: everything to buy (the parts, wire by gauge and length, Kapton, a foam
+    pad, screws), everything to print (each STL with its face on the bed), and the steps in an order
+    that works (which half each part goes into and when, leads soldered before a part covers its
+    pads, the wires between the halves with the case open like a book, the battery last and
+    insulated, a test before closing), a picture each. Walk the person through it in plain words and
+    fix what its `assembly-*` checks flag. Then `export_manufacturing`: one folder +
     zip with the case (STL, 3MF, STEP, drawing, print notes), BOM, wiring, netlists, wire cuts,
-    firmware, numbered assembly steps and the test plan, for a 3D printer or a supplier. Say plainly
+    firmware, the assembly steps with their pictures and the test plan, for a 3D printer or a supplier. Say plainly
     that the print, the plastic and the hand feel were not tested. Guide: [enclosures.md](enclosures.md).
 
 ### check_design codes worth knowing

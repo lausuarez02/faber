@@ -30,7 +30,7 @@
     "d": 14.5
   },
   "wall_mm": 1.6,
-  "mass_g": 33.2,
+  "mass_g": 33.8,
   "volume_cm3": 97.1,
   "pocket": "tight",
   "ok": true,
@@ -112,6 +112,68 @@
       "ok": true,
       "severity": "info",
       "message": "70.7 x 94.3 x 19.6 mm, 97 cm³: tight in a pocket: 19.6 mm thick (18 to 22 mm) and 94.3 x 70.7 mm across (a pocket takes about 110 x 70 mm). Thinner: exclude a part that need not be inside, or try another shape (each packs differently)."
+    },
+    {
+      "id": "assembly-solder",
+      "ok": true,
+      "severity": "info",
+      "message": "Every joint can be soldered in place, each as soon as both of its parts are in.",
+      "facts": {
+        "leads": 0
+      }
+    },
+    {
+      "id": "assembly-wires",
+      "ok": true,
+      "severity": "info",
+      "message": "The wires fit: 22 wires (thickest 1.3 mm) in 1.5 mm of wiring room, about 4.3 of 35.1 cm³ free; 14 run between the shells (a 6.3 mm bundle) and are cut long enough to open the case like a book on the left.",
+      "facts": {
+        "wiring_room_mm": 1.5,
+        "thickest_wire_mm": 1.3,
+        "wires": 22,
+        "wire_volume_cm3": 4.3,
+        "free_volume_cm3": 35.1,
+        "between_shells": 14,
+        "bundle_mm": 6.3,
+        "free_at_seam_mm2": 3079
+      }
+    },
+    {
+      "id": "assembly-access",
+      "ok": true,
+      "severity": "warning",
+      "message": "Reachable with the case closed: chg.usb (charging) through its opening on the bottom; xiao.usb (flashing and power) through its opening on the left. xiao's BOOT button is inside: flash it before closing (step \"Flash the firmware\"); later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold BOOT while plugging in.",
+      "parts": [
+        "xiao"
+      ],
+      "facts": {
+        "reachable": 2,
+        "hidden_buttons": "boot, reset"
+      }
+    },
+    {
+      "id": "assembly-battery",
+      "ok": true,
+      "severity": "info",
+      "message": "bat (LiPo battery 1S (3.7 V, with protection)): corner locators on the back wall, a foam pad under it, Kapton over its tab; nothing hard within 1 mm of it (it may swell 0.5 mm). It is connected last, after a test on USB.",
+      "parts": [
+        "bat"
+      ],
+      "facts": {
+        "swell_mm": 0.5
+      }
+    },
+    {
+      "id": "assembly-held",
+      "ok": true,
+      "severity": "warning",
+      "message": "Held with foam tape where a printed clip would be better: imu (it could lift 2.5 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)). Why: there is no free room for the feature that would hold it. Fix: more room round it (update_case {\"params\": {\"gap_mm\": 2.5}}) and design again; foam tape works if you clean both surfaces first.",
+      "parts": [
+        "imu"
+      ],
+      "facts": {
+        "taped": 1
+      }
     }
   ],
   "placed": [
@@ -274,8 +336,8 @@
       "path": "stl/front.stl",
       "kind": "stl",
       "body": "front",
-      "bytes": 945984,
-      "sha256": "6204c0c6f2218aa71570f548c17cc78d77699fc99ad298f3ac96fbcc1ff8d359",
+      "bytes": 963584,
+      "sha256": "c54b50ebe9e0da1dd667785038344c8624a786a164fc9d83ea2fc8b0f1bffe25",
       "print": {
         "face_down": "front",
         "supports": false,
@@ -286,8 +348,8 @@
       "path": "stl/back.stl",
       "kind": "stl",
       "body": "back",
-      "bytes": 764384,
-      "sha256": "525f353a2ea02d143c43bd18978d68ea3a2866dbe53ef393ab5a86c9359d397b",
+      "bytes": 793584,
+      "sha256": "cf6df06125ab0f9e1c16d8cc98a3a0c37ecedd216777634511c08d610c2ad149",
       "print": {
         "face_down": "back",
         "supports": false,
@@ -310,29 +372,29 @@
       "path": "case.3mf",
       "kind": "3mf",
       "body": "all",
-      "bytes": 385213,
-      "sha256": "6c944654bcbf161c435697045365e0ff700b92b0ca7d7ac2093c9be080f4b5c0"
+      "bytes": 393193,
+      "sha256": "0f6b0e39365d6af470c78d590739d3a4292ec585a0607d8c90cf68ad2e35d79f"
     },
     {
       "path": "step/assembly.step",
       "kind": "step",
       "body": "assembly",
-      "bytes": 4790265,
-      "sha256": "9fb0caa6fc0c22b749da6c68b11702a6efa756b5180050731f75df5c203f2cd7"
+      "bytes": 4911171,
+      "sha256": "ef9500cbdc16980afdab7dda9a841b4117b07df8d3dc26690db43944ac2cb9d7"
     },
     {
       "path": "step/front.step",
       "kind": "step",
       "body": "front",
-      "bytes": 2980908,
-      "sha256": "076d74eadf20aca9a098a039fe651695582f35faa97cd299eabbbba881eb3ecb"
+      "bytes": 3006997,
+      "sha256": "295537151defe44dbb9dfdf0a3beb8b0993e55a001265dcecbeb228ac6fcdb07"
     },
     {
       "path": "step/back.step",
       "kind": "step",
       "body": "back",
-      "bytes": 1607735,
-      "sha256": "095936a07bd9997aaac9ffe273eb836936025a5bcb4dde8f9e15322c701b668c"
+      "bytes": 1702547,
+      "sha256": "50b6f3635c2a109df6207ad47412118ce679d722a5de04b909465d9f14baf743"
     },
     {
       "path": "renders/front.png",
@@ -352,29 +414,183 @@
       "path": "renders/exploded.png",
       "kind": "png",
       "body": "render-exploded",
-      "bytes": 96237,
-      "sha256": "a28a696a844fcb7d48626d67466d8e2890da57d3dbf73795d74c94984ef1c6ff"
+      "bytes": 97809,
+      "sha256": "a70aba0cbd50965d8ede07f1723023e1a833dac3753c2c4379aa3cc83760d133"
     },
     {
       "path": "renders/inside.png",
       "kind": "png",
       "body": "render-inside",
-      "bytes": 98186,
-      "sha256": "f78fb950f6a9a27a0f20424c6ee4dc826838be247b61653428923c09e38fe5da"
+      "bytes": 101352,
+      "sha256": "781df5269d02cc02f4998dd34112ae6738987e9405e0f95b3dbb53c7db0e1cfc"
+    },
+    {
+      "path": "assembly/step-01.png",
+      "kind": "png",
+      "body": "step-01",
+      "bytes": 66254,
+      "sha256": "89e5fb00ef5047913dd3d32193d44504ef885f676e3c7ed22181f76aa778e914"
+    },
+    {
+      "path": "assembly/step-02.png",
+      "kind": "png",
+      "body": "step-02",
+      "bytes": 4536,
+      "sha256": "6823167af70d00052b2f8856005259ddd573a8ab907d0aa8e2b42808ebd5065d"
+    },
+    {
+      "path": "assembly/step-03.png",
+      "kind": "png",
+      "body": "step-03",
+      "bytes": 3036,
+      "sha256": "6cc1228dd0ed2979c635cab6a7c60d873d19a4ab84f83b4215d33863a529f2fd"
+    },
+    {
+      "path": "assembly/step-04.png",
+      "kind": "png",
+      "body": "step-04",
+      "bytes": 49222,
+      "sha256": "eb6c1fda589ccc6c5fc57ecdd2ee373e11b73824d32fb98bbeb585d1a828722e"
+    },
+    {
+      "path": "assembly/step-05.png",
+      "kind": "png",
+      "body": "step-05",
+      "bytes": 47786,
+      "sha256": "f1bdb9d72b237cc4f9478bb55b8f6dab6da22ddeba53c7f73b855705b2da395a"
+    },
+    {
+      "path": "assembly/step-06.png",
+      "kind": "png",
+      "body": "step-06",
+      "bytes": 48441,
+      "sha256": "d43177425a42a6be110dc35d6302c20f5894e585c48b71a28e8b878e1358bae2"
+    },
+    {
+      "path": "assembly/step-07.png",
+      "kind": "png",
+      "body": "step-07",
+      "bytes": 38250,
+      "sha256": "43066b4a3b4ca0d1a16a30fc268ac2e3318a146babb3ebeb44cbf827372ef70a"
+    },
+    {
+      "path": "assembly/step-08.png",
+      "kind": "png",
+      "body": "step-08",
+      "bytes": 38498,
+      "sha256": "f2052364535dec2a3758830d3f1bd54ad84bc19ea198c6fef1df750948d77b0c"
+    },
+    {
+      "path": "assembly/step-09.png",
+      "kind": "png",
+      "body": "step-09",
+      "bytes": 35848,
+      "sha256": "749c0b4b3db4858b065d522d6912538b281769fe65d489e7a725317df1212b08"
+    },
+    {
+      "path": "assembly/step-10.png",
+      "kind": "png",
+      "body": "step-10",
+      "bytes": 34679,
+      "sha256": "2d2b7f228b60a0c55cbee5c7f2b39b5093f442166a2624292fce1518cf9b6cf5"
+    },
+    {
+      "path": "assembly/step-11.png",
+      "kind": "png",
+      "body": "step-11",
+      "bytes": 37475,
+      "sha256": "cfb3a13958f58b0cdc5dd83ef6863abd77f08368c7e2c91eb53f975fe3ca8f41"
+    },
+    {
+      "path": "assembly/step-12.png",
+      "kind": "png",
+      "body": "step-12",
+      "bytes": 35772,
+      "sha256": "18813d11c7051f2d258da4399017c84afa49330721d0ff6b086db9019dd71bfa"
+    },
+    {
+      "path": "assembly/step-13.png",
+      "kind": "png",
+      "body": "step-13",
+      "bytes": 36774,
+      "sha256": "f911a529816e0601fd8e69ab573dca631d95006a8844d00c22bebcefd7ee2c2d"
+    },
+    {
+      "path": "assembly/step-14.png",
+      "kind": "png",
+      "body": "step-14",
+      "bytes": 36048,
+      "sha256": "b2db0ec65d3c9b3ba0f34ae4b5a1ed916e83abed7dea49a3bafe482dcc256a6c"
+    },
+    {
+      "path": "assembly/step-15.png",
+      "kind": "png",
+      "body": "step-15",
+      "bytes": 36907,
+      "sha256": "c4da0b083ff4cc714681631bf43cbe9a3daa04a330605ca087a755a8bcab0f33"
+    },
+    {
+      "path": "assembly/step-16.png",
+      "kind": "png",
+      "body": "step-16",
+      "bytes": 61593,
+      "sha256": "c682d1766e1924cd964bad5dd24d965bb56187bdd9bb4a5b25cc2520c761ef55"
+    },
+    {
+      "path": "assembly/step-17.png",
+      "kind": "png",
+      "body": "step-17",
+      "bytes": 55836,
+      "sha256": "be84a7ef4f17ca88ad2a04096be6867efbd3f025260c0d6e7edc98ecbfb8df1d"
+    },
+    {
+      "path": "assembly/step-18.png",
+      "kind": "png",
+      "body": "step-18",
+      "bytes": 37051,
+      "sha256": "31fd3e2d3f3dcc76719db3371c031098fa00e76cad83726ae1f6bdd2764ada89"
+    },
+    {
+      "path": "assembly/step-19.png",
+      "kind": "png",
+      "body": "step-19",
+      "bytes": 56173,
+      "sha256": "69dfe0e41096d8d1ab3060771a37d2ddf9c6f7563e43def4663e808d07a0d848"
+    },
+    {
+      "path": "assembly/step-20.png",
+      "kind": "png",
+      "body": "step-20",
+      "bytes": 66788,
+      "sha256": "9c86b8edd7c16c57e4d5dc83ab7f1064b6dd502ae706e4a021c2c99dcd92ce7b"
+    },
+    {
+      "path": "assembly/step-21.png",
+      "kind": "png",
+      "body": "step-21",
+      "bytes": 59085,
+      "sha256": "4b0d62c7d22ed20138058592f90c6ff72a46a1678ae1119d4250292222e6cc6c"
+    },
+    {
+      "path": "assembly/plan.json",
+      "kind": "json",
+      "body": "plan",
+      "bytes": 38582,
+      "sha256": "68fe2b7eec57a8f5014080ae46422fe8dc77cac39eaa3106b0be6bab4e6a236c"
     },
     {
       "path": "drawing/drawing.svg",
       "kind": "svg",
       "body": "drawing",
       "bytes": 14477,
-      "sha256": "675302449d7265d933300fc81fedd591b2ed656694ae28899df7a11b78ef3440"
+      "sha256": "7a3d44656d6179cc7178e420c48eed2c302258453a27f4777f44b1f44d9fc39f"
     },
     {
       "path": "drawing/drawing.pdf",
       "kind": "pdf",
       "body": "drawing",
       "bytes": 87271,
-      "sha256": "0032e80972774da6088e1e9b8e325d2b822046bd43ab56402116028b5d7f88dc"
+      "sha256": "497c6d55a52b87eb0754fc18b7767405855ed0e04e9eb80e8a2ad22bcc1ab755"
     },
     {
       "path": "PRINT.md",
@@ -384,7 +600,7 @@
       "sha256": "2d8b0e1cf0ba7e1112416556661b64c45d27c100db7f88989d14c7fc93255548"
     }
   ],
-  "hash": "1f5f4aaa2d409acf",
+  "hash": "57ba0bfeef706587",
   "notes": [
     "Domed faces: the front rises 1.0 mm and the back 0.9 mm above the flat wall, with a flat 38 mm land around the window and a flat 32 mm pad on the back (each shell prints on its flat).",
     "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
@@ -883,6 +1099,52 @@
       -1.81
     ]
   ],
+  "assembly": {
+    "steps": 21,
+    "plan": "assembly/plan.json",
+    "images": [
+      "assembly/step-01.png",
+      "assembly/step-02.png",
+      "assembly/step-03.png",
+      "assembly/step-04.png",
+      "assembly/step-05.png",
+      "assembly/step-06.png",
+      "assembly/step-07.png",
+      "assembly/step-08.png",
+      "assembly/step-09.png",
+      "assembly/step-10.png",
+      "assembly/step-11.png",
+      "assembly/step-12.png",
+      "assembly/step-13.png",
+      "assembly/step-14.png",
+      "assembly/step-15.png",
+      "assembly/step-16.png",
+      "assembly/step-17.png",
+      "assembly/step-18.png",
+      "assembly/step-19.png",
+      "assembly/step-20.png",
+      "assembly/step-21.png"
+    ],
+    "hinge": "left",
+    "order": {
+      "front": [
+        "eye",
+        "imu",
+        "d1"
+      ],
+      "back": [
+        "cap-pet",
+        "squeak",
+        "bat",
+        "chg",
+        "xiao",
+        "pet",
+        "pwr"
+      ]
+    },
+    "errors": 0,
+    "warnings": 2
+  },
   "layout": {
     "goal": "balanced",
     "asked": "auto",

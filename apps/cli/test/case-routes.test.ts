@@ -36,6 +36,9 @@ describe("jumper serve: case routes", () => {
     expect(m.status).toBe(404);
     expect((await m.json()).error).toMatch(/No case yet\. Why: .*Fix: /);
     expect(await (await fetch(`${srv.url}/api/device/case`)).json()).toEqual({ case: null });
+    const a = await post("/api/case/assembly", {});
+    expect(a.status).toBe(404);
+    expect((await a.json()).error).toMatch(/No case yet\. Why: .*Fix: /);
   });
 
   it("GET lists the shapes made with save: false (case/variants/<shape>/report.json)", async () => {
@@ -84,6 +87,16 @@ describe("jumper serve: case routes", () => {
       expect(zip.status).toBe(200);
       expect(zip.headers.get("content-type")).toBe("application/zip");
       expect((await fetch(`${srv.url}/api/manufacturing/..%2Fjumper.zip`)).status).toBe(404);
+      // round 12: how to build it, with a picture per step the page can load
+      expect((await post("/api/case/assembly", {}, "nope")).status).toBe(403);
+      const a = await (await post("/api/case/assembly", {})).json();
+      expect(a.steps.length).toBeGreaterThan(8);
+      expect(a.buy.length).toBeGreaterThan(3);
+      expect(a.print.map((p: { file: string }) => p.file)).toContain("case/stl/front.stl");
+      expect(a.dir).toBeUndefined();
+      const img = await fetch(`${srv.url}${a.steps[0].image_url}`);
+      expect(img.status).toBe(200);
+      expect(img.headers.get("content-type")).toBe("image/png");
     },
     240_000,
   );

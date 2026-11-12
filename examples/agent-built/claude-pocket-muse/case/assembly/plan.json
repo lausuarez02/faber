@@ -1,0 +1,1438 @@
+{
+  "title": "Pocket Muse",
+  "steps": [
+    {
+      "n": 1,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "flush cutters",
+        "hobby knife"
+      ],
+      "cautions": [
+        "Do not force a tight fit: sand the lip or reprint with tolerance_mm 0.3."
+      ],
+      "title": "Check the printed parts",
+      "say": "Print the case (enclosure/PRINT.md): front shell, back shell, button plunger for pet. Remove the brim, clear each hole with a 2 mm drill or a knife, then press the two shells together once without anything inside: they should close evenly and click. If they do not, fix the print (or the tolerance) before going on.",
+      "shell": "bench",
+      "parts": [],
+      "action": "test",
+      "view": {
+        "explode": 1,
+        "highlight": [],
+        "camera": "exploded"
+      },
+      "image": "assembly/step-01.png"
+    },
+    {
+      "n": 2,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "USB cable for the board",
+        "computer"
+      ],
+      "cautions": [
+        "Flash it bare: once it is wired, a short could hide a flashing problem."
+      ],
+      "title": "Flash the firmware",
+      "say": "Before anything is soldered, flash the firmware onto the bare xiao (Seeed XIAO RP2040) (firmware/FLASHING.md) and check it starts: the serial monitor prints or the screen lights. A board that does not flash is easy to swap now.",
+      "shell": "bench",
+      "parts": [
+        "xiao"
+      ],
+      "action": "flash",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "xiao"
+        ],
+        "camera": "bench"
+      },
+      "image": "assembly/step-02.png"
+    },
+    {
+      "n": 3,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w1",
+          "from": "eye.VCC",
+          "to": "xiao.3V3",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w2",
+          "from": "eye.GND",
+          "to": "xiao.GND.1",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "black",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w3",
+          "from": "eye.SCK",
+          "to": "xiao.GP2",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "yellow",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w4",
+          "from": "eye.MOSI",
+          "to": "xiao.GP3",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "purple",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w5",
+          "from": "eye.CS",
+          "to": "xiao.GP1",
+          "length_mm": 100,
+          "gauge": 26,
+          "color": "white",
+          "route": "between",
+          "open_mm": 100
+        },
+        {
+          "id": "w6",
+          "from": "eye.DC",
+          "to": "xiao.GP29",
+          "length_mm": 90,
+          "gauge": 26,
+          "color": "green",
+          "route": "between",
+          "open_mm": 90
+        },
+        {
+          "id": "w7",
+          "from": "eye.RST",
+          "to": "xiao.GP28",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "orange",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w9",
+          "from": "imu.VCC",
+          "to": "xiao.3V3",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w10",
+          "from": "imu.GND",
+          "to": "xiao.GND.1",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "black",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w11",
+          "from": "imu.SDA",
+          "to": "xiao.GP6",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "white",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w12",
+          "from": "imu.SCL",
+          "to": "xiao.GP7",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "green",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w13",
+          "from": "pet.1a",
+          "to": "xiao.GP26",
+          "length_mm": 105,
+          "gauge": 26,
+          "color": "orange",
+          "route": "back"
+        },
+        {
+          "id": "w14",
+          "from": "pet.2a",
+          "to": "xiao.GND.1",
+          "length_mm": 105,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        },
+        {
+          "id": "w15",
+          "from": "squeak.POS",
+          "to": "xiao.GP27",
+          "length_mm": 95,
+          "gauge": 26,
+          "color": "yellow",
+          "route": "back"
+        },
+        {
+          "id": "w16",
+          "from": "squeak.NEG",
+          "to": "xiao.GND.1",
+          "length_mm": 105,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        },
+        {
+          "id": "w17",
+          "from": "bat.POS",
+          "to": "chg.BAT",
+          "length_mm": 50,
+          "gauge": 24,
+          "color": "red",
+          "route": "battery"
+        },
+        {
+          "id": "w18",
+          "from": "bat.NEG",
+          "to": "chg.GND.2",
+          "length_mm": 55,
+          "gauge": 24,
+          "color": "black",
+          "route": "battery"
+        },
+        {
+          "id": "w19",
+          "from": "chg.GND.3",
+          "to": "xiao.GND.1",
+          "length_mm": 80,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        },
+        {
+          "id": "w8",
+          "from": "eye.LED",
+          "to": "xiao.GP0",
+          "length_mm": 105,
+          "gauge": 26,
+          "color": "blue",
+          "route": "between",
+          "open_mm": 105
+        },
+        {
+          "id": "w20",
+          "from": "chg.OUT",
+          "to": "pwr.2",
+          "length_mm": 115,
+          "gauge": 24,
+          "color": "red",
+          "route": "back"
+        },
+        {
+          "id": "w21",
+          "from": "pwr.1",
+          "to": "d1.A",
+          "length_mm": 100,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 80
+        },
+        {
+          "id": "w22",
+          "from": "d1.C",
+          "to": "xiao.VBUS",
+          "length_mm": 60,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 60
+        }
+      ],
+      "tools": [
+        "wire stripper (24 to 26 AWG)",
+        "flush cutters",
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux"
+      ],
+      "cautions": [],
+      "title": "Cut, strip and tin the wires",
+      "say": "Cut the 22 wires to the lengths in electronics/WIRE-CUTS.csv (the 14 between the shells are longer so the case can open like a book), strip 5 mm at each end and tin every end. Label each with its wire id on a bit of tape.",
+      "shell": "bench",
+      "parts": [],
+      "action": "solder",
+      "view": {
+        "explode": 0,
+        "highlight": [],
+        "camera": "bench"
+      },
+      "image": "assembly/step-03.png"
+    },
+    {
+      "n": 4,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [
+        "Leave the screen's protective film on until the case is closed; do not press on the glass."
+      ],
+      "title": "Put eye into the front shell",
+      "say": "eye drops into the front shell: its bezel rests on the ledge round the window; ribs round it keep it in place; posts from the other shell stop it lifting when the case is closed.",
+      "shell": "front",
+      "parts": [
+        "eye"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "eye"
+        ],
+        "camera": "front-shell"
+      },
+      "image": "assembly/step-04.png"
+    },
+    {
+      "n": 5,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "1 mm double-sided foam tape"
+      ],
+      "cautions": [
+        "Why tape: it could lift 2.5 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)."
+      ],
+      "title": "Put imu into the front shell",
+      "say": "imu presses into the front shell: it presses onto the case's pins through its mounting holes; a strip of 1 mm foam tape holds it (no clip fits).",
+      "shell": "front",
+      "parts": [
+        "imu"
+      ],
+      "action": "tape",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "imu"
+        ],
+        "camera": "front-shell"
+      },
+      "image": "assembly/step-05.png"
+    },
+    {
+      "n": 6,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "1 mm double-sided foam tape"
+      ],
+      "cautions": [
+        "Why tape: it could lift 4.3 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)."
+      ],
+      "title": "Put d1 into the front shell",
+      "say": "d1 drops into the front shell: ribs round it keep it in place; a strip of 1 mm foam tape holds it (no clip fits).",
+      "shell": "front",
+      "parts": [
+        "d1"
+      ],
+      "action": "tape",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "d1"
+        ],
+        "camera": "front-shell"
+      },
+      "image": "assembly/step-06.png"
+    },
+    {
+      "n": 7,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [
+        "Check each one moves freely before the part goes behind it."
+      ],
+      "title": "Put the button plungers into the back shell",
+      "say": "From the inside of the back shell, push the plunger for pet into its hole on the right, flange inside. They go in before the parts behind them.",
+      "shell": "back",
+      "parts": [
+        "cap-pet"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 6,
+        "highlight": [
+          "cap-pet"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-07.png"
+    },
+    {
+      "n": 8,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [],
+      "title": "Put squeak into the back shell",
+      "say": "squeak drops into the back shell: ribs round it keep it in place; its port / button / lever sits in its opening; posts from the other shell stop it lifting when the case is closed.",
+      "shell": "back",
+      "parts": [
+        "squeak"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "squeak"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-08.png"
+    },
+    {
+      "n": 9,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [],
+      "title": "Put chg into the back shell",
+      "say": "chg drops into the back shell: its port / button / lever sits in its opening.",
+      "shell": "back",
+      "parts": [
+        "chg"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "chg"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-09.png"
+    },
+    {
+      "n": 10,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [
+        "Hold boards by the edges (static)."
+      ],
+      "title": "Put xiao into the back shell",
+      "say": "xiao drops into the back shell: it rests on seat posts; its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger.",
+      "shell": "back",
+      "parts": [
+        "xiao"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "xiao"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-10.png"
+    },
+    {
+      "n": 11,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w15",
+          "from": "squeak.POS",
+          "to": "xiao.GP27",
+          "length_mm": 95,
+          "gauge": 26,
+          "color": "yellow",
+          "route": "back"
+        },
+        {
+          "id": "w16",
+          "from": "squeak.NEG",
+          "to": "xiao.GND.1",
+          "length_mm": 105,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        },
+        {
+          "id": "w19",
+          "from": "chg.GND.3",
+          "to": "xiao.GND.1",
+          "length_mm": 80,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        }
+      ],
+      "tools": [
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux",
+        "tweezers",
+        "helping hands"
+      ],
+      "cautions": [
+        "Point the iron away from the plastic: PLA softens at about 60 °C.",
+        "Cover any bare joint near another one with heat-shrink or Kapton."
+      ],
+      "title": "Solder the wires to xiao",
+      "say": "With xiao in place, solder w15 (squeak.POS to xiao.GP27, yellow, 95 mm), w16 (squeak.NEG to xiao.GND.1, black, 105 mm), w19 (chg.GND.3 to xiao.GND.1, black, 80 mm). Run each along the wall or the edge of a part, through the wiring room, never over the seam.",
+      "shell": "back",
+      "parts": [
+        "squeak",
+        "xiao",
+        "chg"
+      ],
+      "action": "solder",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "xiao"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-11.png"
+    },
+    {
+      "n": 12,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [],
+      "title": "Put pet into the back shell",
+      "say": "pet drops into the back shell: its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger.",
+      "shell": "back",
+      "parts": [
+        "pet"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "pet"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-12.png"
+    },
+    {
+      "n": 13,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w13",
+          "from": "pet.1a",
+          "to": "xiao.GP26",
+          "length_mm": 105,
+          "gauge": 26,
+          "color": "orange",
+          "route": "back"
+        },
+        {
+          "id": "w14",
+          "from": "pet.2a",
+          "to": "xiao.GND.1",
+          "length_mm": 105,
+          "gauge": 24,
+          "color": "black",
+          "route": "back"
+        }
+      ],
+      "tools": [
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux",
+        "tweezers",
+        "helping hands"
+      ],
+      "cautions": [
+        "Point the iron away from the plastic: PLA softens at about 60 °C.",
+        "Cover any bare joint near another one with heat-shrink or Kapton."
+      ],
+      "title": "Solder the wires to pet",
+      "say": "With pet in place, solder w13 (pet.1a to xiao.GP26, orange, 105 mm), w14 (pet.2a to xiao.GND.1, black, 105 mm). Run each along the wall or the edge of a part, through the wiring room, never over the seam.",
+      "shell": "back",
+      "parts": [
+        "pet",
+        "xiao"
+      ],
+      "action": "solder",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "pet"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-13.png"
+    },
+    {
+      "n": 14,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [
+        "Hold it 4.5 mm away from the top wall, push the lever through its slot, then lay it down."
+      ],
+      "title": "Slide pwr into the back shell",
+      "say": "pwr slides into the back shell: its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger.",
+      "shell": "back",
+      "parts": [
+        "pwr"
+      ],
+      "action": "place",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "pwr"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-14.png"
+    },
+    {
+      "n": 15,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w20",
+          "from": "chg.OUT",
+          "to": "pwr.2",
+          "length_mm": 115,
+          "gauge": 24,
+          "color": "red",
+          "route": "back"
+        }
+      ],
+      "tools": [
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux",
+        "tweezers",
+        "helping hands"
+      ],
+      "cautions": [
+        "Point the iron away from the plastic: PLA softens at about 60 °C.",
+        "Cover any bare joint near another one with heat-shrink or Kapton."
+      ],
+      "title": "Solder the wires to pwr",
+      "say": "With pwr in place, solder w20 (chg.OUT to pwr.2, red, 115 mm). Run each along the wall or the edge of a part, through the wiring room, never over the seam.",
+      "shell": "back",
+      "parts": [
+        "chg",
+        "pwr"
+      ],
+      "action": "solder",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "pwr"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-15.png"
+    },
+    {
+      "n": 16,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w1",
+          "from": "eye.VCC",
+          "to": "xiao.3V3",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w2",
+          "from": "eye.GND",
+          "to": "xiao.GND.1",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "black",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w3",
+          "from": "eye.SCK",
+          "to": "xiao.GP2",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "yellow",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w4",
+          "from": "eye.MOSI",
+          "to": "xiao.GP3",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "purple",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w5",
+          "from": "eye.CS",
+          "to": "xiao.GP1",
+          "length_mm": 100,
+          "gauge": 26,
+          "color": "white",
+          "route": "between",
+          "open_mm": 100
+        },
+        {
+          "id": "w6",
+          "from": "eye.DC",
+          "to": "xiao.GP29",
+          "length_mm": 90,
+          "gauge": 26,
+          "color": "green",
+          "route": "between",
+          "open_mm": 90
+        },
+        {
+          "id": "w7",
+          "from": "eye.RST",
+          "to": "xiao.GP28",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "orange",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w9",
+          "from": "imu.VCC",
+          "to": "xiao.3V3",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w10",
+          "from": "imu.GND",
+          "to": "xiao.GND.1",
+          "length_mm": 75,
+          "gauge": 24,
+          "color": "black",
+          "route": "between",
+          "open_mm": 75
+        },
+        {
+          "id": "w11",
+          "from": "imu.SDA",
+          "to": "xiao.GP6",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "white",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w12",
+          "from": "imu.SCL",
+          "to": "xiao.GP7",
+          "length_mm": 85,
+          "gauge": 26,
+          "color": "green",
+          "route": "between",
+          "open_mm": 85
+        },
+        {
+          "id": "w8",
+          "from": "eye.LED",
+          "to": "xiao.GP0",
+          "length_mm": 105,
+          "gauge": 26,
+          "color": "blue",
+          "route": "between",
+          "open_mm": 105
+        },
+        {
+          "id": "w21",
+          "from": "pwr.1",
+          "to": "d1.A",
+          "length_mm": 100,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 80
+        },
+        {
+          "id": "w22",
+          "from": "d1.C",
+          "to": "xiao.VBUS",
+          "length_mm": 60,
+          "gauge": 24,
+          "color": "red",
+          "route": "between",
+          "open_mm": 60
+        }
+      ],
+      "tools": [
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux",
+        "tweezers",
+        "helping hands",
+        "Kapton tape"
+      ],
+      "cautions": [
+        "Keep the bundle away from the lip and the screw bosses."
+      ],
+      "title": "Open it like a book and join the two shells' wires",
+      "say": "Lay the front shell face down next to the back shell on its left side, both open sides up, as if the case were a book opened on the left. Solder the 14 wires that run between them: w1 (eye.VCC to xiao.3V3, 75 mm), w2 (eye.GND to xiao.GND.1, 75 mm), w3 (eye.SCK to xiao.GP2, 85 mm), w4 (eye.MOSI to xiao.GP3, 85 mm), w5 (eye.CS to xiao.GP1, 100 mm), w6 (eye.DC to xiao.GP29, 90 mm), w7 (eye.RST to xiao.GP28, 85 mm), w9 (imu.VCC to xiao.3V3, 75 mm), w10 (imu.GND to xiao.GND.1, 75 mm), w11 (imu.SDA to xiao.GP6, 85 mm), w12 (imu.SCL to xiao.GP7, 85 mm), w8 (eye.LED to xiao.GP0, 105 mm), w21 (pwr.1 to d1.A, 100 mm), w22 (d1.C to xiao.VBUS, 60 mm). Bundle them with a strip of Kapton near the left wall so they fold in when the case closes.",
+      "shell": "both",
+      "parts": [
+        "eye",
+        "xiao",
+        "imu",
+        "pwr",
+        "d1"
+      ],
+      "action": "route-wire",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "eye",
+          "xiao",
+          "imu",
+          "pwr",
+          "d1"
+        ],
+        "camera": "open-book"
+      },
+      "image": "assembly/step-16.png"
+    },
+    {
+      "n": 17,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "USB cable",
+        "multimeter"
+      ],
+      "cautions": [
+        "Look for a hot part in the first seconds: unplug at once if anything warms up."
+      ],
+      "title": "Test it on USB before the battery",
+      "say": "Plug a USB cable into xiao.usb with the case still open and the battery not connected. Run through test/TEST-PLAN.md: the screen, buttons and sounds should behave as in the simulation. Fix anything now, while every joint is easy to reach.",
+      "shell": "both",
+      "parts": [
+        "xiao"
+      ],
+      "action": "test",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "xiao"
+        ],
+        "camera": "open-book"
+      },
+      "image": "assembly/step-17.png"
+    },
+    {
+      "n": 18,
+      "fasteners": [],
+      "wires": [
+        {
+          "id": "w17",
+          "from": "bat.POS",
+          "to": "chg.BAT",
+          "length_mm": 50,
+          "gauge": 24,
+          "color": "red",
+          "route": "battery"
+        },
+        {
+          "id": "w18",
+          "from": "bat.NEG",
+          "to": "chg.GND.2",
+          "length_mm": 55,
+          "gauge": 24,
+          "color": "black",
+          "route": "battery"
+        }
+      ],
+      "tools": [
+        "Kapton tape",
+        "1 mm foam pad",
+        "soldering iron (fine tip, about 330 °C)",
+        "solder (0.5 mm, rosin core)",
+        "flux"
+      ],
+      "cautions": [
+        "Never let the two bare leads touch, and never solder with both connected to anything else.",
+        "Do not bend, press or pierce the cell; nothing hard may press on it (it swells up to 10 %).",
+        "Check the polarity with a multimeter before connecting: a reversed LiPo destroys the charger."
+      ],
+      "title": "Place and connect the battery bat",
+      "say": "Stick a 1 mm foam pad on the back wall where the cell goes and lay bat (LiPo battery 1S (3.7 V, with protection)) on it between its corner locators. Put Kapton tape over its protection board and tab, then a Kapton strap over it. Last, connect its leads: w17 (bat.POS to chg.BAT), w18 (bat.NEG to chg.GND.2), red to + first, one lead at a time.",
+      "shell": "back",
+      "parts": [
+        "bat"
+      ],
+      "action": "tape",
+      "view": {
+        "explode": 8,
+        "highlight": [
+          "bat"
+        ],
+        "camera": "back-shell"
+      },
+      "image": "assembly/step-18.png"
+    },
+    {
+      "n": 19,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "multimeter"
+      ],
+      "cautions": [
+        "If it does not start, switch off and check the battery wiring before anything else."
+      ],
+      "title": "Test it on the battery",
+      "say": "Unplug USB and switch it on with pwr: it should start from the battery. Then plug USB into the charging port and check the charge light.",
+      "shell": "both",
+      "parts": [
+        "bat"
+      ],
+      "action": "test",
+      "view": {
+        "explode": 0,
+        "highlight": [
+          "bat"
+        ],
+        "camera": "open-book"
+      },
+      "image": "assembly/step-19.png"
+    },
+    {
+      "n": 20,
+      "fasteners": [],
+      "wires": [],
+      "tools": [],
+      "cautions": [
+        "A pinched wire can short: look along the seam before the last press."
+      ],
+      "title": "Close the case",
+      "say": "Fold the wires in so none crosses the seam or the lip, line the front shell up with the back and press it on evenly all round until the lip clicks. Nothing should need force: if it does, a wire or a part is in the way.",
+      "shell": "closed",
+      "parts": [],
+      "action": "close",
+      "view": {
+        "explode": 1,
+        "highlight": [],
+        "camera": "exploded"
+      },
+      "image": "assembly/step-20.png"
+    },
+    {
+      "n": 21,
+      "fasteners": [],
+      "wires": [],
+      "tools": [
+        "USB cable"
+      ],
+      "cautions": [
+        "Peel the screen's film last."
+      ],
+      "title": "Final test, closed",
+      "say": "With the case closed: plug a cable into chg.usb and xiao.usb; press every button through its plunger; check the screen through the window; then run test/TEST-PLAN.md and test/TEST-ON-HARDWARE.md once more.",
+      "shell": "closed",
+      "parts": [],
+      "action": "test",
+      "view": {
+        "explode": 0,
+        "highlight": [],
+        "camera": "closed"
+      },
+      "image": "assembly/step-21.png"
+    }
+  ],
+  "checks": [
+    {
+      "id": "assembly-solder",
+      "ok": true,
+      "severity": "info",
+      "message": "Every joint can be soldered in place, each as soon as both of its parts are in.",
+      "facts": {
+        "leads": 0
+      }
+    },
+    {
+      "id": "assembly-wires",
+      "ok": true,
+      "severity": "info",
+      "message": "The wires fit: 22 wires (thickest 1.3 mm) in 1.5 mm of wiring room, about 4.3 of 35.1 cm³ free; 14 run between the shells (a 6.3 mm bundle) and are cut long enough to open the case like a book on the left.",
+      "facts": {
+        "wiring_room_mm": 1.5,
+        "thickest_wire_mm": 1.3,
+        "wires": 22,
+        "wire_volume_cm3": 4.3,
+        "free_volume_cm3": 35.1,
+        "between_shells": 14,
+        "bundle_mm": 6.3,
+        "free_at_seam_mm2": 3079
+      }
+    },
+    {
+      "id": "assembly-access",
+      "ok": true,
+      "severity": "warning",
+      "message": "Reachable with the case closed: chg.usb (charging) through its opening on the bottom; xiao.usb (flashing and power) through its opening on the left. xiao's BOOT button is inside: flash it before closing (step \"Flash the firmware\"); later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold BOOT while plugging in.",
+      "parts": [
+        "xiao"
+      ],
+      "facts": {
+        "reachable": 2,
+        "hidden_buttons": "boot, reset"
+      }
+    },
+    {
+      "id": "assembly-battery",
+      "ok": true,
+      "severity": "info",
+      "message": "bat (LiPo battery 1S (3.7 V, with protection)): corner locators on the back wall, a foam pad under it, Kapton over its tab; nothing hard within 1 mm of it (it may swell 0.5 mm). It is connected last, after a test on USB.",
+      "parts": [
+        "bat"
+      ],
+      "facts": {
+        "swell_mm": 0.5
+      }
+    },
+    {
+      "id": "assembly-held",
+      "ok": true,
+      "severity": "warning",
+      "message": "Held with foam tape where a printed clip would be better: imu (it could lift 2.5 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)). Why: there is no free room for the feature that would hold it. Fix: more room round it (update_case {\"params\": {\"gap_mm\": 2.5}}) and design again; foam tape works if you clean both surfaces first.",
+      "parts": [
+        "imu"
+      ],
+      "facts": {
+        "taped": 1
+      }
+    }
+  ],
+  "consumables": [
+    {
+      "item": "Silicone hook-up wire 24 AWG",
+      "qty": "1.2 m",
+      "why": "12 wires (lengths in WIRE-CUTS.csv) + 20 % spare"
+    },
+    {
+      "item": "Silicone hook-up wire 26 AWG",
+      "qty": "1.2 m",
+      "why": "10 wires (lengths in WIRE-CUTS.csv) + 20 % spare"
+    },
+    {
+      "item": "Heat-shrink tubing 1.5 to 3 mm",
+      "qty": "4 pieces",
+      "why": "inline parts, splices and any joint near another"
+    },
+    {
+      "item": "Solder 0.5 mm rosin core and flux",
+      "qty": "a few grams",
+      "why": "44 joints"
+    },
+    {
+      "item": "Kapton tape 10 mm",
+      "qty": "30 cm",
+      "why": "over the cell's tab and as its strap; wire bundles"
+    },
+    {
+      "item": "Foam pad 1 mm (EVA or PU, adhesive)",
+      "qty": "1 piece the size of the cell",
+      "why": "under the cell: room to swell, no hard edge"
+    },
+    {
+      "item": "Double-sided foam tape 1 mm",
+      "qty": "1 strip",
+      "why": "holds imu"
+    }
+  ],
+  "tools": [
+    "flush cutters",
+    "hobby knife",
+    "USB cable for the board",
+    "computer",
+    "wire stripper (24 to 26 AWG)",
+    "soldering iron (fine tip, about 330 °C)",
+    "solder (0.5 mm, rosin core)",
+    "flux",
+    "1 mm double-sided foam tape",
+    "tweezers",
+    "helping hands",
+    "Kapton tape",
+    "USB cable",
+    "multimeter",
+    "1 mm foam pad"
+  ],
+  "order": {
+    "front": [
+      "eye",
+      "imu",
+      "d1"
+    ],
+    "back": [
+      "cap-pet",
+      "squeak",
+      "bat",
+      "chg",
+      "xiao",
+      "pet",
+      "pwr"
+    ]
+  },
+  "hinge": "left",
+  "wires": [
+    {
+      "id": "w1",
+      "from": "eye.VCC",
+      "to": "xiao.3V3",
+      "length_mm": 75,
+      "gauge": 24,
+      "color": "red",
+      "route": "between",
+      "open_mm": 75
+    },
+    {
+      "id": "w2",
+      "from": "eye.GND",
+      "to": "xiao.GND.1",
+      "length_mm": 75,
+      "gauge": 24,
+      "color": "black",
+      "route": "between",
+      "open_mm": 75
+    },
+    {
+      "id": "w3",
+      "from": "eye.SCK",
+      "to": "xiao.GP2",
+      "length_mm": 85,
+      "gauge": 26,
+      "color": "yellow",
+      "route": "between",
+      "open_mm": 85
+    },
+    {
+      "id": "w4",
+      "from": "eye.MOSI",
+      "to": "xiao.GP3",
+      "length_mm": 85,
+      "gauge": 26,
+      "color": "purple",
+      "route": "between",
+      "open_mm": 85
+    },
+    {
+      "id": "w5",
+      "from": "eye.CS",
+      "to": "xiao.GP1",
+      "length_mm": 100,
+      "gauge": 26,
+      "color": "white",
+      "route": "between",
+      "open_mm": 100
+    },
+    {
+      "id": "w6",
+      "from": "eye.DC",
+      "to": "xiao.GP29",
+      "length_mm": 90,
+      "gauge": 26,
+      "color": "green",
+      "route": "between",
+      "open_mm": 90
+    },
+    {
+      "id": "w7",
+      "from": "eye.RST",
+      "to": "xiao.GP28",
+      "length_mm": 85,
+      "gauge": 26,
+      "color": "orange",
+      "route": "between",
+      "open_mm": 85
+    },
+    {
+      "id": "w9",
+      "from": "imu.VCC",
+      "to": "xiao.3V3",
+      "length_mm": 75,
+      "gauge": 24,
+      "color": "red",
+      "route": "between",
+      "open_mm": 75
+    },
+    {
+      "id": "w10",
+      "from": "imu.GND",
+      "to": "xiao.GND.1",
+      "length_mm": 75,
+      "gauge": 24,
+      "color": "black",
+      "route": "between",
+      "open_mm": 75
+    },
+    {
+      "id": "w11",
+      "from": "imu.SDA",
+      "to": "xiao.GP6",
+      "length_mm": 85,
+      "gauge": 26,
+      "color": "white",
+      "route": "between",
+      "open_mm": 85
+    },
+    {
+      "id": "w12",
+      "from": "imu.SCL",
+      "to": "xiao.GP7",
+      "length_mm": 85,
+      "gauge": 26,
+      "color": "green",
+      "route": "between",
+      "open_mm": 85
+    },
+    {
+      "id": "w13",
+      "from": "pet.1a",
+      "to": "xiao.GP26",
+      "length_mm": 105,
+      "gauge": 26,
+      "color": "orange",
+      "route": "back"
+    },
+    {
+      "id": "w14",
+      "from": "pet.2a",
+      "to": "xiao.GND.1",
+      "length_mm": 105,
+      "gauge": 24,
+      "color": "black",
+      "route": "back"
+    },
+    {
+      "id": "w15",
+      "from": "squeak.POS",
+      "to": "xiao.GP27",
+      "length_mm": 95,
+      "gauge": 26,
+      "color": "yellow",
+      "route": "back"
+    },
+    {
+      "id": "w16",
+      "from": "squeak.NEG",
+      "to": "xiao.GND.1",
+      "length_mm": 105,
+      "gauge": 24,
+      "color": "black",
+      "route": "back"
+    },
+    {
+      "id": "w17",
+      "from": "bat.POS",
+      "to": "chg.BAT",
+      "length_mm": 50,
+      "gauge": 24,
+      "color": "red",
+      "route": "battery"
+    },
+    {
+      "id": "w18",
+      "from": "bat.NEG",
+      "to": "chg.GND.2",
+      "length_mm": 55,
+      "gauge": 24,
+      "color": "black",
+      "route": "battery"
+    },
+    {
+      "id": "w19",
+      "from": "chg.GND.3",
+      "to": "xiao.GND.1",
+      "length_mm": 80,
+      "gauge": 24,
+      "color": "black",
+      "route": "back"
+    },
+    {
+      "id": "w8",
+      "from": "eye.LED",
+      "to": "xiao.GP0",
+      "length_mm": 105,
+      "gauge": 26,
+      "color": "blue",
+      "route": "between",
+      "open_mm": 105
+    },
+    {
+      "id": "w20",
+      "from": "chg.OUT",
+      "to": "pwr.2",
+      "length_mm": 115,
+      "gauge": 24,
+      "color": "red",
+      "route": "back"
+    },
+    {
+      "id": "w21",
+      "from": "pwr.1",
+      "to": "d1.A",
+      "length_mm": 100,
+      "gauge": 24,
+      "color": "red",
+      "route": "between",
+      "open_mm": 80
+    },
+    {
+      "id": "w22",
+      "from": "d1.C",
+      "to": "xiao.VBUS",
+      "length_mm": 60,
+      "gauge": 24,
+      "color": "red",
+      "route": "between",
+      "open_mm": 60
+    }
+  ],
+  "mounts": [
+    {
+      "part": "eye",
+      "shell": "front",
+      "how": [
+        "window-ledge",
+        "wall",
+        "locators",
+        "hold-down"
+      ],
+      "insert": "drop",
+      "say": "eye drops into the front shell: its bezel rests on the ledge round the window; ribs round it keep it in place; posts from the other shell stop it lifting when the case is closed."
+    },
+    {
+      "part": "chg",
+      "shell": "back",
+      "how": [
+        "opening",
+        "wall"
+      ],
+      "insert": "drop",
+      "say": "chg drops into the back shell: its port / button / lever sits in its opening.",
+      "missing": "no room for a backstop behind it (a 1.6 mm rib needs 1.9 mm behind the part; plugging a cable in or pressing it pushes the part inwards)"
+    },
+    {
+      "part": "xiao",
+      "shell": "back",
+      "how": [
+        "opening",
+        "backstop",
+        "seat-posts"
+      ],
+      "insert": "drop",
+      "say": "xiao drops into the back shell: it rests on seat posts; its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger."
+    },
+    {
+      "part": "pwr",
+      "shell": "back",
+      "how": [
+        "opening",
+        "backstop"
+      ],
+      "insert": "slide",
+      "say": "pwr slides into the back shell: its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger."
+    },
+    {
+      "part": "pet",
+      "shell": "back",
+      "how": [
+        "opening",
+        "backstop"
+      ],
+      "insert": "drop",
+      "say": "pet drops into the back shell: its port / button / lever sits in its opening; a backstop behind it takes the push of a plug or a finger."
+    },
+    {
+      "part": "imu",
+      "shell": "front",
+      "how": [
+        "standoffs",
+        "foam-tape"
+      ],
+      "insert": "press",
+      "say": "imu presses into the front shell: it presses onto the case's pins through its mounting holes; a strip of 1 mm foam tape holds it (no clip fits).",
+      "missing": "it could lift 2.5 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)"
+    },
+    {
+      "part": "d1",
+      "shell": "front",
+      "how": [
+        "wall",
+        "locators",
+        "foam-tape"
+      ],
+      "insert": "drop",
+      "say": "d1 drops into the front shell: ribs round it keep it in place; a strip of 1 mm foam tape holds it (no clip fits).",
+      "missing": "it could lift 4.3 mm and no hold-down post fits over it (a 3 mm post needs a free column to the back wall)"
+    },
+    {
+      "part": "squeak",
+      "shell": "back",
+      "how": [
+        "opening",
+        "wall",
+        "locators",
+        "hold-down"
+      ],
+      "insert": "drop",
+      "say": "squeak drops into the back shell: ribs round it keep it in place; its port / button / lever sits in its opening; posts from the other shell stop it lifting when the case is closed."
+    },
+    {
+      "part": "bat",
+      "shell": "back",
+      "how": [
+        "corners",
+        "strap",
+        "foam-pad"
+      ],
+      "insert": "drop",
+      "say": "bat lies between its corner locators on a 1 mm foam pad, held by a Kapton strap; nothing presses on it (10 % room to swell)."
+    }
+  ],
+  "wires_key": "w10:imu.GND-xiao.GND.1,w11:imu.SDA-xiao.GP6,w12:imu.SCL-xiao.GP7,w13:pet.1a-xiao.GP26,w14:pet.2a-xiao.GND.1,w15:squeak.POS-xiao.GP27,w16:squeak.NEG-xiao.GND.1,w17:bat.POS-chg.BAT,w18:bat.NEG-chg.GND.2,w19:chg.GND.3-xiao.GND.1,w1:eye.VCC-xiao.3V3,w20:chg.OUT-pwr.2,w21:pwr.1-d1.A,w22:d1.C-xiao.VBUS,w2:eye.GND-xiao.GND.1,w3:eye.SCK-xiao.GP2,w4:eye.MOSI-xiao.GP3,w5:eye.CS-xiao.GP1,w6:eye.DC-xiao.GP29,w7:eye.RST-xiao.GP28,w8:eye.LED-xiao.GP0,w9:imu.VCC-xiao.3V3"
+}

@@ -171,6 +171,67 @@ the speaker pinned on the front and a fixed 74 x 96 mm size. So every `check_fit
   choices in plain words, each with an Apply button, plus "Let Jumper decide all of these" and, for a
   fixed size that fails, the sizes that work (`POST /api/case/costs`).
 
+## How it goes together (round 12)
+
+Jumper plans how the parts go inside at design time, for any case shape, and checks it. Every
+`design_case` / `update_case` writes `case/assembly/plan.json` and a picture per step
+(`case/assembly/step-NN.png`); `get_assembly_plan` (and `POST /api/case/assembly`, the Case view's
+**Build** tab) returns it with what to buy and what to print:
+
+```sh
+jumper get_assembly_plan -p my-egg        # {buy, print, consumables, tools, steps, mounts, checks, problems}
+```
+
+- **Mounting is designed, not assumed** (`packages/enclosure/src/mounts.ts`): each part gets a shell
+  and what holds it, and the case adds what is missing where there is free room: locator ribs round
+  a board (also off the wall), seat posts under a part that floats above its wall, standoff pins in
+  mounting holes (round 6), hold-down posts from the other shell that stop a part lifting (they end
+  0.3 mm clear of its keep-out, so they never press on components), a backstop behind a USB port,
+  button or switch on a side wall (a plug or a finger pushes it inwards) and guides beside it, a
+  cell's cradle with two strap slots or corner locators where the cradle does not fit, on a foam pad.
+  Ribs are 1 to 1.2 mm, posts 2.4 to 3 mm, printed with the shell open side up (no supports); no
+  feature touches another (two solids meeting on a face would leave the shell open there). What
+  cannot be made is said with the room it needed, and the part is held with foam tape.
+- **The order** (`packages/enclosure/src/assembly.ts`): the front shell comes straight down onto the
+  back one, so a part in the front shell never sits behind one of the back shell it overlaps
+  (`assembly-close`). In each shell a part another one covers goes in first; a switch whose lever
+  pokes through a hole in one shell is held away from its wall and slid out to it, so it goes in
+  before what would block its way (and its backstop comes with the other shell); plungers and light
+  pipes go in before the parts behind them. A cell nothing goes over is placed last.
+- **Wires**: each is soldered as soon as both of its parts are in; a pad that a later part will
+  cover gets its lead soldered on the bench first (two covered ends: two leads and a splice). Wires
+  between the shells are soldered with the case open like a book on the side nearest their ends
+  (`opens_on`), and are cut long enough for it (`open_mm`, used in WIRE-CUTS.csv). Small passives
+  that ride in the wiring are soldered in line on the bench.
+- **The steps**: check the print (test-fit the empty shells), heat-set inserts, flash the bare
+  board, cut and tin the wires, the shells part by part (each step says how the part is held), the
+  wires between the shells, a test on USB, then the battery (foam pad, Kapton, one lead at a time),
+  a test on the battery, close, a closed test. Each step: `{n, title, say, shell, parts, action,
+  fasteners, wires, tools, cautions, view: {explode, highlight, camera}, image}`.
+- **Checks** (in `report.checks`, in `check_design` once the case is built, and in the Build tab),
+  each with what failed, why, the fix and `facts` (sizes):
+
+| Check | Fires when |
+| --- | --- |
+| `assembly-close` | a front-shell part sits behind a back-shell part it overlaps: the case cannot close |
+| `assembly-insert` | a part cannot go in after another (each must go first), or a lever cannot slide in (room behind it, a rib in its path) |
+| `assembly-solder` | a joint can only be made with leads and a splice (both pads end up covered) |
+| `assembly-wires` | the thickest wire is wider than the wiring room (`gap_mm`), the wires (with slack, bundled) fill more than 60 % of the free room (warning past 30 %), or the bundle between the shells has little room at the seam |
+| `assembly-access` | a USB port (flashing, charging) has no opening when closed; the board's BOOT button inside (warning: flash before closing) |
+| `assembly-battery` | a hard edge (a part, a post, a screw boss) within the cell's swell + 0.5 mm, or no cradle / corner locators |
+| `assembly-screws` | a screw has no straight path for the driver (under the belt clip or the tab) |
+| `assembly-held` | a part is held by foam tape where a printed clip would be better (with the room it needed) |
+
+- **Consumables and tools** come with the plan (wire by gauge with 20 % spare, heat-shrink, solder,
+  Kapton and a foam pad for a cell, foam tape where used, screws and inserts, glue for a belt clip),
+  and the factory pack's BOM adds the Kapton and foam pad. `assembly/ASSEMBLY.md` in the pack is the
+  plan: what to print, consumables, tools, how each part is held, every step with its picture.
+- **Honest limits**: wire routes are not drawn as real paths (the pictures show straight runs; the
+  room is a volume budget); a pad's position comes from the part's drawing, on its top face, and
+  pads are assumed reachable from either side of the board (through-hole or castellated); the snap
+  and hold-down fit, foam and Kapton thickness and the soldering itself are not checked on a real
+  print; a stale plan after a rewire is made again without new pictures until the case is rebuilt.
+
 ## Shapes and settings
 
 | Shape | What it is |

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { adviceNotes, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
+import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -17,6 +17,8 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  *   GET  /api/case/advice          → round 8: { notes } "parts you may not need" in a person's words, with the mm they save
  *   POST /api/case/advice/apply    → round 8: { id } makes a note's simple change (swap / removal) with the agent ops
  *                                    (remove, place_part, connect) as one undoable step; { applied, result, notes }
+ *   POST /api/case/assembly        → round 12: how to build it: { buy, print, consumables, tools, steps (each with its
+ *                                    picture as image_url), mounts, checks, problems }; regenerates a stale case first
  *   GET  /api/case/mesh            → CaseMesh (positions / indices base64, case frame, explode per body)
  *   GET  /api/device/case          → the built case for the Device view: { case: null } or { case: { mesh, openings,
  *                                    stale, stale_reason, color, size_mm } }; never rebuilds case/ (a stale case comes as built)
@@ -221,6 +223,27 @@ export const caseRoutes: ApiRoute[] = [
       } catch (e) {
         const m = (e as Error).message;
         ctx.json(res, 400, { error: m.includes("Why:") ? m : `Applying that change failed. Why: ${m}. Fix: undo the last step on the canvas and make the change there` });
+      }
+    },
+  },
+  {
+    method: "POST",
+    path: "/api/case/assembly",
+    label: "POST /api/case/assembly",
+    async handle(req, res, ctx) {
+      if (!needToken(req, res, ctx)) return;
+      const s = ctx.session();
+      s.sync();
+      if (!s.project.enclosure) return ctx.json(res, 404, noCase(s.dir));
+      try {
+        const r = await assemblyPlanFor(s);
+        if (r.stale_case_regenerated) ctx.hub.broadcast({ type: "case", hash: "", ok: true });
+        // (the pictures are case files: the page loads them from GET /api/case/file)
+        const steps = r.steps.map(({ image_file, ...st }) => ({ ...st, ...(image_file && st.image ? { image_url: `/api/case/file?path=${encodeURIComponent(st.image)}&inline=1` } : {}) }));
+        ctx.json(res, 200, { ...r, steps, dir: undefined });
+      } catch (e) {
+        const m = (e as Error).message;
+        ctx.json(res, 400, { error: m.includes("Why:") ? m : `Working out the assembly failed. Why: ${m}. Fix: press Update case, then open Assembly again` });
       }
     },
   },
