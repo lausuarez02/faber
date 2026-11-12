@@ -36,7 +36,7 @@ async function websocket(request, ctx) {
     sent = upstreamHeaders(request.headers.entries(), a.entry, ctx.env, a.target);
   } catch (e) {
     if (!(e instanceof RelayError)) throw e;
-    ctx.log(logEntry(redact, { kind: "refused", ...(a ? { device: a.device, host: a.target.host } : {}), method: "WS", path: url.pathname, status: e.status, error: e.code, why: e.why }));
+    ctx.log(logEntry(redact, { kind: "refused", ...(a ? { device: a.device, host: a.target.host } : e.device ? { device: e.device } : {}), method: "WS", path: url.pathname, status: e.status, error: e.code, why: e.why }));
     return e.response();
   }
   const { device, target, limits } = a;

@@ -57,6 +57,8 @@ export class RelayError extends Error {
   why: string;
   fix: string;
   headers: Record<string, string>;
+  /** The device, when it was known before the refusal. */
+  device?: string;
   body(): { error: string; why: string; fix: string };
   response(): Response;
 }

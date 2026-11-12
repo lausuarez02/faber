@@ -63,6 +63,15 @@ Agents
                                           Code loads it in that folder), <project>/AGENTS.md (Codex and
                                           others) and <project>/CLAUDE.md (imports AGENTS.md); files you
                                           wrote yourself are kept unless --force
+Real device: API access without keys in the firmware (docs/relay.md)
+  relay init [--out D]                    write relay/ (Node server, Cloudflare Worker + wrangler.toml, README,
+                                          JumperRelay.h) from jumper.json network; no secret values in it
+  relay serve [--port 8787] [--host H]    run the relay on this computer (reads the project's .env)
+  relay token add <device> | revoke <device> | list
+                                          one token per device: the raw one goes to .env DEVICE_TOKEN (for
+                                          flashing), only its hash to RELAY_DEVICE_TOKENS (for the relay)
+  relay device-header [--ca root.pem]     write jumper_device.h (git-ignored) next to the sketch from .env:
+                                          RELAY_URL, DEVICE_TOKEN, WIFI_SSID, WIFI_PASSWORD
 Any tool
   call <tool> [json-args]                 e.g. jumper call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
   tools                                   list tools
@@ -133,6 +142,8 @@ function parse(argv: string[]): Parsed {
       chrome: { type: "string" },
       visual: { type: "boolean" },
       out: { type: "string" },
+      ca: { type: "string" },
+      host: { type: "string" },
       view: { type: "string" },
       press: { type: "string" },
       camera: { type: "string" },
@@ -366,6 +377,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (p.cmd === "render-device") return renderDeviceCommand(p);
   if (p.cmd === "setup") return setupCommand(p.pos[0]);
   if (p.cmd === "skill") return skillCommand(p);
+  if (p.cmd === "relay") return relayCommand(p);
   let mapped: Awaited<ReturnType<typeof toOp>>;
   try {
     mapped = await toOp(p);
@@ -442,6 +454,82 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
   }
   process.stdout.write(`${n} frame(s) in ${outDir}${every && !msList.length ? `; video: ffmpeg -framerate ${Math.round(1000 / every)} -i ${outDir}/frame-%05d.png -pix_fmt yuv420p device.mp4` : ""}\n`);
   return 0;
+}
+
+/**
+ * Round 13: `jumper relay init|serve|token|device-header`. The real device's API access: a relay the
+ * person runs or deploys holds the keys; the device holds only a revocable token for that relay.
+ */
+async function relayCommand(p: Parsed): Promise<number> {
+  const r = await import("@jumper/session");
+  const sub = p.pos[0];
+  const dir = projectDir(p.opts);
+  const say = (s: string) => process.stdout.write(`${s}\n`);
+  let session: ProjectSession | undefined;
+  try {
+    session = new ProjectSession({ dir, actor: "cli" });
+    const proj = { dir, project: session.project };
+    if (sub === "init") {
+      const out = typeof p.opts.out === "string" ? resolve(BASE, p.opts.out) : undefined;
+      const w = r.writeRelayFolder(proj, out);
+      const { spec } = r.relayConfigOf(proj);
+      say(`relay written to ${w.dir} (${w.files.length} files). Hosts: ${spec.allow.map((a) => a.host).join(", ")}. Secrets by name: ${spec.secrets.join(", ") || "none"}.`);
+      say(`Next: jumper relay token add <device name>, then run it here (jumper relay serve) or deploy it: cd ${relative(BASE, w.dir).startsWith("..") ? w.dir : relative(BASE, w.dir) || "."} && npx wrangler deploy (README.md has the steps).`);
+      return 0;
+    }
+    if (sub === "token") {
+      const action = p.pos[1];
+      const name = p.pos[2];
+      if (action === "add" && name) {
+        const t = r.relayTokenAdd(proj, name);
+        say(`device token for ${t.name}: ${t.token}`);
+        say(`Saved in ${t.env}: DEVICE_TOKEN (this device's token, for flashing) and RELAY_DEVICE_TOKENS (hashes of ${t.devices.join(", ")}, for the relay).${t.ignored.length ? ` Added ${t.ignored.join(", ")} to .gitignore.` : ""}`);
+        say("Next: give the relay the new RELAY_DEVICE_TOKENS (Cloudflare: npx wrangler secret put RELAY_DEVICE_TOKENS; jumper relay serve reads .env), then jumper relay device-header and flash this device.");
+        return 0;
+      }
+      if (action === "revoke" && name) {
+        const t = r.relayTokenRevoke(proj, name);
+        say(`revoked ${t.name}; the relay still accepts: ${t.devices.join(", ") || "no device"}. Give the relay the new RELAY_DEVICE_TOKENS (npx wrangler secret put RELAY_DEVICE_TOKENS, or restart jumper relay serve) for it to take effect.`);
+        return 0;
+      }
+      if (action === "list") {
+        const names = r.relayTokenList(proj);
+        say(names.length ? names.join("\n") : "no device tokens yet: jumper relay token add <device name>");
+        return 0;
+      }
+      process.stderr.write(`jumper relay token: say what to do. Why: '${action ?? ""}' needs add <device>, revoke <device> or list. Fix: jumper relay token add star-1\n`);
+      return 2;
+    }
+    if (sub === "device-header") {
+      const h = r.writeDeviceHeader(proj, typeof p.opts.ca === "string" ? { ca: resolve(BASE, p.opts.ca) } : {});
+      say(`wrote ${h.file} (relay ${h.relay_url}, Wi-Fi ${h.wifi_ssid}${h.added_header ? ", and JumperRelay.h next to it" : ""}). It holds this device's token and your Wi-Fi password: git-ignored, never compiled by Jumper's own builds.`);
+      say(`Build and flash from ${dirname(h.file)} with the Arduino IDE or arduino-cli compile --upload (Jumper's factory pack firmware has no relay settings).`);
+      return 0;
+    }
+    if (sub === "serve") {
+      const port = typeof p.opts.port === "string" ? Number(p.opts.port) : 8787;
+      const srv = await r.serveRelay(proj, { port, ...(typeof p.opts.host === "string" ? { host: p.opts.host } : {}) });
+      process.stderr.write(`Jumper relay for ${srv.spec.project} on ${srv.url} (hosts: ${srv.spec.allow.map((a) => a.host).join(", ")}; devices: ${srv.devices.join(", ") || "none yet: jumper relay token add <device name>"})\n`);
+      if (srv.missing_secrets.length) process.stderr.write(`Missing secrets: ${srv.missing_secrets.join(", ")} (requests that need them get 500 with the fix). Put NAME=value in ${join(dir, ".env")}.\n`);
+      process.stderr.write("One JSON line per request below (no keys, tokens or query values). Ctrl+C stops it.\n");
+      session.dispose();
+      session = undefined;
+      await new Promise<void>((done) => {
+        const stop = () => void srv.close().then(done);
+        process.once("SIGINT", stop);
+        process.once("SIGTERM", stop);
+      });
+      return 0;
+    }
+    process.stderr.write(`jumper relay: say what to do. Why: '${sub ?? ""}' is not init, serve, token or device-header. Fix: jumper relay init (then see relay/README.md).\n`);
+    return 2;
+  } catch (err) {
+    const msg = err instanceof JumperError ? err.message : (err as Error).message;
+    process.stderr.write(`jumper relay ${sub ?? ""}: ${msg}\n`);
+    return 1;
+  } finally {
+    session?.dispose();
+  }
 }
 
 /**

@@ -339,12 +339,18 @@ export function logEntry(redact, fields) {
 export async function authorize(req, ctx) {
   const limits = limitsOf(ctx.spec);
   const device = await identifyDevice(req.header(TOKEN_HEADER), ctx.env.RELAY_DEVICE_TOKENS);
-  checkRate(ctx.limiter, device, limits.requests_per_minute);
-  const t = parseTarget(req.url);
-  const entry = findAllow(ctx.spec, t.host, t.port);
-  checkRequestSize(req.header("content-length"), limits.max_request_bytes);
-  const scheme = t.port === 80 ? "http" : "https";
-  return { device, limits, entry, target: { ...t, scheme } };
+  try {
+    checkRate(ctx.limiter, device, limits.requests_per_minute);
+    const t = parseTarget(req.url);
+    const entry = findAllow(ctx.spec, t.host, t.port);
+    checkRequestSize(req.header("content-length"), limits.max_request_bytes);
+    const scheme = t.port === 80 ? "http" : "https";
+    return { device, limits, entry, target: { ...t, scheme } };
+  } catch (e) {
+    // the log says which device was refused
+    if (e instanceof RelayError) e.device = device;
+    throw e;
+  }
 }
 
 /** Where the target is really reached (tests point it at a local server). */
@@ -373,7 +379,7 @@ export async function handleRelay(request, ctx) {
     a = await authorize({ method: request.method, url: pathAndQuery, header: (n) => request.headers.get(n) }, ctx);
   } catch (e) {
     if (!(e instanceof RelayError)) throw e;
-    log(logEntry(redact, { kind: "refused", method: request.method, path: pathAndQuery, status: e.status, error: e.code, why: e.why }));
+    log(logEntry(redact, { kind: "refused", ...(e.device ? { device: e.device } : {}), method: request.method, path: pathAndQuery, status: e.status, error: e.code, why: e.why }));
     return e.response();
   }
   const { device, limits, entry, target } = a;

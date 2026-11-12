@@ -63,3 +63,5 @@ export { canBuildArduino, runtimeSummary, nativeStatus } from "@jumper/runner";
 export { buildKit, kitHtml, kitMarkdown, shoppingCsv, stlStats, detectSlicer, planSteps } from "./kit/index.ts";
 export type { BuildKit, KitOptions } from "./kit/index.ts";
 export { writeKitFiles, htmlToPdf } from "./kit/files.ts";
+// Round 13: the API relay for the real device (jumper relay ..., factory pack relay/, kit Connect)
+export { ensureSecretsIgnored, relayConfigOf, relayTokenAdd, relayTokenList, relayTokenRevoke, serveRelay, writeDeviceHeader, writeRelayFolder } from "./relay-tools.ts";

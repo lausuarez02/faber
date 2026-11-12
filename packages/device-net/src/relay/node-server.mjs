@@ -93,7 +93,7 @@ export function startRelay(opts) {
       sent = upstreamHeaders(Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(", ") : String(v)]), a.entry, env, a.target);
     } catch (err) {
       const e = err instanceof RelayError ? err : new RelayError(500, "relay-error", redact(String(err)), "see the relay's log");
-      ctx.log(logEntry(redact, { kind: "refused", ...(a ? { device: a.device, host: a.target.host } : {}), method: "WS", path: req.url, status: e.status, error: e.code, why: e.why }));
+      ctx.log(logEntry(redact, { kind: "refused", ...(a ? { device: a.device, host: a.target.host } : e.device ? { device: e.device } : {}), method: "WS", path: req.url, status: e.status, error: e.code, why: e.why }));
       socket.end(errorHead(e));
       return;
     }
