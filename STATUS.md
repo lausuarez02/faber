@@ -9,6 +9,34 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 12, track assembly (2026-11-12): Jumper plans how the parts go inside, and checks it
+
+The person asked to go from the designed case to "all the pieces I need to build it, what to print,
+and how I put the stuff inside". Branch `round12/assembly` (worktree, not merged). Guide:
+[docs/enclosures.md](docs/enclosures.md#how-it-goes-together-round-12).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Mounting designed (`mounts.ts`) | For any shape, each part gets a shell and what holds it; the case adds what is missing where there is free room: locator ribs (also off the wall), seat posts, hold-down posts from the other shell (end 0.3 mm clear of the keep-out), backstop + guides for side ports / buttons / switches (a slid-in part's backstop comes with the other shell), cell cradle strap slots or corner locators. No feature touches another (it left 3 open edges before the fix). What cannot be made is said with the room it needed (foam tape). Engine `case-6` | `packages/enclosure/test/assembly-cad.test.ts` (egg, puffy star, rounded-box + screws: watertight, no-intersection, size-match), `engine.test.ts` (Muse, 5 shapes) |
+| Assembly plan (`assembly.ts`) | Shells that can close; order per shell (covered parts first, a lever through a one-shell hole slides in first, plungers first, an uncovered cell last); solder moments (as soon as both parts are in; bench leads for pads a later part covers; splice when both are covered); open-like-a-book hinge + `open_mm` slack; card slots as a step; USB test before the battery; battery (foam pad, Kapton, one lead at a time); battery test; close; closed test. Consumables and tools | `packages/enclosure/test/assembly.test.ts` (egg, Muse pebble, rounded-box, star) |
+| DFA checks | `assembly-close`, `-insert`, `-solder`, `-wires`, `-access`, `-battery`, `-screws`, `-held`, each what / why / fix + `facts`; in the report, `check_design` (built case) and the Build tab | crafted bad layouts in `assembly.test.ts` |
+| Step pictures | One PNG per step with the existing renderer (shell being filled, step parts orange and lifted, wires as bars, the case opened like a book, exploded close); about 1.8 s for 21 steps | `assembly-cad.test.ts`; looked at in `jumper-evals/round12/assembly-steps/` |
+| Exposed | Tool `get_assembly_plan` (buy, print, consumables, tools, steps with image_file, mounts, checks); `design_case` / `update_case` / `get_case` answers carry `assembly`; `POST /api/case/assembly`; Case view **Build** tab (step stepper with pictures, to buy / to print / consumables / how each part is held); factory pack `assembly/ASSEMBLY.md` from the plan, WIRE-CUTS.csv with the book slack, BOM adds Kapton + foam pad; AGENT_LOOP, AGENTS.md, docs/agents.md | `packages/session/test/assembly-plan.test.ts`, `apps/cli/test/case-routes.test.ts`, `apps/web/e2e/case-assembly.spec.ts` |
+
+Evals (in process through `ProjectSession`, not port 7780), in `jumper-evals/round12/assembly-steps/`:
+talking egg (agent's SVG egg, 13 parts) 97.6 x 127.3 x 23 mm, 22 steps (`design_case` 63 s); Muse
+pebble 70.7 x 94.3 x 19.6 mm, 21 steps (36 s); `get_assembly_plan` about 1 ms on a built case.
+
+Known gaps (round 12):
+- Wires are not routed as real paths (straight bars in the pictures; room is a volume budget).
+- Pad positions come from the part drawing on its top face; pads are assumed reachable from both
+  sides (through-hole / castellated). Iron access is a 2 mm disc test, not a tool model.
+- Hold-down / seat fit, foam and Kapton thickness, snap feel and soldering are not checked on a
+  real print. Many tight layouts still fall back to foam tape for small modules (said in `assembly-held`).
+- After a rewire the plan is made again without new pictures until the case is rebuilt.
+- The Build tab does not highlight the step in the 3D stage; the step picture carries it.
+- Not done: a live Claude Code run over MCP using `get_assembly_plan`; a skill file (the guidance is in the MCP instructions).
+
 ## Round 11 (2026-11-11): native builds, firmware and emulators without Docker
 
 Docker Desktop on this Mac is broken (its VM disk has EXT4 errors), so Jumper now builds and runs
