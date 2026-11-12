@@ -132,8 +132,17 @@ export function shoppingList(inp: ShoppingInput): Shopping {
     const jst = jstOf(spec?.sourcing?.package ?? "");
     const pkg = sized ? `${sized}${jst ? `, ${jst.family} ${jst.pitch} lead` : ""}` : spec?.sourcing?.package;
     const variant = [b.value, standIn ? "" : pkg].filter(Boolean).join(", ") || (spec?.footprint ?? "");
-    const askFor = standIn ? `${first!.standIn}` : withValue(spec?.sourcing?.generic ?? spec?.name ?? b.name, b.value);
+    // props that pick another size (a 250 mAh cell is the 502030, not the default 503035): the part's words and its
+    // store searches name the default size, so drop the default's sizes from the words and search for this variant
+    const generic = sized ? withoutDefaultSize(spec?.sourcing?.generic ?? spec?.name ?? b.name) : (spec?.sourcing?.generic ?? spec?.name ?? b.name);
+    const askFor = standIn ? `${first!.standIn}` : sized ? withValue(withValue(generic, b.value), sized) : withValue(generic, b.value);
     let links = standIn ? [] : (spec?.buy_links ?? []).map((l) => regionalLink(l.vendor, l.url, region));
+    if (sized && !standIn) {
+      const variantWords = [shortSpecName(spec?.name ?? b.name), b.value, sized.replace(/\s*\([^)]*\)/g, ""), jst?.family ?? ""].filter(Boolean).join(" ");
+      const searches = searchLinks(variantWords, region);
+      links = [...links.filter((l) => l.kind === "product"), ...links.filter((l) => l.kind === "search").map((l) => searches.find((x) => x.store === l.store) ?? searches[0]!).filter((l, i, a) => a.findIndex((x) => x.url === l.url) === i)];
+      if (!links.length) links = searches;
+    }
     if (inp.prefer) links = [...links.filter((l) => l.store.toLowerCase() === inp.prefer!.toLowerCase()), ...links.filter((l) => l.store.toLowerCase() !== inp.prefer!.toLowerCase())];
     let noLink: string | undefined;
     if (!links.length) {
@@ -145,7 +154,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
       const same = registry.list().filter((d) => d.spec.id !== spec.id && d.spec.category === "board" && d.spec.mcu?.chip === spec.mcu!.chip).map((d) => d.spec.name);
       if (same.length) alternatives.push(`Same chip, other board (the sketch keeps working; the pins and the case change): ${same.join(", ")}`);
     }
-    if (spec?.sourcing?.generic && !standIn) alternatives.push(`Any module sold as: ${withValue(spec.sourcing.generic, b.value)}`);
+    if (spec?.sourcing?.generic && !standIn) alternatives.push(`Any module sold as: ${sized ? withValue(withValue(generic, b.value), sized) : withValue(spec.sourcing.generic, b.value)}`);
     lines.push({
       id: `part:${first?.type ?? b.name}|${b.value}|${b.refs}`,
       section: "electronics",
@@ -284,13 +293,25 @@ function settingsWords(p: { props?: Record<string, unknown> } | undefined, spec:
     const val = `${v}${unit && unit !== "×" ? ` ${unit}` : ""}`;
     if (value && (value.includes(String(v)) || value.replace(/\s/g, "").includes(val.replace(/\s/g, "")))) continue;
     const usual = def.default === undefined || def.default === null || typeof def.default === "boolean" ? "" : ` (it usually comes set to ${def.default}${unit && unit !== "×" ? ` ${unit}` : ""}: change it before first use)`;
-    out.push(`${def.label}: ${val}${def.type === "number" ? usual : ""}`);
+    // how to set it on the real part, when the part data says (a resistor to swap, a jumper to bridge, a trimmer)
+    const how = def.type === "number" && def.description && /\b(set by|resistor|R_?PROG|jumper|solder pad|bridge|trimmer|potentiometer|DIP)\b/i.test(def.description) ? ` How: ${def.description.replace(/\.?\s*$/, ".")}` : "";
+    out.push(`${def.label}: ${val}${def.type === "number" ? usual : ""}${how}`);
   }
-  return out.length ? `Set up as: ${out.join(", ")}` : "";
+  return out.length ? `Set up as: ${out.join("; ")}` : "";
 }
 
 function partNote(notes: string): string {
   return notes.split("; ").filter((n) => !/^[\w.]+=/.test(n)).join("; ");
+}
+
+/** "LiPo 3.7 V 1S pouch cell, JST-PH 2.0 lead (503035 for 500 mAh)" → without the parenthesis naming the default size. */
+function withoutDefaultSize(words: string): string {
+  return words.replace(/\s*\([^)]*\b\d+(?:\.\d+)?\s*(?:mAh|mm|in|")[^)]*\)/gi, "").trim();
+}
+
+/** "LiPo battery 1S (3.7 V, with protection)" → "LiPo battery 1S". */
+function shortSpecName(name: string): string {
+  return name.replace(/\s*\(.*\)\s*$/, "");
 }
 
 function withValue(generic: string, value: string): string {
