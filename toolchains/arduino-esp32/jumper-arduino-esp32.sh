@@ -7,6 +7,9 @@
 #     mbedTLS chain verification are wrapped (-Wl,--wrap=...), so the unmodified sketch joins Jumper's
 #     sandbox Wi-Fi over the emulated Ethernet card and trusts the sandbox CA. The sketch folder is
 #     copied first (the shim adds one file); the person's files are never touched.
+#   - When the sketch uses Espressif's esp32-camera driver (esp_camera.h), the JumperCamera library is
+#     linked in and the driver's API is wrapped (esp_camera_init, esp_camera_fb_get, ...), so frames
+#     come from Jumper's camera port in the emulator (QEMU patch 0004). Round 13.
 #   The sketch must be the last argument (as Jumper's runner passes it).
 # JUMPER_SIM=0 builds for the real device: plain arduino-cli, no shim, no define.
 #
@@ -15,6 +18,8 @@
 # flash size so QEMU accepts it (2, 4, 8 or 16 MB).
 set -e
 SIMLIB=/opt/arduino/user/libraries/JumperSim
+CAMLIB=/opt/arduino/user/libraries/JumperCamera
+CAMERA_INCLUDES='esp_camera|esp_camera_af'
 NETWORK_INCLUDES='WiFi|WiFiMulti|WiFiClient|WiFiClientSecure|WiFiUdp|WiFiServer|WiFiGeneric|NetworkClientSecure|NetworkClient|Network|HTTPClient|HTTPUpdate|WebServer|WebSocketsClient|WebSockets|WebSocketsServer|ArduinoWebsockets|PubSubClient|MQTT|MQTTClient|ArduinoMqttClient|AsyncMqttClient|ESPmDNS|AsyncUDP|esp_wifi|esp_http_client|esp_websocket_client|mqtt_client'
 
 if [ "$1" = "compile" ] && [ "${JUMPER_SIM:-1}" != "0" ]; then
@@ -29,15 +34,29 @@ if [ "$1" = "compile" ] && [ "${JUMPER_SIM:-1}" != "0" ]; then
   done
   DIR="$SKETCH"
   [ -f "$DIR" ] && DIR=$(dirname "$DIR")
-  if [ -n "$DIR" ] && grep -rqsE "#[[:space:]]*include[[:space:]]*[<\"](${NETWORK_INCLUDES})\.h[>\"]" "$DIR" --include='*.ino' --include='*.cpp' --include='*.c' --include='*.h' --include='*.hpp'; then
+  uses() { [ -n "$DIR" ] && grep -rqsE "#[[:space:]]*include[[:space:]]*[<\"]($1)\.h[>\"]" "$DIR" --include='*.ino' --include='*.cpp' --include='*.c' --include='*.h' --include='*.hpp'; }
+  NET=0; CAM=0
+  uses "$NETWORK_INCLUDES" && NET=1
+  uses "$CAMERA_INCLUDES" && CAM=1
+  DEFINES="-DJUMPER_SIM=1"
+  case "$*" in *PSRAM=opi*|*PSRAM=enabled*) DEFINES="$DEFINES -DBOARD_HAS_PSRAM"; [ "$CAM" = 1 ] && DEFINES="$DEFINES -DJUMPER_SIM_PSRAM_FALLBACK=1";; esac
+  if [ "$NET" = 1 ] || [ "$CAM" = 1 ]; then
     COPY="$(mktemp -d /tmp/jsim.XXXXXX)/$(basename "$DIR")"
     cp -R "$DIR" "$COPY"
-    printf '// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSim.h>\n' > "$COPY/zz_jumper_sim_shim.cpp"
-    WRAPS=$(grep -ho '__wrap_[A-Za-z0-9_]*' "$SIMLIB"/src/*.c | sort -u | sed 's/^__wrap_/-Wl,--wrap=/' | tr '\n' ' ')
-    echo "jumper: simulation build, Wi-Fi shim on (WiFi.begin() joins the Jumper sandbox network over the emulated Ethernet card)"
-    set -- "$@" --build-property "build.defines=-DJUMPER_SIM=1" --build-property "compiler.c.elf.extra_flags=${WRAPS}" "$COPY"
+    WRAPS=""
+    if [ "$NET" = 1 ]; then
+      printf '// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSim.h>\n' > "$COPY/zz_jumper_sim_shim.cpp"
+      WRAPS="$WRAPS $(grep -ho '__wrap_[A-Za-z0-9_]*' "$SIMLIB"/src/*.c | sort -u | sed 's/^__wrap_/-Wl,--wrap=/' | tr '\n' ' ')"
+      echo "jumper: simulation build, Wi-Fi shim on (WiFi.begin() joins the Jumper sandbox network over the emulated Ethernet card)"
+    fi
+    if [ "$CAM" = 1 ]; then
+      printf '// Added by Jumper for the simulation build only (not in your project).\n#include <JumperCamera.h>\n' > "$COPY/zz_jumper_camera_shim.cpp"
+      WRAPS="$WRAPS $(grep -ho '__wrap_[A-Za-z0-9_]*' "$CAMLIB"/src/*.c | sort -u | sed 's/^__wrap_/-Wl,--wrap=/' | tr '\n' ' ')"
+      echo "jumper: simulation build, camera shim on (esp_camera_fb_get() gets frames from Jumper; the device build uses the real esp32-camera driver)"
+    fi
+    set -- "$@" --build-property "build.defines=${DEFINES}" --build-property "compiler.c.elf.extra_flags=${WRAPS}" "$COPY"
   else
-    set -- "$@" --build-property "build.defines=-DJUMPER_SIM=1" ${SKETCH:+"$SKETCH"}
+    set -- "$@" --build-property "build.defines=${DEFINES}" ${SKETCH:+"$SKETCH"}
   fi
 fi
 

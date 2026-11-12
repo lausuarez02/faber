@@ -10,7 +10,7 @@ import { buildMicroPython } from "./lang/build-micropython.ts";
 import { buildEspIdf } from "./lang/build-espidf.ts";
 import { buildPlatformIO } from "./lang/build-platformio.ts";
 import { arduinoRuntimeFor } from "./runtime.ts";
-import { compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
+import { CAMERA_SHIM_INCLUDE, cameraShimHash, compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
 import type { Runtime } from "@jumper/sim-backends/node";
 
 export interface BuildRequest {
@@ -271,6 +271,8 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
     h.update(`image=${runtime === "native" && family ? nativeToolchainId(family) : imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
     if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
     if (req.purpose === "device") h.update("purpose=device\n");
+    // Round 13: a simulation build of a camera sketch links Jumper's camera shim from the repo.
+    else if (req.fqbn.startsWith("esp32:esp32:") && [...sources.values()].some((c) => CAMERA_SHIM_INCLUDE.test(c))) h.update(`camshim=${cameraShimHash()}\n`);
     for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
     return h.digest("hex").slice(0, 24);
   };
