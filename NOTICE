@@ -320,3 +320,12 @@ its packages: avr-gcc (GPL-3.0 with the GCC runtime exception, run as a
 program) and the Arduino AVR core (LGPL-2.1, built into the person's firmware
 like the arduino-cli builds above). The base image is python:3.12.12-slim-bookworm
 (Python PSF License, Debian packages under their own licences).
+
+API relay
+---------
+
+The relay Jumper generates for a project (packages/device-net/src/relay/: relay-core.mjs,
+node-server.mjs, worker.mjs, firmware/JumperRelay.h; written to relay/ in a project, the
+factory pack and the build kit) is released under the MIT License so people can deploy
+and change it freely. JumperRelay.h embeds public root CA certificates (ISRG Root X1 / X2,
+GTS Root R1 / R4, GlobalSign Root CA) for HTTPS trust.
