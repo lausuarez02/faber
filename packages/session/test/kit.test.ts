@@ -205,6 +205,10 @@ describe("build kit", () => {
     // the plan's foam pad under the cell is something to buy; its Kapton reason joins the Kapton line
     expect(kit.shopping.lines.some((l) => /foam pad/i.test(l.name))).toBe(true);
     expect(kit.shopping.lines.find((l) => l.id === "extra:kapton")!.why).toMatch(/the assembly plan/);
+    // the plan's reasons point at the kit's own steps, not the factory pack's files
+    const wireLine = kit.shopping.lines.find((l) => /wire \d+ AWG/.test(l.name))!;
+    expect(wireLine.why).toMatch(/lengths in the Assemble steps/);
+    expect(JSON.stringify(kit.shopping.lines)).not.toMatch(/WIRE-CUTS|PRINT\.md/);
     // its tools are on the tool list once (consumables stay on the shopping list)
     expect(kit.tools.items.filter((t) => /knife/i.test(t.name))).toHaveLength(1);
     expect(kit.tools.items.some((t) => /^(Solder|Flux|Kapton tape|USB cable|1 mm foam pad)$/i.test(t.name))).toBe(false);

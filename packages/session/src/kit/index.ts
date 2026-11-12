@@ -115,7 +115,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     const w = specWithProps(spec, props);
     return w !== spec && w.mechanical?.source ? w.mechanical.source.split(";")[0]!.replace(/, typical\)/, ")") : undefined;
   };
-  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(plan ? { consumables: plan.consumables } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
+  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(plan ? { consumables: plan.consumables.map((c) => ({ ...c, why: kitWords(c.why, {}).replace(/in the wire list below/g, "in the Assemble steps") })) } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
 
   const built = s.firmwareState();
   const flash = flashPlan(project, reg, built);
