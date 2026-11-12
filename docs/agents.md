@@ -154,6 +154,27 @@ as its instructions and offers three resources: `jumper://docs/agents` (this gui
 back as an image too, so a model with vision can look at the circuit, the OLED and the robot's world.
 `packages/mcp/bin/jumper-mcp.mjs --project <dir>` is the same server without the CLI wrapper.
 
+### The hardware skill (any agent)
+
+Jumper's hardware know-how (the design loop, the rules of thumb, how the parts go inside, and how to
+answer "what do I need to buy, print and assemble") is written once in `packages/agent-skill` and
+reaches every agent without touching your global config:
+
+- **Every MCP client**: the server instructions end with a short "Design for assembly" block; the
+  prompts `design-device` (argument `goal`), `build-kit` and `design-for-assembly`; the resource
+  `jumper://docs/hardware` with the whole guide ([hardware-guide.md](hardware-guide.md)).
+- **Claude Code in a project folder**: `<project>/.claude/skills/jumper-hardware/SKILL.md`, which
+  Claude Code loads by itself. `new_project`, `jumper new`, Open in Agent → Launch and
+  `jumper skill install --project <dir>` write it (and `<project>/AGENTS.md` for Codex and others).
+  A file you wrote yourself is kept unless `--force`; `JUMPER_AGENT_FILES=0` turns it off.
+  `jumper skill print [--target skill|agents|guide|instructions]` prints it.
+- **Claude Code anywhere**: the plugin in [plugins/jumper](../plugins/jumper/README.md) (the skill
+  plus the MCP server of a running Jumper). You install it yourself, e.g.
+  `claude --plugin-dir /path/to/jumper/plugins/jumper` for one session.
+
+A test (`packages/session/test/agent-skill-sync.test.ts`) fails when the skill names a tool Jumper
+does not have, or when one of its rules contradicts the server instructions or a tool description.
+
 ## Talk to the person first
 
 The people asking for a device are often beginners. The server instructions say the same:

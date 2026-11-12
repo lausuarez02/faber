@@ -30,6 +30,11 @@ Case choices cost size: do not pin parts (`placements` x_mm / y_mm / layer / fac
 asked for that spot, leave `dome_mm` and the edges on auto, and read `costs` in every `check_fit` /
 `propose_layout` / `design_case` / `update_case` answer (what each choice adds, with the call that
 relaxes it): relax the costly ones. Pocket and hand-held devices: aim for 20 mm thick or less.
+Think how the person will put the stuff inside (what mounts where, insertion order, wire room,
+USB / button access, battery safety) and, when asked what is needed, say what to buy, print,
+assemble and flash with totals: [docs/hardware-guide.md](docs/hardware-guide.md) (also the MCP
+resource `jumper://docs/hardware`, the prompts `design-device` / `build-kit` / `design-for-assembly`,
+and the project skill `jumper skill install --project <dir>` writes).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 
@@ -41,4 +46,5 @@ Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool referen
 - Determinism: no `Date`, `Math.random` or timers in `sim-core`, `sim-backends`, part models or `physics`.
 - Original work only (no Wokwi code or assets), MIT/Apache-2.0-compatible dependencies, no secrets.
 - Agent surface: `packages/session` (the engine; tool definitions in `src/catalog.ts`),
+  `packages/agent-skill` (the hardware know-how every agent face is rendered from; `pnpm gen` after changing it),
   `packages/mcp`, `apps/cli`, `services/runner` (Docker builds), `apps/web/src/live` (follow / replay).
