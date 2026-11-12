@@ -3,6 +3,7 @@
  * The MCP server, the CLI help and docs/mcp-tools.md are all generated from this list, so the
  * three faces cannot drift apart.
  */
+import { renderInstructionsBlock } from "@jumper/agent-skill";
 import { NETWORK_TOOLS } from "./network.ts";
 import { TEMPLATES } from "./templates.ts";
 import { TOOL_MODULES } from "./tools/index.ts";
@@ -155,7 +156,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "read_file",
     title: "Read a file",
-    description: 'Read a firmware file ("firmware/main.ino") or "jumper.json". Use it to look at the line a compiler error points at.',
+    description: 'Read a firmware file ("firmware/main.ino"), "jumper.json", or a text file the case and the build pack wrote ("case/PRINT.md", "manufacturing/<pack>/BOM.md", ".../assembly/ASSEMBLY.md", ".../firmware/FLASHING.md": .md, .csv, .txt, .json under case/ or manufacturing/). Use it to look at the line a compiler error points at, or to summarise what to buy, print and assemble.',
     inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
     readOnly: true,
   },
@@ -332,5 +333,7 @@ The loop:
 9. Show it: screenshot returns the picture inline (show it) plus its path; record makes an MP4 of your build and the device running; viewer_url gives a link where the person runs it and presses its buttons. Give links and paths, never a terminal command, to people who did not ask for one.
 10. fidelity_report: tell the person what was verified and, honestly, what the simulation cannot check (plan_device's cannot_check: real feel, sound, battery life, stand-ins). export when done; delete_file removes stale shots or debug sketches.
 11. A real device: when the person wants to hold it (or asks about size, a case, printing or a factory), the flow ends with design_case {"shape": "pebble" | "puck" | "pill" | "rounded-box" | "keychain"} (save: false for side-by-side variants; update_case to change wall, closure, clip). Any other shape the person wants (an egg, a heart, a bean, a character) is shape "custom" with an outline you draw (SVG path in mm, or points with smooth: true) and, if they gave one, size_mm; there is no preset per object. Test it first with check_fit (under a second, no CAD): when the parts do not fit the asked size it lists what misses by how much and smaller parts that would fit (a smaller LiPo cell, a smaller screen or speaker, a board on its edge) or "make it N mm bigger"; tell the person the trade-off and let them choose before design_case. Case choices cost size: do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot; leave dome_mm and the edges on auto (each mm of dome is a mm of thickness per face); call propose_layout before design_case; every check_fit / propose_layout / design_case / update_case answer has costs (what each of your choices adds, with the update_case call that relaxes it): read it and relax the costly choices unless the person asked for them. Pocket and hand-held devices (an egg, a pet, a remote): aim for 20 mm thick or less. Then show its renders and the measured size and checks (pocket verdict, screen window, button travel, USB access), then export_manufacturing: one folder + zip a supplier or a 3D printer can use (STL / 3MF / STEP, drawing, BOM, wiring, netlists, wire cuts, firmware, numbered assembly steps, test plan). Battery devices: set_assembly "soldered" first. Say honestly that the print and the hand feel were not tested.
+
+${renderInstructionsBlock({ tools: TOOLS.map((t) => t.name) })}
 
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.`;

@@ -28,6 +28,8 @@ import { bomMarkdown, solderedAssemblyMarkdown, wiringMarkdown } from "./exporte
 import { assemblyStyle, wireCuts, wireCutsCsv } from "./assembly.ts"; // round 6 power
 import { createPartTemplate, fits, resolvePartType } from "./catalog-fit.ts"; // round 6 power
 import { fidelityReport } from "./fidelity.ts";
+import { installProjectFiles } from "@jumper/agent-skill";
+import { TOOLS } from "./catalog.ts";
 import { suggestConnections, usageFor } from "./hints.ts";
 import {
   applyToProject,
@@ -551,7 +553,23 @@ export class ProjectSession {
     this.host = undefined;
     this.commit(ctx, `new_project ${template}`, next, files);
     ctx.summary = `new ${template} project '${name}'`;
-    return { ok: true, dir: this.dir, id: projectId(this.dir), template, ...this.compactProject() };
+    const agentFiles = this.installAgentFiles(name);
+    return { ok: true, dir: this.dir, id: projectId(this.dir), template, ...this.compactProject(), ...(agentFiles.length ? { agent_files: agentFiles } : {}) };
+  }
+
+  /**
+   * Round 12 skill: a project carries Jumper's hardware guide for whichever agent opens it
+   * (.claude/skills/jumper-hardware/SKILL.md for Claude Code, AGENTS.md for Codex and others).
+   * Never fails the op; JUMPER_AGENT_FILES=0 turns it off. Files someone else wrote are kept.
+   */
+  private installAgentFiles(projectName: string): string[] {
+    if (process.env.JUMPER_AGENT_FILES === "0") return [];
+    try {
+      const r = installProjectFiles(this.dir, { tools: TOOLS.map((t) => t.name), projectName });
+      return r.files.filter((f) => f.action === "written" || f.action === "updated").map((f) => f.path);
+    } catch {
+      return [];
+    }
   }
 
   /** new_project {folder}: a fresh folder under projectsRoot, registered, then opened by the host when it can. */
@@ -1011,6 +1029,23 @@ export class ProjectSession {
 
   // =================================================================== files
 
+  /**
+   * Round 12 skill: the text files the case and the build pack wrote (case/PRINT.md,
+   * manufacturing/<pack>/BOM.md …) are readable, so an agent with only the tools can answer
+   * "what do I need to buy, print and assemble". Text only, inside case/ or manufacturing/.
+   */
+  private relPackDocPath(path: string): { path: string; content: string } | undefined {
+    const p = normalize(path.trim().replace(/^\/+/, "")).split(sep).join("/");
+    const top = p.split("/")[0];
+    if (top !== "case" && top !== "manufacturing") return undefined;
+    if (p.split("/").includes("..")) fail("bad-path", `Path '${path}' leaves the ${top} folder`, "read_file reads inside the project only", `use a path like "${top}/…" as the export answer lists it`);
+    if (!/\.(md|csv|txt|json)$/i.test(p)) fail("bad-path", `read_file cannot read ${p}`, "only text files (.md, .csv, .txt, .json) of the case and the build pack are readable; STL / 3MF / STEP / zip are binary", "read the .md or .csv next to it (PRINT.md, BOM.md, ASSEMBLY.md), or give the person the file's path");
+    const abs = join(this.dir, p);
+    if (!existsSync(abs) || statSync(abs).isDirectory()) fail("no-file", `No file ${p}`, `${top}/ has no such file (the pack is written by ${top === "case" ? "design_case" : "export_manufacturing"})`, `call ${top === "case" ? "design_case (or get_case)" : "export_manufacturing"} and use a path from its answer`);
+    if (statSync(abs).size > 400_000) fail("too-big", `${p} is ${statSync(abs).size} bytes`, "read_file returns text files up to 400 kB", "read a smaller file of the pack (BOM.md rather than the netlist)");
+    return { path: p, content: readFileSync(abs, "utf8") };
+  }
+
   private relFirmwarePath(path: string): string {
     if (typeof path !== "string" || !path.trim()) fail("missing-arg", "A file path is needed", "path is empty", 'pass a path under firmware/, e.g. "firmware/main.ino"');
     let p = normalize(path.trim().replace(/^\/+/, "")).split(sep).join("/");
@@ -1064,6 +1099,8 @@ export class ProjectSession {
   }
 
   async readFile(args: { path: string }): Promise<unknown> {
+    const doc = typeof args.path === "string" ? this.relPackDocPath(args.path) : undefined;
+    if (doc) return doc;
     const rel = args.path === "jumper.json" ? "jumper.json" : this.relFirmwarePath(args.path);
     const abs = join(this.dir, rel);
     if (!existsSync(abs)) fail("no-file", `No file ${rel}`, `files are: ${this.listFirmwareFiles().join(", ") || "none"}`, "list_files shows what exists; write_file creates one");
