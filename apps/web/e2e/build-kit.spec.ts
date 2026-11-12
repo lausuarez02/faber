@@ -104,6 +104,8 @@ test("Build it: buy, print, assemble, flash; ticks are remembered; zip, PDF and 
     await page.getByTestId("kit-tab-print").click();
     await expect(page.getByTestId("kit-print-item")).toHaveCount(3);
     await expect(page.getByTestId("kit-print-item").first()).toContainText(/\d+(\.\d)? g/);
+    // each printed file's measured size
+    await expect(page.getByTestId("kit-print-size").first()).toHaveText(/^\d+(\.\d)? × \d+(\.\d)? × \d+(\.\d)? mm/);
     await expect(page.getByTestId("kit-print-service")).toContainText("JLC3DP");
     await shot(page, info, "kit-print");
     // Assemble: steps with pictures, wires with cut lengths, checks, troubleshooting
