@@ -18,12 +18,12 @@ afterAll(() => {
 });
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
-async function project(network?: Record<string, unknown>): Promise<ProjectSession> {
+async function project(network?: Record<string, unknown>, template = "xiao-esp32s3"): Promise<ProjectSession> {
   const dir = mkdtempSync(join(tmpdir(), "jumper-kit-connect-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
   sessions.push(s);
-  await call(s, "new_project", { template: "xiao-esp32s3" });
+  await call(s, "new_project", { template });
   if (network) await call(s, "set_network", network);
   return s;
 }
@@ -68,6 +68,11 @@ describe("build kit: Connect", () => {
     const r2 = await call(open, "get_build_kit", { write: false, slicer: "off" });
     expect(r2.kit.connect.needs_relay).toBe(false);
     expect(r2.kit.connect.steps.map((x: { title: string }) => x.title)).toEqual(["Wi-Fi and the relay address on the device", "Check it"]);
+    expect(r.kit.connect.warning).toBeUndefined();
+    // a board without Wi-Fi: said first, with what to use instead
+    const uno = await project({ secrets: ["API_KEY"], allow: [{ host: "api.example.com", secrets: ["API_KEY"] }] }, "uno");
+    const r3 = await call(uno, "get_build_kit", { write: false, slicer: "off" });
+    expect(r3.kit.connect.warning).toMatch(/has no Wi-Fi.*ESP32/);
     const none = await project();
     expect((await call(none, "get_build_kit", { write: false, slicer: "off" })).kit.connect).toBeUndefined();
   });

@@ -236,3 +236,8 @@
   .kit-view { animation: none; }
   .kit-view .spin { animation: none; }
 }
+
+/* round 13: Connect */
+.kv-connect-step h3 { margin: 18px 0 6px; font-size: 14px; }
+.kv-ok { color: #5cf2a1; }
+.kv-warn { color: #ffb23f; }

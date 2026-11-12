@@ -96,7 +96,7 @@ function flashMd(k: BuildKit): string[] {
 function connectMd(k: BuildKit): string[] {
   const c = k.connect;
   if (!c) return [];
-  const out = ["## Connect", "", c.summary, ""];
+  const out = ["## Connect", "", ...(c.warning ? [`> ⚠ ${c.warning}`, ""] : []), c.summary, ""];
   c.steps.forEach((st, i) => {
     out.push(`### ${i + 1}. ${st.title}`, "", ...st.do.map((d) => `- ${d}`), "");
     for (const cmd of st.commands ?? []) out.push(`${cmd.label}:`, "", "```sh", cmd.cmd, "```", "");
@@ -112,7 +112,7 @@ function connectHtml(k: BuildKit): string {
   const steps = c.steps
     .map((st, i) => `<section class="step" id="connect-${i + 1}"><h3>${i + 1}. ${h(st.title)}</h3><ul>${st.do.map((d) => `<li>${h(d)}</li>`).join("")}</ul>${(st.commands ?? []).map((cmd) => `<p>${h(cmd.label)}:</p><pre>${h(cmd.cmd)}</pre>`).join("")}</section>`)
     .join("");
-  return `<h2 id="connect">6. Connect</h2><p>${h(c.summary)}</p>${steps}<h3>What it costs</h3><ul>${c.cost.map((x) => `<li>${h(x)}</li>`).join("")}</ul>${c.notes.map((n) => `<p class="why">${h(n)}</p>`).join("")}`;
+  return `<h2 id="connect">6. Connect</h2>${c.warning ? `<div class="box warn"><b>${h(c.warning)}</b></div>` : ""}<p>${h(c.summary)}</p>${steps}<h3>What it costs</h3><ul>${c.cost.map((x) => `<li>${h(x)}</li>`).join("")}</ul>${c.notes.map((n) => `<p class="why">${h(n)}</p>`).join("")}`;
 }
 
 /** The whole kit as one CSV (the shopping list; the other parts are tables in KIT.md). */

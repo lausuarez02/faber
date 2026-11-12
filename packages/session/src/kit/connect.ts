@@ -7,6 +7,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadSecrets, parseDeviceTokens, parseDotEnv, RELAY_ENV, relaySlug, relaySpecFrom, relayUseful, worstCaseCallsPerDay } from "@jumper/device-net";
+import { boardSupportOf } from "@jumper/parts";
 import type { Project } from "@jumper/project-format";
 import type { PartRegistry } from "@jumper/sim-core";
 import { networkConfigOf } from "../device-network.ts";
@@ -95,12 +96,18 @@ export function connectPlan(project: Project, registry: PartRegistry, dir: strin
     "Each call the device makes is one relay request plus one API call. The API's own price per call is usually what matters: calls an hour x hours on x the provider's price per call (see the provider's pricing page).",
     ...(needsRelay ? [`The relay caps one device at ${spec.limits.requests_per_minute} calls a minute, so ${perDay.toLocaleString("en-US")} a day at worst. Lower network.relay.requests_per_minute if that would cost too much, and set a spending limit with the provider too.`, "The relay itself: free on your own computer; Cloudflare Workers' free plan covers hobby use (check their current limits)."] : []),
   ];
+  // a board with no network of its own (an RP2040, an AVR) cannot reach anything on the real device
+  const net = board ? boardSupportOf(board.type)?.areas.net : undefined;
+  const boardName = board ? (registry.get(board.type)?.spec.name ?? board.type) : "the board";
+  const noRadio = net?.status === "no" && !project.parts.some((p) => /esp-?01|wifi|wi-fi/i.test(p.type));
   const notes = [
+    ...(noRadio ? [`${boardName} has no Wi-Fi, so the real device cannot reach the network with it. Use a board with Wi-Fi (an ESP32-family board, e.g. a XIAO ESP32-S3), or add a Wi-Fi module.`] : []),
     ...(spec.direct?.length ? [`Not through the relay (end-to-end TLS): ${spec.direct.map((d) => d.host).join(", ")}; the device calls them directly and they get no key.`] : []),
     "Relayed: HTTP(S) requests, streamed answers and WebSockets. Not relayed: MQTT and other raw TCP (MQTT over WebSocket works).",
     "In Jumper's simulator the same firmware calls a sandbox relay with the same rules, so what worked there works here.",
   ];
   return {
+    ...(noRadio ? { warning: notes[0] } : {}),
     summary: needsRelay
       ? `The device reaches ${hosts.map((h) => h.host).join(", ")} through your relay, which holds the API keys (${config.secrets.join(", ")}); the device holds only its own revocable token.`
       : `The device reaches ${hosts.map((h) => h.host).join(", ") || "the network"} directly; no API keys are needed.`,

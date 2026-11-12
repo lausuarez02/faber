@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, rmSync, statSync, utimesSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,13 +12,14 @@ import { hubPort, shot } from "./helpers.ts";
 const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse", import.meta.url));
 
-async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
+async function serve(info: TestInfo, prep?: (dir: string) => void, slot = 1): Promise<{ url: string; dir: string; close(): Promise<void> }> {
   const root = mkdtempSync(join(tmpdir(), "jumper-e2e-kit-"));
   const dir = join(root, "muse");
   cpSync(MUSE, dir, { recursive: true });
+  prep?.(dir);
   const later = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware", "main.hex"), later, later);
-  const port = hubPort(info, 1);
+  const port = hubPort(info, slot);
   const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_SLICER: "none" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
@@ -119,6 +120,8 @@ test("Build it: buy, print, assemble, flash; ticks are remembered; zip, PDF and 
     await expect(page.getByTestId("kit-trouble")).toContainText("If something does not work");
     await shot(page, info, "kit-assemble");
     // Flash: drag and drop for the XIAO RP2040
+    // no network in this project: no Connect tab
+    await expect(page.getByTestId("kit-tab-connect")).toHaveCount(0);
     await page.getByTestId("kit-tab-flash").click();
     await expect(page.getByTestId("kit-flash")).toContainText("RPI-RP2");
     await expect(page.getByTestId("kit-flash")).toContainText("firmware/firmware.uf2");
@@ -169,6 +172,43 @@ test("Build it opens from the Case view", async ({ page }, info) => {
     await expect(page.getByTestId("kit-summary")).toContainText("Pocket Muse", { timeout: 60_000 });
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("kit-view")).toHaveCount(0);
+  } finally {
+    await s.close();
+  }
+});
+
+// Round 13: a device that calls an API with a key: the Connect tab says which keys, how to run or
+// deploy the relay that holds them, a token per device, Wi-Fi, a check and the cost; never a key value.
+test("Build it: Connect for a device that reaches an API", async ({ page }, info) => {
+  test.setTimeout(180_000);
+  const KEY = "sk-e2e-connect-not-a-real-key-0123456789";
+  const s = await serve(
+    info,
+    (dir) => {
+      const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+      p.network = { mode: "mock", secrets: ["API_KEY"], allow: [{ host: "api.example.com", secrets: ["API_KEY"], headers: { Authorization: "Bearer {{secret:API_KEY}}" } }] };
+      writeFileSync(join(dir, "jumper.json"), JSON.stringify(p, null, 2));
+      writeFileSync(join(dir, ".env"), `API_KEY=${KEY}\n`);
+    },
+    2,
+  );
+  try {
+    await openApp(page, s.url);
+    await openKit(page, info);
+    await page.getByTestId("kit-tab-connect").click();
+    const c = page.getByTestId("kit-connect");
+    await expect(c).toContainText("through your relay, which holds the API keys (API_KEY)");
+    // the Muse's XIAO RP2040 has no Wi-Fi: said first
+    await expect(c).toContainText("has no Wi-Fi");
+    await expect(c.getByLabel("API keys")).toContainText("set on this computer");
+    for (const t of ["Your API keys", "Set up the relay", "A token for each device", "Wi-Fi and the relay address on the device", "Check it", "What it costs"]) await expect(c.getByRole("heading", { name: t })).toBeVisible();
+    await expect(c).toContainText("npx wrangler secret put RELAY_DEVICE_TOKENS");
+    await expect(c).toContainText("jumper relay device-header");
+    await expect(c).toContainText("86,400 a day at worst");
+    expect(await page.content()).not.toContain(KEY);
+    const view = page.getByTestId("kit-view");
+    expect(await view.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await shot(page, info, "kit-connect");
   } finally {
     await s.close();
   }

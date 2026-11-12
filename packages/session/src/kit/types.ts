@@ -165,6 +165,8 @@ export interface FlashPlan {
 
 /** Round 13: how the device reaches its APIs on the real network (keys, relay, tokens, Wi-Fi, cost). */
 export interface ConnectPlan {
+  /** Said first when the board cannot reach the network at all (no Wi-Fi). */
+  warning?: string;
   summary: string;
   /** False when no host needs a key (the device calls the APIs directly). */
   needs_relay: boolean;
