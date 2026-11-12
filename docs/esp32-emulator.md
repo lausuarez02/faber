@@ -24,6 +24,10 @@ Flash image: the merged 4 MB image (`esptool merge-bin`: bootloader at 0x0 (S3/C
 
 ## The bridge (what the patch adds)
 
+> Round 13: the camera port (patch `0004-jumper-camera.patch`, native tag `…-jb5-cam1`) adds two
+> blocking lines, `CC` (camera command) and `CD` (frame bytes), both answered with `Q`; nothing else
+> changes. See [camera.md](camera.md#bridge-protocol-qemu-patch-0004).
+>
 > Round 10: protocol version 3 (patch `0002-jumper-peripherals.patch`, image `…-jb3`) adds GPIO
 > matrix routing (`M`/`N`), pin interrupts, LEDC (`L`), SPI (`SX`/`SQ`), RMT (`RM`), ADC (`E`/`AT`),
 > UART1/2 (`V`/`B`/`X`), I2C bus index and S3/C3 controllers, watched-pin parks (`K`) and I2S lines

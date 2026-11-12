@@ -37,6 +37,7 @@ fixture tests listed at the end pass.
 | RMT TX (NeoPixel / FastLED RMT) | 8 ch | 4 ch | 2 ch | channel RAM read at transmit time, ping-pong threshold interrupt, wrap, end marker, `tx_end`; `RM` symbols drawn as edges | ✓ (WS2812 bit timing) | not run |
 | ADC (`analogRead`, `analogReadMilliVolts`) | SAR1+SAR2 (SENS) | SAR1+SAR2 (SENS) | APB_SARADC oneshot | pad voltage from the circuit (`E`), linear, full scale per attenuation (table below) | ✓ (`E` sent) | not run |
 | UART1 / UART2 | UART1+2 | UART1+2 | UART1 | bytes `V` drawn as 8N1 frames at the configured baud (`B`, from CLKDIV and the clock source); frames a part drives on the RX pin decoded at the stop bit and fed in (`X`) | ✓ (both ways) | not run |
+| Camera (esp32-camera) | ✓ | ✓ | – (no camera interface) | round 13: QEMU patch 0004 camera port (`CC` / `CD` lines); the driver API is wrapped in simulation builds, frames rendered by Jumper ([camera.md](camera.md)); the LCD_CAM / I2S camera hardware itself is not modelled | ✓ | ✓ (`camera.integration.test.ts`: S3 Sense pins, ESP32 ESP32-CAM pins) |
 | I2S TX / RX | protocol + TS + parts only | same | same | `ST` / `SR` lines → `I2sBus`; **the QEMU I2S + DMA device is not written** (ESP32 lldesc DMA, S3/C3 GDMA) | ✓ (bus, parts) | **not emulated** |
 | Touch | – | – | – | not bridged | – | not emulated |
 | Wi-Fi / BT radio | – | – | – | not emulated (Ethernet MAC instead, round 9) | – | – |

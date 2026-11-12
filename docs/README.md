@@ -20,6 +20,7 @@
 - [Contracts](contracts.md): the APIs of every package.
 - [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
 - [Cases and the factory pack](enclosures.md): any case shape, the parts laid out inside, print and factory files.
+- [Cameras](camera.md): cameras as a general capability (esp32-camera on ESP32 / ESP32-S3): the XIAO ESP32-S3 Sense and the OV2640 module, what is emulated vs shimmed, scenes / images / webcam, tests, case lens holes.
 - [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
 - [The hardware skill](agent-skill.md): how the design-for-assembly know-how reaches Claude and other agents (server instructions, prompts, project skill, CLAUDE.md, plugin).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.

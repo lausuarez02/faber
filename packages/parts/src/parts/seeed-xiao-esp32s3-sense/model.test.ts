@@ -40,3 +40,16 @@ describe("seeed-xiao-esp32s3-sense camera", () => {
     expect(b.model.diagnostics?.().map((d) => d.code)).toContain("camera-image");
   });
 });
+
+describe("seeed-xiao-esp32s3-sense microphone", () => {
+  it("is an I2S source on the board: silence by default, a 1 kHz tone at 70 dB SPL when set", () => {
+    const b = mount(def, {});
+    b.solve();
+    const req = { cycle: 0, sampleRate: 16000, bits: 16, channels: 1, frames: 160 };
+    expect(Math.max(...b.model.i2s!.i2sProvide!(req)!)).toBe(0);
+    b.setProp("mic_sound", "tone");
+    const s = b.model.i2s!.i2sProvide!(req)!;
+    const rms = Math.sqrt(s.reduce((a, v) => a + (v / 32767) ** 2, 0) / s.length);
+    expect(20 * Math.log10(rms)).toBeCloseTo(70 - 94 - 26, 0);
+  });
+});
