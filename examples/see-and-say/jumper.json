@@ -1,0 +1,404 @@
+{
+  "format": "jumper/1",
+  "name": "See and say (XIAO ESP32-S3 Sense)",
+  "description": "Press the button: the XIAO ESP32-S3 Sense takes a picture, sends it to a vision model, sends the answer to a text-to-speech model and plays the speech on a MAX98357A + 20 mm speaker, with a face on a GC9A01 round screen. Every API call goes through the project's relay, so no key is on the device. Tests run offline: the vision API is a mock, the speech API a cassette.",
+  "parts": [
+    {
+      "id": "sense",
+      "type": "seeed-xiao-esp32s3-sense",
+      "x": 0,
+      "y": 0,
+      "rotation": 0
+    },
+    {
+      "id": "eyes",
+      "type": "gc9a01-round-tft",
+      "x": 300,
+      "y": -180,
+      "rotation": 0
+    },
+    {
+      "id": "amp",
+      "type": "max98357a",
+      "x": 300,
+      "y": 120,
+      "rotation": 0
+    },
+    {
+      "id": "spk",
+      "type": "speaker-20mm",
+      "x": 520,
+      "y": 140,
+      "rotation": 0
+    },
+    {
+      "id": "btn",
+      "type": "pushbutton",
+      "x": -220,
+      "y": 40,
+      "rotation": 0
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "sense",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "btn",
+        "pin": "2a"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "btn",
+        "pin": "1a"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO1"
+      },
+      "color": "#4AA8FF"
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "amp",
+        "pin": "VIN"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "5V"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w4",
+      "from": {
+        "part": "amp",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GND"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w5",
+      "from": {
+        "part": "amp",
+        "pin": "BCLK"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO2"
+      },
+      "color": "#B47CFF"
+    },
+    {
+      "id": "w6",
+      "from": {
+        "part": "amp",
+        "pin": "LRC"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO3"
+      },
+      "color": "#F2E14A"
+    },
+    {
+      "id": "w7",
+      "from": {
+        "part": "amp",
+        "pin": "DIN"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO4"
+      },
+      "color": "#3DDC97"
+    },
+    {
+      "id": "w8",
+      "from": {
+        "part": "spk",
+        "pin": "+"
+      },
+      "to": {
+        "part": "amp",
+        "pin": "OUT+"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w9",
+      "from": {
+        "part": "spk",
+        "pin": "-"
+      },
+      "to": {
+        "part": "amp",
+        "pin": "OUT-"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w10",
+      "from": {
+        "part": "eyes",
+        "pin": "VCC"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "3V3"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w11",
+      "from": {
+        "part": "eyes",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GND.2"
+      },
+      "color": "#2B3038"
+    },
+    {
+      "id": "w12",
+      "from": {
+        "part": "eyes",
+        "pin": "LED"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "3V3"
+      },
+      "color": "#FF4D2E"
+    },
+    {
+      "id": "w13",
+      "from": {
+        "part": "eyes",
+        "pin": "SCK"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO7"
+      },
+      "color": "#B47CFF"
+    },
+    {
+      "id": "w14",
+      "from": {
+        "part": "eyes",
+        "pin": "MOSI"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO9"
+      },
+      "color": "#F2E14A"
+    },
+    {
+      "id": "w15",
+      "from": {
+        "part": "eyes",
+        "pin": "CS"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO6"
+      },
+      "color": "#4AA8FF"
+    },
+    {
+      "id": "w16",
+      "from": {
+        "part": "eyes",
+        "pin": "DC"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "GPIO5"
+      },
+      "color": "#3DDC97"
+    },
+    {
+      "id": "w17",
+      "from": {
+        "part": "eyes",
+        "pin": "RST"
+      },
+      "to": {
+        "part": "sense",
+        "pin": "3V3"
+      },
+      "color": "#FF9F1C"
+    }
+  ],
+  "firmware": {
+    "board": "sense",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.bin",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "esp32:esp32:XIAO_ESP32S3:PSRAM=opi"
+    },
+    "libraries": [
+      "ArduinoJson",
+      "Adafruit GC9A01A",
+      "Adafruit GFX Library"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "see-and-say",
+      "name": "A press: picture -> vision API -> speech API -> the speaker plays it",
+      "steps": [
+        {
+          "expect_serial": "ready",
+          "within_ms": 20000
+        },
+        {
+          "camera_frame": "face"
+        },
+        {
+          "press": "btn",
+          "hold_ms": 80
+        },
+        {
+          "expect_serial": {
+            "regex": "photo \\d+ bytes 320x240"
+          },
+          "within_ms": 3000
+        },
+        {
+          "request": {
+            "host": "api.vision.example",
+            "path": "/v1/chat/completions",
+            "method": "POST",
+            "status": 200
+          },
+          "within_ms": 30000
+        },
+        {
+          "expect_serial": "said: Nice keyboard. Shame about the crumbs.",
+          "within_ms": 5000
+        },
+        {
+          "request": {
+            "host": "api.speech.example",
+            "path": "/v1/audio/speech",
+            "method": "POST",
+            "status": 200
+          },
+          "within_ms": 30000
+        },
+        {
+          "expect_part": "amp.playing",
+          "op": "==",
+          "value": true,
+          "within_ms": 5000
+        },
+        {
+          "expect_part": "spk.sounding",
+          "op": "==",
+          "value": true,
+          "within_ms": 1500
+        },
+        {
+          "expect_serial": "played 29760 bytes",
+          "within_ms": 15000
+        },
+        {
+          "expect_part": "sense.camera_frames",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "expect_part": "eyes.blank",
+          "op": "==",
+          "value": false
+        }
+      ]
+    },
+    {
+      "id": "vision-down",
+      "name": "The vision API answers 503: it says so and does not call the speech API",
+      "steps": [
+        {
+          "expect_serial": "ready",
+          "within_ms": 20000
+        },
+        {
+          "network_fault": {
+            "kind": "http_error",
+            "status": 503,
+            "host": "api.vision.example"
+          }
+        },
+        {
+          "press": "btn",
+          "hold_ms": 80
+        },
+        {
+          "expect_serial": "vision error 503",
+          "within_ms": 30000
+        },
+        {
+          "request": {
+            "host": "api.speech.example"
+          },
+          "absent": true
+        }
+      ]
+    }
+  ],
+  "network": {
+    "mode": "mock",
+    "wifi": {
+      "ssid": "JumperNet"
+    },
+    "cassette": "speech",
+    "secrets": [
+      "VISION_API_KEY",
+      "SPEECH_API_KEY"
+    ],
+    "allow": [
+      {
+        "host": "api.vision.example",
+        "secrets": [
+          "VISION_API_KEY"
+        ],
+        "headers": {
+          "Authorization": "Bearer {{secret:VISION_API_KEY}}"
+        }
+      },
+      {
+        "host": "api.speech.example",
+        "secrets": [
+          "SPEECH_API_KEY"
+        ],
+        "headers": {
+          "Authorization": "Bearer {{secret:SPEECH_API_KEY}}"
+        }
+      }
+    ],
+    "relay": {
+      "requests_per_minute": 20,
+      "max_request_kb": 256,
+      "max_response_kb": 4096,
+      "max_stream_seconds": 60
+    }
+  }
+}

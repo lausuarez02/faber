@@ -1,0 +1,30 @@
+{
+  "mocks": [
+    {
+      "host": "api.vision.example",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "id": "chatcmpl-example",
+          "object": "chat.completion",
+          "model": "your-vision-model",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "Nice keyboard. Shame about the crumbs."
+              },
+              "finish_reason": "stop"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
