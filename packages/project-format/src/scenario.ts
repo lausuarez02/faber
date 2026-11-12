@@ -201,6 +201,23 @@ export const NetworkMockStepSchema = z
   })
   .strict();
 
+/**
+ * Round 13 (camera): what a camera sees from now on: a named test scene (test-card, color-bars, face,
+ * gradient, checker, black, white, dark-room) or an image file in the project (PNG or baseline JPEG).
+ */
+export const CameraFrameStepSchema = z
+  .object({
+    camera_frame: z
+      .union([
+        z.string().min(1),
+        z.object({ scene: z.string().min(1).optional(), image: z.string().min(1).optional() }).strict(),
+      ])
+      .describe('A test scene name ("face", "test-card", ...) or an image path in the project ("tests/cat.jpg"); or {"scene": ...} / {"image": ...}.'),
+    part: PartRef.optional().describe("The camera part (default: the only camera in the project)."),
+    ...common,
+  })
+  .strict();
+
 export const ScenarioStepSchema = z.union([
   RunStepSchema,
   WaitStepSchema,
@@ -219,6 +236,7 @@ export const ScenarioStepSchema = z.union([
   RequestStepSchema,
   NetworkFaultStepSchema,
   NetworkMockStepSchema,
+  CameraFrameStepSchema,
 ]);
 
 /** Action key → its schema. Used to give one precise error instead of a union dump. */
@@ -240,6 +258,7 @@ export const STEP_KINDS = {
   request: RequestStepSchema,
   network_fault: NetworkFaultStepSchema,
   network_mock: NetworkMockStepSchema,
+  camera_frame: CameraFrameStepSchema,
 } as const;
 export type StepKind = keyof typeof STEP_KINDS;
 
@@ -263,6 +282,7 @@ export const STEP_EXAMPLES: Record<StepKind, string> = {
   request: `{ "request": { "host": "api.example.com", "path": "/v1/now", "status": 200 }, "within_ms": 5000 } (the device made it through the sandbox), or { "request": { "host": "mqtt.example.com", "kind": "mqtt" }, "within_ms": 8000 }, or { "request": { "host": "api.example.com" }, "absent": true }`,
   network_fault: `{ "network_fault": { "kind": "wifi_drop" } }, then later { "network_fault": { "kind": "clear" } }; or { "network_fault": { "kind": "http_error", "status": 503, "count": 1 } }`,
   network_mock: `{ "network_mock": { "host": "api.example.com", "path": "/v1/forecast", "response": { "body": { "rain": 0 } } } } (this answer for the rest of this scenario only, ahead of network/mocks.json)`,
+  camera_frame: `{ "camera_frame": "face" } (a test scene: test-card, color-bars, face, gradient, checker, black, white, dark-room), or { "camera_frame": { "image": "tests/cat.jpg" }, "part": "cam1" } (a PNG / JPEG in the project); then e.g. { "expect_part": "cam1.camera_frames", "op": ">=", "value": 1, "within_ms": 2000 }`,
   said: `{ "said": "dizzy", "within_ms": 500 } (words a DFPlayer clip said, with a speaker wired), or { "said": { "regex": "^hi" }, "part": "df", "within_ms": 2000 }, or { "said": "goodbye", "absent": true, "within_ms": 1000 }`,
 };
 
