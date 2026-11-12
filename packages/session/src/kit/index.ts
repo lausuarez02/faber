@@ -3,7 +3,7 @@
  * it" panel, and build-kit/ in the factory pack). Read-only: it never rebuilds the case or the
  * firmware; what is stale or missing is said, with the fix.
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { CaseReport } from "@jumper/enclosure";
 import { assemblyStyle, colorName, wireCuts, type WireCut } from "../assembly.ts";
@@ -63,6 +63,20 @@ async function casePositions(s: ProjectSession, report: CaseReport): Promise<Lay
   return c;
 }
 
+/** Every source file of the project's firmware, joined (undefined when the project has no firmware folder). */
+function firmwareText(s: ProjectSession): string | undefined {
+  const dir = s.project.firmware?.dir;
+  if (!dir || !existsSync(join(s.dir, dir))) return undefined;
+  try {
+    return readdirSync(join(s.dir, dir))
+      .filter((f) => /\.(ino|cpp|c|h|hpp|py)$/.test(f))
+      .map((f) => readFileSync(join(s.dir, dir, f), "utf8"))
+      .join("\n");
+  } catch {
+    return undefined;
+  }
+}
+
 function readJson<T>(file: string): T | undefined {
   if (!existsSync(file)) return undefined;
   try {
@@ -116,7 +130,8 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     const w = specWithProps(spec, props);
     return w !== spec && w.mechanical?.source ? w.mechanical.source.split(";")[0]!.replace(/, typical\)/, ")") : undefined;
   };
-  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(plan ? { consumables: plan.consumables.map((c) => ({ ...c, why: kitWords(c.why, {}).replace(/in the wire list below/g, "in the Assemble steps") })) } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
+  const fwText = firmwareText(s);
+  const shopping = shoppingList({ project, registry: reg, soldered, cuts, region, sizeOf, ...(fwText !== undefined ? { firmwareText: fwText } : {}), ...(o.prefer ? { prefer: o.prefer } : {}), ...(screws ? { screws } : {}), ...(plan ? { consumables: plan.consumables.map((c) => ({ ...c, why: kitWords(c.why, {}).replace(/in the wire list below/g, "in the Assemble steps") })) } : {}), ...(print.items.length && print.process === "fdm" ? { filament: { grams: print.total_grams, material: "PLA", color: print.items[0]!.color } } : {}) });
 
   const built = s.firmwareState();
   const flash = flashPlan(project, reg, built);

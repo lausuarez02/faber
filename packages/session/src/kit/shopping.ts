@@ -101,6 +101,8 @@ export interface ShoppingInput {
   sizeOf?: (type: string, props: Record<string, unknown> | undefined) => string | undefined;
   /** Grams of filament the print list needs (0 / undefined: no case to print). */
   filament?: { grams: number; material: string; color: string };
+  /** The firmware's source text (all files), when known: a board's own card slot needs a card only when it uses one. */
+  firmwareText?: string;
   /** The case engine's assembly plan consumables (Kapton, the foam pad under a cell, ...): joined into the matching line, or a line of their own. */
   consumables?: { item: string; qty: number | string; why: string }[];
 }
@@ -182,7 +184,12 @@ export function shoppingList(inp: ShoppingInput): Shopping {
 
   // ---- things people forget (rules over the part data)
   // a card slot (DFPlayer, SD modules) needs its card
-  const cardParts = project.parts.filter((p) => /micro\s?-?SD|TF card/i.test(words(registry.get(p.type)?.spec)));
+  // A board with a slot (XIAO ESP32-S3 Sense) needs a card only when its firmware reads one (SD / SD_MMC / FFat on a card).
+  const usesCard = inp.firmwareText === undefined || /#\s*include\s*[<"](SD|SD_MMC|SdFat)\.h[>"]|\bSD(_MMC)?\.begin\s*\(/.test(inp.firmwareText);
+  const cardParts = project.parts.filter((p) => {
+    const spec = registry.get(p.type)?.spec;
+    return /micro\s?-?SD|TF card/i.test(words(spec)) && (spec?.category !== "board" || usesCard);
+  });
   if (cardParts.length) extra("electronics", "microsd", cardParts.length, "microSD card", "1 to 32 GB, any class, formatted FAT32", "microSD card 8GB", 3, `${cardParts.map((p) => `${p.id} (the ${shortName(registry.get(p.type)?.spec)})`).join(", ")} read${cardParts.length > 1 ? "" : "s"} its files from it${project.parts.some((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips")) ? " (the sound clips: the Flash steps say how to make them)" : ""}`, true);
 
   // a JST lead needs a mating socket on whatever it plugs into, unless that part has one
