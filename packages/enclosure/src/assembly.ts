@@ -388,11 +388,17 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
 
   // ---------------------------------------------------------------- 5. ports and the boot button when closed
   const access: string[] = [];
+  const cards: { part: string; what: string }[] = [];
   for (const p of L.placed) {
     for (const f of p.mech.features) {
       if (f.kind !== "connector") continue;
       const opened = L.openings.some((o) => o.part === p.mech.id && o.feature === f.id);
       const role = p.mech.id === board?.id ? "flashing and power" : p.mech.category === "power" ? "charging" : "its cable";
+      // a card slot inside is fine: the card goes in before closing (a step of the plan)
+      if (!opened && /sd/i.test(f.connector ?? "")) {
+        cards.push({ part: p.mech.id, what: f.connector === "microsd" ? "microSD card" : "SD card" });
+        continue;
+      }
       if (opened) access.push(`${p.mech.id}.${f.id} (${role}) through its opening on the ${L.openings.find((o) => o.part === p.mech.id && o.feature === f.id)!.face}`);
       else checks.push({ id: "assembly-access", ok: false, severity: "warning", message: `${name(p.mech.id)}'s ${f.connector ?? "connector"} (${role}) is inside the closed case. Why: it has no opening (its part data does not expose it, or it was placed away from the walls). Fix: ${role === "charging" || role === "flashing and power" ? `put ${p.mech.id} against a wall (placements {"${p.mech.id}": {"face": "bottom"}}) so its port gets an opening` : "open the case to plug it in"}.`, parts: [p.mech.id] });
     }
@@ -400,7 +406,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   const boardP = board ? byId.get(board.id) : undefined;
   const hidden = boardP ? boardP.mech.features.filter((f) => f.kind === "button" && !L.openings.some((o) => o.part === boardP.mech.id && o.feature === f.id)) : [];
   const boot = hidden.find((f) => /boot/i.test(f.id));
-  checks.push({ id: "assembly-access", ok: true, severity: boot ? "warning" : "info", message: `${access.length ? `Reachable with the case closed: ${access.join("; ")}.` : "No port is reachable with the case closed."}${boot ? ` ${boardP!.mech.id}'s ${boot.id.toUpperCase()} button is inside: flash it before closing (step "Flash the firmware"); later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold ${boot.id.toUpperCase()} while plugging in.` : ""}`, parts: boardP ? [boardP.mech.id] : [], facts: { reachable: access.length, hidden_buttons: hidden.map((h) => h.id).join(", ") } });
+  checks.push({ id: "assembly-access", ok: true, severity: boot ? "warning" : "info", message: `${access.length ? `Reachable with the case closed: ${access.join("; ")}.` : "No port is reachable with the case closed."}${cards.length ? ` ${cards.map((c) => `${c.part}'s ${c.what} stays inside (it goes in before closing)`).join("; ")}.` : ""}${boot ? ` ${boardP!.mech.id}'s ${boot.id.toUpperCase()} button is inside: flash it before closing (step "Flash the firmware"); later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold ${boot.id.toUpperCase()} while plugging in.` : ""}`, parts: boardP ? [boardP.mech.id] : [], facts: { reachable: access.length, hidden_buttons: hidden.map((h) => h.id).join(", ") } });
 
   // ---------------------------------------------------------------- 6. the cell
   for (const p of L.placed.filter((x) => x.mech.soft)) {
@@ -434,7 +440,8 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
         closest = 0;
       }
     if (near.length) checks.push({ id: "assembly-battery", ok: true, severity: "warning", message: `${name(p.mech.id)} may be pressed by a hard edge: ${near.join("; ")}, while a pouch cell swells about ${r1(swell)} mm. Why: a corner pressing on a LiPo can pierce it as it swells. Fix: a 1 mm foam pad between them (the plan adds it), or more room (update_case {"params": {"gap_mm": ${r1(L.params.gap_mm + 1)}}}).`, parts: [p.mech.id], facts: { closest_mm: r1(Math.max(0, closest)), swell_mm: r1(swell) } });
-    else checks.push({ id: "assembly-battery", ok: !!m && (m.how.includes("cradle") || m.how.includes("corners")), severity: m && (m.how.includes("cradle") || m.how.includes("corners")) ? "info" : "warning", message: m && (m.how.includes("cradle") || m.how.includes("corners")) ? `${name(p.mech.id)}: ${m.how.includes("cradle") ? "a cradle with two strap slots" : "corner locators"} on the ${shell} wall, a foam pad under it, Kapton over its tab; nothing hard within ${r1(swell + 0.5)} mm of it (it may swell ${r1(swell)} mm). It is connected last, after a test on USB.` : `${name(p.mech.id)} has no cradle or corner locators. Why: ${m?.missing ?? "the parts round it leave no room"}. Fix: hold it with a Kapton strap on a foam pad, or more room round it (gap_mm).`, parts: [p.mech.id], facts: { swell_mm: r1(swell) } });
+    // (no cradle is a warning, not a failure: the strap on a foam pad holds it)
+    else checks.push({ id: "assembly-battery", ok: true, severity: m && (m.how.includes("cradle") || m.how.includes("corners")) ? "info" : "warning", message: m && (m.how.includes("cradle") || m.how.includes("corners")) ? `${name(p.mech.id)}: ${m.how.includes("cradle") ? "a cradle with two strap slots" : "corner locators"} on the ${shell} wall, a foam pad under it, Kapton over its tab; nothing hard within ${r1(swell + 0.5)} mm of it (it may swell ${r1(swell)} mm). It is connected last, after a test on USB.` : `${name(p.mech.id)} has no cradle or corner locators. Why: ${m?.missing ?? "the parts round it leave no room"}. Fix: hold it with a Kapton strap on a foam pad, or more room round it (gap_mm).`, parts: [p.mech.id], facts: { swell_mm: r1(swell) } });
   }
 
   // ---------------------------------------------------------------- 7. screws
@@ -501,6 +508,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   }
   const book = solderSteps.get(BOOK) ?? [];
   if (book.length) add({ title: "Open it like a book and join the two shells' wires", say: `Lay the front shell face down next to the back shell on its ${hinge} side, both open sides up, as if the case were a book opened on the ${hinge}. Solder the ${book.length} wires that run between them: ${book.map((w) => `${w.id} (${w.from} to ${w.to}, ${w.length_mm} mm)`).join(", ")}. ${splices.length ? `Join the leads of ${splices.map((s) => s.wire.id).join(", ")} with a splice and heat-shrink. ` : ""}Bundle them with a strip of Kapton near the ${hinge} wall so they fold in when the case closes.`, shell: "both", parts: [...new Set(book.flatMap((w) => [partOf(w.from), partOf(w.to)]))], action: "route-wire", wires: book, tools: [...solderTools, "Kapton tape"], cautions: ["Keep the bundle away from the lip and the screw bosses."], view: { camera: "open-book", explode: 0, highlight: [...new Set(book.flatMap((w) => [partOf(w.from), partOf(w.to)]))] } });
+  for (const c of cards) add({ title: `Put the ${c.what} into ${c.part}`, say: `Copy the files from sd-card/ onto the ${c.what} (sd-card/CLIPS.md), then push it into ${name(c.part)} until it clicks. It stays inside the closed case: to change it later, open the case.`, shell: shellOf(c.part), parts: [], action: "place", tools: [], cautions: ["Format it FAT32 first; copy the files in order."], view: { camera: shellOf(c.part) === "front" ? "front-shell" : "back-shell", explode: 0, highlight: [c.part] } });
   const hasBattery = L.placed.some((p) => p.mech.soft);
   const usb = access.find((a) => a.startsWith(`${board?.id}.`)) ?? access[0];
   add({ title: "Test it on USB before the battery", say: `${usb ? `Plug a USB cable into ${usb.split(" (")[0]}` : "Power it"} with the case still open${hasBattery ? " and the battery not connected" : ""}. Run through test/TEST-PLAN.md: the screen, buttons and sounds should behave as in the simulation. Fix anything now, while every joint is easy to reach.`, shell: "both", parts: board ? [board.id] : [], action: "test", tools: ["USB cable", "multimeter"], cautions: ["Look for a hot part in the first seconds: unplug at once if anything warms up."], view: { camera: "open-book", explode: 0, highlight: board ? [board.id] : [] } });

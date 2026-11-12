@@ -24,8 +24,11 @@ fit checks; any shape they name, an egg or a heart, is `"shape": "custom"` with 
 draw and maybe `size_mm`: `check_fit` first says what fits and what smaller parts would;
 `propose_layout` shows how Jumper would distribute the parts inside, thinnest / smallest / balanced,
 with the reasons: tell the person which one and why, `layout: "<id>"` picks it; call it before
-`design_case`) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
-steps: the factory pack).
+`design_case`) → `get_assembly_plan` (what to buy, what to print, and how it goes together for that
+case: the order per shell, when each wire is soldered, the battery last, a test before closing, a
+picture per step; tell the person in plain words and fix what its `assembly-*` checks flag) →
+`export_manufacturing` (case files for a printer, BOM, wiring, firmware, the assembly steps: the
+factory pack).
 Case choices cost size: do not pin parts (`placements` x_mm / y_mm / layer / face) unless the person
 asked for that spot, leave `dome_mm` and the edges on auto, and read `costs` in every `check_fit` /
 `propose_layout` / `design_case` / `update_case` answer (what each choice adds, with the call that
