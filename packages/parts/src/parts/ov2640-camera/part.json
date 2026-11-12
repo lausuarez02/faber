@@ -1,0 +1,466 @@
+{
+  "id": "ov2640-camera",
+  "name": "OV2640 camera module (2 MP, DVP)",
+  "category": "sensor",
+  "description": "2 MP colour camera (OmniVision OV2640, up to 1600 × 1200, JPEG built in) on a module with its own regulators: 3.3 V in, an 8-bit parallel (DVP) pixel bus, PCLK / VSYNC / HREF, an XCLK input and an SCCB control bus. For ESP32 / ESP32-S3 boards with Espressif's esp32-camera driver (esp_camera.h): wire the 16 signals to free GPIOs and give the same pins to camera_config_t. This is the 2 × 9 header module you can wire by hand; the ESP32-CAM-style 24-pin flex module is the same sensor and signals but needs an FPC breakout with 2.8 V / 1.2 V regulators. In Jumper's simulator it sees a test scene, an image, or your webcam (frames come from Jumper; the bus timing is not simulated).",
+  "pins": [
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 16,
+      "y": 132,
+      "type": "power",
+      "voltage": {
+        "min": 3.0,
+        "max": 3.6
+      },
+      "description": "3.3 V supply (the module's regulators make the sensor's 2.8 V and 1.2 V). Not 5 V."
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 16,
+      "y": 146,
+      "type": "ground",
+      "description": "Ground."
+    },
+    {
+      "id": "SIOC",
+      "label": "SIOC",
+      "x": 32,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-scl"
+      ],
+      "description": "SCCB clock (I2C-like control bus) from the board: camera_config_t pin_sccb_scl."
+    },
+    {
+      "id": "SIOD",
+      "label": "SIOD",
+      "x": 32,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-sda"
+      ],
+      "description": "SCCB data: camera_config_t pin_sccb_sda. The module has pull-ups."
+    },
+    {
+      "id": "VSYNC",
+      "label": "VSYNC",
+      "x": 48,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-vsync"
+      ],
+      "description": "Frame sync out of the camera: pin_vsync."
+    },
+    {
+      "id": "HREF",
+      "label": "HREF",
+      "x": 48,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-href"
+      ],
+      "description": "Line valid out of the camera: pin_href."
+    },
+    {
+      "id": "PCLK",
+      "label": "PCLK",
+      "x": 64,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-pclk"
+      ],
+      "description": "Pixel clock out of the camera: pin_pclk."
+    },
+    {
+      "id": "XCLK",
+      "label": "XCLK",
+      "x": 64,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-xclk"
+      ],
+      "description": "Master clock from the board (10 to 20 MHz, made with LEDC by the driver): pin_xclk."
+    },
+    {
+      "id": "D7",
+      "label": "D7 (Y9)",
+      "x": 80,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d7"
+      ],
+      "description": "Pixel data bit 7 (sensor Y9): pin_d7."
+    },
+    {
+      "id": "D6",
+      "label": "D6 (Y8)",
+      "x": 80,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d6"
+      ],
+      "description": "Pixel data bit 6 (Y8): pin_d6."
+    },
+    {
+      "id": "D5",
+      "label": "D5 (Y7)",
+      "x": 96,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d5"
+      ],
+      "description": "Pixel data bit 5 (Y7): pin_d5."
+    },
+    {
+      "id": "D4",
+      "label": "D4 (Y6)",
+      "x": 96,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d4"
+      ],
+      "description": "Pixel data bit 4 (Y6): pin_d4."
+    },
+    {
+      "id": "D3",
+      "label": "D3 (Y5)",
+      "x": 112,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d3"
+      ],
+      "description": "Pixel data bit 3 (Y5): pin_d3."
+    },
+    {
+      "id": "D2",
+      "label": "D2 (Y4)",
+      "x": 112,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d2"
+      ],
+      "description": "Pixel data bit 2 (Y4): pin_d2."
+    },
+    {
+      "id": "D1",
+      "label": "D1 (Y3)",
+      "x": 128,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d1"
+      ],
+      "description": "Pixel data bit 1 (Y3): pin_d1."
+    },
+    {
+      "id": "D0",
+      "label": "D0 (Y2)",
+      "x": 128,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-d0"
+      ],
+      "description": "Pixel data bit 0 (Y2): pin_d0."
+    },
+    {
+      "id": "RESET",
+      "label": "RESET",
+      "x": 144,
+      "y": 132,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-reset"
+      ],
+      "description": "Reset, active low (pin_reset; -1 = tie to 3V3)."
+    },
+    {
+      "id": "PWDN",
+      "label": "PWDN",
+      "x": 144,
+      "y": 146,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "protocols": [
+        "cam-pwdn"
+      ],
+      "description": "Power down, active high (pin_pwdn; -1 = tie to GND)."
+    }
+  ],
+  "size": {
+    "w": 160,
+    "h": 160
+  },
+  "props": [
+    {
+      "id": "camera_source",
+      "label": "Camera sees",
+      "type": "enum",
+      "default": "test-card",
+      "options": [
+        "test-card",
+        "color-bars",
+        "face",
+        "gradient",
+        "checker",
+        "black",
+        "white",
+        "dark-room",
+        "image"
+      ],
+      "description": "What the camera sees in the simulator: a test scene, or 'image' (the still in camera_image: a scenario's camera_frame step, set_camera_frame, an image dropped on the part, or the webcam)."
+    },
+    {
+      "id": "camera_image",
+      "label": "Camera image",
+      "type": "text",
+      "default": "",
+      "description": "A PNG or JPEG as a data URL (or base64), shown to the camera when 'Camera sees' is 'image'. Set at run time by tests, the agent or the browser; usually left empty in the project."
+    }
+  ],
+  "limits": {
+    "maxVoltage": 3.6,
+    "minVoltage": 3.0
+  },
+  "footprint": "Square module about 34 × 34 mm, M12 lens holder, 2 × 9 pin 0.1 in header, 4 corner holes",
+  "dimensions_mm": {
+    "w": 34,
+    "h": 34,
+    "d": 18
+  },
+  "mass_g": 7,
+  "current_ma": {
+    "typ": 40,
+    "max": 60
+  },
+  "price_usd": 6.5,
+  "buy_links": [
+    {
+      "vendor": "AliExpress",
+      "url": "https://www.aliexpress.com/w/wholesale-OV2640-camera-module-18pin.html"
+    },
+    {
+      "vendor": "Amazon",
+      "url": "https://www.amazon.com/s?k=OV2640+camera+module"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "camera_on",
+      "type": "boolean",
+      "description": "The firmware took a picture in the last 1.5 s."
+    },
+    {
+      "key": "camera_ready",
+      "type": "boolean",
+      "description": "esp_camera_init found this camera and it was not released."
+    },
+    {
+      "key": "camera_frames",
+      "type": "number",
+      "description": "Frames the firmware captured since the run started."
+    },
+    {
+      "key": "camera_preview",
+      "type": "string",
+      "description": "A small JPEG data URL of the last captured picture (what the device sees)."
+    },
+    {
+      "key": "has_preview",
+      "type": "boolean",
+      "description": "A picture was captured (the preview shows)."
+    },
+    {
+      "key": "camera_size",
+      "type": "string",
+      "description": "Size and format of the last frame, e.g. 320×240 JPEG."
+    },
+    {
+      "key": "camera_source",
+      "type": "string",
+      "description": "What the camera sees: a scene name or image."
+    },
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "3V3 is within 3.0 to 3.6 V."
+    }
+  ],
+  "camera": {
+    "sensor": "OV2640",
+    "pins": {
+      "scl": "SIOC",
+      "sda": "SIOD",
+      "vsync": "VSYNC",
+      "href": "HREF",
+      "pclk": "PCLK",
+      "xclk": "XCLK",
+      "d7": "D7",
+      "d6": "D6",
+      "d5": "D5",
+      "d4": "D4",
+      "d3": "D3",
+      "d2": "D2",
+      "d1": "D1",
+      "d0": "D0",
+      "reset": "RESET",
+      "pwdn": "PWDN"
+    },
+    "activeMa": 40,
+    "note": "OV2640 datasheet: 125 mW at UXGA 15 fps (about 40 mA at 3.3 V through the module's regulators), 600 µA standby."
+  },
+  "tags": [
+    "camera",
+    "cam",
+    "ov2640",
+    "image",
+    "photo",
+    "picture",
+    "see",
+    "look",
+    "vision",
+    "jpeg",
+    "dvp",
+    "esp32-cam",
+    "sensor",
+    "video"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 3,
+    "mounting_holes": [
+      {
+        "x": 2.5,
+        "y": 2.5,
+        "d": 2.2
+      },
+      {
+        "x": 31.5,
+        "y": 2.5,
+        "d": 2.2
+      },
+      {
+        "x": 2.5,
+        "y": 31.5,
+        "d": 2.2
+      },
+      {
+        "x": 31.5,
+        "y": 31.5,
+        "d": 2.2
+      }
+    ],
+    "features": [
+      {
+        "id": "lens",
+        "kind": "camera",
+        "face": "+z",
+        "x": 17,
+        "y": 15,
+        "shape": "round",
+        "d": 14,
+        "fov_deg": 66,
+        "description": "M12 lens barrel; the case opens a hole wide enough for its field of view (the stock lens sees about 66°)"
+      },
+      {
+        "id": "header",
+        "kind": "connector",
+        "face": "-z",
+        "x": 17,
+        "y": 30,
+        "shape": "rect",
+        "w": 23,
+        "h": 5,
+        "connector": "header-2.54",
+        "expose": false,
+        "description": "2 × 9 header pins on the back (wires inside the case)"
+      }
+    ],
+    "source": "typical 2 x 9 header OV2640 module (same board outline as the common OV7670 modules); sizes vary by seller: measure yours before printing a tight case"
+  },
+  "sourcing": {
+    "mpn": "OV2640",
+    "manufacturer": "OmniVision (sensor)",
+    "package": "module ~34 x 34 mm, M12 lens, 2 x 9 header",
+    "generic": "OV2640 2MP camera module, DVP 8-bit, SCCB, 3.3 V, 18-pin 2.54 mm header (the ESP32-CAM 24-pin FPC module is the same sensor)"
+  }
+}

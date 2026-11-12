@@ -148,6 +148,10 @@ export interface CameraStats {
   frames: number;
   bytes: number;
   failedInits: number;
+  /** Frames larger than the firmware's frame buffer (the driver drops them: FB-OVF). */
+  dropped: number;
+  /** Why the last frame was dropped, with the fix. */
+  dropWhy?: string;
   last?: { partId: string; width: number; height: number; format: CameraPixelFormat; bytes: number; cycle: number };
   /** The last init failure (what the firmware asked and why nothing answered). */
   problem?: string;
@@ -178,7 +182,7 @@ export function captureLatencyUs(width: number, height: number, xclkHz = 20_000_
 export class CameraBus {
   private devices: CameraAttached[] = [];
   private active: CameraAttached | undefined;
-  private _stats: CameraStats = { inits: 0, frames: 0, bytes: 0, failedInits: 0 };
+  private _stats: CameraStats = { inits: 0, frames: 0, bytes: 0, failedInits: 0, dropped: 0 };
   private listeners = new Set<(partId: string, frame: CameraFrame, cycle: number) => void>();
   private xclkHz = 20_000_000;
 
@@ -263,6 +267,10 @@ export class CameraBus {
     this._stats.frames++;
     this._stats.bytes += frame.data.length;
     this._stats.last = { partId: a.partId, width: frame.width, height: frame.height, format: frame.format, bytes: frame.data.length, cycle: req.cycle };
+    if (req.capacity > 0 && frame.data.length > req.capacity) {
+      this._stats.dropped++;
+      this._stats.dropWhy = `A ${frame.width}x${frame.height} ${frame.format.toUpperCase()} frame is ${frame.data.length} bytes, more than the firmware's ${req.capacity}-byte frame buffer, so the driver drops it (esp_camera_fb_get returns NULL; "FB-OVF" on the board). Why: frame buffers are sized at esp_camera_init for its frame_size and pixel_format${frame.format === "jpeg" ? " (JPEG: width × height / 5)" : ""}. Fix: ${frame.format === "jpeg" ? "a higher jpeg_quality number (smaller files), or a larger jpeg_buffer_size" : "init the camera with this frame size (esp_camera_deinit, then esp_camera_init), or keep the size you started with"}.`;
+    }
     for (const l of this.listeners) l(a.partId, frame, req.cycle);
     return frame;
   }
@@ -270,7 +278,7 @@ export class CameraBus {
   reset(): void {
     this.devices = [];
     this.active = undefined;
-    this._stats = { inits: 0, frames: 0, bytes: 0, failedInits: 0 };
+    this._stats = { inits: 0, frames: 0, bytes: 0, failedInits: 0, dropped: 0 };
   }
 }
 

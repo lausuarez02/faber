@@ -1,23 +1,33 @@
 // Round 13 camera fixture: Espressif's esp32-camera API exactly as a sketch for a XIAO ESP32-S3
-// Sense uses it (the Sense's camera pins). In Jumper's simulation build the API is wrapped and the
+// Sense (its camera pins) or an AI-Thinker ESP32-CAM (on the ESP32) uses it. In Jumper's simulation build the API is wrapped and the
 // frames come from Jumper (a test image); on the board the same source runs the real driver.
 // Prints what it captured so a test can check sizes and bytes.
 #include "esp_camera.h"
 
 static camera_config_t cfg() {
   camera_config_t c = {};
+#if CONFIG_IDF_TARGET_ESP32
+  // AI-Thinker ESP32-CAM pins (an OV2640 module on an ESP32)
+  c.pin_pwdn = 32; c.pin_reset = -1; c.pin_xclk = 0;
+  c.pin_sccb_sda = 26; c.pin_sccb_scl = 27;
+  c.pin_d7 = 35; c.pin_d6 = 34; c.pin_d5 = 39; c.pin_d4 = 36;
+  c.pin_d3 = 21; c.pin_d2 = 19; c.pin_d1 = 18; c.pin_d0 = 5;
+  c.pin_vsync = 25; c.pin_href = 23; c.pin_pclk = 22;
+#else
+  // Seeed XIAO ESP32-S3 Sense pins
   c.pin_pwdn = -1; c.pin_reset = -1; c.pin_xclk = 10;
   c.pin_sccb_sda = 40; c.pin_sccb_scl = 39;
   c.pin_d7 = 48; c.pin_d6 = 11; c.pin_d5 = 12; c.pin_d4 = 14;
   c.pin_d3 = 16; c.pin_d2 = 18; c.pin_d1 = 17; c.pin_d0 = 15;
   c.pin_vsync = 38; c.pin_href = 47; c.pin_pclk = 13;
+#endif
   c.xclk_freq_hz = 20000000;
   c.ledc_timer = LEDC_TIMER_0; c.ledc_channel = LEDC_CHANNEL_0;
   c.pixel_format = PIXFORMAT_JPEG;
   c.frame_size = FRAMESIZE_QVGA;
   c.jpeg_quality = 12;
   c.fb_count = 1;
-  c.fb_location = psramFound() ? CAMERA_FB_IN_PSRAM : CAMERA_FB_IN_DRAM;
+  c.fb_location = CAMERA_FB_IN_PSRAM;  // as the Sense examples do; the simulator falls back to DRAM
   c.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   return c;
 }

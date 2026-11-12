@@ -46,6 +46,11 @@ function applyOne(el: BindableElement, attr: string, value: VisualValue): void {
   } else if (attr === "visible") {
     if (value) el.removeAttribute("display");
     else el.setAttribute("display", "none");
+  } else if (attr === "href" || attr === "xlink:href") {
+    // Only pictures the model made (a camera preview) or local #ids: never a URL that loads something.
+    const s = String(value);
+    if (s !== "" && !s.startsWith("#") && !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]*$/.test(s)) return;
+    if (el.getAttribute(attr) !== s) el.setAttribute(attr, s);
   } else {
     const s = String(value);
     if (el.getAttribute(attr) !== s) el.setAttribute(attr, s);

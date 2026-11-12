@@ -763,8 +763,15 @@ export class Simulation {
       }
     }
 
+    let boardI2s: { id: string; device: NonNullable<PartModel["i2s"]> } | undefined;
     for (const s of this.slots) {
       if (!s.model.i2s) continue;
+      // Round 13: an I2S device on the firmware board itself (the XIAO ESP32-S3 Sense's microphone)
+      // is hard-wired to its I2S pins; it answers after any wired one.
+      if (s.id === board) {
+        if (this.mcu?.attachI2s) boardI2s = { id: s.id, device: s.model.i2s };
+        continue;
+      }
       const diag = (severity: SimDiagnostic["severity"], code: string, message: string, pin?: string) =>
         this.busDiag.push({ partId: s.id, severity, code, message, ...(pin ? { pin } : {}) });
       const [bclk] = pinsWith(s, "i2s-bclk");
@@ -789,6 +796,7 @@ export class Simulation {
       }
       this.busUnsubs.push(this.i2s.attach(s.id, s.model.i2s));
     }
+    if (boardI2s) this.busUnsubs.push(this.i2s.attach(boardI2s.id, boardI2s.device));
 
     // Round 13: cameras. A board with a built-in camera names its own GPIOs; a module's pins are
     // followed through the wires to the firmware board's GPIOs.

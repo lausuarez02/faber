@@ -17,6 +17,7 @@ if (!available) console.warn(`skipping ESP board fixtures: Docker is not running
 
 const BOARDS: { id: string; out: string; in: string }[] = [
   { id: "seeed-xiao-esp32s3", out: "GPIO1", in: "GPIO2" },
+  { id: "seeed-xiao-esp32s3-sense", out: "GPIO1", in: "GPIO2" },
   { id: "seeed-xiao-esp32c3", out: "GPIO3", in: "GPIO4" },
   { id: "esp32-c3-supermini", out: "GPIO10", in: "GPIO9" },
   { id: "esp32-devkitc", out: "GPIO2", in: "GPIO4" },

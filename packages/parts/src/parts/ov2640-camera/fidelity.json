@@ -1,0 +1,44 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": {
+      "level": "approx",
+      "note": "The camera answers Espressif's esp32-camera driver in Jumper's simulation build: esp_camera_init finds it when camera_config_t names the GPIOs its pins are wired to (any mismatch is reported pin by pin, like a failed probe on the board), and every esp_camera_fb_get gets a frame Jumper renders (a test scene, an image, the webcam) at the frame size and pixel format the sketch set (JPEG, RGB565, grayscale, YUV422, RGB888), with the sensor_t settings applied (mirror, flip, brightness, contrast, saturation, special effects, colour bars). The pixel bus, XCLK, PCLK / VSYNC / HREF edges and the SCCB registers are not simulated: QEMU does not model the ESP32's camera interface, so the driver's API is wrapped instead."
+    },
+    "timing": {
+      "level": "approx",
+      "note": "A capture takes about one sensor frame period on the virtual clock (60 fps up to CIF, 30 up to SVGA, 15 above at a 24 MHz XCLK, scaled with XCLK); init about 300 ms. Real frame rates also depend on JPEG size, PSRAM speed and Wi-Fi load: measure on the board."
+    },
+    "analog": {
+      "level": "none",
+      "note": "No image noise, exposure, white balance or lens effects: frames are clean renders of the source."
+    },
+    "power": {
+      "level": "approx",
+      "note": "Draws a fixed 40 mA from 3V3 while powered (datasheet active figure); standby (PWDN) and the higher current at UXGA are not modelled. Over 3.6 V on 3V3 is an error (5 V damages it)."
+    },
+    "radio": {
+      "level": "n/a",
+      "note": "No radio."
+    }
+  },
+  "emulates": [
+    "Detection by esp_camera_init on the GPIOs it is wired to (pins checked one by one)",
+    "Frames at every esp32-camera frame size up to UXGA, in JPEG / RGB565 / grayscale / YUV422 / RGB888",
+    "sensor_t settings (frame size, format, quality, mirror, flip, brightness, contrast, saturation, special effect, colour bars)",
+    "Capture time per frame size",
+    "Supply check (3.0 to 3.6 V)"
+  ],
+  "doesNotEmulate": [
+    "The DVP pixel bus, XCLK, PCLK / VSYNC / HREF timing and DMA",
+    "SCCB register reads and writes (set_reg changes nothing)",
+    "Exposure, white balance, noise, blur and lens distortion",
+    "Standby current (PWDN) and the regulators"
+  ],
+  "testOnRealDevice": [
+    "Picture quality and exposure in your light",
+    "Wire length: the pixel bus runs at 10 to 20 MHz, keep it short (under about 10 cm) or frames tear",
+    "Frame rate with your frame size, JPEG quality and Wi-Fi",
+    "That the pins you chose are free (not flash / PSRAM / strapping pins)"
+  ]
+}
