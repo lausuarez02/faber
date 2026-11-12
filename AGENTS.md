@@ -25,7 +25,10 @@ draw and maybe `size_mm`: `check_fit` first says what fits and what smaller part
 `propose_layout` shows how Jumper would distribute the parts inside, thinnest / smallest / balanced,
 with the reasons: tell the person which one and why, `layout: "<id>"` picks it; call it before
 `design_case`) → `export_manufacturing` (case files for a printer, BOM, wiring, firmware, assembly
-steps: the factory pack).
+steps: the factory pack). When the person builds it themselves ("what do I buy / print, how does it
+go together"), `get_build_kit`: the shopping list with store links and totals, the print list with
+grams and time, the tools, step-by-step assembly into the case with cut lengths, flashing and
+troubleshooting, as `build-kit/<name>-kit/kit.html` (and the Build it button in the Case view).
 Case choices cost size: do not pin parts (`placements` x_mm / y_mm / layer / face) unless the person
 asked for that spot, leave `dome_mm` and the edges on auto, and read `costs` in every `check_fit` /
 `propose_layout` / `design_case` / `update_case` answer (what each choice adds, with the call that

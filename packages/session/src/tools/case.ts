@@ -144,7 +144,7 @@ export const caseTools: ToolModule = {
     {
       name: "export_manufacturing",
       title: "Factory pack",
-      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
+      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), build-kit/ (the person-facing build kit, as get_build_kit: kit.html, KIT.md, SHOPPING.csv / .md, PRINT-LIST.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
       inputSchema: {
         type: "object",
         properties: {
@@ -590,6 +590,16 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   writeText(root, "README.md", readmeMd(project, boardSpec?.name ?? "", report, soldered, lines, missing));
   if (args.zh_cn) writeText(root, "README.zh-CN.md", readmeZh(project, boardSpec?.name ?? "", report));
   writeText(root, "NOTES.md", notesMd(project, reg, report, soldered, fid.summary));
+  // round 12 kit: the person-facing build kit (what to buy, print, how to put it inside, flash, fix)
+  try {
+    const { buildKit } = await import("../kit/index.ts");
+    const { writeKitFiles } = await import("../kit/files.ts");
+    const kit = await buildKit(s, { slicer: "cached" });
+    await writeKitFiles(s, kit, { into: join(root, "build-kit"), pdf: false, firmware: false, caseFiles: false });
+    writeText(root, "build-kit/WHERE-ARE-THE-FILES.md", "# Where the kit's files are\n\nThe kit names the case files as `case/...` and the firmware as `firmware/...`. In this pack they are in `../enclosure/` (same paths) and `../firmware/`.\n");
+  } catch (e) {
+    notes.push(`The build kit (build-kit/) could not be written: ${(e as Error).message.split("\n")[0]}. get_build_kit makes it on its own.`);
+  }
   const files = listFiles(root);
   writeText(root, "manifest.json", JSON.stringify({ project: project.name, version, firmware_hash: fwHash, case_hash: report?.hash ?? "", files }, null, 2) + "\n");
   let zipPath: string | undefined;
@@ -705,6 +715,9 @@ ${report ? `\nCase: **${report.shape}**, ${report.size_mm.w} x ${report.size_mm.
 | enclosure/ | stl/, case.3mf, step/, drawing/, renders/, PRINT.md |
 | assembly/ | ASSEMBLY.md |
 | test/ | TEST-PLAN.md, TEST-ON-HARDWARE.md |
+| build-kit/ | for a person building one: kit.html (open it in a browser: what to buy and where, what to print, the tools, step-by-step with pictures, flashing, troubleshooting), KIT.md, SHOPPING.csv |
+
+Building just one yourself? Open \`build-kit/kit.html\`.
 
 Read \`NOTES.md\` before quoting: it lists what was only simulated and what to verify on the first unit.${missing.length ? `\n\n**Not in this pack yet:** ${missing.map((m) => m.item).join(", ")}.` : ""}
 `;
