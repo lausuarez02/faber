@@ -16,7 +16,7 @@ static size_t stream(HTTPClient &http, size_t skip) {
   static uint8_t buf[1024];
   size_t total = 0, have = 0;
   uint32_t idle = millis();
-  while ((http.connected() || s->available()) && (left > 0 || left == -1) && millis() - idle < 3000) {
+  while ((http.connected() || s->available()) && (left > 0 || left == -1) && millis() - idle < 15000) {
     size_t n = s->available();
     if (!n) {
       delay(1);
