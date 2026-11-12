@@ -47,7 +47,7 @@ describe("jumper CLI", () => {
     expect(inst.files.map((f) => `${f.path}:${f.action}`)).toEqual([".claude/skills/jumper-hardware/SKILL.md:written", "AGENTS.md:kept", "CLAUDE.md:written"]);
     expect(readFileSync(join(dir, "own", "AGENTS.md"), "utf8")).toBe("# mine\n");
     expect(jumper("skill", "install", "--project", "own", "--force").out).toMatch(/updated +.*AGENTS.md/);
-  });
+  }, 30_000); // seven CLI processes: timed out at the 5 s default while the e2e suite ran beside it
 
   it("exits 1 with a what/why/fix message on errors, 2 on bad usage", () => {
     const r = jumper("connect", "uno.D99", "led1.A", "-p", "p");

@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-12 (round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-12 (round 14 integrated: behaviour over time made testable (seeds, NTP clock, capture timing, request bodies, OpenAPI mocks, local services, flash across reboots, duty-cycle battery life, camera indicator); round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,39 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 14, integrated on main (2026-11-12): behaviour over time, testable and general
+
+`round14/gaps` (12a4bd8) merged into main (which had moved two commits: the round 13 proof's kit fixes)
+with no conflicts. The track section below lists what each area does; guide:
+[docs/behaviour-tests.md](docs/behaviour-tests.md), plus [network.md](docs/network.md),
+[power.md](docs/power.md), [cameras.md](docs/cameras.md), [esp32-peripherals.md](docs/esp32-peripherals.md).
+
+Checks on the merged main (worktree `jumper-wt-r14-main`, native runtimes, Docker down):
+
+| Check | Result |
+| --- | --- |
+| `pnpm gen` | exit 0, no generated file changed |
+| `pnpm typecheck` | exit 0 |
+| `pnpm test` | exit 0: **233 files passed, 2 skipped; 1897 tests passed, 5 expected fail, 5 skipped** (includes the real-QEMU random-photo test) |
+| `pnpm test:e2e` (E2E_PORT=6460, E2E_HUB_PORT_BASE=13200) | **109 passed, 16 skipped, 3 did not run, 2 failed** on the first full run, which ran beside the unit suite; both failures **passed** when their two spec files were rerun alone (10/10) |
+
+Verified: every behaviour in the track table, by its unit tests and the real-firmware integration test
+(same seed gives the same random wait; the countdown is said 9.5-11.5 s before the picture; a press in
+the window skips it; Wi-Fi drop, queue in LittleFS, `reset_board`, the queue survives, Wi-Fi back,
+multipart upload accepted by an OpenAPI mock with 201; `http://mystar.local/` reaches a local server).
+
+Not verified / honest notes:
+- The two first-run e2e failures were load flakes, not round 14 code: "Build it opens from the Case
+  view" waited 60 s for `kit-summary` (it takes about 49 s alone, close to its budget), and "AI pet: a
+  quick click on TALK" got "Port 13200 is in use" from the previous test's `jumper serve` on the same
+  worker port still closing. Neither was changed.
+- `apps/cli/test/cli.test.ts` "round 12 skill" timed out at vitest's 5 s default under that load; it
+  now has the same 30 s budget as its neighbour (seven CLI processes).
+- No UI changed in round 14, so no e2e covers it; nothing was tried on a real XIAO ESP32-S3 Sense.
+- Gaps carried from the track: no fast-forward over firmware execution, microSD not emulated, speech
+  checked as the text sent to the API (not as sound), `wifi_drop` is a clean link loss, battery figures
+  are datasheet typicals, a local service must run in its own process.
 
 ## Round 14, track gaps (2026-11-12): behaviour over time, testable and general
 
