@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-12 (round 12 kit: the build kit, everything to build it yourself; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-12 (round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,35 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 12, integrated on main (2026-11-12): "ask Claude for all the pieces, what to print, and how it goes inside"
+
+The three tracks below are merged on main and joined:
+
+- **Assembly** (`packages/enclosure`, engine `case-6`): every case shape now holds each part (seat
+  posts, hold-downs, backstops, guides, cell cradle or corners), and `get_assembly_plan` gives the
+  order per shell, when each wire is soldered, the battery last, tests, a picture per step and the
+  `assembly-*` design-for-assembly checks. Case view **Build** tab, factory pack ASSEMBLY.md.
+- **Kit** (`get_build_kit`, Case view **Build it yourself**): buy / print / tools / assemble / flash /
+  troubleshooting as kit.html, PDF and zip. It now reads the real plan through `assemblyPlanFor`
+  (the same function as `get_assembly_plan`): its steps (with a check per step from what the step
+  does), its cut list (wire metres include the open-like-a-book slack), its consumables (joined into
+  the matching shopping line, or a line of their own, e.g. the foam pad under the cell) and its tools.
+  The shape-guessing adapter and its two fixture plans are gone; a stale case still never uses its plan.
+- **Skill** (`packages/agent-skill`): the loop now says think assembly with `propose_layout` before the
+  case, `get_assembly_plan` right after `design_case` (it needs a case; fix its checks before printing)
+  and `get_build_kit` for "what do I need". Server instructions, prompts, `jumper://docs/hardware`,
+  the project skill + CLAUDE.md + AGENTS.md and the plugin are regenerated with the real tool names.
+  Guide: [docs/agent-skill.md](docs/agent-skill.md); kit: [docs/build-kit.md](docs/build-kit.md).
+
+Checks (worktree `jumper-wt-r12-main`, native runtimes, Docker down, machine load average 40 to 70):
+CHECKS_PLACEHOLDER
+
+Gaps (round 12, all tracks): no live Claude Code run over MCP has used `get_assembly_plan` /
+`get_build_kit` yet (the skill runs predate the merge); wires are not routed as paths; nothing was
+bought, printed or soldered from a plan or kit; tight layouts still fall back to foam tape for small
+modules; print estimates not compared against a real slicer; the plugin's MCP address is fixed at
+port 7780; `plan_device` still picks a board without a charger for some battery devices.
 
 ## Round 12, track assembly (2026-11-12): Jumper plans how the parts go inside, and checks it
 
@@ -68,7 +97,7 @@ did not wait for the Projects page, which then covered the panel).
 Known gaps (round 12 kit):
 - Prices are the part data's typical prices; most links are store searches; no live stock, shipping or tax.
 - The derived steps reuse the case renders (the inside render shows unlabelled coloured boxes); per-step pictures come with the assembly plan.
-- The assembly plan's own `tools` / `consumables` are not merged into the kit's lists yet (integration).
+- (Integrated on main: the kit now reads the real plan, its tools and consumables; see Round 12 integrated.)
 - Print estimates are not checked against a real slicer here (no PrusaSlicer on this Mac; a fake one tests the path).
 - Nothing was bought, printed or soldered from a kit.
 
@@ -110,8 +139,7 @@ rp2040, switch-projects (desktop). Re-run as the same 5-spec set, plain main fai
 switch-projects too (same load flake); device-case, renode-board and rp2040 pass on this branch when
 re-run (rp2040 twice alone).
 
-Gaps: get_build_kit / get_assembly_plan are another track's; until they merge the skill uses
-export_manufacturing + read_file. plan_device itself still picks a charger-less board for a
+Gaps: (integrated on main: the skill now names get_assembly_plan after design_case and get_build_kit.) plan_device itself still picks a charger-less board for a
 battery pocket device; the agent swaps it only because the skill says so.
 
 ## Round 11 (2026-11-11): native builds, firmware and emulators without Docker

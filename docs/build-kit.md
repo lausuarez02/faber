@@ -64,15 +64,25 @@ off.
 
 ## The assembly plan
 
-When the case engine writes an assembly plan (round 12 track assembly: `case/assembly/plan.json`,
-named by `report.assembly.plan`, a picture per step in `case/assembly/step-NN.png`) the steps come
-from it. Also read: an inline `report.assembly_plan` / `assemblyPlan` / `assembly` with steps, or
-`case/assembly.json`. Shape `{steps: [{title, say | do | text | instructions, parts, wires (ids or
-{id, from, to, color (name or hex), length_mm, gauge | gauge_awg}), tools, fasteners, image | images |
-picture (relative to case/), cautions | caution | warnings, check | checkpoint | test, minutes}]}`
-(`AssemblyPlanLike` in `packages/session/src/kit/steps.ts`; extra fields are ignored; tested on a
-real case-6 plan of the Muse). A stale case never uses its plan. Wires named by id take their colour,
-length and gauge from the cut list. Without a plan the steps are derived (`steps_source: "derived"`).
+When the case is current and the device is soldered, the kit reads the case engine's assembly plan
+through the same function `get_assembly_plan` uses (`assemblyPlanFor` in
+`packages/session/src/tools/case.ts`; the plan is `case/assembly/plan.json`, with a picture per step in
+`case/assembly/step-NN.png`, rebuilt without pictures when the wires changed since the case). From it:
+
+- the steps (`planSteps` in `packages/session/src/kit/steps.ts`): the plan's plain words (`say`), its
+  fasteners and tools, its cautions, the step picture, the wires with their colour in words and their
+  cut length including the open-like-a-book slack; a check per step from what the step does (place,
+  solder, route, close; the plan's test steps say their own);
+- the cut list (the plan's wires, so the metres of wire on the shopping list match the steps);
+- the consumables: a plan consumable joins the matching kit line (wire by gauge, heat-shrink, solder,
+  Kapton, foam tape, screws, inserts) with the plan's reason; one the kit had no line for (the foam pad
+  under a cell) becomes its own line;
+- the tools: a plan tool the kit's rules did not name is added as recommended; consumables in the
+  plan's tool list (solder, tape, a cable) stay on the shopping list.
+
+A stale case never uses its plan (`steps_source: "derived"`, and `missing` says the case is old). When
+the plan cannot be read the kit says why in `missing` and derives the steps. Without a case, or for a
+breadboard build, the steps are derived from the case report and the wiring.
 
 ## Honest limits
 

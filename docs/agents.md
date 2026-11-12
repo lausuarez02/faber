@@ -160,6 +160,8 @@ Jumper's hardware know-how (the design loop, the rules of thumb, how the parts g
 answer "what do I need to buy, print and assemble") is written once in `packages/agent-skill` and
 reaches every agent without touching your global config:
 
+Design notes: [agent-skill.md](agent-skill.md).
+
 - **Every MCP client**: the server instructions end with a short "Design for assembly" block; the
   prompts `design-device` (argument `goal`), `build-kit` and `design-for-assembly`; the resource
   `jumper://docs/hardware` with the whole guide ([hardware-guide.md](hardware-guide.md)).
