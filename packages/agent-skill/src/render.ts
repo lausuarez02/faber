@@ -2,7 +2,7 @@ import { ASSEMBLY_CHECKLIST, BUILD_KIT_ANSWER, BUILD_KIT_PARTS, LOOP, PROMPTS, R
 
 export const SKILL_NAME = "jumper-hardware";
 export const SKILL_DESCRIPTION =
-  "Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something.";
+  "Load this first, before any jumper tool call. Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something.";
 
 /** The line that marks a file Jumper wrote (and may rewrite). Files without it are never overwritten. */
 export const MARKER = "Written by Jumper (jumper skill install).";
@@ -95,7 +95,7 @@ export function renderAgentsMd(o: RenderOptions, projectName?: string): string {
 export function renderInstructionsBlock(o: RenderOptions): string {
   const kit = (BUILD_KIT_ANSWER.needs ?? []).every((n) => o.tools.includes(n)) ? "get_build_kit" : "export_manufacturing (then read_file its BOM.md, PRINT.md, ASSEMBLY.md)";
   return [
-    "Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print.",
+    `Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print. If your client lists the ${SKILL_NAME} skill (Claude Code in a Jumper project), load it first.`,
     ...RULES.filter((r) => r.short).map((r) => `- ${r.short}`),
     `- Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety${o.tools.includes("get_assembly_plan") ? " (get_assembly_plan)" : ""}.`,
     `- "What do I need to build it?": ${kit}, then answer Buy / Print / Assemble / Flash with totals.`,

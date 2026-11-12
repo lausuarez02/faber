@@ -1,6 +1,6 @@
 ---
 name: jumper-hardware
-description: "Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something."
+description: "Load this first, before any jumper tool call. Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something."
 ---
 
 <!-- Written by Jumper (jumper skill install). Regenerate with: jumper skill install --project <dir>. A copy edited by hand is kept unless --force. -->
@@ -23,7 +23,7 @@ Jumper is a hardware sandbox with a real simulator, reached through the `jumper`
 
 - Pocket and hand-held devices (a keychain, a pet, a remote, an egg): aim for 20 mm thick or less. Thickness is what makes a pocket device feel wrong; width and length matter less.
 - Pick the smallest parts that do the job, then prove they fit: `check_fit` (under a second, nothing written) says what misses by how many mm and which smaller parts would fit (a smaller cell, a smaller screen, a board on its edge). Tell the person the trade-off (a smaller cell means shorter battery life) and let them choose.
-- Battery devices: prefer a board with a built-in LiPo charger and USB-C (`plan_device` and `search_parts` say which boards have one). One board instead of board + charger module is fewer wires, less room and one fewer thing to assemble.
+- Battery devices: prefer a board with a built-in LiPo charger and USB-C: `search_parts` {"query": "charger", "category": "board"} lists them first. One board instead of board + charger module is fewer wires, less room, one USB port and one fewer thing to assemble. If `plan_device` picked a board without one, say so and offer the swap (the board's language and pins may change).
 - Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot: Jumper's layout is usually smaller. Pinned parts show up in costs with what they add.
 - Leave dome_mm and the edges on auto: each mm of dome is a mm of thickness on each face.
 - Read costs in every `check_fit` / `propose_layout` / `design_case` / `update_case` answer (what each of your choices adds, in mm and cm³, with the call that relaxes it) and relax the costly ones unless the person asked for them.

@@ -54,8 +54,8 @@ export const RULES: Rule[] = [
   },
   {
     id: "built-in-charger",
-    text: `Battery devices: prefer a board with a built-in LiPo charger and USB-C (${tool("plan_device")} and ${tool("search_parts")} say which boards have one). One board instead of board + charger module is fewer wires, less room and one fewer thing to assemble.`,
-    short: "Battery devices: prefer a board with a built-in charger.",
+    text: `Battery devices: prefer a board with a built-in LiPo charger and USB-C: ${tool("search_parts")} {"query": "charger", "category": "board"} lists them first. One board instead of board + charger module is fewer wires, less room, one USB port and one fewer thing to assemble. If ${tool("plan_device")} picked a board without one, say so and offer the swap (the board's language and pins may change).`,
+    short: 'Battery devices: prefer a board with a built-in charger (search_parts {"query": "charger", "category": "board"}); if plan_device picked one without, offer the swap.',
     mustSay: [/built-in (?:LiPo )?charger/],
   },
   {
