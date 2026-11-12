@@ -125,10 +125,13 @@ function checkSvg(dir: string, spec: PartSpec, svg: ParsedSvg, p: string[]): voi
   const marked = new Set<string>();
   for (const el of svg.elements) {
     const where = `${dir}/visual.svg line ${el.line}`;
-    if (["script", "foreignObject", "iframe", "image", "style"].includes(el.tag)) p.push(`${where}: <${el.tag}> is not allowed in part visuals`);
+    // Round 13: an <image> may show a picture the model makes (a camera preview): empty href, bound with
+    // data-bind="href:<key>"; the binding only ever sets data:image/png|jpeg URLs (sim-core bindings.ts).
+    const boundImage = el.tag === "image" && /(^|,)\s*href:/.test(el.attrs["data-bind"] ?? "") && !el.attrs["xlink:href"] && (el.attrs.href ?? "") === "";
+    if (["script", "foreignObject", "iframe", "image", "style"].includes(el.tag) && !boundImage) p.push(`${where}: <${el.tag}> is not allowed in part visuals${el.tag === "image" ? ' (except an empty one whose href is bound: href="" data-bind="href:key")' : ""}`);
     for (const [k, v] of Object.entries(el.attrs)) {
       if (/^on/i.test(k)) p.push(`${where}: event handler attribute ${k} is not allowed`);
-      if ((k === "href" || k === "xlink:href") && !v.startsWith("#")) p.push(`${where}: external reference ${k}="${v}" is not allowed`);
+      if ((k === "href" || k === "xlink:href") && !v.startsWith("#") && !(boundImage && v === "")) p.push(`${where}: external reference ${k}="${v}" is not allowed`);
       if (/url\((?!#)/.test(v)) p.push(`${where}: external url() in ${k} is not allowed`);
     }
     const id = el.attrs.id;

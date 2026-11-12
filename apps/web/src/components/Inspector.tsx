@@ -7,6 +7,7 @@ import { WIRE_COLORS } from "../lib/store.ts";
 import { RotateCw, Trash2 } from "lucide-react";
 import { boardWiring, descriptionForBoard } from "@jumper/parts";
 import { pressPart, releasePart } from "../interact/press.ts";
+import { CameraPanel } from "../interact/CameraPanel.tsx";
 
 const NAMED_COLORS: Record<string, string> = {
   red: "#FF3B30",
@@ -142,7 +143,9 @@ function PartInspector({ partId }: { partId: string }) {
         </div>
       )}
 
-      {spec.props?.map((prop) => (
+      {spec.camera ? <CameraPanel part={part.id} sensor={spec.camera.sensor} /> : null}
+
+      {spec.props?.filter((prop) => !(spec.camera && (prop.id === "camera_source" || prop.id === "camera_image"))).map((prop) => (
         <PropField
           key={prop.id}
           prop={prop}

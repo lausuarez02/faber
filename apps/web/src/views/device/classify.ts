@@ -55,6 +55,8 @@ export interface CaseFit {
   grilles: CaseOpening[];
   /** USB and other connector openings. */
   connectors: CaseOpening[];
+  /** Round 13: camera lens holes (the lens shows in them; it lights up while the camera takes pictures). */
+  lenses: CaseOpening[];
 }
 
 export const SCREEN_TYPES: Record<string, { kind: "oled" | "lcd" | "tft"; screen: string; aspect: number }> = {
@@ -114,6 +116,7 @@ export function fitToCase(base: Pick<DeviceLayout, "buttons" | "leds" | "screen"
     }),
     grilles: model.openings.filter((o) => o.kind === "grille"),
     connectors: model.openings.filter((o) => o.kind === "connector"),
+    lenses: model.openings.filter((o) => o.kind === "lens"),
   };
 }
 

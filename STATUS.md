@@ -104,6 +104,42 @@ Gaps (round 13 audio):
   machine file; the two patches touch different files except `hw/xtensa/esp32s3.c` / `esp32.c` and
   meson.build (one line each) and must be renumbered / rebased into one series at integration.
 
+## Round 13, track camera (2026-11-12): cameras as a general capability
+
+The person asked for "a camera so it can see and send info through an API" for their star
+keychain. Built as a general capability (any part with a camera, Espressif's esp32-camera driver on
+an ESP32 / ESP32-S3), not a star feature. Branch `round13/camera` (worktree, not merged). Guide:
+[docs/camera.md](docs/camera.md).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Parts | `seeed-xiao-esp32s3-sense` (XIAO ESP32-S3 + Sense board: OV2640 / OV3660 on its own GPIOs, PDM mic as an I2S source, microSD, 8 MB octal PSRAM, charger; 21 x 17.8 x 15 mm, 6 g, 110 / 380 mA, $13.99, lens as a `camera` feature with fov 66) and `ov2640-camera` (2 x 9 header DVP module, every esp32-camera signal on a pin). Original SVGs: the lens shows the last captured picture (`<image>` bound to a data:image URL only) | `packages/parts/src/parts/*/model.test.ts` |
+| Emulation | QEMU patch `0004-jumper-camera.patch`: a camera port next to Espressif's virtual RGB panel (`CC` / `CD` blocking lines, frame window). Simulation builds of sketches that include `esp_camera.h` link `JumperCamera` (`-Wl,--wrap` of the esp32-camera API: pins checked, fb_count, PSRAM / DRAM, FB-OVF, settings, capture time); device builds use the real driver. Frames (scene, image, webcam) rendered by `sim-core/camera.ts` (own baseline JPEG encoder / decoder, PNG decoder) as JPEG / RGB565 / grayscale / YUYV / BGR888. Boards with `mcu.psram` get QEMU's SPI PSRAM (octal on the Sense) | `camera.integration.test.ts` (S3 with Sense pins, ESP32 with ESP32-CAM pins), `boards.integration.test.ts` (Sense) |
+| Agent / tests | `set_camera_frame {scene \| image}` (live, never saved), scenario step `camera_frame`, template `xiao-esp32s3-sense` (camera starter + light / dark test), get_part hints; `plan_device` picks the Sense for camera / see / photo wishes (drops camera, mic, Wi-Fi and TP4056 modules it has; burst-aware cell); `check_design`: camera-board, camera-unwired, camera-pins (camera_config_t through #defines), camera-psram, camera-battery (bursts vs 1C, battery-life estimate) | `packages/session/test/camera-session.test.ts`, `camera-design.test.ts` |
+| Web | Inspector camera section: scene, picture (picked or dropped), webcam (permission, indicator in the section + a pill, 0.7 s frames to the local simulator only, off after 3 min / hidden page / project switch); Device view draws the lens in its hole, red ring while capturing | `apps/web/e2e/camera.spec.ts` |
+| Case | `camera` features are exposed; the engine cuts a `lens` opening of lens diameter + 2 x (standoff + wall) x tan(fov / 2) | `packages/enclosure/test/camera-hole.test.ts` |
+
+Emulated vs shimmed vs not: the firmware and PSRAM are emulated; the esp32-camera API is shimmed in
+simulation builds; the camera hardware (DVP / LCD_CAM / I2S camera mode, DMA, XCLK, SCCB) is not
+emulated, and frames are clean renders (no exposure, noise or lens effects).
+
+Checks (worktree `jumper-wt-r13-camera`, native runtimes, Docker down, load average 80 to 220 from the
+other tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` first run exit 1 (an
+old planner test still said "Jumper does not simulate cameras": updated), second run exit 1:
+**218 files passed, 1 failed, 2 skipped; 1820 tests passed, 1 failed, 5 expected fail, 5 skipped**;
+the failure was apps/cli/test/cli.test.ts "round 12 skill" timing out at 5 s (load ~170), re-run
+alone 5/5 passed. Every emulator integration test ran natively (QEMU jb5-cam1). e2e desktop + mobile
+(`E2E_PORT=6300 E2E_HUB_PORT_BASE=12800 --workers=2`): exit 1, **104 passed, 4 failed, 16 skipped,
+2 did not run**; camera.spec passed on both. The 4 (case-view desktop, micropython desktop, build-kit
+mobile, case-assembly mobile) re-run alone with 1 worker: 9 passed, case-view desktop failed again
+("Loading the case…" past 30 s, the round 12 load flake), then passed alone (exit 0). The native QEMU
+installer with JUMPER_QEMU_SRC built jb5-cam1 in 64 s and the camera tests passed on that build.
+
+Gaps: Docker images not built (`jumper/qemu-esp:…-jb5-cam1`, arduino-esp32 with JumperCamera; the
+wrapper and Dockerfiles are updated, untested); the Sense's PDM mic reaches firmware only when the
+QEMU I2S RX path lands (audio track); no browser mic for it; frame rates and init time are estimates;
+nothing bought or run on a real Sense / OV2640.
+
 ## Round 12, integrated on main (2026-11-12): "ask Claude for all the pieces, what to print, and how it goes inside"
 
 The three tracks below are merged on main and joined:

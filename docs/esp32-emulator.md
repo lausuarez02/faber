@@ -30,6 +30,10 @@ Flash image: the merged 4 MB image (`esptool merge-bin`: bootloader at 0x0 (S3/C
 > frame in QEMU's queue until the driver frees a descriptor (bursts delivered while the CPU is parked
 > used to overflow its few RX buffers and cost the sender a 1 s retransmission). See
 > `docs/esp32-peripherals.md` ("I2S").
+>
+> Round 13: the camera port (patch `0006-jumper-camera.patch`; native tag `…-jb7` = 0001-0006) adds two
+> blocking lines, `CC` (camera command) and `CD` (frame bytes), both answered with `Q`; nothing else
+> changes. See [camera.md](camera.md#bridge-protocol-qemu-patch-0006).
 
 > Round 10: protocol version 3 (patch `0002-jumper-peripherals.patch`, image `…-jb3`) adds GPIO
 > matrix routing (`M`/`N`), pin interrupts, LEDC (`L`), SPI (`SX`/`SQ`), RMT (`RM`), ADC (`E`/`AT`),

@@ -370,17 +370,43 @@ export function pruneCore(f: NativeFamily): void {
 /** The ESP32 shim's include test (toolchains/arduino-esp32/jumper-arduino-esp32.sh NETWORK_INCLUDES). */
 const NETWORK_INCLUDE = /#[ \t]*include[ \t]*[<"](WiFi|WiFiMulti|WiFiClient|WiFiClientSecure|WiFiUdp|WiFiServer|WiFiGeneric|NetworkClientSecure|NetworkClient|Network|HTTPClient|HTTPUpdate|WebServer|WebSocketsClient|WebSockets|WebSocketsServer|ArduinoWebsockets|PubSubClient|MQTT|MQTTClient|ArduinoMqttClient|AsyncMqttClient|ESPmDNS|AsyncUDP|esp_wifi|esp_http_client|esp_websocket_client|mqtt_client)\.h[>"]/;
 
-function sketchUsesNetwork(dir: string): boolean {
+/** The camera shim's include test (toolchains/arduino-esp32/jumper-arduino-esp32.sh CAMERA_INCLUDES). */
+export const CAMERA_SHIM_INCLUDE = /#[ \t]*include[ \t]*[<"](esp_camera|esp_camera_af)\.h[>"]/;
+const CAMERA_INCLUDE = CAMERA_SHIM_INCLUDE;
+
+function sketchIncludes(dir: string, re: RegExp): boolean {
   const walk = (d: string): boolean => {
     for (const name of readdirSync(d)) {
       const p = join(d, name);
       if (statSync(p).isDirectory()) {
         if (walk(p)) return true;
-      } else if (/\.(ino|cpp|c|h|hpp)$/.test(name) && NETWORK_INCLUDE.test(readFileSync(p, "utf8"))) return true;
+      } else if (/\.(ino|cpp|c|h|hpp)$/.test(name) && re.test(readFileSync(p, "utf8"))) return true;
     }
     return false;
   };
   return existsSync(dir) && walk(dir);
+}
+
+const sketchUsesNetwork = (dir: string) => sketchIncludes(dir, NETWORK_INCLUDE);
+/** True when the sketch uses Espressif's esp32-camera driver (esp_camera.h). */
+export const sketchUsesCamera = (dir: string) => sketchIncludes(dir, CAMERA_INCLUDE);
+
+/** The camera shim library, used straight from the repo (simulation builds only; never installed into the person's sketchbook). */
+export const JUMPER_CAMERA_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/JumperCamera");
+
+/** Content hash of the camera shim's sources (part of a camera sketch's build cache key). */
+export function cameraShimHash(): string {
+  const h = createHash("sha256");
+  const src = join(JUMPER_CAMERA_LIB, "src");
+  if (existsSync(src)) for (const f of readdirSync(src).sort()) h.update(`${f}\0${readFileSync(join(src, f))}\0`);
+  return h.digest("hex").slice(0, 16);
+}
+
+/** -Wl,--wrap=… for every __wrap_<symbol> a shim library's C files define. */
+export function wrapFlagsOf(srcDir: string): string[] {
+  const wraps = new Set<string>();
+  for (const file of readdirSync(srcDir).filter((n) => n.endsWith(".c"))) for (const m of readFileSync(join(srcDir, file), "utf8").matchAll(/__wrap_[A-Za-z0-9_]*/g)) wraps.add(m[0]);
+  return [...wraps].sort().map((w) => w.replace(/^__wrap_/, "-Wl,--wrap="));
 }
 
 function findFirst(dir: string, rel: (v: string) => string): string | undefined {
@@ -447,21 +473,34 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
   let sketchCopy: string | undefined;
   let note = "";
   if (f === "esp32" && c.purpose !== "device") {
-    // jumper-arduino-esp32.sh, simulation build.
-    if (sketchUsesNetwork(sketch)) {
+    // jumper-arduino-esp32.sh, simulation build: each shim the sketch needs adds one include file
+    // to a copy of the sketch (the person's files are never touched) and its link-time wraps.
+    const net = sketchUsesNetwork(sketch);
+    const cam = sketchUsesCamera(sketch);
+    if (net || cam) {
       sketchCopy = join(c.workDir, "jsim", basename(sketch));
       rmSync(dirname(sketchCopy), { recursive: true, force: true });
       cpSync(sketch, sketchCopy, { recursive: true });
-      writeFileSync(join(sketchCopy, "zz_jumper_sim_shim.cpp"), "// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSim.h>\n");
-      const simSrc = join(libsDir("esp32"), "JumperSim", "src");
-      const wraps = new Set<string>();
-      for (const file of readdirSync(simSrc).filter((n) => n.endsWith(".c"))) for (const m of readFileSync(join(simSrc, file), "utf8").matchAll(/__wrap_[A-Za-z0-9_]*/g)) wraps.add(m[0]);
-      const wrapFlags = [...wraps].sort().map((w) => w.replace(/^__wrap_/, "-Wl,--wrap=")).join(" ") + " ";
-      note = "jumper: simulation build, Wi-Fi shim on (WiFi.begin() joins the Jumper sandbox network over the emulated Ethernet card)\n";
-      args = [...args, "--build-property", "build.defines=-DJUMPER_SIM=1", "--build-property", `compiler.c.elf.extra_flags=${wrapFlags}`];
+      const wrapFlags: string[] = [];
+      if (net) {
+        writeFileSync(join(sketchCopy, "zz_jumper_sim_shim.cpp"), "// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSim.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(libsDir("esp32"), "JumperSim", "src")));
+        note += "jumper: simulation build, Wi-Fi shim on (WiFi.begin() joins the Jumper sandbox network over the emulated Ethernet card)\n";
+      }
+      if (cam) {
+        writeFileSync(join(sketchCopy, "zz_jumper_camera_shim.cpp"), "// Added by Jumper for the simulation build only (not in your project).\n#include <JumperCamera.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(JUMPER_CAMERA_LIB, "src")));
+        args = [...args, "--library", JUMPER_CAMERA_LIB];
+        note += "jumper: simulation build, camera shim on (esp_camera_fb_get() gets frames from Jumper; the device build uses the real esp32-camera driver)\n";
+      }
+      // build.defines replaces the board menu's defines: keep BOARD_HAS_PSRAM for a PSRAM build, and
+      // tell the camera shim the board has PSRAM the emulator lacks.
+      const psram = /[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn);
+      const defines = ["-DJUMPER_SIM=1", ...(psram ? ["-DBOARD_HAS_PSRAM", ...(cam ? ["-DJUMPER_SIM_PSRAM_FALLBACK=1"] : [])] : [])].join(" ");
+      args = [...args, "--build-property", `build.defines=${defines}`, "--build-property", `compiler.c.elf.extra_flags=${wrapFlags.join(" ")} `];
       sketch = sketchCopy;
     } else {
-      args = [...args, "--build-property", "build.defines=-DJUMPER_SIM=1"];
+      args = [...args, "--build-property", `build.defines=-DJUMPER_SIM=1${/[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn) ? " -DBOARD_HAS_PSRAM" : ""}`];
     }
   }
   // The build folder is ours (not the OS temp one) so it can be mapped to the image's path.

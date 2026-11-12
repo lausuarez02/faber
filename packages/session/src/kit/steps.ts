@@ -193,7 +193,7 @@ const FACING: Record<string, string> = { front: "facing the front (towards you)"
 /** "against the right wall (its opening is there)" when the part has something the case exposes. */
 function facingWords(facing: string, spec: PartSpec | undefined): string {
   const base = FACING[facing] ?? facing;
-  const exposed = (spec?.mechanical?.features ?? []).some((f) => f.expose !== false && ["button", "switch", "knob", "connector", "sensor-window", "grille", "screen", "led"].includes(f.kind));
+  const exposed = (spec?.mechanical?.features ?? []).some((f) => f.expose !== false && ["button", "switch", "knob", "connector", "sensor-window", "grille", "screen", "led", "camera"].includes(f.kind));
   return facing !== "front" && facing !== "back" && exposed ? `${base} (its opening is there)` : base;
 }
 

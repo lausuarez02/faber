@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <rect x="2" y="2" width="156" height="156" rx="6" fill="#141A22" stroke="#3A4250" stroke-width="2"/>
+  <circle cx="11" cy="11" r="4.5" fill="#0B0D10" stroke="#5A6474" stroke-width="1"/>
+  <circle cx="149" cy="11" r="4.5" fill="#0B0D10" stroke="#5A6474" stroke-width="1"/>
+  <!-- lens holder and lens; the preview shows what the camera last captured -->
+  <rect x="44" y="12" width="72" height="72" rx="6" fill="#0B0D10" stroke="#5A6474" stroke-width="1"/>
+  <circle cx="80" cy="48" r="32" fill="#151A22" stroke="#3A4250" stroke-width="2.5"/>
+  <clipPath id="ov2640-camera-lens"><circle cx="80" cy="48" r="27"/></clipPath>
+  <circle cx="80" cy="48" r="27" fill="#06080B"/>
+  <circle cx="71" cy="39" r="7" fill="#3A4A66" opacity="0.6"/>
+  <image x="44" y="21" width="72" height="54" preserveAspectRatio="xMidYMid slice" clip-path="url(#ov2640-camera-lens)" href="" display="none" data-bind="href:camera_preview,visible:has_preview"/>
+  <circle cx="80" cy="48" r="27" fill="none" stroke="#5A6474" stroke-width="1"/>
+  <circle cx="122" cy="18" r="3" fill="#3A1A1A"/>
+  <circle cx="122" cy="18" r="3" fill="#FF3B2F" display="none" data-bind="visible:camera_on"/>
+  <text x="80" y="98" font-family="Bricolage Grotesque" font-size="10" font-weight="800" fill="#C9CED6" text-anchor="middle">OV2640</text>
+  <text x="80" y="109" font-family="IBM Plex Mono" font-size="5.5" fill="#8A93A0" text-anchor="middle" data-bind="text:camera_size">2 MP camera · DVP</text>
+  <circle data-pin="3V3" cx="16" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="GND" cx="16" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="SIOC" cx="32" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="SIOD" cx="32" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="VSYNC" cx="48" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="HREF" cx="48" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="PCLK" cx="64" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="XCLK" cx="64" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D7" cx="80" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D6" cx="80" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D5" cx="96" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D4" cx="96" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D3" cx="112" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D2" cx="112" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D1" cx="128" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="D0" cx="128" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="RESET" cx="144" cy="132" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <circle data-pin="PWDN" cx="144" cy="146" r="4" fill="#C9CED6" stroke="#0B0D10" stroke-width="1"/>
+  <text x="16" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">3V3</text>
+  <text x="16" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">GND</text>
+  <text x="32" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">SIOC</text>
+  <text x="32" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">SIOD</text>
+  <text x="48" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">VSYNC</text>
+  <text x="48" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">HREF</text>
+  <text x="64" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">PCLK</text>
+  <text x="64" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">XCLK</text>
+  <text x="80" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D7</text>
+  <text x="80" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D6</text>
+  <text x="96" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D5</text>
+  <text x="96" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D4</text>
+  <text x="112" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D3</text>
+  <text x="112" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D2</text>
+  <text x="128" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D1</text>
+  <text x="128" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">D0</text>
+  <text x="144" y="124" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">RESET</text>
+  <text x="144" y="156" font-family="IBM Plex Mono" font-size="4.2" fill="#8A93A0" text-anchor="middle">PWDN</text>
+</svg>

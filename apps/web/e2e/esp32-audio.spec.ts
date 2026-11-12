@@ -17,7 +17,7 @@ const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("./fixtures/esp32-audio/", import.meta.url));
 /** The ESP32 toolchain and QEMU Jumper installs natively (jumper setup esp32). */
 const NATIVE = join(process.env.JUMPER_NATIVE_HOME ?? join(homedir(), ".jumper"));
-const ready = existsSync(join(NATIVE, "emulators", "qemu-esp", "9.2.2-20260417-jb6", "bin", "qemu-system-xtensa")) && existsSync(join(NATIVE, "toolchains", "arduino"));
+const ready = existsSync(join(NATIVE, "emulators", "qemu-esp", "9.2.2-20260417-jb7", "bin", "qemu-system-xtensa")) && existsSync(join(NATIVE, "toolchains", "arduino"));
 
 test.describe("an ESP32-S3 that plays sound, followed from jumper serve", () => {
   test.skip(!ready, "needs the native ESP32 toolchain and QEMU jb6 (pnpm jumper setup esp32)");

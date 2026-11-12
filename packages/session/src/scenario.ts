@@ -1,3 +1,4 @@
+import { cameraProps, cameraSourceSpec, pickCamera } from "./camera.ts";
 import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@jumper/project-format";
 import type { PartRegistry, VisualValue } from "@jumper/sim-core";
 import { checkRequest, validateMock, type Fault, type Mock, type NetView } from "@jumper/device-net";
@@ -20,6 +21,8 @@ export interface ScenarioOptions {
   snapshot?: (name: string) => DisplaySnapshot | undefined;
   /** Stop (as passed) right after this step index: screenshot {scenario, at_step}. */
   stopAfter?: number;
+  /** Round 13: the project folder (camera_frame images are read from it). */
+  projectDir?: string;
 }
 
 export interface StepResult {
@@ -147,6 +150,12 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         if (typeof step.matches === "string" && opts.snapshot && !opts.snapshot(step.matches)) {
           fail("no-snapshot", `expect_display matches '${step.matches}'`, `there is no snapshot '${step.matches}' (snapshots/${step.matches}.json)`, `run until the screen shows it, then read_display {"part": "${part.id}", "save_as": "${step.matches}"} (optionally with "region": [x, y, w, h]) to save it`);
         }
+      }
+      if ("camera_frame" in step) {
+        pickCamera(project, registry, typeof step.part === "string" ? step.part : undefined);
+        const src = cameraSourceSpec(step.camera_frame as string | { scene?: string; image?: string });
+        if ("image" in src && !opts.projectDir) fail("no-project-dir", `camera_frame ${src.image}`, "this run has no project folder to read the image from", 'use a test scene such as "face"');
+        cameraProps(opts.projectDir ?? ".", src);
       }
       if ("network_mock" in step) {
         try {
@@ -419,6 +428,11 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
             detail = ok ? `${r.matched} matching request(s)` : `${r.why}${typeof step.within_ms === "number" ? ` (waited ${step.within_ms} ms)` : " (checked once; add within_ms to wait)"}. Fix: ${r.fix}`;
           }
         }
+      } else if ("camera_frame" in step) {
+        const cam = pickCamera(project, registry, typeof step.part === "string" ? step.part : undefined);
+        const src = cameraSourceSpec(step.camera_frame as string | { scene?: string; image?: string });
+        sim.setProps(cam, cameraProps(opts.projectDir ?? ".", src));
+        detail = `${cam} sees ${"scene" in src ? `the "${src.scene}" scene` : src.image}`;
       } else if ("network_mock" in step) {
         const net = opts.network;
         const m = step.network_mock as Mock;

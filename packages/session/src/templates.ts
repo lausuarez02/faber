@@ -92,6 +92,59 @@ function espTemplate(type: string, id: string, fqbn: string, name: string, chip:
   };
 }
 
+/**
+ * Round 13: a camera starter for any esp32-camera board (the XIAO ESP32-S3 Sense's pins). It grabs a
+ * small grayscale frame twice a second and prints its size and mean brightness: a base for "look at
+ * something and react", motion, light or sending a JPEG to an API.
+ */
+export const CAMERA_STARTER_INO = `// Camera starter (XIAO ESP32-S3 Sense pins): a 160x120 grayscale frame twice a second, its mean brightness.
+// Same source on the board (the real esp32-camera driver) and in Jumper (frames from Jumper).
+#include "esp_camera.h"
+
+camera_config_t cameraConfig() {
+  camera_config_t c = {};
+  c.pin_pwdn = -1; c.pin_reset = -1; c.pin_xclk = 10;
+  c.pin_sccb_sda = 40; c.pin_sccb_scl = 39;
+  c.pin_d7 = 48; c.pin_d6 = 11; c.pin_d5 = 12; c.pin_d4 = 14;
+  c.pin_d3 = 16; c.pin_d2 = 18; c.pin_d1 = 17; c.pin_d0 = 15;
+  c.pin_vsync = 38; c.pin_href = 47; c.pin_pclk = 13;
+  c.xclk_freq_hz = 20000000;
+  c.ledc_timer = LEDC_TIMER_0; c.ledc_channel = LEDC_CHANNEL_0;
+  c.pixel_format = PIXFORMAT_GRAYSCALE;  // PIXFORMAT_JPEG to send pictures to an API
+  c.frame_size = FRAMESIZE_QQVGA;        // 160x120
+  c.jpeg_quality = 12;
+  c.fb_count = 1;
+  c.fb_location = CAMERA_FB_IN_PSRAM;
+  c.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  return c;
+}
+
+void setup() {
+  Serial.begin(115200);
+  camera_config_t c = cameraConfig();
+  esp_err_t err = esp_camera_init(&c);
+  if (err != ESP_OK) {
+    Serial.printf("camera init failed 0x%x\\n", err);
+    return;
+  }
+  Serial.println("ready");
+}
+
+void loop() {
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("no frame");
+    delay(500);
+    return;
+  }
+  uint32_t sum = 0;
+  for (size_t i = 0; i < fb->len; i++) sum += fb->buf[i];
+  Serial.printf("frame %ux%u mean=%u\\n", (unsigned)fb->width, (unsigned)fb->height, (unsigned)(sum / fb->len));
+  esp_camera_fb_return(fb);
+  delay(500);
+}
+`;
+
 export const TEMPLATES: Record<string, Template> = {
   blank: {
     description: "Empty canvas, no parts, no firmware.",
@@ -130,6 +183,22 @@ export const TEMPLATES: Record<string, Template> = {
   "xiao-rp2040": rp2040Template("seeed-xiao-rp2040", "xiao", "rp2040:rp2040:seeed_xiao_rp2040", "Seeed XIAO RP2040", "low"),
   "rp2040-zero": rp2040Template("waveshare-rp2040-zero", "zero", "rp2040:rp2040:waveshare_rp2040_zero", "Waveshare RP2040-Zero", undefined),
   "xiao-esp32s3": espTemplate("seeed-xiao-esp32s3", "xiao", "esp32:esp32:XIAO_ESP32S3", "Seeed XIAO ESP32-S3", "ESP32-S3", "low"),
+  // Round 13: a board with a camera, and a camera starter sketch.
+  "xiao-esp32s3-sense": {
+    description: "A Seeed XIAO ESP32-S3 Sense (camera, microphone, microSD; runs in a local emulator) and a camera starter (firmware/main.ino): a grayscale frame twice a second and its mean brightness. Tests show the camera a white and a black scene.",
+    needs: ["seeed-xiao-esp32s3-sense"],
+    project: (name) => ({
+      format: "jumper/1",
+      name,
+      parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0 }],
+      wires: [],
+      firmware: { board: "sense", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn: "esp32:esp32:XIAO_ESP32S3:PSRAM=opi" } },
+      scenarios: [
+        { id: "sees-light", name: "The camera tells light from dark", steps: [{ expect_serial: "ready", within_ms: 1500 }, { camera_frame: "white" }, { expect_serial: { regex: "mean=2[0-9][0-9]" }, within_ms: 1200 }, { camera_frame: "black" }, { expect_serial: "mean=0", within_ms: 1200 }, { expect_part: "sense.camera_frames", op: ">=", value: 2 }] },
+      ],
+    }),
+    files: { "firmware/main.ino": CAMERA_STARTER_INO },
+  },
   "xiao-esp32c3": espTemplate("seeed-xiao-esp32c3", "xiao", "esp32:esp32:XIAO_ESP32C3", "Seeed XIAO ESP32-C3", "ESP32-C3", undefined),
   "esp32-c3-supermini": espTemplate("esp32-c3-supermini", "c3", "esp32:esp32:nologo_esp32c3_super_mini", "ESP32-C3 SuperMini", "ESP32-C3", "low"),
   esp32: espTemplate("esp32-devkitc", "esp32", "esp32:esp32:esp32", "ESP32 DevKitC", "ESP32", undefined),

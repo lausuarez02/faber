@@ -10,9 +10,10 @@ import { nativeQemuBinary, nativeQemuDir, nativeQemuInstalled, pickRuntime, prob
 /**
  * Bridge protocol 5: GPIO + matrix + interrupts, UART0-2, I2C on every chip (two buses on the ESP32),
  * LEDC, SPI, RMT, ADC (round 10 esp-periph) and pad pull-ups / pull-downs answered in lockstep
- * (round 10 esp-app). Override with JUMPER_QEMU_ESP_IMAGE.
+ * (round 10 esp-app); plus the camera port (patch 0004, round 13: "CC" / "CD" lines).
+ * Override with JUMPER_QEMU_ESP_IMAGE.
  */
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb6";
+export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb7";
 
 /** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
 export const EMULATOR_LABEL = "jumper.emulator";

@@ -83,7 +83,7 @@ export interface LiveHubCore {
 const HELLO_TAIL = 400;
 /** Agent ops after which a following page starts its own simulation (C6 auto-run). */
 const AUTO_RUN_OPS = new Set(["build", "run", "run_tests"]);
-const WEB_OPS = new Set(["accept_step", "reject_step", "undo", "redo", "list_steps", "get_project", "run", "interact", "set_sensor_value", "move_part"]);
+const WEB_OPS = new Set(["accept_step", "reject_step", "undo", "redo", "list_steps", "get_project", "run", "interact", "set_sensor_value", "move_part", "set_camera_frame"]);
 
 /** Keep only the lines of an action log written by these actors / clients / sessions (comma lists). */
 export function filterActionLog(text: string, f: { actor?: string; client?: string; sid?: string }): string {

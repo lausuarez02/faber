@@ -141,8 +141,10 @@ describe("plan_device", () => {
     expect(made.bom.find((l) => /soil/.test(l.name))!.make_with).toMatch(/create_part.*analog-sensor/);
     expect(planDevice("water my plant when the soil is dry", {}, registry).bom.find((l) => /soil/i.test(l.name))).toMatchObject({ type: "capacitive-soil-moisture", source: "simulated-exactly" });
     const drone = planDevice("a drone with a camera", {}, registry);
-    expect(drone.bom.filter((l) => l.source === "not-simulated").map((l) => l.name).join()).toMatch(/camera.*flight|flight.*camera/);
-    expect(drone.cannot_check.join()).toMatch(/does not simulate cameras/);
+    // round 13: the camera is simulated now (a board with one built in); flight still is not
+    expect(drone.bom.filter((l) => l.source === "not-simulated").map((l) => l.name).join()).toMatch(/flight/);
+    expect(drone.bom[0]!.type).toBe("seeed-xiao-esp32s3-sense");
+    expect(drone.cannot_check.join()).toMatch(/does not simulate aerodynamics/);
   });
 
   it("asks one question when the wish is ambiguous", () => {

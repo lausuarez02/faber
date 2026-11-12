@@ -1,5 +1,6 @@
 import type { I2cBus, McuBusPins, SpiBus } from "./bus.ts";
 import type { I2sBus } from "./i2s.ts";
+import type { CameraBus } from "./camera.ts";
 
 export type PinMode = "input" | "input_pullup" | "input_pulldown" | "output" | "analog";
 
@@ -7,7 +8,7 @@ export type PinMode = "input" | "input_pullup" | "input_pulldown" | "output" | "
  * What a backend carries between the firmware and the circuit (decision 0006). The fidelity report
  * and check_design read it to say "I2C is not emulated on the ESP32-C3" at the board, before a run.
  */
-export const MCU_CAPABILITIES = ["gpio", "pulls", "irq", "uart", "i2c", "spi", "pwm", "adc", "rmt", "i2s", "net", "ble"] as const;
+export const MCU_CAPABILITIES = ["gpio", "pulls", "irq", "uart", "i2c", "spi", "pwm", "adc", "rmt", "i2s", "net", "ble", "camera"] as const;
 export type McuCapability = (typeof MCU_CAPABILITIES)[number];
 
 export interface PinState {
@@ -57,6 +58,11 @@ export interface McuBackend {
   attachSpi?(bus: SpiBus): void;
   /** Optional: connect the MCU's I2S peripheral (audio frames out and in). Same lifetime as attachI2c. */
   attachI2s?(bus: I2sBus): void;
+  /**
+   * Optional (round 13): connect the MCU's camera port to camera parts. The firmware's camera driver
+   * asks for whole frames (CameraBus.init / capture). Same lifetime as attachI2c.
+   */
+  attachCamera?(bus: CameraBus): void;
   /**
    * Optional: end the step() in progress at `cycle` (or as soon as possible after it) instead of its
    * original target. The Simulation calls it, from inside a pin-change callback, when a part
@@ -110,5 +116,7 @@ export type BackendFactory = (board: {
     flash?: { sizeMB: number; mode?: string | undefined } | undefined;
     platform?: string | undefined;
     console?: string | undefined;
+    /** Round 13: PSRAM on the board (the emulator gets the same, when it can model it). */
+    psram?: { sizeMB: number; mode?: "quad" | "octal" | undefined } | undefined;
   };
 }) => McuBackend;

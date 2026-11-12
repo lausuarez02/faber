@@ -211,6 +211,8 @@ export class ProjectSession {
   private seq = 0;
   private host: SimHost | undefined;
   private hostKey = "";
+  /** Round 13: what each camera sees in live runs (set_camera_frame, the page); never saved in jumper.json. */
+  readonly cameraInputs = new Map<string, Record<string, string>>();
   private diskStamp = "";
   private listeners = new Set<(e: SessionEvent) => void>();
   private lastBuild: BuildResult | undefined;
@@ -1444,7 +1446,23 @@ export class ProjectSession {
   }
 
   /** Round 10: a project with a device network runs its mocks on the simulation's clock. */
+  /** Round 13: the live camera inputs onto a (new) host, for the parts it still has. */
+  applyCameraInputs(host: SimHost | undefined = this.host): void {
+    if (!host) return;
+    for (const [id, props] of this.cameraInputs) {
+      if (host.sim.partState(id) === undefined) continue;
+      host.setLiveProps(id, props);
+    }
+  }
+
+  /** Round 13: set what a camera sees for live runs (the running host now, later hosts when made). */
+  setCameraInput(partId: string, props: Record<string, string>): void {
+    this.cameraInputs.set(partId, props);
+    if (this.host && this.host.sim.partState(partId) !== undefined) this.host.setLiveProps(partId, props);
+  }
+
   private async withNetworkClock(r: { host: SimHost; restarted?: string }): Promise<{ host: SimHost; restarted?: string }> {
+    if (r.host.liveProps.size !== this.cameraInputs.size) this.applyCameraInputs(r.host);
     if (this.project.network && !r.host.timeListeners.size) {
       const net = await this.deviceNetwork.ensure();
       r.host.timeListeners.add((t) => net.setVirtualTime(t));
@@ -1669,7 +1687,7 @@ export class ProjectSession {
   }
 
   private scenarioOptions(net?: DeviceNetHost): ScenarioOptions {
-    return { snapshot: (name: string) => loadSnapshot(this.dir, name), ...(net ? { network: { drain: () => net.drain(), view: net } } : {}) };
+    return { snapshot: (name: string) => loadSnapshot(this.dir, name), projectDir: this.dir, ...(net ? { network: { drain: () => net.drain(), view: net } } : {}) };
   }
 
   /**
@@ -2180,7 +2198,8 @@ function fmtDiag(d: { file?: string; line?: number; column?: number; message: st
 function trimArgs(args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) {
-    out[k] = typeof v === "string" && v.length > 20_000 ? `${v.slice(0, 20_000)}…` : v;
+    // round 13: images sent as data: URLs (camera frames) are not worth keeping in the action log
+    out[k] = typeof v === "string" && v.startsWith("data:") && v.length > 200 ? `${v.slice(0, 40)}… (${v.length} chars)` : typeof v === "string" && v.length > 20_000 ? `${v.slice(0, 20_000)}…` : v;
   }
   return out;
 }

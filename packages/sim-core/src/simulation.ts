@@ -2,6 +2,7 @@ import { buildNets, netIndex, pinKey, type Net, type Project, type PropValue } f
 import { Circuit, GROUND, scopedBuilder, type NodeId, type SolveResult } from "./circuit.ts";
 import { I2C_FAULTS, I2cBus, SPI_FAULTS, SpiBus, type I2cFault, type SpiFault } from "./bus.ts";
 import { I2sBus } from "./i2s.ts";
+import { CameraBus, CAMERA_PIN_ROLES, type CameraPinRole } from "./camera.ts";
 import { Clock } from "./clock.ts";
 import { hashString } from "./hash.ts";
 import { averageSolves, PwmMeter, type PwmReading } from "./pwm.ts";
@@ -127,6 +128,8 @@ export class Simulation {
   readonly spi: SpiBus;
   /** The firmware board's I2S bus (audio frames; backends with attachI2s). */
   readonly i2s: I2sBus;
+  /** Round 13: the firmware board's camera port (frames for the camera driver; backends with attachCamera). */
+  readonly camera: CameraBus;
 
   // ---- PWM measurement, periodic ticks and part-scheduled events (packages/sim-core/PWM.md)
   /** One meter per MCU GPIO that has changed at least once, fed from onPinChange. */
@@ -199,9 +202,11 @@ export class Simulation {
     this.i2c = new I2cBus("i2c0", () => this.cycles);
     this.spi = new SpiBus("spi0");
     this.i2s = new I2sBus("i2s0");
+    this.camera = new CameraBus();
     mcu?.attachI2c?.(this.i2c);
     mcu?.attachSpi?.(this.spi);
     mcu?.attachI2s?.(this.i2s);
+    mcu?.attachCamera?.(this.camera);
     this.chunkCycles = Math.max(1, this.clock.fromMs(opts.chunkMs ?? 1));
     this.tickCycles = Math.max(1, this.clock.fromMs(TICK_MS));
     if (mcu && this.boardId) {
@@ -758,8 +763,15 @@ export class Simulation {
       }
     }
 
+    let boardI2s: { id: string; device: NonNullable<PartModel["i2s"]> } | undefined;
     for (const s of this.slots) {
       if (!s.model.i2s) continue;
+      // Round 13: an I2S device on the firmware board itself (the XIAO ESP32-S3 Sense's microphone)
+      // is hard-wired to its I2S pins; it answers after any wired one.
+      if (s.id === board) {
+        if (this.mcu?.attachI2s) boardI2s = { id: s.id, device: s.model.i2s };
+        continue;
+      }
       const diag = (severity: SimDiagnostic["severity"], code: string, message: string, pin?: string) =>
         this.busDiag.push({ partId: s.id, severity, code, message, ...(pin ? { pin } : {}) });
       const [bclk] = pinsWith(s, "i2s-bclk");
@@ -783,6 +795,40 @@ export class Simulation {
         continue;
       }
       this.busUnsubs.push(this.i2s.attach(s.id, s.model.i2s));
+    }
+    if (boardI2s) this.busUnsubs.push(this.i2s.attach(boardI2s.id, boardI2s.device));
+
+    // Round 13: cameras. A board with a built-in camera names its own GPIOs; a module's pins are
+    // followed through the wires to the firmware board's GPIOs.
+    for (const s of this.slots) {
+      if (!s.model.camera) continue;
+      const spec = s.def.spec.camera;
+      const diag = (severity: SimDiagnostic["severity"], code: string, message: string, pin?: string) =>
+        this.busDiag.push({ partId: s.id, severity, code, message, ...(pin ? { pin } : {}) });
+      if (!spec) {
+        diag("error", "camera-pins-missing", `${s.id} (${s.def.spec.id}) is a camera but its part.json has no "camera" block naming its pins, so the simulator cannot attach it. This is a bug in the part definition.`);
+        continue;
+      }
+      if (!board || !this.mcu) {
+        if (s.id !== board) diag("warning", "camera-no-mcu", `${s.id} is a camera but the project has no firmware board running, so nothing takes pictures with it. Set project.firmware.board and load firmware.`);
+        continue;
+      }
+      const onBoard = s.id === board;
+      if (!this.mcu.attachCamera) {
+        diag(onBoard ? "info" : "error", "camera-unsupported", `${s.id} is a camera, but the board '${board}' has no camera port in its simulator backend, so the firmware cannot take pictures with it. Use an ESP32 or ESP32-S3 board (the esp32-camera driver).`);
+        continue;
+      }
+      const pins: Partial<Record<CameraPinRole, string>> = {};
+      for (const role of CAMERA_PIN_ROLES) {
+        const pin = spec.pins[role];
+        if (!pin) continue;
+        if (onBoard) pins[role] = pin;
+        else {
+          const gpio = this.mcuPinOfNode.get(this.nodeOf(s.id, pin));
+          if (gpio) pins[role] = gpio;
+        }
+      }
+      this.busUnsubs.push(this.camera.attach(s.id, s.model.camera, pins));
     }
 
     if (i2cDevices > 0 && !i2cPullups) {

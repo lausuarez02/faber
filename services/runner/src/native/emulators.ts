@@ -1,6 +1,6 @@
 // Round 11: native emulators managed by Jumper, for a machine without (working) Docker.
 //
-//   ~/.jumper/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Jumper's patches 0001-0005 (bridge v6),
+//   ~/.jumper/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Jumper's patches 0001-0006 (bridge v6 + camera port),
 //                                        built on this machine from source (Jumper does not ship QEMU
 //                                        binaries; GPL-2.0, its own process). Same configure flags as
 //                                        toolchains/qemu-esp/Dockerfile, macOS UI parts off.
@@ -16,9 +16,9 @@ import { download, run } from "./arduino.ts";
 
 /** Espressif's QEMU release tag the patches apply to (toolchains/qemu-esp/Dockerfile QEMU_TAG). */
 export const QEMU_UPSTREAM_TAG = "esp-develop-9.2.2-20260417";
-export const QEMU_PATCHES = ["0001-jumper-bridge.patch", "0002-jumper-peripherals.patch", "0003-jumper-pads.patch", "0004-jumper-i2s.patch", "0005-jumper-eth-rx.patch"];
+export const QEMU_PATCHES = ["0001-jumper-bridge.patch", "0002-jumper-peripherals.patch", "0003-jumper-pads.patch", "0004-jumper-i2s.patch", "0005-jumper-eth-rx.patch", "0006-jumper-camera.patch"];
 /** The branch of a JUMPER_QEMU_SRC checkout that equals the patch series applied to the tag. */
-export const QEMU_SRC_BRANCH = "jumper-jb6";
+export const QEMU_SRC_BRANCH = "jumper-jb7";
 /** toolchains/qemu-esp/Dockerfile's configure line, plus what a Mac build leaves out (Cocoa UI, GnuTLS). */
 export const QEMU_CONFIGURE = [
   "--target-list=xtensa-softmmu,riscv32-softmmu",

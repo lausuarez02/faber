@@ -282,9 +282,22 @@ export class SimHost {
   }
 
   /** Back to t = 0 with the same firmware, keeping injected faults (they model the hardware, not the run). */
+  /**
+   * Round 13: inputs set while it runs that are not part of the saved project (what a camera sees:
+   * set_camera_frame, an image or webcam frame from the page). They survive reset() and stay until
+   * replaced; tests set their own with camera_frame steps.
+   */
+  readonly liveProps = new Map<string, Record<string, PropValue>>();
+
+  setLiveProps(partId: string, props: Record<string, PropValue>): void {
+    this.liveProps.set(partId, { ...this.liveProps.get(partId), ...props });
+    this.sim.setProps(partId, props);
+  }
+
   reset(): void {
     this.network.resetRun();
     this.sim.reset();
+    for (const [id, props] of this.liveProps) if (this.sim.partState(id) !== undefined) this.sim.setProps(id, props);
     this.serialCursor = 0;
     this.lastStates.clear();
     this.lastLive = "";
@@ -687,6 +700,10 @@ export function compactState(s: VisualState): Record<string, unknown> {
   for (const [k, v] of Object.entries(s)) {
     if (/Transform$|^lens$|Opacity$/.test(k)) continue;
     if (/^pin_/.test(k)) continue;
+    if (typeof v === "string" && v.startsWith("data:image/")) {
+      o[k] = `<picture, ${v.length} chars; screenshot shows it>`; // round 13: a camera preview
+      continue;
+    }
     if (typeof v === "string" && v.length > 64) {
       o[k] = `<${v.length} chars; use read_display>`;
       continue;

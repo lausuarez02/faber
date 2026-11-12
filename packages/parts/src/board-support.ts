@@ -20,7 +20,7 @@ export interface SupportCell {
   test?: string;
 }
 
-export const SUPPORT_AREAS = ["boots", "gpio", "pwm", "adc", "irq", "uart", "i2c", "spi", "i2s", "rmt", "net", "ble"] as const;
+export const SUPPORT_AREAS = ["boots", "gpio", "pwm", "adc", "irq", "uart", "i2c", "spi", "i2s", "rmt", "net", "ble", "camera"] as const;
 export type SupportArea = (typeof SUPPORT_AREAS)[number];
 
 export const AREA_LABEL: Record<SupportArea, string> = {
@@ -36,6 +36,7 @@ export const AREA_LABEL: Record<SupportArea, string> = {
   rmt: "NeoPixel / WS2812",
   net: "Wi-Fi / network",
   ble: "BLE",
+  camera: "Camera",
 };
 
 export interface BoardSupport {
@@ -71,6 +72,7 @@ const T = {
   espAudio: "services/runner/src/lang/esp-audio.integration.test.ts",
   renode: "packages/sim-backends/src/renode/boards.integration.test.ts",
   renodeParts: "packages/parts/src/renode.integration.test.ts",
+  espCamera: "packages/sim-backends/src/qemu-esp/camera.integration.test.ts",
 } as const;
 
 const v = (test: string, note?: string): SupportCell => ({ status: "verified", test, ...(note ? { note } : {}) });
@@ -97,6 +99,7 @@ const avr = (board: string): BoardSupport => ({
     rmt: v(T.avrLibs, "FastLED bit-bangs a WS2812B strip on the Uno"),
     net: no("no network on the board; the ESP-01 Wi-Fi part (AT commands) reaches the sandbox network over Serial"),
     ble: na(),
+    camera: na("no camera interface: esp32-camera needs an ESP32 or ESP32-S3"),
   },
   languages: [
     { id: "arduino", status: "verified" },
@@ -123,6 +126,7 @@ const rp = (board: string, boots: string): BoardSupport => ({
     rmt: v(T.avrLibs, "FastLED drives a WS2812B strip through PIO (checked on the XIAO RP2040; same chip on every RP2040 board)"),
     net: no("no network on the board"),
     ble: na(),
+    camera: na("no camera interface: esp32-camera needs an ESP32 or ESP32-S3"),
   },
   languages: [
     { id: "arduino", status: "verified" },
@@ -132,7 +136,7 @@ const rp = (board: string, boots: string): BoardSupport => ({
 
 // ------------------------------------------------------------------------------------------ ESP32 family
 
-const NATIVE = "on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet)";
+const NATIVE = "on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet)";
 
 const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => {
   const s3 = chip === "esp32s3";
@@ -161,6 +165,10 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
           ? { status: "partial", test: T.espNet, note: "the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated" }
           : untested("the netstack and the r3 Wi-Fi shim are chip-independent (verified on the S3), but no firmware for this chip has run through them; the radio itself is not emulated"),
       ble: no("QEMU has no radio model"),
+      camera:
+        chip === "esp32c3"
+          ? na("the ESP32-C3 has no camera interface (esp32-camera does not support it)")
+          : v(T.espCamera, `esp32-camera from real Arduino firmware (${chip === "esp32" ? "ESP32-CAM pins" : "XIAO ESP32-S3 Sense pins"}): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the ${chip === "esp32" ? "I2S camera mode" : "LCD_CAM"} hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs)`),
     },
     languages: [
       { id: "arduino", status: "verified", note: "simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0" },
@@ -191,6 +199,7 @@ const renode = (board: string, o: { irq?: SupportCell; uart?: SupportCell; ble?:
     rmt: untested("no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried"),
     net: no("no network interface on these boards in Renode (docs/network.md says what it would take)"),
     ble: o.ble ?? na(),
+    camera: no("no camera interface model in Renode (the STM32F4's DCMI is not emulated)"),
   },
   languages: [
     { id: "arduino", status: "verified" },
@@ -207,6 +216,7 @@ export const BOARD_SUPPORT: readonly BoardSupport[] = [
   rp("seeed-xiao-rp2040", T.rp),
   rp("waveshare-rp2040-zero", T.rpSession),
   esp("seeed-xiao-esp32s3", "esp32s3"),
+  esp("seeed-xiao-esp32s3-sense", "esp32s3"),
   esp("seeed-xiao-esp32c3", "esp32c3"),
   esp("esp32-c3-supermini", "esp32c3"),
   esp("esp32-devkitc", "esp32"),
@@ -285,7 +295,7 @@ export function boardSupportMarkdown(names: Record<string, { name: string; avail
   out.push("## Gaps across boards");
   out.push("");
   out.push("- **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.");
-  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb6 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
+  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb7 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
   out.push("- **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.");
   out.push("- **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.");
   out.push("");

@@ -1,0 +1,621 @@
+{
+  "id": "seeed-xiao-esp32s3-sense",
+  "name": "Seeed XIAO ESP32-S3 Sense",
+  "category": "board",
+  "description": "XIAO ESP32-S3 with the Sense expansion board: a 2 MP camera (OV2640; newer batches ship the 3 MP OV3660) on the board-to-board connector, a digital PDM microphone and a microSD slot, plus everything the XIAO ESP32-S3 has (Wi-Fi / BLE not emulated, 8 MB flash, 8 MB octal PSRAM, 11 GPIOs D0 to D10, USB-C, built-in Li-ion charger with BAT pads). About 21 × 17.8 × 15 mm with the camera. The camera is wired inside: in code use esp_camera.h with the Sense's pins (XCLK 10, SIOD 40, SIOC 39, Y9..Y2 = 48, 11, 12, 14, 16, 18, 17, 15, VSYNC 38, HREF 47, PCLK 13; no PWDN / RESET). Mic: PDM CLK GPIO42, DATA GPIO41. microSD: CS GPIO21 (shared with the user LED) on the SPI pins D8 / D9 / D10. In Jumper's simulator the camera sees a test scene, an image, or your webcam (frames come from Jumper: QEMU does not model the camera interface). 3.3 V logic only.",
+  "availability": {
+    "status": "available",
+    "reason": "Its fixture test passed on 2026-11-12 on the native QEMU jb7 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3-sense: boot, GPIO out, GPIO in with the pull-up, Serial). The camera fixture (fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Jumper through the esp32-camera API (camera.integration.test.ts). The jumper/qemu-esp Docker image with the camera port is not built."
+  },
+  "pins": [
+    {
+      "id": "GPIO1",
+      "label": "D0/A0",
+      "x": 9,
+      "y": 36,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO1; McuBackend pin \"GPIO1\" (pinMode(1, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D0 / A0 (ADC1, touch T1).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO2",
+      "label": "D1/A1",
+      "x": 9,
+      "y": 56,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO2; McuBackend pin \"GPIO2\" (pinMode(2, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D1 / A1 (ADC1, touch T2).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO3",
+      "label": "D2/A2",
+      "x": 9,
+      "y": 76,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO3; McuBackend pin \"GPIO3\" (pinMode(3, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D2 / A2 (ADC1). Strapping pin (JTAG source when the eFuse selects it; harmless otherwise).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO4",
+      "label": "D3/A3",
+      "x": 9,
+      "y": 96,
+      "type": "analog",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO4; McuBackend pin \"GPIO4\" (pinMode(4, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D3 / A3 (ADC1).",
+      "protocols": [
+        "adc"
+      ]
+    },
+    {
+      "id": "GPIO5",
+      "label": "D4/SDA",
+      "x": 9,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO5; McuBackend pin \"GPIO5\" (pinMode(5, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D4 / SDA: Wire SDA.",
+      "protocols": [
+        "i2c-sda"
+      ]
+    },
+    {
+      "id": "GPIO6",
+      "label": "D5/SCL",
+      "x": 9,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO6; McuBackend pin \"GPIO6\" (pinMode(6, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D5 / SCL: Wire SCL.",
+      "protocols": [
+        "i2c-scl"
+      ]
+    },
+    {
+      "id": "GPIO43",
+      "label": "D6/TX",
+      "x": 9,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX (Serial1 on the real board; in Jumper's simulator build Serial goes here too).",
+      "protocols": [
+        "uart-tx"
+      ]
+    },
+    {
+      "id": "5V",
+      "label": "5V",
+      "x": 129,
+      "y": 36,
+      "type": "power",
+      "description": "VBUS: 5 V from the USB-C port when plugged in (jumper.json power.usb, default plugged). Without USB it is an input (4.5 to 5.5 V); on battery this pad stays at 0 V (the charger never back-feeds it).",
+      "voltage": {
+        "min": 4.5,
+        "max": 5.5
+      }
+    },
+    {
+      "id": "GND",
+      "label": "GND",
+      "x": 129,
+      "y": 56,
+      "type": "ground",
+      "description": "Ground (all GND pins are one node)."
+    },
+    {
+      "id": "3V3",
+      "label": "3V3",
+      "x": 129,
+      "y": 76,
+      "type": "power",
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Keep loads modest (Jumper checks 500 mA). The ESP32-S3 runs down to about 3.0 V.",
+      "voltage": {
+        "min": 3.2,
+        "max": 3.4
+      }
+    },
+    {
+      "id": "GPIO9",
+      "label": "D10/MOSI",
+      "x": 129,
+      "y": 96,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO9; McuBackend pin \"GPIO9\" (pinMode(9, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D10 / MOSI: SPI MOSI. On the Sense this SPI pin also goes to the microSD slot.",
+      "protocols": [
+        "spi-mosi"
+      ]
+    },
+    {
+      "id": "GPIO8",
+      "label": "D9/MISO",
+      "x": 129,
+      "y": 116,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO8; McuBackend pin \"GPIO8\" (pinMode(8, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D9 / MISO: SPI MISO. On the Sense this SPI pin also goes to the microSD slot.",
+      "protocols": [
+        "spi-miso"
+      ]
+    },
+    {
+      "id": "GPIO7",
+      "label": "D8/SCK",
+      "x": 129,
+      "y": 136,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO7; McuBackend pin \"GPIO7\" (pinMode(7, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D8 / SCK: SPI SCK. On the Sense this SPI pin also goes to the microSD slot.",
+      "protocols": [
+        "spi-sck"
+      ]
+    },
+    {
+      "id": "GPIO44",
+      "label": "D7/RX",
+      "x": 129,
+      "y": 156,
+      "type": "digital",
+      "voltage": {
+        "min": 0,
+        "max": 3.3
+      },
+      "description": "ESP32-S3 GPIO44; McuBackend pin \"GPIO44\" (pinMode(44, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D7 / RX: UART0 RX.",
+      "protocols": [
+        "uart-rx"
+      ]
+    },
+    {
+      "id": "BAT",
+      "label": "BAT+",
+      "x": 55,
+      "y": 172,
+      "type": "power",
+      "voltage": {
+        "min": 3.0,
+        "max": 4.2
+      },
+      "description": "Battery pad on the underside (+, the pad farther from USB): a 1S LiPo / Li-ion cell (3.7 V). The board's SGM40567 charger charges it from USB at 50 mA (3.8 mA trickle below 2.9 V, CV at 4.2 V); without USB the cell powers the board through its power path."
+    },
+    {
+      "id": "GND.2",
+      "label": "BAT−",
+      "x": 83,
+      "y": 172,
+      "type": "ground",
+      "description": "Battery − pad on the underside (the pad nearer USB). Same node as GND."
+    }
+  ],
+  "size": {
+    "w": 138,
+    "h": 186
+  },
+  "props": [
+    {
+      "id": "camera_source",
+      "label": "Camera sees",
+      "type": "enum",
+      "default": "test-card",
+      "options": [
+        "test-card",
+        "color-bars",
+        "face",
+        "gradient",
+        "checker",
+        "black",
+        "white",
+        "dark-room",
+        "image"
+      ],
+      "description": "What the camera sees in the simulator: a test scene, or 'image' (the still in camera_image: a scenario's camera_frame step, set_camera_frame, an image dropped on the part, or the webcam)."
+    },
+    {
+      "id": "camera_image",
+      "label": "Camera image",
+      "type": "text",
+      "default": "",
+      "description": "A PNG or JPEG as a data URL (or base64), shown to the camera when 'Camera sees' is 'image'. Set at run time by tests, the agent or the browser; usually left empty in the project."
+    },
+    {
+      "id": "mic_sound",
+      "label": "Microphone hears",
+      "type": "enum",
+      "default": "silence",
+      "options": [
+        "silence",
+        "tone",
+        "noise",
+        "clip"
+      ],
+      "description": "What the on-board PDM microphone hears: quiet, a sine tone, noise, or the clip in mic_clip_b64 (16 kHz mono 16-bit PCM). Reaches the firmware only when the emulator's I2S receive works (docs/esp32-peripherals.md)."
+    },
+    {
+      "id": "mic_clip_b64",
+      "label": "Microphone clip (16-bit PCM, base64)",
+      "type": "text",
+      "default": "",
+      "description": "Mono 16-bit little-endian PCM at 16 kHz, base64, played in a loop when 'Microphone hears' is 'clip'."
+    }
+  ],
+  "limits": {
+    "maxCurrentmA": 40,
+    "recommendedPinCurrentmA": 20,
+    "maxTotalCurrentmA": 200,
+    "maxVoltage": 3.6,
+    "max3v3mA": 500,
+    "minSupplyV": 3.4,
+    "vbusInMinV": 4.5,
+    "vbusInMaxV": 5.5,
+    "ldoDropoutV": 0.25,
+    "min3v3V": 3.0
+  },
+  "footprint": "21 × 17.8 mm castellated module, 2 × 7 pins at 0.1 in, BAT pads underneath; the Sense board and camera add height (about 15 mm in all)",
+  "dimensions_mm": {
+    "w": 21,
+    "h": 17.8,
+    "d": 15
+  },
+  "mass_g": 6,
+  "current_ma": {
+    "typ": 110,
+    "max": 380
+  },
+  "price_usd": 13.99,
+  "buy_links": [
+    {
+      "vendor": "Seeed",
+      "url": "https://www.seeedstudio.com/XIAO-ESP32S3-Sense-p-5639.html"
+    },
+    {
+      "vendor": "DigiKey",
+      "url": "https://www.digikey.com/en/products/result?keywords=XIAO%20ESP32S3%20Sense"
+    },
+    {
+      "vendor": "Amazon",
+      "url": "https://www.amazon.com/s?k=XIAO+ESP32S3+Sense"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "powered",
+      "type": "boolean",
+      "description": "Board has power: USB plugged (power.usb) or a supply wired to its power pins keeps the 3.3 V rail up; the firmware is held in reset while false."
+    },
+    {
+      "key": "running",
+      "type": "boolean",
+      "description": "True when this board runs the project's firmware (has an MCU backend)."
+    },
+    {
+      "key": "led_user",
+      "type": "number",
+      "description": "User LED (orange, GPIO21, active low; LED_BUILTIN) brightness 0..1."
+    },
+    {
+      "key": "charging",
+      "type": "boolean",
+      "description": "The on-board SGM40567 charger is charging the cell on BAT (charge LED lit)."
+    },
+    {
+      "key": "chargemA",
+      "type": "number",
+      "description": "Charge current into BAT (mA)."
+    },
+    {
+      "key": "chargeMode",
+      "type": "string",
+      "description": "off / trickle / CC / CV / full."
+    },
+    {
+      "key": "pin_<id>",
+      "type": "number",
+      "description": "Digital level 0/1 of each GPIO, e.g. pin_GPIO2 (only on the firmware board)."
+    },
+    {
+      "key": "camera_on",
+      "type": "boolean",
+      "description": "The firmware took a picture in the last 1.5 s (the red dot on the part)."
+    },
+    {
+      "key": "camera_ready",
+      "type": "boolean",
+      "description": "esp_camera_init succeeded and the camera was not released."
+    },
+    {
+      "key": "camera_frames",
+      "type": "number",
+      "description": "Frames the firmware captured since the run started."
+    },
+    {
+      "key": "camera_preview",
+      "type": "string",
+      "description": "A small JPEG data URL of the last captured picture (what the device sees)."
+    },
+    {
+      "key": "has_preview",
+      "type": "boolean",
+      "description": "A picture was captured (the preview shows)."
+    },
+    {
+      "key": "camera_size",
+      "type": "string",
+      "description": "Size and format of the last frame, e.g. 320×240 JPEG."
+    },
+    {
+      "key": "camera_label",
+      "type": "string",
+      "description": "The sensor and the last frame size, shown under the lens."
+    },
+    {
+      "key": "camera_source",
+      "type": "string",
+      "description": "What the camera sees: a scene name or image."
+    },
+    {
+      "key": "mic_level_dbfs",
+      "type": "number",
+      "description": "Level of what the microphone hears (dBFS)."
+    }
+  ],
+  "mcu": {
+    "backend": "qemu-esp",
+    "chip": "esp32s3",
+    "clockHz": 240000000,
+    "vcc": 3.3,
+    "fqbn": "esp32:esp32:XIAO_ESP32S3:PSRAM=opi",
+    "flash": {
+      "sizeMB": 8,
+      "mode": "dio"
+    },
+    "console": "uart0",
+    "busPins": {
+      "i2c": {
+        "sda": "GPIO5",
+        "scl": "GPIO6"
+      },
+      "spi": {
+        "sck": "GPIO7",
+        "miso": "GPIO8",
+        "mosi": "GPIO9"
+      },
+      "uart": {
+        "tx": "GPIO43",
+        "rx": "GPIO44"
+      }
+    },
+    "strapping": [
+      {
+        "pin": "GPIO3",
+        "boot": "any",
+        "note": "GPIO3 (D2) selects the JTAG source only when the eFuse asks for it; on a stock XIAO anything may pull it."
+      }
+    ],
+    "toolchain": {
+      "image": "jumper/arduino-esp32:3.3.12-r3",
+      "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio,PSRAM=opi",
+      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The 8 MB octal PSRAM is emulated (QEMU's SPI PSRAM model, psramFound() is true). The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
+      "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
+    },
+    "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts (boot, GPIO, Serial with the PSRAM=opi simulator FQBN); camera: packages/sim-backends/src/qemu-esp/camera.integration.test.ts",
+    "psram": {
+      "sizeMB": 8,
+      "mode": "octal"
+    }
+  },
+  "camera": {
+    "sensor": "OV2640",
+    "alternatives": [
+      "OV3660"
+    ],
+    "pins": {
+      "xclk": "GPIO10",
+      "sda": "GPIO40",
+      "scl": "GPIO39",
+      "vsync": "GPIO38",
+      "href": "GPIO47",
+      "pclk": "GPIO13",
+      "d0": "GPIO15",
+      "d1": "GPIO17",
+      "d2": "GPIO18",
+      "d3": "GPIO16",
+      "d4": "GPIO14",
+      "d5": "GPIO12",
+      "d6": "GPIO11",
+      "d7": "GPIO48"
+    },
+    "activeMa": 40,
+    "note": "Seeed's camera_pins.h (CAMERA_MODEL_XIAO_ESP32S3). PWDN and RESET are not connected (-1)."
+  },
+  "tags": [
+    "3.3v",
+    "battery",
+    "ble",
+    "board",
+    "cam",
+    "camera",
+    "charger",
+    "esp32",
+    "esp32-s3",
+    "image",
+    "lipo",
+    "mic",
+    "microcontroller",
+    "microphone",
+    "microsd",
+    "ov2640",
+    "ov3660",
+    "pdm",
+    "photo",
+    "picture",
+    "pocket",
+    "psram",
+    "s3",
+    "sd-card",
+    "see",
+    "seeed",
+    "sense",
+    "tiny",
+    "usb-c",
+    "vision",
+    "wifi",
+    "xiao"
+  ],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_top_mm": 1.0,
+    "keepout_bottom_mm": 0.5,
+    "features": [
+      {
+        "id": "lens",
+        "kind": "camera",
+        "face": "+z",
+        "x": 10.5,
+        "y": 9.5,
+        "shape": "round",
+        "d": 6,
+        "fov_deg": 66,
+        "description": "camera lens (OV2640 / OV3660 module on the Sense board); the case opens a hole wide enough for its field of view"
+      },
+      {
+        "id": "usb",
+        "kind": "connector",
+        "face": "-y",
+        "x": 10.5,
+        "y": 0,
+        "z": 1.6,
+        "w": 9,
+        "h": 3.2,
+        "connector": "usb-c",
+        "plug_clearance_mm": 1.5,
+        "protrude_mm": 1
+      },
+      {
+        "id": "microsd",
+        "kind": "connector",
+        "face": "+y",
+        "x": 10.5,
+        "y": 17.8,
+        "z": 7.5,
+        "w": 12,
+        "h": 1.4,
+        "connector": "microsd",
+        "expose": false,
+        "description": "microSD slot on the Sense board; the card goes in before the case is closed (set expose true for a card slot)"
+      },
+      {
+        "id": "mic",
+        "kind": "grille",
+        "face": "+z",
+        "x": 3.5,
+        "y": 15.5,
+        "z": 8,
+        "shape": "round",
+        "d": 1,
+        "expose": false,
+        "description": "PDM microphone sound port on the Sense board; set expose true for sound holes when the firmware listens"
+      },
+      {
+        "id": "user-led",
+        "kind": "led",
+        "face": "-z",
+        "x": 5.2,
+        "y": 3.2,
+        "shape": "round",
+        "d": 1.2,
+        "expose": false,
+        "description": "orange user LED (GPIO21, shared with the microSD CS); set expose true for a light pipe, e.g. to show when the camera is on"
+      },
+      {
+        "id": "charge-led",
+        "kind": "led",
+        "face": "-z",
+        "x": 15.6,
+        "y": 3.2,
+        "shape": "round",
+        "d": 1.2,
+        "expose": false,
+        "description": "red charge LED (lit while the battery charges)"
+      },
+      {
+        "id": "boot",
+        "kind": "button",
+        "face": "-z",
+        "x": 3.0,
+        "y": 5.0,
+        "shape": "round",
+        "d": 1.5,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "reset",
+        "kind": "button",
+        "face": "-z",
+        "x": 18.0,
+        "y": 5.0,
+        "shape": "round",
+        "d": 1.5,
+        "travel_mm": 0.2,
+        "expose": false
+      },
+      {
+        "id": "antenna",
+        "kind": "antenna",
+        "face": "-z",
+        "x": 10.5,
+        "y": 15.5,
+        "shape": "rect",
+        "w": 6,
+        "h": 3,
+        "description": "U.FL connector for the external antenna (keep metal away)"
+      }
+    ],
+    "source": "Seeed XIAO ESP32S3 Sense wiki (21 x 17.8 x 15 mm with the expansion board and camera). Part frame seen from the camera side: the XIAO's own components (USB-C, buttons, LEDs, U.FL) face -z, the lens +z. Lens, mic and microSD positions are approximate: measure your board before printing a tight case."
+  },
+  "sourcing": {
+    "mpn": "113991115",
+    "manufacturer": "Seeed Studio",
+    "package": "module 21 x 17.8 x 15 mm (XIAO ESP32S3 + Sense expansion board + camera)",
+    "generic": "Seeed XIAO ESP32S3 Sense (ESP32-S3R8, 8 MB flash, 8 MB PSRAM, OV2640 or OV3660 camera, PDM microphone, microSD slot, USB-C, LiPo charger)"
+  }
+}

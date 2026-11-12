@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb6), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
+      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-S3 machine) with Jumper's patches (jb7), in Docker or a native build, in lockstep with the circuit. Verified on real firmware on the S3: GPIO outputs and inputs with the chip's pull-ups / pull-downs, and UART0 (Serial). The jb5 emulator also models PWM (LEDC), GPIO interrupts, UART1/2, the ADC, RMT, SPI and an I2C controller for the S3; they are verified on the ESP32 and ESP32-C3 but have never run on the S3, so treat them as not emulated here until a test proves them. Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
     },
     "timing": {
       "level": "approx",

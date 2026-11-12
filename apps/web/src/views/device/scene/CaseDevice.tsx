@@ -102,6 +102,9 @@ export function CaseDevice({ fit, finish, onPressKey }: { fit: CaseFit; finish: 
             {fit.grilles.map((o) => (
               <GrilleRings key={`${o.part}-${o.feature}`} o={o} />
             ))}
+            {fit.lenses.map((o) => (
+              <CameraLens key={`${o.part}-${o.feature}`} o={o} />
+            ))}
           </group>
         </group>
       </group>
@@ -312,6 +315,43 @@ function GrilleRings({ o }: { o: CaseOpening }) {
           <meshBasicMaterial color="#ffffff" transparent opacity={0} depthWrite={false} toneMapped={false} side={THREE.DoubleSide} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+/**
+ * Round 13: a camera lens in its hole: dark glass in a metal ring at the inner wall (the hole is
+ * wider than the lens so the wall stays out of the picture); a red ring glows while the camera takes
+ * pictures (the part's camera_on).
+ */
+function CameraLens({ o }: { o: CaseOpening }) {
+  const source = useDeviceSource();
+  const ring = useRef<THREE.MeshBasicMaterial>(null);
+  const q = useMemo(() => basis(o), [o]);
+  const at = useMemo(() => v3(o.at).addScaledVector(v3(o.n).normalize(), 0.05), [o]);
+  const r = Math.max(1.5, Math.min(o.u / 2 - 0.3, 4));
+  useFrame(() => {
+    const on = source.partState(o.part)?.camera_on === true;
+    if (ring.current) ring.current.opacity = on ? 0.9 : 0;
+  });
+  return (
+    <group position={at} quaternion={q} name={`lens-${o.part}`}>
+      <mesh>
+        <circleGeometry args={[r, 48]} />
+        <meshPhysicalMaterial color="#05070a" roughness={0.05} metalness={0.2} clearcoat={1} clearcoatRoughness={0.05} />
+      </mesh>
+      <mesh position={[-r * 0.3, r * 0.3, 0.02]}>
+        <circleGeometry args={[r * 0.25, 24]} />
+        <meshBasicMaterial color="#5b6f95" transparent opacity={0.45} />
+      </mesh>
+      <mesh position={[0, 0, 0.01]}>
+        <ringGeometry args={[r, r + 0.6, 48]} />
+        <meshStandardMaterial color="#9aa3ad" roughness={0.3} metalness={0.8} />
+      </mesh>
+      <mesh position={[0, 0, 0.03]}>
+        <ringGeometry args={[r + 0.6, r + 1.1, 48]} />
+        <meshBasicMaterial ref={ring} color="#ff3b2f" transparent opacity={0} toneMapped={false} />
+      </mesh>
     </group>
   );
 }

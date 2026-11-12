@@ -903,6 +903,47 @@
                     "network_mock"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "camera_frame": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scene": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "image": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "A test scene name (\"face\", \"test-card\", ...) or an image path in the project (\"tests/cat.jpg\"); or {\"scene\": ...} / {\"image\": ...}."
+                    },
+                    "part": {
+                      "description": "The camera part (default: the only camera in the project).",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "camera_frame"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }

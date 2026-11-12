@@ -5,6 +5,7 @@ import type { PropValue } from "@jumper/project-format";
 import type { CircuitBuilder, NodeId, SolveResultView } from "./circuit.ts";
 import type { I2cDevice, SpiDevice } from "./bus.ts";
 import type { I2sDevice } from "./i2s.ts";
+import { CAMERA_PIN_ROLES, CAMERA_SENSOR_IDS, type CameraDevice } from "./camera.ts";
 import type { McuBackend } from "./mcu.ts";
 import type { PwmReading } from "./pwm.ts";
 
@@ -132,6 +133,8 @@ export const McuSpecSchema = z.object({
       uart: z.object({ tx: z.string(), rx: z.string() }).optional(),
     })
     .optional(),
+  /** Round 13: PSRAM on the board (camera frame buffers, big audio buffers). The simulator gives the emulator the same. */
+  psram: z.object({ sizeMB: z.number().positive(), mode: z.enum(["quad", "octal"]).optional() }).optional(),
   /** Boot-strapping pins (check_design warns when a part pulls one the wrong way at reset). */
   strapping: z.array(StrappingPinSchema).optional(),
   /** Pins that can only be inputs (ESP32 GPIO34-39). */
@@ -191,6 +194,7 @@ export const MECH_FEATURE_KINDS = [
   "grille", // buzzer / speaker / microphone: needs sound holes
   "vent", // needs airflow (regulators, chargers)
   "antenna", // keep metal / thick walls away
+  "camera", // a lens: the case opens a hole wide enough for its field of view (fov_deg)
 ] as const;
 export type MechFeatureKind = (typeof MECH_FEATURE_KINDS)[number];
 
@@ -217,6 +221,8 @@ export const MechFeatureSchema = z.object({
   travel_mm: z.number().nonnegative().optional(),
   /** connector: extra opening around the receptacle for the plug's overmold (mm, each side). USB-C plugs need about 1.5. */
   plug_clearance_mm: z.number().nonnegative().optional(),
+  /** camera: the lens' diagonal field of view (degrees); the hole widens with the wall so the wall stays out of the picture. */
+  fov_deg: z.number().positive().max(180).optional(),
   /** connector: "usb-c", "micro-usb", "jst-ph-2", "jst-sh-4", "header-2.54", … */
   connector: z.string().optional(),
   /** The case must expose it (window / hole / cap / opening). Default: true for screen, button, switch, knob, connector, led, sensor-window, grille; false for vent, antenna. */
@@ -330,6 +336,22 @@ export const PartSpecSchema = z.object({
     })
     .optional(),
   tags: z.array(z.string()).optional(),
+  /**
+   * Round 13: the part is (or carries) a camera. `pins` maps each camera signal (esp32-camera's
+   * camera_config_t names) to a pin: on a module, its own pin ids (wired to the board's GPIOs); on a
+   * board with a built-in camera, the board's MCU pin ids it is hard-wired to.
+   */
+  camera: z
+    .object({
+      sensor: z.enum(CAMERA_SENSOR_IDS as [string, ...string[]]),
+      /** Other sensors the same product ships with (batches differ), e.g. ["OV3660"]. */
+      alternatives: z.array(z.enum(CAMERA_SENSOR_IDS as [string, ...string[]])).optional(),
+      pins: z.partialRecord(z.enum(CAMERA_PIN_ROLES), z.string()),
+      /** Current while capturing (mA), on top of the board's own. */
+      activeMa: z.number().nonnegative().optional(),
+      note: z.string().optional(),
+    })
+    .optional(),
   /** Round 6 (decision 0004, R1): what a case needs. Optional; the case track requires it for every part an example uses. The LAST key of part.json. */
   mechanical: MechanicalSchema.optional(),
   /** Round 6 (R1): factory BOM numbers. Optional; written after mechanical. */
@@ -508,6 +530,11 @@ export interface PartModel {
    * board's I2S bus when the part's "i2s-bclk" and "i2s-ws" pins are wired to board GPIOs.
    */
   i2s?: I2sDevice;
+  /**
+   * Round 13: a camera. The Simulation attaches it to the board's camera port (McuBackend.attachCamera)
+   * at the pins part.json `camera.pins` names: wired module pins, or a board's own GPIOs.
+   */
+  camera?: CameraDevice;
   /**
    * Colour display parts: the frame the glass shows (RGB565, viewer orientation). Too big for
    * visualState(), so renderers and screenshots read it here (Simulation.framebuffer(partId)).

@@ -1170,7 +1170,8 @@
                   "sensor-window",
                   "grille",
                   "vent",
-                  "antenna"
+                  "antenna",
+                  "camera"
                 ]
               },
               "face": {
@@ -1227,6 +1228,11 @@
               "plug_clearance_mm": {
                 "type": "number",
                 "minimum": 0
+              },
+              "fov_deg": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 180
               },
               "connector": {
                 "type": "string"

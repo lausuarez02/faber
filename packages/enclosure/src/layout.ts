@@ -124,7 +124,7 @@ export interface Placed {
   bound?: { face: CaseFaceName; feature: LocalFeature; offset: number };
 }
 
-export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot";
+export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot" | "lens";
 
 export interface Opening {
   part: string;
@@ -289,7 +289,7 @@ function autoCrown(shape: CaseShape, S: number): number {
 function priority(f: LocalFeature, isFront: boolean): number {
   if (!f.expose) return -1;
   if (f.kind === "screen") return isFront ? 100 : 40;
-  return { connector: 90, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
+  return { connector: 90, camera: 85, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
 }
 
 /** Distance kept between a feature's tip and the inner wall surface, by kind. */
@@ -1223,7 +1223,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
         at = [base[0] + n[0] * baseDist, base[1] + n[1] * baseDist, base[2]];
       }
       const wallDist = f.passThrough ? baseDist - f.protrude : baseDist;
-      const reach = f.kind === "button" ? 8 : f.kind === "led" ? 6 : f.kind === "grille" ? 3 : 1.5;
+      const reach = f.kind === "button" ? 8 : f.kind === "camera" ? 6 : f.kind === "led" ? 6 : f.kind === "grille" ? 3 : 1.5;
       if (baseDist < -0.05 || baseDist > reach + Math.max(0, tipOffset(f, tol))) {
         issues.push({ id: f.kind === "connector" ? "connector-access" : f.kind === "button" ? "buttons-reachable" : f.kind === "screen" ? "screen-window" : "exposed", ok: false, severity: f.kind === "connector" || f.kind === "button" || f.kind === "screen" ? "error" : "warning", message: `${p.mech.id}'s ${f.kind} "${f.id}" faces the ${face} but is ${baseDist.toFixed(1)} mm from that wall, so the case cannot expose it. Why: ${baseDist > 0 ? "the curved wall or another part keeps it away from the wall" : "it would poke through the wall"}. Fix: put it on another face with placements ({"${p.mech.id}": {"face": "${face === "right" ? "left" : face === "top" ? "right" : "top"}"}}), try the rounded-box shape, or set "expose": false for that feature if it does not need to be reached.`, parts: [p.mech.id] });
         continue;
@@ -1295,6 +1295,16 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
           // the cut reaches the outer surface over every hole (a domed or curved face is higher off-centre)
           const depthAt = (h: Vec3) => (face === "front" || face === "back" ? t + domeHeight(dome?.[face], h[0], h[1]) : Math.max(t, rayExit(outerPlan, h[0], h[1], n[0], n[1]) + 1e-6));
           o.depth = Math.max(o.depth, ...holes.map((h) => depthAt(h.at)));
+          break;
+        }
+        case "camera": {
+          // round 13: a lens hole that grows with how far the lens sits behind the outer surface,
+          // so the wall stays out of the picture (the field of view is a cone from the lens)
+          const half = ((f.fov ?? 66) * Math.PI) / 360;
+          const behind = Math.max(0, wallDist) + depthAlong;
+          o.kind = "lens";
+          o.shape = "round";
+          o.u = o.v = Math.round((f.u + 2 * behind * Math.tan(half) + 2 * tol) * 10) / 10;
           break;
         }
         case "switch":

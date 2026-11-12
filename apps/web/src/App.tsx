@@ -1,3 +1,4 @@
+import { WebcamIndicator } from "./interact/CameraPanel.tsx";
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { engine, loadInitialFirmware, useJumper } from "./lib/app.ts";
@@ -164,6 +165,7 @@ export function App() {
           </div>
         ) : null}
         <ChromeSlots />
+        <WebcamIndicator />
         <Toasts />
       </div>
     </ReactFlowProvider>

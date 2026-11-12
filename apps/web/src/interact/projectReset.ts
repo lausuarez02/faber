@@ -4,6 +4,7 @@ import { useUi } from "../lib/ui.ts";
 import { stopMotions } from "./imu.ts";
 import { releaseAllNow } from "./press.ts";
 import { useInteract } from "./store.ts";
+import { stopWebcam, useCameraUi } from "./camera.ts";
 
 /**
  * Round 6 (decision 0004, R8), canvas track: what belongs to the open project in the canvas track's
@@ -16,6 +17,8 @@ onProjectSwitch(({ reason }) => {
   const s = useJumper.getState();
   if (reason === "open") {
     stopMotions();
+    stopWebcam(); // round 13: the webcam never feeds another project's camera
+    useCameraUi.setState({ shown: {}, error: undefined });
     releaseAllNow();
     useInteract.setState({ values: {}, held: {}, tilt: {}, motion: {}, arrange: false });
     s.select([], []);

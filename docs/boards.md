@@ -11,23 +11,24 @@ Every board, every peripheral, and how we know. Statuses:
 
 A board is placeable in the parts library only when its fixture test proves it boots real firmware and its listed buses work (part.json `availability`); the others are listed as planned with the reason.
 
-| Board | Runs | Boots real firmware | GPIO (+ pulls) | PWM | ADC | Pin interrupts | UART | I2C | SPI | I2S | NeoPixel / WS2812 | Wi-Fi / network | BLE | Languages |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Arduino Uno R3](#arduino-uno) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | – | ✅ | ❌ | – | arduino ✅, platformio ⚪ |
-| [Arduino Nano](#arduino-nano) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | – | ✅ | ❌ | – | arduino ✅, platformio ⚪ |
-| [Raspberry Pi Pico](#raspberry-pi-pico) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ✅ |
-| [Seeed XIAO RP2040](#seeed-xiao-rp2040) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ✅ |
-| [Waveshare RP2040-Zero](#waveshare-rp2040-zero) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | arduino ✅, micropython ⚪ |
-| [Seeed XIAO ESP32-S3](#seeed-xiao-esp32s3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
-| [Seeed XIAO ESP32-C3](#seeed-xiao-esp32c3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32-C3 SuperMini](#esp32-c3-supermini) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32 DevKitC (WROOM-32)](#esp32-devkitc) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ⚪ | ❌ | arduino ✅, micropython ✅, esp-idf ⚪ |
-| [ESP32-S3 DevKitC-1](#esp32-s3-devkitc-1) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | arduino ✅, micropython ❌, esp-idf ⚪ |
-| [STM32 Blue Pill (F103C8)](#stm32-bluepill) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
-| [WeAct Black Pill (STM32F411CE)](#stm32-blackpill-f411) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
-| [ST Nucleo-F401RE](#stm32-nucleo-f401re) (planned) | Renode | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | arduino ✅, micropython ❌ |
-| [Seeed XIAO nRF52840](#seeed-xiao-nrf52840) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | ❌ | arduino ✅, micropython ❌ |
-| [Arduino Nano 33 BLE](#arduino-nano-33-ble) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ❌ | ⚪ | ❌ | ❌ | arduino ✅, micropython ❌ |
+| Board | Runs | Boots real firmware | GPIO (+ pulls) | PWM | ADC | Pin interrupts | UART | I2C | SPI | I2S | NeoPixel / WS2812 | Wi-Fi / network | BLE | Camera | Languages |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Arduino Uno R3](#arduino-uno) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | – | ✅ | ❌ | – | – | arduino ✅, platformio ⚪ |
+| [Arduino Nano](#arduino-nano) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | – | ✅ | ❌ | – | – | arduino ✅, platformio ⚪ |
+| [Raspberry Pi Pico](#raspberry-pi-pico) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | – | arduino ✅, micropython ✅ |
+| [Seeed XIAO RP2040](#seeed-xiao-rp2040) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | – | arduino ✅, micropython ✅ |
+| [Waveshare RP2040-Zero](#waveshare-rp2040-zero) | page | ✅ | ✅ | ✅ | ✅ | ⚪ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | – | – | arduino ✅, micropython ⚪ |
+| [Seeed XIAO ESP32-S3](#seeed-xiao-esp32s3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | ✅ | arduino ✅, micropython ❌, esp-idf ⚪ |
+| [Seeed XIAO ESP32-S3 Sense](#seeed-xiao-esp32s3-sense) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | ✅ | arduino ✅, micropython ❌, esp-idf ⚪ |
+| [Seeed XIAO ESP32-C3](#seeed-xiao-esp32c3) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | – | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32-C3 SuperMini](#esp32-c3-supermini) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | 🟡 | ❌ | – | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32 DevKitC (WROOM-32)](#esp32-devkitc) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ⚪ | ❌ | ✅ | arduino ✅, micropython ✅, esp-idf ⚪ |
+| [ESP32-S3 DevKitC-1](#esp32-s3-devkitc-1) | QEMU | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ❌ | ✅ | arduino ✅, micropython ❌, esp-idf ⚪ |
+| [STM32 Blue Pill (F103C8)](#stm32-bluepill) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | ❌ | arduino ✅, micropython ❌ |
+| [WeAct Black Pill (STM32F411CE)](#stm32-blackpill-f411) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | ❌ | arduino ✅, micropython ❌ |
+| [ST Nucleo-F401RE](#stm32-nucleo-f401re) (planned) | Renode | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | – | ❌ | arduino ✅, micropython ❌ |
+| [Seeed XIAO nRF52840](#seeed-xiao-nrf52840) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚪ | ❌ | ❌ | ❌ | arduino ✅, micropython ❌ |
+| [Arduino Nano 33 BLE](#arduino-nano-33-ble) | Renode | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ❌ | ⚪ | ❌ | ❌ | ❌ | arduino ✅, micropython ❌ |
 
 ## Per board
 
@@ -50,6 +51,7 @@ Part `arduino-uno`, backend `avr8js`: in the page and in Node (avr8js).
 | NeoPixel / WS2812 | ✅ verified | FastLED bit-bangs a WS2812B strip on the Uno | [libs3.integration.test.ts](../packages/parts/src/libs3.integration.test.ts) |
 | Wi-Fi / network | ❌ no | no network on the board; the ESP-01 Wi-Fi part (AT commands) reaches the sandbox network over Serial |  |
 | BLE | n/a | the chip has none |  |
+| Camera | n/a | no camera interface: esp32-camera needs an ESP32 or ESP32-S3 |  |
 | Languages | | arduino: ✅ verified; platformio: ⚪ untested (image jumper/platformio:6.2.0-avr5.3.0-r1 built; Jumper's build path never ran (Docker failed in round 10)) | |
 
 ### Arduino Nano
@@ -71,6 +73,7 @@ Part `arduino-nano`, backend `avr8js`: in the page and in Node (avr8js).
 | NeoPixel / WS2812 | ✅ verified | FastLED bit-bangs a WS2812B strip on the Uno | [libs3.integration.test.ts](../packages/parts/src/libs3.integration.test.ts) |
 | Wi-Fi / network | ❌ no | no network on the board; the ESP-01 Wi-Fi part (AT commands) reaches the sandbox network over Serial |  |
 | BLE | n/a | the chip has none |  |
+| Camera | n/a | no camera interface: esp32-camera needs an ESP32 or ESP32-S3 |  |
 | Languages | | arduino: ✅ verified; platformio: ⚪ untested (image jumper/platformio:6.2.0-avr5.3.0-r1 built; Jumper's build path never ran (Docker failed in round 10)) | |
 
 ### Raspberry Pi Pico
@@ -92,6 +95,7 @@ Part `raspberry-pi-pico`, backend `rp2040js`: in the page and in Node (rp2040js)
 | NeoPixel / WS2812 | ✅ verified | FastLED drives a WS2812B strip through PIO (checked on the XIAO RP2040; same chip on every RP2040 board) | [libs3.integration.test.ts](../packages/parts/src/libs3.integration.test.ts) |
 | Wi-Fi / network | ❌ no | no network on the board |  |
 | BLE | n/a | the chip has none |  |
+| Camera | n/a | no camera interface: esp32-camera needs an ESP32 or ESP32-S3 |  |
 | Languages | | arduino: ✅ verified; micropython: ✅ verified | |
 
 ### Seeed XIAO RP2040
@@ -113,6 +117,7 @@ Part `seeed-xiao-rp2040`, backend `rp2040js`: in the page and in Node (rp2040js)
 | NeoPixel / WS2812 | ✅ verified | FastLED drives a WS2812B strip through PIO (checked on the XIAO RP2040; same chip on every RP2040 board) | [libs3.integration.test.ts](../packages/parts/src/libs3.integration.test.ts) |
 | Wi-Fi / network | ❌ no | no network on the board |  |
 | BLE | n/a | the chip has none |  |
+| Camera | n/a | no camera interface: esp32-camera needs an ESP32 or ESP32-S3 |  |
 | Languages | | arduino: ✅ verified; micropython: ✅ verified | |
 
 ### Waveshare RP2040-Zero
@@ -134,6 +139,7 @@ Part `waveshare-rp2040-zero`, backend `rp2040js`: in the page and in Node (rp204
 | NeoPixel / WS2812 | ✅ verified | FastLED drives a WS2812B strip through PIO (checked on the XIAO RP2040; same chip on every RP2040 board) | [libs3.integration.test.ts](../packages/parts/src/libs3.integration.test.ts) |
 | Wi-Fi / network | ❌ no | no network on the board |  |
 | BLE | n/a | the chip has none |  |
+| Camera | n/a | no camera interface: esp32-camera needs an ESP32 or ESP32-S3 |  |
 | Languages | | arduino: ✅ verified; micropython: ⚪ untested (the RPI_PICO build should run; not tested on this board) | |
 
 ### Seeed XIAO ESP32-S3
@@ -143,7 +149,7 @@ Part `seeed-xiao-esp32s3`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -155,6 +161,29 @@ Part `seeed-xiao-esp32s3`, backend `qemu-esp`: Espressif QEMU on this computer (
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ✅ verified | net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
+| Camera | ✅ verified | esp32-camera from real Arduino firmware (XIAO ESP32-S3 Sense pins): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the LCD_CAM hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs) | [camera.integration.test.ts](../packages/sim-backends/src/qemu-esp/camera.integration.test.ts) |
+| Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ❌ no (the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
+
+### Seeed XIAO ESP32-S3 Sense
+<a id="seeed-xiao-esp32s3-sense"></a>
+
+Part `seeed-xiao-esp32s3-sense`, backend `qemu-esp`: Espressif QEMU on this computer (Docker image jumper/qemu-esp, or a native build), started by jumper serve. **Available**: Its fixture test passed on 2026-11-12 on the native QEMU jb7 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3-sense: boot, GPIO out, GPIO in with the pull-up, Serial). The camera fixture (fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Jumper through the esp32-camera API (camera.integration.test.ts). The jumper/qemu-esp Docker image with the camera port is not built.
+
+| Area | Status | Notes | Test |
+| --- | --- | --- | --- |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| Pin interrupts | ✅ verified | attachInterrupt RISING, three edges counted | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| UART | ✅ verified | Serial (UART0), Serial1 and Serial2 on matrix pins, both directions | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| I2C | ✅ verified | Wire and Wire1 on two buses: scan, write, repeated-START read (the controllers jb5 adds to the S3) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| SPI | 🟡 partial | Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; MicroPython does not run on the S3 | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| I2S | ✅ verified | ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, I2S0 / I2S1 through GDMA): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (PDM, the XIAO Sense's mic pins); an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network. Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps | [esp-audio.integration.test.ts](../services/runner/src/lang/esp-audio.integration.test.ts) |
+| NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
+| Wi-Fi / network | ✅ verified | net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
+| BLE | ❌ no | QEMU has no radio model |  |
+| Camera | ✅ verified | esp32-camera from real Arduino firmware (XIAO ESP32-S3 Sense pins): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the LCD_CAM hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs) | [camera.integration.test.ts](../packages/sim-backends/src/qemu-esp/camera.integration.test.ts) |
 | Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ❌ no (the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
 
 ### Seeed XIAO ESP32-C3
@@ -164,7 +193,7 @@ Part `seeed-xiao-esp32c3`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -176,6 +205,7 @@ Part `seeed-xiao-esp32c3`, backend `qemu-esp`: Espressif QEMU on this computer (
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | 🟡 partial | the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
+| Camera | n/a | the ESP32-C3 has no camera interface (esp32-camera does not support it) |  |
 | Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ✅ verified (official 1.29.0 build + Jumper's littlefs image with main.py); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
 
 ### ESP32-C3 SuperMini
@@ -185,7 +215,7 @@ Part `esp32-c3-supermini`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -197,6 +227,7 @@ Part `esp32-c3-supermini`, backend `qemu-esp`: Espressif QEMU on this computer (
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | 🟡 partial | the same shim and netstack as the S3 test; on the C3 the esp32-ws-stream example's scenario passes (wss://, 40 chunks) and a WiFi.h + HTTPS sketch ran by hand; no committed C3 firmware test. The radio itself is not emulated | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
+| Camera | n/a | the ESP32-C3 has no camera interface (esp32-camera does not support it) |  |
 | Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ✅ verified (official 1.29.0 build + Jumper's littlefs image with main.py); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
 
 ### ESP32 DevKitC (WROOM-32)
@@ -206,7 +237,7 @@ Part `esp32-devkitc`, backend `qemu-esp`: Espressif QEMU on this computer (Docke
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade; MicroPython PWM too | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -218,6 +249,7 @@ Part `esp32-devkitc`, backend `qemu-esp`: Espressif QEMU on this computer (Docke
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ⚪ untested | the netstack and the r3 Wi-Fi shim are chip-independent (verified on the S3), but no firmware for this chip has run through them; the radio itself is not emulated |  |
 | BLE | ❌ no | QEMU has no radio model |  |
+| Camera | ✅ verified | esp32-camera from real Arduino firmware (ESP32-CAM pins): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the I2S camera mode hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs) | [camera.integration.test.ts](../packages/sim-backends/src/qemu-esp/camera.integration.test.ts) |
 | Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ✅ verified (official 1.29.0 build + Jumper's littlefs image with main.py); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
 
 ### ESP32-S3 DevKitC-1
@@ -227,7 +259,7 @@ Part `esp32-s3-devkitc-1`, backend `qemu-esp`: Espressif QEMU on this computer (
 
 | Area | Status | Notes | Test |
 | --- | --- | --- | --- |
-| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb6 sources built on this machine by `jumper setup esp32`; the jb6 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
+| Boots real firmware | ✅ verified | real arduino-esp32 firmware on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet) | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | GPIO (+ pulls) | ✅ verified | output, input with the internal pull-up | [boards.integration.test.ts](../packages/sim-backends/src/qemu-esp/boards.integration.test.ts) |
 | PWM | ✅ verified | LEDC from real Arduino firmware: analogWrite 1 kHz 25 % then 75 %, a 50 Hz servo 1.5 then 2.0 ms, tone 2 kHz, ledcFade | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | ADC | 🟡 partial | analogRead (raw, 12 bit) within 3 % of the pad voltage on an ADC1 pin and a second pin; analogReadMilliVolts is wrong: QEMU has no ADC calibration eFuses (0 on the ESP32 / S3, the C3's fallback curve reads 1123 mV for 1.0 V; asserted as a known gap) | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
@@ -239,6 +271,7 @@ Part `esp32-s3-devkitc-1`, backend `qemu-esp`: Espressif QEMU on this computer (
 | NeoPixel / WS2812 | ✅ verified | Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin | [esp-arduino-peripherals.integration.test.ts](../services/runner/src/lang/esp-arduino-peripherals.integration.test.ts) |
 | Wi-Fi / network | ✅ verified | net-probe (WiFi.h, HTTPClient, PubSubClient, unmodified): Wi-Fi shim join, DHCP, DNS, HTTPS to a mock and to an allowed host with a secret added at the edge, a blocked host, MQTT, drop and reconnect. The radio itself is not emulated: Wi-Fi rides an emulated Ethernet card | [firmware.integration.test.ts](../packages/device-net/test/firmware.integration.test.ts) |
 | BLE | ❌ no | QEMU has no radio model |  |
+| Camera | ✅ verified | esp32-camera from real Arduino firmware (XIAO ESP32-S3 Sense pins): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the LCD_CAM hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs) | [camera.integration.test.ts](../packages/sim-backends/src/qemu-esp/camera.integration.test.ts) |
 | Languages | | arduino: ✅ verified (simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0); micropython: ❌ no (the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build); esp-idf: ⚪ untested (image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)) | |
 
 ### STM32 Blue Pill (F103C8)
@@ -260,6 +293,7 @@ Part `stm32-bluepill`, backend `renode`: Renode 1.17 on this computer (Docker im
 | NeoPixel / WS2812 | ⚪ untested | no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried |  |
 | Wi-Fi / network | ❌ no | no network interface on these boards in Renode (docs/network.md says what it would take) |  |
 | BLE | n/a | the chip has none |  |
+| Camera | ❌ no | no camera interface model in Renode (the STM32F4's DCMI is not emulated) |  |
 | Languages | | arduino: ✅ verified; micropython: ❌ no (official builds have a USB-only REPL (STM32F4) or expect the bootloader + SoftDevice (nRF52840)) | |
 
 ### WeAct Black Pill (STM32F411CE)
@@ -281,6 +315,7 @@ Part `stm32-blackpill-f411`, backend `renode`: Renode 1.17 on this computer (Doc
 | NeoPixel / WS2812 | ⚪ untested | no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried |  |
 | Wi-Fi / network | ❌ no | no network interface on these boards in Renode (docs/network.md says what it would take) |  |
 | BLE | n/a | the chip has none |  |
+| Camera | ❌ no | no camera interface model in Renode (the STM32F4's DCMI is not emulated) |  |
 | Languages | | arduino: ✅ verified; micropython: ❌ no (official builds have a USB-only REPL (STM32F4) or expect the bootloader + SoftDevice (nRF52840)) | |
 
 ### ST Nucleo-F401RE
@@ -302,6 +337,7 @@ Part `stm32-nucleo-f401re`, backend `renode`: Renode 1.17 on this computer (Dock
 | NeoPixel / WS2812 | ⚪ untested | no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried |  |
 | Wi-Fi / network | ❌ no | no network interface on these boards in Renode (docs/network.md says what it would take) |  |
 | BLE | n/a | the chip has none |  |
+| Camera | ❌ no | no camera interface model in Renode (the STM32F4's DCMI is not emulated) |  |
 | Languages | | arduino: ✅ verified; micropython: ❌ no (official builds have a USB-only REPL (STM32F4) or expect the bootloader + SoftDevice (nRF52840)) | |
 
 ### Seeed XIAO nRF52840
@@ -323,6 +359,7 @@ Part `seeed-xiao-nrf52840`, backend `renode`: Renode 1.17 on this computer (Dock
 | NeoPixel / WS2812 | ⚪ untested | no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried |  |
 | Wi-Fi / network | ❌ no | no network interface on these boards in Renode (docs/network.md says what it would take) |  |
 | BLE | ❌ no | Renode has an nRF52840 RADIO model, but nothing is connected to it: BLE is not emulated |  |
+| Camera | ❌ no | no camera interface model in Renode (the STM32F4's DCMI is not emulated) |  |
 | Languages | | arduino: ✅ verified; micropython: ❌ no (official builds have a USB-only REPL (STM32F4) or expect the bootloader + SoftDevice (nRF52840)) | |
 
 ### Arduino Nano 33 BLE
@@ -344,11 +381,12 @@ Part `arduino-nano-33-ble`, backend `renode`: Renode 1.17 on this computer (Dock
 | NeoPixel / WS2812 | ⚪ untested | no RMT on these chips; a bit-banged WS2812 should run in Renode, but its timing has not been tried |  |
 | Wi-Fi / network | ❌ no | no network interface on these boards in Renode (docs/network.md says what it would take) |  |
 | BLE | ❌ no | Renode has an nRF52840 RADIO model, but nothing is connected to it: BLE is not emulated |  |
+| Camera | ❌ no | no camera interface model in Renode (the STM32F4's DCMI is not emulated) |  |
 | Languages | | arduino: ✅ verified; micropython: ❌ no (official builds have a USB-only REPL (STM32F4) or expect the bootloader + SoftDevice (nRF52840)) | |
 
 ## Gaps across boards
 
 - **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.
-- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb6 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say "image missing" with the fix.
+- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb7 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say "image missing" with the fix.
 - **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.
 - **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.
