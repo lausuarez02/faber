@@ -60,7 +60,7 @@ export interface BomLine {
   notes: string;
 }
 
-export function bomLines(project: Project, registry: PartRegistry, opts: { soldered: boolean; cuts: WireCut[]; screws?: { count: number; size: string; inserts: string } }): BomLine[] {
+export function bomLines(project: Project, registry: PartRegistry, opts: { soldered: boolean; cuts: WireCut[]; screws?: { count: number; size: string; inserts: string }; consumables?: { item: string; qty: number | string; why: string }[] }): BomLine[] {
   const groups = new Map<string, { ids: string[]; type: string; props: string; standIn?: string }>();
   for (const p of project.parts) {
     // round 7 voice: text props (a DFPlayer's clips) go to sd-card/, not into a BOM cell
@@ -110,6 +110,8 @@ export function bomLines(project: Project, registry: PartRegistry, opts: { solde
     if (total(24)) add("Hook-up wire 24 AWG", "Silicone stranded wire 24 AWG, red and black", 1, `${(total(24) / 1000).toFixed(2)} m in ${opts.cuts.filter((c) => c.gauge_awg === 24).length} cuts (power)`);
     add("Heat-shrink tube", "Heat-shrink 1.5 mm and 3 mm, 2:1", 1, "over every splice and resistor lead");
     add("Foam tape", "Double-sided foam tape 1 mm", 1, "holds modules without standoffs");
+    // round 12: what the assembly plan adds (the cell's Kapton strap and foam pad)
+    for (const c of opts.consumables ?? []) if (/Kapton|Foam pad/.test(c.item)) add(c.item, c.item, 1, `${c.qty}: ${c.why}`);
   } else if (project.wires.length) {
     out.push({ line: out.length + 1, refs: "", qty: project.wires.length, name: "Jumper wires", value: "", mpn: "", manufacturer: "", lcsc: "", jlc: "", package: "", generic: "Dupont jumper wires 20 cm, male-male / male-female", unit_usd: "", ext_usd: "", buy_url: "", source: "assembly", notes: "breadboard build" });
   }

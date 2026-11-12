@@ -142,6 +142,14 @@ export const caseTools: ToolModule = {
       readOnly: true,
     },
     {
+      name: "get_assembly_plan",
+      title: "How to build it",
+      description:
+        'How to build the real device, worked out by Jumper at design time for this case (any shape): everything to BUY (parts with MPNs, wire by gauge and length, screws, inserts, Kapton, foam), everything to PRINT (each STL with the face that goes on the bed), the consumables and tools, and the ASSEMBLY STEPS in an order that is physically possible: which shell each part goes into and in what order (a part another covers goes in first; a switch whose lever pokes through its hole slides in before what would block it; plungers before the parts behind them), when each wire is soldered (as soon as both of its parts are in; pads a later part covers get their lead on the bench first; wires between the two shells with the case open like a book, cut long enough for it), the battery last and insulated, a power-on test before closing, the closure, a closed test. Each step: {n, title, say (plain words for the person), shell, parts, action (place | press-fit | screw | glue | solder | tape | route-wire | close | flash | test), fasteners, wires [{id, from, to, length_mm, gauge, color}], tools, cautions, view {explode, highlight, camera}, image (a picture of that step)}. Also how each part is held (mounts: the case adds seat posts, hold-downs, backstops, guides, cell corners and strap slots where they fit) and the design-for-assembly checks (assembly-close, assembly-insert, assembly-solder, assembly-wires, assembly-access, assembly-battery, assembly-screws, assembly-held), each with what failed, why, the fix and the sizes. Regenerates the case first when it is stale. Example: {} or {"images": true} (attach the step pictures). Use it when the person asks what to buy, what to print or how to put it together; show them the steps and pictures in plain words. Fails when there is no case yet (design_case first).',
+      inputSchema: { type: "object", properties: { images: { type: "boolean", description: "Attach the step pictures inline (the first four; every step has its path in image). Default false." } } },
+      readOnly: true,
+    },
+    {
       name: "export_manufacturing",
       title: "Factory pack",
       description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
@@ -253,6 +261,14 @@ export const caseTools: ToolModule = {
       const st = await caseState(s);
       x.summary(`case: ${st.report.shape} ${fmtSize(st.report)}${st.regenerated ? " (regenerated)" : ""}`);
       return { ...compact(st.report), dir: join(s.dir, "case"), stale: st.regenerated, files: st.report.files.map((f) => f.path) };
+    },
+    async get_assembly_plan(args, x) {
+      const r = await assemblyPlanFor(x.session);
+      x.summary(`assembly plan: ${r.steps.length} steps, ${r.print.length} pieces to print, ${r.buy.length} lines to buy${r.problems.length ? `, ${r.problems.length} problem(s)` : ""}`);
+      const imgs = r.steps.flatMap((st) => (st.image_file ? [st.image_file] : []));
+      // (the most telling pictures first: a part going in, the case open like a book, closing)
+      const pick = [r.steps.find((st) => st.view.camera.endsWith("-shell") && st.action !== "solder"), r.steps.find((st) => st.view.camera === "open-book"), r.steps.find((st) => st.action === "close" || st.action === "screw")].flatMap((st) => (st?.image_file ? [st.image_file] : []));
+      return { ...r, ...(args.images === true ? { image_files: [...new Set([...pick, ...imgs])] } : {}) };
     },
     async export_manufacturing(args, x) {
       const res = await exportManufacturing(x.session, { ...(typeof args.dir === "string" ? { dir: args.dir } : {}), zip: args.zip !== false, zh_cn: args.zh_cn !== false });
@@ -457,9 +473,15 @@ async function pdfFromSvg(svg: string): Promise<{ pdf?: Uint8Array; why?: string
   }
 }
 
+/** Round 12: the cut list (power track's wireCuts) on a layout, as the assembly plan takes it. */
+export function planWires(project: Project, reg: ProjectSession["registry"]) {
+  return (L: import("@jumper/enclosure").Layout) =>
+    wireCuts(project, reg, pinPositions(L.placed, (t) => reg.get(t)?.spec)).map((c) => ({ id: c.wire, from: c.from, to: c.to, length_mm: c.length_mm, gauge: c.gauge_awg, color: c.color }));
+}
+
 async function generateInto(s: ProjectSession, project: Project, caseDir: string): Promise<Out> {
   const { generateCase, writeCaseFiles, writeMeshCache } = await import("@jumper/enclosure");
-  const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg });
+  const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg, wires: planWires(project, s.registry) });
   writeCaseFiles(caseDir, g.files);
   if (caseDir === join(s.dir, "case")) writeMeshCache(join(s.dir, ".jumper", "case-mesh.json"), g.mesh);
   return { report: g.report, dir: caseDir, missing: g.missing };
@@ -483,12 +505,62 @@ export async function caseIsStale(s: ProjectSession): Promise<boolean> {
   return readManifest(join(s.dir, "case"))?.hash !== caseHash(s.project, (t) => s.registry.get(t)?.spec);
 }
 
+/**
+ * Round 12: the assembly plan of the saved case (get_assembly_plan, POST /api/case/assembly):
+ * what to buy, what to print, the consumables and tools, the steps with their pictures, how each
+ * part is held and the design-for-assembly checks. The case is regenerated first when stale; a plan
+ * made before the wires changed is made again (no CAD) and says its pictures are from the last build.
+ */
+export async function assemblyPlanFor(s: ProjectSession) {
+  if (!s.project.enclosure) fail("no-case", "No case yet", "the assembly plan is how the parts go into the case, and this project has no case (jumper.json has no enclosure)", 'design_case {"shape": "pebble"} (or any shape; check_fit first), then get_assembly_plan');
+  const st = await caseState(s);
+  const E = await import("@jumper/enclosure");
+  const caseDir = join(s.dir, "case");
+  const specOf = (t: string) => s.registry.get(t)?.spec;
+  let plan: import("@jumper/enclosure").AssemblyPlan | undefined;
+  try {
+    plan = JSON.parse(readFileSync(join(caseDir, "assembly", "plan.json"), "utf8"));
+  } catch {
+    plan = undefined;
+  }
+  const current = !!plan && plan.wires_key === E.wiresKey(s.project);
+  if (!plan || !current) {
+    const L = E.layoutCase(E.layoutInput(s.project, specOf));
+    plan = E.assemblyPlan({ project: s.project, layout: L, specOf, title: s.project.name, wires: planWires(s.project, s.registry)(L) });
+  }
+  const report = st.report;
+  const print = report.files.filter((f) => f.kind === "stl").map((f) => ({ file: `case/${f.path}`, body: f.body, face_down: f.print?.face_down ?? "flat", supports: f.print?.supports ?? false, note: f.print?.note ?? "" }));
+  const cuts = plan.wires.map((w) => ({ wire: w.id, from: w.from, to: w.to, color: w.color, length_mm: w.length_mm, gauge_awg: w.gauge }));
+  const screws = report.assembly && plan.consumables.find((c) => /M2 screws/.test(c.item)) ? { count: Number(plan.consumables.find((c) => /M2 screws/.test(c.item))!.qty), size: "M2 pan head (length in case/PRINT.md)", inserts: "M2 x 3 mm brass heat-set inserts" } : undefined;
+  const buy = bomLines(s.project, s.registry, { soldered: true, cuts, ...(screws ? { screws } : {}), consumables: plan.consumables }).map((l) => ({ qty: l.qty, name: l.name, ...(l.value ? { value: l.value } : {}), ...(l.mpn ? { mpn: l.mpn } : {}), ...(l.generic ? { generic: l.generic } : {}), ...(l.notes ? { notes: l.notes } : {}), ...(l.refs ? { refs: l.refs } : {}) }));
+  const problems = plan.checks.filter((c) => !c.ok || c.severity === "warning").map((c) => c.message);
+  const steps = plan.steps.map((step) => ({ ...step, ...(current && step.image ? { image_file: join(caseDir, step.image) } : {}), ...(!current ? { image: undefined } : {}) }));
+  return {
+    title: plan.title,
+    stale_case_regenerated: st.regenerated,
+    pictures: current ? "one per step (image_file)" : "the wires changed since the case was built: these steps are new and have no pictures yet (design_case or update_case renders them)",
+    buy,
+    print,
+    consumables: plan.consumables,
+    tools: plan.tools,
+    steps,
+    mounts: plan.mounts,
+    order: plan.order,
+    opens_on: plan.hinge,
+    wires: plan.wires,
+    checks: plan.checks,
+    problems,
+    dir: join(caseDir, "assembly"),
+    next: problems.length && plan.checks.some((c) => !c.ok && c.severity === "error") ? `Fix first: ${plan.checks.find((c) => !c.ok && c.severity === "error")!.message.split("Fix: ")[1] ?? "see checks"}` : "Tell the person what to buy and print, then walk them through the steps with the pictures (plain words; each step's say). export_manufacturing puts it all in the factory pack (assembly/ASSEMBLY.md).",
+  };
+}
+
 function fmtSize(r: CaseReport): string {
   return `${r.size_mm.w} x ${r.size_mm.h} x ${r.size_mm.d} mm`;
 }
 
 function compact(r: CaseReport) {
-  return { ...(r.fit ? { fits: r.fit.fits, fit: r.fit } : {}), shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
+  return { ...(r.fit ? { fits: r.fit.fits, fit: r.fit } : {}), ...(r.assembly ? { assembly: assemblySummary(r) } : {}), shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
 }
 
 function answer(s: ProjectSession, out: Out, images: boolean, rel: string, next: string) {
@@ -496,10 +568,17 @@ function answer(s: ProjectSession, out: Out, images: boolean, rel: string, next:
   return { ...compact(out.report), dir: out.dir, files: out.report.files.map((f) => `${rel}/${f.path}`), ...(out.missing.length ? { missing: out.missing } : {}), ...(images ? { image_files: imgs } : {}), next };
 }
 
+/** Round 12: the assembly plan in one line for design_case / update_case / get_case answers (the whole plan: get_assembly_plan). */
+function assemblySummary(r: CaseReport) {
+  const a = r.assembly!;
+  const bad = r.checks.filter((c) => c.id.startsWith("assembly-") && (!c.ok || c.severity === "warning"));
+  return { steps: a.steps, order: a.order, opens_on: a.hinge, errors: a.errors, warnings: a.warnings, problems: bad.map((c) => c.message), plan: `case/${a.plan}`, images: a.images.length, how: "get_assembly_plan has every step (plain words, parts, wires, tools, cautions, a picture each), the pieces to print and the consumables" };
+}
+
 function nextAfter(r: CaseReport): string {
   const bad = r.checks.filter((c) => !c.ok && c.severity === "error");
   if (bad.length) return `Fix: ${bad[0]!.message.split("Fix: ")[1] ?? "see checks"}`;
-  return "Show the person the renders (case/renders/), then export_manufacturing for the factory pack. Try other shapes with design_case {save: false}.";
+  return "Show the person the renders (case/renders/), then get_assembly_plan (what to buy and print, and how it goes together, step by step with pictures), then export_manufacturing for the factory pack. Try other shapes with design_case {save: false}.";
 }
 
 // ===================================================================== factory pack
@@ -538,9 +617,15 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     if (project.enclosure.params?.closure === "screws" && L.bosses.length) screws = { count: L.bosses.length, size: "M2 pan head (length in enclosure/PRINT.md)", inserts: "M2 x 3 mm brass heat-set inserts" };
   } else missing.push({ item: "enclosure/", why: "the project has no case yet", fix: 'design_case {"shape": "pebble"} (or puck, rounded-box, pill, keychain), then export_manufacturing again', say: "pick a shape and press Design case, then Factory pack again" });
 
+  // ---- round 12: the assembly plan (order, how each part is held, what to buy beyond the parts)
+  const ap = project.enclosure ? await assemblyPlanFor(s) : undefined;
   // ---- electronics
-  const cuts = wireCuts(project, reg, positions);
-  const lines = bomLines(project, reg, { soldered, cuts, ...(screws ? { screws } : {}) });
+  // (the wires between the shells are cut long enough to open the case like a book: the plan's lengths)
+  const cuts = wireCuts(project, reg, positions).map((c) => {
+    const w = ap?.wires.find((x) => x.id === c.wire);
+    return w && w.length_mm > c.length_mm ? { ...c, length_mm: w.length_mm } : c;
+  });
+  const lines = bomLines(project, reg, { soldered, cuts, ...(screws ? { screws } : {}), ...(ap ? { consumables: ap.consumables } : {}) });
   writeText(root, "BOM.csv", bomCsv(lines));
   writeText(root, "BOM.md", bomMd(lines, project.name));
   writeText(root, "electronics/WIRING.md", wiringMarkdown(project, reg));
@@ -583,7 +668,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   } else missing.push({ item: "firmware/", why: "the project has no firmware", fix: "write_file the sketch and build", say: "write the sketch in the code panel and press Build, then Factory pack again" });
 
   // ---- assembly, tests, readme, notes
-  writeText(root, "assembly/ASSEMBLY.md", assemblyMd(project, reg, report, soldered, !!screws));
+  writeText(root, "assembly/ASSEMBLY.md", ap && soldered ? planMd(project, ap) : assemblyMd(project, reg, report, soldered, !!screws));
   writeText(root, "test/TEST-PLAN.md", testPlanMd(project));
   const fid = fidelityReport(project, reg);
   writeText(root, "test/TEST-ON-HARDWARE.md", `# Test these on the real device: ${project.name}\n\n${fid.summary}\n\n${fid.testOnRealDevice.map((t) => `- [ ] ${t}`).join("\n")}\n\n## Simulator limits\n\n${fid.global.map((g) => `- ${g}`).join("\n")}\n`);
@@ -654,6 +739,25 @@ function assemblyMd(project: Project, reg: ProjectSession["registry"], report: C
   return `# Assembly: ${project.name}\n\n${soldered ? "Hand-wired build (point-to-point or perfboard): no breadboard, no dupont wires." : "Breadboard build."}\n\n${steps.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n`;
 }
 
+/** Round 12: ASSEMBLY.md from the assembly plan: what to buy and print, then every step with its picture. */
+function planMd(project: Project, ap: Awaited<ReturnType<typeof assemblyPlanFor>>): string {
+  const out: string[] = [`# Assembly: ${project.name}`, "", "Hand-wired build (point to point) in a 3D-printed case. Jumper worked out this order at design time: parts another one covers go in first, every joint is soldered while it can be reached, the battery goes in last, and it is tested before it is closed.", ""];
+  out.push("## Print", "", "| File | Face on the bed | Supports |", "| --- | --- | --- |", ...ap.print.map((p) => `| enclosure/${p.file.replace(/^case\//, "")} | ${p.face_down} | ${p.supports ? "yes" : "no"} |`), "", "Settings and material: `enclosure/PRINT.md`.", "");
+  out.push("## Consumables", "", ...ap.consumables.map((c) => `- ${c.item}: ${c.qty} (${c.why})`), "", "## Tools", "", ...ap.tools.map((t) => `- ${t}`), "");
+  out.push("## How each part is held", "", "| Part | Shell | How it goes in | Held by |", "| --- | --- | --- | --- |", ...ap.mounts.map((m) => `| ${m.part} | ${m.shell} | ${m.insert} | ${m.how.join(", ")}${m.missing ? ` (${m.missing})` : ""} |`), "");
+  out.push("## Steps", "");
+  for (const st of ap.steps) {
+    out.push(`### ${st.n}. ${st.title}`, "", st.say, "");
+    if (st.image) out.push(`![Step ${st.n}](../enclosure/${st.image})`, "");
+    if (st.wires.length) out.push(...st.wires.map((w) => `- ${w.id}: ${w.from} to ${w.to}, ${w.color}, ${w.gauge} AWG, ${w.length_mm} mm`), "");
+    if (st.fasteners.length) out.push(...st.fasteners.map((f) => `- ${f.qty} x ${f.kind} ${f.size}`), "");
+    if (st.cautions.length) out.push(...st.cautions.map((c) => `> ${c}`), "");
+  }
+  const flagged = ap.checks.filter((c) => !c.ok || c.severity !== "info");
+  out.push("## Checks", "", ...(flagged.length ? flagged.map((c) => `- **${c.id}** (${c.severity}): ${c.message}`) : ["- Every assembly check passed."]), "");
+  return out.join("\n");
+}
+
 function stepText(st: Record<string, unknown>): string {
   const w = st.within_ms ? ` within ${(Number(st.within_ms) / 1000).toFixed(1)} s` : "";
   if (st.run_ms !== undefined) return `wait ${(Number(st.run_ms) / 1000).toFixed(1)} s`;
@@ -692,7 +796,7 @@ ${report ? `\nCase: **${report.shape}**, ${report.size_mm.w} x ${report.size_mm.
 1. Buy the parts in \`BOM.csv\` (MPN where known, otherwise the description in "generic").
 2. Print the case: \`enclosure/PRINT.md\` (STL / 3MF for printers, STEP for factories, drawing with all sizes).
 3. Flash the firmware: \`firmware/FLASHING.md\`.
-4. Build it: \`assembly/ASSEMBLY.md\` (wiring in \`electronics/\`).
+4. Build it: \`assembly/ASSEMBLY.md\`: what to print and the consumables, then every step in order with a picture (wiring in \`electronics/\`).
 5. Test it: \`test/TEST-PLAN.md\`.
 
 ## Files
@@ -721,7 +825,7 @@ function readmeZh(project: Project, board: string, report: CaseReport | undefine
 - electronics/：接线表 WIRING.md、网表 netlist.csv 与 jumper.net（KiCad）、导线下料表 WIRE-CUTS.csv
 - firmware/：固件（.hex / .uf2）、源代码、烧录步骤 FLASHING.md
 - enclosure/：外壳 STL 与 3MF（3D 打印）、STEP（报价与开模）、尺寸图（SVG / PDF）、打印说明 PRINT.md
-- assembly/ASSEMBLY.md：装配步骤（含渲染图）
+- assembly/ASSEMBLY.md：装配步骤（每一步一张图：零件放入顺序、焊接、电池最后安装、合壳前通电测试）
 - test/：测试计划
 
 ## 注意

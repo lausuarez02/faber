@@ -16,6 +16,7 @@ import { caseApi, decodeF32, decodeU32, type AdviceNote, type CaseMesh, type Cas
 import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
 import { LayoutTab, partColors, type Pins } from "./LayoutTab.tsx";
+import { AssemblyTab } from "./AssemblyTab.tsx";
 import { OutlineEditor, type SizeDraft } from "./OutlineEditor.tsx";
 
 const SHAPES: { id: Enclosure["shape"]; label: string; hint: string }[] = [
@@ -54,7 +55,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [layoutsError, setLayoutsError] = useState<string | undefined>();
   const layoutSeq = useRef(0);
   // round 8 (view): the Layout tab, the proposal previewed, the parts placed by hand, the parts advice
-  const [tab, setTab] = useState<"shape" | "layout">("shape");
+  const [tab, setTab] = useState<"shape" | "layout" | "build">("shape");
   const [selected, setSelected] = useState<string | undefined>();
   const [stageMode, setStageMode] = useState<"case" | "preview">("case");
   const [pins, setPins] = useState<Pins>({});
@@ -451,7 +452,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
         ) : null}
       </div>
 
-      <aside className={`cv-panel float-box ${tab === "layout" ? "is-wide" : ""}`} aria-label="Case settings">
+      <aside className={`cv-panel float-box ${tab !== "shape" ? "is-wide" : ""}`} aria-label="Case settings">
         <header className="cv-head">
           <div>
             <div className="cv-title">Case</div>
@@ -487,9 +488,16 @@ export function CaseView({ onClose }: { onClose(): void }) {
           >
             Layout {staleMsg ? <span className="cv-dot" aria-label="(Jumper has a better layout)" /> : null}
           </button>
+          <button type="button" role="tab" id="cv-tab-build" aria-selected={tab === "build"} aria-controls="cv-pane" className={tab === "build" ? "is-on" : ""} data-testid="case-tab-build" onClick={() => setTab("build")}>
+            Build
+          </button>
         </div>
 
-        {tab === "layout" ? (
+        {tab === "build" ? (
+          <div id="cv-pane" role="tabpanel" aria-labelledby="cv-tab-build" className="cv-pane">
+            <AssemblyTab hash={state?.stale ? undefined : report?.hash} working={!!busy} />
+          </div>
+        ) : tab === "layout" ? (
           <div id="cv-pane" role="tabpanel" aria-labelledby="cv-tab-layout" className="cv-pane">
             <LayoutTab
               {...(layouts ? { result: layouts } : {})}

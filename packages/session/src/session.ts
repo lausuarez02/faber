@@ -1754,10 +1754,22 @@ export class ProjectSession {
         issues.push({ severity: d.severity, code: d.code ?? "sim", message: `${d.partId} (simulated at ${round(this.host.timeMs)} ms): ${d.message}`, parts: [d.partId] });
       }
     }
+    // round 12: the built case's design-for-assembly checks (how the parts go in), when it is current
+    let caseNote: string | undefined;
+    if (this.project.enclosure) {
+      const E = await import("@jumper/enclosure");
+      const caseDir = join(this.dir, "case");
+      const report = E.readReport(caseDir);
+      const fresh = report && E.readManifest(caseDir)?.hash === E.caseHash(this.project, (t) => this.registry.get(t)?.spec);
+      if (report && fresh) {
+        for (const c of report.checks.filter((x) => x.id.startsWith("assembly-") && (!x.ok || x.severity === "warning"))) issues.push({ severity: !c.ok && c.severity === "error" ? "error" : "warning", code: c.id, message: c.message, parts: c.parts ?? [] });
+      } else caseNote = "the case was changed since it was built: get_case rebuilds it, then check_design also checks how the parts go in (assembly)";
+    }
     const errors = issues.filter((i) => i.severity === "error").length;
     const warnings = issues.filter((i) => i.severity === "warning").length;
     return {
       ok: errors === 0,
+      ...(caseNote ? { case: caseNote } : {}),
       errors,
       warnings,
       issues: issues.map((i) => `${i.severity} [${i.code}] ${i.message}`),
