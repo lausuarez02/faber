@@ -1,6 +1,6 @@
 // Round 11: native emulators managed by Jumper, for a machine without (working) Docker.
 //
-//   ~/.jumper/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Jumper's patches 0001-0003 (bridge v5),
+//   ~/.jumper/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Jumper's patches 0001-0004 (bridge v5 + camera port),
 //                                        built on this machine from source (Jumper does not ship QEMU
 //                                        binaries; GPL-2.0, its own process). Same configure flags as
 //                                        toolchains/qemu-esp/Dockerfile, macOS UI parts off.
@@ -16,7 +16,9 @@ import { download, run } from "./arduino.ts";
 
 /** Espressif's QEMU release tag the patches apply to (toolchains/qemu-esp/Dockerfile QEMU_TAG). */
 export const QEMU_UPSTREAM_TAG = "esp-develop-9.2.2-20260417";
-export const QEMU_PATCHES = ["0001-jumper-bridge.patch", "0002-jumper-peripherals.patch", "0003-jumper-pads.patch"];
+export const QEMU_PATCHES = ["0001-jumper-bridge.patch", "0002-jumper-peripherals.patch", "0003-jumper-pads.patch", "0004-jumper-camera.patch"];
+/** Patches already on the spike repo's jumper-jb5 branch (JUMPER_QEMU_SRC); the ones after them are applied on top. */
+const JB5_PATCHES = 3;
 /** toolchains/qemu-esp/Dockerfile's configure line, plus what a Mac build leaves out (Cocoa UI, GnuTLS). */
 export const QEMU_CONFIGURE = [
   "--target-list=xtensa-softmmu,riscv32-softmmu",
@@ -89,8 +91,13 @@ export async function installNativeQemu(log: (l: string) => void = () => {}, opt
     if (spike) {
       log(`QEMU source: ${spike} (branch jumper-jb5)…`);
       mkdirSync(src, { recursive: true });
-      const r = await run("sh", ["-c", `git -C "$1" archive jumper-jb5 | tar -x -C "$2"`, "sh", spike, src]);
+      let r = await run("sh", ["-c", `git -C "$1" archive jumper-jb5 | tar -x -C "$2"`, "sh", spike, src]);
       if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Could not export branch jumper-jb5 from ${spike}: ${tail(r.stderr)}. Fix: point JUMPER_QEMU_SRC at a QEMU checkout that has the jumper-jb5 branch, or unset it to clone Espressif's QEMU.`);
+      // jumper-jb5 carries 0001-0003; the later patches go on top.
+      for (const p of QEMU_PATCHES.slice(JB5_PATCHES)) {
+        r = await run("patch", ["-p1", "-d", src, "-i", join(REPO_ROOT, "toolchains/qemu-esp", p)]);
+        if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Jumper's QEMU patch ${p} did not apply to branch jumper-jb5 of ${spike}: ${tail(r.stdout + r.stderr)}. Fix: unset JUMPER_QEMU_SRC to build from Espressif's tag with every patch.`);
+      }
     } else {
       log(`cloning Espressif's QEMU ${QEMU_UPSTREAM_TAG} from GitHub (about 200 MB)…`);
       let r = await run("git", ["clone", "--depth", "1", "--branch", QEMU_UPSTREAM_TAG, "https://github.com/espressif/qemu", src], { onLine: (l) => log(`  ${l}`) });
@@ -129,7 +136,7 @@ export async function installNativeQemu(log: (l: string) => void = () => {}, opt
     }
     // Keep only what Jumper runs (the install also copies firmware blobs for other boards).
     for (const sub of ["share/applications", "share/icons", "share/doc"]) rmSync(join(dest, sub), { recursive: true, force: true });
-    writeFileSync(join(dest, "JUMPER-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Jumper patches ${QEMU_PATCHES.join(", ")} (bridge v5)\nsource: ${spike ? `${spike} branch jumper-jb5` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
+    writeFileSync(join(dest, "JUMPER-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Jumper patches ${QEMU_PATCHES.join(", ")} (bridge v5 + camera port)\nsource: ${spike ? `${spike} branch jumper-jb5` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
     if (!nativeQemuInstalled()) throw new RunnerError("qemu-build-failed", `QEMU built but ${dest}/bin has no qemu-system-xtensa / qemu-system-riscv32. Fix: run \`jumper setup esp32\` again.`);
     return { dir: dest, built: true };
   } finally {
