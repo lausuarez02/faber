@@ -19,6 +19,8 @@
 - [Part spec](part-spec.md): `part.json`, `fidelity.json`, SVG bindings, and the model contract.
 - [Contracts](contracts.md): the APIs of every package.
 - [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
+- [Cases and the factory pack](enclosures.md): any case shape, the parts laid out inside, print and factory files.
+- [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.
 - [PWM](../packages/sim-core/PWM.md): cycle-timed PWM measurement and the part hooks it adds.
 

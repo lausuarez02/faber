@@ -1,5 +1,6 @@
 import { useRef } from "react";
-import { Code2, Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, History, LayoutGrid, ListChecks, Pencil, Upload } from "lucide-react";
+import { Code2, Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, Hammer, History, LayoutGrid, ListChecks, Pencil, Upload } from "lucide-react";
+import { useKit } from "../kit/store.ts"; // round 12 kit
 import { useJumper } from "../lib/app.ts";
 import { exampleNames } from "../lib/examples.ts";
 import { useUi } from "../lib/ui.ts";
@@ -80,6 +81,9 @@ export function TitleBlock() {
               </MenuItem>
               <MenuItem icon={Code2} onSelect={() => (close(), useProjectsUi.getState().openCode())} testId="menu-code">
                 Code
+              </MenuItem>
+              <MenuItem icon={Hammer} onSelect={() => (close(), useKit.getState().setOpen(true))} testId="menu-build-it">
+                Build it yourself
               </MenuItem>
               <div className="menu-sep" />
               <MenuItem icon={Download} onSelect={() => (exportProject(), close())} testId="export-project">

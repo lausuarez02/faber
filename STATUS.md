@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-11 (round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-12 (round 12 kit: the build kit, everything to build it yourself; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -36,6 +36,41 @@ Known gaps (round 12):
 - After a rewire the plan is made again without new pictures until the case is rebuilt.
 - The Build tab does not highlight the step in the 3D stage; the step picture carries it.
 - Not done: a live Claude Code run over MCP using `get_assembly_plan`; a skill file (the guidance is in the MCP instructions).
+
+## Round 12, track kit (2026-11-12): "ask Claude for everything I need to build it"
+
+A person-ready build kit for any project: what to buy, what to print, the tools, how it goes
+together inside the case, how to flash it and what to do when it does not work. Branch
+`round12/kit`. Guide: [docs/build-kit.md](docs/build-kit.md).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Tool | `get_build_kit {region?, prefer?, slicer?, write?, pdf?}` (read-only on the project): `{summary, kit, files, next}`; writes `build-kit/<name>-kit/` (kit.html with pictures inside, kit.pdf, KIT.md, SHOPPING.csv / .md, PRINT-LIST.md, the STLs / 3MF / renders, the file to flash, sd-card/) + zip. AGENT_LOOP, AGENTS.md, docs/agents.md name it | `packages/session/test/kit.test.ts` |
+| Buy | Every part from the factory BOM with the exact variant (a 250 mAh cell is the 502030 pouch), settings in words with what the module ships with ("Charge current (R_PROG): 250 mA (it usually comes set to 1000 mA ...)"), store links per region (Amazon searches move to .de / .co.uk), prices, alternatives (same-chip boards, "any module sold as"), and rules for what people forget: microSD for a card slot, the mating JST socket for a cell lead (with the polarity warning), a data USB cable per connector type, wire per gauge (metres and colours from the cut list), heat-shrink, solder, Kapton, foam tape, M2 screws + inserts, filament grams. Totals per store, still to buy, and with what they may already have. Lines without a link get store searches and a `no_link` note | same |
+| Print | Each STL: material, named colour, face on the bed, supports, layer, infill, grams and minutes from the mesh (documented formula: area x 1 mm solid + infill, 4 mm³/s + 3 s per layer), the 3MF plate, print-service notes (JLC3DP, Craftcloud). PrusaSlicer is used when installed (`JUMPER_SLICER`, cached per STL hash, never bundled); OrcaSlicer detected only | same (fake slicer) |
+| Assemble | From the case engine's plan when there is one (`case/assembly/plan.json`, round12/assembly's shape, tested on a real case-6 Muse plan), else derived: print + test-fit, inserts, flash bare, cut list, power and ground first, one module at a time (inline resistors with their module), parts into the case layer by layer (the screen first, which wall each port lines up with), the cell last, close, final check from the scenarios; each with picture, wires (from / to in words, colour, cut, gauge), cautions, a check | same |
+| Flash, help | Per backend: UF2 drag-drop, esptool (the board's own command), avrdude / arduino-cli (old-bootloader note), arduino-cli for nRF52 / STM32 (ST-Link / DFU), mpremote; where the file is. Troubleshooting: rules per part category, check_design and case checks, the fidelity "test on the real device" list; tool names turned into people's words | same |
+| Factory pack | `build-kit/` added (kit.html, KIT.md, SHOPPING.*, PRINT-LIST.md); the factory files and README.zh-CN unchanged | same |
+| HTTP + web | `GET /api/kit`, `POST /api/kit/files`, `GET /api/kit/file`; the Build it panel (Case view "Build it yourself", project menu, phone ⋯ menu): tabs Buy / Print / Assemble / Flash, ticks per viewer in localStorage (try/catch), Zip / PDF / Page, one scrolling sheet with sticky tabs on phones, no tool names | `apps/cli/test/kit-routes.test.ts`, `apps/web/e2e/build-kit.spec.ts` |
+
+Sample (the talking egg of round 8b with its case, firmware built natively): 
+`jumper-evals/round12/kit-sample/talking-egg-kit/` (kit.html, kit.pdf, zip). Read as a first-time
+maker; fixed what was confusing (see the commit "what a first-time maker tripped on").
+
+Checks (worktree `jumper-wt-r12-kit`, native runtimes, Docker down): `pnpm gen` exit 0, no diff;
+`pnpm typecheck` exit 0; `pnpm test` exit 0, **207 files passed, 2 skipped; 1723 tests passed, 5 expected
+fail, 5 skipped** (run before the last adapter commit; after it `kit.test.ts`, `kit-routes.test.ts`,
+`round6-integration`, `case-tools`: 21/21, exit 0). e2e (`E2E_PORT=6220 E2E_HUB_PORT_BASE=12400
+--workers=2`): `build-kit`, `case-view`, `app` on desktop + mobile, 16 passed, exit 0. Earlier
+runs had timeouts under a load average of 60 to 165 (other tracks): one real cause fixed (the spec
+did not wait for the Projects page, which then covered the panel).
+
+Known gaps (round 12 kit):
+- Prices are the part data's typical prices; most links are store searches; no live stock, shipping or tax.
+- The derived steps reuse the case renders (the inside render shows unlabelled coloured boxes); per-step pictures come with the assembly plan.
+- The assembly plan's own `tools` / `consumables` are not merged into the kit's lists yet (integration).
+- Print estimates are not checked against a real slicer here (no PrusaSlicer on this Mac; a fake one tests the path).
+- Nothing was bought, printed or soldered from a kit.
 
 ## Round 11 (2026-11-11): native builds, firmware and emulators without Docker
 

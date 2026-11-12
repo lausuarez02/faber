@@ -1,0 +1,977 @@
+{
+  "shape": "custom",
+  "enclosure": {
+    "shape": "custom",
+    "params": {
+      "wall_mm": 1.6,
+      "corner_radius_mm": 4,
+      "color": "#F4EBDD",
+      "lanyard_hole": false,
+      "belt_clip": false,
+      "closure": "snap",
+      "tolerance_mm": 0.2,
+      "process": "fdm",
+      "gap_mm": 1.5,
+      "edge_radius_front_mm": "auto",
+      "edge_radius_back_mm": "auto",
+      "dome_mm": 1.5,
+      "dome_back_mm": 1.5,
+      "depth_mm": "auto"
+    },
+    "placements": {
+      "eyes": {
+        "face": "front"
+      },
+      "spk": {
+        "face": "front",
+        "x_mm": 0,
+        "y_mm": -26
+      },
+      "sw": {
+        "face": "right"
+      }
+    },
+    "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"
+  },
+  "size_mm": {
+    "w": 81.7,
+    "h": 106.5,
+    "d": 20.2
+  },
+  "inner_mm": {
+    "w": 78.5,
+    "h": 103.3,
+    "d": 14
+  },
+  "wall_mm": 1.6,
+  "mass_g": 52,
+  "volume_cm3": 130.6,
+  "pocket": "no",
+  "ok": true,
+  "checks": [
+    {
+      "id": "fits",
+      "ok": true,
+      "severity": "info",
+      "message": "All 8 parts fit in 78.5 x 103.3 x 14 mm inside with 1.5 mm of wiring room around each; r1, rb1, rb2 ride in the wiring (heat-shrink)."
+    },
+    {
+      "id": "watertight",
+      "ok": true,
+      "severity": "info",
+      "message": "All 2 bodies are closed 2-manifolds (every edge shared by two triangles) with volume > 0."
+    },
+    {
+      "id": "no-intersection",
+      "ok": true,
+      "severity": "info",
+      "message": "No part body touches the shell (8 parts checked in OpenCascade, overlap < 0.001 mm³)."
+    },
+    {
+      "id": "min-wall",
+      "ok": true,
+      "severity": "info",
+      "message": "Wall 1.60 mm measured between the outer and inner surfaces, 1.20 mm at the snap groove (minimum 1.2 mm)."
+    },
+    {
+      "id": "size-match",
+      "ok": true,
+      "severity": "info",
+      "message": "Printed bodies match the layout within 0.01 mm (limit 0.1)."
+    },
+    {
+      "id": "screen-window",
+      "ok": true,
+      "severity": "info",
+      "message": "Window 22.3 x 11.5 mm over the eyes active area (21.7 x 10.9), 0.30 mm over its 1 mm bezel, glass 0.0 mm behind the wall. eyes' active area is behind the window: 35 of 35 lines of sight through it land on the screen, window centred within 0.00 mm.",
+      "parts": [
+        "eyes"
+      ]
+    },
+    {
+      "id": "connector-access",
+      "ok": true,
+      "severity": "info",
+      "message": "chg.usb: 12.0 x 6.3 mm opening on the right, receptacle 1.9 mm inside the outer surface (plug overmold clearance included).",
+      "parts": [
+        "chg"
+      ]
+    },
+    {
+      "id": "connector-access",
+      "ok": true,
+      "severity": "info",
+      "message": "xiao.usb: 12.0 x 6.2 mm opening on the left, receptacle 2.0 mm inside the outer surface (plug overmold clearance included).",
+      "parts": [
+        "xiao"
+      ]
+    },
+    {
+      "id": "printable",
+      "ok": true,
+      "severity": "warning",
+      "message": "Each shell prints on its outer face with no supports; front: 3067 mm² of the rounded edge overhangs > 45° near the bed, back: 3798 mm² of the rounded edge overhangs > 45° near the bed (use a brim; PRINT.md)."
+    },
+    {
+      "id": "pocket",
+      "ok": false,
+      "severity": "warning",
+      "message": "81.7 x 106.5 x 20.2 mm, 131 cm³: bulky for a pocket: 20.2 mm thick (18 to 22 mm) and 106.5 x 81.7 mm across (a pocket takes about 110 x 70 mm). Thinner: exclude a part that need not be inside, or try another shape (each packs differently)."
+    }
+  ],
+  "placed": [
+    {
+      "id": "spk",
+      "type": "speaker-20mm",
+      "min": [
+        -10.47,
+        -34.93,
+        1.5
+      ],
+      "max": [
+        9.53,
+        -14.93,
+        7
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 0
+    },
+    {
+      "id": "bat",
+      "type": "lipo-battery",
+      "min": [
+        -10.47,
+        -44.39,
+        -6.7
+      ],
+      "max": [
+        9.53,
+        -14.39,
+        -1.2
+      ],
+      "rotation": 90,
+      "facing": "front",
+      "layer": 5
+    },
+    {
+      "id": "voice",
+      "type": "dfplayer-mini",
+      "min": [
+        -31.97,
+        -29.54,
+        -5.5
+      ],
+      "max": [
+        -11.97,
+        -9.54,
+        6
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 1
+    },
+    {
+      "id": "chg",
+      "type": "tp4056-charger",
+      "min": [
+        9.52,
+        -12.89,
+        -3.7
+      ],
+      "max": [
+        37.52,
+        4.61,
+        2.8
+      ],
+      "rotation": 180,
+      "facing": "front",
+      "layer": 4
+    },
+    {
+      "id": "xiao",
+      "type": "seeed-xiao-rp2040",
+      "min": [
+        -36.46,
+        -8.04,
+        -2.5
+      ],
+      "max": [
+        -15.46,
+        9.46,
+        3
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 3
+    },
+    {
+      "id": "sw",
+      "type": "slide-switch",
+      "min": [
+        30.49,
+        -25.58,
+        -4.05
+      ],
+      "max": [
+        40.99,
+        -21.98,
+        4.55
+      ],
+      "rotation": 0,
+      "facing": "right",
+      "layer": 2
+    },
+    {
+      "id": "d1",
+      "type": "schottky-diode",
+      "min": [
+        -2.07,
+        -45.76,
+        1.8
+      ],
+      "max": [
+        1.13,
+        -43.06,
+        7
+      ],
+      "rotation": 0,
+      "facing": "left",
+      "layer": 0
+    },
+    {
+      "id": "eyes",
+      "type": "ssd1306-oled-i2c",
+      "min": [
+        -13.97,
+        10.96,
+        0.5
+      ],
+      "max": [
+        13.03,
+        38.76,
+        7
+      ],
+      "rotation": 0,
+      "facing": "front",
+      "layer": 0
+    }
+  ],
+  "files": [
+    {
+      "path": "stl/front.stl",
+      "kind": "stl",
+      "body": "front",
+      "bytes": 1843584,
+      "sha256": "747c8d5fa9fc007cdc7575dd4e7fb276c81813cd4cbca9562844f3e236e81778",
+      "print": {
+        "face_down": "front",
+        "supports": false,
+        "note": "front face on the bed (the window side down), open side up"
+      }
+    },
+    {
+      "path": "stl/back.stl",
+      "kind": "stl",
+      "body": "back",
+      "bytes": 575584,
+      "sha256": "4d17552aeb299744d9cea155cf85d3cd6e442ed5156256802581548e825888e2",
+      "print": {
+        "face_down": "back",
+        "supports": false,
+        "note": "back face on the bed, open side up"
+      }
+    },
+    {
+      "path": "case.3mf",
+      "kind": "3mf",
+      "body": "all",
+      "bytes": 494249,
+      "sha256": "858b8c31c673599a739dd1b38f3b21634de3c53b7e7db13327660e29b3746ae0"
+    },
+    {
+      "path": "step/assembly.step",
+      "kind": "step",
+      "body": "assembly",
+      "bytes": 4131434,
+      "sha256": "e6dc838a10b739decad31aa71d06d5414a716d2881edc5930d0a3cf570ed4849"
+    },
+    {
+      "path": "step/front.step",
+      "kind": "step",
+      "body": "front",
+      "bytes": 2956941,
+      "sha256": "7e2ade24d097e050948dd372ba3609b4b8e35814e812c50ffabdd92b4bce3c72"
+    },
+    {
+      "path": "step/back.step",
+      "kind": "step",
+      "body": "back",
+      "bytes": 1000657,
+      "sha256": "c155a346667ef357a8939f9ee77953650ddf57098a42c72025e15b20284bf449"
+    },
+    {
+      "path": "renders/front.png",
+      "kind": "png",
+      "body": "render-front",
+      "bytes": 83798,
+      "sha256": "85fc2e9e3b417bc4de8687dd32f7697bdd88cd21036ff86194426cb53973ade5"
+    },
+    {
+      "path": "renders/back.png",
+      "kind": "png",
+      "body": "render-back",
+      "bytes": 50528,
+      "sha256": "9dad29fee9c278b2a2e5202492434446ad3dacc13fb684c17ef71fb5105200b0"
+    },
+    {
+      "path": "renders/exploded.png",
+      "kind": "png",
+      "body": "render-exploded",
+      "bytes": 85895,
+      "sha256": "95b3d9d3cd1751deaa35741fd05f99c5824937e47e3cb889ef4e1a5b25be3fca"
+    },
+    {
+      "path": "renders/inside.png",
+      "kind": "png",
+      "body": "render-inside",
+      "bytes": 88560,
+      "sha256": "802b560eaa595a6ae2a2716ba080aa7dc68358efe630191a7f1c16bb74e4f7bd"
+    },
+    {
+      "path": "drawing/drawing.svg",
+      "kind": "svg",
+      "body": "drawing",
+      "bytes": 23871,
+      "sha256": "615075ee8a32194d4dcdd46773a1253315e3739a5216ede639dd4c37dad990fa"
+    },
+    {
+      "path": "PRINT.md",
+      "kind": "md",
+      "body": "PRINT",
+      "bytes": 3006,
+      "sha256": "563ca09e9053c8c856832f55be16b72f314a15c9ae5bc59a45e14815dcee57dc"
+    }
+  ],
+  "hash": "29adee18eb956fd2",
+  "notes": [
+    "Domed faces: the front rises 1.5 mm and the back 1.5 mm above the flat wall, with a flat 30 mm land around the window and a flat 35 mm pad on the back (each shell prints on its flat).",
+    "Snap-fit strength and fit depend on the filament and your printer's real tolerances: print the two shells first and test the fit.",
+    "Sizes come from the parts' mechanical data (datasheets or typical modules); clone modules can differ by about 1 mm.",
+    "Not checked: drop, water, heat, the cell swelling beyond 10 %, wire routing (the gap_mm room is a budget, not a route).",
+    "STEP is AP214 (the OpenCascade build has no IGES writer): factories accept STEP; ask for IGES and convert it in FreeCAD or the factory's CAD."
+  ],
+  "fit": {
+    "fits": true,
+    "needed_mm": {
+      "w": 81.7,
+      "h": 106.5,
+      "d": 20.2
+    },
+    "scale": 1.4594
+  },
+  "outline_mm": [
+    [
+      -3.05,
+      53.09
+    ],
+    [
+      -5.15,
+      52.74
+    ],
+    [
+      -7.23,
+      52.2
+    ],
+    [
+      -9.26,
+      51.53
+    ],
+    [
+      -11.23,
+      50.71
+    ],
+    [
+      -13.13,
+      49.73
+    ],
+    [
+      -14.95,
+      48.62
+    ],
+    [
+      -16.7,
+      47.39
+    ],
+    [
+      -18.38,
+      46.06
+    ],
+    [
+      -19.98,
+      44.64
+    ],
+    [
+      -21.51,
+      43.15
+    ],
+    [
+      -22.96,
+      41.57
+    ],
+    [
+      -24.33,
+      39.93
+    ],
+    [
+      -25.63,
+      38.23
+    ],
+    [
+      -26.87,
+      36.49
+    ],
+    [
+      -28.04,
+      34.7
+    ],
+    [
+      -29.16,
+      32.88
+    ],
+    [
+      -30.22,
+      31.02
+    ],
+    [
+      -31.22,
+      29.13
+    ],
+    [
+      -32.16,
+      27.21
+    ],
+    [
+      -33.05,
+      25.26
+    ],
+    [
+      -33.89,
+      23.29
+    ],
+    [
+      -34.67,
+      21.3
+    ],
+    [
+      -35.4,
+      19.29
+    ],
+    [
+      -36.09,
+      17.26
+    ],
+    [
+      -36.72,
+      15.22
+    ],
+    [
+      -37.32,
+      13.17
+    ],
+    [
+      -37.86,
+      11.1
+    ],
+    [
+      -38.36,
+      9.02
+    ],
+    [
+      -38.82,
+      6.93
+    ],
+    [
+      -39.23,
+      4.83
+    ],
+    [
+      -39.6,
+      2.72
+    ],
+    [
+      -39.92,
+      0.61
+    ],
+    [
+      -40.19,
+      -1.51
+    ],
+    [
+      -40.42,
+      -3.64
+    ],
+    [
+      -40.6,
+      -5.77
+    ],
+    [
+      -40.73,
+      -7.91
+    ],
+    [
+      -40.82,
+      -10.04
+    ],
+    [
+      -40.85,
+      -12.18
+    ],
+    [
+      -40.81,
+      -14.32
+    ],
+    [
+      -40.69,
+      -16.46
+    ],
+    [
+      -40.49,
+      -18.59
+    ],
+    [
+      -40.2,
+      -20.71
+    ],
+    [
+      -39.83,
+      -22.81
+    ],
+    [
+      -39.35,
+      -24.9
+    ],
+    [
+      -38.76,
+      -26.95
+    ],
+    [
+      -38.07,
+      -28.98
+    ],
+    [
+      -37.28,
+      -30.96
+    ],
+    [
+      -36.38,
+      -32.9
+    ],
+    [
+      -35.37,
+      -34.79
+    ],
+    [
+      -34.25,
+      -36.61
+    ],
+    [
+      -33.01,
+      -38.36
+    ],
+    [
+      -31.67,
+      -40.02
+    ],
+    [
+      -30.23,
+      -41.6
+    ],
+    [
+      -28.7,
+      -43.1
+    ],
+    [
+      -27.09,
+      -44.5
+    ],
+    [
+      -25.39,
+      -45.8
+    ],
+    [
+      -23.61,
+      -46.98
+    ],
+    [
+      -21.76,
+      -48.06
+    ],
+    [
+      -19.85,
+      -49.03
+    ],
+    [
+      -17.9,
+      -49.9
+    ],
+    [
+      -15.9,
+      -50.67
+    ],
+    [
+      -13.87,
+      -51.33
+    ],
+    [
+      -11.8,
+      -51.88
+    ],
+    [
+      -9.71,
+      -52.34
+    ],
+    [
+      -7.6,
+      -52.7
+    ],
+    [
+      -5.48,
+      -52.97
+    ],
+    [
+      -3.35,
+      -53.14
+    ],
+    [
+      -1.21,
+      -53.23
+    ],
+    [
+      0.93,
+      -53.24
+    ],
+    [
+      3.06,
+      -53.17
+    ],
+    [
+      5.2,
+      -53
+    ],
+    [
+      7.32,
+      -52.74
+    ],
+    [
+      9.43,
+      -52.4
+    ],
+    [
+      11.52,
+      -51.96
+    ],
+    [
+      13.59,
+      -51.42
+    ],
+    [
+      15.63,
+      -50.77
+    ],
+    [
+      17.63,
+      -50.02
+    ],
+    [
+      19.59,
+      -49.16
+    ],
+    [
+      21.51,
+      -48.21
+    ],
+    [
+      23.36,
+      -47.14
+    ],
+    [
+      25.15,
+      -45.97
+    ],
+    [
+      26.86,
+      -44.69
+    ],
+    [
+      28.49,
+      -43.3
+    ],
+    [
+      30.04,
+      -41.82
+    ],
+    [
+      31.49,
+      -40.25
+    ],
+    [
+      32.84,
+      -38.6
+    ],
+    [
+      34.09,
+      -36.86
+    ],
+    [
+      35.23,
+      -35.05
+    ],
+    [
+      36.25,
+      -33.17
+    ],
+    [
+      37.17,
+      -31.24
+    ],
+    [
+      37.99,
+      -29.26
+    ],
+    [
+      38.7,
+      -27.24
+    ],
+    [
+      39.29,
+      -25.19
+    ],
+    [
+      39.77,
+      -23.1
+    ],
+    [
+      40.17,
+      -21
+    ],
+    [
+      40.48,
+      -18.89
+    ],
+    [
+      40.69,
+      -16.76
+    ],
+    [
+      40.81,
+      -14.62
+    ],
+    [
+      40.85,
+      -12.48
+    ],
+    [
+      40.83,
+      -10.35
+    ],
+    [
+      40.75,
+      -8.21
+    ],
+    [
+      40.63,
+      -6.07
+    ],
+    [
+      40.46,
+      -3.94
+    ],
+    [
+      40.24,
+      -1.81
+    ],
+    [
+      39.98,
+      0.31
+    ],
+    [
+      39.66,
+      2.43
+    ],
+    [
+      39.31,
+      4.54
+    ],
+    [
+      38.91,
+      6.64
+    ],
+    [
+      38.46,
+      8.73
+    ],
+    [
+      37.96,
+      10.81
+    ],
+    [
+      37.42,
+      12.88
+    ],
+    [
+      36.83,
+      14.94
+    ],
+    [
+      36.2,
+      16.98
+    ],
+    [
+      35.51,
+      19.01
+    ],
+    [
+      34.78,
+      21.02
+    ],
+    [
+      34,
+      23.01
+    ],
+    [
+      33.17,
+      24.98
+    ],
+    [
+      32.29,
+      26.93
+    ],
+    [
+      31.36,
+      28.85
+    ],
+    [
+      30.37,
+      30.75
+    ],
+    [
+      29.33,
+      32.62
+    ],
+    [
+      28.23,
+      34.45
+    ],
+    [
+      27.06,
+      36.25
+    ],
+    [
+      25.84,
+      38
+    ],
+    [
+      24.53,
+      39.7
+    ],
+    [
+      23.16,
+      41.34
+    ],
+    [
+      21.72,
+      42.92
+    ],
+    [
+      20.21,
+      44.43
+    ],
+    [
+      18.63,
+      45.87
+    ],
+    [
+      16.97,
+      47.22
+    ],
+    [
+      15.22,
+      48.45
+    ],
+    [
+      13.4,
+      49.57
+    ],
+    [
+      11.51,
+      50.57
+    ],
+    [
+      9.55,
+      51.43
+    ],
+    [
+      7.53,
+      52.13
+    ],
+    [
+      5.46,
+      52.67
+    ],
+    [
+      3.35,
+      53.02
+    ],
+    [
+      1.22,
+      53.2
+    ],
+    [
+      -0.92,
+      53.24
+    ]
+  ],
+  "layout": {
+    "goal": "balanced",
+    "asked": "auto",
+    "label": "Balanced (pocket)",
+    "fill_ratio": 0.17,
+    "layers": [
+      {
+        "index": 0,
+        "z_mm": [
+          -5.5,
+          7
+        ],
+        "parts": [
+          "spk",
+          "voice",
+          "chg",
+          "xiao",
+          "sw",
+          "d1",
+          "eyes"
+        ]
+      },
+      {
+        "index": 1,
+        "z_mm": [
+          -6.7,
+          -1.2
+        ],
+        "parts": [
+          "bat"
+        ]
+      }
+    ],
+    "why": [
+      "2 layers: bat behind spk and d1.",
+      "Stacking saves 10.9 mm of length (106.5 instead of 117.4 mm) for 2 mm more thickness.",
+      "14 mm thinner than stacking every part front to back (71.4 x 93 x 34.2 mm).",
+      "Weighs thickness first (a pocket takes about 18 mm comfortably, 22 tight) and a footprint up to 110 x 70 mm.",
+      "bat, the heaviest part, sits low so it stands steady."
+    ],
+    "source": "optimizer, 13.5 mm deep inside"
+  }
+}

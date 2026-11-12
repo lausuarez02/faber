@@ -231,6 +231,12 @@ The people asking for a device are often beginners. The server instructions say 
     zip with the case (STL, 3MF, STEP, drawing, print notes), BOM, wiring, netlists, wire cuts,
     firmware, the assembly steps with their pictures and the test plan, for a 3D printer or a supplier. Say plainly
     that the print, the plastic and the hand feel were not tested. Guide: [enclosures.md](enclosures.md).
+    For a person who builds it themselves, `get_build_kit` (round 12) gives everything in one kit:
+    what to buy (exact variants, store links per region, totals per store, the things people
+    forget), what to print (material, orientation, supports, grams, time, print-service notes), the
+    tools and skill, step-by-step assembly into the case (pictures, wires with cut lengths and
+    colours, cautions, checks), flashing and troubleshooting. Give them `kit.html`. Guide:
+    [build-kit.md](build-kit.md).
 
 ### check_design codes worth knowing
 

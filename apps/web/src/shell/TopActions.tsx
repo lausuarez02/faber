@@ -1,9 +1,10 @@
-import { Bot, Box, ChevronDown, Ellipsis, FlaskConical, Globe, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
+import { Bot, Box, ChevronDown, Hammer, Ellipsis, FlaskConical, Globe, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
 import { engine, useJumper } from "../lib/app.ts";
 import { RELIABLE_SPEED, SPEEDS } from "../lib/store.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
 import { useCase } from "../case/store.ts"; // round 6 case
+import { useKit } from "../kit/store.ts"; // round 12 kit
 import { InstallMcpMenu } from "../connect/InstallMcpMenu.tsx";
 import { OpenInAgentMenu } from "../connect/OpenInAgentMenu.tsx";
 import { IconButton, MenuItem, Popover, STROKE } from "./primitives.tsx";
@@ -144,6 +145,9 @@ export function PhoneTopActions() {
             </MenuItem>
             <MenuItem icon={Box} onSelect={() => (close(), useCase.getState().setOpen(true))} testId="phone-case">
               Case {/* round 6 case */}
+            </MenuItem>
+            <MenuItem icon={Hammer} onSelect={() => (close(), useKit.getState().setOpen(true))} testId="phone-build-it">
+              Build it yourself {/* round 12 kit */}
             </MenuItem>
             <div className="menu-sep" />
             <MenuItem icon={Plug} onSelect={() => ui().setPopover("mcp")} testId="phone-install-mcp">

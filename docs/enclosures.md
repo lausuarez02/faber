@@ -326,7 +326,9 @@ manufacturing/<name>-v<version>/ (+ .zip)
   electronics/WIRING.md, netlist.csv, jumper.net (KiCad legacy netlist), WIRE-CUTS.csv
   firmware/firmware.hex, firmware.uf2 (RP2040), FLASHING.md, source/
   enclosure/ (the case files), assembly/ASSEMBLY.md, test/TEST-PLAN.md, TEST-ON-HARDWARE.md
+  build-kit/             round 12: the person-facing build kit (kit.html, KIT.md, SHOPPING.csv, PRINT-LIST.md)
   manifest.json          sha256 of every file
+build-kit/<name>-kit/ (+ .zip)   get_build_kit / Build it: what to buy, print, assemble, flash (docs/build-kit.md)
 ```
 
 The web view's meshes are cached in `.jumper/case-mesh.json`.

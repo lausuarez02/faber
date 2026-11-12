@@ -5,6 +5,7 @@ import { projectsTools } from "./projects.ts";
 import { powerTools } from "./power.ts";
 import { voiceTools } from "./voice.ts"; // round 7 voice
 import { networkTools } from "./network.ts"; // round 10 network
+import { kitTools } from "./kit.ts"; // round 12 kit
 import type { ExtOp, ToolModule } from "./types.ts";
 
 export type { ExtOp, ExtOpContext, ToolModule } from "./types.ts";
@@ -18,6 +19,7 @@ export const TOOL_MODULES: ToolModule[] = [
   caseTools, // round 6 case
   voiceTools, // round 7 voice
   networkTools, // round 10 network
+  kitTools, // round 12 kit
 ];
 
 /** tool name → handler for the module tools (ProjectSession.call routes here after OP_METHODS). */

@@ -1,0 +1,185 @@
+{
+  "hash": "c67851cd82237ef7",
+  "engine": "case-5",
+  "enclosure": {
+    "shape": "custom",
+    "params": {
+      "wall_mm": 1.4,
+      "corner_radius_mm": 4,
+      "color": "#C9CDD2",
+      "lanyard_hole": true,
+      "belt_clip": false,
+      "closure": "snap",
+      "tolerance_mm": 0.2,
+      "process": "fdm",
+      "gap_mm": 1.5,
+      "edge_radius_front_mm": 2.5,
+      "edge_radius_back_mm": 1.5,
+      "dome_mm": "auto",
+      "dome_back_mm": "auto",
+      "depth_mm": "auto"
+    },
+    "placements": {
+      "sw": {
+        "face": "right"
+      },
+      "xiao": {},
+      "eyes": {
+        "x_mm": 0,
+        "y_mm": 0
+      }
+    },
+    "outline": {
+      "points": [
+        [
+          0,
+          40
+        ],
+        [
+          -16.9,
+          23.3
+        ],
+        [
+          -38,
+          12.4
+        ],
+        [
+          -27.4,
+          -8.9
+        ],
+        [
+          -23.5,
+          -32.4
+        ],
+        [
+          0,
+          -28.8
+        ],
+        [
+          23.5,
+          -32.4
+        ],
+        [
+          27.4,
+          -8.9
+        ],
+        [
+          38,
+          12.4
+        ],
+        [
+          16.9,
+          23.3
+        ]
+      ],
+      "smooth": true
+    },
+    "size_mm": {
+      "w": 88,
+      "h": 88
+    }
+  },
+  "files": [
+    {
+      "path": "stl/front.stl",
+      "kind": "stl",
+      "body": "front",
+      "bytes": 1746984,
+      "sha256": "5ba10e4105bef2751cb502762f1ab7c4e95745eca284485dc51a8c9e83b1930c",
+      "print": {
+        "face_down": "front",
+        "supports": false,
+        "note": "front face on the bed (the window side down), open side up"
+      }
+    },
+    {
+      "path": "stl/back.stl",
+      "kind": "stl",
+      "body": "back",
+      "bytes": 1537384,
+      "sha256": "d497cb1b50e919a8183f3ffcd388173effb920600966db50812d95d58637b0ff",
+      "print": {
+        "face_down": "back",
+        "supports": false,
+        "note": "back face on the bed, open side up"
+      }
+    },
+    {
+      "path": "case.3mf",
+      "kind": "3mf",
+      "body": "all",
+      "bytes": 651795,
+      "sha256": "d4326e76c5c72965e4a37025868e1ac11953060259ccd91363a849d4b845c92e"
+    },
+    {
+      "path": "step/assembly.step",
+      "kind": "step",
+      "body": "assembly",
+      "bytes": 5490158,
+      "sha256": "74855803f9cc4cae821d265f8d5b05da4525f1e1c006d8d3cee9f71db4061aa1"
+    },
+    {
+      "path": "step/front.step",
+      "kind": "step",
+      "body": "front",
+      "bytes": 3513146,
+      "sha256": "69909d11d0af2d950c4cfeb46f807b8f2fc85d1a4c383d5192c3aec05c927c07"
+    },
+    {
+      "path": "step/back.step",
+      "kind": "step",
+      "body": "back",
+      "bytes": 1833959,
+      "sha256": "880126407990bc8d6af675951adbefb707ad53d0fcffdec93b4f1d3ab292859e"
+    },
+    {
+      "path": "renders/front.png",
+      "kind": "png",
+      "body": "render-front",
+      "bytes": 83416,
+      "sha256": "dc382392b671e1a8324fdb2d7fd38d5e477e8cf2a9c8198c51429583863d4733"
+    },
+    {
+      "path": "renders/back.png",
+      "kind": "png",
+      "body": "render-back",
+      "bytes": 75320,
+      "sha256": "8f3a396d124f4c014442c5d226c5728d5e708d3364273b833a66f2b850b8fc45"
+    },
+    {
+      "path": "renders/exploded.png",
+      "kind": "png",
+      "body": "render-exploded",
+      "bytes": 88660,
+      "sha256": "1c64a19bf64a19f169dc5d13a01114033782545abd5496ae246f88c2b00d76c0"
+    },
+    {
+      "path": "renders/inside.png",
+      "kind": "png",
+      "body": "render-inside",
+      "bytes": 90448,
+      "sha256": "df51a37e41addd26fc94e72872bbbd236fdf3380a145cacbc488db572d5b60fc"
+    },
+    {
+      "path": "drawing/drawing.svg",
+      "kind": "svg",
+      "body": "drawing",
+      "bytes": 23237,
+      "sha256": "0688edd7388d8f05eabf2b072407976da90eff2e1af94ea515c550efa7379cbc"
+    },
+    {
+      "path": "drawing/drawing.pdf",
+      "kind": "pdf",
+      "body": "drawing",
+      "bytes": 95949,
+      "sha256": "2fd0e2cfc3d1af8b849487da99160a011df04555478f7dff24ca1224c2292a92"
+    },
+    {
+      "path": "PRINT.md",
+      "kind": "md",
+      "body": "PRINT",
+      "bytes": 3008,
+      "sha256": "26dc68018ffcd2898d9ee573adb2f44c943cdb27b845372ea0336022ae95704a"
+    }
+  ]
+}
