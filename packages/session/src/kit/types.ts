@@ -186,6 +186,8 @@ export interface BuildKit {
   flash: FlashPlan;
   troubleshooting: TroubleRow[];
   missing: { item: string; why: string; fix: string; say: string }[];
+  /** The design check's errors and warnings about the circuit: fix them (or accept them knowingly) before buying. */
+  check_first: { severity: "error" | "warning"; code: string; problem: string; why: string; fix: string }[];
   /** Region the links were picked for. */
   region: string;
 }

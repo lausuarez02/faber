@@ -187,6 +187,18 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
               </ul>
             </div>
           ) : null}
+          {kit.check_first?.length ? (
+            <div className="kv-missing" data-testid="kit-check-first">
+              <b>Check before you buy:</b> Jumper's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why.
+              <ul>
+                {kit.check_first.map((c) => (
+                  <li key={c.code}>
+                    <b>{c.problem}</b>: {c.why} Fix: {c.fix}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="kv-tabs" role="tablist" aria-label="Build it">
             {TABS.map((t) => {
               const count = t.id === "buy" ? progress("buy:", kit.shopping.lines.length) : t.id === "print" ? progress("print:", kit.print.items.length) : t.id === "assemble" ? progress("step:", kit.steps.length) : "";

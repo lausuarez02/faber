@@ -38,12 +38,84 @@ function testCheck(say: string): string {
   return sentences.find((x) => /\bshould\b/i.test(x)) ?? sentences.at(-1) ?? say;
 }
 
-export function planSteps(steps: AssemblyStep[], ctx: { label: (ref: string) => string; caseRel: string }): KitStep[] {
+/** What the plan steps need to know about the project to speak in the kit's words. */
+export interface PlanWords {
+  label: (ref: string) => string;
+  caseRel: string;
+  /** "xiao.usb" → "xiao's USB-C port", "sw.1" → "sw pin 1"; text left alone when the id is not a part. */
+  ref?: (part: string, rest: string) => string | undefined;
+  /** Parts that are soft cells (LiPo pouches). */
+  cells?: ReadonlySet<string>;
+  /** Cells whose lead ends in a JST plug, with the family ("JST-PH"): the kit buys the mating socket. */
+  jst?: ReadonlyMap<string, string>;
+  /** The project's test scenarios by name (they passed in the simulator). */
+  tests?: string[];
+}
+
+/**
+ * The plan's words are written for the factory pack (its paths, its part refs, its parameter names); the kit is read by
+ * a person with the kit open, so the paths become the kit's own sections and the refs become words.
+ */
+const PACK_PATHS: [RegExp, string][] = [
+  [/\((?:enclosure\/)?PRINT\.md\)/g, "(see the print list)"],
+  [/\((?:length )?in (?:enclosure\/)?PRINT\.md\)/g, "(see the print list)"],
+  [/(?:enclosure\/)?PRINT\.md/g, "the print list"],
+  [/\(firmware\/FLASHING\.md\)/g, "(see the Flash steps)"],
+  [/firmware\/FLASHING\.md/g, "the Flash steps"],
+  [/\b(?:in|from) (?:electronics\/)?WIRE-CUTS\.csv/g, "in the wire list below"],
+  [/(?:electronics\/)?WIRE-CUTS\.csv/g, "the wire list"],
+  [/\(sd-card\/CLIPS\.md\)/g, "(see the Flash steps for the sound clips)"],
+  [/test\/TEST-PLAN\.md and test\/TEST-ON-HARDWARE\.md/g, "the tests below and the \"Check on the real device\" list (under If something does not work)"],
+  [/test\/TEST-PLAN\.md/g, "the tests below"],
+  [/test\/TEST-ON-HARDWARE\.md/g, "the \"Check on the real device\" list (under If something does not work)"],
+  [/\btolerance_mm\s+([0-9]+(?:\.[0-9]+)?)/g, "a looser fit (the case's tolerance at $1 mm)"],
+];
+
+export function kitWords(text: string, w: Pick<PlanWords, "ref">): string {
+  let t = text;
+  for (const [re, to] of PACK_PATHS) t = t.replace(re, to);
+  if (w.ref) t = t.replace(/\b([a-z][a-z0-9_-]*)\.([A-Za-z0-9_+-]+(?:\.\d+)?)\b/g, (m, part: string, rest: string) => w.ref!(part, rest) ?? m);
+  return t;
+}
+
+export function planSteps(steps: AssemblyStep[], ctx: PlanWords): KitStep[] {
+  const words = (t: string) => kitWords(t, ctx);
+  // a pin where 3 or more wires meet: a small pad takes two at most, so the step that solders the first of them says how
+  const ends = new Map<string, string[]>();
+  for (const st of steps) for (const w of st.wires) for (const end of [w.from, w.to]) ends.set(end, [...new Set([...(ends.get(end) ?? []), w.id])]);
+  const crowded = [...ends.entries()].filter(([, ids]) => ids.length >= 3);
+  const told = new Set<string>();
   return steps.map((st, i) => {
     const wires: KitWire[] = st.wires.map((w) => ({ wire: w.id, from: w.from, to: w.to, from_label: ctx.label(w.from), to_label: ctx.label(w.to), color: w.color.startsWith("#") ? colorName(w.color) : w.color, length_mm: w.length_mm, gauge_awg: w.gauge }));
     const image = st.image ? `${ctx.caseRel}/${st.image}` : undefined;
-    const extra = [...(st.fasteners.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${f.size} ${f.kind}`).join(", ")}.`] : []), ...(st.tools.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
-    return { n: i + 1, title: st.title, do: [st.say, ...extra].filter(Boolean), ...(image ? { image, image_alt: st.title } : {}), parts: st.parts, wires, cautions: [...st.cautions], check: st.action === "test" ? testCheck(st.say) : PLAN_CHECK[st.action] };
+    const extra = [...(st.fasteners.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${words(f.size)} ${f.kind}`).join(", ")}.`] : []), ...(st.tools.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
+    const cautions = st.cautions.map(words);
+    const doLines = [words(st.say)];
+    // the tests this step points at, by name (the kit has no test folder)
+    if (/TEST-PLAN\.md/.test(st.say) && ctx.tests?.length) doLines.push(`The tests (they passed in Jumper's simulator): ${ctx.tests.join("; ")}.`);
+    // a soldering step (not the bench cut-list step) that joins a crowded pin
+    // (not the bench steps that cut the wires or put the small parts in line: the pads are soldered later)
+    if (st.wires.length && st.shell !== "bench") {
+      for (const [end, ids] of crowded) {
+        if (told.has(end) || !st.wires.some((w) => w.from === end || w.to === end)) continue;
+        told.add(end);
+        const here = ids.filter((id) => st.wires.some((w) => w.id === id));
+        const later = ids.filter((id) => !here.includes(id));
+        cautions.push(`${ids.length} wires end at ${ctx.label(end)}: ${here.join(", ")} now${later.length ? `, ${later.join(", ")} in a later step` : ""}. A small pad holds two at most: twist the others together with one short extra wire, solder and heat-shrink that splice, and solder the single wire to the pad${later.length ? `; leave the splice open (or one pad free) for ${later.join(", ")}` : ""}.`);
+      }
+    }
+    // the cell: the kit bought a socket for its plug, so the "leads" are the socket's; the check is the polarity
+    const cell = st.parts.find((p) => ctx.cells?.has(p));
+    let check = st.action === "test" ? testCheck(words(st.say)) : PLAN_CHECK[st.action];
+    if (cell && st.wires.length) {
+      const fam = ctx.jst?.get(cell);
+      if (fam) doLines.push(`${cell}'s lead ends in a ${fam} plug: solder the ${fam} socket's leads (on the shopping list) in place of ${st.wires.map((w) => w.id).join(" and ")}, red to the + pad, black to the − pad. Then plug the cell into the socket.`);
+      const pads = [...new Set(st.wires.map((w) => (ctx.cells!.has(w.from.split(".")[0]!) ? w.to : w.from)))].map((r) => ctx.label(r)).join(" and ");
+      check = fam
+        ? `Before plugging the cell in: the socket's red lead is on the + pad and the cell's plug goes in red to red. Plugged in: the multimeter reads 3.0 to 4.2 V across ${pads}, and nothing gets warm.`
+        : `Connected: the multimeter reads 3.0 to 4.2 V across ${pads}, + on the red lead, and nothing gets warm.`;
+    }
+    return { n: i + 1, title: st.title, do: [...doLines, ...extra].filter(Boolean), ...(image ? { image, image_alt: st.title } : {}), parts: st.parts, wires, cautions, check };
   });
 }
 
@@ -80,6 +152,41 @@ function shortName(spec: PartSpec | undefined, standIn?: string): string {
   if (standIn) return standIn;
   if (!spec) return "";
   return spec.name.replace(/\s*\(.*\)\s*$/, "");
+}
+
+/** Part refs in the plan's words as words: "xiao.usb" → "xiao's USB-C port", "sw.1" → "sw pin 1"; undefined when it is not a part of this project. */
+export function refWords(project: Project, registry: PartRegistry): (part: string, rest: string) => string | undefined {
+  return (part, rest) => {
+    const inst = project.parts.find((p) => p.id === part);
+    if (!inst) return undefined;
+    const spec = registry.get(inst.type)?.spec;
+    const f = spec?.mechanical?.features?.find((x) => x.id === rest);
+    if (f) {
+      const conn = (f as { connector?: string }).connector;
+      const what = f.kind === "connector" ? `${conn ? conn.replace(/^usb-c$/i, "USB-C").replace(/^usb-micro$/i, "micro-USB").replace(/^usb-a$/i, "USB-A") : rest.toUpperCase()} port` : f.kind === "button" ? `${rest.toUpperCase()} button` : f.kind === "switch" ? "switch lever" : f.kind;
+      return `${part}'s ${what}`;
+    }
+    if (spec?.pins.some((x) => x.id === rest)) return `${part} pin ${rest}`;
+    return undefined;
+  };
+}
+
+/** Cells whose lead ends in a JST plug (the kit buys the mating socket), by id: "JST-PH". */
+export function cellPlugs(project: Project, registry: PartRegistry): Map<string, string> {
+  const out = new Map<string, string>();
+  const nets = buildNets(project);
+  for (const p of project.parts) {
+    const spec = registry.get(p.type)?.spec;
+    if (!spec?.mechanical?.soft) continue;
+    const m = /JST[- ]?(PH|SH|XH|ZH|GH)/i.exec(`${spec.sourcing?.package ?? ""} ${spec.sourcing?.generic ?? ""}`);
+    if (!m) continue;
+    const fam = `JST-${m[1]!.toUpperCase()}`;
+    // (the same rule as the shopping list: no socket when a part it connects to has the mating connector)
+    const near = new Set(nets.filter((n) => n.pins.some((r) => r.part === p.id)).flatMap((n) => n.pins.map((r) => r.part)).filter((x) => x !== p.id));
+    const hasMate = [...near].some((n) => (registry.get(project.parts.find((q) => q.id === n)?.type ?? "")?.spec.mechanical?.features ?? []).some((f) => f.kind === "connector" && ((f as { connector?: string }).connector ?? "").toLowerCase().startsWith(fam.toLowerCase())));
+    if (!hasMate) out.set(p.id, fam);
+  }
+  return out;
 }
 
 const FACING: Record<string, string> = { front: "facing the front (towards you)", back: "facing the back", left: "against the left wall", right: "against the right wall", top: "against the top wall", bottom: "against the bottom wall" };

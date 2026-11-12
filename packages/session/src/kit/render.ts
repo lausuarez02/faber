@@ -72,6 +72,7 @@ function stepMd(s: KitStep): string[] {
 export function kitMarkdown(k: BuildKit): string {
   const out = [`# Build it yourself: ${k.project}`, "", k.summary, ""];
   if (k.missing.length) out.push("## Not ready yet", "", ...k.missing.map((m) => `- **${m.item}**: ${m.why}. To fix it: ${m.say}.`), "");
+  if (k.check_first?.length) out.push("## Check before you buy", "", "Jumper's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:", "", ...k.check_first.map((c) => `- **${c.problem}** (${c.severity}): ${c.why} Fix: ${c.fix}`), "");
   out.push(shoppingMd(k).replace(/^# .*\n/, "## Buy\n").replace(/^## /gm, "### ").replace(/^### Buy/m, "## Buy"));
   out.push("## Tools", "", ...k.tools.items.map((t) => `- [ ] **${t.name}** (${t.need}): ${t.why}`), "", `**Skill:** ${k.tools.skill_why}`, "", `**Time:** ${k.tools.time.note}`, "");
   out.push(printListMd(k).replace(/^# .*\n/, "## Print\n").replace(/^## (?!Print)/gm, "### "));
@@ -165,11 +166,12 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
     })
     .join("");
   const missing = k.missing.length ? `<div class="box warn"><b>Not ready yet</b><ul>${k.missing.map((m) => `<li><b>${h(m.item)}</b>: ${h(m.why)}. To fix it: ${h(m.say)}.</li>`).join("")}</ul></div>` : "";
+  const checkFirst = k.check_first?.length ? `<div class="box warn"><b>Check before you buy</b><p>Jumper's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:</p><ul>${k.check_first.map((c) => `<li><b>${h(c.problem)}</b> (${h(c.severity)}): ${h(c.why)} Fix: ${h(c.fix)}</li>`).join("")}</ul></div>` : "";
   const hero = images["case/renders/front.png"] ? `<img src="${images["case/renders/front.png"]}" alt="The finished case" style="max-width:280px;width:100%;border-radius:12px;background:#0d0f12;float:right;margin:0 0 12px 16px">` : "";
   const key = `jumper-kit:${k.project}`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${h(k.project)} build kit</title><style>${CSS}</style></head><body><main>
 ${hero}<h1>Build it yourself: ${h(k.project)}</h1><p class="summary">${h(k.summary)}</p>
-<nav class="noprint"><a href="#buy">Buy</a><a href="#tools">Tools</a><a href="#print">Print</a><a href="#assemble">Assemble</a><a href="#flash">Flash</a><a href="#help">If it does not work</a></nav>${missing}
+<nav class="noprint"><a href="#buy">Buy</a><a href="#tools">Tools</a><a href="#print">Print</a><a href="#assemble">Assemble</a><a href="#flash">Flash</a><a href="#help">If it does not work</a></nav>${missing}${checkFirst}
 <h2 id="buy">1. Buy</h2>${shop}<h3>Totals</h3>${totals}${alts.length ? `<h3>Alternatives</h3><ul>${alts.map((l) => `<li><b>${h(l.name)}</b>: ${l.alternatives.map((a) => h(a)).join("; ")}</li>`).join("")}</ul>` : ""}${k.shopping.notes.map((n) => `<p class="why">${h(n)}</p>`).join("")}
 <h2 id="tools">2. Tools</h2><ul>${k.tools.items.map((t) => `<li>${cb(`tool:${t.name}`)} <b>${h(t.name)}</b> <span class="tag">${t.need}</span> <span class="why">${h(t.why)}</span></li>`).join("")}</ul><p><b>Skill:</b> ${h(k.tools.skill_why)}</p><p><b>Time:</b> ${h(k.tools.time.note)}</p>
 <h2 id="print">3. Print</h2>${printSec}

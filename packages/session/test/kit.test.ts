@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import type { BuildRequest, BuildResult } from "@jumper/runner";
 import { ProjectSession } from "../src/index.ts";
-import { buildKit, type BuildKit } from "../src/kit/index.ts";
+import type { AssemblyStep } from "@jumper/enclosure";
+import { buildKit, planSteps, type BuildKit } from "../src/kit/index.ts";
 import { writeKitFiles } from "../src/kit/files.ts";
 import { detectSlicer, parseGcodeEstimate, printPlan } from "../src/kit/print-plan.ts";
 import { kitHtml, kitMarkdown } from "../src/kit/render.ts";
@@ -175,6 +176,18 @@ describe("build kit", () => {
     expect(kit.size_mm).toMatchObject({ w: 88 });
     expect(kit.shopping.lines.find((l) => l.refs.split(" ").includes("r1"))!.variant).toMatch(/100k/);
     expect(kit.shopping.lines.find((l) => l.refs === "ldo")!.variant).toMatch(/MCP1700-3\.3/);
+    // the 250 mAh cell: the store searches and the words name the 502030, not the part's default 503035 / 500 mAh
+    const bat = kit.shopping.lines.find((l) => l.refs === "bat")!;
+    for (const k of bat.links) expect(k.url, k.store).not.toMatch(/503035|500mah/i);
+    expect(bat.links.some((k) => /502030/.test(k.url))).toBe(true);
+    expect(`${bat.ask_for} ${bat.alternatives.join(" ")}`).not.toMatch(/503035|500 mAh/);
+    // a setting changed from how the module is sold says how to change it on the real part
+    expect(kit.shopping.lines.find((l) => l.refs === "chg")!.why).toMatch(/Charge current.*250 mA.*How: Set by R_PROG.*5 k.* = 250/);
+    // the design check's circuit warning (the LDO and the board's 3V3 both drive one rail) leads the kit, in words
+    expect(kit.check_first.map((c) => c.code)).toContain("parallel-regulators");
+    expect(kit.check_first.find((c) => c.code === "parallel-regulators")!.why).toMatch(/ldo pin VOUT .* xiao pin 3V3/);
+    expect(kitMarkdown(kit)).toMatch(/## Check before you buy[\s\S]*parallel regulators/);
+    expect(kitHtml(kit, {})).toContain("Check before you buy");
   }, 60_000);
 
   it("the Muse: its committed case-6 plan is the kit's steps, tools and consumables (what get_assembly_plan returns)", async () => {
@@ -196,6 +209,34 @@ describe("build kit", () => {
     expect(kit.tools.items.filter((t) => /knife/i.test(t.name))).toHaveLength(1);
     expect(kit.tools.items.some((t) => /^(Solder|Flux|Kapton tape|USB cable|1 mm foam pad)$/i.test(t.name))).toBe(false);
   }, 120_000);
+
+  it("plan steps speak the kit's words: its sections, part words, the tests by name, crowded pads and the cell's socket", () => {
+    const wire = (id: string, from: string, to: string) => ({ id, from, to, length_mm: 60, gauge: 24, color: "red", route: "front" as const });
+    const step = (n: number, title: string, action: AssemblyStep["action"], say: string, wires: ReturnType<typeof wire>[], parts: string[] = [], shell: AssemblyStep["shell"] = "front"): AssemblyStep => ({ n, title, say, action, shell, parts, wires, fasteners: [], tools: [], cautions: [], view: { camera: "front-shell", explode: 0, highlight: [] } }) as AssemblyStep;
+    const steps = [
+      step(1, "Check the printed parts", "test", "Print the case (enclosure/PRINT.md): front shell, back shell. They should close evenly.", [], [], "bench"),
+      step(2, "Cut, strip and tin the wires", "solder", "Cut the 4 wires to the lengths in electronics/WIRE-CUTS.csv.", [wire("w1", "a.GND", "b.GND"), wire("w2", "c.GND", "b.GND"), wire("w3", "d.GND", "b.GND")], [], "bench"),
+      step(3, "Solder the wires to b", "solder", "With b in place, solder w1 (a.GND to b.GND), w2 (c.GND to b.GND).", [wire("w1", "a.GND", "b.GND"), wire("w2", "c.GND", "b.GND")], ["a", "b", "c"]),
+      step(4, "Join the shells", "route-wire", "Solder w3 (d.GND to b.GND).", [wire("w3", "d.GND", "b.GND")], ["d", "b"], "both"),
+      step(5, "Test it on USB before the battery", "test", "Plug a USB cable into b.usb. Run through test/TEST-PLAN.md: the screen should behave as in the simulation.", [], ["b"], "both"),
+      step(6, "Place and connect the battery bat", "tape", "Last, connect its leads: w4 (bat.POS to b.BAT).", [wire("w4", "bat.POS", "b.BAT")], ["bat"], "back"),
+    ];
+    const ref = (part: string, rest: string) => (["a", "b", "c", "d", "bat"].includes(part) ? (rest === "usb" ? `${part}'s USB-C port` : `${part} pin ${rest}`) : undefined);
+    const out = planSteps(steps, { label: (r) => r.replace(".", " pin "), caseRel: "case", ref, cells: new Set(["bat"]), jst: new Map([["bat", "JST-PH"]]), tests: ["Eyes appear", "Blinks"] });
+    const all = JSON.stringify(out.map((st) => [st.do, st.cautions, st.check]));
+    expect(all).not.toMatch(/PRINT\.md|WIRE-CUTS|TEST-PLAN|b\.usb|a\.GND/);
+    expect(out[0]!.do[0]).toMatch(/Print the case \(see the print list\)/);
+    expect(out[1]!.do[0]).toMatch(/in the wire list below/);
+    expect(out[4]!.do[0]).toMatch(/b's USB-C port.*the tests below/);
+    expect(out[4]!.do[1]).toBe("The tests (they passed in Jumper's simulator): Eyes appear; Blinks.");
+    // 3 wires on b.GND: said once, where the pad is first soldered (not on the bench), naming the one that comes later
+    const crowded = out.flatMap((st, i) => st.cautions.filter((c) => /3 wires end at b pin GND/.test(c)).map(() => i));
+    expect(crowded).toEqual([2]);
+    expect(out[2]!.cautions.join(" ")).toMatch(/w1, w2 now, w3 in a later step/);
+    // the cell's JST plug: solder the socket, check the polarity and the voltage
+    expect(out[5]!.do.join(" ")).toMatch(/JST-PH socket's leads/);
+    expect(out[5]!.check).toMatch(/3\.0 to 4\.2 V across b pin BAT/);
+  });
 
   it("a stale case never uses its plan (the steps are derived and the kit says the case is old)", async () => {
     const s = open(MUSE);

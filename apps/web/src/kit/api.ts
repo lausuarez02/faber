@@ -91,6 +91,8 @@ export interface BuildKit {
   flash: { board: string; language: string; method: string; file?: string; kit_file?: string; built: string; steps: string[]; commands: { label: string; cmd: string }[]; needs: string[]; cable?: string; why_missing?: string };
   troubleshooting: { problem: string; why: string; fix: string; source: string }[];
   missing: { item: string; why: string; fix: string; say: string }[];
+  /** The design check's errors and warnings about the circuit (older servers leave it out). */
+  check_first?: { severity: "error" | "warning"; code: string; problem: string; why: string; fix: string }[];
   region: string;
 }
 export interface KitFiles {

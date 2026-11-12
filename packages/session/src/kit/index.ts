@@ -13,7 +13,7 @@ import type { ProjectSession } from "../session.ts";
 import { sdCardFiles } from "../voice.ts";
 import { printPlan } from "./print-plan.ts";
 import { shoppingList, type Region } from "./shopping.ts";
-import { derivedSteps, flashPlan, peopleWords, planSteps, refLabel, toolsFor, troubleshooting } from "./steps.ts";
+import { cellPlugs, derivedSteps, flashPlan, kitWords, peopleWords, planSteps, refLabel, refWords, toolsFor, troubleshooting } from "./steps.ts";
 import type { BuildKit } from "./types.ts";
 
 export type { BuildKit } from "./types.ts";
@@ -126,14 +126,20 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   }
 
   const label = refLabel(project, reg);
-  const steps = plan ? planSteps(plan.steps, { label, caseRel: "case" }) : derivedSteps({ project, registry: reg, report, cuts, estimatedCuts: !layout, soldered, screws: !!screws, flash, has });
+  const steps = plan ? planSteps(plan.steps, { label, caseRel: "case", ref: refWords(project, reg), cells: new Set(project.parts.filter((p) => reg.get(p.type)?.spec.mechanical?.soft).map((p) => p.id)), jst: cellPlugs(project, reg), tests: project.scenarios.map((sc) => sc.name ?? sc.id) }) : derivedSteps({ project, registry: reg, report, cuts, estimatedCuts: !layout, soldered, screws: !!screws, flash, has });
   const cell = project.parts.some((p) => reg.get(p.type)?.spec.mechanical?.soft);
   const tools = toolsFor(project, reg, { soldered, hasCase: !!report, screws: !!screws, inserts: !!screws, printMinutes: print.total_minutes, steps, cell, ...(plan ? { planTools: plan.tools } : {}) });
   const drc = ((await s.checkDesign()) as { issues?: string[] }).issues ?? [];
   const fid = fidelityReport(project, reg);
   const { TOOLS } = await import("../catalog.ts");
   const toolNames = new Set([...TOOLS.map((t) => t.name), "remove"]);
-  const trouble = troubleshooting(project, reg, { report, drc, fidelity: fid.testOnRealDevice, flash, soldered, tools: toolNames });
+  const trouble = troubleshooting(project, reg, { report, drc, fidelity: fid.testOnRealDevice, flash, soldered, tools: toolNames }).map((t) => ({ ...t, problem: kitWords(t.problem, { ref: refWords(project, reg) }), why: kitWords(t.why, { ref: refWords(project, reg) }), fix: kitWords(t.fix, { ref: refWords(project, reg) }) }));
+  // the design check's errors and warnings about the circuit (not the case's assembly notes): things to fix or accept
+  // before buying, so they lead the kit instead of hiding at the end of the troubleshooting table
+  const check_first = drc
+    .map((line) => /^(error|warning)\s+\[([^\]]+)\]\s+(.*)$/s.exec(line))
+    .filter((m): m is RegExpExecArray => !!m && !/^(assembly|case)-/.test(m[2]!))
+    .map((m) => ({ severity: m[1] as "error" | "warning", code: m[2]!, problem: m[2]!.replace(/-/g, " "), why: kitWords(m[3]!.replace(/\s*Fix:.*$/s, ""), { ref: refWords(project, reg) }), fix: kitWords(/Fix:\s*(.*)$/s.exec(m[3]!)?.[1] ?? "see the design check in Jumper", { ref: refWords(project, reg) }) }));
   for (const st of steps) {
     st.do = st.do.map((d) => peopleWords(d, toolNames));
     st.cautions = st.cautions.map((c) => peopleWords(c, toolNames));
@@ -156,6 +162,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     flash,
     troubleshooting: trouble,
     missing,
+    check_first,
     region,
   };
 }
