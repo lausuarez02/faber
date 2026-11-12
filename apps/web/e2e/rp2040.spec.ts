@@ -37,8 +37,17 @@ test.describe("XIAO RP2040 project from jumper serve", () => {
       .toBe(200);
   });
 
-  test.afterEach(() => {
-    hub?.kill();
+  test.afterEach(async () => {
+    // wait for the server to exit: the next test reuses its port with --strict-port, and a server
+    // still closing (the page's live socket is open until the page fixture closes) holds the port
+    const h = hub;
+    if (h && h.exitCode === null && h.signalCode === null) {
+      const gone = new Promise((done) => h.once("exit", done));
+      h.kill();
+      const t = setTimeout(() => h.kill("SIGKILL"), 5_000);
+      await gone;
+      clearTimeout(t);
+    }
     rmSync(dir, { recursive: true, force: true });
   });
 
