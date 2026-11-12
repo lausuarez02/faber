@@ -10,11 +10,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { AlertTriangle, Box, CheckCircle2, Download, Loader2, Package, X, XCircle } from "lucide-react";
+import { AlertTriangle, Box, CheckCircle2, Download, Hammer, Loader2, Package, X, XCircle } from "lucide-react";
 import type { Enclosure } from "@jumper/project-format";
 import { caseApi, decodeF32, decodeU32, type AdviceNote, type CaseMesh, type CaseReport, type CaseState, type CostsResult, type FitResult, type LayoutProposal, type LayoutsResult } from "../../case/api.ts";
 import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
+import { useKit } from "../../kit/store.ts"; // round 12 kit
 import { LayoutTab, partColors, type Pins } from "./LayoutTab.tsx";
 import { OutlineEditor, type SizeDraft } from "./OutlineEditor.tsx";
 
@@ -648,6 +649,9 @@ export function CaseView({ onClose }: { onClose(): void }) {
                       </a>
                     ))}
                   </div>
+                  <button type="button" className="cv-secondary cv-buildit" disabled={!!busy} data-testid="case-build-it" onClick={() => useKit.getState().setOpen(true)} title="What to buy, what to print, how to put it inside, how to flash it">
+                    <Hammer size={15} aria-hidden /> Build it yourself
+                  </button>
                   <button type="button" className="cv-secondary" disabled={!!busy} data-testid="case-pack" onClick={() => void makePack()}>
                     <Package size={15} aria-hidden /> Factory pack (zip)
                   </button>
