@@ -8,7 +8,7 @@
 import { buildNets, firmwareLanguage, type Project } from "@jumper/project-format";
 import type { PartRegistry, PartSpec } from "@jumper/sim-core";
 import type { CaseReport } from "@jumper/enclosure";
-import type { WireCut } from "../assembly.ts";
+import { colorName, type WireCut } from "../assembly.ts";
 import type { FlashPlan, KitStep, KitTool, KitWire, TroubleRow } from "./types.ts";
 
 // ------------------------------------------------------------------ the assembly plan (adapter)
@@ -27,7 +27,12 @@ export interface AssemblyPlanLike {
     do?: string[];
     instructions?: string[];
     parts?: string[];
-    wires?: (string | { wire?: string; id?: string; from: string; to: string; color?: string; length_mm?: number; gauge_awg?: number })[];
+    /** Plain words for a person (the case engine's plan, round 12 track assembly). */
+    say?: string;
+    /** Tools this step needs and fasteners it uses (the case engine's plan). */
+    tools?: string[];
+    fasteners?: { kind: string; size: string; qty: number }[];
+    wires?: (string | { wire?: string; id?: string; from: string; to: string; color?: string; length_mm?: number; gauge_awg?: number; gauge?: number })[];
     image?: string;
     images?: string[];
     picture?: string;
@@ -41,10 +46,16 @@ export interface AssemblyPlanLike {
   }[];
 }
 
-/** The plan from a report (or a loaded case/assembly.json), when it has one with steps. */
-export function planFrom(report: unknown, file?: unknown): AssemblyPlanLike | undefined {
+/**
+ * The plan from a report, when it has one with steps: inline (`assembly_plan` / `assemblyPlan` /
+ * `assembly`), the file the report names (`assembly.plan`, e.g. "assembly/plan.json", the case
+ * engine's round-12 layout) read with `read`, or a loaded case/assembly.json.
+ */
+export function planFrom(report: unknown, file?: unknown, read?: (caseRel: string) => unknown): AssemblyPlanLike | undefined {
   const r = report as Record<string, unknown> | undefined;
-  for (const c of [r?.assembly_plan, r?.assemblyPlan, r?.assembly, file]) {
+  const named = (r?.assembly as { plan?: unknown } | undefined)?.plan;
+  const fromFile = typeof named === "string" && read ? read(named) : undefined;
+  for (const c of [r?.assembly_plan, r?.assemblyPlan, r?.assembly, fromFile, file]) {
     const p = c as AssemblyPlanLike | undefined;
     if (p && Array.isArray(p.steps) && p.steps.length && p.steps.every((s) => s && typeof s.title === "string")) return p;
   }
@@ -62,14 +73,16 @@ export function adaptAssemblyPlan(plan: AssemblyPlanLike, ctx: { cuts: WireCut[]
       const from = typeof w === "string" ? cut?.from : w.from;
       const to = typeof w === "string" ? cut?.to : w.to;
       if (!from || !to) return [];
-      const o: { color?: string; length_mm?: number; gauge_awg?: number } = typeof w === "string" ? {} : w;
-      return [{ wire: cut?.wire ?? (typeof w === "string" ? w : (w.wire ?? w.id ?? `${from}-${to}`)), from, to, from_label: ctx.label(from), to_label: ctx.label(to), color: o.color ?? cut?.color ?? "any", length_mm: o.length_mm ?? cut?.length_mm ?? 0, gauge_awg: o.gauge_awg ?? cut?.gauge_awg ?? 26 }];
+      const o: { color?: string; length_mm?: number; gauge_awg?: number; gauge?: number } = typeof w === "string" ? {} : w;
+      const color = o.color ? (o.color.startsWith("#") ? colorName(o.color) : o.color) : (cut?.color ?? "any");
+      return [{ wire: cut?.wire ?? (typeof w === "string" ? w : (w.wire ?? w.id ?? `${from}-${to}`)), from, to, from_label: ctx.label(from), to_label: ctx.label(to), color, length_mm: o.length_mm ?? cut?.length_mm ?? 0, gauge_awg: o.gauge_awg ?? o.gauge ?? cut?.gauge_awg ?? 26 }];
     });
     const img = st.image ?? st.images?.[0] ?? st.picture;
     const image = img ? (/^(case|build-kit)\//.test(img) || img.startsWith("/") ? img : `${ctx.caseRel}/${img}`) : undefined;
     const cautions = [...(st.cautions ?? []), ...(st.caution ? [st.caution] : []), ...(st.warnings ?? [])];
     const check = st.check ?? st.checkpoint ?? st.test;
-    return { n: i + 1, title: st.title, do: [...(st.do ?? []), ...(st.instructions ?? []), ...text], ...(image ? { image, image_alt: st.title } : {}), parts: st.parts ?? [], wires, cautions, ...(check ? { check } : {}), ...(st.minutes ? { minutes: st.minutes } : {}) };
+    const extra = [...(st.fasteners?.length ? [`Fasteners: ${st.fasteners.map((f) => `${f.qty} x ${f.size} ${f.kind}`).join(", ")}.`] : []), ...(st.tools?.length ? [`Tools: ${st.tools.join(", ")}.`] : [])];
+    return { n: i + 1, title: st.title, do: [...(st.say ? [st.say] : []), ...(st.do ?? []), ...(st.instructions ?? []), ...text, ...extra], ...(image ? { image, image_alt: st.title } : {}), parts: st.parts ?? [], wires, cautions, ...(check ? { check } : {}), ...(st.minutes ? { minutes: st.minutes } : {}) };
   });
 }
 

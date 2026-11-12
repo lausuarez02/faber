@@ -64,12 +64,14 @@ off.
 
 ## The assembly plan
 
-When the case engine writes an assembly plan (round 12 track assembly) the steps come from it:
-`report.assembly_plan` / `report.assemblyPlan` / `report.assembly` in `case/report.json`, or
-`case/assembly.json`, shaped `{steps: [{title, do | text | instructions, parts, wires (ids or
-{from, to, color?, length_mm?, gauge_awg?}), image | images | picture (relative to case/),
-cautions | caution | warnings, check | checkpoint | test, minutes}]}` (`AssemblyPlanLike` in
-`packages/session/src/kit/steps.ts`; extra fields are ignored). Wires named by id take their colour,
+When the case engine writes an assembly plan (round 12 track assembly: `case/assembly/plan.json`,
+named by `report.assembly.plan`, a picture per step in `case/assembly/step-NN.png`) the steps come
+from it. Also read: an inline `report.assembly_plan` / `assemblyPlan` / `assembly` with steps, or
+`case/assembly.json`. Shape `{steps: [{title, say | do | text | instructions, parts, wires (ids or
+{id, from, to, color (name or hex), length_mm, gauge | gauge_awg}), tools, fasteners, image | images |
+picture (relative to case/), cautions | caution | warnings, check | checkpoint | test, minutes}]}`
+(`AssemblyPlanLike` in `packages/session/src/kit/steps.ts`; extra fields are ignored; tested on a
+real case-6 plan of the Muse). A stale case never uses its plan. Wires named by id take their colour,
 length and gauge from the cut list. Without a plan the steps are derived (`steps_source: "derived"`).
 
 ## Honest limits

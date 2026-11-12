@@ -197,6 +197,28 @@ describe("build kit", () => {
     expect(direct[1]!.wires).toEqual([]);
   }, 60_000);
 
+  it("reads the case engine's round-12 plan (case/assembly/plan.json named by report.assembly.plan)", async () => {
+    const s = open(MUSE);
+    mkdirSync(join(s.dir, "case/assembly"), { recursive: true });
+    cpSync(join(FIX, "assembly-plan-case6.json"), join(s.dir, "case/assembly/plan.json"));
+    const rp = join(s.dir, "case/report.json");
+    const report = JSON.parse(readFileSync(rp, "utf8"));
+    writeFileSync(rp, JSON.stringify({ ...report, assembly: { steps: 21, plan: "assembly/plan.json", images: [], hinge: "left", order: { front: [], back: [] }, errors: 0, warnings: 0 } }));
+    const kit = await buildKit(s, { slicer: "off" });
+    expect(kit.steps_source).toBe("assembly-plan");
+    expect(kit.steps).toHaveLength(21);
+    const first = kit.steps[0]!;
+    expect(first.title).toBe("Check the printed parts");
+    expect(first.do[0]).toMatch(/press the two shells together/);
+    expect(first.do.at(-1)).toBe("Tools: flush cutters, hobby knife.");
+    expect(first.image).toBe("case/assembly/step-01.png");
+    const wired = kit.steps.flatMap((st) => st.wires);
+    expect(wired.find((w) => w.wire === "w1")).toMatchObject({ color: "red", gauge_awg: 24, length_mm: 75 });
+    expect(new Set(wired.map((w) => w.wire))).toEqual(new Set(s.project.wires.map((w) => w.id)));
+    // a stale case never uses the old plan
+    expect(planFrom({ assembly: { plan: "assembly/plan.json" } }, undefined, () => undefined)).toBeUndefined();
+  }, 60_000);
+
   it("Amazon searches follow the region; product pages stay", () => {
     expect(regionalLink("Amazon", "https://www.amazon.com/s?k=lipo", "uk")).toMatchObject({ url: "https://www.amazon.co.uk/s?k=lipo", region: "UK", kind: "search" });
     expect(regionalLink("Amazon (search)", "https://www.amazon.com/dp/B000", "eu")).toMatchObject({ store: "Amazon", url: "https://www.amazon.com/dp/B000", kind: "product" });

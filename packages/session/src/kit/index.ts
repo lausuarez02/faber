@@ -4,7 +4,7 @@
  * firmware; what is stale or missing is said, with the fix.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import type { CaseReport } from "@jumper/enclosure";
 import { assemblyStyle, wireCuts, type WireCut } from "../assembly.ts";
 import { fidelityReport } from "../fidelity.ts";
@@ -116,7 +116,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   }
 
   const label = refLabel(project, reg);
-  const plan = report ? planFrom(report, readJson(join(caseDir, "assembly.json"))) : undefined;
+  const plan = report && !stale ? planFrom(report, readJson(join(caseDir, "assembly.json")), (rel) => (relative(caseDir, join(caseDir, rel)).startsWith("..") ? undefined : readJson(join(caseDir, rel)))) : undefined;
   const steps = plan ? adaptAssemblyPlan(plan, { cuts, label, caseRel: "case" }) : derivedSteps({ project, registry: reg, report, cuts, estimatedCuts: !layout, soldered, screws: !!screws, flash, has });
   const cell = project.parts.some((p) => reg.get(p.type)?.spec.mechanical?.soft);
   const tools = toolsFor(project, reg, { soldered, hasCase: !!report, screws: !!screws, inserts: !!screws, printMinutes: print.total_minutes, steps, cell });

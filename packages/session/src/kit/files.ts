@@ -92,6 +92,11 @@ export async function writeKitFiles(s: ProjectSession, kit: BuildKit, o: { into?
       const abs = join(s.dir, "case", "renders", `${r}.png`);
       if (existsSync(abs)) put(`case/renders/${r}.png`, readFileSync(abs));
     }
+    // the steps' own pictures (the case engine's assembly plan: case/assembly/step-NN.png)
+    for (const img of new Set(kit.steps.flatMap((st) => (st.image?.startsWith("case/") && !st.image.startsWith("case/renders/") ? [st.image] : [])))) {
+      const abs = resolve(s.dir, img);
+      if (!relative(s.dir, abs).startsWith("..") && existsSync(abs)) put(img, readFileSync(abs));
+    }
   }
   // the file to flash
   if (o.firmware !== false && kit.flash.method !== "none" && kit.flash.kit_file) {
