@@ -87,7 +87,7 @@ function flashMd(k: BuildKit): string[] {
   if (f.why_missing) out.push(`> ${f.why_missing}.`, "");
   out.push(...f.steps.map((s, i) => `${i + 1}. ${s}`), "");
   for (const c of f.commands) out.push(`${c.label}:`, "", "```sh", c.cmd, "```", "");
-  if (f.needs.length) out.push(`You need: ${f.needs.join("; ")}.`, "");
+  if (f.needs.length) out.push(`You need: ${f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.`, "");
   return out;
 }
 
@@ -155,7 +155,7 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
     })
     .join("");
   const f = k.flash;
-  const flash = `<p>Board: <b>${h(f.board)}</b>${f.kit_file ? `. File: <code>${h(f.kit_file)}</code> in the download (made from <code>${h(f.file ?? "")}</code> in the project)` : ""}. Cable: ${h(f.cable ?? "USB data cable")}.</p>${f.why_missing ? `<div class="box warn"><b>${h(f.why_missing)}.</b></div>` : ""}<ol>${f.steps.map((s) => `<li>${h(s)}</li>`).join("")}</ol>${f.commands.map((c) => `<p>${h(c.label)}:</p><pre>${h(c.cmd)}</pre>`).join("")}${f.needs.length ? `<p class="why">You need: ${h(f.needs.join("; "))}.</p>` : ""}`;
+  const flash = `<p>Board: <b>${h(f.board)}</b>${f.kit_file ? `. File: <code>${h(f.kit_file)}</code> in the download (made from <code>${h(f.file ?? "")}</code> in the project)` : ""}. Cable: ${h(f.cable ?? "USB data cable")}.</p>${f.why_missing ? `<div class="box warn"><b>${h(f.why_missing)}.</b></div>` : ""}<ol>${f.steps.map((s) => `<li>${h(s)}</li>`).join("")}</ol>${f.commands.map((c) => `<p>${h(c.label)}:</p><pre>${h(c.cmd)}</pre>`).join("")}${f.needs.length ? `<p class="why">You need: ${h(f.needs.map((n) => n.replace(/\.$/, "")).join("; "))}.</p>` : ""}`;
   const groups: [string, (s: string) => boolean][] = [["Common problems", (s) => s === "general" || s === "part" || s === "case"], ["What Jumper's checks said", (s) => s === "check_design"], ["Check on the real device", (s) => s === "fidelity"]];
   const trouble = groups
     .map(([title, f2]) => {

@@ -97,7 +97,8 @@ export function refLabel(project: Project, registry: PartRegistry): (ref: string
     const ps = spec?.pins.find((x) => x.id === pin);
     const name = shortName(spec, inst?.standIn);
     const pinWords = ps && ps.label && ps.label !== pin ? `${pin} (${ps.label})` : pin;
-    return `${part}${name ? ` (${name})` : ""} pin ${pinWords}`;
+    const jst = spec ? /JST[- ]?(PH|SH|XH|ZH|GH)/i.exec(`${spec.sourcing?.package ?? ""} ${spec.sourcing?.generic ?? ""}`) : null;
+    return `${part}${name ? ` (${name})` : ""} pin ${pinWords}${jst ? `, on the JST-${jst[1]!.toUpperCase()} socket's lead (${/^(?:\+|POS|BAT\+|VBAT|V\+)/i.test(pin) || /\+/.test(ps?.label ?? "") ? "red" : "black"})` : ""}`;
   };
 }
 
@@ -133,7 +134,7 @@ export function derivedSteps(inp: StepInput): KitStep[] {
   if (report) {
     steps.push({
       title: "Print the case and test the fit",
-      do: ["Print every file in the Print tab (each already lies the right way up on the bed).", "Press the front and back shells together before anything else: they should close evenly and open again.", "If the seam is too tight, sand the lip lightly; if it is loose, print the back shell again with 0.1 mm less clearance in your slicer (horizontal expansion -0.1)."],
+      do: ["Print every file in the print list (each already lies the right way up on the bed).", "Press the front and back shells together before anything else: they should close evenly and open again.", "If the seam is too tight, sand the lip lightly; if it is loose, print the back shell again with 0.1 mm less clearance in your slicer (horizontal expansion -0.1)."],
       ...img("front"),
       parts: [],
       wires: [],
@@ -144,7 +145,7 @@ export function derivedSteps(inp: StepInput): KitStep[] {
     if (inp.screws) steps.push({ title: "Press the heat-set inserts", do: ["Put each M2 insert on its post in the front shell, flat side up.", "Press it in with the soldering iron at about 220 °C (an insert tip, or an old tip), straight down, until it is flush; hold it straight while it cools for a few seconds."], ...img("inside"), parts: [], wires: [], cautions: ["The iron and the insert are hot enough to burn; do not touch the brass for a minute."], check: "A screw goes in by hand and the insert does not turn.", minutes: 10 });
   }
   if (board && inp.flash.method !== "none") {
-    steps.push({ title: `Flash ${name(board.id)} before wiring it`, do: ["Plug the bare board into your computer with the data cable and follow the Flash tab.", "Open a serial monitor at 115200 baud (Arduino IDE: Tools > Serial Monitor) to see it start."], parts: [board.id], wires: [], cautions: inp.flash.built !== "fresh" ? [inp.flash.why_missing ?? "The firmware file is not ready yet: see the Flash tab."] : [], check: "The board starts: its serial output appears (or its LED blinks) with nothing else connected.", minutes: 10 });
+    steps.push({ title: `Flash ${name(board.id)} before wiring it`, do: ["Plug the bare board into your computer with the data cable and follow the Flash steps.", "Open a serial monitor at 115200 baud (Arduino IDE: Tools > Serial Monitor) to see it start."], parts: [board.id], wires: [], cautions: inp.flash.built !== "fresh" ? [inp.flash.why_missing ?? "The firmware file is not ready yet: see the Flash steps."] : [], check: "The board starts: its serial output appears (or its LED blinks) with nothing else connected.", minutes: 10 });
   }
 
   // which step a wire belongs to: the power path first, then each module, front layer first
@@ -179,7 +180,7 @@ export function derivedSteps(inp: StepInput): KitStep[] {
         ...(project.parts.some((p) => /schottky|diode/.test(p.type)) ? ["A diode only works one way round: the end with the stripe is the cathode; it goes where the wire list says Cathode."] : []),
       ],
       check: cell
-        ? "Multimeter on continuity (beep): no beep between + and - of the battery socket. Then USB into the charger: its charge light comes on; switch on: the board starts."
+        ? "Multimeter on continuity (beep): no beep between + and - at the battery socket, nor between the board's supply pins and GND. Then USB into the board: it starts as before (the battery comes later)."
         : "Multimeter on continuity (beep): no beep between the supply and ground. Then plug USB in: the board starts.",
       minutes: Math.round(powerCuts.length * 3 + 5),
     });
@@ -241,6 +242,7 @@ export function derivedSteps(inp: StepInput): KitStep[] {
   if (report) {
     const layers = report.layout?.layers?.length ? report.layout.layers : [...new Set(report.placed.map((p) => p.layer))].sort((a, b) => a - b).map((i) => ({ index: i, z_mm: [0, 0] as [number, number], parts: report.placed.filter((p) => p.layer === i).map((p) => p.id) }));
     const sideParts = report.placed.filter((p) => p.facing !== "front" && p.facing !== "back");
+    const cellStep = !!cell && report.placed.some((p) => p.id === cell.id);
     steps.push({
       title: "Put the parts in the case",
       do: [
@@ -248,7 +250,11 @@ export function derivedSteps(inp: StepInput): KitStep[] {
         ...(sideParts.length ? [`First the parts that stand against a side wall (a port, button or lever lines up with its hole there): ${sideParts.map((p) => `${name(p.id)} ${facingWords(p.facing, specOf(p.id))}`).join("; ")}.`] : []),
         ...layers.flatMap((l, i) => {
           const where = layers.length > 1 ? `Layer ${i + 1} (${i === 0 ? "against the front" : i === layers.length - 1 ? "towards the back" : "in the middle"})` : "Inside";
-          return l.parts.filter((id) => !sideParts.some((s) => s.id === id)).map((id) => `${where}: ${name(id)}, ${placeWords(report, id, specOf(id))}.`);
+          const front = (id: string) => ((specOf(id)?.mechanical?.features ?? []).some((f) => f.kind === "screen") ? 0 : 1);
+          return l.parts
+            .filter((id) => !sideParts.some((s) => s.id === id) && !(cellStep && id === cell?.id))
+            .sort((a, b) => front(a) - front(b))
+            .map((id) => `${where}: ${name(id)}, ${placeWords(report, id, specOf(id))}${front(id) === 0 ? " (first: it lines up with the window)" : ""}.`);
         }),
         ...(report.files.some((f) => /cap-|light-pipe-/.test(f.body)) ? ["Drop the printed button caps / light pipes into their holes from the inside before the parts that sit behind them."] : []),
         "Hold modules that have no screw post with a square of 1 mm foam tape; fold the wires flat along the walls, away from the seam.",
@@ -263,7 +269,7 @@ export function derivedSteps(inp: StepInput): KitStep[] {
     if (cell && report.placed.some((p) => p.id === cell.id)) {
       steps.push({ title: `Plug in ${name(cell.id)}`, do: ["Put the cell in its cradle in the back shell (it is the soft, flat pouch).", "Plug its connector into the socket last, after all soldering is done."], ...img("back"), parts: [cell.id], wires: [], cautions: ["Never press, bend or pierce the cell, and never solder near it. If it ever puffs up, stop using it."], check: "Switch on: it starts from the battery with USB unplugged.", minutes: 3 });
     }
-    steps.push({ title: "Close the case", do: [inp.screws ? "Put the back on and drive the M2 screws in from the back, finger tight (the inserts strip if forced)." : "Press the back onto the front all round until the lip clicks; to open it again, push a fingernail into the seam at the bottom."], ...img("exploded"), parts: [], wires: [], cautions: [], check: "The seam is even all round and the buttons still click.", minutes: 3 });
+    steps.push({ title: "Close the case", do: [inp.screws ? "Put the back on and drive the M2 screws in from the back, finger tight (the inserts strip if forced)." : "Press the back onto the front all round until the lip clicks; to open it again, push a fingernail into the seam at the bottom."], ...img("exploded"), parts: [], wires: [], cautions: [], check: `The seam is even all round${project.parts.some((p) => (specOf(p.id)?.mechanical?.features ?? []).some((f) => f.kind === "button" && f.expose !== false)) ? " and the buttons still click" : ""}${project.parts.some((p) => (specOf(p.id)?.mechanical?.features ?? []).some((f) => f.kind === "switch")) ? "; the switch slides" : ""}.`, minutes: 3 });
   }
   const names = project.scenarios.map((sc) => sc.name ?? sc.id);
   steps.push({
@@ -393,7 +399,7 @@ export function toolsFor(project: Project, registry: PartRegistry, o: { soldered
     if (project.wires.length) items.push({ name: "Soldering iron", why: "only to solder header pins onto modules that ship without them", need: "optional" });
   }
   if (o.hasCase) {
-    items.push({ name: "A 3D printer, or a print service", why: "for the case (the Print tab lists the files and settings)", need: "required" });
+    items.push({ name: "A 3D printer, or a print service", why: "for the case (the print list has the files and settings)", need: "required" });
     items.push({ name: "Craft knife or deburring tool, and 240 grit sandpaper", why: "to clean the brim and the seam", need: "recommended" });
     items.push({ name: "Hot glue gun", why: "to hold a wire or the speaker in place if it moves", need: "optional" });
   }
@@ -457,7 +463,7 @@ export function troubleshooting(project: Project, registry: PartRegistry, o: { r
   const displays = has((s) => s.category === "display");
   if (displays.length) rows.push({ problem: `The screen (${displays.join(", ")}) stays dark or shows noise`, why: "a loose data or clock wire, swapped pins, or a module that differs from the simulated one (another controller or I2C address)", fix: "Check each screen wire against the wire list with the multimeter (beep); run the board with the serial monitor open: the sketch prints what it found.", source: "part" });
   const cards = has((s) => /micro\s?-?SD|TF card/i.test(`${s.description} ${s.sourcing?.generic ?? ""}`));
-  if (cards.length) rows.push({ problem: `No sound or the wrong clip plays (${cards.join(", ")})`, why: "the card is not FAT32, the files are not named 0001.mp3, 0002.mp3 … in the order the sketch expects, or the speaker wires are loose", fix: "Format the card FAT32, copy the clips in order (the Flash tab says how to make them), and check the speaker's two wires.", source: "part" });
+  if (cards.length) rows.push({ problem: `No sound or the wrong clip plays (${cards.join(", ")})`, why: "the card is not FAT32, the files are not named 0001.mp3, 0002.mp3 … in the order the sketch expects, or the speaker wires are loose", fix: "Format the card FAT32, copy the clips in order (the Flash steps say how to make them), and check the speaker's two wires.", source: "part" });
   const cells = has((s) => !!s.mechanical?.soft || /lipo/i.test(s.id));
   if (cells.length) rows.push({ problem: "It runs on USB but not on the battery", why: "the cell is flat, its plug is wired the other way round, the switch is off, or a diode in the power path is reversed", fix: "Charge it (the charger's light goes off when full); measure the cell (3.0 to 4.2 V) and its polarity at the socket; check the diode's stripe.", source: "part" });
   const inputs = has((s) => s.category === "input");

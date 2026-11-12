@@ -486,7 +486,7 @@ function FlashTab({ kit, copy, copied }: { kit: BuildKit; copy(t: string): void;
           </button>
         </div>
       ))}
-      {f.needs.length ? <p className="kv-note">You need: {f.needs.join("; ")}.</p> : null}
+      {f.needs.length ? <p className="kv-note">You need: {f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.</p> : null}
     </div>
   );
 }

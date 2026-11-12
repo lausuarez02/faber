@@ -80,6 +80,10 @@ export function jstOf(text: string): { family: string; pitch: string } | undefin
   return { family: `JST-${fam}`, pitch };
 }
 
+function shortName(spec: PartSpec | undefined): string {
+  return spec ? spec.name.replace(/\s*\(.*\)\s*$/, "") : "part";
+}
+
 function words(spec: PartSpec | undefined): string {
   return spec ? [spec.name, spec.description, spec.footprint, spec.sourcing?.package, spec.sourcing?.generic].filter(Boolean).join(" ") : "";
 }
@@ -157,7 +161,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
   // ---- things people forget (rules over the part data)
   // a card slot (DFPlayer, SD modules) needs its card
   const cardParts = project.parts.filter((p) => /micro\s?-?SD|TF card/i.test(words(registry.get(p.type)?.spec)));
-  if (cardParts.length) extra("electronics", "microsd", cardParts.length, "microSD card", "1 to 32 GB, any class, formatted FAT32", "microSD card 8GB", 3, `${cardParts.map((p) => p.id).join(", ")} read${cardParts.length > 1 ? "" : "s"} files from it${project.parts.some((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips")) ? " (the sound clips: the Flash tab says how to make them)" : ""}`, true);
+  if (cardParts.length) extra("electronics", "microsd", cardParts.length, "microSD card", "1 to 32 GB, any class, formatted FAT32", "microSD card 8GB", 3, `${cardParts.map((p) => `${p.id} (the ${shortName(registry.get(p.type)?.spec)})`).join(", ")} read${cardParts.length > 1 ? "" : "s"} its files from it${project.parts.some((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips")) ? " (the sound clips: the Flash steps say how to make them)" : ""}`, true);
 
   // a JST lead needs a mating socket on whatever it plugs into, unless that part has one
   const nets = buildNets(project);
@@ -169,7 +173,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
     const hasMate = [...neighbours(p.id)].some((n) => (specOf(n)?.mechanical?.features ?? []).some((f) => f.kind === "connector" && (f.connector ?? "").toLowerCase().startsWith(jst.family.toLowerCase())));
     if (hasMate) continue;
     const pins = spec.pins.filter((x) => x.type === "power" || x.type === "ground").length || 2;
-    extra("electronics", `jst-${p.id}`, 1, `${jst.family} ${jst.pitch} mm socket with leads`, `${pins}-pin, female socket with ~10 cm leads (the "pigtail" that mates with ${p.id}'s plug)`, `${jst.family} ${jst.pitch}mm ${pins} pin connector with wire`, 0.5, `${p.id} (${spec.name}) comes with a ${jst.family} plug; solder this socket where it connects, so it can be unplugged. Check the red wire goes to + on both: cells from different shops come with the plug wired either way round`, false);
+    extra("electronics", `jst-${p.id}`, 1, `${jst.family} ${jst.pitch} mm socket with leads`, `${pins}-pin, female socket with ~10 cm leads (the "pigtail" that mates with ${p.id}'s plug)`, `${jst.family} ${jst.pitch}mm ${pins} pin connector with wire`, 0.5, `${p.id} (the ${shortName(spec)}) comes with a ${jst.family} plug; solder this socket where it connects, so it can be unplugged. Check the red wire goes to + on both: cells from different shops come with the plug wired either way round`, false);
   }
 
   // USB cables for every connector a person plugs into
@@ -214,7 +218,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
     }
     if (inp.filament && inp.filament.grams > 0) {
       const g = Math.ceil(inp.filament.grams);
-      lines.push({ id: "extra:filament", section: "case", qty: 1, name: `${inp.filament.material} filament`, variant: `${inp.filament.color}, 1.75 mm; this case uses about ${g} g`, ask_for: `${inp.filament.material} filament 1.75mm ${inp.filament.color}`, refs: "", unit_usd: round2(g * 0.022), ext_usd: round2(g * 0.022), price_note: "the grams it uses at about 22 USD per kg spool (a whole spool costs 15 to 25 USD)", links: searchLinks(`${inp.filament.material} filament 1.75mm ${inp.filament.color}`, region), alternatives: ["A print service prints it for you instead (Print tab): skip the filament then"], why: "only if you print it yourself", may_have: true, source: "case" });
+      lines.push({ id: "extra:filament", section: "case", qty: 1, name: `${inp.filament.material} filament`, variant: `${inp.filament.color}, 1.75 mm; this case uses about ${g} g`, ask_for: `${inp.filament.material} filament 1.75mm ${inp.filament.color}`, refs: "", unit_usd: round2(g * 0.022), ext_usd: round2(g * 0.022), price_note: "the grams it uses at about 22 USD per kg spool (a whole spool costs 15 to 25 USD)", links: searchLinks(`${inp.filament.material} filament 1.75mm ${inp.filament.color}`, region), alternatives: ["A print service prints it for you instead (see the print list): skip the filament then"], why: "only if you print it yourself", may_have: true, source: "case" });
     }
   }
 
@@ -247,10 +251,13 @@ function settingsWords(p: { props?: Record<string, unknown> } | undefined, spec:
   for (const [k, v] of Object.entries(p.props)) {
     const def = spec.props.find((d) => d.id === k);
     if (!def || def.type === "text" || v === def.default || v === undefined || v === null) continue;
+    // the props the value is made of ("100k" is the resistance) are already in the variant
+    if (value && ["resistance", "capacitance", "inductance", "capacity", "value", "model", "variant", "chip"].includes(k)) continue;
     const unit = (def as { unit?: string }).unit ?? "";
     const val = `${v}${unit && unit !== "×" ? ` ${unit}` : ""}`;
     if (value && (value.includes(String(v)) || value.replace(/\s/g, "").includes(val.replace(/\s/g, "")))) continue;
-    out.push(`${def.label}: ${val}`);
+    const usual = def.default === undefined || def.default === null || typeof def.default === "boolean" ? "" : ` (it usually comes set to ${def.default}${unit && unit !== "×" ? ` ${unit}` : ""}: change it before first use)`;
+    out.push(`${def.label}: ${val}${def.type === "number" ? usual : ""}`);
   }
   return out.length ? `Set up as: ${out.join(", ")}` : "";
 }
