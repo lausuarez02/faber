@@ -29,6 +29,20 @@ The loop:
 10. fidelity_report: tell the person what was verified and, honestly, what the simulation cannot check (plan_device's cannot_check: real feel, sound, battery life, stand-ins). export when done; delete_file removes stale shots or debug sketches.
 11. A real device: when the person wants to hold it (or asks about size, a case, printing or a factory), the flow ends with design_case {"shape": "pebble" | "puck" | "pill" | "rounded-box" | "keychain"} (save: false for side-by-side variants; update_case to change wall, closure, clip). Any other shape the person wants (an egg, a heart, a bean, a character) is shape "custom" with an outline you draw (SVG path in mm, or points with smooth: true) and, if they gave one, size_mm; there is no preset per object. Test it first with check_fit (under a second, no CAD): when the parts do not fit the asked size it lists what misses by how much and smaller parts that would fit (a smaller LiPo cell, a smaller screen or speaker, a board on its edge) or "make it N mm bigger"; tell the person the trade-off and let them choose before design_case. Case choices cost size: do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot; leave dome_mm and the edges on auto (each mm of dome is a mm of thickness per face); call propose_layout before design_case; every check_fit / propose_layout / design_case / update_case answer has costs (what each of your choices adds, with the update_case call that relaxes it): read it and relax the costly choices unless the person asked for them. Pocket and hand-held devices (an egg, a pet, a remote): aim for 20 mm thick or less. Then show its renders and the measured size and checks (pocket verdict, screen window, button travel, USB access), then export_manufacturing: one folder + zip a supplier or a 3D printer can use (STL / 3MF / STEP, drawing, BOM, wiring, netlists, wire cuts, firmware, numbered assembly steps, test plan). Battery devices: set_assembly "soldered" first. Say honestly that the print and the hand feel were not tested.
 
+Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print.
+- Pocket and hand-held devices: aim for 20 mm thick or less.
+- Smallest parts that fit: check_fit before design_case; tell the person each trade-off.
+- Battery devices: prefer a board with a built-in charger.
+- Do not pin positions unless the person asked for that spot.
+- Leave dome_mm and the edges on auto.
+- Read costs in every case answer and relax the costly choices.
+- Call propose_layout before design_case.
+- Say honestly what was not simulated: the print, the real fit and the hand feel were not tested.
+- Never put API keys in firmware: secrets by name (set_network), values in .env.
+- Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety.
+- "What do I need to build it?": export_manufacturing (then read_file its BOM.md, PRINT.md, ASSEMBLY.md), then answer Buy / Print / Assemble / Flash with totals.
+Hardware guide: resource jumper://docs/hardware; prompts design-device, build-kit, design-for-assembly.
+
 Conventions: pins are "part.pin"; ids have no dots; time is virtual ms; every error says what failed, why, and the fix: do what it says. Full guide: resource jumper://docs/agents.
 ```
 
@@ -244,7 +258,7 @@ Create or replace a firmware file under firmware/: {"path": "firmware/main.ino",
 
 ### read_file
 
-Read a firmware file ("firmware/main.ino") or "jumper.json". Use it to look at the line a compiler error points at.
+Read a firmware file ("firmware/main.ino"), "jumper.json", or a text file the case and the build pack wrote ("case/PRINT.md", "manufacturing/<pack>/BOM.md", ".../assembly/ASSEMBLY.md", ".../firmware/FLASHING.md": .md, .csv, .txt, .json under case/ or manufacturing/). Use it to look at the line a compiler error points at, or to summarise what to buy, print and assemble.
 
 | Argument | Type | Required | Notes |
 | --- | --- | --- | --- |

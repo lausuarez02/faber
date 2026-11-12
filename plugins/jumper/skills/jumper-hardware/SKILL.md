@@ -1,0 +1,61 @@
+---
+name: jumper-hardware
+description: "Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something."
+---
+
+<!-- Written by Jumper (jumper skill install). Regenerate with: jumper skill install --project <dir>. A copy edited by hand is kept unless --force. -->
+
+# Building a real device with Jumper
+
+Jumper is a hardware sandbox with a real simulator, reached through the `jumper` MCP tools (or the `jumper` CLI with the same operations). A person who wants a device wants to **hold it**: so from the first answer, think about what they will buy, what they will print and how they will put the stuff inside. Every error from Jumper says what failed, why and the fix: do what it says.
+
+## The loop
+
+1. **Goal.** Say back what the device does in one sentence in the person's words. If the wish is ambiguous (or they changed their mind mid-sentence: take the last version), ask ONE question and wait.
+2. **Plan.** `plan_device` {goal, constraints} first (pocket: true for anything carried), then tell the person the plan in plain words: what it does, the board and parts and why, size, battery life, price, and what is simulated. One project per idea: `new_project` {"folder": true, "name": …}.
+3. **Smallest parts that fit.** Choose the smallest parts that do the job (`search_parts`, `get_part`), place and wire them (`place_part`, `connect`), `check_design` until it is clean. Before any case: `check_fit` with the shape and size the person wants, then `propose_layout`; read costs and relax what is costly.
+4. **Think assembly.** Think how it goes together before the case exists, using propose_layout's placements and layers: what mounts where, the insertion order, the wire room, access to USB / buttons / switch, battery safety (the checklist below). If a part cannot go in, change the layout or the part now.
+5. **Design the case.** `design_case` with the chosen layout (any shape: a preset or "custom" with an outline you draw), show the renders and the measured size and checks (pocket verdict, screen window, button travel, USB access). `update_case` to change it.
+6. **Firmware and tests.** `write_file` the firmware, `run` it, `write_scenario` for each behaviour of the goal and `run_tests` until they pass; `fidelity_report` for what the simulation cannot check.
+7. **The build kit.** `export_manufacturing` writes the build pack (BOM with prices, case files and PRINT.md, wiring and wire cuts, ASSEMBLY.md, firmware and FLASHING.md); read its parts with `read_file` and summarise (see "What do I need to build it?").
+
+## Rules of thumb
+
+- Pocket and hand-held devices (a keychain, a pet, a remote, an egg): aim for 20 mm thick or less. Thickness is what makes a pocket device feel wrong; width and length matter less.
+- Pick the smallest parts that do the job, then prove they fit: `check_fit` (under a second, nothing written) says what misses by how many mm and which smaller parts would fit (a smaller cell, a smaller screen, a board on its edge). Tell the person the trade-off (a smaller cell means shorter battery life) and let them choose.
+- Battery devices: prefer a board with a built-in LiPo charger and USB-C (`plan_device` and `search_parts` say which boards have one). One board instead of board + charger module is fewer wires, less room and one fewer thing to assemble.
+- Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot: Jumper's layout is usually smaller. Pinned parts show up in costs with what they add.
+- Leave dome_mm and the edges on auto: each mm of dome is a mm of thickness on each face.
+- Read costs in every `check_fit` / `propose_layout` / `design_case` / `update_case` answer (what each of your choices adds, in mm and cm³, with the call that relaxes it) and relax the costly ones unless the person asked for them.
+- Call `propose_layout` before `design_case`: it shows the thinnest, smallest and balanced ways to put the parts inside, with the reasons. Tell the person which one and why; layout: "<id>" picks it.
+- Be honest about what was not simulated: `fidelity_report` and plan_device's cannot_check list it (real feel, sound, battery life, stand-ins). The print, the fit of real parts and the hand feel were not tested: say so, and say what to check on the first real unit.
+- Never put API keys, passwords or tokens in firmware or in jumper.json: `set_network` takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service gets its key at run time, never in the source.
+
+## Always think how it goes inside
+
+Before the case exists, and again when the person asks how to build it:
+
+- **Where each part mounts.** For every part, say what holds it: the screen sits behind its window on ledges, the board on standoffs or in a pocket, the cell in its own pocket, the speaker against its grille, buttons under their plungers, a sensor at its window or air holes. A part nothing holds rattles or breaks a joint.
+- **Insertion order.** Write the order a person puts it together, front shell face down: window part (screen) first, then buttons / plungers / light pipes, then the board, then the wires, the battery last, then close. If a part cannot go in after the one before it, change the layout (layers) now, not after printing.
+- **Wire room.** Hand-wired devices need room for solder joints and bends (about 3 to 5 mm above pins, more where many wires meet) and a short service loop so the halves open without tearing a joint. Route wires away from the closing seam and screw bosses. Battery devices are built soldered: `set_assembly` "soldered" so the pack has wire cuts and soldering steps.
+- **Access from outside.** The USB-C port must reach its wall with room for the plug's body (charging and flashing), every button must line up with its plunger, a power switch must be reachable, and a screen must face its window. Boards that need BOOT / RESET to flash: flash before closing, or leave a pin hole.
+- **Battery safety.** Use a protected LiPo cell (with its protection circuit) on a connector so it can be unplugged, charged only by a charger (the board's built-in one or a charger module), with the switch after the charger. Nothing presses on the cell: no screw, boss or sharp edge over it, a little room for swelling, and keep it away from the regulator's heat. Never solder onto the cell's tabs.
+- **Closing and opening.** Choose how the halves close (snap clips or screws; the case answer says which and where) and whether the person must open it again (a cell that is not charged over USB, an SD card). Heavy parts low, the cell flat.
+- **Printing it.** Each body is written in its print orientation with PRINT.md (material, layer height, supports, tolerances). Suggest a test print of the front half first to check the screen and buttons with the real parts; tolerances differ per printer.
+
+## What do I need to build it?
+
+There is no single build-kit tool in this Jumper yet. Make sure there is a case (`get_case`; if none, `check_fit` → `propose_layout` → `design_case`), set `set_assembly` "soldered" for a battery device, then `export_manufacturing`. Its answer lists the files: `read_file` the pack's BOM.md, enclosure/PRINT.md (or case/PRINT.md), assembly/ASSEMBLY.md and firmware/FLASHING.md (paths relative to the project, e.g. "manufacturing/<pack>/BOM.md"), and answer in four short parts, with totals:
+
+- **Buy:** each part with quantity, price and where, plus wire, heat-shrink and screws; the total price. Name the real part when a stand-in was simulated.
+- **Print:** each printed body (front, back, plungers, light pipes) with the material, layer height and supports from PRINT.md, and print time or grams when given; where the STL / 3MF files are.
+- **Assemble:** the numbered steps in insertion order (power path first when soldered), the tools needed (soldering iron, wire strippers, screwdriver) and the checks before closing.
+- **Flash:** how the firmware gets on the board (the file and one line on how), and the quick test once it is closed.
+
+Then one line on what was not tested (the print, the real fit, the hand feel, real battery life) and offer the pack for a supplier or a printer.
+
+## Talking to the person
+
+- Many people are beginners: say "the screen", not "SSD1306 over I2C"; answer in their language.
+- Show pictures (renders, screenshots) and give links and file paths, not terminal commands, unless they asked for one.
+- Short answers: the plan, the trade-off to choose, then the result.

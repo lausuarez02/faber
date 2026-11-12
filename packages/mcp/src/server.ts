@@ -3,11 +3,14 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { PROMPTS, renderGuide, renderPrompt } from "@jumper/agent-skill";
 import { AGENT_LOOP, ProjectSession, TOOLS, type Builder, type CallMeta } from "@jumper/session";
 
 export const SERVER_NAME = "jumper";
 export const SERVER_VERSION = "0.1.0";
+
+const TOOL_NAMES = TOOLS.map((t) => t.name);
 
 const DOCS_AGENTS = fileURLToPath(new URL("../../../docs/agents.md", import.meta.url));
 
@@ -106,7 +109,7 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
-      capabilities: { tools: {}, resources: {} },
+      capabilities: { tools: {}, resources: {}, prompts: {} },
       instructions: `${AGENT_LOOP}\n\nProject folder: ${dir}${session.exists ? "" : " (empty: start with new_project or place_part)"}.${opts.instructionsExtra ? `\n\n${opts.instructionsExtra}` : ""}`,
     },
   );
@@ -139,6 +142,7 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
+      { uri: "jumper://docs/hardware", name: "Building a real device", description: "Jumper's hardware know-how: the design loop, rules of thumb, how the parts go inside (mounting, insertion order, wire room, access, battery safety) and how to answer what to buy, print and assemble.", mimeType: "text/markdown" },
       { uri: "jumper://docs/agents", name: "Jumper agent guide", description: "How to build and test a device with Jumper's tools, with a worked example.", mimeType: "text/markdown" },
       { uri: "jumper://parts", name: "Parts catalog", description: "Every part type with its pins, category and fidelity, one per line.", mimeType: "text/plain" },
       { uri: "jumper://project", name: "Current project (jumper.json)", description: "The project file as it is now.", mimeType: "application/json" },
@@ -147,6 +151,9 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
 
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
     const uri = req.params.uri;
+    if (uri === "jumper://docs/hardware") {
+      return { contents: [{ uri, mimeType: "text/markdown", text: renderGuide({ tools: TOOL_NAMES }) }] };
+    }
     if (uri === "jumper://docs/agents") {
       const text = existsSync(DOCS_AGENTS) ? readFileSync(DOCS_AGENTS, "utf8") : AGENT_LOOP;
       return { contents: [{ uri, mimeType: "text/markdown", text }] };
@@ -163,7 +170,18 @@ export function createJumperMcpServer(opts: JumperMcpOptions): { server: Server;
       const text = existsSync(session.projectFile) ? readFileSync(session.projectFile, "utf8") : JSON.stringify(session.project, null, 2);
       return { contents: [{ uri, mimeType: "application/json", text }] };
     }
-    throw new Error(`Unknown resource '${uri}'. Resources: jumper://docs/agents, jumper://parts, jumper://project.`);
+    throw new Error(`Unknown resource '${uri}'. Why: Jumper serves jumper://docs/hardware, jumper://docs/agents, jumper://parts and jumper://project. Fix: read one of those.`);
+  });
+
+  // Round 12 skill: the hardware know-how as prompts (design-device, build-kit, design-for-assembly).
+  server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    prompts: PROMPTS.map((p) => ({ name: p.name, title: p.title, description: p.description, arguments: p.arguments.map((a) => ({ ...a })) })),
+  }));
+
+  server.setRequestHandler(GetPromptRequestSchema, async (req) => {
+    const p = PROMPTS.find((x) => x.name === req.params.name);
+    const text = renderPrompt(req.params.name, (req.params.arguments ?? {}) as Record<string, string>, { tools: TOOL_NAMES });
+    return { ...(p ? { description: p.description } : {}), messages: [{ role: "user" as const, content: { type: "text" as const, text } }] };
   });
 
   return { server, session };

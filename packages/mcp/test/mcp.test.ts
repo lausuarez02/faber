@@ -49,9 +49,34 @@ describe("jumper MCP server over stdio", () => {
 
   it("serves the agent guide, catalog and project as resources", async () => {
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual(["jumper://docs/agents", "jumper://parts", "jumper://project"]);
+    expect(resources.map((r) => r.uri)).toEqual(["jumper://docs/hardware", "jumper://docs/agents", "jumper://parts", "jumper://project"]);
+    const hw = await client.readResource({ uri: "jumper://docs/hardware" });
+    const text = String((hw.contents[0] as { text?: string }).text);
+    expect(text).toMatch(/Always think how it goes inside/);
+    expect(text).toMatch(/Insertion order/);
+    expect(text).toMatch(/Buy.*\n.*Print.*\n.*Assemble.*\n.*Flash/);
     const parts = await client.readResource({ uri: "jumper://parts" });
     expect(String((parts.contents[0] as { text?: string }).text)).toMatch(/arduino-uno \[board/);
+  });
+
+  it("round 12 skill: serves the hardware know-how as prompts, and the instructions carry the design-for-assembly rules", async () => {
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name)).toEqual(["design-device", "build-kit", "design-for-assembly"]);
+    expect(prompts[0]!.arguments).toEqual([expect.objectContaining({ name: "goal", required: true })]);
+    const dd = await client.getPrompt({ name: "design-device", arguments: { goal: "a keychain with a little screen that shows a smiley" } });
+    const t = (dd.messages[0]!.content as { text: string }).text;
+    expect(t).toMatch(/^I want to build: a keychain with a little screen/);
+    expect(t.indexOf("check_fit")).toBeLessThan(t.indexOf("`design_case`"));
+    expect(t).toMatch(/20 mm thick or less/);
+    const kit = await client.getPrompt({ name: "build-kit" });
+    expect((kit.messages[0]!.content as { text: string }).text).toMatch(/what to buy, what to print/);
+    const dfa = await client.getPrompt({ name: "design-for-assembly" });
+    expect((dfa.messages[0]!.content as { text: string }).text).toMatch(/Battery safety/);
+    await expect(client.getPrompt({ name: "design-device", arguments: {} })).rejects.toThrow(/needs a goal.*Fix:/);
+    await expect(client.getPrompt({ name: "nope" })).rejects.toThrow(/No prompt 'nope'.*Fix:/);
+    const ins = client.getInstructions() ?? "";
+    expect(ins).toMatch(/Design for assembly/);
+    expect(ins).toMatch(/resource jumper:\/\/docs\/hardware; prompts design-device, build-kit, design-for-assembly/);
   });
 
   it("returns errors that say what, why and how to fix", async () => {

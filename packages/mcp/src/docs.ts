@@ -1,4 +1,17 @@
+import { renderGuide, renderSkillMd, SKILL_NAME } from "@jumper/agent-skill";
 import { AGENT_LOOP, TOOLS } from "@jumper/session";
+
+/**
+ * Round 12 skill: the generated agent-facing files in the repo (pnpm gen writes them; test/docs.test.ts
+ * fails when one is stale). Paths are relative to the repo root.
+ */
+export function renderAgentSkillFiles(): Record<string, string> {
+  const tools = TOOLS.map((t) => t.name);
+  return {
+    [`plugins/jumper/skills/${SKILL_NAME}/SKILL.md`]: renderSkillMd({ tools }),
+    "docs/hardware-guide.md": `<!-- Generated from packages/agent-skill by \`pnpm gen\`. Do not edit by hand: change packages/agent-skill/src/knowledge.ts. -->\n\n${renderGuide({ tools })}`,
+  };
+}
 
 /** docs/mcp-tools.md, generated from the tool definitions (kept in sync by test/docs.test.ts). */
 export function renderToolDocs(): string {
