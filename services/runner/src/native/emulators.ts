@@ -131,7 +131,7 @@ export async function installNativeQemu(log: (l: string) => void = () => {}, opt
     }
     // Keep only what Jumper runs (the install also copies firmware blobs for other boards).
     for (const sub of ["share/applications", "share/icons", "share/doc"]) rmSync(join(dest, sub), { recursive: true, force: true });
-    writeFileSync(join(dest, "JUMPER-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Jumper patches ${QEMU_PATCHES.join(", ")} (bridge v6)\nsource: ${spike ? `${spike} branch ${QEMU_SRC_BRANCH}` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
+    writeFileSync(join(dest, "JUMPER-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Jumper patches ${QEMU_PATCHES.join(", ")} (bridge v6 + camera port)\nsource: ${spike ? `${spike} branch ${QEMU_SRC_BRANCH}` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
     if (!nativeQemuInstalled()) throw new RunnerError("qemu-build-failed", `QEMU built but ${dest}/bin has no qemu-system-xtensa / qemu-system-riscv32. Fix: run \`jumper setup esp32\` again.`);
     return { dir: dest, built: true };
   } finally {
