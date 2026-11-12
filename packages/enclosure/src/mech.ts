@@ -42,6 +42,8 @@ export interface LocalFeature {
   expose: boolean;
   /** Pokes through the wall (PIR dome, pot shaft, slide lever, 5 mm LED dome). */
   passThrough: boolean;
+  /** Round 13: a camera lens' diagonal field of view (degrees). */
+  fov?: number;
   description?: string;
 }
 
@@ -66,7 +68,7 @@ export interface PartMech {
   source: string;
 }
 
-const EXPOSE_DEFAULT = new Set(["screen", "button", "switch", "knob", "connector", "led", "sensor-window", "grille"]);
+const EXPOSE_DEFAULT = new Set(["screen", "button", "switch", "knob", "connector", "led", "sensor-window", "grille", "camera"]);
 const PASS_THROUGH = new Set(["knob", "switch", "sensor-window", "led"]);
 
 const NORMALS: Record<MechFeature["face"], Vec3> = {
@@ -161,6 +163,7 @@ function localFeature(f: MechFeature, w: number, h: number, d: number): LocalFea
     ...(f.connector ? { connector: f.connector } : {}),
     expose,
     passThrough: PASS_THROUGH.has(f.kind) && protrude > 0,
+    ...(f.kind === "camera" ? { fov: f.fov_deg ?? 66 } : {}),
     ...(f.description ? { description: f.description } : {}),
   };
 }
