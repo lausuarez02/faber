@@ -9,6 +9,38 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 13, track relay (2026-11-12): the real device reaches APIs the way the simulator does, with no key in it
+
+The person wants a keychain that sees (camera) and says things through an API. This track is the general
+piece the REAL device needs for any API: a relay that holds the keys, generated from the project's
+`jumper.json` `network` (allow list, secret names, header templates, new `network.relay` limits). No
+camera / voice / star code. Branch `round13/relay`. Guide: [docs/relay.md](docs/relay.md).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Relay core (MIT, Fetch API, no deps) | Device token in `X-Device-Token` (relay keeps SHA-256 hashes only, `RELAY_DEVICE_TOKENS=name:hash,...`; revoke = remove the name), allow list + ports, `{{secret:NAME}}` from templates or the device only to hosts given NAME, never over plain HTTP, rate / size / stream-time limits per device, streamed answers and chunked uploads, keys echoed back masked, one JSON log line per request with no key, token or query value; every refusal says why and fix (401 / 403 / 413 / 429 / 502) | `packages/device-net/test/relay.test.ts` (14) |
+| Node relay | `jumper relay serve` (project's config + .env) and the generated `relay/server.mjs` (runs alone with `node`); WebSocket piped with the key on the upgrade | same, incl. `node server.mjs` as a child process |
+| Cloudflare Worker | `relay/worker.js` + `wrangler.toml` (secrets by `wrangler secret put`), WebSocket bridged with `WebSocketPair` | the generated worker.js imported in Node with a fetch mock and a fake WebSocketPair (wrangler not installed; nothing deployed) |
+| Simulator parity | The sandbox answers `relay.sandbox.jumper/<host>/<path>` with the core's own `authorize()`, then serves the target like a direct request (mocks, cassettes, faults, internet, secrets at the edge); log entries `via: "relay"` | `relay.test.ts`; **real firmware**: `packages/session/test/relay-firmware.integration.test.ts` (XIAO ESP32-S3 built natively, run in QEMU: 200 from a mock through the relay, 403 for a host off the list) |
+| Firmware | `JumperRelay.h` (MIT): `jumperRelayUrl`, `jumperRelayEndpoint` (WebSocket), `JUMPER_TOKEN_HEADER`, `jumperRelayReady/Why`, default root CAs (ISRG X1/X2, GTS R1/R4, GlobalSign; workers.dev chains to GTS R4). The build adds it when included; simulation builds add a sandbox `jumper_device.h`; the runner drops the person's `jumper_device.h` from every Jumper build | firmware test checks the token string is absent from the sim and device images |
+| Wi-Fi + token on the device | Default: git-ignored `jumper_device.h` from `.env` (`jumper relay token add <device>`, `jumper relay device-header [--ca]`); .gitignore updated. Captive portal documented as the option for gifted devices, not built (soft-AP is not emulated) | `apps/cli/test/relay-cli.test.ts` |
+| Packs | `relay/` in `jumper relay init`, the factory pack (NETWORK.md points at it) and the build kit download | `packages/session/test/kit-connect.test.ts` |
+| Kit Connect | Keys by name (set / missing here), relay on a computer or Cloudflare, a token per device, Wi-Fi via the device header, a check, generic cost (provider price per call; worst case per day from the rate limit); says first when the board has no Wi-Fi (the star's XIAO RP2040 has none). KIT.md, kit.html, `get_build_kit`, web Build it **Connect** tab | `kit-connect.test.ts`, `apps/web/e2e/build-kit.spec.ts` (Connect, desktop + mobile) |
+
+Checks (worktree `jumper-wt-r13-relay`, native runtimes, Docker down, load average 14 to 100 from other
+tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **216 files passed, 2
+skipped; 1785 tests passed, 5 expected fail, 5 skipped** (includes the real-QEMU relay firmware test).
+Full e2e (`E2E_PORT=6340 E2E_HUB_PORT_BASE=13000`, 2 workers, desktop + mobile): exit 1, **107 passed, 1
+failed, 16 skipped, 2 did not run**; the failure was case-assembly (mobile; untouched by this track),
+re-run alone: mobile passed, desktop once hit "port 13800 is in use" at serve start, then passed (exit 0).
+build-kit's "opens from the Case view" (mobile) timed out once in an earlier run and passed re-run.
+
+Gaps: nothing deployed to Cloudflare and no real device flashed; the Worker's rate limit is per instance;
+MQTT / raw TCP not relayed (MQTT over WebSocket is); keys only in headers (not query or body); secrets
+echoed inside WebSocket frames are not masked; the sandbox relay refuses an over-size chunked upload after
+reading it (the real relay cuts it mid-stream); no captive portal; a project's `network.wifi` change does
+not mark the firmware stale even though the simulation header carries the SSID.
+
 ## Round 12, integrated on main (2026-11-12): "ask Claude for all the pieces, what to print, and how it goes inside"
 
 The three tracks below are merged on main and joined:
