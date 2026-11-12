@@ -339,7 +339,10 @@ async function compile(
   for (const lib of libraries) if (!isPreinstalled(lib, req.fqbn)) libDirs.push(await ensureLibrary(lib, log, runtime));
 
   // Arduino wants <name>/<name>.ino; we always use "sketch/sketch.ino" and map paths back.
-  const work = join(cacheDir(), "work", hash);
+  // One folder per process: two servers (or a test and a server) building the same sketch at once
+  // must not delete each other's work (round 13: two e2e browsers, one sketch). Paths inside the
+  // firmware are mapped to /work either way, so the output does not depend on the folder name.
+  const work = join(cacheDir(), "work", `${hash}-${process.pid}`);
   // Where the compiler sees the work folder: /work in the container, the folder itself natively.
   const workIn = native ? work : "/work";
   rmSync(work, { recursive: true, force: true });
