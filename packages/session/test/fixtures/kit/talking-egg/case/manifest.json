@@ -1,0 +1,133 @@
+{
+  "hash": "29adee18eb956fd2",
+  "engine": "case-5",
+  "enclosure": {
+    "shape": "custom",
+    "params": {
+      "wall_mm": 1.6,
+      "corner_radius_mm": 4,
+      "color": "#F4EBDD",
+      "lanyard_hole": false,
+      "belt_clip": false,
+      "closure": "snap",
+      "tolerance_mm": 0.2,
+      "process": "fdm",
+      "gap_mm": 1.5,
+      "edge_radius_front_mm": "auto",
+      "edge_radius_back_mm": "auto",
+      "dome_mm": 1.5,
+      "dome_back_mm": 1.5,
+      "depth_mm": "auto"
+    },
+    "placements": {
+      "eyes": {
+        "face": "front"
+      },
+      "spk": {
+        "face": "front",
+        "x_mm": 0,
+        "y_mm": -26
+      },
+      "sw": {
+        "face": "right"
+      }
+    },
+    "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"
+  },
+  "files": [
+    {
+      "path": "stl/front.stl",
+      "kind": "stl",
+      "body": "front",
+      "bytes": 1843584,
+      "sha256": "747c8d5fa9fc007cdc7575dd4e7fb276c81813cd4cbca9562844f3e236e81778",
+      "print": {
+        "face_down": "front",
+        "supports": false,
+        "note": "front face on the bed (the window side down), open side up"
+      }
+    },
+    {
+      "path": "stl/back.stl",
+      "kind": "stl",
+      "body": "back",
+      "bytes": 575584,
+      "sha256": "4d17552aeb299744d9cea155cf85d3cd6e442ed5156256802581548e825888e2",
+      "print": {
+        "face_down": "back",
+        "supports": false,
+        "note": "back face on the bed, open side up"
+      }
+    },
+    {
+      "path": "case.3mf",
+      "kind": "3mf",
+      "body": "all",
+      "bytes": 494249,
+      "sha256": "858b8c31c673599a739dd1b38f3b21634de3c53b7e7db13327660e29b3746ae0"
+    },
+    {
+      "path": "step/assembly.step",
+      "kind": "step",
+      "body": "assembly",
+      "bytes": 4131434,
+      "sha256": "e6dc838a10b739decad31aa71d06d5414a716d2881edc5930d0a3cf570ed4849"
+    },
+    {
+      "path": "step/front.step",
+      "kind": "step",
+      "body": "front",
+      "bytes": 2956941,
+      "sha256": "7e2ade24d097e050948dd372ba3609b4b8e35814e812c50ffabdd92b4bce3c72"
+    },
+    {
+      "path": "step/back.step",
+      "kind": "step",
+      "body": "back",
+      "bytes": 1000657,
+      "sha256": "c155a346667ef357a8939f9ee77953650ddf57098a42c72025e15b20284bf449"
+    },
+    {
+      "path": "renders/front.png",
+      "kind": "png",
+      "body": "render-front",
+      "bytes": 83798,
+      "sha256": "85fc2e9e3b417bc4de8687dd32f7697bdd88cd21036ff86194426cb53973ade5"
+    },
+    {
+      "path": "renders/back.png",
+      "kind": "png",
+      "body": "render-back",
+      "bytes": 50528,
+      "sha256": "9dad29fee9c278b2a2e5202492434446ad3dacc13fb684c17ef71fb5105200b0"
+    },
+    {
+      "path": "renders/exploded.png",
+      "kind": "png",
+      "body": "render-exploded",
+      "bytes": 85895,
+      "sha256": "95b3d9d3cd1751deaa35741fd05f99c5824937e47e3cb889ef4e1a5b25be3fca"
+    },
+    {
+      "path": "renders/inside.png",
+      "kind": "png",
+      "body": "render-inside",
+      "bytes": 88560,
+      "sha256": "802b560eaa595a6ae2a2716ba080aa7dc68358efe630191a7f1c16bb74e4f7bd"
+    },
+    {
+      "path": "drawing/drawing.svg",
+      "kind": "svg",
+      "body": "drawing",
+      "bytes": 23871,
+      "sha256": "615075ee8a32194d4dcdd46773a1253315e3739a5216ede639dd4c37dad990fa"
+    },
+    {
+      "path": "PRINT.md",
+      "kind": "md",
+      "body": "PRINT",
+      "bytes": 3006,
+      "sha256": "563ca09e9053c8c856832f55be16b72f314a15c9ae5bc59a45e14815dcee57dc"
+    }
+  ]
+}

@@ -59,3 +59,7 @@ export { SessionDeviceNet, sandboxCaDir, networkConfigOf } from "./device-networ
 
 // Round 11: tests and the app ask whether this machine can build a board right now (Docker or native).
 export { canBuildArduino, runtimeSummary, nativeStatus } from "@jumper/runner";
+// round 12 kit: the build kit (get_build_kit, GET /api/kit, the web Build it panel)
+export { buildKit, kitHtml, kitMarkdown, shoppingCsv, stlStats, detectSlicer, planFrom, adaptAssemblyPlan } from "./kit/index.ts";
+export type { BuildKit, KitOptions, AssemblyPlanLike } from "./kit/index.ts";
+export { writeKitFiles, htmlToPdf } from "./kit/files.ts";
