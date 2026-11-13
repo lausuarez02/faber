@@ -48,6 +48,14 @@ what an upload carried, `network_fault` wifi_drop / clear and `reset_board` (fla
 path; `add_mock_api` {"kind": "openapi"} mocks any API from its spec; a local service is reached only
 with `"local": true` + `"to"`; `estimate_power` / `set_power {target_hours, duty}` for battery life:
 [docs/behaviour-tests.md](docs/behaviour-tests.md).
+A case that holds something that is not electronics (a tin, a card deck) declares it with `design_case`
+`{"held": [{"id", "name", "shape", "size_mm", "insert": "slide" | "pocket" | "snap", "from", "sensor"}]}`
+(its real size with its source; tell the person to measure theirs with calipers). Always-on battery
+devices: e-paper (`epaper-154-ssd1681`) or a memory LCD (`sharp-memory-lcd-128`), lids sensed by a
+`reed-switch` or `hall-switch-drv5032` (`{"set": "lid.magnet", "value": "away"}` in a test), and
+`esp_deep_sleep_start()` really sleeps in the simulator (no firmware runs, hours pass in seconds, it
+wakes on its timer or a pin with RTC memory and the clock kept); `set_clock` also sets RTC parts;
+`estimate_power` takes `wakes_per_day`: [docs/low-power.md](docs/low-power.md).
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 

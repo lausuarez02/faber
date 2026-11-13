@@ -117,6 +117,19 @@ export const RULES: Rule[] = [
     short: "Battery devices: estimate_power with the real duty cycles, set_power target_hours, and say it is an estimate.",
     mustSay: [/estimate_power/],
   },
+  {
+    id: "held-object",
+    text: `When the case holds something that is not electronics (a tin of pouches or mints, a lip balm, a lighter, a card deck), declare it on the case, never as a fake part: ${tool("design_case")} / ${tool("check_fit")} {"held": [{"id", "name", "shape": "cylinder" | "box" | "custom", "size_mm", "clearance_mm", "insert": "slide" | "pocket" | "snap", "from", "removable", "source", "sensor": {"part"}}]}. Find its real size from more than one source (the maker's page, measurements people posted) and say where it came from in "source"; tell the person to measure their own with calipers (the report's held[].measure and the build kit's "What it holds" say how) and that clearance_mm is the knob if it is tight or loose. The case keeps every part and wire out of its room, cuts its opening and checks the walls round it (held-object) and that a lid sensor sits close enough (held-sensor).`,
+    short: "A thing the case holds (a tin, a card deck): enclosure held with its real size and source, never a fake part; tell the person to measure theirs with calipers.",
+    mustSay: [/calipers/],
+    mustNotSay: [/create_part .* (?:tin|can|deck)/i],
+  },
+  {
+    id: "low-power-always-on",
+    text: `A device that shows something all day on a small battery: an e-paper screen (epaper-154-ssd1681: the image stays with no power; refresh about 2 s full, 0.5 s partial, ghosts unless the previous image is kept) or a Sharp memory LCD (sharp-memory-lcd-128: a microamp for a still image, VCOM toggled each second), never a TFT / OLED that must stay lit. The board deep-sleeps between events (esp_deep_sleep_start with a timer and a GPIO wake-up from a reed / Hall switch or a button): the simulation runs no firmware while it sleeps, so a test step can let hours pass in seconds, and RTC_DATA_ATTR variables, the clock and esp_sleep_get_wakeup_cause() survive like on the chip. Day counters: an RTC part (a scenario's "clock" and its clock steps set it too, so a test crosses midnight) or NTP. Then ${tool("estimate_power")} with power.wakes_per_day and awake_s (or after a run: the measured wake pattern) for battery life in days; say it is an estimate.`,
+    short: "Always-on battery devices: e-paper or memory LCD, deep sleep with timer + pin wake (tests jump hours), RTC for days, estimate_power with wakes_per_day.",
+    mustSay: [/deep.sleep/],
+  },
 ];
 
 /** What to think through before the case exists: how every part goes inside (generic, any device). */

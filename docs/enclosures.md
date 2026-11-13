@@ -384,3 +384,34 @@ STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
   without a case they are estimates from the part sizes (the CSV says which). Not routed paths.
 - No PCB layout: the pack is for a hand-wired / perfboard build; `jumper.net` is where a PCB starts.
 - Sourcing has MPNs and plain descriptions; LCSC / JLC numbers are left empty until checked.
+
+## Things the case holds (round 15)
+
+A case can hold something that is not electronics: a tin of pouches or mints, a lip balm, a lighter,
+a card deck. Declare it on the case (never as a fake part):
+
+```sh
+jumper design_case '{"shape": "rounded-box", "held": [{"id": "tin", "name": "round tin", "shape": "cylinder", "size_mm": {"d": 66, "h": 21}, "clearance_mm": 0.5, "insert": "slide", "from": "right", "source": "measured with calipers", "sensor": {"part": "lid"}}]}' -p my-holder
+```
+
+- **shape**: `cylinder` (`size_mm` `d` diameter, `h` height; `orientation` `flat` = round face to the
+  front, default, or `upright`), `box` (`w`, `h`, `d`), `custom` (its bounding box).
+- **insert**: `slide` (through a slot in a side: `from` left / right / top / bottom), `pocket` (an
+  opening in the back, front or top), `snap` (a pocket whose rim overlaps the object by `lip_mm`,
+  default 0.6, so it clicks in). `removable: false` = it goes in during assembly and stays (no opening).
+- The packer gives it a room (its size + `clearance_mm` all round) against the side it goes in
+  through and keeps every part out; the shell gets the slot or the pocket (cut through curved walls
+  and domes); **sleeve walls** (1.2 mm) wall it off from the electronics where there is room, and the
+  report says where there is not. Ribs and posts of other parts never enter its room.
+- Checks: `held-object` (the room, the opening, the thinnest wall round it, a pocket rim the rim's
+  round-over would eat, with the fix) and `held-sensor` (a reed / Hall switch must sit within
+  `sensor.max_mm`, default 8 mm, of the object).
+- `report.held[]` and the build kit's **What it holds** give the object, its room, the opening and how
+  to check the fit: measure your own with calipers (the lid's rim is often the widest part), raise
+  or lower `clearance_mm`, and print a 2 mm test ring of the opening first.
+- The assembly plan does not assemble it: a removable object goes in after the case is closed (the
+  last step), a captive one before closing.
+
+Proof: `packages/enclosure/test/held.test.ts` (layout), `held-cad.test.ts` (real CAD: a slide-in tin in
+a rounded box, a back pocket in a pebble with a flat back: closed solids, nothing in the room),
+`packages/session/test/round15-held.test.ts` (design_case, the kit).
