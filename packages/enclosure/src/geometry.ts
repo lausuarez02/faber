@@ -86,12 +86,14 @@ function tryFillet(solid: Solid, r: number, z: number): Solid | undefined {
  * A fillet OpenCascade "succeeded" at can still be a broken solid: on some outlines (an arc meeting
  * straight sides) the rounded rim comes back as a separate face that is not sewn to the flat face,
  * so the printed STL has a gap all round the edge (round 15: a 1.65 mm back rim, 200 open edges).
- * A coarse tessellation finds it: closed, one piece, positive volume, or the caller tries a smaller radius.
+ * A coarse tessellation finds it: every edge shared by two triangles and a positive volume, or the
+ * caller tries again. Not "one piece": half-built, a shell can rightly hold a closed void (a held
+ * object's sleeve and floor under the front wall, before its opening is cut).
  */
 export function sound(s: Solid): boolean {
   try {
     const c = checkMesh(meshOf(s, 0.2, 0.5));
-    return c.closed && c.shells === 1 && c.volume > 0;
+    return c.closed && c.volume > 0;
   } catch {
     return false;
   }

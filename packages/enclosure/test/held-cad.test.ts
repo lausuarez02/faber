@@ -52,5 +52,22 @@ describe("held object sleeve walls on a rounded custom outline (round 15 proof)"
     expect(wt.ok, wt.message).toBe(true);
     expect(g.report.checks.filter((c) => !c.ok && c.severity === "error"), JSON.stringify(g.report.checks.filter((c) => !c.ok))).toEqual([]);
     expect(g.report.held?.[0]).toMatchObject({ id: "can", room_mm: { w: 71, h: 71, d: 21 } });
+    // one sleeve wall under the arc still breaks the solid and is left out: said, not hidden
+    const out = g.report.notes.filter((n) => n.includes("left out"));
+    expect(out.length).toBeLessThanOrEqual(1);
+    if (out.length) expect(out[0]).toMatch(/Why: .* Fix: /);
+  });
+
+  // The second proof run: the tin's lower 13 mm in a front pocket, its floor a plate just above the
+  // seam. Fused under the front wall, the floor and sleeve close a void until the opening is cut:
+  // a sound solid with two shells, which the first version of the check mistook for a broken one
+  // and left the floor out (the tin would have dropped into the case).
+  it("a pocket floor that encloses a void before its opening is cut is kept", async () => {
+    const proj = { format: "jumper/1", name: "pouch-tin-case-2", parts: [{"id": "xiao", "type": "seeed-xiao-esp32c3", "x": 0, "y": 0, "rotation": 0}, {"id": "epd", "type": "epaper-154-ssd1681", "x": 0, "y": 0, "rotation": 0}, {"id": "reed", "type": "reed-switch", "props": {"magnet_mm": 3}, "x": 0, "y": 0, "rotation": 0}, {"id": "btn", "type": "pushbutton", "x": 0, "y": 0, "rotation": 0}, {"id": "rtc", "type": "ds3231-rtc", "x": 0, "y": 0, "rotation": 0}, {"id": "bat", "type": "lipo-battery", "props": {"capacity": 500}, "x": 0, "y": 0, "rotation": 0}, {"id": "rpu", "type": "resistor", "props": {"resistance": 1000000}, "x": 0, "y": 0, "rotation": 0}, {"id": "rbtn", "type": "resistor", "props": {"resistance": 100000}, "x": 0, "y": 0, "rotation": 0}], wires: [], scenarios: [], enclosure: {"shape": "rounded-box", "params": {"corner_radius_mm": 12, "color": "#2B3038", "edge_radius_front_mm": 2, "dome_mm": 0}, "placements": {"can": {"face": "front", "y_mm": 24}, "epd": {"face": "front", "y_mm": -40, "rotation": 90}, "reed": {"x_mm": 37, "y_mm": 26, "layer": 0}}, "held": [{"id": "can", "name": "Zyn can body (lid stands proud)", "shape": "cylinder", "size_mm": {"d": 70, "h": 13}, "orientation": "flat", "clearance_mm": 0.3, "insert": "pocket", "from": "front", "removable": true, "source": "user's own measurement (70 mm across, 20 mm tall with lid); pocket holds the lower ~13 mm of the can so the ~7 mm lid skirt stays outside and can pop off; Zyn 15-pouch can about 68-70 mm, EU 20-pouch about 68.5 x 24 mm", "sensor": {"part": "reed", "max_mm": 10}}]} } as unknown as Project;
+    const g = await generateCase(proj, specOf, { renders: false, stepImages: false });
+    const wt = g.report.checks.find((c) => c.id === "watertight")!;
+    expect(wt.ok, wt.message).toBe(true);
+    expect(g.report.notes.join(" ")).not.toContain("left out");
+    expect(g.report.held?.[0]).toMatchObject({ id: "can", room_mm: { d: 13.6 }, sleeve: expect.arrayContaining(["back"]) });
   });
 });
