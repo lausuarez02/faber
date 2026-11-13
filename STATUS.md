@@ -1,6 +1,6 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-12 (round 14 integrated: behaviour over time made testable (seeds, NTP clock, capture timing, request bodies, OpenAPI mocks, local services, flash across reboots, duty-cycle battery life, camera indicator); round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-13 (round 15 integrated: cases that hold a non-electronic object, reed / Hall lid sensors, e-paper and memory-LCD screens, deep sleep with battery life in days, RTC parts on the test clock; round 14 integrated: behaviour over time made testable (seeds, NTP clock, capture timing, request bodies, OpenAPI mocks, local services, flash across reboots, duty-cycle battery life, camera indicator); round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
@@ -8,6 +8,36 @@ one-line goal to a wired, programmed and tested device using only Jumper's tools
 watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+
+## Round 15, integrated on main (2026-11-13): cases that hold things, lids, always-on screens, deep sleep, days
+
+`round15/gaps` (b0726ad) merged into main (97e5ffa) with no conflicts. The track section below lists what
+each area does; guides: [docs/low-power.md](docs/low-power.md),
+[docs/enclosures.md](docs/enclosures.md#things-the-case-holds-round-15). The README's case paragraph now
+links both.
+
+Checks on the merged main (worktree `jumper-wt-r15-main`, native runtimes, Docker down):
+
+| Check | Result |
+| --- | --- |
+| `pnpm gen` | exit 0, no generated file changed |
+| `pnpm typecheck` | exit 0 |
+| `pnpm test` | exit 0: **243 files passed, 2 skipped; 1967 tests passed, 5 expected fail, 5 skipped** (includes the real-QEMU deep-sleep tests) |
+| `pnpm test:e2e` (E2E_PORT=6560, E2E_HUB_PORT_BASE=13300) | exit 0: **114 passed, 16 skipped** (device-specific), 0 failed, first run, run alone after the unit suite |
+
+Verified: every behaviour in the track table, by its unit tests, the real-CAD held-object tests
+(watertight, nothing in the object's room) and the real-firmware deep-sleep integration test (XIAO
+ESP32-C3 in QEMU, an hour of virtual sleep in about a second); the e2e suite shows the round did not
+break the app.
+
+Not verified / honest notes:
+- No e2e drives the new features themselves: the magnet-distance slider and hold-to-press reed are
+  covered by `controls.test.ts` only, and the Case view has no e2e with an `enclosure.held` object.
+- Nothing was printed, and no real board, magnet, reed, Hall sensor or panel was tried; e-paper and
+  memory-LCD power figures are datasheet / vendor typicals.
+- Gaps carried from the track: deep sleep for the ESP32 family only, no slow-clock drift or wake boot
+  time, GxEPD2 / Adafruit_EPD / Adafruit_SharpMem not in the pinned library set, a custom held shape is
+  its bounding box, lid sensors are checked rather than auto-placed, the Docker image lacks JumperSleep.
 
 ## Round 15, track gaps (2026-11-13): cases that hold things, lids, always-on screens, deep sleep, days
 

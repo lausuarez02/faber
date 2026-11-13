@@ -86,7 +86,10 @@ slide switch and a Schottky diode (USB unplugged, 11/11 tests, 0 design errors),
 measures 70.7 × 94.3 × 19.6 mm (97 cm³, rounded in 3D with domed faces; "tight" for a pocket at
 19.6 mm thick); a puck variant (72.7 × 72.7 × 25 mm) sits next to it. In the app, the **Case** button shows the case in 3D with see-through and explode sliders,
 the checks, the downloads and **Factory pack (zip)**. The print, the plastic and the hand feel are
-not tested. Guide: [docs/enclosures.md](docs/enclosures.md); power: [docs/power.md](docs/power.md).
+not tested. A case can also hold something that is not electronics (`enclosure.held`: a slot, pocket or
+snap-in room sized to the object, with a lid sensor checked beside it), and devices that deep-sleep with
+an e-paper or memory-LCD screen get battery life in days. Guide: [docs/enclosures.md](docs/enclosures.md); power: [docs/power.md](docs/power.md),
+[docs/low-power.md](docs/low-power.md).
 
 ## Use Jumper from your agent
 
