@@ -2,7 +2,7 @@ import { buildNets, type Project } from "@jumper/project-format";
 import { Simulation, type PartRegistry, type VisualValue } from "@jumper/sim-core";
 import { assemblyReason, assemblyStyle } from "../assembly.ts";
 import { fail } from "../errors.ts";
-import { checkDuty, powerBudget, type Duty, type PowerProfile } from "../power-budget.ts";
+import { checkDuty, measuredSleep, powerBudget, type Duty, type PowerProfile } from "../power-budget.ts";
 import type { ToolModule } from "./types.ts";
 
 /**
@@ -86,6 +86,8 @@ export const powerTools: ToolModule = {
           target_hours: { type: ["number", "null"], description: "Round 14: hours the device should run on one charge (jumper.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it." },
           duty: { type: ["object", "null"], description: 'Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Merged into power.duty; null clears it.' },
           sleep: { type: ["string", "null"], enum: ["none", "light", "deep", null], description: "Round 14: what the board does between active moments." },
+          wakes_per_day: { type: ["number", "null"], description: "Round 15: a sleeping board wakes this many times a day (timer + button / lid). null removes it." },
+          awake_s: { type: ["number", "null"], description: "Round 15: seconds awake per wake (boot, read, draw; an e-paper full refresh is 2 s). null removes it." },
           why,
         },
       },
@@ -102,6 +104,8 @@ export const powerTools: ToolModule = {
           target_hours: { type: "number", description: "Hours on one charge to compare against (default: power.target_hours)." },
           duty: { type: "object", description: 'What-if duty per role or part id: "always", "off" or {"on_s", "every_s"}.' },
           sleep: { type: "string", enum: ["none", "light", "deep"] },
+          wakes_per_day: { type: "number", description: "Round 15: what-if wakes per day of a sleeping board (default: power.wakes_per_day, else measured from the last run's deep sleeps, else the firmware's sleep timer)." },
+          awake_s: { type: "number", description: "Round 15: what-if seconds awake per wake." },
         },
       },
       readOnly: true,
@@ -131,13 +135,16 @@ export const powerTools: ToolModule = {
         if (why) fail("bad-arg", `estimate_power: duty.${k} is not valid`, why, 'pass e.g. {"duty": {"camera": {"on_s": 2, "every_s": 600}}}');
       }
       if (args.target_hours !== undefined && !(Number(args.target_hours) > 0)) fail("bad-arg", "estimate_power: target_hours must be a positive number", `got ${JSON.stringify(args.target_hours)}`, 'pass e.g. {"target_hours": 24}');
-      const b = powerBudget(s.project, s.registry, s.firmwareSource(), { ...(duty ? { duty } : {}), ...(typeof args.target_hours === "number" ? { target_hours: args.target_hours } : {}), ...(typeof args.sleep === "string" ? { sleep: args.sleep as PowerProfile["sleep"] } : {}) });
+      for (const k of ["wakes_per_day", "awake_s"] as const) if (args[k] !== undefined && !(Number(args[k]) >= 0)) fail("bad-arg", `estimate_power: ${k} must be a number of 0 or more`, `got ${JSON.stringify(args[k])}`, `pass e.g. {"${k}": ${k === "awake_s" ? 2 : 30}}`);
+      const live = s.liveSleep();
+      const measured = live ? measuredSleep(live.log, live.t_ms) : undefined;
+      const b = powerBudget(s.project, s.registry, s.firmwareSource(), { ...(duty ? { duty } : {}), ...(typeof args.target_hours === "number" ? { target_hours: args.target_hours } : {}), ...(typeof args.sleep === "string" ? { sleep: args.sleep as PowerProfile["sleep"] } : {}), ...(typeof args.wakes_per_day === "number" ? { wakes_per_day: args.wakes_per_day } : {}), ...(typeof args.awake_s === "number" ? { awake_s: args.awake_s } : {}) }, measured ? { measured } : {});
       x.summary(b.summary);
       return { ...b, next: b.assumptions.length ? "correct the guesses with set_power {duty: {...}} (saved in jumper.json power.duty), then check_design" : "check_design reports battery-life against power.target_hours" };
     },
     set_power(args, x) {
       const s = x.session;
-      if (args.usb === undefined && args.target_hours === undefined && args.duty === undefined && args.sleep === undefined) fail("bad-arg", "set_power needs usb, target_hours, duty or sleep", "nothing to change was given", 'pass {"usb": false} to run from the battery, or {"target_hours": 24, "duty": {"camera": "always"}}');
+      if (args.usb === undefined && args.target_hours === undefined && args.duty === undefined && args.sleep === undefined && args.wakes_per_day === undefined && args.awake_s === undefined) fail("bad-arg", "set_power needs usb, target_hours, duty or sleep", "nothing to change was given", 'pass {"usb": false} to run from the battery, or {"target_hours": 24, "duty": {"camera": "always"}}');
       if (args.usb === undefined) {
         // Round 14: the battery-life profile (target, duty cycles, sleep), an undoable edit
         const cur = { ...(s.project.power ?? {}) } as Record<string, unknown>;
@@ -160,6 +167,12 @@ export const powerTools: ToolModule = {
           if (args.sleep === null) delete cur.sleep;
           else if (!["none", "light", "deep"].includes(String(args.sleep))) fail("bad-arg", `set_power: sleep '${String(args.sleep)}' is not a sleep mode`, "the modes are none, light and deep", 'pass {"sleep": "light"}');
           else cur.sleep = args.sleep;
+        }
+        for (const k of ["wakes_per_day", "awake_s"] as const) {
+          if (args[k] === undefined) continue;
+          if (args[k] === null) delete cur[k];
+          else if (!(Number(args[k]) >= 0) || (k === "awake_s" && !(Number(args[k]) > 0))) fail("bad-arg", `set_power: ${k} must be a ${k === "awake_s" ? "positive number" : "number of 0 or more"}`, `got ${JSON.stringify(args[k])}`, `pass e.g. {"${k}": ${k === "awake_s" ? 2 : 30}}, or null to remove it`);
+          else cur[k] = Number(args[k]);
         }
         x.commit("set_power profile", { ...s.project, power: cur as NonNullable<Project["power"]> });
         const b = powerBudget(s.project, s.registry, s.firmwareSource());

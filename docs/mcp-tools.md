@@ -566,6 +566,8 @@ Say whether a USB cable is plugged into the board (jumper.json power.usb; defaul
 | `target_hours` | number \| null |  | Round 14: hours the device should run on one charge (jumper.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it. |
 | `duty` | object \| null |  | Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Merged into power.duty; null clears it. |
 | `sleep` | string \| null |  | one of `none`, `light`, `deep`, `null`. Round 14: what the board does between active moments. |
+| `wakes_per_day` | number \| null |  | Round 15: a sleeping board wakes this many times a day (timer + button / lid). null removes it. |
+| `awake_s` | number \| null |  | Round 15: seconds awake per wake (boot, read, draw; an e-paper full refresh is 2 s). null removes it. |
 | `why` | string |  | Short reason shown to the human in the step list, e.g. "check it runs from the battery". |
 
 ### estimate_power
@@ -577,6 +579,8 @@ Round 14: how long the battery lasts, from each load's datasheet current and how
 | `target_hours` | number |  | Hours on one charge to compare against (default: power.target_hours). |
 | `duty` | object |  | What-if duty per role or part id: "always", "off" or {"on_s", "every_s"}. |
 | `sleep` | string |  | one of `none`, `light`, `deep` |
+| `wakes_per_day` | number |  | Round 15: what-if wakes per day of a sleeping board (default: power.wakes_per_day, else measured from the last run's deep sleeps, else the firmware's sleep timer). |
+| `awake_s` | number |  | Round 15: what-if seconds awake per wake. |
 
 ### set_assembly
 

@@ -118,6 +118,8 @@ export const PowerOptionsSchema = z.object({
     .optional()
     .describe('Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Unset loads are guessed from the firmware (estimate_power lists the guesses).'),
   sleep: z.enum(["none", "light", "deep"]).optional().describe("Round 14: what the board does between active moments (default: guessed from the firmware)."),
+  wakes_per_day: z.number().nonnegative().optional().describe("Round 15: a board that sleeps wakes this many times a day (a timer each hour = 24, plus the button / lid presses you expect). Sets the CPU's awake share and how often parts with an event (an e-paper refresh) run."),
+  awake_s: z.number().positive().optional().describe("Round 15: seconds the board stays awake per wake (boot, read, draw, wait for the screen; default 1)."),
 });
 
 /**

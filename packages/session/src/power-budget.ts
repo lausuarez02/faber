@@ -18,6 +18,37 @@ export interface PowerProfile {
   duty?: Record<string, Duty>;
   /** What the board does between active moments: "none" (stays on), "light" or "deep" sleep. */
   sleep?: "none" | "light" | "deep";
+  /** Round 15: wakes per day of a board that sleeps (timer + presses). */
+  wakes_per_day?: number;
+  /** Round 15: seconds awake per wake. */
+  awake_s?: number;
+}
+
+/** Round 15: a wake pattern measured from a run's deep sleeps (Simulation.sleepLog()). */
+export interface MeasuredSleep {
+  wakes_per_day: number;
+  awake_s: number;
+  /** In words: what was measured, over how long. */
+  source: string;
+}
+
+/** Wakes per day and seconds awake per wake from a run's sleep log (extrapolated from the run's length). */
+export function measuredSleep(log: readonly { t_ms: number; woke?: { t_ms: number } }[], runMs: number): MeasuredSleep | undefined {
+  if (!log.length || runMs <= 0) return undefined;
+  const awake: number[] = [log[0]!.t_ms];
+  for (let i = 0; i + 1 < log.length; i++) if (log[i]!.woke) awake.push(log[i + 1]!.t_ms - log[i]!.woke!.t_ms);
+  const wakes = log.filter((e) => e.woke).length;
+  const awake_s = Math.max(0.001, awake.reduce((a, b) => a + b, 0) / awake.length / 1000);
+  return { wakes_per_day: Math.round(((wakes + 1) / runMs) * 86_400_000 * 10) / 10, awake_s: Math.round(awake_s * 1000) / 1000, source: `the last run: ${wakes + 1} boot(s) in ${Math.round(runMs / 1000)} s of virtual time, ${Math.round(awake_s * 1000)} ms awake each` };
+}
+
+/** The timer the firmware arms before sleeping, in seconds (literal products only, e.g. 3600ULL * 1000000ULL). */
+export function sleepTimerSeconds(src: string): number | undefined {
+  const m = /(?:esp_sleep_enable_timer_wakeup|esp_deep_sleep)\s*\(\s*([0-9ULul\s*]+)\)/.exec(src);
+  if (!m) return undefined;
+  const factors = m[1]!.split("*").map((x) => Number(x.trim().replace(/[ULul]+$/, "")));
+  if (!factors.length || factors.some((f) => !Number.isFinite(f) || f <= 0)) return undefined;
+  return factors.reduce((a, b) => a * b, 1) / 1e6;
 }
 
 export interface PowerLoad {
@@ -37,7 +68,11 @@ export interface PowerBudget {
   avg_ma: number;
   peak_ma: number;
   hours?: number;
+  /** Round 15: hours / 24, for devices that last weeks. */
+  days?: number;
   target_hours?: number;
+  /** Round 15: a sleeping board's wake pattern the estimate used. */
+  wakes?: { per_day: number; awake_s: number };
   loads: PowerLoad[];
   assumptions: string[];
   suggestions: string[];
@@ -85,7 +120,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 /** The power budget of a project. `profile` overrides jumper.json power (estimate_power's what-if). */
-export function powerBudget(project: Project, registry: PartRegistry, firmwareSource = "", profile?: PowerProfile, opts: { suggest?: boolean } = {}): PowerBudget {
+export function powerBudget(project: Project, registry: PartRegistry, firmwareSource = "", profile?: PowerProfile, opts: { suggest?: boolean; measured?: MeasuredSleep } = {}): PowerBudget {
   const saved = (project.power ?? {}) as PowerProfile & { usb?: boolean };
   const prof: PowerProfile = { ...saved, ...profile, duty: { ...(saved.duty ?? {}), ...(profile?.duty ?? {}) } };
   const duty = prof.duty ?? {};
@@ -105,6 +140,25 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
   const chip = CHIPS[chipId];
   const sleepMode = prof.sleep ?? (/esp_deep_sleep_start|esp_deep_sleep\(|deepSleep\(/.test(src) ? "deep" : /esp_light_sleep_start/.test(src) ? "light" : "none");
   if (prof.sleep === undefined && sleepMode !== "none") assumptions.push(`the board ${sleepMode}-sleeps between active moments (the firmware calls ${sleepMode === "deep" ? "esp_deep_sleep_start" : "esp_light_sleep_start"}); set power.sleep to change it`);
+  // round 15: how often a sleeping board wakes and for how long
+  let wakes = prof.wakes_per_day;
+  let awakeS = prof.awake_s;
+  if (sleepMode !== "none") {
+    if (wakes === undefined && opts.measured) {
+      wakes = opts.measured.wakes_per_day;
+      awakeS ??= opts.measured.awake_s;
+      assumptions.push(`${wakes} wakes a day, ${awakeS} s awake each, measured from ${opts.measured.source}; set power.wakes_per_day / awake_s for the real pattern (button presses add wakes)`);
+    }
+    if (wakes === undefined) {
+      const t = sleepTimerSeconds(src);
+      wakes = t ? Math.round((86400 / t) * 10) / 10 : 24;
+      assumptions.push(t ? `the board wakes on its ${t >= 3600 ? `${+(t / 3600).toFixed(2)} h` : `${t} s`} timer, ${wakes} times a day; set power.wakes_per_day to add the wakes a button or lid gives` : "the board wakes about once an hour (24 a day); set power.wakes_per_day to the real number");
+    }
+    if (awakeS === undefined) {
+      awakeS = 1;
+      assumptions.push("each wake takes about 1 s awake (boot, read, draw); set power.awake_s (an e-paper full refresh alone takes 2 s)");
+    }
+  }
 
   // Wi-Fi (ESP32 family): connected and idle vs bursts
   const usesNet = NET.test(src) && !!chip?.wifiBurst;
@@ -134,9 +188,13 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
     const others = loads.map((l) => l.duty);
     const busy = sleepMode === "none" ? 1 : Math.max(0.01, ...others);
     const cpu = chip?.cpu ?? bspec.current_ma?.typ ?? 0;
-    const idle = sleepMode === "deep" ? (chip?.deep ?? 0.05) : sleepMode === "light" ? (chip?.light ?? 1) : cpu;
-    const d: Duty = sleepMode === "none" ? "always" : (duty.cpu ?? { on_s: Math.round(busy * 600), every_s: 600 });
-    loads.push({ load: `board CPU (${bspec.mcu?.chip ?? bspec.name})`, part: boardPart.id, active_ma: cpu, idle_ma: round3(idle), duty: sleepMode === "none" ? 1 : dutyFraction(d), duty_text: sleepMode === "none" ? "always" : `${dutyText(d)} awake, ${sleepMode} sleep otherwise`, avg_ma: 0, source: chip?.source ?? `${bspec.name} typical current (part data, current_ma.typ ${bspec.current_ma?.typ ?? "?"} mA)` });
+    // round 15: the board's own sleep current (regulator, charger, LEDs) when its part data has one
+    const boardSleep = (bspec.current_ma?.standby_ua ?? 0) / 1000;
+    const idle = sleepMode === "deep" ? Math.max(chip?.deep ?? 0.05, boardSleep) : sleepMode === "light" ? Math.max(chip?.light ?? 1, boardSleep) : cpu;
+    const byWakes = sleepMode !== "none" && duty.cpu === undefined && wakes !== undefined;
+    const d: Duty = sleepMode === "none" ? "always" : (duty.cpu ?? (byWakes ? { on_s: Math.round(wakes! * awakeS! * 1000) / 1000, every_s: 86400 } : { on_s: Math.round(busy * 600), every_s: 600 }));
+    const dText = byWakes ? `${wakes} wakes a day x ${awakeS} s awake` : dutyText(d);
+    loads.push({ load: `board CPU (${bspec.mcu?.chip ?? bspec.name})`, part: boardPart.id, active_ma: cpu, idle_ma: round3(idle), duty: sleepMode === "none" ? 1 : dutyFraction(d), duty_text: sleepMode === "none" ? "always" : `${dText}, ${sleepMode} sleep otherwise`, avg_ma: 0, source: `${chip?.source ?? `${bspec.name} typical current (part data, current_ma.typ ${bspec.current_ma?.typ ?? "?"} mA)`}${boardSleep > (chip?.deep ?? 0) && sleepMode !== "none" ? `; the board itself draws ${bspec.current_ma!.standby_ua} µA asleep (part data)` : ""}` });
   }
 
   // Everything else with a current figure: screens, amplifiers, LEDs, sensors
@@ -160,6 +218,25 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
       loads.push({ load: `audio amplifier (${s.name})`, part: p.id, active_ma: round1(playing), idle_ma: typ, duty: dutyFraction(d), duty_text: dutyText(d), avg_ma: 0, source: `${s.name} datasheet (2.4 mA quiescent, 92 % efficient); speech at about a tenth of full-scale power into ${ohms} Ω (${round1(peakW * 1000)} mW peak at ${vbat} V)` });
       continue;
     }
+    // round 15: a part that draws typ only while it does one thing (an e-paper refresh), microamps otherwise
+    const ev = s.current_ma?.event_ms;
+    if (ev && typ) {
+      const given = duty[p.id] ?? (isDisplay ? duty.display : undefined);
+      const standby = (s.current_ma?.standby_ua ?? 0) / 1000;
+      let frac: number;
+      let text: string;
+      if (given !== undefined) {
+        frac = dutyFraction(given);
+        text = dutyText(given);
+      } else {
+        const perDay = wakes ?? 96;
+        if (wakes === undefined) assumptions.push(`${p.id} does its ${s.current_ma?.event ?? "update"} about every 15 min (96 a day); set power.duty.${p.id} or power.wakes_per_day`);
+        frac = Math.min(1, (perDay * ev) / 86_400_000);
+        text = `${perDay} ${s.current_ma?.event ?? "updates"} a day x ${ev} ms`;
+      }
+      loads.push({ load: isDisplay ? `screen (${s.name})` : s.name, part: p.id, active_ma: typ, idle_ma: round3(standby), duty: frac, duty_text: text, avg_ma: 0, source: `${s.name} part data (${typ} mA for ${ev} ms per ${s.current_ma?.event ?? "event"}, ${s.current_ma?.standby_ua ?? 0} µA otherwise)` });
+      continue;
+    }
     if (!typ) continue;
     const d = pick([p.id, ...(isDisplay ? ["display"] : [])], "always", `${p.id} (${s.name}) is on all the time${isDisplay ? " (screen and backlight)" : ""}; set power.duty.${isDisplay ? "display" : p.id} if the firmware turns it off`);
     loads.push({ load: isDisplay ? `screen (${s.name})` : s.name, part: p.id, active_ma: typ, idle_ma: 0, duty: dutyFraction(d), duty_text: dutyText(d), avg_ma: 0, source: `${s.name} part data (current_ma.typ ${typ} mA)` });
@@ -172,6 +249,7 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
 
   const cap = lipo ? Number(lipo.props?.capacity ?? spec("lipo-battery")?.props?.find((x) => x.id === "capacity")?.default ?? 500) : undefined;
   const hours = cap !== undefined && avg > 0 ? round1((cap * USABLE) / avg) : undefined;
+  const days = hours !== undefined ? round1(hours / 24) : undefined;
   const target = prof.target_hours;
   const suggestions: string[] = [];
   if (cap !== undefined && target !== undefined && hours !== undefined && hours < target) {
@@ -191,13 +269,14 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
   const summary =
     cap === undefined
       ? `About ${round1(avg)} mA on average (peaks ~${Math.round(peak)} mA); no LiPo cell in the project, so no battery life.`
-      : `About ${hours} h on ${cap} mAh (${round1(avg)} mA average, peaks ~${Math.round(peak)} mA)${target !== undefined ? `; target ${target} h: ${hours! >= target ? "met" : "NOT met"}` : ""}. Estimate from datasheet typicals and duty cycles, not measured.`;
+      : `About ${hours! >= 72 ? `${round1(hours! / 24)} days (${hours} h)` : `${hours} h`} on ${cap} mAh (${avg < 1 ? `${round3(avg) * 1000} µA` : `${round1(avg)} mA`} average, peaks ~${Math.round(peak)} mA)${target !== undefined ? `; target ${target} h: ${hours! >= target ? "met" : "NOT met"}` : ""}. Estimate from datasheet typicals and duty cycles, not measured.`;
   return {
     ...(lipo && cap !== undefined ? { battery: { part: lipo.id, capacity_mah: cap, usable_mah: Math.round(cap * USABLE) } } : {}),
     avg_ma: round1(avg),
     peak_ma: Math.round(peak),
-    ...(hours !== undefined ? { hours } : {}),
+    ...(hours !== undefined ? { hours, days } : {}),
     ...(target !== undefined ? { target_hours: target } : {}),
+    ...(wakes !== undefined && awakeS !== undefined ? { wakes: { per_day: wakes, awake_s: awakeS } } : {}),
     loads: out,
     assumptions,
     suggestions,

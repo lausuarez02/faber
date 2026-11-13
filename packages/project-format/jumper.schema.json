@@ -1371,6 +1371,16 @@
             "light",
             "deep"
           ]
+        },
+        "wakes_per_day": {
+          "description": "Round 15: a board that sleeps wakes this many times a day (a timer each hour = 24, plus the button / lid presses you expect). Sets the CPU's awake share and how often parts with an event (an e-paper refresh) run.",
+          "type": "number",
+          "minimum": 0
+        },
+        "awake_s": {
+          "description": "Round 15: seconds the board stays awake per wake (boot, read, draw, wait for the screen; default 1).",
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       }
     },

@@ -15180,7 +15180,8 @@ export const partDefinitions: PartDefinition[] = [
       "mass_g": 3,
       "current_ma": {
         "typ": 20,
-        "max": 350
+        "max": 350,
+        "standby_ua": 44
       },
       "price_usd": 4.99,
       "buy_links": [
@@ -15680,7 +15681,8 @@ export const partDefinitions: PartDefinition[] = [
       "mass_g": 3,
       "current_ma": {
         "typ": 22,
-        "max": 100
+        "max": 100,
+        "standby_ua": 14
       },
       "price_usd": 7.49,
       "buy_links": [

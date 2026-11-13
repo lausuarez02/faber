@@ -201,6 +201,14 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
   const sim = host.sim;
   // round 14: the NTP clock this test starts from (deterministic dates), and the event timeline
   if (s.clock && opts.network?.view.setClock) opts.network.view.setClock(Date.parse(s.clock));
+  // round 15: real-time-clock parts (a DS3231...) follow the scenario's clock too
+  const rtcs = project.parts.filter((p) => registry.get(p.type)?.spec.bindings?.some((b) => b.key === "time") && (registry.get(p.type)?.spec.tags ?? []).some((t) => /^(rtc|real-time clock|clock)$/i.test(t)));
+  const setRtcs = (iso: string) => {
+    const local = new Date(Date.parse(iso)).toISOString().slice(0, 19); // the RTC holds wall time, no zone
+    for (const p of rtcs) sim.interact(p.id, { kind: "set", key: "time", value: local });
+    return rtcs.map((p) => p.id);
+  };
+  if (s.clock) setRtcs(s.clock);
   const evCtx = { host, ...(opts.network ? { net: { view: opts.network.view, drain: () => opts.network!.drain() } } : {}), netStartSeq };
   let saidFloor = -Infinity; // round 14: utterances are matched in time order (clips and speech-API text)
   const saidUsed = new Set<string>();
@@ -422,12 +430,14 @@ export function runScenario(host: SimHost, s: Scenario, project: Project, regist
         detail = `rebooted the board at ${Math.round(sim.timeMs)} ms (flash kept)`;
       } else if ("set_clock" in step) {
         const net = opts.network;
-        if (!net?.view.setClock) {
+        const iso = new Date(Date.parse(step.set_clock as string)).toISOString();
+        const set = setRtcs(step.set_clock as string);
+        if (!net?.view.setClock && !set.length) {
           ok = false;
-          detail = "this project has no device network, so the device gets no time from NTP: set_clock sets what the sandbox's NTP answers. Fix: give the project a network (set_network) and call configTime() in the firmware";
+          detail = "this project has no device network and no real-time-clock part, so nothing in the device gets the time: set_clock sets what the sandbox's NTP answers and what RTC parts (DS3231...) read. Fix: give the project a network (set_network) and call configTime() in the firmware, or add an RTC part and read it";
         } else {
-          net.view.setClock(Date.parse(step.set_clock as string));
-          detail = `NTP now answers ${new Date(Date.parse(step.set_clock as string)).toISOString()} (advancing with virtual time)`;
+          if (net?.view.setClock) net.view.setClock(Date.parse(step.set_clock as string));
+          detail = [net?.view.setClock ? `NTP now answers ${iso} (advancing with virtual time)` : "", set.length ? `${set.join(", ")} now read${set.length === 1 ? "s" : ""} ${iso.slice(0, 19).replace("T", " ")}` : ""].filter(Boolean).join("; ");
         }
       } else if ("expect_capture" in step) {
         // Round 14: pictures the camera took (each esp_camera_fb_get), with their times.
