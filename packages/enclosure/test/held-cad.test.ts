@@ -69,5 +69,8 @@ describe("held object sleeve walls on a rounded custom outline (round 15 proof)"
     expect(wt.ok, wt.message).toBe(true);
     expect(g.report.notes.join(" ")).not.toContain("left out");
     expect(g.report.held?.[0]).toMatchObject({ id: "can", room_mm: { d: 13.6 }, sleeve: expect.arrayContaining(["back"]) });
+    // the floor stays out of the tin's room (it is not grown 0.3 mm towards the front like a hanging rib)
+    const hit = g.report.checks.find((c) => c.id === "no-intersection")!;
+    expect(hit.ok, hit.message).toBe(true);
   });
 });

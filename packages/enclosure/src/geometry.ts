@@ -272,8 +272,10 @@ export async function buildCase(L: Layout): Promise<Built> {
   const addF: Solid[] = [];
   const addB: Solid[] = [];
   for (const rib of L.ribs) {
-    const z0 = rib.shell === "front" ? rib.min[2] : rib.min[2] - 0.3;
-    const z1 = rib.shell === "front" ? rib.max[2] + 0.3 : rib.max[2];
+    // a rib reaches 0.3 mm into the wall it hangs from (a sure fuse); round 15: only when it reaches
+    // that wall: a held object's floor plate floats on its sleeve, and growing it would put it in the room
+    const z0 = rib.shell === "back" && rib.min[2] - 0.3 <= L.zBack + 0.05 ? rib.min[2] - 0.3 : rib.min[2];
+    const z1 = rib.shell === "front" && rib.max[2] + 0.3 >= L.zFront - 0.05 ? rib.max[2] + 0.3 : rib.max[2];
     const box = clip(r.makeBox([rib.min[0], rib.min[1], z0], [rib.max[0], rib.max[1], z1]));
     (rib.shell === "front" ? addF : addB).push(box);
   }
