@@ -4,7 +4,8 @@
  * plus the things people forget, found by rules over the part data (never per project):
  * a microSD card for a part with a card slot, the mating plug for a cell's JST lead, the USB cable
  * each connector needs, wire / heat-shrink / solder / tape for a soldered build, headers and a
- * breadboard for a breadboard build, screws and inserts for a screwed case, filament for the case.
+ * breadboard for a breadboard build, screws and inserts for a screwed case, filament for the case,
+ * the magnet a reed / Hall switch senses (round 15).
  */
 import { firmwareUsesCard } from "@jumper/enclosure";
 import { buildNets, type Project } from "@jumper/project-format";
@@ -192,6 +193,22 @@ export function shoppingList(inp: ShoppingInput): Shopping {
     return /micro\s?-?SD|TF card/i.test(words(spec)) && (spec?.category !== "board" || usesCard);
   });
   if (cardParts.length) extra("electronics", "microsd", cardParts.length, "microSD card", "1 to 32 GB, any class, formatted FAT32", "microSD card 8GB", 3, `${cardParts.map((p) => `${p.id} (the ${shortName(registry.get(p.type)?.spec)})`).join(", ")} read${cardParts.length > 1 ? "" : "s"} its files from it${project.parts.some((p) => registry.get(p.type)?.spec.props?.some((x) => x.id === "clips")) ? " (the sound clips: the Flash steps say how to make them)" : ""}`, true);
+
+  // round 15: a magnet-sensing part (reed switch, Hall switch: any part with a magnet_d_mm prop)
+  // needs the magnet it senses, of the size and grade the design was checked with
+  const magnets = new Map<string, string[]>();
+  for (const p of project.parts) {
+    const spec = registry.get(p.type)?.spec;
+    const def = (id: string) => p.props?.[id] ?? spec?.props?.find((x) => x.id === id)?.default;
+    if (!spec?.props?.some((x) => x.id === "magnet_d_mm")) continue;
+    const key = `${def("magnet_d_mm")}x${def("magnet_t_mm") ?? 2} mm ${def("magnet_grade") ?? "N35"}`;
+    magnets.set(key, [...(magnets.get(key) ?? []), p.id]);
+  }
+  for (const [key, ids] of magnets) {
+    const [size, grade] = key.split(" mm ");
+    const ferrite = /ferrite/i.test(grade!);
+    extra("electronics", `magnet-${size}`, ids.length, ferrite ? "Ferrite disc magnet" : "Neodymium disc magnet", `${size!.replace("x", " mm across x ")} mm thick, ${grade}, axially magnetised (a pack; one per sensor)`, ferrite ? `ferrite disc magnet ${size}mm` : `neodymium disc magnet ${size}mm ${grade}`, ferrite ? 0.3 : 0.4, `${ids.join(", ")} sense${ids.length > 1 ? "" : "s"} this magnet (its size and grade set the switching distance the design was checked with: a smaller or weaker one switches closer). Glue it to the moving side (a lid) facing the sensor, with CA glue`, false);
+  }
 
   // a JST lead needs a mating socket on whatever it plugs into, unless that part has one
   const nets = buildNets(project);

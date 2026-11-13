@@ -129,11 +129,20 @@ export class SyncBridgeLink {
   /** Like next(), but waits without blocking the event loop (Atomics.waitAsync): for the 1 to 3 s boot. */
   async nextAsync(timeoutMs: number): Promise<string[]> {
     const deadline = Date.now() + timeoutMs;
-    while (Atomics.load(this.ctrl, CTRL_SEQ) === this.consumed) {
-      const left = deadline - Date.now();
-      if (left <= 0) throw new BridgeTimeoutError(`no answer from the emulator within ${timeoutMs} ms`);
-      const w = (Atomics as unknown as { waitAsync: (a: Int32Array, i: number, v: number, t: number) => { async: boolean; value: Promise<string> | string } }).waitAsync(this.ctrl, CTRL_SEQ, this.consumed, Math.min(left, 250));
-      if (w.async) await w.value;
+    // Atomics.waitAsync does not keep Node's event loop alive, and the worker and the emulator
+    // process are unref'd: in a short-lived process (the CLI's `jumper test` booting the next
+    // scenario's emulator) the loop could empty while QEMU was still booting, and Node exited with
+    // "unsettled top-level await" (exit 13) and no output. A ref'd timer holds the loop while we wait.
+    const hold = setInterval(() => {}, 1000);
+    try {
+      while (Atomics.load(this.ctrl, CTRL_SEQ) === this.consumed) {
+        const left = deadline - Date.now();
+        if (left <= 0) throw new BridgeTimeoutError(`no answer from the emulator within ${timeoutMs} ms`);
+        const w = (Atomics as unknown as { waitAsync: (a: Int32Array, i: number, v: number, t: number) => { async: boolean; value: Promise<string> | string } }).waitAsync(this.ctrl, CTRL_SEQ, this.consumed, Math.min(left, 250));
+        if (w.async) await w.value;
+      }
+    } finally {
+      clearInterval(hold);
     }
     return this.next(0);
   }

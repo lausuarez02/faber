@@ -5,6 +5,7 @@
  * Everything is in the case frame (mm).
  */
 import { apply, type Mat3, ROTATIONS } from "./mech.ts";
+import { checkMesh, meshOf } from "./mesh.ts";
 import type { Layout, Opening } from "./layout.ts";
 import { contains, planBounds, planDrawing } from "./plan.ts";
 import { occt, type Replicad } from "./occt.ts";
@@ -74,9 +75,25 @@ function frameR(u: Vec3, v: Vec3, n: Vec3): Mat3 {
 
 function tryFillet(solid: Solid, r: number, z: number): Solid | undefined {
   try {
-    return solid.fillet(r, (e: Solid) => e.inPlane("XY", z));
+    const s = solid.fillet(r, (e: Solid) => e.inPlane("XY", z));
+    return sound(s) ? s : undefined;
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * A fillet OpenCascade "succeeded" at can still be a broken solid: on some outlines (an arc meeting
+ * straight sides) the rounded rim comes back as a separate face that is not sewn to the flat face,
+ * so the printed STL has a gap all round the edge (round 15: a 1.65 mm back rim, 200 open edges).
+ * A coarse tessellation finds it: closed, one piece, positive volume, or the caller tries a smaller radius.
+ */
+export function sound(s: Solid): boolean {
+  try {
+    const c = checkMesh(meshOf(s, 0.2, 0.5));
+    return c.closed && c.shells === 1 && c.volume > 0;
+  } catch {
+    return false;
   }
 }
 
@@ -124,7 +141,7 @@ export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number
         return bb.center[2] > zMid ? rT : rB;
       });
       s = s.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf]));
-      if (r.measureVolume(s) > 0) return { solid: s, r: rT, rBack: rB };
+      if (r.measureVolume(s) > 0 && sound(s)) return { solid: s, r: rT, rBack: rB };
     } catch {
       // try a smaller radius
     }
@@ -273,14 +290,50 @@ export async function buildCase(L: Layout): Promise<Built> {
     for (const sl of c.slots ?? []) ring = ring.cut(r.makeBox([sl.min[0], sl.min[1], z0 - 1], [sl.max[0], sl.max[1], z1 + 1]));
     addB.push(clip(ring));
   }
-  const fuseAll = (shell: Solid, pieces: Solid[]) => {
+  const fuseAll = (shell: Solid, pieces: Solid[], name: string) => {
     if (!pieces.length) return shell;
+    const spare = pieces.map((q) => q.clone());
     let all = pieces[0]!;
     for (const q of pieces.slice(1)) all = all.fuse(q);
-    return shell.fuse(all);
+    const fused = shell.fuse(all);
+    if (sound(fused)) return fused;
+    // Round 15: a piece clipped to the rounded outer body (a held object's sleeve wall meeting the
+    // rim fillet) can share a face with it, and OpenCascade's fuse then leaves the rim unsewn: an STL
+    // with a gap all round the edge. Fuse piece by piece, nudging a piece that breaks the solid by a
+    // few hundredths of a millimetre (z first, into the wall it already overlaps, then sideways), and
+    // leave out one that still breaks it (said in the notes).
+    let s = shell;
+    let nudged = 0;
+    const dropped: string[] = [];
+    for (const q of spare) {
+      let ok = false;
+      const moves: Vec3[] = [[0, 0, 0], [0, 0, 0.02], [0, 0, -0.02], [0, 0, 0.05], [0, 0, -0.05], [0.03, 0, 0], [-0.03, 0, 0], [0, 0.03, 0], [0, -0.03, 0]];
+      for (const mv of moves) {
+        const dz = mv.some((v) => v !== 0);
+        const tool = dz ? q.clone().translate(mv) : q.clone();
+        let f: Solid;
+        try {
+          f = s.fuse(tool);
+        } catch {
+          continue;
+        }
+        if (!sound(f)) continue;
+        s = f;
+        ok = true;
+        if (dz) nudged++;
+        break;
+      }
+      if (!ok) {
+        const [lo, hi] = q.boundingBox.bounds as [Vec3, Vec3];
+        dropped.push(`(${lo.map((v) => v.toFixed(1)).join(", ")}) to (${hi.map((v) => v.toFixed(1)).join(", ")})`);
+      }
+    }
+    if (nudged) notes.push(`${nudged} rib / wall piece(s) of the ${name} shell were fused 0.02-0.05 mm off their exact place (OpenCascade left the rounded rim open on the exact one; within the print tolerance).`);
+    if (dropped.length) notes.push(`The ${name} shell has ${dropped.length} rib / wall piece(s) left out, at ${dropped.join("; ")} mm. Why: fusing them broke the solid in OpenCascade (the printed file would have had a gap). Fix: change wall_mm, gap_mm or the outline a little and design again; the case still closes without them.`);
+    return s;
   };
-  front = fuseAll(front, addF);
-  back = fuseAll(back, addB);
+  front = fuseAll(front, addF, "front");
+  back = fuseAll(back, addB, "back");
 
   // openings through whichever shell they cross (a cut whose box misses a shell's box is skipped)
   const boxOf = (x: Solid) => x.boundingBox.bounds as [Vec3, Vec3];
@@ -295,11 +348,18 @@ export async function buildCase(L: Layout): Promise<Built> {
   // millimetre (well inside the tolerances), then reported with what to change
   const cutOpening = (o: Opening, make: (jitter: number) => Solid) => {
     let last: unknown;
+    let open: [Solid, Solid] | undefined;
     for (const j of [0, 0.03, -0.03, 0.07]) {
       try {
         const tool = make(j);
         const f2 = cutIf(front, tool);
         const b2 = cutIf(back, tool);
+        // round 15: a cut can "succeed" and still leave a shell open (an STL with a gap): try the next
+        // size; if every size does, keep the exact one and the watertight check reports it
+        if ((f2 !== front && !sound(f2)) || (b2 !== back && !sound(b2))) {
+          open ??= [f2, b2];
+          continue;
+        }
         front = f2;
         back = b2;
         if (j) notes.push(`The ${o.kind} for ${o.part} was cut ${Math.abs(j)} mm ${j > 0 ? "larger" : "smaller"} (OpenCascade failed on the exact size; within the print tolerance).`);
@@ -307,6 +367,10 @@ export async function buildCase(L: Layout): Promise<Built> {
       } catch (e) {
         last = e;
       }
+    }
+    if (open) {
+      [front, back] = open;
+      return;
     }
     throw new Error(`OpenCascade could not cut the ${o.kind} for ${o.part} on the ${o.face}. Why: the boolean between that opening and this curved outline failed (${last instanceof Error ? last.message : "a kernel exception"}). Fix: change dome_mm or edge_radius_front_mm a little, or nudge the outline, and design again`);
   };
