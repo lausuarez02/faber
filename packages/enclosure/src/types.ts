@@ -43,6 +43,8 @@ export type FitCheckId =
   | "buttons-reachable" // every button cap reaches through its hole with travel to spare
   | "connector-access" // USB etc. opening lines up with the receptacle, plug clearance kept
   | "camera-view" // round 14: a camera lens has its hole, and the field of view clears the wall
+  | "held-object" // round 15: a held object's room, opening and walls
+  | "held-sensor" // round 15: a sensor that must sit next to a held object
   | "min-wall" // every wall >= min (1.2 mm FDM)
   | "printable" // no overhang needing support except where listed
   | "watertight" // every STL is a closed 2-manifold with volume > 0
@@ -87,6 +89,8 @@ export interface CaseReport {
   /** Round 12: how it goes together: the plan (case/assembly/plan.json), a picture per step, the side it opens on like a book, the order per shell, and how many of its checks failed. */
   assembly?: { steps: number; plan: string; images: string[]; hinge: string; order: { front: string[]; back: string[] }; errors: number; warnings: number };
   /** Round 8: the distribution proposal the case was built from (enclosure.layout; "auto" = balanced), its fill ratio (parts' volume / cavity) and layers. */
+  /** Round 15: what the case holds that is not electronics (a tin, a card deck): its room, opening, walls and how to check its size. */
+  held?: import("./held.ts").HeldReport[];
   layout?: { goal: string; asked: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string };
 }
 

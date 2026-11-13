@@ -46,7 +46,7 @@ AVR and RP2040 firmware is deterministic already (avr-libc's `random()` and the 
 | `{"request": {"host", "method", "path", "status", "content_type", "body_contains", "body_json", "min_bytes"}, "within_ms"}` | What the request carried. `body_json` matches JSON, form and multipart fields by dot path (`"messages.0.role"`), with `"x*"` (starts with) and `"?"` (present, not empty); a multipart file part has `<name>.filename`, `<name>.content_type`, `<name>.bytes`. `read_network` shows every request's `content_type` and `body` (fields, parts, the start of a text body; secrets redacted). |
 | `{"network_fault": {"kind": "wifi_drop"}}` ... `{"network_fault": {"kind": "clear"}}` | Wi-Fi goes down (the firmware sees it disconnect, DNS and connections fail) and comes back (WiFi.reconnect / auto-reconnect joins again). |
 | `{"reset_board": true}` | Reboots the board now (reset button / power cycle): virtual time, the parts, the logs go on; **what the firmware wrote to flash stays** (LittleFS, SPIFFS, NVS / Preferences). |
-| `{"set_clock": "..."}` | NTP's answer from now on. |
+| `{"set_clock": "..."}` | NTP's answer from now on, and (round 15) what RTC parts such as the DS3231 read. |
 
 ### The offline queue, end to end
 
@@ -102,3 +102,10 @@ AVR and RP2040 firmware is deterministic already (avr-libc's `random()` and the 
 The microSD card is not emulated (LittleFS / SPIFFS / NVS on the flash are). The speech is checked as
 the text sent to the API (and the I2S audio played, see [audio.md](audio.md)), not as sound. Wi-Fi
 radio behaviour (roaming, power save timing) is not emulated; `wifi_drop` is a clean link loss.
+
+## Sleeping devices (round 15)
+
+A board that calls `esp_deep_sleep_start()` sleeps in the simulator: no firmware runs, so
+`{"run_ms": 86400000}` passes a day in seconds, and it wakes on its timer or a wake pin with RTC
+memory, the clock and the wake cause kept. Check it with `{"expect_part": "<board>.asleep", "op": "==", "value": true}`
+and open a lid with `{"set": "lid.magnet", "value": "away"}`. Guide: [low-power.md](low-power.md).

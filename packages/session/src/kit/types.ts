@@ -208,6 +208,8 @@ export interface BuildKit {
   connect?: ConnectPlan;
   /** Round 14: battery life from each load's duty cycle (when the device has a LiPo cell). */
   power?: import("../power-budget.ts").PowerBudget;
+  /** Round 15: what the case holds that is not electronics (a tin, a card deck): its room, opening and how to check the fit. */
+  holds?: { id: string; name: string; object_mm: { w: number; h: number; d: number }; room_mm: { w: number; h: number; d: number }; clearance_mm: number; opening?: string; how: string; wall_mm: number; source: string; measure: string }[];
   troubleshooting: TroubleRow[];
   missing: { item: string; why: string; fix: string; say: string }[];
   /** The design check's errors and warnings about the circuit: fix them (or accept them knowingly) before buying. */

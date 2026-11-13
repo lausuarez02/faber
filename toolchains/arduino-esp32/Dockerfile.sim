@@ -7,6 +7,8 @@
 #   - JumperEth with jumper_eth_install() (used by the shim).
 #   - JumperCamera (round 13): the esp32-camera shim, linked into simulation builds of sketches that
 #     include esp_camera.h (frames from Jumper's camera port, QEMU patch 0004).
+#   - JumperSleep (round 15): the deep-sleep shim, linked into simulation builds of sketches that call
+#     esp_deep_sleep / esp_deep_sleep_start (Jumper wakes the board; RTC memory and the clock survive).
 #   - Pinned network libraries sketches commonly use, so the same source builds for the
 #     simulation and the device: PubSubClient (MIT), arduino-mqtt "MQTT" (MIT), ArduinoJson (MIT),
 #     arduinoWebSockets "WebSockets" (LGPL-2.1, a build input of the person's firmware; see NOTICE).
@@ -21,5 +23,6 @@ RUN arduino-cli lib update-index \
 COPY libraries/JumperEth /opt/arduino/user/libraries/JumperEth
 COPY libraries/JumperSim /opt/arduino/user/libraries/JumperSim
 COPY libraries/JumperCamera /opt/arduino/user/libraries/JumperCamera
+COPY libraries/JumperSleep /opt/arduino/user/libraries/JumperSleep
 COPY jumper-arduino-esp32.sh /usr/local/bin/jumper-arduino-esp32
 RUN chmod a+rx /usr/local/bin/jumper-arduino-esp32 && chmod -R a+rX /opt/arduino/user/libraries

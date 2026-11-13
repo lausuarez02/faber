@@ -32,7 +32,7 @@ export function isImu(def: PartDefinition | undefined): boolean {
 
 /** Units that describe how a part is built, not what it measures (no live slider for those). */
 const CONFIG_UNITS = new Set(["Ω", "V", "A", "ms", "µs", "us", "rpm", "s/60°"]);
-const CONFIG_IDS = /^(resistance|address|preset|baud|internalResistance|min|max|initial|rated|wheel|track|mass|length|width|sensorOffset|startTime)/i;
+const CONFIG_IDS = /^(resistance|address|preset|baud|internalResistance|min|max|initial|rated|wheel|track|mass|length|width|sensorOffset|startTime|magnet_d_mm|magnet_t_mm|pull_in|drop_out)/i;
 
 /**
  * Number props a person may set while the device runs: what a sensor measures (distance, lux,

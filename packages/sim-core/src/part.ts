@@ -195,6 +195,7 @@ export const MECH_FEATURE_KINDS = [
   "vent", // needs airflow (regulators, chargers)
   "antenna", // keep metal / thick walls away
   "camera", // a lens: the case opens a hole wide enough for its field of view (fov_deg)
+  "access", // round 15: where a held object (a tin, a card deck) goes in: the case opens a slot or a pocket its size
 ] as const;
 export type MechFeatureKind = (typeof MECH_FEATURE_KINDS)[number];
 
@@ -223,6 +224,8 @@ export const MechFeatureSchema = z.object({
   plug_clearance_mm: z.number().nonnegative().optional(),
   /** camera: the lens' diagonal field of view (degrees); the hole widens with the wall so the wall stays out of the picture. */
   fov_deg: z.number().positive().max(180).optional(),
+  /** Round 15, access: how far the opening's rim overlaps the object each side (a snap pocket), mm. */
+  lip_mm: z.number().nonnegative().optional(),
   /** connector: "usb-c", "micro-usb", "jst-ph-2", "jst-sh-4", "header-2.54", … */
   connector: z.string().optional(),
   /** The case must expose it (window / hole / cap / opening). Default: true for screen, button, switch, knob, connector, led, sensor-window, grille; false for vent, antenna. */
@@ -297,7 +300,18 @@ export const PartSpecSchema = z.object({
   /** Mass in grams (the module as sold, without wires). */
   mass_g: z.number().nonnegative().optional(),
   /** Supply current drawn by the part itself in mA: typ = usual operation, max = worst case (stall, all LEDs white, radio TX). Passive parts: 0/0. */
-  current_ma: z.object({ typ: z.number().nonnegative(), max: z.number().nonnegative() }).optional(),
+  current_ma: z
+    .object({
+      typ: z.number().nonnegative(),
+      max: z.number().nonnegative(),
+      /** Round 15: what it draws while idle (the board asleep, a screen holding its image, a sensor between samples), µA. */
+      standby_ua: z.number().nonnegative().optional(),
+      /** Round 15: parts that draw `typ` only while they do one thing (an e-paper refresh, a reading): how long that takes, ms. */
+      event_ms: z.number().positive().optional(),
+      /** Round 15: what that one thing is, in words ("full refresh"). */
+      event: z.string().optional(),
+    })
+    .optional(),
   /** Typical single-unit price in US dollars from a generic distributor. */
   price_usd: z.number().nonnegative().optional(),
   /** Where to buy it: generic distributors or the maker's own shop. Search URLs are fine. */

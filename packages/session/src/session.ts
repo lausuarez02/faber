@@ -2100,6 +2100,13 @@ export class ProjectSession {
     return { t_ms: round(host.timeMs), said: host.sim.speech() };
   }
 
+  /** Round 15: the last run's deep sleeps (when the board slept), for estimate_power's measured wake pattern. */
+  liveSleep(): { t_ms: number; log: ReturnType<SimHost["sim"]["sleepLog"]> } | undefined {
+    const host = this.host;
+    if (!host || !host.sim.sleepLog().length) return undefined;
+    return { t_ms: host.sim.timeMs, log: host.sim.sleepLog() };
+  }
+
   liveStates(): Record<string, Record<string, VisualValue>> | undefined {
     const host = this.host;
     if (!host) return undefined;

@@ -326,6 +326,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     outline_mm: frontOutline(L),
     assembly: { steps: plan.steps.length, plan: "assembly/plan.json", images: plan.steps.flatMap((st) => (st.image ? [st.image] : [])), hinge: plan.hinge, order: plan.order, errors: plan.checks.filter((c) => !c.ok && c.severity === "error").length, warnings: plan.checks.filter((c) => c.severity === "warning").length },
     ...(L.proposal ? { layout: { goal: L.proposal.id, asked: L.proposal.asked, label: L.proposal.label, fill_ratio: L.proposal.fill_ratio, layers: L.proposal.layers, why: L.proposal.why, source: L.proposal.source } } : {}),
+    ...(L.held?.length ? { held: L.held } : {}),
   };
   const reportBytes = new TextEncoder().encode(JSON.stringify(report, null, 2) + "\n");
   files.set("report.json", reportBytes);

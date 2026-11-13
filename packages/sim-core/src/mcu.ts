@@ -53,6 +53,12 @@ export interface McuBackend {
    * reset() is used).
    */
   reboot?(): void;
+  /**
+   * Round 15, optional: the board is about to boot out of deep sleep (the Simulation calls it right
+   * before reboot()). A backend whose firmware shim reads the wake cause back (the ESP32 family:
+   * a record in flash) stores it; without it the firmware sees a plain power-on reset.
+   */
+  setWakeInfo?(info: import("./sleep.ts").WakeInfo): void;
   /** Optional: which pins the hardware I2C / SPI peripherals use (McuBackend pin ids). */
   readonly busPins?: McuBusPins;
   /**

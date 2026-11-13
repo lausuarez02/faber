@@ -25,7 +25,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CAMERA_FRAME_SIZES, CAMERA_PIXFORMATS, CAMERA_SENSORS as SENSOR_INFO, DEFAULT_CAMERA_SETTINGS, type CameraBus, type CameraPinRole, type I2cBus, type I2sBus, type McuBackend, type McuBusPins, type McuCapability, type PinState, type SpiBus, type Unsubscribe } from "@jumper/sim-core";
+import { CAMERA_FRAME_SIZES, CAMERA_PIXFORMATS, CAMERA_SENSORS as SENSOR_INFO, DEFAULT_CAMERA_SETTINGS, type CameraBus, type CameraPinRole, type I2cBus, type I2sBus, type McuBackend, type McuBusPins, type McuCapability, type PinState, type SpiBus, type Unsubscribe, type WakeInfo } from "@jumper/sim-core";
 import { ESP_CHIPS, espGpioOf, espOutputSource, espPinId, type EspChip, type EspChipInfo, type EspOutputSource } from "./chips.ts";
 import { launchQemu, QEMU_ESP_IMAGE, type QemuLaunchOptions, type QemuProcess } from "./launcher.ts";
 import {
@@ -43,6 +43,7 @@ import {
   type BridgeEvent,
 } from "./protocol.ts";
 import { BridgeTimeoutError, SyncBridgeLink } from "./sync-link.ts";
+import { patchSleepRecord } from "./sleep-record.ts";
 import { EdgeQueue, PwmWave, queueRmt, queueUart, UartDecoder, type Waveform } from "./waveforms.ts";
 
 export interface QemuEspBackendOptions {
@@ -305,6 +306,15 @@ export class QemuEspBackend implements McuBackend {
     this.start();
   }
 
+  /** Round 15: the next reboot is a wake from deep sleep: the JumperSleep shim's flash record gets the cause. */
+  setWakeInfo(info: WakeInfo): void {
+    this.pendingWake = info;
+  }
+
+  /** Round 15: what happened to the last wake record ("patched", or why not). */
+  lastWake?: string;
+  private pendingWake?: WakeInfo;
+
   /**
    * Round 14: the flash as it is now (the image plus what the firmware wrote: LittleFS, NVS...), or
    * undefined before a load. Read while QEMU is parked; the file is what QEMU last wrote.
@@ -539,6 +549,13 @@ export class QemuEspBackend implements McuBackend {
     const flashImage = join(this.flashDir, "flash.bin");
     if (!persist || this.flashStale || !existsSync(flashImage)) writeFileSync(flashImage, this.flash!);
     this.flashStale = false;
+    if (this.pendingWake) {
+      // round 15: a wake from deep sleep: tell the shim why and how long it slept (QEMU is stopped here)
+      const bytes = new Uint8Array(readFileSync(flashImage));
+      this.lastWake = patchSleepRecord(bytes, this.pendingWake);
+      if (this.lastWake === "patched") writeFileSync(flashImage, bytes);
+      this.pendingWake = undefined;
+    }
     this.logPath = this.opts.logFile ?? join(this.workDir, "qemu.log");
     const link = new SyncBridgeLink();
     this.link = link;

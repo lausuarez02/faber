@@ -251,7 +251,8 @@
   "mass_g": 3,
   "current_ma": {
     "typ": 22,
-    "max": 100
+    "max": 100,
+    "standby_ua": 14
   },
   "price_usd": 7.49,
   "buy_links": [

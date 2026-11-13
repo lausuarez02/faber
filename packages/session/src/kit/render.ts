@@ -85,6 +85,7 @@ export function kitMarkdown(k: BuildKit): string {
   out.push(...flashMd(k));
   out.push(...connectMd(k));
   out.push(...powerMd(k));
+  out.push(...holdsMd(k));
   out.push("## If something does not work", "", "| Problem | Why | Fix |", "| --- | --- | --- |", ...k.troubleshooting.map((t) => `| ${mdCell(t.problem)} | ${mdCell(t.why)} | ${mdCell(t.fix)} |`), "");
   return out.join("\n");
 }
@@ -97,6 +98,21 @@ function flashMd(k: BuildKit): string[] {
   for (const c of f.commands) out.push(`${c.label}:`, "", "```sh", c.cmd, "```", "");
   if (f.needs.length) out.push(`You need: ${f.needs.map((n) => n.replace(/\.$/, "")).join("; ")}.`, "");
   return out;
+}
+
+/** Round 15: what the case holds, its sizes, and how to check the fit with calipers. */
+function holdsMd(k: BuildKit): string[] {
+  if (!k.holds?.length) return [];
+  const out = ["## What it holds", ""];
+  for (const x of k.holds) {
+    out.push(`### ${x.name}`, "", `| | Size (mm) |`, "| --- | --- |", `| The object | ${x.object_mm.w} x ${x.object_mm.h} x ${x.object_mm.d} |`, `| Its room in the case (${x.clearance_mm} mm all round) | ${x.room_mm.w} x ${x.room_mm.h} x ${x.room_mm.d} |`, ...(x.opening ? [`| The opening | ${x.opening} |`] : []), `| Thinnest wall round it | ${x.wall_mm} |`, "", `It ${x.how}. Size from: ${x.source}.`, "", `**Check the fit:** ${x.measure}`, "");
+  }
+  return out;
+}
+
+function holdsHtml(k: BuildKit): string {
+  if (!k.holds?.length) return "";
+  return `<h2 id="holds">What it holds</h2>${k.holds.map((x) => `<h3>${h(x.name)}</h3><table><tr><td>The object</td><td class="num">${x.object_mm.w} x ${x.object_mm.h} x ${x.object_mm.d} mm</td></tr><tr><td>Its room (${x.clearance_mm} mm all round)</td><td class="num">${x.room_mm.w} x ${x.room_mm.h} x ${x.room_mm.d} mm</td></tr>${x.opening ? `<tr><td>The opening</td><td class="num">${h(x.opening)}</td></tr>` : ""}<tr><td>Thinnest wall round it</td><td class="num">${x.wall_mm} mm</td></tr></table><p>It ${h(x.how)}. <span class="why">Size from: ${h(x.source)}.</span></p><div class="box"><b>Check the fit:</b> ${h(x.measure)}</div>`).join("")}`;
 }
 
 /** Round 14: the battery budget, in a few lines. */
@@ -214,7 +230,7 @@ ${hero}<h1>Build it yourself: ${h(k.project)}</h1><p class="summary">${h(k.summa
 <h2 id="assemble">4. Assemble</h2>${steps}
 <h2 id="flash">5. Flash</h2>${flash}
 ${connectHtml(k)}
-<h2 id="help">If something does not work</h2>${trouble}
+${holdsHtml(k)}<h2 id="help">If something does not work</h2>${trouble}
 <p class="why">Made by Jumper. Ticks are remembered in this browser only.</p>
 </main><script>(function(){var K=${JSON.stringify(key)};var s={};try{s=JSON.parse(localStorage.getItem(K)||"{}")||{}}catch(e){s={}}document.querySelectorAll("input[data-tick]").forEach(function(c){var id=c.getAttribute("data-tick");c.checked=!!s[id];c.addEventListener("change",function(){s[id]=c.checked;try{localStorage.setItem(K,JSON.stringify(s))}catch(e){}})})})();</script></body></html>`;
 }

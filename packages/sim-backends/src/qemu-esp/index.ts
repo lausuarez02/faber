@@ -6,3 +6,4 @@ export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, launchQemu, qemuArgs, qemu
 export type { QemuLaunchOptions, QemuNetwork, QemuProcess } from "./launcher.ts";
 export { parseBridgeLine } from "./protocol.ts";
 export type { BridgeEvent } from "./protocol.ts";
+export { patchSleepRecord, readSleepRecord, SLEEP_RECORD_BYTES, WAKE_CAUSE_CODE } from "./sleep-record.ts";

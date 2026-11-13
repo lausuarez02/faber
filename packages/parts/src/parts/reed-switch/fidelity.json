@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "Normally open contacts that close above the pull-in field and open below the drop-out field (hysteresis)." },
+    "timing": { "level": "approx", "note": "Closes and opens at once; a real reed takes about 0.5 ms to operate and bounces for up to 0.5 ms (debounce in firmware)." },
+    "analog": { "level": "approx", "note": "Field of an axially magnetised disc magnet on its axis; off-axis, tilted, or through steel the field is weaker. The pull-in field is a prop, converted from the datasheet's ampere-turns by hand." },
+    "power": { "level": "ok", "note": "Draws nothing; the pull-up it closes against draws VCC / R_pullup while it is closed (about 70 µA with an ESP32's 45 kΩ)." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Magnet distance, size and grade → field at the switch", "Pull-in / drop-out hysteresis", "Contact closure for a GPIO wake-up"],
+  "doesNotEmulate": ["Contact bounce", "Off-axis positions and the null zones of a reed beside a magnet", "Steel nearby shunting the field", "Glass breaking when the leads are bent too close"],
+  "testOnRealDevice": ["Close and open the lid 20 times: it must switch every time at the gap your case gives", "Bend the leads at least 2 mm from the glass, or it cracks", "With a pull-up on a sleeping board, the closed switch draws VCC / R: open it in the resting position if you can"]
+}

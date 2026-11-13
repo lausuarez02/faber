@@ -1171,7 +1171,8 @@
                   "grille",
                   "vent",
                   "antenna",
-                  "camera"
+                  "camera",
+                  "access"
                 ]
               },
               "face": {
@@ -1233,6 +1234,10 @@
                 "type": "number",
                 "exclusiveMinimum": 0,
                 "maximum": 180
+              },
+              "lip_mm": {
+                "type": "number",
+                "minimum": 0
               },
               "connector": {
                 "type": "string"

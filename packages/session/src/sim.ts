@@ -23,6 +23,9 @@ import { COLOR_EVERY_MS, colorFrameImage, colorSig } from "./color-frames.ts";
  * noise, serial cursors, compact state summaries and frames for live view / replay.
  */
 
+/** Round 15: run() slice while the board deep-sleeps (virtual ms). */
+const SLEEP_SLICE_MS = 1000;
+
 export const FAULT_KINDS = ["disconnect", "noisy", "i2c_nack", "i2c_nack_data", "i2c_garbage", "wifi_drop", "clear"] as const;
 export type FaultKind = (typeof FAULT_KINDS)[number];
 /** Documented but not simulated yet; inject_fault explains this instead of pretending. */
@@ -453,7 +456,10 @@ export class SimHost {
       if (f) opts.onFrame(f);
     }
     while (this.sim.timeMs < end - 1e-9) {
-      const dt = Math.min(step, end - this.sim.timeMs, frameMs ? Math.max(0.001, nextFrame - this.sim.timeMs) : Infinity);
+      // round 15: a board in deep sleep runs no firmware, so nothing needs a fine slice: up to a
+      // second at a time (the wake itself lands on its exact cycle inside runFor)
+      const asleep = this.sim.asleep;
+      const dt = Math.min(asleep ? Math.max(step, SLEEP_SLICE_MS) : step, end - this.sim.timeMs, frameMs && !asleep ? Math.max(0.001, nextFrame - this.sim.timeMs) : Infinity);
       this.sim.runFor(dt);
       for (const l of this.timeListeners) l(this.sim.timeMs); // round 10: the device network follows virtual time
       this.watchCollisions();
@@ -463,6 +469,7 @@ export class SimHost {
         const f = this.frame(true);
         if (f) opts.onFrame(f);
         nextFrame += frameMs;
+        if (nextFrame < this.sim.timeMs) nextFrame = this.sim.timeMs + frameMs; // after a sleep: no burst of frames
       }
       if (opts.until?.()) break;
       yield;

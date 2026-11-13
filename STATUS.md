@@ -9,6 +9,37 @@ watches it happen on the canvas and in 3D, then runs it themselves.
 
 <p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
 
+## Round 15, track gaps (2026-11-13): cases that hold things, lids, always-on screens, deep sleep, days
+
+Branch `round15/gaps`. What a "pocket case for a tin with a screen that shows a face per day's count"
+needs from Jumper, built as general capabilities (the tin holder is only a test case). Guide:
+[docs/low-power.md](docs/low-power.md), [docs/enclosures.md](docs/enclosures.md#things-the-case-holds-round-15).
+
+| Area | What works | Check it with |
+| --- | --- | --- |
+| Held objects | `enclosure.held`: cylinder (flat / upright), box, custom (bounding box); size + clearance; slide / pocket / snap / captive; the packer keeps parts out, the shell gets its slot or pocket (through curved walls and domes), 1.2 mm sleeve walls where there is room; checks `held-object` (room, opening, thinnest wall, pocket rim vs round-over) and `held-sensor`; `report.held`, the kit's "What it holds" with the calipers check; the assembly plan puts it in last (captive: before closing) | `packages/enclosure/test/held.test.ts`, `held-cad.test.ts` (real CAD, watertight), `packages/session/test/round15-held.test.ts` |
+| Lids | `reed-switch` (pull-in / drop-out from a disc magnet's field), `hall-switch-drv5032` (TI datasheet thresholds, 5 / 20 Hz sampling, push-pull / open-drain, 0.69 µA); magnet distance as the live slider, hold-to-press on the reed, `{"set": "lid.magnet", "value": "away"}` in tests | part tests, `apps/web/src/interact/controls.test.ts` |
+| Screens | `epaper-154-ssd1681` (SSD1681 RAM / windows / entry modes / full and partial refresh with ghosting / BUSY / deep sleep / refresh energy), `sharp-memory-lcd-128` (LS013B7DH03 protocol, active-high CS `spi-cs-high`, VCOM check); both as colour frames for screenshots and `expect_display` | part tests; the e-paper from real firmware in the deep-sleep integration test |
+| Deep sleep | sim-core: a sleeping board runs no firmware, time jumps between part events (1 h ≈ 1 s), wakes on timer / pin level, reboots with flash kept; the JumperSleep shim (ESP32 family, simulation builds only, MIT) keeps RTC memory, the clock and the wake cause; board state `asleep` / `sleeps` / `wakes` | `packages/sim-core/src/sleep.test.ts`, `packages/session/test/deep-sleep.integration.test.ts` (real XIAO ESP32-C3 firmware in QEMU) |
+| Days | `set_clock` and a scenario's `clock` also set RTC parts (DS3231): midnight rollovers testable without a network | `packages/session/test/round15-time.test.ts` |
+| Power | `power.wakes_per_day` / `awake_s` (set_power, estimate_power; else the firmware's sleep timer or the last run's measured wakes), board sleep current (`current_ma.standby_ua`), per-event parts (`event_ms`), results in days and µA | `round15-time.test.ts` |
+| Agents | skill rules held-object and low-power-always-on, tool descriptions, AGENTS.md, docs | `agent-skill-sync.test.ts` |
+
+Checks (worktree `jumper-wt-r15-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
+exit 0; `pnpm test` exit 0, **243 files passed, 2 skipped; 1967 tests passed, 5 expected fail, 5 skipped**
+(includes the real-QEMU deep-sleep tests: one hour of virtual sleep in about a second of wall time).
+
+Gaps: deep sleep is simulated for the ESP32 family only (AVR / RP2040 / STM32 / nRF52 have no sleep shim;
+the sim-core side is general); the RTC slow clock's drift and boot time after a wake are not modelled;
+GxEPD2 (GPL-3.0), Adafruit_EPD and Adafruit_SharpMem are not in the pinned library set (the protocol
+models are tested with raw SPI and byte benches); red / yellow e-paper and other panel sizes need their
+part.json (the SSD168x controller model is size-generic); a held object's custom outline is packed as its
+bounding box; a lid sensor's placement next to the object is checked (`held-sensor`), not auto-placed;
+a removable object's sleeve walls need gap room and are skipped (said) where parts are too close;
+the Docker build image does not have JumperSleep yet (Dockerfile.sim updated, not built: Docker broken
+here); e2e not run (the only UI change is the live-control filter, unit-tested); nothing was printed or
+tried on a real board, magnet or panel.
+
 ## Round 14, integrated on main (2026-11-12): behaviour over time, testable and general
 
 `round14/gaps` (12a4bd8) merged into main (which had moved two commits: the round 13 proof's kit fixes)

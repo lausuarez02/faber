@@ -8,6 +8,7 @@ import { hashString } from "./hash.ts";
 import { averageSolves, PwmMeter, type PwmReading } from "./pwm.ts";
 import type { BackendFactory, McuBackend, PinState, Unsubscribe } from "./mcu.ts";
 import type { ColorFrame } from "./color.ts";
+import { parseSleepMarker, type SleepEvent, type SleepRequest, type WakeCause } from "./sleep.ts";
 import type { SimServices } from "./network.ts";
 import {
   resolveProps,
@@ -32,7 +33,9 @@ export type SimEvent =
   | { type: "run"; tMs: number }
   | { type: "stopped" }
   | { type: "reset" }
-  | { type: "board-reset"; tMs: number };
+  | { type: "board-reset"; tMs: number }
+  | { type: "sleep"; tMs: number; request: SleepRequest }
+  | { type: "wake"; tMs: number; cause: WakeCause; sleptMs: number };
 
 export interface SimDiagnostic extends Diagnostic {
   partId: string;
@@ -55,6 +58,8 @@ export interface SimulationOptions {
 
 /** Period of PartModel.tick() and of the stopped-PWM check (virtual ms). */
 export const TICK_MS = 1;
+/** Round 15: the tick period while the firmware board is in deep sleep (virtual ms). */
+export const SLEEP_TICK_MS = 1000;
 
 interface Ticker {
   periodCycles: number;
@@ -162,6 +167,15 @@ export class Simulation {
   private _boardPowered = true;
   /** Power changed while the MCU was stepping: apply the reset after the step. */
   private powerPending = false;
+  // round 15 deep sleep
+  /** The firmware board is in deep sleep: no firmware runs, the clock jumps between part events. */
+  private sleep: { req: SleepRequest; since: number; timer?: number } | undefined;
+  private _sleepLog: SleepEvent[] = [];
+  /** The console line being assembled (for the sleep marker). */
+  private consoleLine: number[] = [];
+  /** A sleep marker seen inside an MCU step: entered after the step. */
+  private sleepPending: SleepRequest | undefined;
+  private sleepErrors: string[] = [];
   /** Global cycle at which the MCU last came out of reset (its own cycle counter restarts at 0 then). */
   private mcuOffset = 0;
 
@@ -260,10 +274,11 @@ export class Simulation {
       const cur = this.clock.cycles;
       this.clock.advanceTo(cur); // run events due now
       const nextEvent = this.clock.nextEventCycle();
-      let next = Math.min(target, cur + this.chunkCycles);
+      // asleep: nothing runs between part events, so jump straight to the next one
+      let next = this.sleep ? target : Math.min(target, cur + this.chunkCycles);
       if (nextEvent !== undefined && nextEvent > cur && nextEvent < next) next = nextEvent;
       if (this.powerPending) this.applyPower();
-      if (this.mcu && this._boardPowered) {
+      if (this.mcu && this._boardPowered && !this.sleep) {
         this.stepping = true;
         try {
           this.mcu.step(next - cur);
@@ -273,6 +288,11 @@ export class Simulation {
         // Normally mcu.cycles >= next; it is less only when a part event stopped the step early (stopAt).
         this.clock.advanceTo(Math.max(this.clock.cycles, this.mcu.cycles + this.mcuOffset));
         if (this.powerPending) this.applyPower();
+        if (this.sleepPending) {
+          const req = this.sleepPending;
+          this.sleepPending = undefined;
+          this.enterSleep(req);
+        }
       } else {
         this.clock.advanceTo(next);
       }
@@ -305,6 +325,11 @@ export class Simulation {
     this.mcuOffset = 0;
     this._boardPowered = true;
     this.powerPending = false;
+    this.sleep = undefined;
+    this.sleepPending = undefined;
+    this._sleepLog = [];
+    this.consoleLine = [];
+    this.sleepErrors = [];
     this._stopped = false;
     this.meters.clear();
     this.declaredPwm.clear();
@@ -350,6 +375,7 @@ export class Simulation {
     }
     this.updateSpiSelects();
     this.checkBoardPower();
+    if (this.sleep && this.sleep.req.wakePins.length && !this.stepping) this.checkPinWake();
     this.emit({ type: "solved", tMs: this.timeMs });
     return this._lastSolve!;
   }
@@ -395,6 +421,7 @@ export class Simulation {
   resetBoard(): boolean {
     if (!this.mcu) return false;
     if (this.stepping) throw new Error("resetBoard() was called while the firmware was running a step. Fix: call it between runFor() calls.");
+    if (this.sleep) this.endSleep("manual");
     this.applyPower();
     this.emit({ type: "board-reset", tMs: this.timeMs });
     return true;
@@ -439,7 +466,10 @@ export class Simulation {
   }
 
   partState(partId: string): VisualState | undefined {
-    return this.slot(partId)?.model.visualState();
+    const st = this.slot(partId)?.model.visualState();
+    // round 15: the firmware board says whether it deep-sleeps and how often it woke
+    if (st && partId === this.boardId && this.mcu) return { ...st, asleep: !!this.sleep, sleeps: this._sleepLog.length, wakes: this._sleepLog.filter((e) => e.woke).length };
+    return st;
   }
 
   /** Round 7 (voice): what the parts said (DFPlayer clips), oldest first, with the part id. */
@@ -754,7 +784,11 @@ export class Simulation {
         const [dMosi] = pinsWith(s, "spi-mosi");
         const [dMiso] = pinsWith(s, "spi-miso");
         const [dSck] = pinsWith(s, "spi-sck");
-        const [dCs] = pinsWith(s, "spi-cs");
+        // round 15: "spi-cs-high" = a chip select that is active HIGH (Sharp memory LCDs)
+        const [dCsLow] = pinsWith(s, "spi-cs");
+        const [dCsHigh] = pinsWith(s, "spi-cs-high");
+        const dCs = dCsLow ?? dCsHigh;
+        const activeHigh = !dCsLow && !!dCsHigh;
         if (!this.mcu || !board) {
           diag("warning", "spi-no-mcu", `${s.id} is an SPI device but the project has no firmware board running, so nothing talks to it. Set project.firmware.board and load firmware.`);
           continue;
@@ -785,13 +819,14 @@ export class Simulation {
           // the circuit is solved on duty-averaged values (PWM.md), which would blur the level.
           const driver = this.driverPinOf(csNode);
           selected = () => {
-            if (csNode === GROUND) return true;
+            if (csNode === GROUND) return !activeHigh;
             if (driver !== undefined && this.mcu) {
               const st = this.mcu.readPin(driver);
-              if (st.mode === "output") return st.value === 0;
+              if (st.mode === "output") return st.value === (activeHigh ? 1 : 0);
             }
             const r = this._lastSolve;
-            return r !== undefined && r.voltages.has(csNode) && !r.isFloating(csNode) && r.voltage(csNode) < 0.3 * vcc;
+            if (r === undefined || !r.voltages.has(csNode) || r.isFloating(csNode)) return false;
+            return activeHigh ? r.voltage(csNode) > 0.7 * vcc : r.voltage(csNode) < 0.3 * vcc;
           };
         }
         this.busUnsubs.push(this.spi.attach(s.id, s.model.spi, selected, dMiso !== undefined && isWired(s, dMiso)));
@@ -1076,10 +1111,12 @@ export class Simulation {
     const run = (cycle: number): void => {
       const tMs = this.clock.toMs(cycle);
       let changed = false;
+      // round 15: while the board deep-sleeps the parts tick once a second (nothing drives them fast)
+      const k = this.sleep ? SLEEP_TICK_MS / TICK_MS : 1;
       for (const m of this.meters.values()) if (m.checkStale(cycle)) changed = true;
-      for (const s of this.slots) s.model.tick?.(tMs, TICK_MS);
+      for (const s of this.slots) s.model.tick?.(tMs, TICK_MS * k);
       if (changed) this.solve();
-      this.clock.schedule(cycle + period, run);
+      this.clock.schedule(cycle + period * k, run);
     };
     this.clock.schedule(first, run);
   }
@@ -1096,7 +1133,125 @@ export class Simulation {
     this.clock.schedule(first, run);
   }
 
+  // ------------------------------------------------------------------ deep sleep (round 15)
+
+  /** The board is in deep sleep now (no firmware runs; the clock jumps between part events). */
+  get asleep(): boolean {
+    return !!this.sleep;
+  }
+
+  /** What the board asked for when it went to sleep (undefined while awake). */
+  get sleepRequest(): SleepRequest | undefined {
+    return this.sleep?.req;
+  }
+
+  /** Every sleep since the run started, oldest first, with how and when it woke. */
+  sleepLog(): readonly SleepEvent[] {
+    return this._sleepLog;
+  }
+
+  /** Virtual ms from now to the sleep timer (undefined: awake or no timer). */
+  get msToWake(): number | undefined {
+    const s = this.sleep;
+    if (!s || s.req.wakeAfterMs === undefined) return undefined;
+    return Math.max(0, s.req.wakeAfterMs - (this.timeMs - this.clock.toMs(s.since)));
+  }
+
+  /** Sleep lines from a shim this Jumper does not understand (what failed, why, fix). */
+  sleepProblems(): readonly string[] {
+    return this.sleepErrors;
+  }
+
+  /**
+   * Put the firmware board into deep sleep (the sleep shim's console line does this; tests may call
+   * it directly). Its pins keep their configuration; it wakes on the timer or a wake pin's level and
+   * then boots from the start with its flash kept.
+   */
+  enterSleep(req: SleepRequest): void {
+    if (!this.mcu) return;
+    if (this.stepping) {
+      this.sleepPending = req;
+      this.mcu.stopAt?.(this.cycles - this.mcuOffset);
+      return;
+    }
+    if (this.sleep) this.endSleep("manual", false);
+    const since = this.clock.cycles;
+    const s: { req: SleepRequest; since: number; timer?: number } = { req, since };
+    if (req.wakeAfterMs !== undefined) s.timer = this.clock.schedule(since + Math.max(1, this.clock.fromMs(req.wakeAfterMs)), () => this.wake("timer"));
+    this.sleep = s;
+    this._sleepLog.push({ t_ms: this.clock.toMs(since), request: req });
+    this.emit({ type: "sleep", tMs: this.timeMs, request: req });
+    // a wake pin already at its level wakes it at once (as the chip does)
+    if (req.wakePins.length) this.checkPinWake();
+  }
+
+  /** Wake the board now (a reset button while it sleeps, or a test): it boots from the start. */
+  wakeNow(cause: WakeCause = "manual"): boolean {
+    if (!this.sleep) return false;
+    this.wake(cause);
+    return true;
+  }
+
+  private wake(cause: WakeCause, pin?: string): void {
+    if (!this.sleep || !this.mcu) return;
+    const slept = this.endSleep(cause, true, pin);
+    this.mcu.setWakeInfo?.({ cause, ...(pin ? { pin } : {}), slept_ms: slept });
+    this.emit({ type: "wake", tMs: this.timeMs, cause, sleptMs: slept });
+    this.applyPower();
+  }
+
+  private endSleep(cause: WakeCause, record = true, pin?: string): number {
+    const s = this.sleep!;
+    this.sleep = undefined;
+    if (s.timer !== undefined) this.clock.cancel(s.timer);
+    const slept = this.clock.toMs(this.clock.cycles - s.since);
+    const ev = this._sleepLog.at(-1);
+    if (ev && record) ev.woke = { t_ms: this.timeMs, cause, ...(pin ? { pin } : {}), slept_ms: Math.round(slept * 1000) / 1000 };
+    return slept;
+  }
+
+  /** A wake pin at its wake level (read from the last solve: the parts on its net and the pin's own pull). */
+  private checkPinWake(): void {
+    const s = this.sleep;
+    const r = this._lastSolve;
+    if (!s || !r || !this.boardId || !this.mcu) return;
+    const vcc = this.mcu.vcc;
+    const at: { pin: string; ok: boolean }[] = s.req.wakePins.map((p) => {
+      let level: 0 | 1 | undefined;
+      const node = this.pinNode.get(pinKey({ part: this.boardId!, pin: p.pin }));
+      if (node === GROUND) level = 0;
+      else if (node !== undefined && r.voltages.has(node) && !r.isFloating(node)) level = r.voltage(node) > 0.5 * vcc ? 1 : 0;
+      else {
+        try {
+          level = this.mcu!.readPin(p.pin).value;
+        } catch {
+          level = undefined;
+        }
+      }
+      return { pin: p.pin, ok: level === p.level };
+    });
+    const hit = s.req.any ? at.find((a) => a.ok) : at.every((a) => a.ok) ? at[0] : undefined;
+    if (!hit) return;
+    const cause: WakeCause = s.req.pinSource ?? (s.req.wakePins.length === 1 ? "ext0" : "gpio");
+    this.clock.schedule(this.clock.cycles, () => this.wake(cause, hit.pin));
+  }
+
   private handleSerial(byte: number, cycle: number): void {
+    // round 15: the sleep shim's console line
+    if (byte === 10) {
+      if (this.consoleLine.length > 12 && this.consoleLine.length < 2000) {
+        const line = String.fromCharCode(...this.consoleLine);
+        const req = parseSleepMarker(line);
+        if (req && "error" in req) this.sleepErrors.push(req.error);
+        else if (req) {
+          if (this.stepping) {
+            this.sleepPending = req;
+            this.mcu?.stopAt?.(cycle - this.mcuOffset);
+          } else this.enterSleep(req);
+        }
+      }
+      this.consoleLine = [];
+    } else if (byte !== 13 && this.consoleLine.length < 4096) this.consoleLine.push(byte);
     this._trace.push({ cycle, kind: "serial", byte });
     this.serialBytes.push(byte);
     if (byte === 10) this.serialLineEnds.push([this.serialBytes.length, this.clock.toMs(cycle)]);

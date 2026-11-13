@@ -1,0 +1,62 @@
+{
+  "id": "hall-switch-drv5032",
+  "name": "Hall-effect switch, ultra-low-power (TI DRV5032, TO-92)",
+  "category": "sensor",
+  "description": "A magnet detector with no moving parts: OUT goes LOW while a magnet (either pole) is near, HIGH when it goes away. Samples the field a few times a second, so it draws under a microampere (0.69 µA at 3 V, FB version): fine for a device that sleeps for weeks. VCC to 3V3 (1.65 to 5.5 V), GND to GND, OUT to a GPIO (push-pull versions need no pull-up; FC / AJ are open-drain: use INPUT_PULLUP). magnet_mm is how far the magnet is.",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 20, "y": 70, "type": "power", "voltage": { "min": 1.65, "max": 5.5 }, "description": "1.65 to 5.5 V. TI recommends 0.1 µF to GND close to the pin." },
+    { "id": "GND", "label": "GND", "x": 40, "y": 70, "type": "ground", "description": "Ground." },
+    { "id": "OUT", "label": "OUT", "x": 60, "y": 70, "type": "digital", "description": "LOW while the field is above B_OP, HIGH (push-pull) or released (open-drain) below B_RP." }
+  ],
+  "size": { "w": 80, "h": 80 },
+  "props": [
+    { "id": "magnet_mm", "label": "Magnet distance", "type": "number", "default": 40, "min": 0, "max": 40, "step": 0.5, "unit": "mm", "description": "How far the magnet's face is from the sensor's face (on its axis)." },
+    { "id": "magnet_d_mm", "label": "Magnet diameter", "type": "number", "default": 6, "min": 2, "max": 30, "step": 0.5, "unit": "mm", "description": "Disc magnet diameter." },
+    { "id": "magnet_t_mm", "label": "Magnet thickness", "type": "number", "default": 3, "min": 0.5, "max": 20, "step": 0.5, "unit": "mm", "description": "Disc magnet thickness (axially magnetised)." },
+    { "id": "magnet_grade", "label": "Magnet grade", "type": "enum", "default": "N35", "options": ["N35", "N42", "N52", "ferrite"], "description": "NdFeB grade (or ferrite)." },
+    {
+      "id": "version",
+      "label": "Version",
+      "type": "enum",
+      "default": "FB",
+      "options": [
+        { "value": "FA", "label": "FA: push-pull, 20 Hz, 3 / 1.5 mT, 1.6 µA" },
+        { "value": "FB", "label": "FB: push-pull, 5 Hz, 3 / 1.5 mT, 0.69 µA" },
+        { "value": "FC", "label": "FC: open-drain, 20 Hz, 3 / 1.5 mT, 1.6 µA" },
+        { "value": "AJ", "label": "AJ: open-drain, 20 Hz, 7 / 5.6 mT, 1.6 µA" }
+      ],
+      "description": "DRV5032 version (datasheet SLVSDC7H table 4-1 and 6.5 / 6.6, typical values at 3 V): output type, sampling rate, operate / release field."
+    }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 1.65, "maxCurrentmA": 5 },
+  "footprint": "TO-92 (LPG), 4 x 1.52 mm body, 3 leads 1.27 mm pitch (SOT-23 and X2SON also sold)",
+  "dimensions_mm": { "w": 4, "h": 1.6, "d": 3.1 },
+  "mass_g": 0.2,
+  "current_ma": { "typ": 0.00069, "max": 0.0018, "standby_ua": 0.69 },
+  "price_usd": 0.7,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=DRV5032FBLPGM" },
+    { "vendor": "Mouser", "url": "https://www.mouser.com/c/?q=DRV5032FB" }
+  ],
+  "bindings": [
+    { "key": "detected", "type": "boolean", "description": "Magnet detected at the last sample (OUT low)." },
+    { "key": "out", "type": "boolean", "description": "OUT level is high." },
+    { "key": "field_mT", "type": "number", "description": "Flux density at the sensor (mT)." },
+    { "key": "magnet_mm", "type": "number", "description": "Magnet distance now (mm)." },
+    { "key": "detects_at_mm", "type": "number", "description": "Distance at which this magnet is detected (mm, typical B_OP)." },
+    { "key": "sample_ms", "type": "number", "description": "Sampling period (ms)." },
+    { "key": "detections", "type": "number", "description": "Times OUT went low since the run started." },
+    { "key": "dotOpacity", "type": "number", "description": "1 while detected (bound in the SVG)." }
+  ],
+  "tags": ["hall", "hall effect", "hall switch", "drv5032", "ah1806", "magnet", "magnetic switch", "lid sensor", "ultra low power", "omnipolar"],
+  "mechanical": {
+    "keepout_bottom_mm": 1,
+    "source": "TI DRV5032 datasheet, LPG (TO-92) package: 4 x 1.52 mm body; the sensing element is at the front face"
+  },
+  "sourcing": {
+    "mpn": "DRV5032FBLPGM",
+    "manufacturer": "Texas Instruments",
+    "package": "TO-92 (LPG)",
+    "generic": "Hall-effect switch, omnipolar, push-pull, 5 Hz, sub-µA (DRV5032FB class)"
+  }
+}

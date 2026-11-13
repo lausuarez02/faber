@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "SSD1681 command set as the libraries use it: RAM windows and counters (0x44 / 0x45 / 0x4E / 0x4F), data entry modes (0x11), the two RAMs (0x24 new, 0x26 previous), display update control (0x21 / 0x22) and master activation (0x20), deep sleep (0x10) that only a hardware reset ends. The glass changes only when a refresh finishes; a partial refresh redraws only pixels that differ between the two RAMs." },
+    "timing": { "level": "approx", "note": "BUSY is high for a fixed 2000 ms (full) / 500 ms (partial) / 100 ms (power on) / 150 ms (power off), GxEPD2's figures for this panel; the real times depend on temperature and the waveform (LUT)." },
+    "analog": { "level": "none", "note": "No grey levels, no fading, no temperature compensation, no flicker during a full refresh (the new image appears at the end)." },
+    "power": { "level": "approx", "note": "About 8 mA while refreshing (Waveshare: 26.4 mW refresh power), 0.5 mA with the panel supplies left on, about 30 µA awake, 1 µA in deep sleep; nothing to keep the image." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["The SSD1681 command and RAM model", "Full and partial refresh, with ghosting when the previous-image RAM is not kept", "BUSY timing", "Deep sleep and hardware reset", "The image staying with no power", "Refresh current and the charge each refresh costs"],
+  "doesNotEmulate": ["Red / yellow panels (black / white only)", "Waveforms (LUT) and their temperature dependence", "Grey levels and the flashing of a full refresh", "Reading RAM or the temperature sensor back", "Image retention after very many partial refreshes"],
+  "testOnRealDevice": ["Do a full refresh every few partial ones (the panel maker recommends it) or the image degrades", "Below 0 °C refreshes get slow and faint", "Check the module's VCC: bare SSD1681 boards are 3.3 V only", "Hibernate (0x10) after each update; check the sleep current with a µA meter"]
+}

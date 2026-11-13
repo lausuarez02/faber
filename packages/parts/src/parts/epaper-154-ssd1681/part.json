@@ -1,0 +1,70 @@
+{
+  "id": "epaper-154-ssd1681",
+  "name": "E-paper display 1.54in 200x200 (SSD1681, SPI, GDEY0154D67)",
+  "category": "display",
+  "description": "1.54 in black / white e-paper, 200 x 200 pixels, on the SSD1681 controller over SPI (Good Display GDEY0154D67, Waveshare 1.54 in V2). The image stays with no power at all, so a device can show a face for weeks and sleep in between; a full refresh takes about 2 s (BUSY high), a partial one about 0.5 s. Wiring: VCC → 3V3, GND → GND, DIN → MOSI, CLK → SCK, CS → any GPIO, DC → any GPIO, RST → any GPIO, BUSY → any input. Works with GxEPD2 (GxEPD2_154_GDEY0154D67) and Adafruit_EPD (ThinkInk_154_Mono_D67 / SSD1681).",
+  "pins": [
+    { "id": "VCC", "label": "VCC", "x": 60, "y": 360, "type": "power", "voltage": { "min": 2.2, "max": 3.7 }, "description": "3.3 V (some modules have a regulator and take 5 V)." },
+    { "id": "GND", "label": "GND", "x": 80, "y": 360, "type": "ground", "description": "Ground." },
+    { "id": "DIN", "label": "DIN", "x": 100, "y": 360, "type": "digital", "protocols": ["spi-mosi"], "description": "SPI data in (MOSI)." },
+    { "id": "CLK", "label": "CLK", "x": 120, "y": 360, "type": "digital", "protocols": ["spi-sck"], "description": "SPI clock (SCK)." },
+    { "id": "CS", "label": "CS", "x": 140, "y": 360, "type": "digital", "protocols": ["spi-cs"], "description": "Chip select, active low." },
+    { "id": "DC", "label": "DC", "x": 160, "y": 360, "type": "digital", "description": "Data / command: LOW = command byte, HIGH = data." },
+    { "id": "RST", "label": "RST", "x": 180, "y": 360, "type": "digital", "description": "Reset, active low (wakes the controller from deep sleep)." },
+    { "id": "BUSY", "label": "BUSY", "x": 200, "y": 360, "type": "digital", "description": "HIGH while the controller is busy (refreshing); wait for LOW before sending." }
+  ],
+  "size": { "w": 260, "h": 380 },
+  "limits": { "maxVoltage": 3.7, "minVoltage": 2.2, "maxCurrentmA": 12 },
+  "footprint": "module 33 x 48 mm with an 8-pin 0.1 in header (bare panel 31.8 x 37.3 x 1.0 mm on a 24-pin FPC)",
+  "dimensions_mm": { "w": 33, "h": 48, "d": 3.5 },
+  "mass_g": 6,
+  "current_ma": { "typ": 8, "max": 12, "standby_ua": 1, "event_ms": 2000, "event": "full refresh (a partial one takes about 500 ms)" },
+  "price_usd": 9,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-1.54-inch-e-paper-SSD1681-200x200.html" },
+    { "vendor": "Good Display", "url": "https://www.good-display.com/product/388.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=1.54%20inch%20e-paper%20display%20module%20SPI%20200x200" }
+  ],
+  "bus": { "spi": { "modes": [0], "maxHz": 20000000 } },
+  "bindings": [
+    { "key": "on", "type": "boolean", "description": "Always true: e-paper shows its last image with or without power." },
+    { "key": "frame", "type": "number", "description": "Counts refreshes that changed the glass. Pixels: Simulation.framebuffer(partId) (200 x 200, white / black)." },
+    { "key": "width", "type": "number", "description": "200." },
+    { "key": "height", "type": "number", "description": "200." },
+    { "key": "lit", "type": "number", "description": "Black pixels on the glass." },
+    { "key": "blank", "type": "boolean", "description": "The glass is all white." },
+    { "key": "busy", "type": "boolean", "description": "BUSY is high." },
+    { "key": "refreshing", "type": "boolean", "description": "A refresh is in progress (the panel draws ~8 mA)." },
+    { "key": "refreshes", "type": "number", "description": "Refreshes since power-on (full + partial)." },
+    { "key": "fullRefreshes", "type": "number", "description": "Full refreshes (display mode 1)." },
+    { "key": "partialRefreshes", "type": "number", "description": "Partial refreshes (display mode 2)." },
+    { "key": "pending", "type": "boolean", "description": "RAM holds pixels that are not on the glass yet (drawn, not refreshed)." },
+    { "key": "ghostPixels", "type": "number", "description": "Pixels the last partial refresh left from the old image." },
+    { "key": "sleeping", "type": "boolean", "description": "Controller in deep sleep (0x10); needs a reset to wake." },
+    { "key": "analogOn", "type": "boolean", "description": "Panel driving supplies on." },
+    { "key": "current_ma", "type": "number", "description": "What the module draws now (mA)." },
+    { "key": "refresh_mAs", "type": "number", "description": "Charge spent refreshing since power-on (mA·s)." },
+    { "key": "screenOpacity", "type": "number", "description": "1 (bound in the SVG)." }
+  ],
+  "tags": ["e-paper", "epaper", "e-ink", "eink", "ssd1681", "gdey0154d67", "1.54", "200x200", "gxepd2", "adafruit_epd", "low power", "always on", "screen", "display", "spi"],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_bottom_mm": 1.5,
+    "mounting_holes": [
+      { "x": 2.5, "y": 2.5, "d": 2.2 },
+      { "x": 30.5, "y": 2.5, "d": 2.2 },
+      { "x": 2.5, "y": 45.5, "d": 2.2 },
+      { "x": 30.5, "y": 45.5, "d": 2.2 }
+    ],
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 16.5, "y": 20, "w": 27.6, "h": 27.6, "bezel_mm": 1.5 }
+    ],
+    "source": "typical 1.54 in e-paper module (Waveshare-class, 33 x 48 mm; active area 27.6 x 27.6 mm per Good Display GDEY0154D67)"
+  },
+  "sourcing": {
+    "mpn": "GDEY0154D67",
+    "manufacturer": "Good Display (panel), Solomon Systech SSD1681 (controller)",
+    "package": "module 33 x 48 mm, 8-pin header",
+    "generic": "1.54 in e-paper 200x200 black/white, SSD1681, SPI, with adapter board"
+  }
+}
