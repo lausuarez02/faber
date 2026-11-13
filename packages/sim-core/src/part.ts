@@ -195,6 +195,7 @@ export const MECH_FEATURE_KINDS = [
   "vent", // needs airflow (regulators, chargers)
   "antenna", // keep metal / thick walls away
   "camera", // a lens: the case opens a hole wide enough for its field of view (fov_deg)
+  "access", // round 15: where a held object (a tin, a card deck) goes in: the case opens a slot or a pocket its size
 ] as const;
 export type MechFeatureKind = (typeof MECH_FEATURE_KINDS)[number];
 
@@ -223,6 +224,8 @@ export const MechFeatureSchema = z.object({
   plug_clearance_mm: z.number().nonnegative().optional(),
   /** camera: the lens' diagonal field of view (degrees); the hole widens with the wall so the wall stays out of the picture. */
   fov_deg: z.number().positive().max(180).optional(),
+  /** Round 15, access: how far the opening's rim overlaps the object each side (a snap pocket), mm. */
+  lip_mm: z.number().nonnegative().optional(),
   /** connector: "usb-c", "micro-usb", "jst-ph-2", "jst-sh-4", "header-2.54", … */
   connector: z.string().optional(),
   /** The case must expose it (window / hole / cap / opening). Default: true for screen, button, switch, knob, connector, led, sensor-window, grille; false for vent, antenna. */

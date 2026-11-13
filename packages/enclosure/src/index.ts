@@ -25,3 +25,4 @@ export const MIN_WALL_MM = 1.2;
 export const DEFAULT_TOLERANCE_MM = 0.2;
 /** plan_device's pocket limit, reused for the "fits in a pocket" verdict (mm). */
 export const POCKET_MM = { w: 110, h: 70, d: 30 } as const;
+export { heldSpec, heldSize, heldFrom, heldProblems, measureText, isHeldMech, isHeldType, HELD_PREFIX, type HeldReport, type HeldSize } from "./held.ts";

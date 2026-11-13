@@ -169,6 +169,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
     flash,
     ...(connect ? { connect } : {}),
     ...(power ? { power } : {}),
+    ...(report?.held?.length ? { holds: report.held.map((x) => ({ id: x.id, name: x.name, object_mm: x.object_mm, room_mm: x.room_mm, clearance_mm: x.clearance_mm, ...(x.opening_mm ? { opening: `${x.opening_mm.w} x ${x.opening_mm.h} mm${x.opening_mm.shape === "round" ? " round" : ""} on the ${x.from}` } : {}), how: !x.removable ? "put in during assembly; it stays" : x.insert === "slide" ? `slides in from the ${x.from}` : x.insert === "snap" ? `snaps into the ${x.from}` : `drops into a pocket on the ${x.from}`, wall_mm: x.wall_mm, source: x.source, measure: x.measure })) } : {}),
     troubleshooting: trouble,
     missing,
     check_first,

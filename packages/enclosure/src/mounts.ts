@@ -18,6 +18,7 @@
  * rib would need), and the assembly plan's checks report it.
  */
 import { apply, type Mat3 } from "./mech.ts";
+import { isHeldMech } from "./held.ts";
 import type { Opening, Placed, Post, Rib } from "./layout.ts";
 import type { Vec3 } from "./types.ts";
 
@@ -120,14 +121,16 @@ function firstShell(p: Placed, c: MountContext, open?: Opening): "front" | "back
  */
 export function assignShells(c: MountContext): { shells: Map<string, "front" | "back">; blocked: { front: string; back: string }[] } {
   const shells = new Map<string, "front" | "back">();
-  for (const p of c.placed) shells.set(p.mech.id, firstShell(p, c, c.openings.find((o) => o.part === p.mech.id && o.kind !== "window" && o.kind !== "grille")));
+  // round 15: a held object is not there while the case is assembled
+  const placed = c.placed.filter((p) => !isHeldMech(p.mech));
+  for (const p of placed) shells.set(p.mech.id, firstShell(p, c, c.openings.find((o) => o.part === p.mech.id && o.kind !== "window" && o.kind !== "grille")));
   const fixed = (p: Placed) => p.bound?.face === "front" || p.bound?.face === "back" || (p.bound?.feature.passThrough ?? false);
   const blocked: { front: string; back: string }[] = [];
-  for (let pass = 0; pass < c.placed.length + 1; pass++) {
+  for (let pass = 0; pass < placed.length + 1; pass++) {
     let changed = false;
     blocked.length = 0;
-    for (const a of c.placed)
-      for (const b of c.placed) {
+    for (const a of placed)
+      for (const b of placed) {
         if (a === b || shells.get(a.mech.id) !== "front" || shells.get(b.mech.id) !== "back") continue;
         // a (front shell) entirely behind b (back shell), overlapping in plan: a would pass through b when closing
         if (!xyOverlap(env(a), env(b), -0.05) || a.max[2] > b.min[2] + 0.05) continue;
@@ -168,6 +171,12 @@ export function designMounts(c: MountContext): Mount[] {
 
   for (const p of c.placed) {
     const id = p.mech.id;
+    // round 15: a held object is not mounted: it goes in through its opening (or during assembly)
+    if (isHeldMech(p.mech)) {
+      const open = c.openings.find((o) => o.part === id && o.feature === "access");
+      out.push({ part: id, shell: "back", how: ["opening"], insert: open && open.face !== "front" && open.face !== "back" ? "slide" : "drop", features: c.ribs.filter((r) => r.part === id).map((r) => r.why), say: open ? `${p.mech.name} goes in through its opening on the ${open.face} once the case is closed, and out again; the sleeve walls keep it off the electronics.` : `${p.mech.name} goes into its room in the back shell before the case is closed, and stays.` });
+      continue;
+    }
     const shell = shells.get(id)!;
     const how: MountHow[] = [];
     const features: string[] = [];

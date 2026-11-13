@@ -44,6 +44,8 @@ export interface LocalFeature {
   passThrough: boolean;
   /** Round 13: a camera lens' diagonal field of view (degrees). */
   fov?: number;
+  /** Round 15, access: the opening's rim overlaps the object by this much each side (snap pocket). */
+  lip?: number;
   description?: string;
 }
 
@@ -68,7 +70,7 @@ export interface PartMech {
   source: string;
 }
 
-const EXPOSE_DEFAULT = new Set(["screen", "button", "switch", "knob", "connector", "led", "sensor-window", "grille", "camera"]);
+const EXPOSE_DEFAULT = new Set(["screen", "button", "switch", "knob", "connector", "led", "sensor-window", "grille", "camera", "access"]);
 const PASS_THROUGH = new Set(["knob", "switch", "sensor-window", "led"]);
 
 const NORMALS: Record<MechFeature["face"], Vec3> = {
@@ -164,6 +166,7 @@ function localFeature(f: MechFeature, w: number, h: number, d: number): LocalFea
     expose,
     passThrough: PASS_THROUGH.has(f.kind) && protrude > 0,
     ...(f.kind === "camera" ? { fov: f.fov_deg ?? 66 } : {}),
+    ...(f.lip_mm ? { lip: f.lip_mm } : {}),
     ...(f.description ? { description: f.description } : {}),
   };
 }

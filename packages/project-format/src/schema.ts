@@ -180,6 +180,41 @@ export const CaseSizeSchema = z.object({
   d: z.number().min(6).max(120).optional().describe("Overall thickness (z, front to back), mm."),
 });
 
+/**
+ * Round 15: something the case holds that is not electronics (a tin, a lip balm, a lighter, a card
+ * deck). The case makes a room for it with clearance, keeps the parts out, cuts the opening it goes
+ * in through and walls it off from the wires.
+ */
+export const HeldObjectSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/).describe("Short id, e.g. 'can' (not a part id)."),
+    name: z.string().optional().describe("What it is, for the report and the kit, e.g. 'ZYN can'."),
+    shape: z.enum(["cylinder", "box", "custom"]).describe("cylinder (a tin, a lip balm), box (a card deck, a lighter), custom (any other shape: the room is its bounding box)."),
+    size_mm: z
+      .object({
+        d: z.number().positive().max(250).optional().describe("Cylinder: diameter. Box: thickness (front to back)."),
+        h: z.number().positive().max(250).optional().describe("Cylinder: height (lid on). Box: height (y)."),
+        w: z.number().positive().max(250).optional().describe("Box: width (x)."),
+      })
+      .describe("The object's size, measured at its widest points, mm."),
+    orientation: z.enum(["flat", "upright"]).optional().describe("Cylinder: flat = its round face to the front (default), upright = its axis along the case's height."),
+    clearance_mm: z.number().min(0).max(5).optional().describe("Room left all round, mm (default 0.5)."),
+    insert: z.enum(["slide", "pocket", "snap"]).describe("slide = in through a slot in a side (left / right / top / bottom); pocket = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays."),
+    from: z.enum(CASE_FACES).optional().describe("The side it goes in through (default: right for slide, back for pocket / snap)."),
+    lip_mm: z.number().min(0.2).max(3).optional().describe("snap: how far the rim overlaps the object each side, mm (default 0.6)."),
+    removable: z.boolean().optional().describe("false = it goes in during assembly and stays (no opening); default true: it goes in and out with the case closed, the electronics stay."),
+    source: z.string().optional().describe("Where the size comes from (a datasheet, a measurement with calipers, a product page)."),
+    sensor: z
+      .object({
+        part: z.string().describe("The part that senses the object (a reed or Hall switch for a lid with a magnet, a lever switch the object presses)."),
+        max_mm: z.number().positive().max(50).optional().describe("Farthest its body may be from the object's room, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm)."),
+      })
+      .strict()
+      .optional()
+      .describe("Round 15: a part that must sit next to the object; the case checks the gap."),
+  })
+  .strict();
+
 export const EnclosureSchema = z.object({
   shape: CaseShapeSchema,
   params: CaseParamsSchema.optional(),
@@ -189,6 +224,7 @@ export const EnclosureSchema = z.object({
   outline: CaseOutlineSchema.optional().describe("Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Jumper fits the parts inside it."),
   size_mm: CaseSizeSchema.optional().describe("Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit)."),
   layout: z.enum(["auto", "thinnest", "smallest", "balanced"]).optional().describe("Round 8: how the parts are distributed inside. Jumper proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it."),
+  held: z.array(HeldObjectSchema).max(4).optional().describe("Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening."),
 });
 
 export type AssemblyStyle = z.infer<typeof AssemblyStyleSchema>;
@@ -199,6 +235,8 @@ export type CasePlacement = z.infer<typeof CasePlacementSchema>;
 export type Enclosure = z.infer<typeof EnclosureSchema>;
 export type CaseOutline = z.infer<typeof CaseOutlineSchema>;
 export type CaseSize = z.infer<typeof CaseSizeSchema>;
+export type HeldObject = z.infer<typeof HeldObjectSchema>;
+export type CaseFace = (typeof CASE_FACES)[number];
 
 /**
  * Round 10 (network): how the simulated device reaches the network (packages/device-net). Plain,

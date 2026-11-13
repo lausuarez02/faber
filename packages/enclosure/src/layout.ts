@@ -21,6 +21,8 @@ import { contains, type Flat, growPlan, withFastOutline, type Need, outline, typ
 import { outlineFeatureIssues, parseOutline, presetOutline, presetPoints, type ParsedOutline } from "./outline.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
 import { designMounts } from "./mounts.ts";
+import { isHeldMech, isHeldType, type HeldReport } from "./held.ts";
+import { sleeveFor, withHeld } from "./held-layout.ts";
 import { depthCandidates, hashSeed, type OEnv, type OItem, type OVariant, radialOf, searchAtDepth, type ZMode } from "./optimize.ts";
 
 /** Round 8: the optimizer's settings for one layout run. */
@@ -124,7 +126,7 @@ export interface Placed {
   bound?: { face: CaseFaceName; feature: LocalFeature; offset: number };
 }
 
-export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot" | "lens";
+export type OpeningKind = "window" | "button" | "connector" | "light-pipe" | "hole" | "grille" | "slot" | "lens" | "access";
 
 export interface Opening {
   part: string;
@@ -234,6 +236,8 @@ export interface Layout {
   /** What parsing the outline changed (corners rounded). */
   outlineNotes?: string[];
   /** Round 8: the distribution proposal this layout is (layoutCase sets it). */
+  /** Round 15: the held objects (a tin, a card deck): their room, opening, walls and sleeve. */
+  held?: HeldReport[];
   proposal?: { id: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string; asked: string };
 }
 
@@ -289,7 +293,7 @@ function autoCrown(shape: CaseShape, S: number): number {
 function priority(f: LocalFeature, isFront: boolean): number {
   if (!f.expose) return -1;
   if (f.kind === "screen") return isFront ? 100 : 40;
-  return { connector: 90, camera: 85, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
+  return { access: 95, connector: 90, camera: 85, button: 80, switch: 75, knob: 70, "sensor-window": 60, grille: 50, led: 30, vent: 0, antenna: 0, screen: 40 }[f.kind] ?? 0;
 }
 
 /** Distance kept between a feature's tip and the inner wall surface, by kind. */
@@ -436,7 +440,9 @@ function overflow(L: Layout): number {
   return (f.fixed.w || f.fixed.h ? Math.max(0, f.scale - 1) * 1e10 : 0) + (f.depthMiss ? (f.depthMiss.needed_mm - f.depthMiss.available_mm) * 1e9 : 0);
 }
 
-function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions & { optimize?: OptimizeOptions } = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[]; candidates?: AutoCandidate[] } {
+function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOptions & { optimize?: OptimizeOptions } = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[]; candidates?: AutoCandidate[] } {
+  // round 15: held objects (a tin, a card deck) are packed as parts with no pins, against the side they go in through
+  const input = withHeld(input0);
   const enc = input.enclosure;
   const shape = enc.shape;
   const params = resolveParams(shape, enc.params);
@@ -470,7 +476,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
       outside.push({ id: p.id, why: "excluded in enclosure.exclude" });
       continue;
     }
-    if (p.spec.category === "misc" && !p.spec.pins.length) {
+    if (p.spec.category === "misc" && !p.spec.pins.length && !isHeldType(p.type)) {
       outside.push({ id: p.id, why: `${p.spec.name} is a frame, not something that goes inside a case` });
       continue;
     }
@@ -1307,6 +1313,32 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
           o.u = o.v = Math.round((f.u + 2 * behind * Math.tan(half) + 2 * tol) * 10) / 10;
           break;
         }
+        case "access": {
+          // round 15: a held object's way in: a slot through a side the size of its cross-section
+          // (no deeper than the cavity, so the front and back walls stay), or a pocket in a face
+          o.kind = "access";
+          const lip = f.lip ?? 0;
+          o.u = Math.max(1, f.u - 2 * lip);
+          o.v = Math.max(1, f.v - 2 * lip);
+          if (face !== "front" && face !== "back") {
+            o.v = Math.min(o.v, zFront - zBack - 0.01);
+            o.at = [at[0], at[1], Math.min(Math.max(at[2], zBack + o.v / 2), zFront - o.v / 2)];
+            // a curved wall is thicker at the slot's ends: cut through it everywhere
+            let deep = o.depth;
+            for (let k = -1; k <= 1; k += 0.25) {
+              const px = at[0] + uAxis[0] * (k * o.u) / 2;
+              const py = at[1] + uAxis[1] * (k * o.u) / 2;
+              deep = Math.max(deep, rayExit(outerPlan, px, py, n[0], n[1]) + 1e-6);
+            }
+            o.depth = deep;
+          } else {
+            let deep = o.depth;
+            for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]] as const) deep = Math.max(deep, t + domeHeight(dome?.[face], at[0] + (a * o.u) / 2, at[1] + (b * o.v) / 2));
+            o.depth = deep;
+          }
+          o.corner = o.shape === "rect" ? Math.min(2, o.u / 2 - 0.01, o.v / 2 - 0.01) : 0;
+          break;
+        }
         case "switch":
           o.kind = "slot";
           o.u = f.u + f.travel + 2 * tol;
@@ -1334,6 +1366,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   const boxes: Box[] = placed.map((p) => ({ min: p.min, max: p.max }));
   const freeBox = (b: Box, ignore?: Placed) => !placed.some((p) => p !== ignore && overlap(p, b, 0.3)) && insidePlan(plan, b, intrusion);
   for (const p of placed) {
+    if (isHeldMech(p.mech)) continue; // round 15: held objects get their sleeve below, not locators
     const facingZ = apply(p.R, [0, 0, 1])[2];
     const againstFront = p.max[2] >= zFront - 0.5;
     const againstBack = p.min[2] <= zBack + 0.8;
@@ -1403,6 +1436,8 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
   void boxes;
   // round 12: every part held (seat posts, locators off the wall, hold-downs, backstops and guides
   // for side parts, cradle strap slots), and which shell it goes into and how
+  // round 15: a sleeve of thin walls between each held object and the electronics
+  const held = sleeveFor({ placed, openings, ribs, zFront, zBack, split, tol, plan, intrusion, issues, held: enc.held ?? [], wall: t, ri, riBack });
   const lipBand = (b: Box) => b.max[2] > split - lip.h - 0.3 && b.min[2] < split + 0.8;
   const mounts = designMounts({
     placed,
@@ -1566,6 +1601,7 @@ function layoutOnce(input: LayoutInput, connPerm?: string[], opts: LayoutOptions
     bosses,
     cradles,
     mounts,
+    ...(held.length ? { held } : {}),
     dome,
     ...(tab ? { tab } : {}),
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },

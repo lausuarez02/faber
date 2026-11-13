@@ -21,6 +21,7 @@ import type { PartSpec } from "@jumper/sim-core";
 import { buildNets } from "@jumper/project-format";
 import type { Layout, Placed } from "./layout.ts";
 import type { Mount } from "./mounts.ts";
+import { isHeldMech } from "./held.ts";
 import { outline } from "./plan.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
 
@@ -160,7 +161,11 @@ function estimateWires(project: Project, L: Layout, specOf: AssemblyInput["specO
 }
 
 export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
-  const { project, layout: L, specOf } = input;
+  const { project, specOf } = input;
+  // round 15: held objects (a tin...) are not assembled: they go in at the end (or, captive, before closing)
+  const full = input.layout;
+  const heldPlaced = full.placed.filter((p) => isHeldMech(p.mech));
+  const L: Layout = heldPlaced.length ? { ...full, placed: full.placed.filter((p) => !isHeldMech(p.mech)), mounts: (full.mounts ?? []).filter((m) => !heldPlaced.some((h) => h.mech.id === m.part)) } : full;
   const title = input.title ?? project.name;
   const checks: AssemblyCheck[] = [];
   const byId = new Map(L.placed.map((p) => [p.mech.id, p]));
@@ -541,7 +546,9 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   }
   const sw = L.placed.find((p) => p.mech.features.some((f) => f.kind === "switch"));
   if (cells.length) add({ title: "Test it on the battery", say: `Unplug USB${sw ? ` and switch it on with ${sw.mech.id}` : ""}: it should start from the battery. Then plug USB into the charging port and check the charge light.`, shell: "both", parts: cells.map((c) => c.mech.id), action: "test", tools: ["multimeter"], cautions: ["If it does not start, switch off and check the battery wiring before anything else."], view: { camera: "open-book", explode: 0, highlight: cells.map((c) => c.mech.id) } });
+  for (const h of (full.held ?? []).filter((x) => !x.removable)) add({ title: `Put ${h.name} in`, say: `${h.name} stays inside: lay it into its room in the back shell now (${h.room_mm.w} x ${h.room_mm.h} x ${h.room_mm.d} mm, the sleeve walls round it), before the front shell goes on.`, shell: "back", parts: [], action: "place", tools: [], cautions: [h.measure], view: { camera: "back-shell", explode: 0, highlight: [] } });
   add({ title: "Close the case", say: `Fold the wires in so none crosses the seam${L.lip ? " or the lip" : ""}, line the front shell up with the back and ${L.bosses.length ? `fit the ${L.bosses.length} M2 screws from the back into the inserts, finger tight (they strip plastic easily)` : "press it on evenly all round until the lip clicks"}. Nothing should need force: if it does, a wire or a part is in the way.`, shell: "closed", parts: [], action: L.bosses.length ? "screw" : "close", fasteners: L.bosses.length ? [{ kind: "screw", size: "M2 pan head (length in enclosure/PRINT.md)", qty: L.bosses.length }] : [], tools: L.bosses.length ? ["PH0 screwdriver (or 1.5 mm hex)"] : [], cautions: ["A pinched wire can short: look along the seam before the last press."], view: { camera: "exploded", explode: 1, highlight: [] } });
+  for (const h of (full.held ?? []).filter((x) => x.removable)) add({ title: `Put ${h.name} in`, say: `${h.insert === "slide" ? `Slide ${h.name} into the slot on the ${h.from}` : h.insert === "snap" ? `Press ${h.name} into the opening on the ${h.from} until the rim clicks over it` : `Drop ${h.name} into the opening on the ${h.from}`} (${h.opening_mm ? `${h.opening_mm.w} x ${h.opening_mm.h} mm` : "its opening"}). It should go in by hand with ${h.clearance_mm} mm to spare and come out the same way; the electronics stay put.`, shell: "closed", parts: [], action: "place", tools: [], cautions: [h.measure], view: { camera: "closed", explode: 0, highlight: [] } });
   add({ title: "Final test, closed", say: `With the case closed: ${access.length ? `plug a cable into ${access.map((a) => a.split(" (")[0]).join(" and ")}` : "power it on"}; ${closedChecks.length ? `${closedChecks.join("; ")}; ` : ""}then run test/TEST-PLAN.md and test/TEST-ON-HARDWARE.md once more.`, shell: "closed", parts: [], action: "test", tools: ["USB cable"], cautions: ["Peel the screen's film last."], view: { camera: "closed", explode: 0, highlight: [] } });
 
   // ---------------------------------------------------------------- 10. consumables and tools

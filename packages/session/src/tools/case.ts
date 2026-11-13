@@ -3,6 +3,7 @@ import { networkConfigOf } from "../device-network.ts";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { CASE_SHAPES, EnclosureSchema, type Enclosure, type Project } from "@jumper/project-format";
+import { heldProblems } from "@jumper/enclosure";
 import type { CaseReport } from "@jumper/enclosure";
 import { parseOutline as parseOutlineSync } from "@jumper/enclosure/outline";
 import { hexToUf2 } from "@jumper/sim-backends";
@@ -75,6 +76,12 @@ const layoutArg = {
     'How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it.',
 };
 
+const heldArg = {
+  type: ["array", "null"],
+  description: 'Round 15: things the case holds that are not electronics (a tin of pouches or mints, a lip balm, a lighter, a card deck), each {"id", "name", "shape": "cylinder" | "box" | "custom", "size_mm": {"d", "h"} (cylinder: diameter and height) or {"w", "h", "d"} (box), "orientation": "flat" | "upright", "clearance_mm" (default 0.5), "insert": "slide" (through a slot in a side) | "pocket" (an opening in the back, front or top) | "snap" (a pocket whose rim is lip_mm narrower), "from": "right" | "left" | "top" | "bottom" | "back" | "front", "removable" (false = it goes in during assembly), "source" (where the size comes from), "sensor": {"part", "max_mm"} (a reed / Hall switch that must sit next to it)}. The case leaves it a room with clearance, keeps every part and wire out (sleeve walls), cuts its opening and checks the walls round it; the report and the build kit give its sizes and how to check them with calipers. Example: [{"id": "tin", "name": "round tin", "shape": "cylinder", "size_mm": {"d": 66, "h": 21}, "insert": "slide", "from": "right"}]. null removes them (update_case).',
+  items: { type: "object", additionalProperties: true },
+};
+
 export const caseTools: ToolModule = {
   name: "case",
   tools: [
@@ -93,6 +100,7 @@ export const caseTools: ToolModule = {
           placements,
           exclude: { type: "array", items: { type: "string" }, description: "Part ids that are not inside the case." },
           layout: layoutArg,
+          held: heldArg,
           dry_run: { type: "boolean", description: "true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit." },
           save: { type: "boolean", description: "Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
           images: { type: "boolean", description: "Default true: return the front and exploded renders inline." },
@@ -109,7 +117,7 @@ export const caseTools: ToolModule = {
       description: `Change the existing case: any of shape, outline, size_mm, params, front, placements, exclude. params, size_mm and placements are merged into what is there; a placement or a size value set to null is removed (back to auto). Example: {"params": {"wall_mm": 2, "closure": "screws"}} or {"placements": {"pet": {"face": "top"}}} or {"shape": "puck"} or {"size_mm": {"w": 64, "h": 84}} or {"outline": {"points": [[0, 40], [24, 16], [28, -4], [13, -32], [-13, -32], [-28, -4], [-24, 16]], "smooth": true}}. Regenerates every file in case/ and returns the CaseReport like design_case (with costs) (or fits: false with misses and suggestions when a fixed size cannot hold the parts; nothing changes then). Fails when there is no case yet (use design_case). ${CANNOT}`,
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, images: { type: "boolean" }, costs: { type: "boolean", description: "Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD." }, why },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: { ...sizeArg, additionalProperties: true }, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, held: heldArg, images: { type: "boolean" }, costs: { type: "boolean", description: "Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD." }, why },
       },
       edits: true,
     },
@@ -120,7 +128,7 @@ export const caseTools: ToolModule = {
         'Test whether the project\'s parts fit a case WITHOUT making it (no CAD, nothing written, answers in under a second): any preset or a custom outline, any size. Takes the same arguments as design_case (shape, outline, size_mm, params, placements, exclude, front); with none it tests the saved case. Returns {fits, size_mm (as laid out), needed_mm (what the parts need), asked_mm, misses: [{part, type, dimension: "outline" | "depth", short_mm, where, message}], suggestions: [{kind: "swap" | "smaller-cell" | "on-edge" | "bigger", part, from, to, message, change: [{tool, args}], fits, size_mm, tradeoff}], issues, costs: {base, costs: [{id, choice, with, without, adds_mm, adds_cm3, breaks_fit, message, change}], relax_all, sizes_that_work (a fixed size: the sizes this outline works at, flat and stacked; use one instead of guessing)}, ms}. Relax the costly choices unless the person asked for them. Each suggestion is tried with the same quick layout while about a second lasts (fits says whether it then fits the asked size; untried ones have no fits; try_suggestions: true tries them all, a few seconds). Use it to rethink the pieces before design_case: e.g. {"shape": "custom", "outline": "<egg path>", "size_mm": {"w": 58, "h": 75, "d": 20}}. preview: true adds the front-view geometry (outline, cavity, part footprints with collides) for drawing it.',
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, costs: { type: "boolean", description: "Default true: add costs, what each of your choices (pins, faces, dome, edges, a fixed size, wall) adds to the size, a few seconds." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, held: heldArg, preview: { type: "boolean", description: "Add the front-view geometry (default false)." }, costs: { type: "boolean", description: "Default true: add costs, what each of your choices (pins, faces, dome, edges, a fixed size, wall) adds to the size, a few seconds." }, try_suggestions: { type: "boolean", description: "Try every suggestion (a few seconds) instead of the ones that fit in about a second (default false)." } },
       },
       readOnly: true,
     },
@@ -131,7 +139,7 @@ export const caseTools: ToolModule = {
         'Work out, automatically, the best ways to distribute the project\'s parts inside a case of ANY outline and size (no CAD, nothing written, about 1 to 2 s): Jumper lays the parts out flat first (every part side by side in one layer inside the real outline, rotated 0 / 90, a board on its edge where it helps), then in two or three layers (e.g. the cell behind the screen), keeping the screen behind its window, the speaker grille on its face, each USB port / button / switch reaching its wall, the cell flat, wiring room between parts and the rim round-over at each part\'s depth (heavy parts low in an upright outline). Returns {proposals: [{id: "thinnest" | "smallest" | "balanced", label, size_mm, volume_cm3, pocket, fill_ratio, layers: [{index, z_mm, parts}], placements: {part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}, why: [reasons in plain words], misses, warnings, source}], best, chosen, parts_volume_cm3, ms}. Same arguments as check_fit (with none it uses the saved case). Also costs: what each of your choices (a pinned part, a face, the dome, edges, a fixed size, wall) adds in thickness / size / volume, measured by proposing again without it, each with the update_case call that relaxes it, and relax_all. Call it before design_case; relax the costly choices unless the person asked for them; a pocket or hand-held device should be 20 mm thick or less. Then make the one you want with design_case / update_case {layout: "<id>"}; pin a part only where the person asked for it (the rest is arranged around it). views: true adds front and side views (outline + part rectangles per layer) for drawing them. Deterministic: the same project gives the same proposals.',
       inputSchema: {
         type: "object",
-        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, views: { type: "boolean", description: "Add the front and side views per proposal (default false)." }, costs: { type: "boolean", description: "Default true: add costs, what each of your choices (pins, faces, dome, edges, a fixed size, wall) adds to the size, a few seconds." } },
+        properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, held: heldArg, views: { type: "boolean", description: "Add the front and side views per proposal (default false)." }, costs: { type: "boolean", description: "Default true: add costs, what each of your choices (pins, faces, dome, edges, a fixed size, wall) adds to the size, a few seconds." } },
       },
       readOnly: true,
     },
@@ -209,6 +217,10 @@ export const caseTools: ToolModule = {
       if (args.params) merged.params = { ...(cur.params ?? {}), ...(args.params as object) };
       if (args.front !== undefined) merged.front = args.front;
       if (args.exclude !== undefined) merged.exclude = args.exclude;
+      if (args.held !== undefined) {
+        if (args.held === null || (Array.isArray(args.held) && !args.held.length)) delete merged.held;
+        else merged.held = args.held;
+      }
       if (args.layout !== undefined) {
         if (args.layout === null || args.layout === "auto") delete merged.layout;
         else merged.layout = args.layout;
@@ -290,6 +302,7 @@ function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Rec
     ...(args.placements ? { placements: stripNulls(args.placements as Record<string, unknown>) } : {}),
     ...(args.exclude ? { exclude: args.exclude } : {}),
     ...(args.layout ? { layout: args.layout } : {}),
+    ...(Array.isArray(args.held) && args.held.length ? { held: args.held } : {}),
   };
 }
 
@@ -298,10 +311,10 @@ function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Rec
  * thinnest, smallest and balanced, each a finished layout, and which one the case uses.
  */
 export async function layoutProposals(s: ProjectSession, args: Record<string, unknown>, opts: { views?: boolean; costs?: boolean; costsBudgetMs?: number } = {}) {
-  const has = args.shape !== undefined || args.outline !== undefined || args.size_mm !== undefined;
+  const has = args.shape !== undefined || args.outline !== undefined || args.size_mm !== undefined || args.held !== undefined;
   if (!has && !s.project.enclosure) fail("no-case", "Nothing to lay out", "propose_layout with no shape uses the saved case, and this project has none", 'pass a shape, e.g. {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C ... Z"}');
   const base = s.project.enclosure && !args.shape ? s.project.enclosure : undefined;
-  const enc = has || args.placements || args.params || args.layout || args.exclude || args.front ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
+  const enc = has || args.placements || args.params || args.layout || args.exclude || args.front || args.held ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
   const { layoutInput, proposalsFor, layoutCase } = await import("@jumper/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   if (!input.parts.length) fail("no-parts", "No parts to lay out", "the project has no parts with a case footprint", "place parts first (place_part)");
@@ -379,7 +392,7 @@ export async function draftCosts(s: ProjectSession, body: Record<string, unknown
   const has = body.shape !== undefined || body.outline !== undefined || body.size_mm !== undefined;
   if (!has && !s.project.enclosure) fail("no-case", "Nothing to weigh", "there is no case yet and the request names no shape", 'send {} once the case exists, or {"shape": "pebble"}');
   const base = s.project.enclosure && !body.shape ? s.project.enclosure : undefined;
-  const enc = has || body.placements || body.params || body.layout || body.exclude || body.front ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(body, s.project.enclosure?.shape) }) : s.project.enclosure!;
+  const enc = has || body.placements || body.params || body.layout || body.exclude || body.front || body.held ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(body, s.project.enclosure?.shape) }) : s.project.enclosure!;
   const c = await caseCosts(s, enc, typeof body.budget_ms === "number" ? Math.min(15000, Math.max(1000, body.budget_ms)) : 8000);
   return c ?? { base: undefined, costs: [], free: [], skipped: [], ms: 0 };
 }
@@ -441,7 +454,15 @@ function validateEnclosure(s: ProjectSession, raw: Record<string, unknown>): Enc
     }
   }
   const ids = new Set(s.project.parts.map((p) => p.id));
-  const bad = [...(enc.front ? [enc.front] : []), ...Object.keys(enc.placements ?? {}), ...(enc.exclude ?? [])].filter((id) => !ids.has(id));
+  // round 15: held objects: a complete declaration, ids that are not part ids, a sensor that exists
+  for (const h of enc.held ?? []) {
+    const problems = heldProblems(h);
+    if (problems.length) fail("bad-held", problems[0]!.split(". Why: ")[0]!, problems[0]!.split(". Why: ")[1]?.split(". Fix: ")[0] ?? "the declaration is incomplete", problems[0]!.split(". Fix: ")[1] ?? "see design_case's held argument");
+    if (ids.has(h.id)) fail("bad-held", `The held object's id "${h.id}" is also a part id`, "a held object is not a part; the case would confuse the two", `give it another id, e.g. "${h.id}-held"`);
+    if (h.sensor && !ids.has(h.sensor.part)) fail("bad-held", `held object "${h.id}" names sensor "${h.sensor.part}", which is not in the project`, `the parts are ${[...ids].join(", ")}`, `place the sensor first (place_part {"type": "reed-switch", "id": "${h.sensor.part}"}) or use one of those ids`);
+  }
+  const heldIds = new Set((enc.held ?? []).map((h) => h.id));
+  const bad = [...(enc.front ? [enc.front] : []), ...Object.keys(enc.placements ?? {}), ...(enc.exclude ?? [])].filter((id) => !ids.has(id) && !heldIds.has(id));
   if (bad.length) fail("unknown-part", `The case names ${bad.map((b) => `"${b}"`).join(", ")}, which ${bad.length > 1 ? "are" : "is"} not in the project`, `the parts are ${[...ids].join(", ")}`, "use those ids (get_project lists them)");
   return enc;
 }
@@ -572,7 +593,7 @@ function fmtSize(r: CaseReport): string {
 }
 
 function compact(r: CaseReport) {
-  return { ...(r.fit ? { fits: r.fit.fits, fit: r.fit } : {}), ...(r.assembly ? { assembly: assemblySummary(r) } : {}), shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, hash: r.hash, notes: r.notes };
+  return { ...(r.fit ? { fits: r.fit.fits, fit: r.fit } : {}), ...(r.assembly ? { assembly: assemblySummary(r) } : {}), shape: r.shape, size_mm: r.size_mm, inner_mm: r.inner_mm, wall_mm: r.wall_mm, mass_g: r.mass_g, ...(r.volume_cm3 !== undefined ? { volume_cm3: r.volume_cm3 } : {}), pocket: r.pocket, ok: r.ok, checks: r.checks, placed: r.placed, enclosure: r.enclosure, ...(r.held?.length ? { held: r.held } : {}), hash: r.hash, notes: r.notes };
 }
 
 function answer(s: ProjectSession, out: Out, images: boolean, rel: string, next: string) {
