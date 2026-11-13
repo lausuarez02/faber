@@ -1,0 +1,13 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "The LS013B7DH03 serial protocol: write-lines, clear-all and VCOM-only frames with an active-high chip select, LSB-first data (MSB-first senders understood), DISP on / off." },
+    "timing": { "level": "approx", "note": "A line shows as soon as its 16 bytes arrive; no SPI clock limit (2 MHz) or chip-select setup / hold times are checked." },
+    "analog": { "level": "none", "note": "No contrast, viewing angle, or the slow degradation a missing VCOM toggle causes (a warning says so instead)." },
+    "power": { "level": "approx", "note": "About 2 µA for a still image and 17 µA while writing (datasheet: about 4 µW / 50 µW at 3 V); a breakout's regulator and level shifter add their own." },
+    "radio": { "level": "n/a", "note": "Not a radio part." }
+  },
+  "emulates": ["Line writes, clear-all, VCOM frames", "Active-high chip select", "DISP pin", "Image lost when power goes", "VCOM toggling check"],
+  "doesNotEmulate": ["Image degradation from a DC bias", "SPI timing limits", "The breakout's regulator current", "EXTMODE (EXTCOMIN is treated as in use when it toggles)"],
+  "testOnRealDevice": ["Toggle VCOM at about 1 Hz, including while the MCU sleeps (EXTCOMIN from an RTC square wave, or a short wake each second)", "Check the image in sunlight and in the dark: it has no backlight", "Measure the breakout's sleep current: some have a power LED"]
+}

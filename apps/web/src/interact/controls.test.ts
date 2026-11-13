@@ -23,6 +23,12 @@ describe("live controls from part specs", () => {
     expect(sensorProps(getDef("led"))).toEqual([]);
   });
 
+  it("round 15: a magnetic switch takes a press (magnet near: a lid closing) and a magnet-distance slider, not its magnet's size", () => {
+    expect(controlOf(getDef("reed-switch"))).toBe("button");
+    expect(sensorProps(getDef("reed-switch")).map((p) => p.id)).toEqual(["magnet_mm"]);
+    expect(sensorProps(getDef("hall-switch-drv5032")).map((p) => p.id)).toEqual(["magnet_mm"]);
+  });
+
   it("knob drag: right / up turns up, clamped to 0..1", () => {
     expect(knobValue(0.5, 80, 0)).toBe(1);
     expect(knobValue(0.5, 0, 40)).toBe(0.25);

@@ -297,7 +297,18 @@ export const PartSpecSchema = z.object({
   /** Mass in grams (the module as sold, without wires). */
   mass_g: z.number().nonnegative().optional(),
   /** Supply current drawn by the part itself in mA: typ = usual operation, max = worst case (stall, all LEDs white, radio TX). Passive parts: 0/0. */
-  current_ma: z.object({ typ: z.number().nonnegative(), max: z.number().nonnegative() }).optional(),
+  current_ma: z
+    .object({
+      typ: z.number().nonnegative(),
+      max: z.number().nonnegative(),
+      /** Round 15: what it draws while idle (the board asleep, a screen holding its image, a sensor between samples), µA. */
+      standby_ua: z.number().nonnegative().optional(),
+      /** Round 15: parts that draw `typ` only while they do one thing (an e-paper refresh, a reading): how long that takes, ms. */
+      event_ms: z.number().positive().optional(),
+      /** Round 15: what that one thing is, in words ("full refresh"). */
+      event: z.string().optional(),
+    })
+    .optional(),
   /** Typical single-unit price in US dollars from a generic distributor. */
   price_usd: z.number().nonnegative().optional(),
   /** Where to buy it: generic distributors or the maker's own shop. Search URLs are fine. */

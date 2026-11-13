@@ -1,0 +1,56 @@
+{
+  "id": "sharp-memory-lcd-128",
+  "name": "Sharp Memory LCD 1.28in 128x128 (LS013B7DH03, SPI)",
+  "category": "display",
+  "description": "1.28 in reflective black / white LCD with a memory in every pixel: a still image costs about 4 µW (a microamp), always readable in daylight, and lines change instantly (no 2 s e-paper refresh). The image needs power (unlike e-paper) and VCOM must toggle about once a second. Wiring: VIN → 3V3, GND → GND, CLK → SCK, DI → MOSI, CS → any GPIO (ACTIVE HIGH), DISP → 3V3 or a GPIO, EXTCOMIN → GND (software VCOM) or a 1 Hz signal. Adafruit_SharpMem: Adafruit_SharpMem display(SCK, MOSI, CS, 128, 128).",
+  "pins": [
+    { "id": "VIN", "label": "VIN", "x": 50, "y": 300, "type": "power", "voltage": { "min": 2.7, "max": 5.5 }, "description": "3 V panel (breakouts with a regulator take 3 to 5 V)." },
+    { "id": "GND", "label": "GND", "x": 70, "y": 300, "type": "ground", "description": "Ground." },
+    { "id": "CLK", "label": "CLK", "x": 90, "y": 300, "type": "digital", "protocols": ["spi-sck"], "description": "SPI clock, up to 2 MHz." },
+    { "id": "DI", "label": "DI", "x": 110, "y": 300, "type": "digital", "protocols": ["spi-mosi"], "description": "SPI data in, least significant bit first." },
+    { "id": "CS", "label": "CS", "x": 130, "y": 300, "type": "digital", "protocols": ["spi-cs-high"], "description": "Chip select, ACTIVE HIGH (SCS)." },
+    { "id": "DISP", "label": "DISP", "x": 150, "y": 300, "type": "digital", "description": "HIGH = show the image, LOW = blank (the memory keeps it)." },
+    { "id": "EXTCOMIN", "label": "EIN", "x": 170, "y": 300, "type": "digital", "description": "External VCOM toggle (with EXTMODE high); tie LOW when the firmware toggles VCOM in the command byte." }
+  ],
+  "size": { "w": 220, "h": 320 },
+  "limits": { "maxVoltage": 5.5, "minVoltage": 2.7, "maxCurrentmA": 1 },
+  "footprint": "breakout about 33 x 41 mm (panel 30.4 x 34.7 x 1.4 mm on a 10-pin FPC)",
+  "dimensions_mm": { "w": 33, "h": 41, "d": 3.5 },
+  "mass_g": 5,
+  "current_ma": { "typ": 0.017, "max": 0.05, "standby_ua": 2, "event_ms": 50, "event": "writing the changed lines" },
+  "price_usd": 22,
+  "buy_links": [
+    { "vendor": "Adafruit", "url": "https://www.adafruit.com/search?q=sharp+memory+display" },
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=LS013B7DH03" }
+  ],
+  "bus": { "spi": { "modes": [0], "maxHz": 2000000 } },
+  "bindings": [
+    { "key": "on", "type": "boolean", "description": "Powered with DISP high." },
+    { "key": "frame", "type": "number", "description": "Changes when the image changes. Pixels: Simulation.framebuffer(partId) (128 x 128)." },
+    { "key": "width", "type": "number", "description": "128." },
+    { "key": "height", "type": "number", "description": "128." },
+    { "key": "lit", "type": "number", "description": "Black pixels shown." },
+    { "key": "blank", "type": "boolean", "description": "Nothing black shown." },
+    { "key": "disp", "type": "boolean", "description": "DISP pin high." },
+    { "key": "linesWritten", "type": "number", "description": "Lines written since power-on." },
+    { "key": "clears", "type": "number", "description": "Clear-all commands." },
+    { "key": "vcomToggles", "type": "number", "description": "VCOM inversions seen (M1 bit or EXTCOMIN)." },
+    { "key": "current_ua", "type": "number", "description": "What the panel draws now (µA)." },
+    { "key": "screenOpacity", "type": "number", "description": "1 (bound in the SVG)." }
+  ],
+  "tags": ["sharp", "memory lcd", "memory-in-pixel", "mip", "ls013b7dh03", "128x128", "low power", "always on", "reflective", "adafruit_sharpmem", "display", "screen", "spi"],
+  "mechanical": {
+    "pcb_mm": 1.6,
+    "keepout_bottom_mm": 2,
+    "features": [
+      { "id": "active-area", "kind": "screen", "face": "+z", "x": 16.5, "y": 17, "w": 23.04, "h": 23.04, "bezel_mm": 1.5 }
+    ],
+    "source": "Sharp LS013B7DH03 datasheet (active area 23.04 x 23.04 mm, 128 x 128 at 0.18 mm); breakout size typical"
+  },
+  "sourcing": {
+    "mpn": "LS013B7DH03",
+    "manufacturer": "Sharp",
+    "package": "breakout with 10-pin FPC connector",
+    "generic": "Sharp Memory LCD 1.28 in 128x128, LS013B7DH03, SPI, breakout"
+  }
+}

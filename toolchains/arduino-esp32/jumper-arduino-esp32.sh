@@ -10,6 +10,9 @@
 #   - When the sketch uses Espressif's esp32-camera driver (esp_camera.h), the JumperCamera library is
 #     linked in and the driver's API is wrapped (esp_camera_init, esp_camera_fb_get, ...), so frames
 #     come from Jumper's camera port in the emulator (QEMU patch 0004). Round 13.
+#   - When the sketch deep-sleeps (calls esp_deep_sleep / esp_deep_sleep_start), the JumperSleep library
+#     is linked in and the sleep API is wrapped, so Jumper wakes the board on its timer or wake pins
+#     and RTC memory, the clock and the wake cause survive. Round 15.
 #   The sketch must be the last argument (as Jumper's runner passes it).
 # JUMPER_SIM=0 builds for the real device: plain arduino-cli, no shim, no define.
 #
@@ -19,6 +22,7 @@
 set -e
 SIMLIB=/opt/arduino/user/libraries/JumperSim
 CAMLIB=/opt/arduino/user/libraries/JumperCamera
+SLPLIB=/opt/arduino/user/libraries/JumperSleep
 CAMERA_INCLUDES='esp_camera|esp_camera_af'
 NETWORK_INCLUDES='WiFi|WiFiMulti|WiFiClient|WiFiClientSecure|WiFiUdp|WiFiServer|WiFiGeneric|NetworkClientSecure|NetworkClient|Network|HTTPClient|HTTPUpdate|WebServer|WebSocketsClient|WebSockets|WebSocketsServer|ArduinoWebsockets|PubSubClient|MQTT|MQTTClient|ArduinoMqttClient|AsyncMqttClient|ESPmDNS|AsyncUDP|esp_wifi|esp_http_client|esp_websocket_client|mqtt_client'
 
@@ -35,12 +39,13 @@ if [ "$1" = "compile" ] && [ "${JUMPER_SIM:-1}" != "0" ]; then
   DIR="$SKETCH"
   [ -f "$DIR" ] && DIR=$(dirname "$DIR")
   uses() { [ -n "$DIR" ] && grep -rqsE "#[[:space:]]*include[[:space:]]*[<\"]($1)\.h[>\"]" "$DIR" --include='*.ino' --include='*.cpp' --include='*.c' --include='*.h' --include='*.hpp'; }
-  NET=0; CAM=0
+  NET=0; CAM=0; SLP=0
   uses "$NETWORK_INCLUDES" && NET=1
   uses "$CAMERA_INCLUDES" && CAM=1
+  [ -n "$DIR" ] && grep -rqsE "esp_deep_sleep(_start|_try_to_start)?[[:space:]]*\(" "$DIR" --include='*.ino' --include='*.cpp' --include='*.c' --include='*.h' --include='*.hpp' && SLP=1
   DEFINES="-DJUMPER_SIM=1"
   case "$*" in *PSRAM=opi*|*PSRAM=enabled*) DEFINES="$DEFINES -DBOARD_HAS_PSRAM"; [ "$CAM" = 1 ] && DEFINES="$DEFINES -DJUMPER_SIM_PSRAM_FALLBACK=1";; esac
-  if [ "$NET" = 1 ] || [ "$CAM" = 1 ]; then
+  if [ "$NET" = 1 ] || [ "$CAM" = 1 ] || [ "$SLP" = 1 ]; then
     COPY="$(mktemp -d /tmp/jsim.XXXXXX)/$(basename "$DIR")"
     cp -R "$DIR" "$COPY"
     WRAPS=""
@@ -53,6 +58,11 @@ if [ "$1" = "compile" ] && [ "${JUMPER_SIM:-1}" != "0" ]; then
       printf '// Added by Jumper for the simulation build only (not in your project).\n#include <JumperCamera.h>\n' > "$COPY/zz_jumper_camera_shim.cpp"
       WRAPS="$WRAPS $(grep -ho '__wrap_[A-Za-z0-9_]*' "$CAMLIB"/src/*.c | sort -u | sed 's/^__wrap_/-Wl,--wrap=/' | tr '\n' ' ')"
       echo "jumper: simulation build, camera shim on (esp_camera_fb_get() gets frames from Jumper; the device build uses the real esp32-camera driver)"
+    fi
+    if [ "$SLP" = 1 ]; then
+      printf '// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSleep.h>\n' > "$COPY/zz_jumper_sleep_shim.cpp"
+      WRAPS="$WRAPS $(grep -ho '__wrap_[A-Za-z0-9_]*' "$SLPLIB"/src/*.c | sort -u | sed 's/^__wrap_/-Wl,--wrap=/' | tr '\n' ' ')"
+      echo "jumper: simulation build, deep-sleep shim on (Jumper wakes the board on its timer or wake pins)"
     fi
     set -- "$@" --build-property "build.defines=${DEFINES}" --build-property "compiler.c.elf.extra_flags=${WRAPS}" "$COPY"
   else

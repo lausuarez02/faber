@@ -1,0 +1,47 @@
+{
+  "id": "reed-switch",
+  "name": "Reed switch (normally open, glass 2 x 14 mm)",
+  "category": "input",
+  "description": "A magnetic switch: two contacts in a glass tube close when a magnet comes near (a lid, a door, a cover with a small magnet glued in) and open when it goes away. Draws no current itself. Wire one lead to a GPIO set to INPUT_PULLUP and the other to GND: the pin reads LOW while the magnet is near. Its magnet_mm prop is how far the magnet is (the live slider; a test sets {\"set\": \"reed1.magnet\", \"value\": \"away\"}). Can wake a sleeping ESP32 (a GPIO / ext0 wake-up).",
+  "pins": [
+    { "id": "1", "label": "1", "x": 10, "y": 20, "type": "passive", "description": "Contact lead (either way round)." },
+    { "id": "2", "label": "2", "x": 130, "y": 20, "type": "passive", "description": "Contact lead (either way round)." }
+  ],
+  "size": { "w": 140, "h": 40 },
+  "props": [
+    { "id": "magnet_mm", "label": "Magnet distance", "type": "number", "default": 40, "min": 0, "max": 40, "step": 0.5, "unit": "mm", "description": "How far the magnet's face is from the switch (on its axis). Closes at about 13 mm with the default 6 x 3 mm N35 magnet." },
+    { "id": "magnet_d_mm", "label": "Magnet diameter", "type": "number", "default": 6, "min": 2, "max": 30, "step": 0.5, "unit": "mm", "description": "Disc magnet diameter." },
+    { "id": "magnet_t_mm", "label": "Magnet thickness", "type": "number", "default": 3, "min": 0.5, "max": 20, "step": 0.5, "unit": "mm", "description": "Disc magnet thickness (axially magnetised)." },
+    { "id": "magnet_grade", "label": "Magnet grade", "type": "enum", "default": "N35", "options": ["N35", "N42", "N52", "ferrite"], "description": "NdFeB grade (or a ferrite fridge-style magnet), sets its remanence." },
+    { "id": "pull_in_mT", "label": "Pull-in field", "type": "number", "default": 4, "min": 0.5, "max": 30, "step": 0.1, "unit": "mT", "description": "Field at which the contacts close. Datasheets give ampere-turns (AT): a 10-15 AT glass reed closes at roughly 2 to 6 mT along its axis; measure yours with the magnet you use." },
+    { "id": "drop_out_ratio", "label": "Drop-out / pull-in", "type": "number", "default": 0.6, "min": 0.2, "max": 0.95, "step": 0.05, "description": "The contacts open again below this share of the pull-in field (hysteresis)." }
+  ],
+  "limits": { "maxCurrentmA": 500, "maxVoltage": 100, "maxPowerW": 10 },
+  "footprint": "THT glass reed, 2.0 mm diameter, 14 mm glass, axial leads (bend 2 mm or more from the glass)",
+  "dimensions_mm": { "w": 14, "h": 2.2, "d": 2.2 },
+  "mass_g": 0.2,
+  "current_ma": { "typ": 0, "max": 0 },
+  "price_usd": 0.3,
+  "buy_links": [
+    { "vendor": "DigiKey", "url": "https://www.digikey.com/en/products/result?keywords=reed%20switch%20normally%20open%2014mm" },
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-reed-switch-2x14mm-normally-open.html" }
+  ],
+  "bindings": [
+    { "key": "closed", "type": "boolean", "description": "Contacts closed (magnet near)." },
+    { "key": "field_mT", "type": "number", "description": "Flux density at the switch from the magnet (mT)." },
+    { "key": "magnet_mm", "type": "number", "description": "Magnet distance now (mm)." },
+    { "key": "closes_at_mm", "type": "number", "description": "Distance at which this magnet closes it (mm)." },
+    { "key": "operations", "type": "number", "description": "Times the contacts closed since the run started." },
+    { "key": "contactOpacity", "type": "number", "description": "1 while closed (bound in the SVG)." }
+  ],
+  "tags": ["reed", "reed switch", "magnetic switch", "magnet", "lid sensor", "door sensor", "open close", "wake", "zero power"],
+  "mechanical": {
+    "outline": "rect",
+    "keepout_top_mm": 0.5,
+    "source": "typical 2 x 14 mm glass reed (e.g. MKA-14103 class); leads not counted"
+  },
+  "sourcing": {
+    "package": "glass reed, 14 mm, axial leads",
+    "generic": "Reed switch, normally open (SPST-NO), glass 2 x 14 mm, 10-15 AT"
+  }
+}

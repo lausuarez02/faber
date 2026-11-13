@@ -391,13 +391,29 @@ const sketchUsesNetwork = (dir: string) => sketchIncludes(dir, NETWORK_INCLUDE);
 /** True when the sketch uses Espressif's esp32-camera driver (esp_camera.h). */
 export const sketchUsesCamera = (dir: string) => sketchIncludes(dir, CAMERA_INCLUDE);
 
+/** Round 15: the deep-sleep shim's trigger (toolchains/arduino-esp32/jumper-arduino-esp32.sh SLEEP_CALLS): the sketch deep-sleeps. */
+export const SLEEP_SHIM_CALL = /\besp_deep_sleep(_start|_try_to_start)?\s*\(/;
+/** True when the sketch calls esp_deep_sleep / esp_deep_sleep_start. */
+export const sketchUsesSleep = (dir: string) => sketchIncludes(dir, SLEEP_SHIM_CALL);
+/** The deep-sleep shim library, used straight from the repo (simulation builds only). */
+export const JUMPER_SLEEP_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/JumperSleep");
+
 /** The camera shim library, used straight from the repo (simulation builds only; never installed into the person's sketchbook). */
 export const JUMPER_CAMERA_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/JumperCamera");
 
 /** Content hash of the camera shim's sources (part of a camera sketch's build cache key). */
 export function cameraShimHash(): string {
+  return shimHash(JUMPER_CAMERA_LIB);
+}
+
+/** Round 15: content hash of the deep-sleep shim's sources (part of a sleeping sketch's build cache key). */
+export function sleepShimHash(): string {
+  return shimHash(JUMPER_SLEEP_LIB);
+}
+
+function shimHash(lib: string): string {
   const h = createHash("sha256");
-  const src = join(JUMPER_CAMERA_LIB, "src");
+  const src = join(lib, "src");
   if (existsSync(src)) for (const f of readdirSync(src).sort()) h.update(`${f}\0${readFileSync(join(src, f))}\0`);
   return h.digest("hex").slice(0, 16);
 }
@@ -477,7 +493,8 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
     // to a copy of the sketch (the person's files are never touched) and its link-time wraps.
     const net = sketchUsesNetwork(sketch);
     const cam = sketchUsesCamera(sketch);
-    if (net || cam) {
+    const slp = sketchUsesSleep(sketch);
+    if (net || cam || slp) {
       sketchCopy = join(c.workDir, "jsim", basename(sketch));
       rmSync(dirname(sketchCopy), { recursive: true, force: true });
       cpSync(sketch, sketchCopy, { recursive: true });
@@ -492,6 +509,12 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
         wrapFlags.push(...wrapFlagsOf(join(JUMPER_CAMERA_LIB, "src")));
         args = [...args, "--library", JUMPER_CAMERA_LIB];
         note += "jumper: simulation build, camera shim on (esp_camera_fb_get() gets frames from Jumper; the device build uses the real esp32-camera driver)\n";
+      }
+      if (slp) {
+        writeFileSync(join(sketchCopy, "zz_jumper_sleep_shim.cpp"), "// Added by Jumper for the simulation build only (not in your project).\n#include <JumperSleep.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(JUMPER_SLEEP_LIB, "src")));
+        args = [...args, "--library", JUMPER_SLEEP_LIB];
+        note += "jumper: simulation build, deep-sleep shim on (esp_deep_sleep_start() hands the board to Jumper, which wakes it on its timer or wake pins; RTC memory and the clock survive)\n";
       }
       // build.defines replaces the board menu's defines: keep BOARD_HAS_PSRAM for a PSRAM build, and
       // tell the camera shim the board has PSRAM the emulator lacks.

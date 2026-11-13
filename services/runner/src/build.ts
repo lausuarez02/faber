@@ -10,7 +10,7 @@ import { buildMicroPython } from "./lang/build-micropython.ts";
 import { buildEspIdf } from "./lang/build-espidf.ts";
 import { buildPlatformIO } from "./lang/build-platformio.ts";
 import { arduinoRuntimeFor } from "./runtime.ts";
-import { CAMERA_SHIM_INCLUDE, cameraShimHash, compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
+import { CAMERA_SHIM_INCLUDE, cameraShimHash, SLEEP_SHIM_CALL, sleepShimHash, compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
 import type { Runtime } from "@jumper/sim-backends/node";
 
 export interface BuildRequest {
@@ -283,7 +283,11 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
     if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
     if (req.purpose === "device") h.update("purpose=device\n");
     // Round 13: a simulation build of a camera sketch links Jumper's camera shim from the repo.
-    else if (req.fqbn.startsWith("esp32:esp32:") && [...sources.values()].some((c) => CAMERA_SHIM_INCLUDE.test(c))) h.update(`camshim=${cameraShimHash()}\n`);
+    else if (req.fqbn.startsWith("esp32:esp32:")) {
+      if ([...sources.values()].some((c) => CAMERA_SHIM_INCLUDE.test(c))) h.update(`camshim=${cameraShimHash()}\n`);
+      // Round 15: a simulation build of a deep-sleep sketch links Jumper's sleep shim from the repo.
+      if ([...sources.values()].some((c) => SLEEP_SHIM_CALL.test(c))) h.update(`sleepshim=${sleepShimHash()}\n`);
+    }
     for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
     return h.digest("hex").slice(0, 24);
   };

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 40" width="140" height="40">
+  <path d="M10 20 H34 M106 20 H130" stroke="#9AA3AF" stroke-width="2"/>
+  <rect x="32" y="11" width="76" height="18" rx="9" fill="#BFE3EA" fill-opacity="0.35" stroke="#7FA9B3" stroke-width="1.2"/>
+  <path d="M36 20 H66 L70 18.5" stroke="#5B636E" stroke-width="2.4" fill="none"/>
+  <path d="M104 20 H74 L70 21.5" stroke="#5B636E" stroke-width="2.4" fill="none"/>
+  <path d="M60 20 H80" stroke="#5CF2A1" stroke-width="2.4" opacity="0" data-bind="opacity:contactOpacity"/>
+  <text x="70" y="38" text-anchor="middle" font-family="IBM Plex Mono" font-size="6" fill="#8A93A0">REED</text>
+  <circle data-pin="1" cx="10" cy="20" r="3" fill="#C9CED6"/>
+  <circle data-pin="2" cx="130" cy="20" r="3" fill="#C9CED6"/>
+</svg>
