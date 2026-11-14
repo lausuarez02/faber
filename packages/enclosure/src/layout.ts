@@ -21,7 +21,7 @@ import { contains, type Flat, growPlan, withFastOutline, type Need, outline, typ
 import { outlineFeatureIssues, parseOutline, presetOutline, presetPoints, type ParsedOutline } from "./outline.ts";
 import type { FitCheck, Vec3 } from "./types.ts";
 import { designMounts } from "./mounts.ts";
-import { isHeldMech, isHeldType, type HeldReport } from "./held.ts";
+import { isHeldMech, isHeldType, SLEEVE_WALL_MM, type HeldReport } from "./held.ts";
 import { sleeveFor, withHeld } from "./held-layout.ts";
 import { depthCandidates, hashSeed, type OEnv, type OItem, type OVariant, radialOf, searchAtDepth, type ZMode } from "./optimize.ts";
 
@@ -184,6 +184,14 @@ export interface Post {
   kind?: "standoff" | "seat" | "hold-down";
 }
 
+export interface Collar {
+  part: string;
+  min: Vec3;
+  max: Vec3;
+  round: boolean;
+  shell: "front" | "back";
+}
+
 export interface Boss {
   x: number;
   y: number;
@@ -238,6 +246,10 @@ export interface Layout {
   /** Round 8: the distribution proposal this layout is (layoutCase sets it). */
   /** Round 15: the held objects (a tin, a card deck): their room, opening, walls and sleeve. */
   held?: HeldReport[];
+  /** Round 17: the collar round a socket in a case that follows the held object: the cavity minus the room over these z (the room's box; round = a cylinder room). */
+  collars?: Collar[];
+  /** Round 17: this shell prints standing on the seam face (the socket's floor plate), not on its outer face. */
+  printFlip?: "front" | "back";
   proposal?: { id: string; label: string; fill_ratio: number; layers: { index: number; z_mm: [number, number]; parts: string[] }[]; why: string[]; source: string; asked: string };
 }
 
@@ -433,6 +445,13 @@ export function stackLayout(input: LayoutInput, opts: LayoutOptions = {}): Layou
   return best;
 }
 
+/** Round 17: the exact CAD outline of a preset shape at a fixed size (half sizes A x B, mm), or undefined (an ellipse: its offsets are not ellipses). */
+function exactPreset(shape: CaseShape, A: number, B: number, corner: number): Plan["exact"] {
+  if (shape === "pebble" || shape === "puck") return Math.abs(A - B) < 1e-6 ? { shape: "circle", r: 0 } : undefined;
+  const r = shape === "pill" ? Math.min(A, B) - 1e-3 : Math.max(0.5, Math.min(corner, A - 0.01, B - 0.01));
+  return { shape: "rrect", r: r / Math.min(A, B) };
+}
+
 /** How far a fixed size is from holding the parts (0 = fits): the packer keeps the layout closest to fitting. */
 function overflow(L: Layout): number {
   const f = L.fit;
@@ -442,10 +461,10 @@ function overflow(L: Layout): number {
 
 function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOptions & { optimize?: OptimizeOptions } = {}, connCycle?: CaseFaceName[]): Layout & { connOrder: string[]; candidates?: AutoCandidate[] } {
   // round 15: held objects (a tin, a card deck) are packed as parts with no pins, against the side they go in through
-  const input = withHeld(input0);
+  const params = resolveParams(input0.enclosure.shape, input0.enclosure.params);
+  const input = withHeld(input0, { wall: params.wall_mm, tol: params.tolerance_mm });
   const enc = input.enclosure;
   const shape = enc.shape;
-  const params = resolveParams(shape, enc.params);
   const g = params.gap_mm;
   const tol = params.tolerance_mm;
   const t = params.wall_mm;
@@ -466,6 +485,8 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     else [A0, B0] = [po.w / 2, po.h / 2];
   }
   const polySpec = po ? { poly: po.poly, ctrl: po.ctrl, w0: t, A0, B0, fixed: fixedWH, quick } : undefined;
+  // round 17: a preset at a fixed size is drawn exactly in CAD (a circle, a rounded rectangle)
+  const exact: Plan["exact"] = shape !== "custom" && po ? exactPreset(shape, A0, B0, params.corner_radius_mm) : undefined;
   const issues: FitCheck[] = [];
   const exclude = new Set(enc.exclude ?? []);
   const outside: Layout["outside"] = [];
@@ -639,10 +660,17 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
         }
       }
       const lay = placement?.layer;
-      items.push({ id: m.id, variants, mass: m.w * m.h * m.d * (m.soft ? 2 : 1), soft: m.soft, ...(lay !== undefined && !pl.bound ? { zPin: (lay === 0 ? 0 : 1) as ZMode } : {}) });
+      items.push({ id: m.id, variants, mass: m.w * m.h * m.d * (m.soft ? 2 : 1), soft: m.soft, ...(isHeldMech(m) ? { flush: true } : {}), ...(lay !== undefined && !pl.bound ? { zPin: (lay === 0 ? 0 : 1) as ZMode } : {}) });
       vdata.push(data);
     }
     const lipT = Math.max(0.8, Math.min(1.2, t * 0.6));
+    // round 17: a case that follows a held object: its room is a whole layer against its wall
+    let followLayer: { front: number; back: number } | undefined;
+    if (enc.follow) {
+      const fi = items.findIndex((it) => it.id === enc.follow!.held && it.flush);
+      const V = fi >= 0 ? items[fi]!.variants[0] : undefined;
+      if (V?.zFix) followLayer = V.zFix.mode === "back" ? { front: 0, back: V.zFix.bottom + V.sz + g } : { front: V.zFix.top + V.sz + g, back: 0 };
+    }
     const kindO: OEnv["kind"] = polySpec ? "poly" : shape === "puck" ? "circle" : shape === "pebble" ? "ellipse" : shape === "pill" ? "stadium" : "rrect";
     // the straight band of the side wall that the openings on the sides (and the closure lip) need,
     // as half its height about the middle of the depth: the rims can only round over outside it (step 5)
@@ -691,6 +719,7 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
         rims: (D) => [rimOf(D, "front"), rimOf(D, "back")],
         upright: !!polySpec && polySpec.B0 > 1.15 * polySpec.A0,
         B0: polySpec ? polySpec.B0 : 30,
+        ...(followLayer ? { layer: followLayer } : {}),
       };
       // area of the container at scale 1 (mm²), for a first guess of the scale
       let a1 = 0;
@@ -713,6 +742,7 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
           r = r2;
           Lc = L2;
         }
+        if (process.env.JUMPER_LAYOUT_DEBUG) console.log(`[layout] ${ct.label} D=${D.toFixed(1)} size=${r.size.toFixed(3)} failed=${r.failed.map((k) => items[k]!.id)} fits=${Lc?.fit?.fits} scale=${Lc?.fit?.scale}`);
         if (!Lc) continue;
         if (Lc.fit?.fits !== false && !Lc.issues.some((i) => i.severity === "error")) fitting++;
         cands.push({ layout: Lc, D, size: r.size, failed: r.failed.map((k) => items[k]!.id), iters: r.iters, container: ct.label });
@@ -950,6 +980,28 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     }
   }
 
+  // ---- round 17: a case that rides on a held object through a socket in its front / back and
+  // follows its outline: the socket's floor plate spans the whole case, so the seam goes on the
+  // plate's inner face. The shell with the socket then prints standing on that plate (no 70 mm
+  // bridge), the socket's collar rising from it.
+  let socket: { part: string; face: "front" | "back"; plate: [number, number] } | undefined;
+  if (enc.follow) {
+    const fr = placed.find((q) => q.mech.id === enc.follow!.held && isHeldMech(q.mech));
+    const hd = (enc.held ?? []).find((x) => x.id === enc.follow!.held);
+    const face = fr?.bound?.face;
+    if (fr && hd?.engage_mm !== undefined && (face === "back" || face === "front")) {
+      const T = SLEEVE_WALL_MM;
+      const plate: [number, number] = face === "back" ? [fr.max[2], fr.max[2] + T] : [fr.min[2] - T, fr.min[2]];
+      const at = face === "back" ? plate[1] : plate[0];
+      // the lip hangs lipH from the seam: on the front shell (socket at the back) it must clear the
+      // parts above the plate; the other way round it hangs into the collar's margin
+      if (at > zBack + 1 && at < zFront - 1 && crossing(at) <= crossing(split)) {
+        split = at;
+        socket = { part: fr.mech.id, face, plate };
+      }
+    }
+  }
+
   // ---- 5. front / back edge fillets
   const D = depth + 2 * t;
   let rf = shape === "rounded-box" ? 1.2 : EDGE_SHARE[shape] * D;
@@ -975,6 +1027,12 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
       bandTop = Math.max(bandTop, tip[2] + half + 0.6);
       bandBot = Math.min(bandBot, tip[2] - half - 0.6);
     }
+  // round 17: a socket in a case that follows its object: the rim round the mouth is the wall alone,
+  // so that face's edge is rounded no more than the wall (unless asked): it stays flat round the opening
+  if (socket) {
+    if (socket.face === "back" && typeof params.edge_radius_back_mm !== "number") rfB = Math.min(rfB, t);
+    if (socket.face === "front" && typeof params.edge_radius_front_mm !== "number") rf = Math.min(rf, t);
+  }
   // front and back edges are rounded separately: a port near the back keeps the front edge round
   const asked = { front: rf, back: rfB };
   let rfBack = rfB < 0.05 ? 0 : Math.max(0.6, Math.min(rfB, bandBot - (zBack - t)));
@@ -996,9 +1054,13 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     const z1 = p.max[2];
     // + 0.1: the shrunk-outline test is an approximation of the true inward offset the wall is built with
     // the lip hangs lipH below the split and its ledge sits 0.8 mm above it
-    const inset = intrusion(z0, z1) + (z1 > split - lipH && z0 < split + 0.8 ? lipIntr : 0) + 0.1;
+    // round 17: a held object's room already has its clearance and needs no wiring room against the
+    // wall (the wall is its sleeve; the closure lip is cut round it), so a case can follow its outline
+    const heldP = isHeldMech(p.mech);
+    const inset = intrusion(z0, z1) + (!heldP && z1 > split - lipH && z0 < split + 0.8 ? lipIntr : 0) + (heldP ? 0.02 : 0.1);
     const side = p.bound && SIDE_FACES.includes(p.bound.face) ? p.bound.face : undefined;
-    const pad = (dir: CaseFaceName) => (side === dir ? p.bound!.offset : g);
+    const gp = heldP ? 0 : g;
+    const pad = (dir: CaseFaceName) => (side === dir ? p.bound!.offset : gp);
     const flat = Math.abs(apply(p.R, [0, 0, 1])[2]) > 0.5;
     if (flat) {
       for (const fp of p.mech.footprint) {
@@ -1008,7 +1070,7 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
         if (fp.shape === "round") {
           for (let i = 0; i < 32; i++) {
             const a = (i / 32) * Math.PI * 2;
-            needs.push({ x: cx + Math.cos(a) * (fp.r + g), y: cy + Math.sin(a) * (fp.r + g), inset, part: p.mech.id });
+            needs.push({ x: cx + Math.cos(a) * (fp.r + gp), y: cy + Math.sin(a) * (fp.r + gp), inset, part: p.mech.id });
           }
         } else {
           const e = apply(p.R, [fp.hw, fp.hh, 0]);
@@ -1054,8 +1116,10 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
   let fitScale = 1;
   const outlineMisses: LayoutFit["outlineMisses"] = [];
   if (polySpec) {
-    const sp = sizePoly(needs, polySpec);
-    plan = sp.plan;
+    // round 17: a case that follows a held object is concentric with its room
+    const fr = enc.follow ? placed.find((q) => q.mech.id === enc.follow!.held && isHeldMech(q.mech)) : undefined;
+    const sp = sizePoly(needs, fr ? { ...polySpec, center: [(fr.min[0] + fr.max[0]) / 2, (fr.min[1] + fr.max[1]) / 2] } : polySpec);
+    plan = exact ? { ...sp.plan, exact } : sp.plan;
     fitScale = sp.scale;
     if (!polySpec.fixed) {
       // auto: never under 15 mm across (the smallest case that prints well)
@@ -1437,7 +1501,17 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
   // round 12: every part held (seat posts, locators off the wall, hold-downs, backstops and guides
   // for side parts, cradle strap slots), and which shell it goes into and how
   // round 15: a sleeve of thin walls between each held object and the electronics
-  const held = sleeveFor({ placed, openings, ribs, zFront, zBack, split, tol, plan, intrusion, issues, held: enc.held ?? [], wall: t, ri, riBack });
+  const held = sleeveFor({ placed, openings, ribs, zFront, zBack, split, tol, plan, intrusion, issues, held: enc.held ?? [], wall: t, ri, riBack, ...(enc.follow ? { follow: enc.follow } : {}), ...(socket ? { socket } : {}) });
+  // round 17: the socket's collar: the cavity round the room over its depth, so the socket wall
+  // hugs the object and holds the floor plate (the case follows the object's outline)
+  const collars: Collar[] = [];
+  if (socket) {
+    const fr = placed.find((q) => q.mech.id === socket!.part)!;
+    const round = fr.mech.footprint.some((f) => f.shape === "round");
+    collars.push(socket.face === "back"
+      ? { part: socket.part, min: [fr.min[0], fr.min[1], zBack - 0.3], max: [fr.max[0], fr.max[1], fr.max[2] + 0.05], round, shell: "back" }
+      : { part: socket.part, min: [fr.min[0], fr.min[1], fr.min[2] - 0.05], max: [fr.max[0], fr.max[1], zFront + 0.3], round, shell: "front" });
+  }
   const lipBand = (b: Box) => b.max[2] > split - lip.h - 0.3 && b.min[2] < split + 0.8;
   const mounts = designMounts({
     placed,
@@ -1537,6 +1611,10 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     b.x -= c[0];
     b.y -= c[1];
   }
+  for (const co of collars) {
+    co.min = mv(co.min);
+    co.max = mv(co.max);
+  }
   for (const cr of cradles) {
     cr.min = mv(cr.min);
     cr.max = mv(cr.max);
@@ -1602,6 +1680,8 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     cradles,
     mounts,
     ...(held.length ? { held } : {}),
+    ...(collars.length ? { collars } : {}),
+    ...(socket ? { printFlip: socket.face } : {}),
     dome,
     ...(tab ? { tab } : {}),
     outer: { w: r1(outerMax[0] - outerMin[0]), h: r1(outerMax[1] - outerMin[1]), d: r1(outerMax[2] - outerMin[2]), min: mv(outerMin), max: mv(outerMax) },

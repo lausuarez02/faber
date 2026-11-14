@@ -121,10 +121,22 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
     meshes.set(b.name, m);
     const c = checkMesh(m);
     if (!c.closed || c.volume <= 0 || (b.kind === "shell" && c.shells !== 1)) watertight.push(`${b.name} (${c.badEdges} open edges, volume ${c.volume.toFixed(1)} mm³, ${c.shells} pieces)`);
-    if (b.kind === "shell") overhang.set(b.name, overhangArea(m, b.name === "front" ? [0, 0, 1] : [0, 0, -1]));
+    if (b.kind === "shell") overhang.set(b.name, overhangArea(m, [-b.up[0], -b.up[1], -b.up[2]]));
     files.set(`stl/${b.name}.stl`, stlBinary(printPose(m, b.up), b.name));
   }
   checks.push(watertight.length ? { id: "watertight", ok: false, severity: "error", message: `Not every printable file is a closed solid: ${watertight.join("; ")}. Why: a boolean in the CAD kernel left a gap. Fix: change wall_mm or gap_mm a little and design again; report it if it persists.` } : { id: "watertight", ok: true, severity: "info", message: `All ${B.bodies.length} bodies are closed 2-manifolds (every edge shared by two triangles) with volume > 0.` });
+
+  // ---- round 17: the rims really got the radius planned (OpenCascade's fillet used to fail silently)
+  {
+    const got = { front: Math.round(B.rf * 10) / 10, back: Math.round(B.rfBack * 10) / 10 };
+    const want = { front: Math.round(L.rf * 10) / 10, back: Math.round(L.rfBack * 10) / 10 };
+    const short = (["front", "back"] as const).filter((f) => want[f] > 0.05 && (got[f] + 0.05 < want[f] || B.edgeHow === "chamfer" || B.edgeHow === "sharp"));
+    const how = B.edgeHow === "fillet" ? "filleted" : B.edgeHow === "lofted" ? "a lofted round-over (OpenCascade's fillet failed on this outline, so the rim is built from offset outlines)" : B.edgeHow === "chamfer" ? "chamfered in two facets (no round-over could be built)" : "sharp";
+    const facts = { front_mm: got.front, back_mm: got.back, planned_front_mm: want.front, planned_back_mm: want.back, how: B.edgeHow };
+    checks.push(short.length
+      ? { id: "edge-radius", ok: true, severity: "warning", facts, message: `The ${short.map((f) => `${f} edge is ${got[f]} mm (${how}), not the ${want[f]} mm planned`).join("; the ")}. Why: ${B.edgeWhy || "OpenCascade could not round this outline at the full radius"}. Fix: ${B.edgeWhy ? "a thicker wall (wall_mm 2) allows a larger round-over, or accept this one" : "a smoother outline (larger corner_radius_mm, fewer tight curves) or a smaller edge_radius_front_mm / edge_radius_back_mm, and design again"}.` }
+      : { id: "edge-radius", ok: true, severity: "info", facts, message: `Front edge rounded ${got.front} mm, back edge ${got.back} mm, as planned (${B.edgeHow === "fillet" ? "filleted" : B.edgeHow === "lofted" ? "lofted round-over" : B.edgeHow}).` });
+  }
 
   // ---- no part body intersects the shell
   const hits: string[] = [];
@@ -211,7 +223,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   }
   // ---- printable
   const oh = [...overhang.entries()].filter(([, a]) => a > 1);
-  checks.push({ id: "printable", ok: true, severity: oh.some(([, a]) => a > 60) ? "warning" : "info", message: oh.length ? `Each shell prints on its outer face with no supports; ${oh.map(([n, a]) => `${n}: ${a.toFixed(0)} mm² of the rounded edge overhangs > 45° near the bed`).join(", ")} (use a brim; PRINT.md).` : "Each shell prints on its outer face with no overhang past 45°." });
+  checks.push({ id: "printable", ok: true, severity: oh.some(([, a]) => a > 60) ? "warning" : "info", message: oh.length ? `Each shell prints ${L.printFlip ? `on its outer face, except the ${L.printFlip} shell, which stands on the socket's floor plate (the seam face),` : "on its outer face"} with no supports; ${oh.map(([n, a]) => `${n}: ${a.toFixed(0)} mm² of the rounded edge overhangs > 45° near the bed`).join(", ")} (use a brim; PRINT.md).` : `Each shell prints ${L.printFlip ? `on its outer face (the ${L.printFlip} shell on the socket's floor plate)` : "on its outer face"} with no overhang past 45°.` });
   // ---- pocket
   const size = { w: L.outer.w, h: L.outer.h, d: L.outer.d };
   const pocket = pocketVerdict(size);

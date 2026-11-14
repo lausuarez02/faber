@@ -199,7 +199,21 @@ export const HeldObjectSchema = z
       .describe("The object's size, measured at its widest points, mm."),
     orientation: z.enum(["flat", "upright"]).optional().describe("Cylinder: flat = its round face to the front (default), upright = its axis along the case's height."),
     clearance_mm: z.number().min(0).max(5).optional().describe("Room left all round, mm (default 0.5)."),
-    insert: z.enum(["slide", "pocket", "snap"]).describe("slide = in through a slot in a side (left / right / top / bottom); pocket = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays."),
+    insert: z.enum(["slide", "pocket", "snap"]).optional().describe("slide = in through a slot in a side (left / right / top / bottom); pocket (default) = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays."),
+    engage_mm: z
+      .number()
+      .positive()
+      .max(250)
+      .optional()
+      .describe(
+        "Round 17, a SOCKET / mount: how far the object goes into the case, mm, measured from the case's OUTER face it enters through (front or back); the rest stays outside. The case then only has to be engage_mm deep there, not the whole object: a puck that rides on a can's lid (lid-topper: engage_mm 6 of a 7 mm lid skirt), a dock a bottle stands in, a cap on a tube. The report says how far the object stands proud (object height - engage_mm). Leave out: the whole object goes in (the room is its full size + clearance).",
+      ),
+    fit: z
+      .enum(["slip", "press", "snap"])
+      .optional()
+      .describe(
+        "Round 17: how the pocket or socket grips the object. slip = clearance_mm all round (default 0.5, a socket 0.3): it slides on and off; press = a tight fit (default clearance 0.1 mm: print a test ring first, PETG flexes more than PLA); snap = a rim at the mouth lip_mm narrower than the object (default 0.6) that clicks over its edge (same as insert: \"snap\"). Default slip.",
+      ),
     from: z.enum(CASE_FACES).optional().describe("The side it goes in through (default: right for slide, back for pocket / snap)."),
     lip_mm: z.number().min(0.2).max(3).optional().describe("snap: how far the rim overlaps the object each side, mm (default 0.6)."),
     removable: z.boolean().optional().describe("false = it goes in during assembly and stays (no opening); default true: it goes in and out with the case closed, the electronics stay."),
@@ -207,11 +221,23 @@ export const HeldObjectSchema = z
     sensor: z
       .object({
         part: z.string().describe("The part that senses the object (a reed or Hall switch for a lid with a magnet, a lever switch the object presses)."),
-        max_mm: z.number().positive().max(50).optional().describe("Farthest its body may be from the object's room, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm)."),
+        max_mm: z.number().positive().max(50).optional().describe("Farthest the switch still senses: its body to the object's room, or to the object's magnet when one is declared, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm)."),
+        lift_mm: z.number().positive().max(200).optional().describe("Round 17, with a magnet on the object: how far the case moves off the object when it comes apart (the lid with the case lifted off the can), mm (default 10). The check reports the gap mounted and lifted this far, and the lift at which the switch lets go."),
       })
       .strict()
       .optional()
       .describe("Round 15: a part that must sit next to the object; the case checks the gap."),
+    magnet: z
+      .object({
+        beyond_mm: z.number().min(-250).max(250).describe("Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out, e.g. 3 = on the can body 3 mm below the socket edge, just under the lid line), negative = inside the socket."),
+        angle_deg: z.number().min(-360).max(360).optional().describe("Where round the object, degrees, as you look at the case's front: 0 = right, 90 = top, 180 = left, 270 = bottom. Default: facing the sensor."),
+        radial_mm: z.number().min(0).max(150).optional().describe("Distance of the magnet's centre from the object's axis, mm (default: glued on the outside of its side: radius + t_mm / 2)."),
+        d_mm: z.number().positive().max(30).optional().describe("Magnet diameter, mm (default 6)."),
+        t_mm: z.number().positive().max(20).optional().describe("Magnet thickness, mm (default 3)."),
+      })
+      .strict()
+      .optional()
+      .describe("Round 17: a magnet glued ON THE OBJECT (not in the case), e.g. on the can body just below a lid that carries the case. With sensor, the held-sensor check measures the switch-to-magnet gap mounted and with the case lifted off (sensor.lift_mm), against sensor.max_mm, and gives the magnet_mm values for test steps."),
   })
   .strict();
 
@@ -224,7 +250,15 @@ export const EnclosureSchema = z.object({
   outline: CaseOutlineSchema.optional().describe("Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Jumper fits the parts inside it."),
   size_mm: CaseSizeSchema.optional().describe("Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit)."),
   layout: z.enum(["auto", "thinnest", "smallest", "balanced"]).optional().describe("Round 8: how the parts are distributed inside. Jumper proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it."),
-  held: z.array(HeldObjectSchema).max(4).optional().describe("Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening."),
+  held: z.array(HeldObjectSchema).max(4).optional().describe("Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening. Round 17: engage_mm makes it a socket the case rides on (only that much goes in), fit picks slip / press / snap, magnet puts the sensing magnet on the object."),
+  follow: z
+    .object({
+      held: z.string().describe("The held object's id whose outline the case follows."),
+      margin_mm: z.number().min(0).max(40).optional().describe("Extra room between the object's room and the wall all round, mm (default 0: the case is the object's footprint + clearance + 2 x wall)."),
+    })
+    .strict()
+    .optional()
+    .describe("Round 17: the case outline FOLLOWS a held object: its front-view footprint (a can lying flat: a circle of its diameter; a box: its w x h) + clearance + 2 x wall (+ margin). A round puck exactly a can's size: shape \"puck\" with follow {\"held\": \"can\"}. Sets size_mm w / h (leave them out); the parts are packed inside that outline, stacked in depth in front of / behind the object."),
 });
 
 export type AssemblyStyle = z.infer<typeof AssemblyStyleSchema>;

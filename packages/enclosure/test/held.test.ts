@@ -3,7 +3,8 @@
 // walls round it, a sensor next to it, and a removable object that is not part of the assembly.
 import { describe, expect, it } from "vitest";
 import type { Enclosure, HeldObject } from "@jumper/project-format";
-import { heldSize, heldSpec } from "../src/held.ts";
+import { heldProblems, heldSize, heldSpec } from "../src/held.ts";
+import { followSize } from "../src/held-layout.ts";
 import { layoutCase } from "../src/proposals.ts";
 import { assemblyPlan } from "../src/assembly.ts";
 import { specOf } from "./helpers.ts";
@@ -95,5 +96,94 @@ describe("a pocket's rim on a rounded face (round 15)", () => {
     const L = layoutCase({ parts: electronics, enclosure: { shape: "pebble", held: [{ ...TIN, insert: "pocket", from: "back" }] } as Enclosure });
     const e = L.issues.find((i) => i.id === "held-object" && i.severity === "error");
     if (e) expect(e.message).toMatch(/leaves only .* mm of shell round it on the back.*Fix: less rounded rims \(params edge_radius_back_mm 2, dome_back_mm 0\)/);
+  });
+});
+
+describe("depth from the outer face, sockets, fits, magnets on the object, outlines that follow (round 17)", () => {
+  const CAN: HeldObject = { id: "can", name: "pouch can", shape: "cylinder", size_mm: { d: 70, h: 20 }, from: "back", engage_mm: 6, magnet: { beyond_mm: 2.5, d_mm: 6, t_mm: 2 }, sensor: { part: "lid", max_mm: 10, lift_mm: 8 } };
+  const ctx = { wall: 1.6, tol: 0.2 };
+
+  it("a front / back room's depth counts from the outer face: the room inside the cavity is a wall and a fit gap shallower", () => {
+    const s = heldSize({ ...TIN, insert: "pocket", from: "back" }, ctx);
+    expect(s.declared.d).toBeCloseTo(22, 5);
+    expect(s.depth).toBeCloseTo(22, 5);
+    expect(s.room.d).toBeCloseTo(22 - 1.6 - 0.2, 5);
+    // a slot through a side keeps its full room
+    expect(heldSize(TIN, ctx).room.d).toBeCloseTo(22, 5);
+    const L = lay([{ ...TIN, insert: "pocket", from: "back" }]);
+    expect(L.held![0]!.depth_mm).toBeCloseTo(22, 1);
+    expect(L.held![0]!.proud_mm).toBeCloseTo(-1, 1);
+  });
+
+  it("a socket: only engage_mm goes in, the clearance defaults by fit, the report says how far it stands proud", () => {
+    const s = heldSize(CAN, ctx);
+    expect(s.socket).toBe(true);
+    expect(s.clearance).toBe(0.3);
+    expect(s.depth).toBe(6);
+    expect(s.room.d).toBeCloseTo(6 - 1.8, 5);
+    expect(heldSize({ ...CAN, fit: "press" }, ctx).clearance).toBe(0.1);
+    expect(heldSize({ ...CAN, clearance_mm: 0.4, fit: "press" }, ctx).clearance).toBe(0.4);
+    const L = lay([CAN], { shape: "puck" });
+    const h = L.held![0]!;
+    expect(h).toMatchObject({ engage_mm: 6, depth_mm: 6, proud_mm: 14, fit: "slip", insert: "pocket", from: "back" });
+    expect(L.issues.find((i) => i.id === "held-object" && i.severity === "info")!.message).toMatch(/a socket 70.6 x 70.6 mm, 6 mm deep from the outer face .*a slip fit.*stands 14 mm proud/);
+    // a snap fit narrows the mouth
+    const snap = lay([{ ...CAN, fit: "snap", lip_mm: 0.5 }], { shape: "puck" });
+    expect(snap.openings.find((o) => o.part === "can")!.u).toBeCloseTo(70.6 - 1, 1);
+  });
+
+  it("bad sockets say what is wrong, why and the fix", () => {
+    const msg = (h: HeldObject) => heldProblems(h, ctx).join(" | ");
+    expect(msg({ ...CAN, engage_mm: 20 })).toMatch(/engage_mm 20, but the object is only 20 mm long that way\. Why: .* Fix: engage_mm under 20/);
+    expect(msg({ ...CAN, engage_mm: 2 })).toMatch(/less than the 2.4 mm a socket needs here\. Why: the wall alone is 1.6 mm thick.* Fix: engage_mm 2.4 or more/);
+    expect(msg({ ...CAN, from: "right", insert: "slide" })).toMatch(/engage_mm 6 with from "right"\. Why: a socket is cut into the front or back face/);
+    expect(msg({ ...CAN, removable: false })).toMatch(/engage_mm \(a socket\) but removable false\. Why: .* Fix:/);
+    expect(msg({ ...CAN, sensor: undefined })).toMatch(/has a magnet but no sensor\. Why: .* Fix: "sensor"/);
+    expect(msg({ ...CAN, fit: "snap", insert: "slide", from: "right", engage_mm: undefined, magnet: undefined })).toMatch(/fit "snap" and insert "slide"/);
+    expect(msg(CAN)).toBe("");
+  });
+
+  it("a magnet on the object: the gap mounted and lifted against max_mm, and the test steps that drive it", () => {
+    const L = lay([CAN], { shape: "puck", follow: { held: "can", margin_mm: 2.5 }, placements: { lid: { x_mm: 0, y_mm: -33.5, layer: 1 } } });
+    const s = L.held![0]!.sensing!;
+    expect(s.sensor).toBe("lid");
+    expect(s.mounted_mm).toBeLessThanOrEqual(10);
+    expect(s.lifted_mm).toBeGreaterThan(s.mounted_mm + 7);
+    expect(s.lets_go_at_mm).toBeGreaterThan(0);
+    const c = L.issues.find((i) => i.id === "held-sensor")!;
+    expect(c.severity).toBe("info");
+    expect(c.message).toMatch(/"set": "lid.magnet_mm", "value": [\d.]+\} mounted/);
+    // too far: it says it never closes, and how to fix it
+    const far = lay([{ ...CAN, sensor: { part: "lid", max_mm: 3 } }], { shape: "puck" });
+    expect(far.issues.find((i) => i.id === "held-sensor")!.message).toMatch(/never closes\. Why: .* Fix: pin lid next to the socket's edge/);
+    // close enough even lifted: it says the switch would not notice
+    const near = lay([{ ...CAN, sensor: { part: "lid", max_mm: 45, lift_mm: 2 } }], { shape: "puck" });
+    expect(near.issues.find((i) => i.id === "held-sensor")!.message).toMatch(/still sees .* it would not notice the case coming off/);
+  });
+
+  it("the outline follows the object: a round case the can's size, concentric, the parts in layers in front of the socket", () => {
+    expect(followSize({ shape: "puck", held: [CAN], follow: { held: "can" } } as Enclosure, ctx)).toEqual({ w: 70 + 0.6 + 3.2 + 0.2, h: 70 + 0.6 + 3.2 + 0.2 });
+    expect(followSize({ shape: "puck", held: [CAN], follow: { held: "can", margin_mm: 2 } } as Enclosure, ctx)!.w).toBeCloseTo(78, 5);
+    // a box: its w x h; a size the person gave wins
+    expect(followSize({ shape: "rounded-box", held: [{ id: "deck", shape: "box", size_mm: { w: 60, h: 90, d: 20 }, from: "back", engage_mm: 8 }], follow: { held: "deck" } } as Enclosure, ctx)).toEqual({ w: 60 + 0.6 + 3.2 + 0.2, h: 90 + 0.6 + 3.2 + 0.2 });
+    expect(followSize({ shape: "puck", held: [CAN], follow: { held: "can" }, size_mm: { w: 90 } } as Enclosure, ctx)).toBeUndefined();
+    const L = lay([CAN], { shape: "puck", follow: { held: "can", margin_mm: 2.5 }, params: { edge_radius_front_mm: 2.5 }, placements: { lid: { x_mm: 0, y_mm: -33.5, layer: 1 } } });
+    // the back rim round the socket's mouth stays within the wall (auto)
+    expect(L.rfBack).toBeLessThanOrEqual(1.6 + 1e-9);
+    // (whether every part fits a tight round outline is the CAD fixture's job: lid-topper.json)
+    const errs = L.issues.filter((i) => i.severity === "error" && i.id !== "fits");
+    expect(errs, JSON.stringify(errs)).toEqual([]);
+    expect(L.outer.w).toBeCloseTo(79, 1);
+    expect(L.outer.h).toBeCloseTo(79, 1);
+    const can = L.placed.find((p) => p.mech.id === "can")!;
+    expect((can.min[0] + can.max[0]) / 2).toBeCloseTo(L.plan.cx, 1);
+    for (const p of L.placed) if (p !== can) expect(p.min[2], p.mech.id).toBeGreaterThan(can.max[2]);
+    // the seam on the socket's floor plate, the collar round the socket, the back shell prints on the plate
+    expect(L.split).toBeCloseTo(can.max[2] + 1.2, 5);
+    expect(L.collars?.[0]).toMatchObject({ part: "can", round: true, shell: "back" });
+    expect(L.printFlip).toBe("back");
+    // an unknown id
+    const bad = lay([CAN], { shape: "puck", follow: { held: "tin" } });
+    expect(bad.issues.find((i) => /enclosure.follow names "tin"/.test(i.message))!.message).toMatch(/Why: .* Fix: "follow": \{"held": "can"\}/);
   });
 });
