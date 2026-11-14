@@ -36,6 +36,14 @@ describe("round 17: a lid-topper through design_case", { timeout: 300_000 }, () 
     expect(s.project.enclosure?.follow).toEqual({ held: "can", margin_mm: 2.5 });
   });
 
+  it("check_design shows the held-sensor warning when the switch would not let go at the lift (hysteresis, round 17 proof)", async () => {
+    // a 6 x 2 mm magnet closing at 10 mm: the reed lets go only past ~12 mm; a 1 mm lift is not enough
+    await call(s, "update_case", { held: [{ ...CAN, sensor: { part: "reed", max_mm: 10, lift_mm: 1 } }], images: false, costs: false });
+    const d = await call(s, "check_design");
+    const w = (d.issues as string[]).find((i) => i.includes("[held-sensor]"));
+    expect(w).toMatch(/^warning \[held-sensor\] reed still sees .* only lets go beyond [\d.]+ mm .*Why: .*hysteresis.*Fix: /);
+  });
+
   it("follow without its held object, or with size_mm, and a too-deep socket say what to fix", async () => {
     await expect(call(s, "update_case", { follow: { held: "tin" } })).rejects.toThrow(/follow names "tin", which is not a held object/);
     await expect(call(s, "update_case", { size_mm: { w: 90 } })).rejects.toThrow(/follow and size_mm w \/ h are both set/);

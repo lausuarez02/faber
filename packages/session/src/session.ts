@@ -1857,7 +1857,9 @@ export class ProjectSession {
       const report = E.readReport(caseDir);
       const fresh = report && E.readManifest(caseDir)?.hash === E.caseHash(this.project, (t) => this.registry.get(t)?.spec);
       if (report && fresh) {
-        for (const c of report.checks.filter((x) => x.id.startsWith("assembly-") && (!x.ok || x.severity === "warning"))) issues.push({ severity: !c.ok && c.severity === "error" ? "error" : "warning", code: c.id, message: c.message, parts: c.parts ?? [] });
+        // round 17 proof: and the held object's checks (its socket, the switch that senses it), so a lid
+        // sensor that would not notice the lid coming off shows here too, not only in the case report
+        for (const c of report.checks.filter((x) => (x.id.startsWith("assembly-") || x.id.startsWith("held-")) && (!x.ok || x.severity === "warning"))) issues.push({ severity: !c.ok && c.severity === "error" ? "error" : "warning", code: c.id, message: c.message, parts: c.parts ?? [] });
       } else caseNote = "the case was changed since it was built: get_case rebuilds it, then check_design also checks how the parts go in (assembly)";
     }
     const errors = issues.filter((i) => i.severity === "error").length;
