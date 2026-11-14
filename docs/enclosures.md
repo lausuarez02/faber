@@ -299,7 +299,8 @@ assembled.
 | `connector-access` | the plug reaches: receptacle ≤ 2.5 mm inside the outer surface, opening on a flat |
 | `camera-view` | round 14: each camera lens has its hole, with its size and position, wide enough for the lens' field of view at its depth behind the wall (warning when the wall shows at the photo's edges) |
 | `min-wall` | wall measured between the outer and inner surfaces in OpenCascade (and at the snap groove), ≥ 1.2 mm |
-| `printable` | prints on its outer face without supports; overhang area of the rounded edge near the bed |
+| `printable` | prints on its outer face without supports (a socket's shell on its floor plate, round 17); overhang area of the rounded edge near the bed |
+| `edge-radius` | round 17: the front / back rims got the radius planned, measured on what was built (`facts`: front_mm, back_mm, how: fillet / lofted / chamfer / sharp); a warning says why it is smaller and what to change |
 | `watertight` | every STL is a closed 2-manifold with volume > 0 (re-checked from the file bytes in tests) |
 | `no-intersection` | no part body overlaps a shell (OpenCascade common volume < 0.001 mm³) |
 | `size-match` | the printed bodies are within 0.1 mm of the planned size |
@@ -415,3 +416,52 @@ jumper design_case '{"shape": "rounded-box", "held": [{"id": "tin", "name": "rou
 Proof: `packages/enclosure/test/held.test.ts` (layout), `held-cad.test.ts` (real CAD: a slide-in tin in
 a rounded box, a back pocket in a pebble with a flat back: closed solids, nothing in the room),
 `packages/session/test/round15-held.test.ts` (design_case, the kit).
+
+### Depth from the outer face, sockets, magnets on the object, outlines that follow (round 17)
+
+- **Depth counts from the OUTER face** of the wall the object goes in through (round 15 counted it
+  from the inside of the wall, so the floor sat a wall thickness deeper than declared: 15.4 mm
+  instead of 13.6). `report.held[].depth_mm` is the floor's depth below the outer face, measured on the
+  layout, and `proud_mm` how far the object stands out of it (negative: it sits below the face); the
+  `held-object` message says it in words. `held-depth-cad.test.ts` measures the floor on the mesh.
+- **A socket the case rides on** (`engage_mm`): only that much of the object goes in, from the front or
+  back face; the rest stays outside. A puck on a can's lid, a dock a bottle stands in, a cap on a
+  tube. The case no longer has to be as thick as the object. `fit`: `slip` (default; clearance 0.3 for
+  a socket), `press` (0.1: print a test ring), `snap` (a `lip_mm` rim at the mouth that clicks over
+  the edge). Errors say what is wrong, why and the fix: deeper than the object, shallower than the
+  wall + 0.6 mm, a socket in a side, a captive socket, a magnet with no sensor.
+- **A magnet on the object** (`magnet`: `beyond_mm` from the case's outer face along the object,
+  positive = outside; `angle_deg` round it, default towards the sensor; `radial_mm`, `d_mm`, `t_mm`):
+  `held-sensor` reports the switch-to-magnet gap mounted and with the case lifted `sensor.lift_mm`
+  (default 10) against `sensor.max_mm`, the lift at which the switch lets go, and the test steps that
+  drive the simulated switch (`{"set": "reed.magnet_mm", "value": <gap>}`). It warns, with the fix,
+  when the switch never closes or never lets go.
+- **The outline follows the object** (`enclosure.follow`: `{"held": "can", "margin_mm": 0}`): the
+  object's front-view footprint + clearance + margin + the wall each side (a can lying flat: a circle;
+  a box: its w x h), concentric with it, drawn exactly in CAD. It sets `size_mm` w / h. The parts are
+  packed in layers in front of / behind the object's room (the room is a layer of its own). With a
+  socket, the seam goes on the socket's floor plate, a collar fills the cavity round the socket so its
+  wall hugs the object, the rim round the mouth is kept within the wall, and the shell with the socket
+  prints standing on the plate (no bridge over the socket).
+
+```sh
+jumper design_case '{"shape": "puck", "params": {"edge_radius_front_mm": 2.5, "edge_radius_back_mm": 1, "dome_mm": 0, "dome_back_mm": 0}, "follow": {"held": "can", "margin_mm": 2.5}, "placements": {"reed": {"x_mm": 0, "y_mm": -33.5, "layer": 1}}, "held": [{"id": "can", "name": "pouch can (lid on)", "shape": "cylinder", "size_mm": {"d": 70, "h": 20}, "from": "back", "engage_mm": 6, "fit": "slip", "clearance_mm": 0.3, "magnet": {"beyond_mm": 2.5, "d_mm": 6, "t_mm": 2}, "sensor": {"part": "reed", "max_mm": 10, "lift_mm": 8}}]}' -p lid-topper
+```
+
+The fixture `packages/enclosure/test/fixtures/lid-topper.json` (XIAO ESP32-C3, 1.54" e-paper, DS3231
+module, 500 mAh cell, reed switch) comes out 79 x 79 x 28.5 mm: a 70.6 mm socket 6.0 mm deep, the can
+standing 14 mm proud (42.5 mm with the can), the reed 9.4 mm from the magnet mounted and 17.3 mm with
+the case lifted 8 mm; both STLs closed (`held-socket-cad.test.ts` measures them). The 2.5 mm margin is
+what the XIAO's USB port needs to reach a round wall; the thickness is the DS3231 module (12.5 mm with
+its coin cell): a smaller clock module or the board's own RTC makes it thinner.
+
+### Rounded edges (round 17)
+
+Round 15's 2 mm rim on a fixed-size rounded box came out sharp: OpenCascade's fillet failed and only a
+note said so. A preset shape at a fixed size (and a case that follows a held object) is now drawn
+exactly in CAD (a circle, a rounded rectangle), which fillets reliably and builds in seconds instead of
+minutes; a flat-faced case is built with sharp rims and rounded at the end; a fillet that fails falls
+back to a lofted round-over through exact offsets of the outline, then a two-facet chamfer. A drawn
+(B-spline) outline keeps a square-cornered cavity (OpenCascade cannot fuse sleeve walls into a rounded
+one there), so its rim is capped where the wall at the rim would drop under 1.25 mm. The
+`edge-radius` check reports what each rim got. `edges-cad.test.ts` measures the radius on the mesh.
