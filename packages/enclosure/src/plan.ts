@@ -586,6 +586,8 @@ export interface PolySpec {
   fixed: boolean;
   /** Quick search (check_fit, pack scoring): a coarser centre search. */
   quick?: boolean;
+  /** Round 17: the outline's centre is fixed here (a case that follows a held object is concentric with it). */
+  center?: [number, number];
 }
 
 /**
@@ -623,6 +625,10 @@ export function sizePoly(needs: Need[], spec: PolySpec): { plan: Plan; scale: nu
     }
     return s;
   };
+  if (spec.center) {
+    const s0 = minS(spec.center[0], spec.center[1], 1e3) * (1 + 1e-4);
+    return { plan: mk(spec.center[0], spec.center[1], spec.fixed ? 1 : s0), scale: s0 };
+  }
   let best = { cx: bx, cy: by, s: minS(bx, by, 1e3) };
   let stepX = (hx * 0.6) / 3;
   let stepY = (hy * 0.6) / 3;

@@ -1,0 +1,100 @@
+{
+  "format": "jumper/1",
+  "name": "lid-topper",
+  "description": "Round 17 fixture: a round puck that rides on the snap-on lid of a 70 mm pouch can (a socket 6 mm deep takes the lid's ~7 mm skirt; the case follows the can's outline with 2.5 mm of margin, which the XIAO's USB port needs on a round wall); e-paper on top; a reed switch just above the socket floor sees a magnet glued on the can body 2.5 mm below the socket edge, so lifting the lid (with the puck) opens it.",
+  "parts": [
+    {
+      "id": "xiao",
+      "type": "seeed-xiao-esp32c3",
+      "x": 0,
+      "y": 0,
+      "rotation": 0
+    },
+    {
+      "id": "epd",
+      "type": "epaper-154-ssd1681",
+      "x": 0,
+      "y": 0,
+      "rotation": 0
+    },
+    {
+      "id": "rtc",
+      "type": "ds3231-rtc",
+      "x": 0,
+      "y": 0,
+      "rotation": 0
+    },
+    {
+      "id": "bat",
+      "type": "lipo-battery",
+      "x": 0,
+      "y": 0,
+      "rotation": 0,
+      "props": {
+        "capacity": 500
+      }
+    },
+    {
+      "id": "reed",
+      "type": "reed-switch",
+      "x": 0,
+      "y": 0,
+      "rotation": 0,
+      "props": {
+        "magnet_mm": 3
+      }
+    }
+  ],
+  "wires": [],
+  "scenarios": [],
+  "enclosure": {
+    "shape": "puck",
+    "params": {
+      "wall_mm": 1.6,
+      "edge_radius_front_mm": 2.5,
+      "edge_radius_back_mm": 1,
+      "dome_mm": 0,
+      "dome_back_mm": 0,
+      "color": "#2B3038"
+    },
+    "follow": {
+      "held": "can",
+      "margin_mm": 2.5
+    },
+    "held": [
+      {
+        "id": "can",
+        "name": "pouch can (lid on)",
+        "shape": "cylinder",
+        "size_mm": {
+          "d": 70,
+          "h": 20
+        },
+        "orientation": "flat",
+        "insert": "pocket",
+        "from": "back",
+        "engage_mm": 6,
+        "fit": "slip",
+        "clearance_mm": 0.3,
+        "source": "test fixture: a 70 mm can, 20 mm tall with its lid; the lid's skirt is about 7 mm",
+        "magnet": {
+          "beyond_mm": 2.5,
+          "d_mm": 6,
+          "t_mm": 2
+        },
+        "sensor": {
+          "part": "reed",
+          "max_mm": 10,
+          "lift_mm": 8
+        }
+      }
+    ],
+    "placements": {
+      "reed": {
+        "x_mm": 0,
+        "y_mm": -33.5,
+        "layer": 1
+      }
+    }
+  }
+}

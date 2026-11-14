@@ -46,6 +46,8 @@ export interface OItem {
   /** A pinned depth mode (placement.layer); otherwise the search picks. */
   zPin?: ZMode;
   soft: boolean;
+  /** Round 17: a held object's room: no wiring room and no closure-lip inset against the wall (the case may follow its outline). */
+  flush?: boolean;
 }
 
 export interface OEnv {
@@ -62,6 +64,8 @@ export interface OEnv {
   upright: boolean;
   /** Half height at scale 1 (poly) for the heavy-low weighting. */
   B0: number;
+  /** Round 17: depth taken at the front / back by a held object's room that fills the outline (mm, gap included). */
+  layer?: { front: number; back: number };
 }
 
 export interface OPlaced {
@@ -146,13 +150,17 @@ interface State {
 }
 
 /** z range of a variant at depth D in a mode, or undefined when it does not fit the depth. */
-function zRange(V: OVariant, mode: ZMode, D: number): [number, number] | undefined {
+function zRange(V: OVariant, mode: ZMode, D: number, layer?: { front: number; back: number }): [number, number] | undefined {
   let r: [number, number];
+  // round 17: a held object's room that fills the outline (a case that follows it) is a layer of its
+  // own against its wall: "front" / "back" then means against that layer
+  const lf = layer?.front ?? 0;
+  const lb = layer?.back ?? 0;
   if (V.zFix?.mode === "front") r = [-V.zFix.top - V.sz, -V.zFix.top];
   else if (V.zFix?.mode === "back") r = [-D + V.zFix.bottom, -D + V.zFix.bottom + V.sz];
-  else if (mode === 0) r = [-V.sz, 0];
-  else if (mode === 1) r = [-D, -D + V.sz];
-  else r = [-(D + V.sz) / 2, -(D - V.sz) / 2];
+  else if (mode === 0) r = [-lf - V.sz, -lf];
+  else if (mode === 1) r = [-D + lb, -D + lb + V.sz];
+  else r = [-(D + lf - lb + V.sz) / 2, -(D + lf - lb - V.sz) / 2];
   if (r[0] < -D - 1e-6 || r[1] > 1e-6 + (V.zFix?.mode === "front" ? Math.max(0, -V.zFix.top) : 0)) return undefined;
   return r;
 }
@@ -196,7 +204,8 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
         const sy = Math.sign(py - V.sy / 2);
         const n = V.side?.n ?? [0, 0];
         const pk = V.side?.poke ?? 0;
-        return [px + (n[0] !== 0 && sx === Math.sign(n[0]) ? -n[0] * pk : sx * g), py + (n[1] !== 0 && sy === Math.sign(n[1]) ? -n[1] * pk : sy * g)] as Pt2;
+        const gg = it.flush ? 0 : g;
+        return [px + (n[0] !== 0 && sx === Math.sign(n[0]) ? -n[0] * pk : sx * gg), py + (n[1] !== 0 && sy === Math.sign(n[1]) ? -n[1] * pk : sy * gg)] as Pt2;
       }),
     ),
   );
@@ -220,13 +229,13 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
       const vi = st.v[i]!;
       const V = it.variants[vi]!;
       const G = grown[i]![vi]!;
-      const zr = zRange(V, V.side ? 2 : st.z[i]!, D);
+      const zr = zRange(V, V.side ? 2 : st.z[i]!, D, env.layer);
       if (!zr || (V.side?.connector && env.kind !== "rrect" && sideFaces.has(V.side.face))) {
         failed.push(i);
         left += V.sx * V.sy + FAIL;
         continue;
       }
-      const ins = inset(zr[0], zr[1]);
+      const ins = it.flush ? inset(zr[0], zr[1]) - env.lip - 0.08 : inset(zr[0], zr[1]);
       const inside = (x: number, y: number) => {
         // quick reject: the box centre's distance bound
         if (Math.hypot(x + V.sx / 2, y + V.sy / 2) > S * maxR + ext[i]![vi]!) return false;
@@ -517,7 +526,15 @@ export function searchAtDepth(items: OItem[], env: OEnv, D: number, opts: { iter
  * Cavity depths worth trying, thinnest first: the thickest part alone (one flat layer), then the
  * depths where two (and three) of the parts stack, up to `max`.
  */
-export function depthCandidates(items: OItem[], g: number, max: number, count = 5): number[] {
+export function depthCandidates(items0: OItem[], g: number, max: number, count = 5): number[] {
+  // round 17: a held object's room (a socket the case rides on) takes a layer of its own: the other
+  // parts stack in front of / behind it, so its depth is added to every candidate
+  const flush = items0.filter((it) => it.flush);
+  const items = flush.length && flush.length < items0.length ? items0.filter((it) => !it.flush) : items0;
+  if (items !== items0) {
+    const base = flush.reduce((a, it) => a + Math.min(...it.variants.map((V) => V.sz + (V.zFix?.mode === "front" ? Math.max(0, V.zFix.top) : V.zFix?.mode === "back" ? Math.max(0, V.zFix.bottom) : 0))) + g, 0);
+    return depthCandidates(items, g, max - base, count).map((d) => Math.ceil((d + base) * 10 + 1e-6) / 10);
+  }
   // each part's thinnest way to sit (a front / back bound one as it must)
   const zs = items.map((it) => Math.min(...it.variants.map((V) => V.sz + (V.zFix?.mode === "front" ? Math.max(0, V.zFix.top) : V.zFix?.mode === "back" ? Math.max(0, V.zFix.bottom) : 0))));
   const dMin = Math.max(4, ...zs);

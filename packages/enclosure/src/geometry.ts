@@ -338,6 +338,8 @@ export async function buildCase(L: Layout): Promise<Built> {
   };
   // (round 17: against the rounded body even when the rims are rounded last: a piece filling the
   // sharp corner the rounding then trims makes OpenCascade leave the fuse open)
+  // (clipped to the rounded body, as the shell will be: a piece filling the sharp corner the
+  // rounding then trims can share faces with it that OpenCascade leaves unsewn)
   const clip = (s: Solid) => (inside(s) ? s : s.intersect(outer));
 
   // closure
@@ -351,7 +353,8 @@ export async function buildCase(L: Layout): Promise<Built> {
       back = back.cut(outRing(lip.groove, -0.05).sketchOnPlane("XY", L.split - lip.h + 0.15).extrude(0.8));
     } else notes.push(`The ${t} mm wall is too thin for a snap groove (it would leave less than 1.2 mm), so the lip is a friction fit; use wall_mm 1.8 or more for a snap bead, or closure "screws".`);
     // the lip stops where a part sits against the wall (a USB port, a button)
-    for (const p of L.placed) if (p.max[2] > L.split - lip.h - 0.5 && p.min[2] < L.split + 0.8) lipS = lipS.cut(r.makeBox([p.bodyMin[0] - 0.4, p.bodyMin[1] - 0.4, L.split - lip.h - 1], [p.bodyMax[0] + 0.4, p.bodyMax[1] + 0.4, L.split + 1]));
+    // (round 17: not round a socket's room: its collar and floor plate leave the lip a channel)
+    for (const p of L.placed) if (p.max[2] > L.split - lip.h - 0.5 && p.min[2] < L.split + 0.8 && !(L.collars ?? []).some((c) => c.part === p.mech.id)) lipS = lipS.cut(r.makeBox([p.bodyMin[0] - 0.4, p.bodyMin[1] - 0.4, L.split - lip.h - 1], [p.bodyMax[0] + 0.4, p.bodyMax[1] + 0.4, L.split + 1]));
     // the split and its lip sit on the straight band of the side wall (the layout keeps the edge
     // rounds off it), where the ledge (half a wall deep) is inside the outer body: no clip needed
     front = front.fuse(lipS);
@@ -440,8 +443,24 @@ export async function buildCase(L: Layout): Promise<Built> {
     return s;
   };
   prof("closure + pieces");
+  // round 17: a socket's collar: the cavity round the held object's room over the socket's depth
+  for (const co of L.collars ?? []) {
+    const h = co.max[2] - co.min[2];
+    const slab = planDrawing(r, L.plan, 0.05).sketchOnPlane("XY", co.min[2]).extrude(h);
+    const cx = (co.min[0] + co.max[0]) / 2;
+    const cy = (co.min[1] + co.max[1]) / 2;
+    const room = co.round ? r.makeCylinder((co.max[0] - co.min[0]) / 2, h + 2, [cx, cy, co.min[2] - 1], [0, 0, 1]) : r.makeBox([co.min[0], co.min[1], co.min[2] - 1], [co.max[0], co.max[1], co.max[2] + 1]);
+    (co.shell === "front" ? addF : addB).push(clip(slab.cut(room)));
+  }
   front = fuseAll(front, addF, "front");
   back = fuseAll(back, addB, "back");
+  // round 17: the front shell's lip hangs into a back shell whose socket collar and floor plate
+  // fill the cavity there: a channel for it
+  if (L.lip && (L.collars ?? []).some((c) => c.shell === "back")) {
+    const lip = L.lip;
+    const ch = planDrawing(r, L.plan, 0.06).cut(planDrawing(r, L.plan, -tol - lip.t - tol)).sketchOnPlane("XY", L.split - lip.h - 0.3).extrude(lip.h + 0.31);
+    back = back.cut(ch);
+  }
   prof("fuse pieces");
 
   // openings through whichever shell they cross (a cut whose box misses a shell's box is skipped)
@@ -550,8 +569,12 @@ export async function buildCase(L: Layout): Promise<Built> {
   if (outerR.r + 1e-6 < L.rf || outerR.rBack + 1e-6 < L.rfBack || outerR.how === "chamfer") notes.push(`The front / back edges are ${outerR.how === "chamfer" ? "chamfered (two facets) " : outerR.how === "sharp" ? "sharp " : "rounded "}${outerR.r.toFixed(1)} / ${outerR.rBack.toFixed(1)} mm${outerR.how === "chamfer" ? "" : ` instead of ${L.rf.toFixed(1)} / ${L.rfBack.toFixed(1)} mm`}. Why: ${edgeWhy || "OpenCascade could not round the planned radius on this outline"}. Fix: ${edgeWhy ? "a thicker wall (wall_mm 2) allows a larger round-over, or accept this one" : "a smoother outline (larger corner_radius_mm) or smaller edge_radius_front_mm / edge_radius_back_mm, and design again"}.`);
   const sep = Math.max(12, (ob[1][2] - ob[0][2]) * 0.9);
   bodies.unshift(
-    { name: "front", kind: "shell", shape: front, color, print: { face_down: "front", supports: false, note: "front face on the bed (the window side down), open side up" }, up: [0, 0, -1], explode: [0, 0, sep] },
-    { name: "back", kind: "shell", shape: back, color, print: { face_down: "back", supports: false, note: "back face on the bed, open side up" }, up: [0, 0, 1], explode: [0, 0, -sep] },
+    L.printFlip === "front"
+      ? { name: "front", kind: "shell", shape: front, color, print: { face_down: "inside", supports: false, note: "the socket's floor plate (the seam face) on the bed, the socket opening up: no bridge over the socket" }, up: [0, 0, 1], explode: [0, 0, sep] }
+      : { name: "front", kind: "shell", shape: front, color, print: { face_down: "front", supports: false, note: "front face on the bed (the window side down), open side up" }, up: [0, 0, -1], explode: [0, 0, sep] },
+    L.printFlip === "back"
+      ? { name: "back", kind: "shell", shape: back, color, print: { face_down: "inside", supports: false, note: "the socket's floor plate (the seam face) on the bed, the socket opening up: no bridge over the socket" }, up: [0, 0, -1], explode: [0, 0, -sep] }
+      : { name: "back", kind: "shell", shape: back, color, print: { face_down: "back", supports: false, note: "back face on the bed, open side up" }, up: [0, 0, 1], explode: [0, 0, -sep] },
   );
   if (L.params.belt_clip) {
     const H = L.outer.h;
