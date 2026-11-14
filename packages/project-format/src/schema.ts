@@ -229,7 +229,7 @@ export const HeldObjectSchema = z
       .describe("Round 15: a part that must sit next to the object; the case checks the gap."),
     magnet: z
       .object({
-        beyond_mm: z.number().min(-250).max(250).describe("Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out, e.g. 3 = on the can body 3 mm below the socket edge, just under the lid line), negative = inside the socket."),
+        beyond_mm: z.number().min(-250).max(250).describe("Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out), negative = inside the socket. A disc glued on the object's side stands t_mm proud of it, so keep its edge clear of the case and of anything that moves with the case: at least d_mm / 2 + 0.5, plus (a lid's skirt length - engage_mm) when the case rides on a lid, e.g. 4.5 for a 6 mm magnet under a 7 mm skirt with engage_mm 6."),
         angle_deg: z.number().min(-360).max(360).optional().describe("Where round the object, degrees, as you look at the case's front: 0 = right, 90 = top, 180 = left, 270 = bottom. Default: facing the sensor."),
         radial_mm: z.number().min(0).max(150).optional().describe("Distance of the magnet's centre from the object's axis, mm (default: glued on the outside of its side: radius + t_mm / 2)."),
         d_mm: z.number().positive().max(30).optional().describe("Magnet diameter, mm (default 6)."),

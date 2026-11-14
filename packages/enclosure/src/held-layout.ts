@@ -205,6 +205,16 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
         // round 17: the magnet is on the object, outside the case: the gap mounted, lifted off, and where it lets go
         const sens: Box = { min: sp.bodyMin, max: sp.bodyMax };
         const mg = magnetAt(h, sz, room, sens, from, c.zFront + wallT, c.zBack - wallT);
+        // round 17 proof: a magnet glued on the object's side sticks out of it, so its edge must stay
+        // clear of the socket (the case's rim would land on it and the case would not sit fully on)
+        {
+          const md = h.magnet.d_mm ?? 6;
+          const mt = h.magnet.t_mm ?? 3;
+          const outside = h.magnet.radial_mm === undefined || h.magnet.radial_mm > (sz.round ? sz.object.w / 2 : Math.min(sz.object.w, sz.object.h) / 2);
+          const edge = h.magnet.beyond_mm - md / 2;
+          const need = md / 2 + 0.5;
+          if (outside && edge < 0.5) c.issues.push({ id: "held-magnet", ok: false, severity: "warning", message: `The magnet on ${h.name ?? h.id} (${md} x ${mt} mm, centre ${h.magnet.beyond_mm} mm beyond the ${from} face) reaches ${r1(Math.abs(edge))} mm ${edge < 0 ? "inside" : "short of"} the socket's mouth. Why: glued on the object's side it stands ${mt} mm proud of it, so the case's rim lands on it and the case cannot go fully on. Fix: magnet.beyond_mm ${r1(need)} or more (its edge 0.5 mm clear of the case), and below anything on the object that moves with the case (a lid's skirt): beyond_mm at least (skirt length - engage_mm) + ${r1(md / 2 + 0.5)}.`, parts: [h.sensor.part, h.id], facts: { magnet_edge_mm: r1(edge), min_beyond_mm: r1(need) } });
+        }
         const lift = h.sensor.lift_mm ?? 10;
         const gapAt = (l: number) => Math.max(0, sensorGap(sens, { min: shiftZ(mg.at, mg.dir * l), max: shiftZ(mg.at, mg.dir * l) }) - mg.t / 2);
         const mounted = gapAt(0);

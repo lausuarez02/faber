@@ -182,6 +182,13 @@ describe("depth from the outer face, sockets, fits, magnets on the object, outli
     expect(so.mounted_mm + so.lets_go_at_mm!).toBeGreaterThan(so.release_mm! - 0.5);
   });
 
+  it("a magnet glued on the object's side must clear the socket's mouth (round 17 proof)", () => {
+    const at = (beyond: number) => lay([{ ...CAN, magnet: { beyond_mm: beyond, d_mm: 6, t_mm: 3 }, sensor: { part: "lid", max_mm: 15, lift_mm: 40 } }], { shape: "puck", follow: { held: "can", margin_mm: 4.2 }, placements: { lid: { x_mm: 31, y_mm: 0, layer: 1 } } });
+    const hit = at(2.5).issues.find((i) => i.id === "held-magnet" && /socket's mouth/.test(i.message));
+    expect(hit?.message).toMatch(/reaches 0.5 mm inside the socket's mouth\. Why: .*stands 3 mm proud.* Fix: magnet.beyond_mm 3.5 or more/);
+    expect(at(4.5).issues.find((i) => /socket's mouth/.test(i.message))).toBeUndefined();
+  });
+
   it("the outline follows the object: a round case the can's size, concentric, the parts in layers in front of the socket", () => {
     expect(followSize({ shape: "puck", held: [CAN], follow: { held: "can" } } as Enclosure, ctx)).toEqual({ w: 70 + 0.6 + 3.2 + 0.2, h: 70 + 0.6 + 3.2 + 0.2 });
     expect(followSize({ shape: "puck", held: [CAN], follow: { held: "can", margin_mm: 2 } } as Enclosure, ctx)!.w).toBeCloseTo(78, 5);
