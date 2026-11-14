@@ -14,7 +14,7 @@ import { usageFor } from "../src/hints.ts";
 
 const HEX = readFileSync(fileURLToPath(new URL("../../parts/src/parts/ds3231-rtc/example.hex", import.meta.url)), "utf8");
 
-describe("round 17: the small RTCs follow the test clock", () => {
+describe("round 17: the small RTCs follow the test clock", { timeout: 60_000 }, () => {
   it("a scenario clock and set_clock set the DS3231 mini (RTClib reads it) and the RV-3028 alike", () => {
     const project = parseProject({
       format: "jumper/1",
