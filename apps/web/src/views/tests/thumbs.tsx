@@ -8,7 +8,7 @@ import type { Project } from "@jumper/project-format";
 import { armPose, parseWorld, type WorldSpec } from "@jumper/physics";
 import { base64ToBytes, rgb565ToRgb } from "@jumper/sim-core";
 import { painterFor } from "../../renderers/displays/paint.ts";
-import { SCREEN_TYPES } from "../device/classify.ts";
+import { screenTypeOf } from "../device/classify.ts";
 import type { DeviceSnapshot } from "./types.ts";
 
 export const THUMB_W = 128;
@@ -80,7 +80,7 @@ function drawScreen(g: CanvasRenderingContext2D, snap: DeviceSnapshot, w: number
     }
     img = { width: tw, height: th, data };
   } else {
-    const screen = SCREEN_TYPES[d.type]?.screen ?? "128x64";
+    const screen = screenTypeOf(d.type)?.screen ?? "128x64";
     const paint = painterFor(screen)!;
     img = paint(d.state);
   }

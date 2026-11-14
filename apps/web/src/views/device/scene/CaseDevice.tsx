@@ -8,9 +8,9 @@ import { useFrame } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { ReadoutsContext, useDeviceSource } from "../context.ts";
-import { SCREEN_TYPES, type CaseFit, type CaseOpening } from "../classify.ts";
+import { screenBlankOf, screenTypeOf, type CaseFit, type CaseOpening } from "../classify.ts";
 import { caseGeometry } from "../caseModel.ts";
-import { createColorScreenTexture, createScreenTexture } from "../screenTexture.ts";
+import { createColorScreenTexture, createPanelTexture, createScreenTexture } from "../screenTexture.ts";
 import { buttonLabel, Led, SHELLS, type ShellFinish } from "./Handheld.tsx";
 
 /** "design" is the colour the case was designed in; the others are the handheld finishes. */
@@ -122,22 +122,33 @@ export function CaseDevice({ fit, finish, onPressKey }: { fit: CaseFit; finish: 
 function WindowScreen({ partId, type, o }: { partId: string; type: string; o: CaseOpening }) {
   const source = useDeviceSource();
   const readouts = useContext(ReadoutsContext);
-  const st = SCREEN_TYPES[type];
+  const st = screenTypeOf(type);
   const color = st?.kind === "tft";
-  const mono = useMemo(() => (!color && st ? createScreenTexture(st.screen) : undefined), [color, st]);
+  const mono = useMemo(() => (st && (st.kind === "oled" || st.kind === "lcd") ? createScreenTexture(st.screen) : undefined), [st]);
   const rgb = useMemo(() => (color ? createColorScreenTexture() : undefined), [color]);
-  useEffect(() => () => (mono?.dispose(), rgb?.dispose()), [mono, rgb]);
+  // round 17: e-paper, memory LCD and any other panel: its framebuffer when it has one, else its pixels
+  const panel = useMemo(() => (st?.kind === "panel" ? createPanelTexture(st.screen, screenBlankOf(type)) : undefined), [st, type]);
+  useEffect(() => () => (mono?.dispose(), rgb?.dispose(), panel?.dispose()), [mono, rgb, panel]);
   const mat = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(() => {
     const s = source.partState(partId);
     if (mono) {
       mono.update(s);
       if (mat.current) mat.current.color.setScalar(0.35 + 0.65 * mono.level);
-      if (s && typeof s.lit === "number") readouts.current["screen lit"] = `${s.lit} px`;
     } else if (rgb) {
       rgb.update(source.framebuffer?.(partId), s);
       if (mat.current) mat.current.color.setScalar(0.2 + 0.8 * rgb.level);
+    } else if (panel) {
+      panel.update(source.framebuffer?.(partId), s);
+      if (mat.current) {
+        if (mat.current.map !== panel.texture) {
+          mat.current.map = panel.texture;
+          mat.current.needsUpdate = true;
+        }
+        mat.current.color.setScalar(0.2 + 0.8 * panel.level);
+      }
     }
+    if (s && typeof s.lit === "number") readouts.current["screen lit"] = `${s.lit} px`;
   });
   const w = o.screen?.u ?? o.u;
   const h = o.screen?.v ?? o.v;
@@ -145,9 +156,9 @@ function WindowScreen({ partId, type, o }: { partId: string; type: string; o: Ca
   const q = useMemo(() => basis(o), [o]);
   // in the inner wall's plane (the module's glass is at or behind it), facing out
   const at = useMemo(() => v3(o.at).addScaledVector(v3(o.n).normalize(), 0.05), [o]);
-  const tex = mono?.texture ?? rgb?.texture;
+  const tex = mono?.texture ?? rgb?.texture ?? panel?.texture;
   return (
-    <group position={at} quaternion={q} name={`screen-${partId}`}>
+    <group position={at} quaternion={q} name={`screen-${partId}`} userData={{ screenKind: st?.kind ?? "none" }}>
       <mesh>
         {round ? <circleGeometry args={[w / 2, 64]} /> : <planeGeometry args={[w, h]} />}
         <meshBasicMaterial ref={mat} map={tex ?? null} toneMapped={false} />

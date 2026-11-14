@@ -94,12 +94,12 @@ export interface ColorScreenTexture {
 }
 
 /** Live texture for a colour TFT (RGB565 frame from Simulation.framebuffer), redrawn per frame version. */
-export function createColorScreenTexture(): ColorScreenTexture {
+export function createColorScreenTexture(blank = "#000"): ColorScreenTexture {
   const c = document.createElement("canvas");
   c.width = 320;
   c.height = 240;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#000";
+  g.fillStyle = blank;
   g.fillRect(0, 0, c.width, c.height);
   const texture = new THREE.CanvasTexture(c);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -145,6 +145,57 @@ export function createColorScreenTexture(): ColorScreenTexture {
     },
     dispose() {
       texture.dispose();
+    },
+  };
+}
+
+export interface PanelTexture {
+  /** The texture to show now: the frame texture once the part has frames, else the pixel painter's. */
+  readonly texture: THREE.CanvasTexture;
+  /** Repaint from the part's frame (e-paper, memory LCD, any panel whose model has a framebuffer) or its visual state. */
+  update(frame: ColorFrame | undefined, state: VisualState | undefined): boolean;
+  readonly level: number;
+  /** True while the frame texture is the one shown. */
+  readonly framed: boolean;
+  dispose(): void;
+}
+
+/**
+ * Round 17: a display the Device view knows only by its drawing (category display with a
+ * data-screen="WxH" rect): drawn from Simulation.framebuffer when the model has one (an e-paper or
+ * a memory LCD keeps its picture there), else from the `pixels` in its visual state like an OLED.
+ */
+export function createPanelTexture(screen: string, blank = "#000"): PanelTexture {
+  const rgb = createColorScreenTexture(blank);
+  const mono = painterFor(screen) ? createScreenTexture(screen) : undefined;
+  // until the part has frames or pixels, its blank glass (an e-paper's paper colour), not a black OLED
+  let framed = true;
+  let gotFrame = false;
+  return {
+    get texture() {
+      return framed || !mono ? rgb.texture : mono.texture;
+    },
+    get level() {
+      if (!gotFrame && framed) return 1; // the blank glass in room light
+      return framed || !mono ? rgb.level : mono.level;
+    },
+    get framed() {
+      return framed;
+    },
+    update(frame, state) {
+      if (frame) {
+        framed = true;
+        gotFrame = true;
+        // a panel's glass is lit by the room, not a backlight: full level whenever it shows a frame
+        return rgb.update(frame, state);
+      }
+      if (!mono || typeof state?.pixels !== "string") return false; // keep the last frame or the blank glass
+      framed = false;
+      return mono.update(state);
+    },
+    dispose() {
+      rgb.dispose();
+      mono?.dispose();
     },
   };
 }

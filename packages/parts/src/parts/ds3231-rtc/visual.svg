@@ -13,6 +13,9 @@
   <circle cx="225" cy="80" r="50" fill="#323944"/>
   <text x="225" y="76" text-anchor="middle" font-family="IBM Plex Mono" font-size="15" fill="#5CF2A1" data-bind="text:clock">12:00:00</text>
   <text x="225" y="96" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#8A93A0">CR2032</text>
+  <circle cx="80" cy="100" r="4" fill="#3A1A1A" stroke="#2B313B"/>
+  <circle cx="80" cy="100" r="4" fill="#FF3B2F" display="none" data-bind="visible:powerLed"/>
+  <text x="90" y="103" font-family="IBM Plex Mono" font-size="7" fill="#8A93A0">PWR</text>
   <text x="70" y="140" font-family="IBM Plex Sans" font-size="9" fill="#8A93A0">RTC · I2C 0x68</text>
   <circle data-pin="32K" cx="14" cy="30" r="3" fill="#C9CED6"/>
   <circle data-pin="SQW" cx="14" cy="50" r="3" fill="#C9CED6"/>

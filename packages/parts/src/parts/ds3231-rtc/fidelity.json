@@ -4,7 +4,7 @@
     "logic": { "level": "ok", "note": "I2C at 0x68 with the register map, auto-incrementing pointer and wrap-around: BCD seconds to year with century bit, 12/24-hour mode, the time latched at START for consistent multi-byte reads, the oscillator-stop flag (cleared by writing 0), control/aging registers, and the temperature registers in 0.25 °C steps." },
     "timing": { "level": "approx", "note": "The clock runs with simulation time, exactly (0 ppm). Writing the time restarts the second like the chip's countdown chain. Alarms are stored but never fire." },
     "analog": { "level": "approx", "note": "Temperature is whatever the temperature prop says, rounded to 0.25 °C; on the chip it is measured every 64 s." },
-    "power": { "level": "approx", "note": "Fixed 0.2 mA from VCC; answers I2C only above 2.3 V. The backup battery is not modelled: the time survives power loss and lostPower is a prop." },
+    "power": { "level": "approx", "note": "The chip draws 0.11 mA from VCC (datasheet ICCS at 3.3 V; the 0.58 mA temperature conversion every 64 s is not added) plus the ZS-042 power LED, about 1.9 mA at 5 V and 1.3 mA at 3.3 V, unless powerLed is false; answers I2C only above 2.3 V. The coin-cell charging circuit is a warning above 4.2 V, not a current. The backup battery is not modelled: the time survives power loss and lostPower is a prop." },
     "radio": { "level": "n/a", "note": "" }
   },
   "emulates": [

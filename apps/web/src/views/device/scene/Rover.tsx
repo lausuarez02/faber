@@ -14,7 +14,7 @@ import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import type { PhysicsBinding, WorldSnapshot } from "@jumper/physics";
 import { ReadoutsContext, useDeviceSource } from "../context.ts";
 import type { DeviceLayout } from "../classify.ts";
-import { SCREEN_TYPES } from "../classify.ts";
+import { screenTypeOf } from "../classify.ts";
 import { createScreenTexture } from "../screenTexture.ts";
 import { glowTexture } from "./Studio.tsx";
 import { Board } from "./Board.tsx";
@@ -179,7 +179,8 @@ export function RoverRobot({ binding, layout, handle }: { binding: PhysicsBindin
   const robot = w.robot;
   // Apex at the sensor, unit length along +X, half angle 15° (the modelled cone).
   const coneGeom = useMemo(() => new THREE.ConeGeometry(Math.tan((15 * Math.PI) / 180), 1, 48, 1, true).rotateZ(Math.PI / 2).translate(0.5, 0, 0), []);
-  const screen = layout.screen && SCREEN_TYPES[layout.screen.type] ? layout.screen : undefined;
+  const screenType = layout.screen ? screenTypeOf(layout.screen.type) : undefined;
+  const screen = layout.screen && screenType && (screenType.kind === "oled" || screenType.kind === "lcd") ? layout.screen : undefined;
 
   useFrame(() => {
     const snap: WorldSnapshot = binding.snapshot();
@@ -335,7 +336,7 @@ export function RoverRobot({ binding, layout, handle }: { binding: PhysicsBindin
         <sprite ref={hit} scale={0.5}>
           <spriteMaterial map={glowTexture()} color="#9fe9c6" transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
         </sprite>
-        {screen ? <RoverFace partId={screen.id} screen={SCREEN_TYPES[screen.type]!.screen} position={[L * 0.38, wheelR0 * 0.9 + 0.55, 0]} /> : null}
+        {screen ? <RoverFace partId={screen.id} screen={screenType!.screen} position={[L * 0.38, wheelR0 * 0.9 + 0.55, 0]} /> : null}
       </group>
     </>
   );

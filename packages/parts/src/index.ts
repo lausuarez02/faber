@@ -5,6 +5,7 @@ export { partDefinitions, registry };
 export { LED_COLORS, ledBrightness, type LedColor } from "./lib/led.ts";
 export { resistorBands, formatOhms } from "./lib/resistorBands.ts";
 export { ldrResistance } from "./parts/photoresistor/model.ts";
+export { LIPO_POUCH_CELLS, thinnestCell, type LipoPouchCell } from "./lib/lipoCells.ts"; // round 17
 
 /** id → definition ({ spec, fidelity, svg, create }). */
 export const parts: Readonly<Record<string, PartDefinition>> = Object.freeze(

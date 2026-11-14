@@ -182,6 +182,8 @@ const SHORT_IDS: Record<string, string> = {
   bme280: "bme",
   mpu6050: "imu",
   "ds3231-rtc": "rtc",
+  "ds3231-mini-rtc": "rtc",
+  "rv3028-rtc": "rtc",
   "lcd1602-i2c": "lcd",
 };
 const SOURCE_EXT = /\.(ino|pde|h|hpp|hh|c|cc|cpp|cxx|S|s)$/;

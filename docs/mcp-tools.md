@@ -43,7 +43,7 @@ Design for assembly (any device a person will hold): always think how the stuff 
 - Cameras: a visible capture indicator, a countdown with cancel, owner review before anything is published.
 - Battery devices: estimate_power with the real duty cycles, set_power target_hours, and say it is an estimate.
 - A thing the case holds (a tin, a card deck): enclosure held with its real size and source, never a fake part; a case that rides on it: engage_mm (a socket), fit, follow; tell the person to measure theirs with calipers.
-- Always-on battery devices: e-paper or memory LCD, deep sleep with timer + pin wake (tests jump hours), RTC for days, estimate_power with wakes_per_day.
+- Always-on battery devices: e-paper or memory LCD, deep sleep with timer + pin wake (tests jump hours), a small RTC without a power LED (ds3231-mini-rtc, rv3028-rtc) for days, estimate_power with wakes_per_day.
 - Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety. After it, get_assembly_plan works out the shell, holder and order of every part with a picture per step: fix what its assembly-* checks flag.
 - "What do I need to build it?": get_build_kit, then answer Buy / Print / Assemble / Flash with totals.
 Hardware guide: resource jumper://docs/hardware; prompts design-device, build-kit, design-for-assembly.

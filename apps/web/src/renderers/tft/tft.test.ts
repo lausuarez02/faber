@@ -62,4 +62,26 @@ describe("mountTft", () => {
     expect(layer.has("led")).toBe(false);
     layer.clear();
   });
+
+  it("round 17: any panel with a data-screen rect is drawn from its frames once it has one (e-paper, memory LCD)", () => {
+    let have = false;
+    const adopted: string[] = [];
+    const layer = registerTftRenderers((id) => (have && id === "epd" ? frame(200, 200) : undefined), undefined, (id) => adopted.push(id));
+    for (const [id, type] of [["epd", "epaper-154-ssd1681"], ["lcd", "sharp-memory-lcd-128"], ["led", "led"]] as const) {
+      const host = document.createElement("div");
+      host.innerHTML = getPart(type)!.svg;
+      layer.attach(id, type, host.querySelector("svg")!);
+    }
+    layer.paint("epd", {});
+    expect(layer.has("epd")).toBe(false); // no frame yet: its own drawing stays
+    have = true;
+    layer.paint("epd", {});
+    layer.paint("lcd", {});
+    layer.paint("led", {});
+    expect(layer.has("epd")).toBe(true);
+    expect(layer.has("lcd")).toBe(false); // this frameOf has none for it
+    expect(layer.has("led")).toBe(false);
+    expect(adopted).toEqual(["epd"]);
+    layer.clear();
+  });
 });

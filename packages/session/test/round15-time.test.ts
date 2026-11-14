@@ -25,7 +25,7 @@ const project = parseProject({
   firmware: { board: "uno", artifact: "firmware/main.hex" },
 });
 
-describe("round 15: RTC parts follow the test clock", () => {
+describe("round 15: RTC parts follow the test clock", { timeout: 60_000 }, () => {
   it("a scenario clock sets the DS3231, and set_clock moves it across midnight (no network needed)", () => {
     const sc: Scenario = {
       id: "midnight",

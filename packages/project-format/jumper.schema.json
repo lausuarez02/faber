@@ -1680,7 +1680,7 @@
           ]
         },
         "held": {
-          "description": "Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening.",
+          "description": "Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening. Round 17: engage_mm makes it a socket the case rides on (only that much goes in), fit picks slip / press / snap, magnet puts the sensing magnet on the object.",
           "maxItems": 4,
           "type": "array",
           "items": {
@@ -1743,13 +1743,28 @@
                 "maximum": 5
               },
               "insert": {
+                "description": "slide = in through a slot in a side (left / right / top / bottom); pocket (default) = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays.",
                 "type": "string",
                 "enum": [
                   "slide",
                   "pocket",
                   "snap"
-                ],
-                "description": "slide = in through a slot in a side (left / right / top / bottom); pocket = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays."
+                ]
+              },
+              "engage_mm": {
+                "description": "Round 17, a SOCKET / mount: how far the object goes into the case, mm, measured from the case's OUTER face it enters through (front or back); the rest stays outside. The case then only has to be engage_mm deep there, not the whole object: a puck that rides on a can's lid (lid-topper: engage_mm 6 of a 7 mm lid skirt), a dock a bottle stands in, a cap on a tube. The report says how far the object stands proud (object height - engage_mm). Leave out: the whole object goes in (the room is its full size + clearance).",
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 250
+              },
+              "fit": {
+                "description": "Round 17: how the pocket or socket grips the object. slip = clearance_mm all round (default 0.5, a socket 0.3): it slides on and off; press = a tight fit (default clearance 0.1 mm: print a test ring first, PETG flexes more than PLA); snap = a rim at the mouth lip_mm narrower than the object (default 0.6) that clicks over its edge (same as insert: \"snap\"). Default slip.",
+                "type": "string",
+                "enum": [
+                  "slip",
+                  "press",
+                  "snap"
+                ]
               },
               "from": {
                 "description": "The side it goes in through (default: right for slide, back for pocket / snap).",
@@ -1786,14 +1801,60 @@
                     "description": "The part that senses the object (a reed or Hall switch for a lid with a magnet, a lever switch the object presses)."
                   },
                   "max_mm": {
-                    "description": "Farthest its body may be from the object's room, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm).",
+                    "description": "Farthest the switch still senses: its body to the object's room, or to the object's magnet when one is declared, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm).",
                     "type": "number",
                     "exclusiveMinimum": 0,
                     "maximum": 50
+                  },
+                  "lift_mm": {
+                    "description": "Round 17, with a magnet on the object: how far the case moves off the object when it comes apart (the lid with the case lifted off the can), mm (default 10). The check reports the gap mounted and lifted this far, and the lift at which the switch lets go.",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 200
                   }
                 },
                 "required": [
                   "part"
+                ],
+                "additionalProperties": false
+              },
+              "magnet": {
+                "description": "Round 17: a magnet glued ON THE OBJECT (not in the case), e.g. on the can body just below a lid that carries the case. With sensor, the held-sensor check measures the switch-to-magnet gap mounted and with the case lifted off (sensor.lift_mm), against sensor.max_mm, and gives the magnet_mm values for test steps.",
+                "type": "object",
+                "properties": {
+                  "beyond_mm": {
+                    "type": "number",
+                    "minimum": -250,
+                    "maximum": 250,
+                    "description": "Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out, e.g. 3 = on the can body 3 mm below the socket edge, just under the lid line), negative = inside the socket."
+                  },
+                  "angle_deg": {
+                    "description": "Where round the object, degrees, as you look at the case's front: 0 = right, 90 = top, 180 = left, 270 = bottom. Default: facing the sensor.",
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  },
+                  "radial_mm": {
+                    "description": "Distance of the magnet's centre from the object's axis, mm (default: glued on the outside of its side: radius + t_mm / 2).",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 150
+                  },
+                  "d_mm": {
+                    "description": "Magnet diameter, mm (default 6).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 30
+                  },
+                  "t_mm": {
+                    "description": "Magnet thickness, mm (default 3).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 20
+                  }
+                },
+                "required": [
+                  "beyond_mm"
                 ],
                 "additionalProperties": false
               }
@@ -1801,11 +1862,30 @@
             "required": [
               "id",
               "shape",
-              "size_mm",
-              "insert"
+              "size_mm"
             ],
             "additionalProperties": false
           }
+        },
+        "follow": {
+          "description": "Round 17: the case outline FOLLOWS a held object: its front-view footprint (a can lying flat: a circle of its diameter; a box: its w x h) + clearance + 2 x wall (+ margin). A round puck exactly a can's size: shape \"puck\" with follow {\"held\": \"can\"}. Sets size_mm w / h (leave them out); the parts are packed inside that outline, stacked in depth in front of / behind the object.",
+          "type": "object",
+          "properties": {
+            "held": {
+              "type": "string",
+              "description": "The held object's id whose outline the case follows."
+            },
+            "margin_mm": {
+              "description": "Extra room between the object's room and the wall all round, mm (default 0: the case is the object's footprint + clearance + 2 x wall).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 40
+            }
+          },
+          "required": [
+            "held"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

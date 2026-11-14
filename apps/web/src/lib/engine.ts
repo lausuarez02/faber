@@ -1,4 +1,4 @@
-import { Simulation, applyVisualState, restVisualState, type VisualState } from "@jumper/sim-core";
+import { Simulation, applyVisualState, restVisualState, type ColorFrame, type VisualState } from "@jumper/sim-core";
 import { backendFactory } from "@jumper/sim-backends";
 import type { Project, PropValue } from "@jumper/project-format";
 import { registry, tftTypeFor } from "./parts.ts";
@@ -68,7 +68,12 @@ export class Engine {
   private displays = registerDisplayRenderers();
   /** Colour TFT canvases (ILI9341, ST7735): pixels come from Simulation.framebuffer, not visualState. */
   // round 6 frames: following an agent or replaying, the screens come from the logged colour frames.
-  private tfts = registerTftRenderers((id) => (this.external && !this.localRun ? colorFrameOf(id) : this.sim?.framebuffer(id)));
+  // Round 17: any display part whose model exposes a framebuffer (e-paper, memory LCD) is drawn from its frames too.
+  private tfts = registerTftRenderers(
+    (id) => (this.external && !this.localRun ? colorFrameOf(id) : this.sim?.framebuffer(id)),
+    undefined,
+    (id) => this.displays.detach(id),
+  );
   /** Round 7 (voice): speech bubbles next to speakers and the browser's voice for DFPlayer clips. */
   private voice = new VoiceLayer(
     () => this.store.getState().project,
@@ -185,7 +190,10 @@ export class Engine {
         // Colour TFTs get their own layer; the mono layer would mount a black canvas over them.
         const tft = tftTypeFor(el.dataset.partType); // built-in TFTs and agent-made displays on a TFT controller
         if (tft) this.tfts.attach(id, tft, svg);
-        else this.displays.attach(id, el.dataset.partType, svg);
+        else {
+          this.displays.attach(id, el.dataset.partType, svg);
+          this.tfts.attach(id, el.dataset.partType, svg); // a candidate: mounts when the part has frames
+        }
       }
       this.paintPart(id);
     } else {
@@ -291,6 +299,29 @@ export class Engine {
 
   get isExternal(): boolean {
     return this.external !== undefined;
+  }
+
+  /**
+   * Round 17: a part's state as the canvas shows it: the local simulation's, or, while following an
+   * agent or replaying, the state it pushed (so the Device view follows a run it did not start).
+   */
+  shownPartState(partId: string): VisualState | undefined {
+    if (this.external && !this.localRun) return this.external.get(partId);
+    try {
+      return this.sim?.partState(partId);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Round 17: a display's frame as the canvas shows it (local framebuffer, or the followed run's logged frame). */
+  shownFramebuffer(partId: string): ColorFrame | undefined {
+    if (this.external && !this.localRun) return colorFrameOf(partId);
+    try {
+      return this.sim?.framebuffer(partId);
+    } catch {
+      return undefined;
+    }
   }
 
   /** A followed page is running its own simulation (the agent's pushed states are on hold). */

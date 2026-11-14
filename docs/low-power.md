@@ -70,6 +70,21 @@ Place the sensor next to the object it watches: the case's `held[].sensor` check
 - An RTC part (DS3231) now follows the test clock: a scenario's `clock` and `set_clock` set it as
   well as the sandbox's NTP, so `{"clock": "2026-11-13T23:59:57Z"}` then `{"expect_serial": "2026-11-14"}`
   tests a midnight rollover, with or without a network.
+- Which RTC (round 17). The common ZS-042 DS3231 board (`ds3231-rtc`, 38 x 22 x 14 mm with its
+  CR2032) has a power LED that draws about 2 mA, around 15 times the clock and in round 15's mood
+  case 96 % of the battery: desolder it (and set prop `powerLed` false; `estimate_power` then drops
+  it and says so), and remove its coin-cell charging diode or fit an LIR2032. Smaller and thinner:
+
+  | Part | Size | Draw | Code |
+  | --- | --- | --- | --- |
+  | `ds3231-mini-rtc` | 14 x 14 x 12 mm (about 6 mm without its socket) | 0.11 mA | RTClib `RTC_DS3231`, same as the ZS-042 |
+  | `rv3028-rtc` | 19 x 19 x 4 mm | 45 nA | plain Wire at 0x52 (the part's example); enable its backup switchover once |
+
+  Both follow a scenario's `clock` and `set_clock`. The RV-3028 ships with the backup switchover off:
+  the part says so (`rtc-backup-switchover-off`) until the firmware sets BSM.
+- Flat cells for a thin case: `lipo-battery` capacity picks the cell (401730 and 402030 are 4 mm,
+  502030 and 503035 5 mm, 603030 6 mm, 523450 5.2 mm; sizes and sources in
+  `packages/parts/src/lib/lipoCells.ts`).
 - The ESP32's own clock survives deep sleep (the shim moves it on by the time slept); it still has to
   be set once (NTP, an RTC, or a button sequence).
 

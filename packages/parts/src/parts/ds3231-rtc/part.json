@@ -2,7 +2,7 @@
   "id": "ds3231-rtc",
   "name": "Real-time clock DS3231 (I2C)",
   "category": "sensor",
-  "description": "Battery-backed real-time clock with a temperature-compensated crystal, on I2C at 0x68. Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno and use RTClib (RTC_DS3231 rtc; rtc.begin(); rtc.now()). The simulated clock starts at the startTime prop and runs with simulation time, so every run is reproducible.",
+  "description": "Battery-backed real-time clock with a temperature-compensated crystal, on I2C at 0x68 (the common ZS-042 board: 38 x 22 mm, CR2032 holder, AT24C32 EEPROM). Its power LED draws about 2 mA, 15 times the clock: for a battery device desolder it (prop powerLed false) and its coin-cell charging diode, or pick ds3231-mini-rtc (14 x 14 mm, no LED) or rv3028-rtc (19 x 19 x 4 mm, 45 nA). Wire GND → GND, VCC → 5V, SDA → A4, SCL → A5 on an Uno and use RTClib (RTC_DS3231 rtc; rtc.begin(); rtc.now()). The simulated clock starts at the startTime prop and runs with simulation time, so every run is reproducible.",
   "pins": [
     {
       "id": "32K",
@@ -98,13 +98,21 @@
       "type": "boolean",
       "default": false,
       "description": "Start with the oscillator-stop flag set, as after the backup battery ran out (RTClib rtc.lostPower() returns true)."
+    },
+    {
+      "id": "powerLed",
+      "label": "Power LED fitted",
+      "type": "boolean",
+      "default": true,
+      "description": "The ZS-042's red power LED draws about 1.5-3 mA all the time, about 15 times the clock itself (0.11 mA). Off = the LED (or its resistor) desoldered, as a battery device needs."
     }
   ],
   "limits": {
     "maxVoltage": 5.5,
     "minVoltage": 2.3,
     "maxCurrentmA": 1,
-    "typicalCurrentmA": 0.2
+    "typicalCurrentmA": 0.2,
+    "powerLedmA": 1.89
   },
   "footprint": "38 x 22 mm ZS-042 module, 6-pin 0.1 in header, CR2032 holder",
   "dimensions_mm": { "w": 38, "h": 22, "d": 10 },
@@ -149,6 +157,11 @@
       "key": "lostPower",
       "type": "boolean",
       "description": "Oscillator-stop flag (status register bit 7)."
+    },
+    {
+      "key": "powerLed",
+      "type": "boolean",
+      "description": "The module's power LED is fitted and lit."
     }
   ],
   "tags": [

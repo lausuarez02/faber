@@ -1,0 +1,49 @@
+{
+  "id": "ds3231-mini-rtc",
+  "name": "Real-time clock DS3231 mini module (14 x 14 mm, no LED)",
+  "category": "sensor",
+  "description": "The small DS3231 board sold for the Raspberry Pi: the same accurate clock chip as the ZS-042 (I2C 0x68, RTClib RTC_DS3231) on a 14 x 14 mm board with its coin cell on top, no power LED and no charging circuit, so it draws only the chip's 0.11 mA. Wire + → 3V3, D → SDA, C → SCL, − → GND (NC stays free). For a thin case cut the 5-pin socket off and solder wires (it then stands about 6 mm).",
+  "pins": [
+    { "id": "VCC", "label": "+", "x": 14, "y": 30, "type": "power", "voltage": { "min": 2.3, "max": 5.5 }, "description": "Supply, 2.3 to 5.5 V (Pi header pin 1, 3.3 V)." },
+    { "id": "SDA", "label": "D", "x": 14, "y": 50, "type": "digital", "protocols": ["i2c-sda"], "description": "I2C data (Pi pin 3). Pi modules often have no pull-up resistors (the Pi has its own): check yours, and add 4.7 kOhm from SDA and SCL to 3V3 if it has none." },
+    { "id": "SCL", "label": "C", "x": 14, "y": 70, "type": "digital", "protocols": ["i2c-scl"], "description": "I2C clock (Pi pin 5)." },
+    { "id": "NC", "label": "NC", "x": 14, "y": 90, "type": "digital", "description": "Not connected on the module (Pi pin 7)." },
+    { "id": "GND", "label": "−", "x": 14, "y": 110, "type": "ground", "description": "Ground (Pi pin 9)." }
+  ],
+  "size": { "w": 140, "h": 140 },
+  "props": [
+    { "id": "startTime", "label": "Time at t = 0", "type": "enum", "default": "2026-01-01T12:00:00", "options": ["2026-01-01T12:00:00", "2026-06-15T08:30:00", "2026-12-31T23:59:50", "2030-02-28T23:59:55"], "description": "Clock time when the simulation starts. A scenario's clock and set_clock set it too; the sketch can call rtc.adjust()." },
+    { "id": "temperature", "label": "Temperature", "type": "number", "default": 25, "min": -40, "max": 85, "step": 0.25, "unit": "°C", "description": "Die temperature the RTC reports (registers 0x11/0x12, 0.25 °C steps)." },
+    { "id": "lostPower", "label": "Lost power", "type": "boolean", "default": false, "description": "Start with the oscillator-stop flag set, as after the coin cell ran out (RTClib rtc.lostPower() returns true)." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 2.3, "maxCurrentmA": 0.65, "typicalCurrentmA": 0.11 },
+  "footprint": "14 x 14 mm module, 5-pin 0.1 in female socket for Pi header pins 1-9, coin-cell holder on top",
+  "dimensions_mm": { "w": 14, "h": 14, "d": 12 },
+  "mass_g": 2,
+  "current_ma": { "typ": 0.11, "max": 0.65 },
+  "price_usd": 3,
+  "buy_links": [
+    { "vendor": "AliExpress", "url": "https://www.aliexpress.com/w/wholesale-DS3231-mini-module-raspberry-pi.html" },
+    { "vendor": "Amazon", "url": "https://www.amazon.com/s?k=DS3231%20mini%20RTC%20module%20raspberry%20pi" }
+  ],
+  "bus": { "i2c": { "addresses": [104], "maxHz": 400000 } },
+  "bindings": [
+    { "key": "time", "type": "string", "description": "Current clock time, YYYY-MM-DD HH:MM:SS." },
+    { "key": "clock", "type": "string", "description": "HH:MM:SS shown on the module drawing." },
+    { "key": "temperature", "type": "number", "description": "Temperature it reports, °C." },
+    { "key": "running", "type": "boolean", "description": "Powered (it keeps time on its coin cell, but answers I2C only when powered)." },
+    { "key": "lostPower", "type": "boolean", "description": "Oscillator-stop flag (status register bit 7)." }
+  ],
+  "tags": ["rtc", "ds3231", "ds3231sn", "real time clock", "clock", "time", "rtclib", "mini", "small", "raspberry pi rtc", "low power", "thin", "i2c"],
+  "mechanical": {
+    "pcb_mm": 1.2,
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 0.5,
+    "source": "seller listings (pishop.co.za, hotmcu.com): 14 x 14 x 12 mm with the 5-pin socket; measure yours, the coin cell sits on top"
+  },
+  "sourcing": {
+    "manufacturer": "Analog Devices / Maxim (IC)",
+    "package": "module 14 x 14 mm",
+    "generic": "DS3231 mini RTC module for Raspberry Pi (DS3231SN, coin cell on top, no LED), 14 x 14 mm"
+  }
+}

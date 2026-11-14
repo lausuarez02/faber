@@ -1,0 +1,52 @@
+{
+  "id": "rv3028-rtc",
+  "name": "Real-time clock RV-3028 breakout (19 x 19 x 4 mm, 45 nA)",
+  "category": "sensor",
+  "description": "Extreme-low-power real-time clock: Micro Crystal RV-3028-C7 on Pimoroni's 19 x 19 x 4 mm breakout with a tiny 337 backup cell, I2C at 0x52. The chip draws 45 nA (the DS3231 0.11 mA, a ZS-042 with its LED about 2 mA), so it is the clock for thin battery devices that sleep for weeks. Wire 2-6V → 3V3, SDA → SDA, SCL → SCL, GND → GND (INT optional). It is not an RTClib chip: read registers 0x00-0x06 (BCD) with Wire, or the UNIX counter at 0x1B-0x1E. It ships with the backup switchover off: enable it once (EEPROM 0x37 BSM = 11) or the cell keeps nothing.",
+  "pins": [
+    { "id": "VCC", "label": "2-6V", "x": 14, "y": 30, "type": "power", "voltage": { "min": 1.2, "max": 5.5 }, "description": "Supply (I2C works from 1.2 V at 100 kHz, 2 V at 400 kHz; 5.5 V max)." },
+    { "id": "SDA", "label": "SDA", "x": 14, "y": 50, "type": "digital", "protocols": ["i2c-sda"], "description": "I2C data." },
+    { "id": "SCL", "label": "SCL", "x": 14, "y": 70, "type": "digital", "protocols": ["i2c-scl"], "description": "I2C clock." },
+    { "id": "INT", "label": "INT", "x": 14, "y": 90, "type": "digital", "description": "Interrupt output (open drain, active low): alarm, timer, update. Not modelled: stays high-impedance." },
+    { "id": "GND", "label": "GND", "x": 14, "y": 110, "type": "ground", "description": "Ground." }
+  ],
+  "size": { "w": 160, "h": 140 },
+  "props": [
+    { "id": "startTime", "label": "Time at t = 0", "type": "enum", "default": "2026-01-01T12:00:00", "options": ["2026-01-01T12:00:00", "2026-06-15T08:30:00", "2026-12-31T23:59:50", "2030-02-28T23:59:55"], "description": "Clock time when the simulation starts. A scenario's clock and set_clock set it too; the sketch can write the time registers." },
+    { "id": "lostPower", "label": "Power-on reset flag", "type": "boolean", "default": false, "description": "Start with PORF (status 0x0E bit 0) set, as after the chip lost all power and the time is wrong." }
+  ],
+  "limits": { "maxVoltage": 5.5, "minVoltage": 1.2, "maxCurrentmA": 0.01, "typicalCurrentmA": 0.000045 },
+  "footprint": "19 x 19 mm breakout, 5-pin 0.1 in header (Breakout Garden / Pi pins 1-9 order), 337 silver-oxide cell on board",
+  "dimensions_mm": { "w": 19, "h": 19, "d": 4 },
+  "mass_g": 1.5,
+  "current_ma": { "typ": 0.000045, "max": 0.0003 },
+  "price_usd": 14,
+  "buy_links": [
+    { "vendor": "Pimoroni", "url": "https://shop.pimoroni.com/products/rv3028-real-time-clock-rtc-breakout" },
+    { "vendor": "The Pi Hut", "url": "https://thepihut.com/products/rv3028-real-time-clock-rtc-breakout" }
+  ],
+  "bus": { "i2c": { "addresses": [82], "maxHz": 400000 } },
+  "bindings": [
+    { "key": "time", "type": "string", "description": "Current clock time, YYYY-MM-DD HH:MM:SS." },
+    { "key": "clock", "type": "string", "description": "HH:MM:SS shown on the module drawing." },
+    { "key": "unix", "type": "number", "description": "The 32-bit UNIX time counter (registers 0x1B-0x1E)." },
+    { "key": "running", "type": "boolean", "description": "Powered (answers I2C)." },
+    { "key": "lostPower", "type": "boolean", "description": "Power-on reset flag PORF (status bit 0)." },
+    { "key": "backupSwitchover", "type": "string", "description": "off (as shipped), direct or level: whether the backup cell would take over." },
+    { "key": "trickleCharge", "type": "boolean", "description": "Trickle charging of the backup cell is on (TCE)." },
+    { "key": "supply_ua", "type": "number", "description": "What it draws from VCC, µA." }
+  ],
+  "tags": ["rtc", "rv3028", "rv-3028", "rv-3028-c7", "micro crystal", "real time clock", "clock", "time", "unix time", "low power", "ultra low power", "thin", "small", "pimoroni", "breakout garden", "i2c"],
+  "mechanical": {
+    "pcb_mm": 1.0,
+    "keepout_top_mm": 0.5,
+    "keepout_bottom_mm": 0.5,
+    "source": "Pimoroni PIM449 listing (19 x 19 x 4 mm with its 337 cell); chip: Micro Crystal RV-3028-C7 application manual rev. 1.4"
+  },
+  "sourcing": {
+    "mpn": "PIM449",
+    "manufacturer": "Pimoroni (board), Micro Crystal (RV-3028-C7)",
+    "package": "breakout 19 x 19 mm",
+    "generic": "RV-3028-C7 RTC breakout, I2C 0x52, backup cell, 19 x 19 mm (Pimoroni RV3028 Breakout or equivalent)"
+  }
+}

@@ -6,8 +6,8 @@ import { useFrame } from "@react-three/fiber";
 import { RoundedBox, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { useDeviceSource, ReadoutsContext } from "../context.ts";
-import { SCREEN_TYPES, type DeviceLayout } from "../classify.ts";
-import { createColorScreenTexture, createScreenTexture } from "../screenTexture.ts";
+import { screenBlankOf, screenTypeOf, type DeviceLayout } from "../classify.ts";
+import { createColorScreenTexture, createPanelTexture, createScreenTexture } from "../screenTexture.ts";
 import { glowTexture, ledColor } from "./Studio.tsx";
 import { useContext } from "react";
 
@@ -64,7 +64,7 @@ const FRONT = D / 2;
 export function Handheld({ layout, finish, onPressKey }: { layout: DeviceLayout; finish: ShellFinish; onPressKey?: (fn: (i: number, down: boolean) => void) => void }) {
   const shell = SHELLS[finish];
   const group = useRef<THREE.Group>(null);
-  const screenType = layout.screen ? SCREEN_TYPES[layout.screen.type] : undefined;
+  const screenType = layout.screen ? screenTypeOf(layout.screen.type) : undefined;
   // Wide screens span the face; tall or square ones (ST7735, round GC9A01) are capped in height so
   // they stay above the buttons.
   const SCREEN_MAX_H = 2.9;
@@ -101,7 +101,8 @@ export function Handheld({ layout, finish, onPressKey }: { layout: DeviceLayout;
         </mesh>
         {/* Screen module */}
         {layout.screen && screenType?.kind === "tft" ? <ColorScreen partId={layout.screen.id} w={screenW} h={screenH} y={1.3} /> : null}
-        {layout.screen && screenType && screenType.kind !== "tft" ? <Screen partId={layout.screen.id} screen={screenType.screen} w={screenW} h={screenH} y={1.45} /> : null}
+        {layout.screen && screenType?.kind === "panel" ? <ColorScreen partId={layout.screen.id} w={screenW} h={screenH} y={1.3} panel={{ screen: screenType.screen, blank: screenBlankOf(layout.screen.type) }} /> : null}
+        {layout.screen && screenType && (screenType.kind === "oled" || screenType.kind === "lcd") ? <Screen partId={layout.screen.id} screen={screenType.screen} w={screenW} h={screenH} y={1.45} /> : null}
         {/* Power LED + project LEDs, top left */}
         <PowerDot />
         {layout.leds.slice(0, 4).map((l, i) => (
@@ -177,17 +178,27 @@ function Screen({ partId, screen, w, h, y }: { partId: string; screen: string; w
   );
 }
 
-/** A colour TFT behind glass: pixels from the panel's framebuffer, backlight as brightness. */
-function ColorScreen({ partId, w, h, y }: { partId: string; w: number; h: number; y: number }) {
+/**
+ * A colour TFT behind glass: pixels from the panel's framebuffer, backlight as brightness. With
+ * `panel` (round 17: an e-paper, a memory LCD): its framebuffer when the model has one, else its pixels.
+ */
+function ColorScreen({ partId, w, h, y, panel }: { partId: string; w: number; h: number; y: number; panel?: { screen: string; blank: string } }) {
   const source = useDeviceSource();
   const readouts = useContext(ReadoutsContext);
-  const tex = useMemo(() => createColorScreenTexture(), []);
+  const tex = useMemo(() => (panel ? createPanelTexture(panel.screen, panel.blank) : createColorScreenTexture()), [panel?.screen, panel?.blank]); // eslint-disable-line react-hooks/exhaustive-deps
   const mat = useRef<THREE.MeshBasicMaterial>(null);
   useEffect(() => () => tex.dispose(), [tex]);
   useFrame(() => {
     const st = source.partState(partId);
     tex.update(source.framebuffer?.(partId), st);
-    if (mat.current) mat.current.color.setScalar(0.2 + 0.8 * tex.level);
+    if (mat.current) {
+      if (mat.current.map !== tex.texture) {
+        mat.current.map = tex.texture;
+        mat.current.needsUpdate = true;
+      }
+      mat.current.color.setScalar(0.2 + 0.8 * tex.level);
+    }
+    if (panel && st && typeof st.lit === "number") readouts.current["screen lit"] = `${st.lit} px`;
   });
   const bezelW = w + 0.42;
   const bezelH = h + 0.5;

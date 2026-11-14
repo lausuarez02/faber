@@ -4,73 +4,12 @@
 import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@jumper/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { clamp, num, round, truthy } from "../../lib/props.ts";
+import { fromEpoch, formatTime, parseTime, toEpoch, bcd, unbcd, type DateTime } from "../../lib/calendar.ts";
 
 const REGS = 0x13;
 
-// ---------------------------------------------------------------- calendar (no Date in models)
+export { civilFromDays, daysFromCivil, formatTime, fromEpoch, parseTime, toEpoch, type DateTime } from "../../lib/calendar.ts";
 
-/** Days since 1970-01-01 for a proleptic Gregorian date (H. Hinnant's algorithm). */
-export function daysFromCivil(y: number, m: number, d: number): number {
-  const yy = m <= 2 ? y - 1 : y;
-  const era = Math.floor(yy / 400);
-  const yoe = yy - era * 400;
-  const doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
-  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
-  return era * 146097 + doe - 719468;
-}
-
-export function civilFromDays(z0: number): { y: number; m: number; d: number } {
-  const z = z0 + 719468;
-  const era = Math.floor(z / 146097);
-  const doe = z - era * 146097;
-  const yoe = Math.floor((doe - Math.floor(doe / 1460) + Math.floor(doe / 36524) - Math.floor(doe / 146096)) / 365);
-  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
-  const mp = Math.floor((5 * doy + 2) / 153);
-  const d = doy - Math.floor((153 * mp + 2) / 5) + 1;
-  const m = mp + (mp < 10 ? 3 : -9);
-  return { y: yoe + era * 400 + (m <= 2 ? 1 : 0), m, d };
-}
-
-export interface DateTime {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-}
-
-/** Seconds since 1970-01-01 00:00:00 (no time zone). */
-export function toEpoch(t: DateTime): number {
-  return daysFromCivil(t.year, t.month, t.day) * 86400 + t.hour * 3600 + t.minute * 60 + t.second;
-}
-
-export function fromEpoch(s: number): DateTime & { weekday: number } {
-  const days = Math.floor(s / 86400);
-  const rest = s - days * 86400;
-  const { y, m, d } = civilFromDays(days);
-  // 1970-01-01 was a Thursday. weekday: 0 = Sunday … 6 = Saturday.
-  const weekday = (((days + 4) % 7) + 7) % 7;
-  return { year: y, month: m, day: d, hour: Math.floor(rest / 3600), minute: Math.floor((rest % 3600) / 60), second: rest % 60, weekday };
-}
-
-/** Parse "YYYY-MM-DDTHH:MM:SS" (or a space instead of T). Returns undefined when malformed. */
-export function parseTime(v: string): number | undefined {
-  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/.exec(v.trim());
-  if (!m) return undefined;
-  const [, y, mo, d, h, mi, s] = m.map(Number) as number[];
-  if (mo! < 1 || mo! > 12 || d! < 1 || d! > 31 || h! > 23 || mi! > 59 || (s ?? 0) > 59) return undefined;
-  return toEpoch({ year: y!, month: mo!, day: d!, hour: h!, minute: mi!, second: s ?? 0 });
-}
-
-export function formatTime(s: number): string {
-  const t = fromEpoch(s);
-  const p = (n: number, w = 2) => String(n).padStart(w, "0");
-  return `${p(t.year, 4)}-${p(t.month)}-${p(t.day)} ${p(t.hour)}:${p(t.minute)}:${p(t.second)}`;
-}
-
-const bcd = (n: number) => ((Math.floor(n / 10) % 10) << 4) | n % 10;
-const unbcd = (b: number) => ((b >> 4) & 0x0f) * 10 + (b & 0x0f);
 
 // ---------------------------------------------------------------- chip
 
@@ -189,8 +128,28 @@ export class Ds3231 {
 
 const DEFAULT_START = "2026-01-01T12:00:00";
 
-export const create: PartModelFactory = (ctx): PartModel => {
-  const mod = createI2cModule(ctx, { supplymA: 0.2, minVolts: 2.3, maxVolts: 5.5 });
+/** One DS3231 module: the chip's own draw and, when the board has one, its power LED. */
+export interface Ds3231ModuleOptions {
+  /** The chip with the bus idle, mA (datasheet ICCS: 0.11 mA at 3.3 V, 0.17 mA max). */
+  chipmA: number;
+  /** A power LED the module carries (ZS-042: about 1.5 mA at 3.3 V, 3 mA at 5 V), lit unless prop powerLed is false. */
+  ledmA?: number;
+  /** Diagnostics for a module that charges its coin cell from VCC (ZS-042: 200 Ω + 1N4148 to a CR2032). */
+  chargesCell?: boolean;
+}
+
+/** The DS3231 model for any module that carries the chip (ZS-042, the Pi-style mini, Adafruit breakouts). */
+export function createDs3231Module(o: Ds3231ModuleOptions): PartModelFactory {
+  return (ctx) => ds3231Model(ctx, o);
+}
+
+export const create: PartModelFactory = createDs3231Module({ chipmA: 0.11, ledmA: 1.89, chargesCell: true });
+
+function ds3231Model(ctx: Parameters<PartModelFactory>[0], o: Ds3231ModuleOptions): PartModel {
+  let led = o.ledmA !== undefined && ctx.props.powerLed !== false;
+  // supplies are stamped as resistors sized for 5 V (createI2cModule); the LED is a second one, so
+  // prop powerLed (the LED or its jumper cut off) can change it while running
+  const mod = createI2cModule(ctx, { supplymA: o.chipmA, minVolts: 2.3, maxVolts: 5.5 });
   let badStart: string | undefined;
   const startOf = (v: unknown) => {
     const s = typeof v === "string" ? parseTime(v) : undefined;
@@ -217,7 +176,10 @@ export const create: PartModelFactory = (ctx): PartModel => {
 
   return {
     i2c,
-    stamp: (c) => mod.stamp(c),
+    stamp: (c) => {
+      mod.stamp(c);
+      if (led) c.resistor(ctx.node("VCC"), ctx.node("GND"), 5 / (o.ledmA! / 1000), { id: "power-led" });
+    },
     onSolved: (r) => mod.onSolved(r),
     visualState() {
       const now = chip.epoch();
@@ -228,6 +190,7 @@ export const create: PartModelFactory = (ctx): PartModel => {
         temperature: round(Math.round(chip.temperature * 4) / 4, 2),
         running: mod.powered,
         lostPower: (chip.regs[0x0f]! & 0x80) !== 0,
+        ...(o.ledmA !== undefined ? { powerLed: led && mod.powered } : {}),
       };
     },
     setProp(id, v) {
@@ -236,6 +199,10 @@ export const create: PartModelFactory = (ctx): PartModel => {
         chip.base = startOf(v);
       } else if (id === "temperature") chip.temperature = clamp(num(v, 25), -40, 85);
       else if (id === "lostPower") chip.regs[0x0f] = truthy(v) ? chip.regs[0x0f]! | 0x80 : chip.regs[0x0f]! & 0x7f;
+      else if (id === "powerLed" && o.ledmA !== undefined && truthy(v) !== led) {
+        led = truthy(v);
+        ctx.requestSolve();
+      }
     },
     interact(e) {
       if (e.kind === "set" && e.key === "temperature") chip.temperature = clamp(num(e.value as number, 25), -40, 85);
@@ -253,7 +220,15 @@ export const create: PartModelFactory = (ctx): PartModel => {
           message: `${ctx.id}: startTime '${badStart}' is not a date like 2026-01-01T12:00:00, so the clock starts at ${DEFAULT_START}. Set startTime as YYYY-MM-DDTHH:MM:SS.`,
         });
       }
+      if (o.chargesCell && mod.powered && mod.volts > 4.2) {
+        out.push({
+          severity: "warning",
+          code: "rtc-charges-coin-cell",
+          pin: "VCC",
+          message: `${ctx.id}: VCC is ${mod.volts.toFixed(1)} V and this module (ZS-042) charges its coin cell from VCC through a 200 Ω resistor and a diode. Why: a CR2032 is not rechargeable; charging it can make it swell or leak. Fix: run the module from 3.3 V, or remove the diode (or its 200 Ω resistor) next to the cell holder, or fit a rechargeable LIR2032; a small DS3231 module without the charger (ds3231-mini-rtc) or an RV-3028 (rv3028-rtc) avoids it.`,
+        });
+      }
       return out;
     },
   };
-};
+}

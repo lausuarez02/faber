@@ -2,6 +2,7 @@
 // one), a generic handheld (screen + buttons, no case yet), a robot in its arena, an arm on a
 // table, or the board on a desk. Pure, so it is unit-tested.
 import type { Project } from "@jumper/project-format";
+import { registry, tftTypeFor } from "../../lib/parts.ts";
 
 export type DeviceKind = "case" | "handheld" | "rover" | "arm" | "board";
 
@@ -59,15 +60,53 @@ export interface CaseFit {
   lenses: CaseOpening[];
 }
 
-export const SCREEN_TYPES: Record<string, { kind: "oled" | "lcd" | "tft"; screen: string; aspect: number }> = {
-  "ssd1306-oled-i2c": { kind: "oled", screen: "128x64", aspect: 2 },
-  "lcd1602-i2c": { kind: "lcd", screen: "16x2", aspect: 80 / 35 },
+export interface ScreenType {
+  /** oled / lcd: pixels or glyphs from the visual state; tft: Simulation.framebuffer; panel: the framebuffer when the model has one, else pixels. */
+  kind: "oled" | "lcd" | "tft" | "panel";
+  screen: string;
+  aspect: number;
+  /** Shown in the HUD ("TFT + 1 button"). */
+  label: string;
+}
+
+export const SCREEN_TYPES: Record<string, ScreenType> = {
+  "ssd1306-oled-i2c": { kind: "oled", screen: "128x64", aspect: 2, label: "OLED" },
+  "lcd1602-i2c": { kind: "lcd", screen: "16x2", aspect: 80 / 35, label: "LCD" },
   // Colour panels: pixels come from Simulation.framebuffer(partId), not the visual state.
-  "ili9341-tft": { kind: "tft", screen: "320x240", aspect: 4 / 3 },
-  "st7735-tft": { kind: "tft", screen: "128x160", aspect: 128 / 160 },
+  "ili9341-tft": { kind: "tft", screen: "320x240", aspect: 4 / 3, label: "TFT" },
+  "st7735-tft": { kind: "tft", screen: "128x160", aspect: 128 / 160, label: "TFT" },
   // Round panel: the square framebuffer is shown; the glass circle is the part's own drawing.
-  "gc9a01-round-tft": { kind: "tft", screen: "240x240", aspect: 1 },
+  "gc9a01-round-tft": { kind: "tft", screen: "240x240", aspect: 1, label: "TFT" },
 };
+
+/**
+ * The screen a part type has, or undefined. Round 17: besides the table above, any display part
+ * whose drawing marks its glass with data-screen="WxH" (an e-paper, a memory LCD, an agent-made
+ * panel) is a screen too; the Device view draws it from its framebuffer, else from its pixels.
+ */
+export function screenTypeOf(type: string): ScreenType | undefined {
+  const known = SCREEN_TYPES[type];
+  if (known) return known;
+  const def = registry.get(type);
+  if (!def || def.spec.category !== "display") return undefined;
+  const m = /data-screen="(\d+)x(\d+)"/.exec(def.svg);
+  if (!m) return undefined;
+  const w = Number(m[1]);
+  const h = Number(m[2]);
+  if (!(w > 0 && h > 0)) return undefined;
+  const words = `${def.spec.name} ${(def.spec.tags ?? []).join(" ")}`;
+  if (tftTypeFor(type)) return { kind: "tft", screen: `${w}x${h}`, aspect: w / h, label: "TFT" };
+  if (w <= 40 && h <= 4) return { kind: "lcd", screen: `${w}x${h}`, aspect: (80 / 35) * (w / 16) * (2 / h), label: "LCD" };
+  const label = /e-?paper|e-?ink/i.test(words) ? "E-paper" : /memory (lcd|display)/i.test(words) ? "Memory LCD" : /oled/i.test(words) ? "OLED" : "Screen";
+  return { kind: "panel", screen: `${w}x${h}`, aspect: w / h, label };
+}
+
+/** The colour of a display part's blank glass (its drawing's data-screen fill), for a panel before its first frame. */
+export function screenBlankOf(type: string): string {
+  const svg = registry.get(type)?.svg ?? "";
+  const tag = /<[^>]*data-screen="[^"]*"[^>]*>/.exec(svg)?.[0] ?? "";
+  return /fill="(#[0-9a-fA-F]{3,8})"/.exec(tag)?.[1] ?? "#000";
+}
 
 const BUTTON_TYPES = new Set(["pushbutton"]);
 const LED_TYPES = new Set(["led", "rgb-led"]);
@@ -127,7 +166,7 @@ export function fitToCase(base: Pick<DeviceLayout, "buttons" | "leds" | "screen"
  */
 export function classifyProject(project: Project, built?: CaseModel | null): DeviceLayout {
   const parts = project.parts;
-  const screenPart = parts.find((p) => SCREEN_TYPES[p.type]);
+  const screenPart = parts.find((p) => screenTypeOf(p.type));
   const buttons = parts.filter((p) => BUTTON_TYPES.has(p.type)).sort((a, b) => a.x - b.x || a.y - b.y).map((p) => ({ id: p.id }));
   const leds = parts.filter((p) => LED_TYPES.has(p.type)).map((p) => ({ id: p.id, color: String(p.props?.color ?? "red") }));
   const buzzers = parts.filter((p) => p.type === "buzzer" || p.type === "passive-buzzer").map((p) => ({ id: p.id }));
@@ -145,13 +184,13 @@ export function classifyProject(project: Project, built?: CaseModel | null): Dev
   }
   if (world?.arm !== undefined) return { ...base, kind: "arm", why: "arm block in the world → arm on a table" };
   if (built && project.enclosure) {
-    const has = [screenPart ? SCREEN_TYPES[screenPart.type]!.kind.toUpperCase() : "", buttons.length ? `${buttons.length} button${buttons.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" + ");
+    const has = [screenPart ? screenTypeOf(screenPart.type)!.label : "", buttons.length ? `${buttons.length} button${buttons.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" + ");
     return { ...base, kind: "case", case: fitToCase(base, built), why: `${caseLabel(built.shape)} from the Case view${has ? ` · ${has}` : ""}` };
   }
   if (screenPart && buttons.length > 0) {
-    return { ...base, kind: "handheld", why: `${SCREEN_TYPES[screenPart.type]!.kind.toUpperCase()} + ${buttons.length} button${buttons.length === 1 ? "" : "s"} → handheld` };
+    return { ...base, kind: "handheld", why: `${screenTypeOf(screenPart.type)!.label} + ${buttons.length} button${buttons.length === 1 ? "" : "s"} → handheld` };
   }
-  if (screenPart) return { ...base, kind: "handheld", why: `${SCREEN_TYPES[screenPart.type]!.kind.toUpperCase()} → handheld` };
+  if (screenPart) return { ...base, kind: "handheld", why: `${screenTypeOf(screenPart.type)!.label} → handheld` };
   return { ...base, kind: "board", why: "no screen or world → board on a desk" };
 }
 
