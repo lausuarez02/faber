@@ -246,6 +246,8 @@ export const MechanicalSchema = z.object({
   keepout_top_mm: z.number().nonnegative().optional(),
   /** Extra room below the bottom face (header pins, through-hole leads, solder), mm. Default 0. */
   keepout_bottom_mm: z.number().nonnegative().optional(),
+  /** Round 17: a magnetic switch (reed, Hall): the field it closes at and the lower field it lets go at (hysteresis), typical, mT. The case's held-sensor check turns them into distances for the held object's magnet. */
+  magnet_switch: z.object({ operate_mT: z.number().positive(), release_mT: z.number().positive(), source: z.string().optional() }).optional(),
   /** Soft body that must not be pressed or pierced (LiPo pouch): the case gives it a cradle with ~10 % swell room, never a boss or a screw. */
   soft: z.boolean().optional(),
   /** Mounting holes in the part frame (mm): centre and hole diameter (e.g. 2.2 for M2). */

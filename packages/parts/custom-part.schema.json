@@ -1123,6 +1123,26 @@
           "type": "number",
           "minimum": 0
         },
+        "magnet_switch": {
+          "type": "object",
+          "properties": {
+            "operate_mT": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "release_mT": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operate_mT",
+            "release_mT"
+          ]
+        },
         "soft": {
           "type": "boolean"
         },

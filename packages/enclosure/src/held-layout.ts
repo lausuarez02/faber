@@ -199,7 +199,7 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
     let sensing: HeldReport["sensing"];
     if (h.sensor) {
       const sp = c.placed.find((q) => q.mech.id === h.sensor!.part);
-      const max = h.sensor.max_mm ?? 8;
+      let max = h.sensor.max_mm ?? 8;
       if (!sp) c.issues.push({ id: "held-sensor", ok: false, severity: "warning", message: `${h.name ?? h.id}'s sensor "${h.sensor.part}" is not in the case. Why: there is no such part, or it is excluded. Fix: place it (place_part {"type": "reed-switch", "id": "${h.sensor.part}"}) or correct enclosure.held[].sensor.part.`, parts: [h.id] });
       else if (h.magnet) {
         // round 17: the magnet is on the object, outside the case: the gap mounted, lifted off, and where it lets go
@@ -209,26 +209,46 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
         const gapAt = (l: number) => Math.max(0, sensorGap(sens, { min: shiftZ(mg.at, mg.dir * l), max: shiftZ(mg.at, mg.dir * l) }) - mg.t / 2);
         const mounted = gapAt(0);
         const lifted = gapAt(lift);
+        // round 17 proof: a magnetic switch has hysteresis. It closes once the field reaches its operate
+        // point and only lets go below the lower release point, so it must be farther away to open than
+        // to close. With the switch's fields and the magnet's size, both are distances (on the magnet's axis).
+        const ms = sp.mech.magnetSwitch;
+        let field: { operate_mm: number; release_mm: number; why: string } | undefined;
+        if (ms) {
+          const d = h.magnet.d_mm ?? 6;
+          const t = h.magnet.t_mm ?? 3;
+          // a max_mm the person gave is where it closes (their switch, their magnet); it lets go where the
+          // field falls to release / operate of the field there
+          const given = h.sensor.max_mm;
+          const operate = given ?? distanceForFieldMt(ms.operate_mT, d, t, N35_BR);
+          const closeMt = given !== undefined ? discFieldMt(given, d, t, N35_BR) : ms.operate_mT;
+          const releaseMt = closeMt * (ms.release_mT / ms.operate_mT);
+          const release = distanceForFieldMt(releaseMt, d, t, N35_BR);
+          field = { operate_mm: operate, release_mm: release, why: `a ${d} x ${t} mm N35 magnet gives ${r1(closeMt)} mT at ${r1(operate)} mm, where ${sp.mech.id} closes${given !== undefined ? " (sensor.max_mm)" : ""}, and ${sp.mech.id} lets go only below ${r1(releaseMt)} mT (${ms.release_mT} / ${ms.operate_mT} mT release / operate), at ${r1(release)} mm, on the magnet's axis` };
+          max = operate;
+        }
+        const openAt = field ? Math.max(field.release_mm, max) : max;
         let letsGo: number | undefined;
         if (mounted <= max) {
           let lo = 0;
           let hi = 200;
-          if (gapAt(hi) > max) {
+          if (gapAt(hi) > openAt) {
             for (let i = 0; i < 40; i++) {
               const mid = (lo + hi) / 2;
-              if (gapAt(mid) > max) hi = mid;
+              if (gapAt(mid) > openAt) hi = mid;
               else lo = mid;
             }
             letsGo = hi;
           }
         }
-        sensing = { sensor: sp.mech.id, mounted_mm: r1(mounted), lifted_mm: r1(lifted), lift_mm: lift, ...(letsGo !== undefined ? { lets_go_at_mm: r1(letsGo) } : {}), max_mm: max };
+        sensing = { sensor: sp.mech.id, mounted_mm: r1(mounted), lifted_mm: r1(lifted), lift_mm: lift, ...(letsGo !== undefined ? { lets_go_at_mm: r1(letsGo) } : {}), max_mm: r1(max), ...(field ? { release_mm: r1(field.release_mm) } : {}) };
         const where = `the magnet ${Math.abs(mg.beyond)} mm ${mg.beyond >= 0 ? "beyond" : "inside"} the ${from} face, ${Math.round(mg.angle)}° round ${h.name ?? h.id} (${mg.angle < 45 || mg.angle >= 315 ? "right" : mg.angle < 135 ? "top" : mg.angle < 225 ? "left" : "bottom"} side)`;
         const steps = `Test steps: {"set": "${sp.mech.id}.magnet_mm", "value": ${r1(mounted)}} mounted, {"set": "${sp.mech.id}.magnet_mm", "value": ${r1(lifted)}} lifted ${lift} mm.`;
-        const facts = { mounted_mm: r1(mounted), lifted_mm: r1(lifted), lift_mm: lift, max_mm: max, ...(letsGo !== undefined ? { lets_go_at_mm: r1(letsGo) } : {}) };
-        if (mounted > max) c.issues.push({ id: "held-sensor", ok: false, severity: "warning", message: `${sp.mech.id} is ${r1(mounted)} mm from ${where} with ${h.name ?? h.id} mounted, farther than the ${max} mm it senses across: it never closes. Why: the switch sits too far from the magnet (inside the case, above the socket floor). Fix: pin ${sp.mech.id} next to the socket's edge on that side (placements x_mm / y_mm, layer near the ${from}), move the magnet closer to the socket edge (magnet.beyond_mm smaller), or a stronger magnet and a larger sensor.max_mm.`, parts: [sp.mech.id, h.id], facts });
-        else if (lifted <= max) c.issues.push({ id: "held-sensor", ok: false, severity: "warning", message: `${sp.mech.id} still sees ${where} with the case lifted ${lift} mm (${r1(lifted)} mm, within its ${max} mm): it would not notice the case coming off. Why: the magnet is strong enough to reach it at that lift. Fix: a weaker or smaller magnet, a smaller sensor.max_mm if your switch is less sensitive, or check the real lift (sensor.lift_mm).${letsGo !== undefined ? ` It lets go after ${r1(letsGo)} mm.` : ""}`, parts: [sp.mech.id, h.id], facts });
-        else c.issues.push({ id: "held-sensor", ok: true, severity: "info", message: `${sp.mech.id} is ${r1(mounted)} mm from ${where} when mounted (within ${max} mm: closed) and ${r1(lifted)} mm when the case is lifted ${lift} mm (open)${letsGo !== undefined ? `; it lets go after about ${r1(letsGo)} mm of lift` : ""}. ${steps}`, parts: [sp.mech.id, h.id], facts });
+        const facts = { mounted_mm: r1(mounted), lifted_mm: r1(lifted), lift_mm: lift, max_mm: r1(max), ...(field ? { release_mm: r1(field.release_mm) } : {}), ...(letsGo !== undefined ? { lets_go_at_mm: r1(letsGo) } : {}) };
+        const physics = field ? ` (${field.why})` : "";
+        if (mounted > max) c.issues.push({ id: "held-sensor", ok: false, severity: "warning", message: `${sp.mech.id} is ${r1(mounted)} mm from ${where} with ${h.name ?? h.id} mounted, farther than the ${r1(max)} mm it senses across${physics}: it never closes. Why: the switch sits too far from the magnet (inside the case, above the socket floor). Fix: pin ${sp.mech.id} next to the socket's edge on that side (placements x_mm / y_mm, layer near the ${from}), move the magnet closer to the socket edge (magnet.beyond_mm smaller), or a stronger magnet and a larger sensor.max_mm.`, parts: [sp.mech.id, h.id], facts });
+        else if (lifted <= openAt) c.issues.push({ id: "held-sensor", ok: false, severity: "warning", message: `${sp.mech.id} still sees ${where} with the case lifted ${lift} mm: ${r1(lifted)} mm away, and it only lets go beyond ${r1(openAt)} mm${physics}, so it would not notice the case coming off that far. Why: ${field && lifted > max ? "a magnetic switch lets go at a weaker field than it closes at (hysteresis), so opening needs more distance than closing" : "the magnet is strong enough to reach it at that lift"}. Fix: if the case comes all the way off in use (a lid pulled off), set sensor.lift_mm to that real lift; otherwise a smaller or weaker magnet (magnet.d_mm / t_mm), or the magnet farther from the socket edge (magnet.beyond_mm).${letsGo !== undefined ? ` It lets go after about ${r1(letsGo)} mm of lift.` : ""} Test steps: {"set": "${sp.mech.id}.magnet_mm", "value": ${r1(mounted)}} mounted, {"set": "${sp.mech.id}.magnet_mm", "value": ${r1(openAt + 1)}} off.`, parts: [sp.mech.id, h.id], facts });
+        else c.issues.push({ id: "held-sensor", ok: true, severity: "info", message: `${sp.mech.id} is ${r1(mounted)} mm from ${where} when mounted (within ${r1(max)} mm: closed) and ${r1(lifted)} mm when the case is lifted ${lift} mm (open${field ? `: beyond the ${r1(openAt)} mm where it lets go` : ""})${physics}${letsGo !== undefined ? `; it lets go after about ${r1(letsGo)} mm of lift` : ""}. ${steps}`, parts: [sp.mech.id, h.id], facts });
       } else {
         const gap = sensorGap({ min: sp.bodyMin, max: sp.bodyMax }, room);
         const side = (["left", "right", "bottom", "top"] as const).map((n, i) => ({ n, d: i % 2 ? sp.bodyMin[i >> 1]! - room.max[i >> 1]! : room.min[i >> 1]! - sp.bodyMax[i >> 1]! })).sort((a, b) => b.d - a.d)[0]!.n;
@@ -312,4 +332,25 @@ function magnetAt(h: HeldObject, sz: ReturnType<typeof heldSize>, room: Box, sen
   const dir: 1 | -1 = from === "front" ? 1 : -1;
   const z = from === "front" ? zOutF + m.beyond_mm : zOutB - m.beyond_mm;
   return { at: [cx + ux * rad, cy + uy * rad, z], dir, t, beyond: m.beyond_mm, angle };
+}
+
+/** Remanence of N35 NdFeB (T), the grade the held object's magnet is assumed to be. */
+const N35_BR = 1.19;
+/** Flux density (mT) on the axis of a disc magnet, z mm from its face (same model as the parts' magnet lib). */
+function discFieldMt(z: number, d: number, t: number, br: number): number {
+  const R = d / 2;
+  const zz = Math.max(0, z);
+  return (br / 2) * ((zz + t) / Math.hypot(R, zz + t) - zz / Math.hypot(R, zz)) * 1000;
+}
+/** The distance (mm) at which a disc magnet's field drops to mT (0 when it never reaches it). */
+function distanceForFieldMt(mT: number, d: number, t: number, br: number): number {
+  if (discFieldMt(0, d, t, br) < mT) return 0;
+  let lo = 0;
+  let hi = 200;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (discFieldMt(mid, d, t, br) >= mT) lo = mid;
+    else hi = mid;
+  }
+  return lo;
 }

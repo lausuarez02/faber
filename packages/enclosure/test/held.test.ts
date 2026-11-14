@@ -144,7 +144,8 @@ describe("depth from the outer face, sockets, fits, magnets on the object, outli
   });
 
   it("a magnet on the object: the gap mounted and lifted against max_mm, and the test steps that drive it", () => {
-    const L = lay([CAN], { shape: "puck", follow: { held: "can", margin_mm: 2.5 }, placements: { lid: { x_mm: 0, y_mm: -33.5, layer: 1 } } });
+    // the lid comes right off (20 mm): far past where the Hall switch lets go
+    const L = lay([{ ...CAN, sensor: { part: "lid", max_mm: 10, lift_mm: 20 } }], { shape: "puck", follow: { held: "can", margin_mm: 2.5 }, placements: { lid: { x_mm: 0, y_mm: -33.5, layer: 1 } } });
     const s = L.held![0]!.sensing!;
     expect(s.sensor).toBe("lid");
     expect(s.mounted_mm).toBeLessThanOrEqual(10);
@@ -159,6 +160,26 @@ describe("depth from the outer face, sockets, fits, magnets on the object, outli
     // close enough even lifted: it says the switch would not notice
     const near = lay([{ ...CAN, sensor: { part: "lid", max_mm: 45, lift_mm: 2 } }], { shape: "puck" });
     expect(near.issues.find((i) => i.id === "held-sensor")!.message).toMatch(/still sees .* it would not notice the case coming off/);
+  });
+
+  it("a magnetic switch lets go farther away than it closes (hysteresis): the lifted gap must pass the release distance (round 17 proof)", () => {
+    // DRV5032 (3 mT on / 1.5 mT off), a 6 x 3 mm N35 magnet, closing at max_mm 15 (3.5 mT): lets go only below 1.7 mT, beyond ~19.6 mm
+    const can6: HeldObject = { ...CAN, magnet: { beyond_mm: 2.5, d_mm: 6, t_mm: 3 }, sensor: { part: "lid", max_mm: 15, lift_mm: 8 } };
+    const L = lay([can6], { shape: "puck", follow: { held: "can", margin_mm: 4.2 }, placements: { lid: { x_mm: 31, y_mm: 0, layer: 1 } } });
+    const s = L.held![0]!.sensing!;
+    expect(s.release_mm).toBeGreaterThan(19);
+    expect(s.release_mm).toBeLessThan(20.5);
+    const c = L.issues.find((i) => i.id === "held-sensor")!;
+    if (s.lifted_mm <= s.release_mm!) {
+      expect(c.severity).toBe("warning");
+      expect(c.message).toMatch(/only lets go beyond 19\.\d mm \(a 6 x 3 mm N35 magnet gives 3.5 mT at 15 mm, where lid closes \(sensor.max_mm\), and lid lets go only below 1.7 mT .*\)/);
+      expect(c.message).toMatch(/Why: a magnetic switch lets go at a weaker field than it closes at \(hysteresis\).* Fix: if the case comes all the way off in use .*sensor.lift_mm/);
+    }
+    // the lid comes all the way off: lifted far beyond the release distance, and lets_go_at_mm is where it really opens
+    const off = lay([{ ...can6, sensor: { part: "lid", max_mm: 15, lift_mm: 40 } }], { shape: "puck", follow: { held: "can", margin_mm: 4.2 }, placements: { lid: { x_mm: 31, y_mm: 0, layer: 1 } } });
+    const so = off.held![0]!.sensing!;
+    expect(off.issues.find((i) => i.id === "held-sensor")!.severity).toBe("info");
+    expect(so.mounted_mm + so.lets_go_at_mm!).toBeGreaterThan(so.release_mm! - 0.5);
   });
 
   it("the outline follows the object: a round case the can's size, concentric, the parts in layers in front of the socket", () => {

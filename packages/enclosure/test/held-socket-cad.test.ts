@@ -68,7 +68,7 @@ describe("a lid-topper: a round puck that rides on a can's lid (round 17)", { ti
     expect(h).toMatchObject({ id: "can", engage_mm: 6, depth_mm: 6, proud_mm: 14, fit: "slip" });
     expect(h.sensing!.mounted_mm).toBeLessThanOrEqual(10);
     expect(h.sensing!.lifted_mm).toBeGreaterThan(10);
-    expect(r.checks.find((c) => c.id === "held-sensor")!.message).toMatch(/when mounted \(within 10 mm: closed\).*lifted 8 mm \(open\).*"set": "reed.magnet_mm"/);
+    expect(r.checks.find((c) => c.id === "held-sensor")!.message).toMatch(/when mounted \(within 10 mm: closed\).*lifted 8 mm \(open: beyond the [\d.]+ mm where it lets go\).*"set": "reed.magnet_mm"/);
     // the edges as planned
     expect(r.checks.find((c) => c.id === "edge-radius")!.facts).toMatchObject({ front_mm: 2.5, back_mm: 1 });
 

@@ -8282,6 +8282,11 @@ export const partDefinitions: PartDefinition[] = [
       ],
       "mechanical": {
         "keepout_bottom_mm": 1,
+        "magnet_switch": {
+          "operate_mT": 3,
+          "release_mT": 1.5,
+          "source": "TI DRV5032 datasheet SLVSDC7H 6.5/6.6, FA/FB/FC typical B_OP / B_RP at 3 V (AJ: 7 / 5.6)"
+        },
         "source": "TI DRV5032 datasheet, LPG (TO-92) package: 4 x 1.52 mm body; the sensing element is at the front face"
       },
       "sourcing": {
@@ -14125,6 +14130,11 @@ export const partDefinitions: PartDefinition[] = [
       "mechanical": {
         "outline": "rect",
         "keepout_top_mm": 0.5,
+        "magnet_switch": {
+          "operate_mT": 4,
+          "release_mT": 2.4,
+          "source": "the part's defaults: pull-in 4 mT, drop-out 0.6 x pull-in (10-15 AT glass reed, rough)"
+        },
         "source": "typical 2 x 14 mm glass reed (e.g. MKA-14103 class); leads not counted"
       },
       "sourcing": {

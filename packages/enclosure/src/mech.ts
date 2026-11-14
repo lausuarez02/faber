@@ -68,6 +68,8 @@ export interface PartMech {
   /** The part.json had a mechanical block (false = box from dimensions_mm only). */
   hasData: boolean;
   source: string;
+  /** Round 17: a magnetic switch's operate / release field (typical, mT), from mechanical.magnet_switch. */
+  magnetSwitch?: { operate_mT: number; release_mT: number; source?: string };
 }
 
 const EXPOSE_DEFAULT = new Set(["screen", "button", "switch", "knob", "connector", "led", "sensor-window", "grille", "camera", "access"]);
@@ -123,6 +125,7 @@ export function resolveMech(id: string, spec: PartSpec): PartMech {
     }),
     features,
     hasData: !!spec.mechanical,
+    ...(m.magnet_switch ? { magnetSwitch: m.magnet_switch } : {}),
     source: m.source ?? (spec.mechanical ? "part.json" : "dimensions_mm only (no mechanical block)"),
   };
 }

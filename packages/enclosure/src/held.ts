@@ -207,7 +207,7 @@ export interface HeldReport {
   /** Round 17: a socket (engage_mm): the case rides on the object. */
   engage_mm?: number;
   /** Round 17: a magnet on the object and the switch's gap to it, mounted and with the case lifted off. */
-  sensing?: { sensor: string; mounted_mm: number; lifted_mm: number; lift_mm: number; lets_go_at_mm?: number; max_mm: number };
+  sensing?: { sensor: string; mounted_mm: number; lifted_mm: number; lift_mm: number; lets_go_at_mm?: number; max_mm: number; release_mm?: number };
   /** The opening in the shell, mm (absent for a captive object). */
   opening_mm?: { w: number; h: number; shape: "rect" | "round" };
   /** Thinnest wall between the room and the outside / the electronics, mm. */

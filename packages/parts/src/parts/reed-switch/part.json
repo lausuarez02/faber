@@ -36,6 +36,7 @@
   ],
   "tags": ["reed", "reed switch", "magnetic switch", "magnet", "lid sensor", "door sensor", "open close", "wake", "zero power"],
   "mechanical": {
+    "magnet_switch": {"operate_mT": 4, "release_mT": 2.4, "source": "the part's defaults: pull-in 4 mT, drop-out 0.6 x pull-in (10-15 AT glass reed, rough)"},
     "outline": "rect",
     "keepout_top_mm": 0.5,
     "source": "typical 2 x 14 mm glass reed (e.g. MKA-14103 class); leads not counted"
