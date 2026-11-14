@@ -85,7 +85,7 @@ describe("rv3028-rtc: registers (RV-3028-C7 application manual)", () => {
 });
 
 describe("rv3028-rtc: the part", () => {
-  const powered = (props: Record<string, unknown> = {}) => {
+  const powered = (props: Record<string, string | number | boolean> = {}) => {
     const b = mount(def, { id: "rtc", props, wiring: { VCC: "v", GND: GROUND } });
     const r = b.solve((c) => c.voltageSource("v", GROUND, 3.3, 0.01, { id: "src" }));
     return { b, r };
@@ -114,14 +114,14 @@ describe("rv3028-rtc: the part", () => {
   it("says when the real chip would lose the time, and when it would charge its silver-oxide cell", () => {
     const { b } = powered();
     b.model.i2c!.i2cConnect(true, false);
-    b.model.i2c!.i2cRead!();
-    b.model.i2c!.i2cStop!();
+    b.model.i2c!.i2cRead(false);
+    b.model.i2c!.i2cStop();
     const off = b.model.diagnostics!().find((d) => d.code === "rtc-backup-switchover-off");
     expect(off?.message).toMatch(/would not keep the time.*Fix: once in setup\(\), write 0x37 with BSM = 11/);
     b.model.i2c!.i2cConnect(false, false);
-    b.model.i2c!.i2cWrite!(0x37);
-    b.model.i2c!.i2cWrite!(0x10 | 0x0c | 0x20);
-    b.model.i2c!.i2cStop!();
+    b.model.i2c!.i2cWrite(0x37);
+    b.model.i2c!.i2cWrite(0x10 | 0x0c | 0x20);
+    b.model.i2c!.i2cStop();
     const codes = b.model.diagnostics!().map((d) => d.code);
     expect(codes).toContain("rtc-trickle-charge-primary-cell");
     expect(codes).not.toContain("rtc-backup-switchover-off");

@@ -92,7 +92,7 @@ describe("ds3231-rtc: registers", () => {
 });
 
 describe("ds3231-rtc: the ZS-042's power LED (round 17)", () => {
-  const supplymA = (props: Record<string, unknown>, volts: number) => {
+  const supplymA = (props: Record<string, string | number | boolean>, volts: number) => {
     const b = mount(def, { id: "rtc", props, wiring: { VCC: "v", GND: GROUND } });
     const r = b.solve((c) => c.voltageSource("v", GROUND, volts, 0.01, { id: "src" }));
     return { mA: r.current("src") * 1000, b };
