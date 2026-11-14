@@ -4,7 +4,7 @@ import tamagotchi from "../../../../../examples/tamagotchi/jumper.json?raw";
 import rover from "../../../../../examples/rover/jumper.json?raw";
 import arm from "../../../../../examples/robot-arm/jumper.json?raw";
 import blink from "../../../../../examples/blink/jumper.json?raw";
-import { caseLabel, classifyProject, lastSerialLine, serialStats, type CaseModel, type CaseOpening } from "./classify.ts";
+import { caseLabel, classifyProject, lastSerialLine, screenBlankOf, screenTypeOf, serialStats, type CaseModel, type CaseOpening } from "./classify.ts";
 import { buttonLabel } from "./scene/Handheld.tsx";
 
 describe("device view: classifyProject", () => {
@@ -106,5 +106,19 @@ describe("device view: classifyProject", () => {
     expect(buttonLabel("btnFeed")).toBe("FEED");
     expect(buttonLabel("button_a")).toBe("A");
     expect(buttonLabel("reset")).toBe("RESET");
+  });
+});
+
+describe("device view: screens it knows only by their drawing (round 17)", () => {
+  it("an e-paper or memory LCD is a panel screen, drawn on its blank glass until it has frames", () => {
+    expect(screenTypeOf("epaper-154-ssd1681")).toMatchObject({ kind: "panel", screen: "200x200", aspect: 1, label: "E-paper" });
+    expect(screenTypeOf("sharp-memory-lcd-128")).toMatchObject({ kind: "panel", screen: "128x128", label: "Memory LCD" });
+    expect(screenTypeOf("ssd1306-oled-i2c")?.kind).toBe("oled");
+    expect(screenTypeOf("led")).toBeUndefined();
+    expect(screenBlankOf("epaper-154-ssd1681")).toBe("#ECEAE2");
+    const p = parseProject({ format: "jumper/1", name: "mood", parts: [{ id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0 }, { id: "epd", type: "epaper-154-ssd1681", x: 0, y: 0 }, { id: "b", type: "pushbutton", x: 0, y: 0 }], wires: [] });
+    const l = classifyProject(p);
+    expect(l.screen).toEqual({ id: "epd", type: "epaper-154-ssd1681" });
+    expect(l.why).toBe("E-paper + 1 button → handheld");
   });
 });

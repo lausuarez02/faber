@@ -4,13 +4,15 @@
 //   open http://localhost:5287/src/views/device/dev/index.html?example=tamagotchi
 // Params: example=<name>, ms=<virtual ms to run before showing>, run=1 (keep running), hud=0,
 //   camera=track|chase|arena, finish=ceramic|graphite|signal, theme=light, press=<part>@<ms>[,<part>@<ms>…] (held 120 ms).
-// window.__device: { ready, step(ms), load(projectJson, hex), press(id), release(id), timeMs() }.
+// window.__device: { ready, step(ms), load(projectJson, hex), press(id), release(id), timeMs(), setFrame(id, frame) }.
+// setFrame (tests): show this RGB565 frame for a display part instead of its model's (e.g. an e-paper
+// with no firmware driving it), so the Device view's frame path is checked without a board build.
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { parseProject, type Project } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
+import { Simulation, type ColorFrame } from "@jumper/sim-core";
 import { createSandboxNetwork } from "@jumper/ai-gateway";
 import { hasWifiPart } from "../../network/webNetwork.ts";
 import { backendFactory } from "@jumper/sim-backends";
@@ -32,13 +34,20 @@ interface DeviceApi {
   press(id: string): void;
   release(id: string): void;
   timeMs(): number;
+  setFrame(partId: string, frame: { width: number; height: number; rgb565: number[] } | null): void;
 }
+
+/** Frames set from a test script (setFrame), shown instead of the part model's own. */
+const fixedFrames = new Map<string, ColorFrame>();
 
 async function makeSource(project: Project, hex: string | undefined): Promise<OwnedSimSource> {
   if (project.world) await initPhysics();
   const sim = new Simulation({ project, registry, backendFactory, ...(hex ? { firmware: hex } : {}), ...(hasWifiPart(project) ? { services: { network: createSandboxNetwork() } } : {}) });
   const physics = project.world ? attachPhysics(sim, project.world) : undefined;
-  return ownedSimSource({ project, sim, physics });
+  const src = ownedSimSource({ project, sim, physics });
+  const own = src.framebuffer?.bind(src);
+  src.framebuffer = (id) => fixedFrames.get(id) ?? own?.(id);
+  return src;
 }
 
 /** Run `ms` of virtual time, pressing buttons at the given times (held 120 ms). */
@@ -83,6 +92,11 @@ function Harness() {
       press: (id) => cur?.press(id),
       release: (id) => cur?.release(id),
       timeMs: () => cur?.timeMs() ?? 0,
+      setFrame: (id, f) => {
+        if (!f) return void fixedFrames.delete(id);
+        const version = (fixedFrames.get(id)?.version ?? 0) + 1;
+        fixedFrames.set(id, { width: f.width, height: f.height, data: Uint16Array.from(f.rgb565), version, on: true, inverted: false });
+      },
     };
     (window as unknown as { __device: DeviceApi }).__device = api;
     const name = params.get("example");

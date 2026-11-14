@@ -115,25 +115,44 @@ export interface DisplayLayer {
 /** The registration entry point: one layer per canvas engine. */
 export function registerDisplayRenderers(types: readonly string[] = DISPLAY_PART_TYPES): DisplayLayer {
   const live = new Map<string, DisplayRenderer>();
+  const later = new Map<string, SVGSVGElement | Element>();
   const wanted = new Set(types);
   return {
     attach(partId, partType, svg) {
       live.get(partId)?.dispose();
       live.delete(partId);
-      if (!wanted.has(partType) && !svg.querySelector("[data-screen]")) return;
+      later.delete(partId);
+      if (!wanted.has(partType)) {
+        // Round 17: another part with a screen rect (an agent-made OLED, an e-paper) gets the mono
+        // canvas only once its state carries pixels or glyphs: until then (and for a panel drawn
+        // from frames by the TFT layer) its own drawing shows, not a black OLED.
+        if (svg.querySelector("[data-screen]")) later.set(partId, svg);
+        return;
+      }
       const r = mountDisplay(svg);
       if (r) live.set(partId, r);
     },
     paint(partId, state) {
-      live.get(partId)?.update(state);
+      let r = live.get(partId);
+      if (!r) {
+        const svg = later.get(partId);
+        if (!svg || (typeof state.pixels !== "string" && typeof state.glyphs !== "string")) return;
+        later.delete(partId);
+        r = mountDisplay(svg);
+        if (!r) return;
+        live.set(partId, r);
+      }
+      r.update(state);
     },
     detach(partId) {
       live.get(partId)?.dispose();
       live.delete(partId);
+      later.delete(partId);
     },
     clear() {
       for (const r of live.values()) r.dispose();
       live.clear();
+      later.clear();
     },
     has: (partId) => live.has(partId),
   };

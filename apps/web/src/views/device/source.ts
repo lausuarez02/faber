@@ -41,6 +41,10 @@ export interface EngineLike {
   readonly simulation: Simulation | undefined;
   readonly world: PhysicsBinding | undefined;
   readonly serialText: string;
+  /** Round 17: the state the canvas shows (local run, or the followed agent's / replay's pushed state). */
+  shownPartState?(partId: string): VisualState | undefined;
+  /** Round 17: the frame the canvas shows for a display part. */
+  shownFramebuffer?(partId: string): ColorFrame | undefined;
   run(): void;
   pause(): void;
   interact(partId: string, kind: "press" | "release"): void;
@@ -60,6 +64,7 @@ export function engineSource(engine: EngineLike, store: StoreLike): DeviceSource
   return {
     project: () => store.getState().project,
     partState: (id) => {
+      if (engine.shownPartState) return engine.shownPartState(id);
       try {
         return engine.simulation?.partState(id);
       } catch {
@@ -67,6 +72,7 @@ export function engineSource(engine: EngineLike, store: StoreLike): DeviceSource
       }
     },
     framebuffer: (id) => {
+      if (engine.shownFramebuffer) return engine.shownFramebuffer(id);
       try {
         return engine.simulation?.framebuffer?.(id);
       } catch {

@@ -132,6 +132,11 @@ export function mountTft(svg: SVGSVGElement | Element): TftRenderer | undefined 
 }
 
 export interface TftLayer {
+  /**
+   * Mount on a part's inlined SVG. Built-in TFT types mount at once; any other part with a
+   * [data-screen="WxH"] rect (an e-paper, a memory LCD, an agent-made panel) is kept as a candidate
+   * and mounts on the first paint that finds a frame for it (its model exposes `framebuffer`).
+   */
   attach(partId: string, partType: string, svg: SVGSVGElement | Element): void;
   paint(partId: string, state?: VisualState): void;
   detach(partId: string): void;
@@ -139,28 +144,53 @@ export interface TftLayer {
   has(partId: string): boolean;
 }
 
-/** One layer per canvas engine; `frameOf` reads the live frame (Simulation.framebuffer). */
-export function registerTftRenderers(frameOf: (partId: string) => ColorFrame | undefined, types: readonly string[] = TFT_PART_TYPES): TftLayer {
+/**
+ * One layer per canvas engine; `frameOf` reads the live frame (Simulation.framebuffer). `onAdopt`
+ * runs when a candidate part turned out to have frames, so the caller can drop the mono layer's
+ * canvas over the same rect.
+ */
+export function registerTftRenderers(frameOf: (partId: string) => ColorFrame | undefined, types: readonly string[] = TFT_PART_TYPES, onAdopt?: (partId: string) => void): TftLayer {
   const live = new Map<string, TftRenderer>();
+  const candidates = new Map<string, SVGSVGElement | Element>();
   const wanted = new Set(types);
   return {
     attach(partId, partType, svg) {
       live.get(partId)?.dispose();
       live.delete(partId);
-      if (!wanted.has(partType)) return;
+      candidates.delete(partId);
+      if (!wanted.has(partType)) {
+        if (/^\d+x\d+$/.test(svg.querySelector("[data-screen]")?.getAttribute("data-screen") ?? "")) candidates.set(partId, svg);
+        return;
+      }
       const r = mountTft(svg);
       if (r) live.set(partId, r);
     },
     paint(partId, state) {
-      live.get(partId)?.update(frameOf(partId), state);
+      let r = live.get(partId);
+      if (!r) {
+        const svg = candidates.get(partId);
+        if (!svg) return;
+        const f = frameOf(partId);
+        if (!f) return;
+        r = mountTft(svg);
+        candidates.delete(partId);
+        if (!r) return;
+        live.set(partId, r);
+        onAdopt?.(partId);
+        r.update(f, state);
+        return;
+      }
+      r.update(frameOf(partId), state);
     },
     detach(partId) {
       live.get(partId)?.dispose();
       live.delete(partId);
+      candidates.delete(partId);
     },
     clear() {
       for (const r of live.values()) r.dispose();
       live.clear();
+      candidates.clear();
     },
     has: (partId) => live.has(partId),
   };

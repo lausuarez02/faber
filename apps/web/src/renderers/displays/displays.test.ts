@@ -78,4 +78,14 @@ describe("mountDisplay", () => {
     layer.clear();
     expect(layer.has("oled")).toBe(false);
   });
+
+  it("round 17: a screen it does not know gets the mono canvas only once its state has pixels", () => {
+    const layer = registerDisplayRenderers();
+    layer.attach("epd", "epaper-154-ssd1681", inline("epaper-154-ssd1681"));
+    layer.paint("epd", { on: true, frame: 3, lit: 10 });
+    expect(layer.has("epd")).toBe(false); // an e-paper is drawn from frames, not a black OLED
+    layer.paint("epd", { on: true, frame: 4, pixels: "", width: 200, height: 200 });
+    expect(layer.has("epd")).toBe(true);
+    layer.clear();
+  });
 });
