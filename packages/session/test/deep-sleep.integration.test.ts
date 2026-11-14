@@ -126,7 +126,64 @@ describe.skipIf(!ready)("deep sleep with real firmware (real build, real QEMU)",
       rmSync(d2, { recursive: true, force: true });
     }
   });
+
+  it("wakes on either of two pins armed with different levels (two esp_deep_sleep_enable_gpio_wakeup calls, as on the chip)", async () => {
+    const d3 = mkdtempSync(join(tmpdir(), "jumper-sleep-2pin-"));
+    const s3 = new ProjectSession({ dir: d3, actor: "test" });
+    try {
+      await call(s3, "new_project", { template: "xiao-esp32c3" });
+      await call(s3, "place_part", { type: "pushbutton", id: "lo" });   // to GND, pull-up: wakes on LOW
+      await call(s3, "place_part", { type: "pushbutton", id: "hi" });   // to 3V3, pull-down: wakes on HIGH
+      await call(s3, "place_part", { type: "resistor", id: "rpd", props: { resistance: 100000 } });
+      const wires: [string, string][] = [
+        ["lo.1a", "xiao.GPIO3"], ["lo.2a", "xiao.GND"],
+        ["hi.1a", "xiao.GPIO4"], ["hi.2a", "xiao.3V3"], ["rpd.1", "xiao.GPIO4"], ["rpd.2", "xiao.GND"],
+      ];
+      for (const [from, to] of wires) await call(s3, "connect", { from, to });
+      await call(s3, "write_file", { path: "firmware/main.ino", content: TWO_PIN_SKETCH });
+      const b = await call(s3, "build");
+      expect(b.ok, JSON.stringify(b).slice(0, 3000)).toBe(true);
+      await call(s3, "write_scenario", {
+        id: "two-pins-two-levels",
+        timeout_ms: 200_000,
+        steps: [
+          { expect_serial: { regex: "cause 0 status 0" }, within_ms: 4000 },
+          { run_ms: 1000 },
+          { expect_part: "xiao.asleep", op: "==", value: true },
+          { press: "hi", hold_ms: 400 },
+          { expect_serial: { regex: "cause 7 status 16" }, within_ms: 4000 },
+          { run_ms: 1000 },
+          { expect_part: "xiao.asleep", op: "==", value: true },
+          { press: "lo", hold_ms: 400 },
+          { expect_serial: { regex: "cause 7 status 8" }, within_ms: 4000 },
+        ],
+      });
+      const r = await call(s3, "run_tests", { ids: ["two-pins-two-levels"] });
+      const res = ((r.results ?? r.scenarios ?? []) as Array<Record<string, any>>).find((x) => x.id === "two-pins-two-levels") ?? r;
+      expect(res.passed, JSON.stringify(res).slice(0, 4000)).toBe(true);
+    } finally {
+      s3.dispose();
+      rmSync(d3, { recursive: true, force: true });
+    }
+  });
 });
+
+const TWO_PIN_SKETCH = `// Two wake pins with different levels on a XIAO ESP32-C3: GPIO3 (button to GND) wakes on LOW,
+// GPIO4 (button to 3V3, 100k pull-down) wakes on HIGH. Each call adds its pins, as in ESP-IDF.
+void setup() {
+  Serial.begin(115200);
+  delay(20);
+  pinMode(3, INPUT_PULLUP);
+  pinMode(4, INPUT);
+  Serial.printf("cause %d status %llu\\n", (int)esp_sleep_get_wakeup_cause(), (unsigned long long)esp_sleep_get_gpio_wakeup_status());
+  while (digitalRead(3) == LOW || digitalRead(4) == HIGH) delay(10);  // wait for both buttons to be let go
+  esp_deep_sleep_enable_gpio_wakeup(1ULL << 3, ESP_GPIO_WAKEUP_GPIO_LOW);
+  esp_deep_sleep_enable_gpio_wakeup(1ULL << 4, ESP_GPIO_WAKEUP_GPIO_HIGH);
+  esp_deep_sleep_start();
+}
+
+void loop() {}
+`;
 
 const EPD_SKETCH = `// Raw SSD1681 over SPI (no library) on a XIAO ESP32-C3; the reed switch closes while the lid is shut.
 #include <SPI.h>

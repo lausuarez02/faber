@@ -78,7 +78,7 @@ static int s_ext0_gpio = -1, s_ext0_level;
 static uint64_t s_ext1_mask;
 static int s_ext1_mode;
 static uint64_t s_gpio_mask;
-static int s_gpio_mode;
+static uint64_t s_gpio_high; // pins of s_gpio_mask that wake on HIGH (the rest wake on LOW)
 static int s_woke;
 static uint32_t s_cause;
 static int s_wake_gpio = -1;
@@ -118,9 +118,14 @@ esp_err_t __wrap_esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_w
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 esp_err_t __real_esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode);
 esp_err_t __wrap_esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode) {
-  s_gpio_mask = gpio_pin_mask;
-  s_gpio_mode = (int)mode;
-  return __real_esp_deep_sleep_enable_gpio_wakeup(gpio_pin_mask, mode);
+  // As in ESP-IDF: each call adds its pins with their own level, so a sketch may arm one pin to wake
+  // on HIGH and another on LOW with two calls (a pin armed again takes the newer level).
+  esp_err_t err = __real_esp_deep_sleep_enable_gpio_wakeup(gpio_pin_mask, mode);
+  if (err != ESP_OK) return err;
+  s_gpio_mask |= gpio_pin_mask;
+  if (mode == ESP_GPIO_WAKEUP_GPIO_HIGH) s_gpio_high |= gpio_pin_mask;
+  else s_gpio_high &= ~gpio_pin_mask;
+  return err;
 }
 #endif
 
@@ -129,7 +134,7 @@ esp_err_t __wrap_esp_sleep_disable_wakeup_source(esp_sleep_source_t source) {
   if (source == ESP_SLEEP_WAKEUP_TIMER || source == ESP_SLEEP_WAKEUP_ALL) s_timer_us = 0;
   if (source == ESP_SLEEP_WAKEUP_EXT0 || source == ESP_SLEEP_WAKEUP_ALL) s_ext0_gpio = -1;
   if (source == ESP_SLEEP_WAKEUP_EXT1 || source == ESP_SLEEP_WAKEUP_ALL) s_ext1_mask = 0;
-  if (source == ESP_SLEEP_WAKEUP_GPIO || source == ESP_SLEEP_WAKEUP_ALL) s_gpio_mask = 0;
+  if (source == ESP_SLEEP_WAKEUP_GPIO || source == ESP_SLEEP_WAKEUP_ALL) s_gpio_mask = s_gpio_high = 0;
   return __real_esp_sleep_disable_wakeup_source(source);
 }
 
@@ -158,7 +163,7 @@ static void pins_json(char *out, size_t n, const char **src, int *any) {
 #endif
     }
     if (s_gpio_mask & (1ULL << g)) {
-      k += snprintf(out + k, n - k, "%s{\"gpio\":%d,\"level\":%d}", first ? "" : ",", g, s_gpio_mode ? 1 : 0);
+      k += snprintf(out + k, n - k, "%s{\"gpio\":%d,\"level\":%d}", first ? "" : ",", g, (s_gpio_high & (1ULL << g)) ? 1 : 0);
       first = 0;
       *src = "gpio";
     }

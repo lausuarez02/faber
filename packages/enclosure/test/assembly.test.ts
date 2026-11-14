@@ -205,6 +205,18 @@ describe("design-for-assembly checks fire on bad layouts, with the facts", () =>
     expect(c.message).toMatch(/Fix: put xiao against a wall/);
   }, T);
 
+  it("a hidden BOOT button on a board whose firmware deep-sleeps: updates need it awake (round 17)", () => {
+    const p = pebble();
+    const L = layoutCase(layoutInput(p, specOf));
+    const awake = assemblyPlan({ project: p, layout: L, specOf, firmwareText: "void loop() { delay(10); }" }).checks.find((x) => x.id === "assembly-access" && x.ok)!;
+    const asleep = assemblyPlan({ project: p, layout: L, specOf, firmwareText: "void setup() { esp_deep_sleep_start(); }" }).checks.find((x) => x.id === "assembly-access" && x.ok)!;
+    expect(String(awake.facts!.hidden_buttons)).toMatch(/boot/i);
+    expect(awake.message).toMatch(/later updates go over USB without it/);
+    expect(asleep.message).not.toMatch(/later updates go over USB without it/);
+    expect(asleep.message).toMatch(/later updates need the board awake: it deep-sleeps.*Why: .*Fix: give the firmware a way to stay awake/);
+    expect(asleep.facts!.firmware_deep_sleeps).toBe(1);
+  }, T);
+
   it("a screw under the belt clip has no tool path", () => {
     const { plan } = planOf({ ...muse(), enclosure: { shape: "rounded-box", params: { closure: "screws", belt_clip: true } } }, (L) => {
       const H = L.outer.h;

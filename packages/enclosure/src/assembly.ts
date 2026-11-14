@@ -99,6 +99,11 @@ export function firmwareUsesCard(text: string): boolean {
   return /#\s*include\s*[<"](SD|SD_MMC|SdFat)\.h[>"]|\bSD(_MMC)?\.begin\s*\(/.test(text);
 }
 
+/** Round 17: firmware that deep-sleeps (Arduino / ESP-IDF / MicroPython): the board's native USB port is off while it sleeps. */
+export function firmwareDeepSleeps(text: string): boolean {
+  return /\besp_deep_sleep_start\s*\(|\besp_deep_sleep\s*\(|\bdeepSleep\s*\(|\bmachine\.deepsleep\s*\(|\bdeepsleep\s*\(/.test(text);
+}
+
 interface Box {
   min: Vec3;
   max: Vec3;
@@ -427,7 +432,8 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
   const boardP = board ? byId.get(board.id) : undefined;
   const hidden = boardP ? boardP.mech.features.filter((f) => f.kind === "button" && !L.openings.some((o) => o.part === boardP.mech.id && o.feature === f.id)) : [];
   const boot = hidden.find((f) => /boot/i.test(f.id));
-  checks.push({ id: "assembly-access", ok: true, severity: boot ? "warning" : "info", message: `${access.length ? `Reachable with the case closed: ${access.join("; ")}.` : "No port is reachable with the case closed."}${cards.length ? ` ${cards.map((c) => `${c.part}'s ${c.what} stays inside (it goes in before closing)`).join("; ")}.` : ""}${boot ? ` ${boardP!.mech.id}'s ${boot.id.toUpperCase()} button is inside: flash it before closing (step "Flash the firmware"); later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold ${boot.id.toUpperCase()} while plugging in.` : ""}`, parts: boardP ? [boardP.mech.id] : [], facts: { reachable: access.length, hidden_buttons: hidden.map((h) => h.id).join(", ") } });
+  const sleeps = input.firmwareText !== undefined && firmwareDeepSleeps(input.firmwareText);
+  checks.push({ id: "assembly-access", ok: true, severity: boot ? "warning" : "info", message: `${access.length ? `Reachable with the case closed: ${access.join("; ")}.` : "No port is reachable with the case closed."}${cards.length ? ` ${cards.map((c) => `${c.part}'s ${c.what} stays inside (it goes in before closing)`).join("; ")}.` : ""}${boot ? ` ${boardP!.mech.id}'s ${boot.id.toUpperCase()} button is inside: flash it before closing (step "Flash the firmware"); ${sleeps ? `later updates need the board awake: it deep-sleeps, and its USB port is switched off while it sleeps, so the computer cannot see it. Why: the IDE can reset a board into its bootloader only over a live USB port. Fix: give the firmware a way to stay awake for a minute or two (a long button hold, or while USB power is present) and upload in that window; otherwise open the case and hold ${boot.id.toUpperCase()} while plugging in.` : `later updates go over USB without it (the IDE resets the board into its bootloader). If new firmware ever hangs USB, open the case and hold ${boot.id.toUpperCase()} while plugging in.`}` : ""}`, parts: boardP ? [boardP.mech.id] : [], facts: { reachable: access.length, hidden_buttons: hidden.map((h) => h.id).join(", "), ...(sleeps ? { firmware_deep_sleeps: 1 } : {}) } });
 
   // ---------------------------------------------------------------- 6. the cell
   for (const p of L.placed.filter((x) => x.mech.soft)) {
