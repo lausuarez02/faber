@@ -1,0 +1,25 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "The DS3231 model of ds3231-rtc: I2C at 0x68, BCD time and date with century and 12/24-hour mode, the time latched at START, the oscillator-stop flag, control/aging registers and the temperature registers." },
+    "timing": { "level": "approx", "note": "The clock runs with simulation time, exactly (0 ppm). Writing the time restarts the second like the chip. Alarms are stored but never fire." },
+    "analog": { "level": "approx", "note": "Temperature is the temperature prop, rounded to 0.25 °C." },
+    "power": { "level": "approx", "note": "0.11 mA from VCC (datasheet ICCS at 3.3 V); the 0.58 mA temperature conversion every 64 s is not added. The coin cell is not modelled: the time survives power loss and lostPower is a prop." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "Registers 0x00-0x12 of the DS3231 (time, date, control, status, aging, temperature)",
+    "Setting the time (rtc.adjust) and the oscillator-stop flag (rtc.lostPower)",
+    "A scenario's clock and set_clock steps"
+  ],
+  "doesNotEmulate": [
+    "Alarms and the SQW / 32 kHz outputs (not broken out on this module)",
+    "Crystal drift and aging",
+    "The coin cell running down"
+  ],
+  "testOnRealDevice": [
+    "Which coin cell your module takes (CR1220 class on most; some sellers ship a rechargeable one) and that the time survives the board being unpowered",
+    "Whether your board has I2C pull-up resistors; with none, long wires need 4.7 kOhm to 3V3",
+    "The height once the socket is removed and wires are soldered"
+  ]
+}

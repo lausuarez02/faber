@@ -1,0 +1,29 @@
+{
+  "level": "behavioral",
+  "areas": {
+    "logic": { "level": "ok", "note": "I2C at 0x52 with registers 0x00-0x3F, auto-increment and wrap at 0x3F: BCD time and date (2000-2099) with 12/24-hour mode, a weekday the sketch can assign, PORF (cleared by writing 0), the UNIX time counter, user RAM, the EEPROM command interface (update 0x11, refresh 0x12, write one byte 0x21, read one byte 0x22) and the configuration mirror 0x30-0x37 (backup switchover, trickle charge)." },
+    "timing": { "level": "approx", "note": "The clock runs with simulation time, exactly (0 ppm); writing the seconds or the RESET bit restarts the second. Reads and writes are coherent as on the chip. The countdown timer, alarms and the periodic update interrupt are stored but never fire." },
+    "analog": { "level": "n/a", "note": "" },
+    "power": { "level": "approx", "note": "45 nA from VCC (datasheet typical at 3 V, I2C idle); the I2C current while talking and the 337 cell are not modelled. The time survives power loss whatever BSM says; a diagnostic says when the real chip would lose it." },
+    "radio": { "level": "n/a", "note": "" }
+  },
+  "emulates": [
+    "Time and date registers 0x00-0x06 in BCD, 12/24-hour mode (Control 2 bit 1)",
+    "The 32-bit UNIX time counter 0x1B-0x1E, independent of the calendar",
+    "PORF and the other status flags (cleared by writing 0)",
+    "EEPROM commands and the configuration mirror, with diagnostics for the backup switchover left off and trickle charging a primary cell",
+    "A scenario's clock and set_clock steps"
+  ],
+  "doesNotEmulate": [
+    "Alarms, the countdown timer, the periodic update and the INT pin",
+    "CLKOUT, the event input and time stamps",
+    "Password write protection",
+    "Crystal drift and the frequency offset",
+    "The backup cell running down or the switchover itself"
+  ],
+  "testOnRealDevice": [
+    "Enable the backup switchover once (BSM = 11) and check the time survives the board unpowered",
+    "Which library you use (no RTClib driver; Pimoroni's examples and the RV-3028-C7 Arduino library differ)",
+    "Drift over weeks (about 1 s in a million at 25 °C, factory calibrated)"
+  ]
+}

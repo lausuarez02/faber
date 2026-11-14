@@ -205,7 +205,10 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
     if (p === boardPart || cams.includes(p) || skip.has(p.type)) continue;
     const s = spec(p.type);
     if (!s || s.category === "board") continue;
-    const typ = s.current_ma?.typ ?? 0;
+    // round 17: a module whose power LED is off (prop powerLed false, the LED desoldered) draws without it
+    const ledmA = typeof s.limits?.powerLedmA === "number" ? s.limits.powerLedmA : 0;
+    const ledOff = ledmA > 0 && p.props?.powerLed === false;
+    const typ = Math.max(0, (s.current_ma?.typ ?? 0) - (ledOff ? ledmA : 0));
     const isAmp = (s.tags ?? []).some((t) => /i2s|amplifier/.test(t)) || /amp|max98357/i.test(p.type);
     const isDisplay = s.category === "display" || /tft|oled|lcd|display/i.test(p.type);
     if (isAmp) {
@@ -239,7 +242,7 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
     }
     if (!typ) continue;
     const d = pick([p.id, ...(isDisplay ? ["display"] : [])], "always", `${p.id} (${s.name}) is on all the time${isDisplay ? " (screen and backlight)" : ""}; set power.duty.${isDisplay ? "display" : p.id} if the firmware turns it off`);
-    loads.push({ load: isDisplay ? `screen (${s.name})` : s.name, part: p.id, active_ma: typ, idle_ma: 0, duty: dutyFraction(d), duty_text: dutyText(d), avg_ma: 0, source: `${s.name} part data (current_ma.typ ${typ} mA)` });
+    loads.push({ load: isDisplay ? `screen (${s.name})` : s.name, part: p.id, active_ma: typ, idle_ma: 0, duty: dutyFraction(d), duty_text: dutyText(d), avg_ma: 0, source: `${s.name} part data (current_ma.typ ${s.current_ma?.typ ?? 0} mA${ledOff ? `, minus its ${ledmA} mA power LED: powerLed is false` : ledmA ? `, of which ${ledmA} mA is its power LED` : ""})` });
   }
 
   for (const l of loads) if (!l.avg_ma) l.avg_ma = l.active_ma * l.duty + l.idle_ma * (1 - l.duty);
@@ -256,6 +259,16 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
     const need = Math.ceil((target * avg) / USABLE);
     const cell = LIPO_CELLS.find((c) => c.mAh >= need);
     suggestions.push(cell ? `a ${cell.mAh} mAh cell (${cell.code}, ${cell.w} x ${cell.h} x ${cell.d} mm) lasts about ${round1((cell.mAh * USABLE) / avg)} h: set_part_property ${lipo!.id} capacity ${cell.mAh}` : `about ${need} mAh would last ${target} h, more than the biggest pouch cell Jumper knows (1000 mAh, 523450): cut the average current instead`);
+  }
+  // round 17: a module's power LED that burns most of the budget (the ZS-042 DS3231's is 15x the clock)
+  for (const l of opts.suggest === false || cap === undefined ? [] : out.slice(0, 3)) {
+    const part = project.parts.find((x) => x.id === l.part);
+    const ps = part ? spec(part.type) : undefined;
+    const led = typeof ps?.limits?.powerLedmA === "number" ? ps.limits.powerLedmA : 0;
+    if (!part || !led || part.props?.powerLed === false || l.share < 15) continue;
+    const alt = powerBudget({ ...project, parts: project.parts.map((x) => (x === part ? { ...x, props: { ...x.props, powerLed: false } } : x)) }, registry, firmwareSource, prof, { suggest: false });
+    const smaller = (registry.list?.() ?? []).filter((d) => d.spec.id !== ps!.id && (d.spec.tags ?? []).some((t) => (ps!.tags ?? []).includes(t) && /^(rtc|real time clock)$/.test(t)) && (d.spec.current_ma?.typ ?? Infinity) < ((ps!.current_ma?.typ ?? 0) - led) * 2).map((d) => d.spec.id);
+    if (alt.hours !== undefined && hours !== undefined) suggestions.push(`${l.load} draws ${l.share} % of the average, ${led} mA of it its power LED: desolder the LED (or cut its jumper), then set_part_property ${part.id} powerLed false → about ${alt.hours} h on the same cell${smaller.length ? `; or use a module without one (${smaller.join(", ")})` : ""}`);
   }
   // what would help most: the biggest load that is on all the time and could be duty-cycled
   for (const l of opts.suggest === false ? [] : out.slice(0, 3)) {

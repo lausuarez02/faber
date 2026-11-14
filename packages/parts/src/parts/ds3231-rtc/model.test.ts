@@ -91,6 +91,30 @@ describe("ds3231-rtc: registers", () => {
   });
 });
 
+describe("ds3231-rtc: the ZS-042's power LED (round 17)", () => {
+  const supplymA = (props: Record<string, unknown>, volts: number) => {
+    const b = mount(def, { id: "rtc", props, wiring: { VCC: "v", GND: GROUND } });
+    const r = b.solve((c) => c.voltageSource("v", GROUND, volts, 0.01, { id: "src" }));
+    return { mA: r.current("src") * 1000, b };
+  };
+
+  it("draws about 15 times the clock with its LED, the chip's 0.11 mA without", () => {
+    const on = supplymA({}, 5);
+    expect(on.mA).toBeCloseTo(2.01, 1);
+    expect(on.b.model.visualState()).toMatchObject({ powerLed: true });
+    const off = supplymA({ powerLed: false }, 3.3);
+    expect(off.mA).toBeCloseTo(0.11 * 3.3 / 5, 2);
+    expect(off.b.model.visualState()).toMatchObject({ powerLed: false });
+  });
+
+  it("warns that a 5 V supply charges the CR2032, and says what to do", () => {
+    const { b } = supplymA({}, 5);
+    const d = b.model.diagnostics!().find((x) => x.code === "rtc-charges-coin-cell");
+    expect(d?.message).toMatch(/not rechargeable.*Fix: run the module from 3.3 V, or remove the diode/);
+    expect(supplymA({}, 3.3).b.model.diagnostics!().some((x) => x.code === "rtc-charges-coin-cell")).toBe(false);
+  });
+});
+
 describe("ds3231-rtc: real firmware (RTClib)", { timeout: 120_000 }, () => {
   it("prints the start time and counts seconds", () => {
     const sim = unoBench({ parts: [{ id: "rtc", type: "ds3231-rtc", x: 0, y: 0, props: { temperature: 21.5 } }], wires: i2cWires("rtc"), hex: "./example.hex", base: import.meta.url });
