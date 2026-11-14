@@ -10496,7 +10496,7 @@ export const partDefinitions: PartDefinition[] = [
           "max": 10000,
           "step": 10,
           "unit": "mAh",
-          "description": "Rated capacity. Pocket sizes: 150 mAh (402030), 500 mAh (503035), 1000 mAh (523450)."
+          "description": "Rated capacity. Common flat cells (thickness x width x length): 401730 4 x 17 x 30 mm about 150 mAh; 402030 4 x 20 x 30 mm about 190 mAh; 502030 5 x 20 x 30 mm 250 mAh; 503035 5 x 30 x 35 mm 500 mAh; 603030 6 x 30 x 30 mm about 500 mAh (squarer, thicker); 523450 5.2 x 34 x 50 mm 1000 mAh. A thin case: the thinnest that holds the days you need (estimate_power), and check the cell size the case report packs."
         },
         {
           "id": "soc",
@@ -10618,7 +10618,15 @@ export const partDefinitions: PartDefinition[] = [
         "wearable",
         "power",
         "cell",
-        "li-ion"
+        "li-ion",
+        "flat",
+        "thin",
+        "401730",
+        "402030",
+        "502030",
+        "503035",
+        "603030",
+        "523450"
       ],
       "mechanical": {
         "soft": true,

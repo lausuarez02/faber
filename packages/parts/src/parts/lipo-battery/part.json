@@ -9,7 +9,7 @@
   ],
   "size": { "w": 160, "h": 80 },
   "props": [
-    { "id": "capacity", "label": "Capacity", "type": "number", "default": 500, "min": 40, "max": 10000, "step": 10, "unit": "mAh", "description": "Rated capacity. Pocket sizes: 150 mAh (402030), 500 mAh (503035), 1000 mAh (523450)." },
+    { "id": "capacity", "label": "Capacity", "type": "number", "default": 500, "min": 40, "max": 10000, "step": 10, "unit": "mAh", "description": "Rated capacity. Common flat cells (thickness x width x length): 401730 4 x 17 x 30 mm about 150 mAh; 402030 4 x 20 x 30 mm about 190 mAh; 502030 5 x 20 x 30 mm 250 mAh; 503035 5 x 30 x 35 mm 500 mAh; 603030 6 x 30 x 30 mm about 500 mAh (squarer, thicker); 523450 5.2 x 34 x 50 mm 1000 mAh. A thin case: the thinnest that holds the days you need (estimate_power), and check the cell size the case report packs." },
     { "id": "soc", "label": "State of charge at start", "type": "number", "default": 100, "min": 0, "max": 100, "step": 1, "unit": "%", "description": "Charge when the simulation starts (or now, when changed while running)." },
     { "id": "protection", "label": "Protection circuit", "type": "boolean", "default": true, "description": "Most cells have a small protection board (DW01) that disconnects the cell below about 2.5 V." },
     { "id": "speedup", "label": "Drain speed-up (for tests)", "type": "number", "default": 1, "min": 1, "max": 3600, "step": 1, "unit": "×", "description": "Multiplies how fast charge is used or added, so a test can watch hours of discharge in seconds. 1 = real time. Anything else is NOT realistic and shows in the label." }
@@ -35,7 +35,7 @@
     { "key": "fillWidth", "type": "number", "description": "Width of the charge bar in the SVG (px)." },
     { "key": "fillColor", "type": "string", "description": "Colour of the charge bar (green, amber, red)." }
   ],
-  "tags": ["lipo", "li-po", "lithium", "battery", "1s", "3.7v", "pouch", "rechargeable", "pocket", "portable", "wearable", "power", "cell", "li-ion"],
+  "tags": ["lipo", "li-po", "lithium", "battery", "1s", "3.7v", "pouch", "rechargeable", "pocket", "portable", "wearable", "power", "cell", "li-ion", "flat", "thin", "401730", "402030", "502030", "503035", "603030", "523450"],
   "mechanical": {
     "soft": true,
     "source": "503035 pouch cell (35 x 30 x 5 mm, 500 mAh); allow 10 % swell"

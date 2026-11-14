@@ -101,3 +101,36 @@ describe("round 17: get_part says which RTC to pick", () => {
     expect(rv.example).toMatch(/const uint8_t RV3028 = 0x52;[\s\S]*Wire\.beginTransmission\(RV3028\)/);
   });
 });
+
+import { LIPO_POUCH_CELLS, thinnestCell } from "@jumper/parts";
+import { LIPO_CELLS } from "@jumper/enclosure";
+
+describe("round 17: the flat LiPo cells", () => {
+  it("the catalog lists the common thin cells with real sizes, and the thinnest pick for a capacity", () => {
+    const codes = LIPO_POUCH_CELLS.map((c) => c.code);
+    for (const c of ["401730", "402030", "502030", "503035", "603030"]) expect(codes).toContain(c);
+    for (const c of LIPO_POUCH_CELLS) {
+      // the code is the size: thickness in 0.1 mm, then width and length
+      expect(Number(c.code.slice(0, 2)) / 10).toBeCloseTo(c.d, 1);
+      expect([Number(c.code.slice(2, 4)), Number(c.code.slice(4, 6))].sort()).toEqual([c.w, c.h].sort());
+      expect(c.source.length).toBeGreaterThan(10);
+    }
+    expect(thinnestCell(150)?.code).toBe("401730");
+    expect(thinnestCell(400, 5)?.code).toBe("503035");
+    expect(thinnestCell(400, 4)).toBeUndefined();
+    const lipo = registry.get("lipo-battery")!.spec;
+    expect(lipo.tags).toEqual(expect.arrayContaining(["402030", "502030", "503035", "603030"]));
+  });
+
+  it("the case engine packs the same cell sizes for the codes both know", () => {
+    // The enclosure's own table (capacity -> cell) is owned by the case track; this keeps the sizes
+    // agreeing. Cells it does not know yet are listed so the gap is visible (see the round 17 notes).
+    for (const e of LIPO_CELLS) {
+      const p = LIPO_POUCH_CELLS.find((c) => c.code === e.code);
+      expect(p, `enclosure cell ${e.code} is missing from LIPO_POUCH_CELLS`).toBeDefined();
+      expect([p!.w, p!.h, p!.d].sort((a, b) => a - b)).toEqual([e.w, e.h, e.d].sort((a, b) => a - b));
+    }
+    const notInCase = LIPO_POUCH_CELLS.filter((c) => !LIPO_CELLS.some((e) => e.code === c.code)).map((c) => c.code);
+    expect(notInCase.every((c) => ["603030"].includes(c))).toBe(true);
+  });
+});
