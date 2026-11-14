@@ -131,6 +131,8 @@ export function processBackendOf(project = useJumper.getState().project): { boar
 
 /** How long one Run of a process backend simulates in the session (virtual ms). */
 export const PROCESS_RUN_MS = 3000;
+/** Then up to this much more while a part's picture is mid-change (an e-paper refresh takes ~2 s). */
+export const PROCESS_SETTLE_MS = 8000;
 
 /** Run pressed on the followed page: latest firmware, then the simulation here. */
 export async function runFollowed(): Promise<void> {
@@ -140,11 +142,11 @@ export async function runFollowed(): Promise<void> {
   const proc = processBackendOf(p);
   if (proc) {
     useJumper.getState().setSimError(undefined);
-    if (!sendLiveCommand("run", { ms: PROCESS_RUN_MS, reset: true })) {
+    if (!sendLiveCommand("run", { ms: PROCESS_RUN_MS, settle_ms: PROCESS_SETTLE_MS, reset: true })) {
       refuse(`${proc.name} runs in ${emulatorName(proc.backend)} next to jumper serve, and this page is not connected to it. Fix: wait for the Live bar to say connected (or restart \`jumper serve\`), then press Run again.`);
       return;
     }
-    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in ${emulatorName(proc.backend)}`, detail: `The firmware runs in the emulator on this computer (natively, or in Docker) for ${PROCESS_RUN_MS / 1000} s of device time; the canvas shows that run. The first run starts the emulator (a few seconds).` });
+    useJumper.getState().toast({ kind: "info", title: `Running ${proc.name} in ${emulatorName(proc.backend)}`, detail: `The firmware runs in the emulator on this computer (natively, or in Docker) for ${PROCESS_RUN_MS / 1000} s of device time (longer if an e-paper screen is still refreshing); the canvas shows that run. The first run starts the emulator (a few seconds).` });
     return;
   }
   const needsFirmware = !!p.firmware || p.parts.length === 0;

@@ -1494,7 +1494,7 @@ export class ProjectSession {
     return { host: this.host, ...(had ? { restarted: "the circuit or firmware changed, so the simulation restarted at 0 ms" } : {}) };
   }
 
-  async run(args: { ms?: number; duration_ms?: number; speed?: number; reset?: boolean; frames?: boolean; serial_write?: string; seed?: number | null; reset_board?: boolean; clock?: string | null }, ctx: OpCtx): Promise<unknown> {
+  async run(args: { ms?: number; duration_ms?: number; settle_ms?: number; speed?: number; reset?: boolean; frames?: boolean; serial_write?: string; seed?: number | null; reset_board?: boolean; clock?: string | null }, ctx: OpCtx): Promise<unknown> {
     const ms = Number(args.ms ?? args.duration_ms ?? 1000);
     // Round 14: the hardware RNG seed (a change restarts at 0 ms), NTP's clock, a board reboot.
     if (args.seed !== undefined) {
@@ -1526,6 +1526,17 @@ export class ProjectSession {
     const sinks = host.sim.i2s.list().filter((d) => d.sink).map((d) => d.partId);
     const rec = sinks.length ? recordI2s(host.sim, host.timeMs) : undefined;
     await host.runAsync(ms, { frameMs, onFrame: (f) => frames.push(f) });
+    // A part whose picture is mid-change (an e-paper refresh takes ~2 s) would leave a short run
+    // showing the old picture: with settle_ms, keep running in small steps until it lands.
+    const settleMax = Math.max(0, Math.min(Number(args.settle_ms ?? 0) || 0, 30_000));
+    let settled = 0;
+    const settling = () => host.sim.partIds().filter((id) => host.sim.partState(id)?.settling === true);
+    while (settleMax > 0 && settled < settleMax && settling().length) {
+      const step = Math.min(250, settleMax - settled);
+      await host.runAsync(step, { frameMs, onFrame: (f) => frames.push(f) });
+      settled += step;
+    }
+    const stillSettling = settleMax > 0 ? settling() : [];
     const wallMs = Date.now() - wall0;
     ctx.frames = limitColorFrames(frames); // round 6 frames: colour screens, thinned for the log
     const audio = rec ? saveRunAudio(this.dir, ctx.seq, rec.stop(), host.timeMs - t0, sinks) : undefined;
@@ -1547,6 +1558,8 @@ export class ProjectSession {
       ...(audio ? { audio: `${audio.parts.join(", ")} played I2S audio (peak ${Math.round(20 * Math.log10(Math.max(audio.peak, 1e-6)))} dBFS); the page plays it with the run (GET /api/audio/${audio.file})` } : {}),
       t_ms: round(host.timeMs),
       ran_ms: round(host.timeMs - t0),
+      ...(settled ? { settled_ms: settled, settle_note: `ran ${settled} ms more so a screen could finish its refresh` } : {}),
+      ...(stillSettling.length ? { settle_warning: `${stillSettling.join(", ")} still mid-refresh after ${settled} ms more. Why: its refresh is longer than settle_ms. Fix: run longer, or pass a bigger settle_ms.` } : {}),
       speed: `${round(ms / Math.max(1, wallMs))}x real time`,
       wall_ms: wallMs,
       serial: serial.length > 3000 ? `…${serial.slice(-3000)}` : serial,

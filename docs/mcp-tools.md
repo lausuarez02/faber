@@ -295,6 +295,7 @@ Run the simulation for ms of virtual time (deterministic, faster than real time;
 | --- | --- | --- | --- |
 | `ms` | number | yes | Virtual ms to simulate, e.g. 2000 (max 600000). |
 | `reset` | boolean |  | Restart from 0 ms first. |
+| `settle_ms` | number |  | Then keep running (up to this many more ms, max 30000) while a part's picture is mid-change, e.g. an e-paper refresh (~2 s), so the screen shows the finished image. Returns settled_ms. |
 | `serial_write` | string |  | Text sent to the board's console before running, e.g. "print(2 + 2)\n" at a MicroPython REPL. |
 | `speed` | number |  | Ignored headless (always as fast as possible); kept for compatibility. |
 | `seed` | number \| null |  | Round 14: seed the board's hardware random numbers (esp_random, random()) so 'random' behaviour repeats; a new seed restarts at 0 ms; null = random again. Scenarios are seeded per test automatically. |
@@ -387,7 +388,7 @@ Run all scenarios (or one by id/name), each from a fresh simulation at 0 ms. Bui
 
 ### check_design
 
-Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch; while the sketch is still the starter template this is an info reminder), Serial pins in use, power budget of the board's 5V rail (servos, motor drivers fed from it; loads on a battery do not count), pinless parts not used by the world, plus live simulator diagnostics (overcurrent, floating inputs) after a run, and, once a case is built, how the parts go into it (assembly-close, assembly-insert, assembly-solder, assembly-wires, assembly-access, assembly-battery, assembly-screws, assembly-held: get_assembly_plan has the steps). Each issue says what, why and the fix. Run it after wiring and before trusting a design.
+Electrical sanity check: LED without resistor, shorts, supply rails tied together, 5 V on a 3.3 V pin, modules with VCC/GND unconnected, I2C on the wrong pins, shared I2C addresses, missing I2C pull-ups, GPIO wired straight to a rail, two outputs on one net, motors on a GPIO, buttons without pull-up (reads the sketch; while the sketch is still the starter template this is an info reminder), Serial pins in use, power budget of the board's 5V rail (servos, motor drivers fed from it; loads on a battery do not count), pinless parts not used by the world, plus live simulator diagnostics (overcurrent, floating inputs) after a run, and, once a case is built, how the parts go into it (assembly-close, assembly-insert, assembly-solder, assembly-wires, assembly-access, assembly-battery, assembly-screws, assembly-held: get_assembly_plan has the steps; and a held object's held-object / held-sensor warnings, e.g. a lid sensor that would not notice the lid coming off). Each issue says what, why and the fix. Run it after wiring and before trusting a design.
 
 No arguments.
 

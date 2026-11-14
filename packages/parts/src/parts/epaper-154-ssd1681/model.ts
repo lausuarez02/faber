@@ -132,6 +132,8 @@ export const create: PartModelFactory = (ctx): PartModel => {
         blank: black === 0,
         busy,
         refreshing: busy && (busyWhat === "full" || busyWhat === "partial"),
+        // generic: the picture is mid-change, a short run should go on until it lands (session run settle_ms)
+        settling: busy && (busyWhat === "full" || busyWhat === "partial"),
         refreshes: chip.fullRefreshes + chip.partialRefreshes,
         fullRefreshes: chip.fullRefreshes,
         partialRefreshes: chip.partialRefreshes,

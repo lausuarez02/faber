@@ -57,12 +57,12 @@ describe("epaper-154-ssd1681", () => {
     cmd(0x22, 0xf7);
     cmd(0x20);
     expect(b.solve().voltage("busy")).toBeCloseTo(3.3, 1);
-    expect(st()).toMatchObject({ refreshing: true, current_ma: 8 });
+    expect(st()).toMatchObject({ refreshing: true, settling: true, current_ma: 8 });
     b.advance(1900);
     expect(st().lit).toBe(0); // still refreshing
     b.advance(200);
     expect(b.solve().voltage("busy")).toBeLessThan(0.05);
-    expect(st()).toMatchObject({ lit: 10_000, fullRefreshes: 1, pending: false, analogOn: false });
+    expect(st()).toMatchObject({ lit: 10_000, fullRefreshes: 1, pending: false, analogOn: false, settling: false });
     // 0xF7 turns the supplies off at the end: the module idles at microamps
     expect(st().current_ma as number).toBeLessThan(0.05);
     const f = b.model.framebuffer!();
