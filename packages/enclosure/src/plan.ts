@@ -36,6 +36,13 @@ export interface Plan {
   poly?: Pt[];
   ctrl?: Pt[];
   w0?: number;
+  /**
+   * Round 17: a preset shape at a fixed size (or one that follows a held object) is drawn exactly
+   * for the CAD kernel: a circle, or a rounded rectangle whose OUTER corner radius is `r` x the outer
+   * half size (the smaller of the two). Booleans and fillets on lines and arcs are fast and sound;
+   * on the 64-pole B-spline they took minutes (round 17: a 2 mm rim on a fixed-size box).
+   */
+  exact?: { shape: "circle" | "rrect"; r: number };
 }
 
 /** A point that must be inside the cavity, with the extra inset needed at its depth (front / back fillet). */
@@ -335,6 +342,19 @@ export function planDrawing(r: any, p: Plan, offset = 0): any {
       }
     }
     return d;
+  }
+  if (p.kind === "poly" && p.exact) {
+    const w0e = p.w0 ?? 0;
+    const off = offset - w0e;
+    const A = p.a + w0e + off;
+    const B = p.b + w0e + off;
+    let e;
+    if (p.exact.shape === "circle") e = r.drawCircle((A + B) / 2);
+    else {
+      const rc = p.exact.r * Math.min(p.a + w0e, p.b + w0e) + off;
+      e = rc > 0.05 ? r.drawRoundedRectangle(2 * A, 2 * B, Math.min(rc, Math.min(A, B) - 1e-3)) : r.drawRectangle(2 * A, 2 * B);
+    }
+    return e.translate(p.cx, p.cy);
   }
   let d;
   const { a, b } = p;

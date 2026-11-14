@@ -433,6 +433,13 @@ export function stackLayout(input: LayoutInput, opts: LayoutOptions = {}): Layou
   return best;
 }
 
+/** Round 17: the exact CAD outline of a preset shape at a fixed size (half sizes A x B, mm), or undefined (an ellipse: its offsets are not ellipses). */
+function exactPreset(shape: CaseShape, A: number, B: number, corner: number): Plan["exact"] {
+  if (shape === "pebble" || shape === "puck") return Math.abs(A - B) < 1e-6 ? { shape: "circle", r: 0 } : undefined;
+  const r = shape === "pill" ? Math.min(A, B) - 1e-3 : Math.max(0.5, Math.min(corner, A - 0.01, B - 0.01));
+  return { shape: "rrect", r: r / Math.min(A, B) };
+}
+
 /** How far a fixed size is from holding the parts (0 = fits): the packer keeps the layout closest to fitting. */
 function overflow(L: Layout): number {
   const f = L.fit;
@@ -466,6 +473,8 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
     else [A0, B0] = [po.w / 2, po.h / 2];
   }
   const polySpec = po ? { poly: po.poly, ctrl: po.ctrl, w0: t, A0, B0, fixed: fixedWH, quick } : undefined;
+  // round 17: a preset at a fixed size is drawn exactly in CAD (a circle, a rounded rectangle)
+  const exact: Plan["exact"] = shape !== "custom" && po ? exactPreset(shape, A0, B0, params.corner_radius_mm) : undefined;
   const issues: FitCheck[] = [];
   const exclude = new Set(enc.exclude ?? []);
   const outside: Layout["outside"] = [];
@@ -1055,7 +1064,7 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
   const outlineMisses: LayoutFit["outlineMisses"] = [];
   if (polySpec) {
     const sp = sizePoly(needs, polySpec);
-    plan = sp.plan;
+    plan = exact ? { ...sp.plan, exact } : sp.plan;
     fitScale = sp.scale;
     if (!polySpec.fixed) {
       // auto: never under 15 mm across (the smallest case that prints well)

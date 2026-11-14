@@ -126,6 +126,18 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   }
   checks.push(watertight.length ? { id: "watertight", ok: false, severity: "error", message: `Not every printable file is a closed solid: ${watertight.join("; ")}. Why: a boolean in the CAD kernel left a gap. Fix: change wall_mm or gap_mm a little and design again; report it if it persists.` } : { id: "watertight", ok: true, severity: "info", message: `All ${B.bodies.length} bodies are closed 2-manifolds (every edge shared by two triangles) with volume > 0.` });
 
+  // ---- round 17: the rims really got the radius planned (OpenCascade's fillet used to fail silently)
+  {
+    const got = { front: Math.round(B.rf * 10) / 10, back: Math.round(B.rfBack * 10) / 10 };
+    const want = { front: Math.round(L.rf * 10) / 10, back: Math.round(L.rfBack * 10) / 10 };
+    const short = (["front", "back"] as const).filter((f) => want[f] > 0.05 && (got[f] + 0.05 < want[f] || B.edgeHow === "chamfer" || B.edgeHow === "sharp"));
+    const how = B.edgeHow === "fillet" ? "filleted" : B.edgeHow === "lofted" ? "a lofted round-over (OpenCascade's fillet failed on this outline, so the rim is built from offset outlines)" : B.edgeHow === "chamfer" ? "chamfered in two facets (no round-over could be built)" : "sharp";
+    const facts = { front_mm: got.front, back_mm: got.back, planned_front_mm: want.front, planned_back_mm: want.back, how: B.edgeHow };
+    checks.push(short.length
+      ? { id: "edge-radius", ok: true, severity: "warning", facts, message: `The ${short.map((f) => `${f} edge is ${got[f]} mm (${how}), not the ${want[f]} mm planned`).join("; the ")}. Why: ${B.edgeWhy || "OpenCascade could not round this outline at the full radius"}. Fix: ${B.edgeWhy ? "a thicker wall (wall_mm 2) allows a larger round-over, or accept this one" : "a smoother outline (larger corner_radius_mm, fewer tight curves) or a smaller edge_radius_front_mm / edge_radius_back_mm, and design again"}.` }
+      : { id: "edge-radius", ok: true, severity: "info", facts, message: `Front edge rounded ${got.front} mm, back edge ${got.back} mm, as planned (${B.edgeHow === "fillet" ? "filleted" : B.edgeHow === "lofted" ? "lofted round-over" : B.edgeHow}).` });
+  }
+
   // ---- no part body intersects the shell
   const hits: string[] = [];
   const shells = B.bodies.filter((b) => b.kind === "shell");

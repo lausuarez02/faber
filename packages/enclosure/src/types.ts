@@ -45,6 +45,7 @@ export type FitCheckId =
   | "camera-view" // round 14: a camera lens has its hole, and the field of view clears the wall
   | "held-object" // round 15: a held object's room, opening and walls
   | "held-sensor" // round 15: a sensor that must sit next to a held object
+  | "edge-radius" // round 17: the front / back rims got the radius planned (fillet, lofted round-over, chamfer)
   | "min-wall" // every wall >= min (1.2 mm FDM)
   | "printable" // no overhang needing support except where listed
   | "watertight" // every STL is a closed 2-manifold with volume > 0

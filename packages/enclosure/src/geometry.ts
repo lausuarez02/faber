@@ -14,6 +14,9 @@ import type { CaseFile, Vec3 } from "./types.ts";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Solid = any;
 
+/** The thinnest wall a rim may leave between the rounded outside and the cavity's corner, mm. */
+const RIM_WALL = 1.25;
+
 export interface Body {
   /** "front", "back", "cap-<part>", "light-pipe-<part>", "belt-clip". */
   name: string;
@@ -34,6 +37,10 @@ export interface Built {
   cavity: Solid;
   rf: number;
   rfBack: number;
+  /** Round 17: how the rims were rounded (fillet, lofted round-over, chamfer, sharp). */
+  edgeHow: EdgeHow;
+  /** Round 17: why a rim got less than planned (empty: as planned, or the kernel could not round it). */
+  edgeWhy: string;
   notes: string[];
   screws?: { count: number; size: string; inserts: string };
 }
@@ -99,28 +106,97 @@ export function sound(s: Solid): boolean {
   }
 }
 
-/** Extrude the plan from z0 to z1 and round the top perimeter with radTop, the bottom with radBot (falls back to smaller radii). */
-function roundedSlab(r: Replicad, drawing: Solid, z0: number, z1: number, radTop: number, radBot = radTop): { solid: Solid; r: number; rBack: number } {
-  const base = drawing.sketchOnPlane("XY", z0).extrude(z1 - z0);
-  for (const k of [1, 0.75, 0.5, 0.3]) {
-    const a = radTop * k < 0.05 ? base : tryFillet(base, radTop * k, z1);
-    const b = a && radBot * k >= 0.05 ? tryFillet(a, radBot * k, z0) : a;
-    if (b) return { solid: b, r: radTop * k < 0.05 ? 0 : radTop * k, rBack: radBot * k < 0.05 ? 0 : radBot * k };
+/** How a front / back rim came out: a true fillet, a lofted round-over (OpenCascade could not fillet it), a chamfer, or sharp. */
+export type EdgeHow = "fillet" | "lofted" | "chamfer" | "sharp";
+
+export interface Rounded {
+  solid: Solid;
+  /** The radius each rim really got, mm (0 = sharp). */
+  r: number;
+  rBack: number;
+  how: EdgeHow;
+}
+
+/**
+ * Round 17: a slab with rounded rims built without a fillet: each rim is a smooth loft through
+ * exact offsets of the outline along a quarter circle (`segs` + 1 sections; segs 1 = a 45° chamfer,
+ * ruled), fused to the straight extruded band between them. OpenCascade's fillet fails silently on
+ * some outlines (round 15: an arc meeting straight sides came out sharp); a loft through concentric
+ * offsets does not. `drawingAt(inset)` is the outline `inset` mm inside the full one.
+ */
+export function loftedSlab(drawingAt: (inset: number) => Solid, z0: number, z1: number, rT: number, rB: number, segs = 4): Solid | undefined {
+  try {
+    if (rT + rB > z1 - z0 + 1e-6) return undefined;
+    const rim = (zFace: number, rr: number, dir: 1 | -1): Solid => {
+      const sk = Array.from({ length: segs + 1 }, (_, k) => {
+        const a = (k / segs) * (Math.PI / 2);
+        return drawingAt(rr * (1 - Math.sin(a))).sketchOnPlane("XY", zFace + dir * rr * (1 - Math.cos(a)));
+      });
+      return sk[0].loftWith(sk.slice(1), { ruled: segs === 1 });
+    };
+    const zb = z0 + (rB > 0.05 ? rB : 0);
+    const zt = z1 - (rT > 0.05 ? rT : 0);
+    let s: Solid | undefined = zt - zb > 0.01 ? drawingAt(0).sketchOnPlane("XY", zb).extrude(zt - zb) : undefined;
+    if (rB > 0.05) s = s ? s.fuse(rim(z0, rB, 1)) : rim(z0, rB, 1);
+    if (rT > 0.05) s = s ? s.fuse(rim(z1, rT, -1)) : rim(z1, rT, -1);
+    return s && sound(s) ? s : undefined;
+  } catch {
+    return undefined;
   }
-  void r;
-  return { solid: base, r: 0, rBack: 0 };
+}
+
+/**
+ * Round 17: the rounded slab, never silently sharp: a fillet at the asked radii, else the lofted
+ * round-over at those radii, else both again at smaller radii, else a chamfer; what it came to is
+ * returned (and reported).
+ */
+export function roundedOuter(drawingAt: (inset: number) => Solid, z0: number, z1: number, rT: number, rB: number, opts: { fillet?: boolean; loft?: boolean } = {}): Rounded {
+  const base = () => drawingAt(0).sketchOnPlane("XY", z0).extrude(z1 - z0);
+  const sharp0 = rT < 0.05 && rB < 0.05;
+  if (sharp0) return { solid: base(), r: 0, rBack: 0, how: "fillet" };
+  for (const k of [1, 0.75, 0.5, 0.3]) {
+    const a = rT * k;
+    const b = rB * k;
+    if (opts.fillet !== false) {
+      let s: Solid | undefined = base();
+      if (a >= 0.05) s = tryFillet(s, a, z1);
+      if (s && b >= 0.05) s = tryFillet(s, b, z0);
+      if (s) return { solid: s, r: a < 0.05 ? 0 : a, rBack: b < 0.05 ? 0 : b, how: "fillet" };
+    }
+    const l = opts.loft === false ? undefined : loftedSlab(drawingAt, z0, z1, a < 0.05 ? 0 : a, b < 0.05 ? 0 : b);
+    if (l) return { solid: l, r: a < 0.05 ? 0 : a, rBack: b < 0.05 ? 0 : b, how: "lofted" };
+  }
+  for (const k of opts.loft === false ? [] : [1, 0.5]) {
+    const c = loftedSlab(drawingAt, z0, z1, rT * k < 0.05 ? 0 : rT * k, rB * k < 0.05 ? 0 : rB * k, 1);
+    if (c) return { solid: c, r: rT * k < 0.05 ? 0 : rT * k, rBack: rB * k < 0.05 ? 0 : rB * k, how: "chamfer" };
+  }
+  return { solid: base(), r: 0, rBack: 0, how: "sharp" };
+}
+
+/** Extrude the plan from z0 to z1 and round the top perimeter with radTop, the bottom with radBot (falls back to a lofted round-over, smaller radii, a chamfer). */
+function roundedSlab(r: Replicad, plan: Layout["plan"], offset: number, z0: number, z1: number, radTop: number, radBot = radTop, opts: { loft?: boolean } = {}): Rounded {
+  return roundedOuter((i) => planDrawing(r, plan, offset - i), z0, z1, radTop, radBot, opts);
 }
 
 /**
  * A curved shape's outer body: the outer plan extruded, domed by a sphere on each face (pebble),
  * every front / back rim edge rounded in 3D with one large fillet, then the domes cut flat at their
- * plateau. Falls back to smaller radii when OpenCascade cannot fillet the larger one.
+ * plateau. Falls back to smaller radii when OpenCascade cannot fillet the larger one. Round 17: a
+ * flat-faced body is first built as a lofted round-over when the full fillet fails (it never
+ * silently comes out sharp).
  */
-export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number): { solid: Solid; r: number; rBack: number } {
+export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number, rfT = L.rf, rfB = L.rfBack): Rounded {
   const d = L.dome;
   const cf = d?.front.crown ?? 0;
   const cb = d?.back.crown ?? 0;
-  let base = planDrawing(r, L.plan, L.params.wall_mm).sketchOnPlane("XY", zOutB - cb - 1).extrude(zOutF - zOutB + cf + cb + 2);
+  const t = L.params.wall_mm;
+  // flat faces: a fillet per rim plane, else the lofted round-over (exact offsets: a circle's is a
+  // revolved profile), smaller radii, a chamfer
+  if (!cf && !cb) {
+    const l = roundedOuter((i) => planDrawing(r, L.plan, t - i), zOutB, zOutF, rfT, rfB);
+    if (l.how !== "sharp") return l;
+  }
+  let base = planDrawing(r, L.plan, t).sketchOnPlane("XY", zOutB - cb - 1).extrude(zOutF - zOutB + cf + cb + 2);
   const sphere = (dm: NonNullable<Layout["dome"]>["front"], z0: number, sign: 1 | -1) => {
     const zc = z0 - sign * Math.sqrt(dm.R * dm.R - dm.S * dm.S);
     // turned so the sphere's poles and seam lie far outside the body (a seam on the face would be filleted)
@@ -132,9 +208,9 @@ export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number
   else base = base.intersect(r.makeBox([-1e3, -1e3, zOutB], [1e3, 1e3, 1e3]));
   const zMid = (zOutF + zOutB) / 2;
   const span = (zOutF - zOutB) / 2;
-  for (const k of [1, 0.85, 0.7, 0.55, 0.4, 0.25]) {
-    const rT = L.rf * k;
-    const rB = L.rfBack * k;
+  const fillet = (k: number): Rounded | undefined => {
+    const rT = rfT * k;
+    const rB = rfB * k;
     try {
       // the front and back rim edges only (a seam running front to back is not rounded)
       let s = base.fillet((e: Solid) => {
@@ -143,12 +219,17 @@ export function roundedBody(r: Replicad, L: Layout, zOutB: number, zOutF: number
         return bb.center[2] > zMid ? rT : rB;
       });
       s = s.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf]));
-      if (r.measureVolume(s) > 0 && sound(s)) return { solid: s, r: rT, rBack: rB };
+      if (r.measureVolume(s) > 0 && sound(s)) return { solid: s, r: rT, rBack: rB, how: "fillet" };
     } catch {
       // try a smaller radius
     }
+    return undefined;
+  };
+  for (const k of [1, 0.85, 0.7, 0.55, 0.4, 0.25]) {
+    const s = fillet(k);
+    if (s) return s;
   }
-  return { solid: base.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf])), r: 0, rBack: 0 };
+  return { solid: base.intersect(r.makeBox([-1e3, -1e3, zOutB - cb], [1e3, 1e3, zOutF + cf])), r: 0, rBack: 0, how: "sharp" };
 }
 
 /** The cutting tool of an opening; `jitter` (mm) nudges its size and start when OpenCascade fails on the exact one. */
@@ -174,19 +255,38 @@ export async function buildCase(L: Layout): Promise<Built> {
   const t = L.params.wall_mm;
   const tol = L.params.tolerance_mm;
   const notes: string[] = [];
-  const cav2d = () => planDrawing(r, L.plan, 0);
   const zOutF = L.zFront + t;
   const zOutB = L.zBack - t;
-  const outerR = L.kind === "rrect" && !L.dome ? roundedSlab(r, planDrawing(r, L.plan, t), zOutB, zOutF, L.rf, L.rfBack) : roundedBody(r, L, zOutB, zOutF);
-  const outer = outerR.solid;
-  const rf = outerR.r;
-  const rfBack = outerR.rBack;
-  if (rf + 1e-6 < L.rf) notes.push(`The rounded front / back edge is ${rf.toFixed(1)} mm instead of ${L.rf.toFixed(1)} mm (OpenCascade could not fillet the larger radius on this outline).`);
+  const prof = process.env.JUMPER_CASE_PROFILE ? (() => { let t0 = Date.now(); return (what: string) => { console.log(`[case] ${what} ${Date.now() - t0} ms`); t0 = Date.now(); }; })() : () => {};
+  // Round 17: a flat-faced case is built with sharp rims (every boolean on a plain extrusion is fast
+  // and sound) and rounded at the end by one intersection per shell with the rounded outer body; a
+  // domed one is rounded from the start (its rim is where the dome meets the side).
+  // The cavity first, filleted only (a lofted cavity makes OpenCascade's later fuses of ribs and
+  // sleeve walls fail on a B-spline outline): where it gets less than planned, the outer rim is
+  // kept small enough for the wall at the rim to stay MIN_WALL thick.
+  // A drawn (B-spline) outline keeps a square-cornered cavity: OpenCascade's fuses of sleeve walls
+  // into its filleted cavity leave the solid open (round 17, the round 15 pouch-tin outline).
+  const spline = L.plan.kind === "poly" && !L.plan.exact;
+  const cavR = roundedSlab(r, L.plan, 0, L.zBack, L.zFront, spline ? 0 : Math.max(0, L.rf - t), spline ? 0 : Math.max(0, L.rfBack - t), { loft: false });
+  const capR = (want: number, ric: number) => (ric + 0.01 >= want - t ? want : Math.min(want, Math.max(0, (Math.SQRT2 * (t + ric) - ric - RIM_WALL) / (Math.SQRT2 - 1))));
+  const rfT = capR(L.rf, cavR.r);
+  const rfB = capR(L.rfBack, cavR.rBack);
+  let edgeWhy = "";
+  if (rfT + 0.05 < L.rf || rfB + 0.05 < L.rfBack) edgeWhy = `the cavity's inner corner is ${spline ? "square on a drawn outline (OpenCascade cannot fuse the sleeve walls and ribs into a rounded one there)" : "rounded less than planned (OpenCascade could not fillet it)"}, and a larger outer round-over would leave the wall under ${RIM_WALL} mm at the rim`;
+  // Round 17: a flat-faced case is built with sharp rims (every boolean on a plain extrusion is fast
+  // and sound) and rounded at the end by one intersection per shell with the rounded outer body; a
+  // domed one is rounded from the start (its rim is where the dome meets the side).
+  let outerR = L.kind === "rrect" && !L.dome ? roundedSlab(r, L.plan, t, zOutB, zOutF, rfT, rfB) : roundedBody(r, L, zOutB, zOutF, rfT, rfB);
+  const roundLate = !L.dome && outerR.how !== "sharp" && (outerR.r > 0 || outerR.rBack > 0);
+  const outer = roundLate ? planDrawing(r, L.plan, t).sketchOnPlane("XY", zOutB).extrude(zOutF - zOutB) : outerR.solid;
   if (L.dome) notes.push(`Domed faces: the front rises ${L.dome.front.crown.toFixed(1)} mm and the back ${L.dome.back.crown.toFixed(1)} mm above the flat wall, with a flat ${(2 * L.dome.front.plateau).toFixed(0)} mm land around the window and a flat ${(2 * L.dome.back.plateau).toFixed(0)} mm pad on the back (each shell prints on its flat).`);
-  const cavity = roundedSlab(r, cav2d(), L.zBack, L.zFront, Math.max(0, rf - t), Math.max(0, rfBack - t)).solid;
+  const cavity = cavR.solid;
+  prof("outer + cavity");
   let shell = outer.cut(cavity);
+  prof("shell");
 
-  // tab (keychain / lanyard), part of the back shell
+  // tab (keychain / lanyard), part of the back shell (fused after the rims are rounded: it stands out of the outline)
+  let tabPiece: Solid | undefined;
   if (L.tab) {
     const ob = planBounds(L.plan, t);
     const tb = L.tab;
@@ -196,7 +296,8 @@ export async function buildCase(L: Layout): Promise<Built> {
     const rr = Math.min(tb.w / 2 - 0.01, 4);
     let tabS = r.drawRoundedRectangle(tb.w, h, rr).translate(tb.x, (top + bottom) / 2).sketchOnPlane("XY", tb.z0).extrude(tb.t);
     tabS = tabS.cut(r.makeCylinder(tb.hole / 2, tb.t + 2, [tb.x, top - tb.hole / 2 - 1.8, tb.z0 - 1], [0, 0, 1]));
-    shell = shell.fuse(tabS.cut(cavity));
+    tabPiece = tabS.cut(cavity);
+    if (!roundLate) shell = shell.fuse(tabPiece);
   }
 
   // part envelopes (bodies only, keep-outs not included) for the assembly STEP and the intersection check
@@ -235,6 +336,8 @@ export async function buildCase(L: Layout): Promise<Built> {
     for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) if (!contains(L.plan, x, y, inset)) return false;
     return true;
   };
+  // (round 17: against the rounded body even when the rims are rounded last: a piece filling the
+  // sharp corner the rounding then trims makes OpenCascade leave the fuse open)
   const clip = (s: Solid) => (inside(s) ? s : s.intersect(outer));
 
   // closure
@@ -336,8 +439,10 @@ export async function buildCase(L: Layout): Promise<Built> {
     if (dropped.length) notes.push(`The ${name} shell has ${dropped.length} rib / wall piece(s) left out, at ${dropped.join("; ")} mm. Why: fusing them broke the solid in OpenCascade (the printed file would have had a gap). Fix: change wall_mm, gap_mm or the outline a little and design again; the case still closes without them.`);
     return s;
   };
+  prof("closure + pieces");
   front = fuseAll(front, addF, "front");
   back = fuseAll(back, addB, "back");
+  prof("fuse pieces");
 
   // openings through whichever shell they cross (a cut whose box misses a shell's box is skipped)
   const boxOf = (x: Solid) => x.boundingBox.bounds as [Vec3, Vec3];
@@ -389,6 +494,7 @@ export async function buildCase(L: Layout): Promise<Built> {
       back = cutIf(back, spotTool);
     }
     // a grille's holes are cut in one boolean (a compound of the cylinders), from inside the cavity to past the outer surface
+    prof(`before ${o.kind} ${o.part}`);
     cutOpening(o, (j) => (o.holes ? r.makeCompound(o.holes.map((h) => cylAlong(r, h.d + j, -0.8 - Math.abs(j), len + 0.6, h.at, o.n))) : cutterFor(r, o, len, j)));
     if (o.insert) {
       const ins = o.insert;
@@ -401,6 +507,47 @@ export async function buildCase(L: Layout): Promise<Built> {
       }
     }
   }
+  prof("openings");
+  // round 17: the rims rounded last (one intersection per shell); never silently sharp: a lofted
+  // round-over, then a chamfer, when the fillet's intersection leaves a shell open
+  if (roundLate) {
+    const z0 = zOutB;
+    const z1 = zOutF;
+    const at = (i: number) => planDrawing(r, L.plan, t - i);
+    const tries: (() => Rounded | undefined)[] = [
+      () => outerR,
+      () => (outerR.how === "fillet" ? lofted(loftedSlab(at, z0, z1, outerR.r, outerR.rBack), "lofted") : undefined),
+      () => lofted(loftedSlab(at, z0, z1, outerR.r, outerR.rBack, 2), "chamfer"),
+    ];
+    function lofted(s: Solid | undefined, how: EdgeHow): Rounded | undefined {
+      return s ? { solid: s, r: outerR.r, rBack: outerR.rBack, how } : undefined;
+    }
+    let done = false;
+    for (const mk of tries) {
+      const o = mk();
+      if (!o) continue;
+      try {
+        const f = front.intersect(o.solid);
+        const b = back.intersect(o.solid);
+        if (!sound(f) || !sound(b)) continue;
+        front = f;
+        back = b;
+        outerR = o;
+        done = true;
+        break;
+      } catch {
+        // the next way of rounding
+      }
+    }
+    if (!done) outerR = { solid: outer, r: 0, rBack: 0, how: "sharp" };
+    if (tabPiece) {
+      const ob2 = tabPiece.boundingBox.bounds as [Vec3, Vec3];
+      if (ob2[1][2] <= L.split + 1e-6) back = back.fuse(tabPiece);
+      else front = front.fuse(tabPiece);
+    }
+    prof("rims rounded");
+  }
+  if (outerR.r + 1e-6 < L.rf || outerR.rBack + 1e-6 < L.rfBack || outerR.how === "chamfer") notes.push(`The front / back edges are ${outerR.how === "chamfer" ? "chamfered (two facets) " : outerR.how === "sharp" ? "sharp " : "rounded "}${outerR.r.toFixed(1)} / ${outerR.rBack.toFixed(1)} mm${outerR.how === "chamfer" ? "" : ` instead of ${L.rf.toFixed(1)} / ${L.rfBack.toFixed(1)} mm`}. Why: ${edgeWhy || "OpenCascade could not round the planned radius on this outline"}. Fix: ${edgeWhy ? "a thicker wall (wall_mm 2) allows a larger round-over, or accept this one" : "a smoother outline (larger corner_radius_mm) or smaller edge_radius_front_mm / edge_radius_back_mm, and design again"}.`);
   const sep = Math.max(12, (ob[1][2] - ob[0][2]) * 0.9);
   bodies.unshift(
     { name: "front", kind: "shell", shape: front, color, print: { face_down: "front", supports: false, note: "front face on the bed (the window side down), open side up" }, up: [0, 0, -1], explode: [0, 0, sep] },
@@ -419,7 +566,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   }
 
   void apply;
-  return { bodies, envelopes, outer, cavity, rf, rfBack, notes, ...(screws ? { screws } : {}) };
+  return { bodies, envelopes, outer: outerR.solid, cavity, rf: outerR.r, rfBack: outerR.rBack, edgeHow: outerR.how, edgeWhy, notes, ...(screws ? { screws } : {}) };
 }
 
 export function partColor(category: string): string {
