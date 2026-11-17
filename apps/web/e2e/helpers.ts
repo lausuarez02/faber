@@ -173,7 +173,9 @@ export async function requireFastWebGL(page: Page): Promise<void> {
  */
 export function hubPort(info: TestInfo, slot = 0): number {
   const base = Number(process.env.E2E_HUB_PORT_BASE ?? 7900);
-  const port = base + slot * 50 + info.parallelIndex * 2 + (info.project.name === "mobile" ? 1 : 0);
+  // E2E_HUB_PORT_STRIDE (default 50) packs the slots closer for a narrow port range, e.g. 2 with --workers=1.
+  const stride = Number(process.env.E2E_HUB_PORT_STRIDE ?? 50);
+  const port = base + slot * stride + info.parallelIndex * 2 + (info.project.name === "mobile" ? 1 : 0);
   if (port === 7780) throw new Error("hubPort would hand out 7780, which is reserved for a person's fabwright serve. Fix: set E2E_HUB_PORT_BASE to another range, e.g. 8000.");
   return port;
 }
