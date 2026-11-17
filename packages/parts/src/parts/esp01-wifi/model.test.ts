@@ -91,7 +91,7 @@ describe("esp01-wifi: real firmware (SoftwareSerial, AT 1.7 protocol)", () => {
     expect(out).toContain("WIFI GOT IP");
     expect(out).toContain("[joined]");
     expect(out).toContain("CONNECT");
-    expect(out).toContain("Recv 41 bytes");
+    expect(out).toContain("Recv 44 bytes");
     expect(out).toContain("SEND OK");
     expect(out).toContain("+IPD,44:HTTP/1.0 200 OK");
     expect(out).toContain("ok|hi!");

@@ -70,7 +70,7 @@ boot_app0 + app, as `esptool merge-bin` writes them), gzipped (the padding is 0x
 
 | Sketch | Image | Chip | What it does |
 | --- | --- | --- | --- |
-| `esp32_blink_io/esp32_blink_io.ino` | `esp32c3_blink_io.merged.bin.gz` | ESP32-C3 | Prints `hello from fabwright esp32`, toggles GPIO8 every 500 ms, mirrors GPIO4 to GPIO2 and prints `in4=<level>` |
+| `esp32_blink_io/esp32_blink_io.ino` | `esp32c3_blink_io.merged.bin.gz` | ESP32-C3 | Prints `hello from jumper esp32` (built before the rename to Fabwright), toggles GPIO8 every 500 ms, mirrors GPIO4 to GPIO2 and prints `in4=<level>` |
 | `esp32_i2c_probe/esp32_i2c_probe.ino` | `esp32_i2c_probe.merged.bin.gz` | ESP32 | I2C0 (SDA 21, SCL 22) scan, reads QEMU's built-in tmp105 at 0x48, writes `04 AA` to 0x3C, reads 4 bytes from register 2 |
 
 ```sh

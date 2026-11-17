@@ -147,7 +147,7 @@ print("fs", os.statvfs("/")[2], sorted(os.listdir("/")))
       be.load(out.hex!);
       for (let ms = 0; ms < 400 && !serial.includes(">>>"); ms++) be.step(125_000);
       expect(serial).toContain("scan [60]");
-      expect(serial).toContain(`fs 352 ['helper.py', '${USB_MAIN_FILE}', 'main.py']`);
+      expect(serial).toContain(`fs 352 [${["helper.py", USB_MAIN_FILE, "main.py"].sort().map((f) => `'${f}'`).join(", ")}]`);
       expect(edges).toEqual([0, 1, 0, 1]); // Pin(15, Pin.OUT) drives low first, then three toggles
       expect(writes).toEqual([0x80, 0xaf]);
     });

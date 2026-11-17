@@ -39,10 +39,11 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
   it("boots Blink: serial text and the LED pin toggling every 500 ms of virtual time", () => {
     const t0 = Date.now();
     const s = boot();
-    expect(s.be.hello).toMatch(/fabwright-esp32-bridge 6 esp32c3.gpio sync=1 feat=.*\bpads\b/);
+    // a QEMU built before the rename still says jumper-esp32-bridge (the name is not checked)
+    expect(s.be.hello).toMatch(/(fabwright|jumper)-esp32-bridge 6 esp32c3.gpio sync=1 feat=.*\bpads\b/);
     run(s.be, 2600);
     const wallMs = Date.now() - t0;
-    expect(s.serial).toContain("hello from fabwright esp32");
+    expect(s.serial).toContain("hello from jumper esp32"); // fixture built before the rename
     const led = s.edges.filter((e) => e.pin === "GPIO8");
     expect(led.length).toBeGreaterThanOrEqual(5);
     // The first toggle lands on the first loop() pass (millis() ≈ boot time), then every 500 ms.
