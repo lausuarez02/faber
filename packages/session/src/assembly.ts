@@ -4,8 +4,8 @@
 // soldered: hand-wired point to point (or on perfboard) inside a case, which is what a pocket device
 // is. The soldered style exports cut lists instead of breadboards: one line per wire with its length,
 // colour and gauge, so whoever builds it (the person, or a supplier) can cut and strip them up front.
-import { buildNets, type Project } from "@jumper/project-format";
-import type { PartRegistry, PartSpec } from "@jumper/sim-core";
+import { buildNets, type Project } from "@fabwright/project-format";
+import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
 
 export type AssemblyStyle = "breadboard" | "soldered";
 
@@ -25,7 +25,7 @@ export interface WireCut {
 /** Boards made to be built into something small: projects on them default to the soldered style. */
 const POCKET_BOARDS = new Set(["seeed-xiao-rp2040", "waveshare-rp2040-zero"]);
 
-/** The project's assembly style: jumper.json `assembly`, else soldered for a case or a pocket board, else breadboard. */
+/** The project's assembly style: fabwright.json `assembly`, else soldered for a case or a pocket board, else breadboard. */
 export function assemblyStyle(project: Project, registry: PartRegistry): AssemblyStyle {
   if (project.assembly) return project.assembly;
   if (project.enclosure) return "soldered";
@@ -37,7 +37,7 @@ export function assemblyStyle(project: Project, registry: PartRegistry): Assembl
 
 /** Why the style is what it is, in words (set_assembly, exports). */
 export function assemblyReason(project: Project, registry: PartRegistry): string {
-  if (project.assembly) return `set in jumper.json ("assembly": "${project.assembly}")`;
+  if (project.assembly) return `set in fabwright.json ("assembly": "${project.assembly}")`;
   if (project.enclosure) return "the project has a case, so it is hand-wired inside it";
   return assemblyStyle(project, registry) === "soldered" ? "the board is a pocket board, made to be soldered into something small" : "the default for a desk prototype on a full-size board";
 }

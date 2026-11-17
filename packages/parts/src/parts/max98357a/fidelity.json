@@ -27,7 +27,7 @@
     "Channel select and shutdown from the SD pin",
     "Gain from the GAIN strap",
     "Driving a speaker part (sounding, power)",
-    "The sound itself on the page that follows jumper serve: each run's I2S stream is kept as a WAV and played with WebAudio in step with the run (mono, 16 kHz; never under a test driver; the speaker's frequency response is not applied)"
+    "The sound itself on the page that follows fabwright serve: each run's I2S stream is kept as a WAV and played with WebAudio in step with the run (mono, 16 kHz; never under a test driver; the speaker's frequency response is not applied)"
   ],
   "doesNotEmulate": [
     "The waveform on the speaker (frequency response, distortion)",

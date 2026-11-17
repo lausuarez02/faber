@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Jumper: Figma for hardware, with a real simulator underneath.">
-  <title>Jumper</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Fabwright: Figma for hardware, with a real simulator underneath.">
+  <title>Fabwright</title>
   <defs>
-    <pattern id="jumper-card-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+    <pattern id="fabwright-card-grid" width="20" height="20" patternUnits="userSpaceOnUse">
       <circle cx="10" cy="10" r="1.6" fill="#2A3039"/>
     </pattern>
-    <radialGradient id="jumper-card-glow">
+    <radialGradient id="fabwright-card-glow">
       <stop offset="0" stop-color="#5CF2A1" stop-opacity=".55"/>
       <stop offset=".45" stop-color="#5CF2A1" stop-opacity=".16"/>
       <stop offset="1" stop-color="#5CF2A1" stop-opacity="0"/>
@@ -17,7 +17,7 @@
   </style>
 
   <rect width="1200" height="630" fill="#0D0F12"/>
-  <rect width="1200" height="630" fill="url(#jumper-card-grid)"/>
+  <rect width="1200" height="630" fill="url(#fabwright-card-grid)"/>
 
   <!-- wordmark -->
   <g transform="translate(72 64) scale(1.25)">
@@ -28,7 +28,7 @@
     <rect x="13.5" y="30" width="15" height="17" rx="2.5" fill="#E9EDF2"/>
     <rect x="40" y="10" width="6" height="3" rx="1" fill="#0D0F12" opacity=".28"/>
     <rect x="18" y="34" width="6" height="3" rx="1" fill="#0D0F12" opacity=".28"/>
-    <text class="display" x="64" y="47" font-size="52" letter-spacing="-1.5" fill="#E9EDF2">jumper</text>
+    <text class="display" x="64" y="47" font-size="52" letter-spacing="-1.5" fill="#E9EDF2">fabwright</text>
   </g>
 
   <!-- headline -->
@@ -59,7 +59,7 @@
     </g>
     <circle cx="72" cy="120" r="4" fill="#5CF2A1"/>
 
-    <!-- red jumper: D13 → resistor -->
+    <!-- red fabwright: D13 → resistor -->
     <path d="M72 120 C 150 120, 170 40, 250 40" fill="none" stroke="#FF4D2E" stroke-width="7" stroke-linecap="round"/>
     <!-- resistor -->
     <line x1="250" y1="40" x2="330" y2="40" stroke="#B9C0CA" stroke-width="3"/>
@@ -73,7 +73,7 @@
     <path d="M330 40 C 400 40, 400 196, 330 196" fill="none" stroke="#FF4D2E" stroke-width="7" stroke-linecap="round"/>
 
     <!-- LED, lit -->
-    <circle cx="322" cy="150" r="92" fill="url(#jumper-card-glow)"/>
+    <circle cx="322" cy="150" r="92" fill="url(#fabwright-card-glow)"/>
     <line x1="330" y1="150" x2="330" y2="196" stroke="#B9C0CA" stroke-width="3"/>
     <line x1="314" y1="150" x2="314" y2="206" stroke="#B9C0CA" stroke-width="3"/>
     <path d="M300 156 V128 A22 22 0 0 1 344 128 V156 Z" fill="#5CF2A1"/>

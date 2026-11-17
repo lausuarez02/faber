@@ -1,7 +1,7 @@
 // Round 5 parts: every new part has a usage hint whose typical connections name real pins, and the
 // session places and describes them through get_part like any built-in.
 import { describe, expect, it } from "vitest";
-import { getPart, partDefinitions } from "@jumper/parts";
+import { getPart, partDefinitions } from "@fabwright/parts";
 import { PARTS_R5_HINTS } from "../src/hints-parts.ts";
 import { usageFor } from "../src/hints.ts";
 

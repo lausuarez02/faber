@@ -4,17 +4,17 @@
 // reports the amplifier playing at the level the samples have, the speaker sounding with the power
 // it gets, and a recording of what was played (the page plays it) that is the sketch's 1 kHz tone.
 // check_design warns that full-scale audio would overdrive this speaker.
-// Needs the native ESP32 toolchain and QEMU (jumper setup esp32) or Docker; skipped otherwise.
+// Needs the native ESP32 toolchain and QEMU (fabwright setup esp32) or Docker; skipped otherwise.
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { canBuildArduino } from "@jumper/runner";
-import { qemuImageAvailable } from "@jumper/sim-backends/node";
+import { canBuildArduino } from "@fabwright/runner";
+import { qemuImageAvailable } from "@fabwright/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
-if (!ready) console.warn("skipping the ESP32 audio session test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm jumper setup esp32)");
+if (!ready) console.warn("skipping the ESP32 audio session test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm fabwright setup esp32)");
 
 const SKETCH = `// XIAO ESP32-S3 + MAX98357A: a 1 kHz beep, 300 ms on / 200 ms off, at 25 % of full scale.
 #include <ESP_I2S.h>
@@ -37,7 +37,7 @@ void loop() {
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 describe.skipIf(!ready)("an ESP32-S3 with an I2S amplifier and a speaker, through the session", { timeout: 300_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-esp32-audio-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-esp32-audio-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();
@@ -77,7 +77,7 @@ describe.skipIf(!ready)("an ESP32-S3 with an I2S amplifier and a speaker, throug
     expect(r.audio).toMatch(/amp played I2S audio \(peak -12 dBFS\)/);
     // The recording the page plays: mono 16-bit at 16 kHz, the tone at its level.
     const file = /GET \/api\/audio\/(run-\d+\.wav)/.exec(r.audio)![1]!;
-    const wav = readFileSync(join(dir, ".jumper", "audio", file));
+    const wav = readFileSync(join(dir, ".fabwright", "audio", file));
     expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
     expect(wav.readUInt32LE(24)).toBe(16000);
     const pcm = new Int16Array(wav.buffer.slice(wav.byteOffset + 44, wav.byteOffset + wav.length));

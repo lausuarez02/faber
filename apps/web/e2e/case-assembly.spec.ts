@@ -6,22 +6,22 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
-// Round 12: the Case view's Build tab, against a real `jumper serve` on a temp copy of the Muse with
+// Round 12: the Case view's Build tab, against a real `fabwright serve` on a temp copy of the Muse with
 // a rounded-box case (built on open, real CAD): how it goes together step by step with a picture each,
 // what to buy and what to print, and the assembly checks in plain words.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
-const MUSE = JSON.stringify({ ...JSON.parse(readFileSync(fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse/jumper.json", import.meta.url)), "utf8")), enclosure: { shape: "rounded-box" } });
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const MUSE = JSON.stringify({ ...JSON.parse(readFileSync(fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse/fabwright.json", import.meta.url)), "utf8")), enclosure: { shape: "rounded-box" } });
 
 async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-assembly-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-assembly-"));
   const dir = join(root, "muse");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "jumper.json"), MUSE);
+  writeFileSync(join(dir, "fabwright.json"), MUSE);
   const port = hubPort(info, 16);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -31,7 +31,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,

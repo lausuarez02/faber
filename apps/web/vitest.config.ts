@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   test: {
-    name: "@jumper/web",
+    name: "@fabwright/web",
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     passWithNoTests: true,

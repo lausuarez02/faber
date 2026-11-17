@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Jumper: after a Seeeduino:nrf52 build, write <sketch>.ino.sim.hex and <sketch>.ino.uf2.
+"""Fabwright: after a Seeeduino:nrf52 build, write <sketch>.ino.sim.hex and <sketch>.ino.uf2.
 
 sim.hex is the whole flash the simulator boots, like a board fresh from the factory without its UF2
 bootloader: Nordic's MBR + S140 SoftDevice (from the core's bootloader hex, records below the
@@ -7,14 +7,14 @@ bootloader at 0xF4000; the UICR bootloader address is left out, so the MBR start
 the SoftDevice starts the app) followed by the app. The .uf2 is the app alone, what the board's
 bootloader takes over USB (family 0xADA52840).
 
-usage: jumper-sim-hex.py <out-dir>
+usage: fabwright-sim-hex.py <out-dir>
 """
 import glob
 import os
 import subprocess
 import sys
 
-CORE = os.environ.get("JUMPER_NRF52_CORE") or glob.glob("/opt/arduino/data/packages/Seeeduino/hardware/nrf52/*")[0]
+CORE = os.environ.get("FABWRIGHT_NRF52_CORE") or glob.glob("/opt/arduino/data/packages/Seeeduino/hardware/nrf52/*")[0]
 BOOTLOADER = glob.glob(os.path.join(CORE, "bootloader/Seeed_XIAO_nRF52840/*_s140_7.3.0.hex"))[0]
 UF2CONV = os.path.join(CORE, "tools/uf2conv/uf2conv.py")
 BOOTLOADER_START = 0xF4000

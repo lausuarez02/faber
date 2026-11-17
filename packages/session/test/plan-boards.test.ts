@@ -2,7 +2,7 @@
 // board names people use ("esp32", "blackpill"), and an ESP32 weather-from-an-API gadget got an
 // ESP-01 Wi-Fi module and a BME280 it does not need.
 import { describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
+import { registry } from "@fabwright/parts";
 import { planDevice, resolveBoard } from "../src/index.ts";
 
 const boards = registry.list().filter((d) => d.spec.category === "board" && d.spec.mcu);

@@ -12,7 +12,7 @@ telemetry and a webhook all go through the same gateway as ordinary traffic.
 ## What exists today (main)
 
 - `services/ai-gateway` + `packages/session/src/network.ts`: a sandbox network for the ESP-01 AT
-  part with one built-in host (`ai.jumper/v1/pet`) and its own `set_ai_mode` / `read_network_log`
+  part with one built-in host (`ai.fabwright/v1/pet`) and its own `set_ai_mode` / `read_network_log`
   / `run_live`. It works at the level of AT commands and is specific to the pet. The new layer
   replaces its insides (see Migration); the agent-facing names stay close.
 
@@ -22,7 +22,7 @@ telemetry and a webhook all go through the same gateway as ordinary traffic.
  emulated chip (QEMU open_eth / Renode / ESP-01 AT part / test harness)
         │ Ethernet frames or AT sockets
  backend adapter (netstack sidecar, slirp guestfwd, AT part)  ← per emulator, no policy here
-        │ DNS/NTP datagrams + TCP flows to (fake ip, port)     JUMPER-FLOW/1 over a local socket
+        │ DNS/NTP datagrams + TCP flows to (fake ip, port)     FABWRIGHT-FLOW/1 over a local socket
  DeviceNet gateway (packages/device-net, Node, Apache-2.0)    ← all policy, one place
    DNS (fake IPs 198.18/15) · policy (offline | mock | internet+allow) · faults
    TLS: inspect with the sandbox CA, or passthrough
@@ -32,20 +32,20 @@ telemetry and a webhook all go through the same gateway as ordinary traffic.
 
 1. **Transport-level boundary.** Backends hand the gateway what the device does: UDP datagrams
    (`udp(ip, port, bytes)`, DNS on 53 and SNTP on 123 answered here) and TCP flows
-   (`connect({ip, port})` in process, or `attach(socket, dst)` / the `JUMPER-FLOW/1` socket
+   (`connect({ip, port})` in process, or `attach(socket, dst)` / the `FABWRIGHT-FLOW/1` socket
    protocol across processes). No chip knowledge, no API knowledge.
 2. **Fake-IP DNS.** Every name the policy allows gets a stable address in 198.18.0.0/15 (the n-th
    name is 198.18.0.n, so runs are deterministic). A later flow to that address maps back to the
    name, which works for HTTP, TLS, MQTT or any raw protocol without guessing from SNI or Host.
    Refused names get NXDOMAIN and a `blocked` log entry with why and fix.
-3. **Modes per project** (`jumper.json` `network`):
+3. **Modes per project** (`fabwright.json` `network`):
    - `offline`: Wi-Fi up, nothing answers (rehearse "no internet").
    - `mock` (default, always used by `run_tests`): only mocks and cassettes answer.
    - `internet`: hosts in `allow` also reach the real host; mocks and cassettes still win.
 4. **TLS.** `inspect` (default): the gateway terminates TLS with a per-machine sandbox CA
-   (proposed location `~/.jumper/sandbox-ca`, never in a project or export; ECDSA P-256, 5 years; leaf per host, cached, 30 days) and re-encrypts
+   (proposed location `~/.fabwright/sandbox-ca`, never in a project or export; ECDSA P-256, 5 years; leaf per host, cached, 30 days) and re-encrypts
    upstream with real verification. Needed for mocks, logs of paths, secrets and cassettes. The
-   simulation build trusts the CA (`#ifdef JUMPER_SIM`, `client.setCACert(JUMPER_SANDBOX_CA)`).
+   simulation build trusts the CA (`#ifdef FABWRIGHT_SIM`, `client.setCACert(FABWRIGHT_SANDBOX_CA)`).
    `passthrough`: bytes go end to end with the real certificate; only host, port, bytes and timing
    are known, and no secrets can be added (config refuses the combination).
 5. **Protocols by sniffing the first bytes** after TLS: HTTP (incl. WebSocket upgrade), MQTT
@@ -86,18 +86,18 @@ telemetry and a webhook all go through the same gateway as ordinary traffic.
 
 ## How emulators plug in (the part this spike did not run end to end)
 
-Checked in `jumper/qemu-esp:9.2.2-20260417-prebuilt` (Espressif QEMU 9.2.2): NIC models `open_eth`;
+Checked in `fabwright/qemu-esp:9.2.2-20260417-prebuilt` (Espressif QEMU 9.2.2): NIC models `open_eth`;
 netdev backends `user` (slirp), `stream`, `dgram`, `socket`, `tap`, ... Options:
 
 | Option | How | Verdict |
 | --- | --- | --- |
 | A. slirp `user` + `restrict=on` + `guestfwd` | DNS gives one gateway IP; `guestfwd=tcp:10.0.2.100:<port>-cmd:...` per port; host recovered from SNI / Host | Quick to try, but loses the host for MQTT / raw, one rule per port, and slirp DNS goes to the container resolver. Fallback only. |
-| B. `-netdev stream` (raw Ethernet frames) → a small netstack sidecar → `JUMPER-FLOW/1` | The sidecar (Go, gVisor netstack, Apache-2.0, as gvisor-tap-vsock does) answers ARP/DHCP, forwards UDP 53/123 and every TCP flow with its real destination to the gateway | **Chosen.** Same path for QEMU (ESP32, C3, S3, Linux boards) and Renode (its TAP / switch can feed frames), keeps fake-IP DNS, no per-port rules. |
+| B. `-netdev stream` (raw Ethernet frames) → a small netstack sidecar → `FABWRIGHT-FLOW/1` | The sidecar (Go, gVisor netstack, Apache-2.0, as gvisor-tap-vsock does) answers ARP/DHCP, forwards UDP 53/123 and every TCP flow with its real destination to the gateway | **Chosen.** Same path for QEMU (ESP32, C3, S3, Linux boards) and Renode (its TAP / switch can feed frames), keeps fake-IP DNS, no per-port rules. |
 | C. ESP-01 AT part (existing) | `SandboxNetwork.open()` becomes a thin adapter over `DeviceNet.connect` | Keeps today's AT path, just changes what answers. |
 
 The gateway's side of B is built and tested (`serveFlows`, real local TCP socket). The sidecar and
 an ESP-IDF / Arduino firmware with `open_eth` in QEMU are the next step (the esp32 track owns the
-firmware). Checked in `jumper/arduino-esp32:3.3.12-r1`: `ETH.h` has no OpenETH PHY and the
+firmware). Checked in `fabwright/arduino-esp32:3.3.12-r1`: `ETH.h` has no OpenETH PHY and the
 prebuilt ESP32 libs' `sdkconfig.h` has no `CONFIG_ETH_USE_OPENETH` (0 matches in dio_qspi and
 qio_qspi), so a stock Arduino sketch cannot use QEMU's `open_eth`. Options: rebuild the Arduino
 libs with OpenETH (esp32-arduino-lib-builder) for the simulation build only, or an ESP-IDF build.
@@ -106,7 +106,7 @@ mapped onto the Ethernet link (a sim-only shim), which is a fidelity gap to stat
 
 ## Firmware side (hints + plan_device, `src/hints.ts`)
 
-Jumper ships none of these; the toolchain image installs what a sketch uses. Licenses checked
+Fabwright ships none of these; the toolchain image installs what a sketch uses. Licenses checked
 2026-11-11 through the GitHub license API:
 
 | Library | Use | License |
@@ -118,7 +118,7 @@ Jumper ships none of these; the toolchain image installs what a sketch uses. Lic
 | bblanchon/ArduinoJson | JSON | MIT |
 | gilmaimon/ArduinoWebsockets | WebSocket client | GPL-3.0 (avoid; hints say so) |
 
-## Licenses of what Jumper ships here
+## Licenses of what Fabwright ships here
 
 `ws` (MIT), `@peculiar/x509` (MIT) and its tree (`@peculiar/asn1-*` MIT, `asn1js` BSD-3,
 `pvtsutils` / `pvutils` / `tsyringe` MIT, `reflect-metadata` Apache-2.0, `tslib` 0BSD). DNS, MQTT,
@@ -128,7 +128,7 @@ Apache-2.0.
 
 ## Migration of the pet AI (later round)
 
-`ai.jumper/v1/pet` becomes an ordinary HTTP mock (deterministic replies), and "live" becomes
+`ai.fabwright/v1/pet` becomes an ordinary HTTP mock (deterministic replies), and "live" becomes
 `internet` mode with an allow entry for the model provider and a `{{secret:...}}` header; `run_live`
 stays as "run at real time" for any internet-mode project. `read_network_log` maps to
 `read_network`; `set_ai_mode` becomes a convenience that edits `network.mode`.
@@ -155,8 +155,8 @@ stays as "run at real time" for any internet-mode project. `read_network_log` ma
 - Faults: http_error count 1, latency 300 ms, timeout (no answer, logged), wifi_drop (open
   WebSocket closed, DNS fails, restored after clear).
 - TLS handshake refused by the device (untrusted CA) is logged with the fix.
-- `JUMPER-FLOW/1` flow server over a real local TCP socket: DNS then HTTPS, 10 to 28 ms.
-- Real internet (manual script, `jumper-spikes/network/live/live-check.mts`): inspect
+- `FABWRIGHT-FLOW/1` flow server over a real local TCP socket: DNS then HTTPS, 10 to 28 ms.
+- Real internet (manual script, `fabwright-spikes/network/live/live-check.mts`): inspect
   `https://example.com/` → 200, 577 B, 77 ms; passthrough `https://api.github.com/zen` → 200, 72 ms,
   real Sectigo certificate seen by the device.
 
@@ -206,11 +206,11 @@ The plan above, with two changes found on the way:
   `mbedtls_x509_crt_verify_restartable`: the sketch's own CAs first, then the sandbox CA, which
   the board receives from the netstack when it joins. Sketches set the real root CA and stay
   identical for the device. Wi-Fi is a link-time shim of the `esp_wifi_*` driver API (the station
-  netif is kept; its frames use the emulated Ethernet card), controlled by Jumper over EtherType
+  netif is kept; its frames use the emulated Ethernet card), controlled by Fabwright over EtherType
   0x88B5: join / refuse (unknown SSID 201, wrong password 15), drop (beacon timeout 200), RSSI,
   scans.
 
-Also built: jumper.json `network` in the project schema, tools `read_network`, `add_mock_api`,
+Also built: fabwright.json `network` in the project schema, tools `read_network`, `add_mock_api`,
 `inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request`
 and `network_fault` (run_tests forces mock mode); firmware/NETWORK.md in the factory pack; the
 Network panel (`GET /api/network`, fault buttons, a Try box); gateway delays and log times on the

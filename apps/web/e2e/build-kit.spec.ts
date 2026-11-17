@@ -6,24 +6,24 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
-// Round 12, kit track: the Build it panel against a real `jumper serve` on a temp copy of the pocket
+// Round 12, kit track: the Build it panel against a real `fabwright serve` on a temp copy of the pocket
 // Muse (its case, renders and firmware are in the example): buy, print, assemble, flash, ticks that
 // survive a reload, and the zip / PDF / page downloads.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse", import.meta.url));
 
 async function serve(info: TestInfo, prep?: (dir: string) => void, slot = 1): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-kit-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-kit-"));
   const dir = join(root, "muse");
   cpSync(MUSE, dir, { recursive: true });
   prep?.(dir);
   const later = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware", "main.hex"), later, later);
   const port = hubPort(info, slot);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_SLICER: "none" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_SLICER: "none" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -33,7 +33,7 @@ async function serve(info: TestInfo, prep?: (dir: string) => void, slot = 1): Pr
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -187,9 +187,9 @@ test("Build it: Connect for a device that reaches an API", async ({ page }, info
   const s = await serve(
     info,
     (dir) => {
-      const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+      const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
       p.network = { mode: "mock", secrets: ["API_KEY"], allow: [{ host: "api.example.com", secrets: ["API_KEY"], headers: { Authorization: "Bearer {{secret:API_KEY}}" } }] };
-      writeFileSync(join(dir, "jumper.json"), JSON.stringify(p, null, 2));
+      writeFileSync(join(dir, "fabwright.json"), JSON.stringify(p, null, 2));
       writeFileSync(join(dir, ".env"), `API_KEY=${KEY}\n`);
     },
     2,
@@ -205,7 +205,7 @@ test("Build it: Connect for a device that reaches an API", async ({ page }, info
     await expect(c.getByLabel("API keys")).toContainText("set on this computer");
     for (const t of ["Your API keys", "Set up the relay", "A token for each device", "Wi-Fi and the relay address on the device", "Check it", "What it costs"]) await expect(c.getByRole("heading", { name: t })).toBeVisible();
     await expect(c).toContainText("npx wrangler secret put RELAY_DEVICE_TOKENS");
-    await expect(c).toContainText("jumper relay device-header");
+    await expect(c).toContainText("fabwright relay device-header");
     await expect(c).toContainText("86,400 a day at worst");
     expect(await page.content()).not.toContain(KEY);
     const view = page.getByTestId("kit-view");

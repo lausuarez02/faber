@@ -1,6 +1,6 @@
 /**
  * The local server's projects API (apps/cli/src/routes/projects.ts, decision 0003 C3), as the web
- * app uses it. Only pages served by `jumper serve` itself can change things (the token comes from
+ * app uses it. Only pages served by `fabwright serve` itself can change things (the token comes from
  * GET /api/connect, which answers same-origin pages only); anywhere else (pnpm dev, a static build)
  * the app runs without a server and says what needs one.
  */
@@ -61,7 +61,7 @@ export interface VersionSummary {
 export interface VersionDetail {
   version: number;
   summary: VersionSummary;
-  project: import("@jumper/project-format").Project;
+  project: import("@fabwright/project-format").Project;
   files: Record<string, string>;
   approxFiles?: string[];
   firmware?: { hash: string; hex: string };
@@ -105,7 +105,7 @@ export class ApiError extends Error {
 
 let connection: Promise<{ token: string } | null> | undefined;
 
-/** The token when this page is served by `jumper serve`, else null. Cached. */
+/** The token when this page is served by `fabwright serve`, else null. Cached. */
 export function serverConnection(fetchFn: typeof fetch = fetch): Promise<{ token: string } | null> {
   connection ??= (async () => {
     try {
@@ -126,7 +126,7 @@ export function resetServerConnection(): void {
 }
 
 export const NO_SERVER =
-  "This needs the local Jumper server. Why: the page was not opened from `jumper serve`, so there is no project folder to read or write. Fix: run `pnpm start` (or `jumper serve --project <folder>`) and open the URL it prints.";
+  "This needs the local Fabwright server. Why: the page was not opened from `fabwright serve`, so there is no project folder to read or write. Fix: run `pnpm start` (or `fabwright serve --project <folder>`) and open the URL it prints.";
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const conn = await serverConnection();
@@ -135,14 +135,14 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   try {
     r = await fetch(path, {
       method,
-      headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "GET" ? {} : { "x-jumper-token": conn.token }) },
+      headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "GET" ? {} : { "x-fabwright-token": conn.token }) },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
   } catch (e) {
-    throw new ApiError(`Could not reach the Jumper server. Why: ${(e as Error).message}. Fix: check that jumper serve is still running, then try again.`, 0);
+    throw new ApiError(`Could not reach the Fabwright server. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then try again.`, 0);
   }
   const data = (await r.json().catch(() => undefined)) as (T & { error?: string }) | undefined;
-  if (!r.ok) throw new ApiError(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the jumper serve terminal for details.`, r.status);
+  if (!r.ok) throw new ApiError(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the fabwright serve terminal for details.`, r.status);
   return data as T;
 }
 

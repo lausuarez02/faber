@@ -1,19 +1,19 @@
 // The fixture test every ESP32-family board part names in mcu.verified (round 10, decision 0006):
-// real arduino-esp32 firmware, built by Jumper's runner with the board's simulator FQBN
+// real arduino-esp32 firmware, built by Fabwright's runner with the board's simulator FQBN
 // (fixtures/esp-boards/build.ts), boots in Espressif's QEMU through the server-side factory with the
 // board's part.json mcu block, and its GPIO out, GPIO in with the internal pull-up and Serial work.
 // ESP32 DevKitC's I2C0 is proven by qemu-esp.integration.test.ts (same FQBN family).
-// Needs Docker and the jumper/qemu-esp image; skipped otherwise, with the reason printed.
+// Needs Docker and the fabwright/qemu-esp image; skipped otherwise, with the reason printed.
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import type { McuBackend } from "@jumper/sim-core";
+import type { McuBackend } from "@fabwright/sim-core";
 import { createNodeBackendFactory } from "../node.ts";
 import { QEMU_ESP_IMAGE, qemuImageAvailable } from "./launcher.ts";
 
 const available = qemuImageAvailable();
-if (!available) console.warn(`skipping ESP board fixtures: Docker is not running or ${QEMU_ESP_IMAGE} is missing (Fix: start Docker Desktop, then pnpm jumper setup esp32)`);
+if (!available) console.warn(`skipping ESP board fixtures: Docker is not running or ${QEMU_ESP_IMAGE} is missing (Fix: start Docker Desktop, then pnpm fabwright setup esp32)`);
 
 const BOARDS: { id: string; out: string; in: string }[] = [
   { id: "seeed-xiao-esp32s3", out: "GPIO1", in: "GPIO2" },
@@ -39,7 +39,7 @@ function runMs(be: McuBackend, ms: number) {
 describe.skipIf(!available)("ESP32-family boards boot real firmware (fixture tests for mcu.verified)", () => {
   const all: McuBackend[] = [];
   afterAll(() => all.forEach((b) => b.dispose?.()));
-  const factory = createNodeBackendFactory({ labels: { "jumper.test": "boards" } });
+  const factory = createNodeBackendFactory({ labels: { "fabwright.test": "boards" } });
 
   it.each(BOARDS)("$id: boots, GPIO out toggles, GPIO in reads its INPUT_PULLUP and a button, Serial prints", async ({ id, out, in: inp }) => {
     const spec = partJson(id);

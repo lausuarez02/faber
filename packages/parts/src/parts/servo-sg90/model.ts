@@ -1,5 +1,5 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 export const IDLE_MA = 10;

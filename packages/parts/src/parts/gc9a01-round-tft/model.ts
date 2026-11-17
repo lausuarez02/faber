@@ -2,7 +2,7 @@
 // GC9A01's geometry: native orientation upright, BGR glass, a glass that needs INVON for true
 // colours, and a round visible area (pixels outside the circle never show). The module around it
 // (supply, backlight, RESET / DC, 3.3 V logic check) is the shared TFT module of ili9341-tft.
-import type { PartModelFactory } from "@jumper/sim-core";
+import type { PartModelFactory } from "@fabwright/sim-core";
 import type { PanelOptions } from "../../lib/mipiPanel.ts";
 import { MADCTL } from "../../lib/mipiPanel.ts";
 import { createTftModule } from "../ili9341-tft/model.ts";

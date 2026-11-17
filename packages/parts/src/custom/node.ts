@@ -1,8 +1,8 @@
 // Node side of agent-made parts: read <project>/parts/<id>/part.json (+ visual.svg) from disk.
-// Kept out of the browser bundle (it uses node:fs); import it as "@jumper/parts/node".
+// Kept out of the browser bundle (it uses node:fs); import it as "@fabwright/parts/node".
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { PartDefinition, PartRegistry } from "@jumper/sim-core";
+import type { PartDefinition, PartRegistry } from "@fabwright/sim-core";
 import { compileCustomPart, CustomPartError, type CompiledCustomPart } from "./compile.ts";
 
 export const PROJECT_PARTS_DIR = "parts";

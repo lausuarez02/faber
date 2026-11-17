@@ -2,10 +2,10 @@
 // stepping its MCU, so virtual time passes as fast as the parts' own events allow: hours in
 // seconds), its pins keep the configuration they had (the RTC pull-ups that hold a wake pin), and
 // it wakes on a timer or a pin level, then boots from the start with its flash kept, as the real
-// chip does. The firmware side tells Jumper with one console line, printed by a sleep shim the
-// simulation build links in (toolchains/arduino-esp32/libraries/JumperSleep for the ESP32 family):
+// chip does. The firmware side tells Fabwright with one console line, printed by a sleep shim the
+// simulation build links in (toolchains/arduino-esp32/libraries/FabwrightSleep for the ESP32 family):
 //
-//   [jumper:sleep] {"mode":"deep","us":3600000000,"pins":[{"gpio":4,"level":0}],"any":true}
+//   [fabwright:sleep] {"mode":"deep","us":3600000000,"pins":[{"gpio":4,"level":0}],"any":true}
 //
 // `us` is the timer (absent = no timer), `pins` the wake pins with the level that wakes the chip,
 // `any` true = any listed pin wakes (ESP32 ext1 ANY_HIGH / ext0 / C3 GPIO wake), false = all of them
@@ -44,11 +44,11 @@ export interface WakeInfo {
   slept_ms: number;
 }
 
-export const SLEEP_MARKER = "[jumper:sleep]";
+export const SLEEP_MARKER = "[fabwright:sleep]";
 
 /**
  * Parse one console line. Returns the request, an error that says what is wrong (a shim and a
- * Jumper of different versions), or undefined when the line is not a sleep marker.
+ * Fabwright of different versions), or undefined when the line is not a sleep marker.
  * `pinId` maps a GPIO number to the backend's pin id (ESP: "GPIO<n>").
  */
 export function parseSleepMarker(line: string, pinId: (gpio: number) => string = (g) => `GPIO${g}`): SleepRequest | { error: string } | undefined {
@@ -59,7 +59,7 @@ export function parseSleepMarker(line: string, pinId: (gpio: number) => string =
   try {
     o = JSON.parse(text);
   } catch {
-    return { error: `the sleep line "${line.trim().slice(0, 120)}" is not JSON after ${SLEEP_MARKER}. Why: the simulation build's sleep shim and this Jumper disagree on the format. Fix: rebuild the firmware (build) so the current shim is linked in.` };
+    return { error: `the sleep line "${line.trim().slice(0, 120)}" is not JSON after ${SLEEP_MARKER}. Why: the simulation build's sleep shim and this Fabwright disagree on the format. Fix: rebuild the firmware (build) so the current shim is linked in.` };
   }
   const r = o as { mode?: unknown; us?: unknown; pins?: unknown; any?: unknown; src?: unknown };
   if (r.mode !== undefined && r.mode !== "deep") return { error: `sleep mode ${JSON.stringify(r.mode)} is not simulated (only "deep"). Fix: use esp_deep_sleep_start(); light sleep runs as normal execution.` };

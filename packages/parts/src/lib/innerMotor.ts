@@ -2,8 +2,8 @@
 // proven in parts/dc-motor/model.test.ts) inside another part: a water pump's or a vibration
 // motor's brushed motor. The inner model sees a context whose "A" / "B" pins map to the outer
 // part's own pins or internal nodes, and whose props are the motor constants the outer part picks.
-import type { PropValue } from "@jumper/project-format";
-import type { PartContext, PartModel } from "@jumper/sim-core";
+import type { PropValue } from "@fabwright/project-format";
+import type { PartContext, PartModel } from "@fabwright/sim-core";
 import { create as createDcMotor } from "../parts/dc-motor/model.ts";
 
 export interface InnerMotorParams {

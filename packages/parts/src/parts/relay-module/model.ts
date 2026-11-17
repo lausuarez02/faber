@@ -1,8 +1,8 @@
 // 1-channel 5 V relay module. Control side: an optocoupler (or transistor) input on IN, the coil
 // (~71 Ω) on VCC. The coil pulls in after ~10 ms when the input current flows and VCC ≥ 3.75 V,
 // and releases ~5 ms after it stops. Load side: COM–NO / COM–NC contacts as switches.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { round, str } from "../../lib/props.ts";
 
 export const COIL_OHMS = 70;

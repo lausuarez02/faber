@@ -5,8 +5,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
-import { registry } from "@jumper/parts";
+import type { Project } from "@fabwright/project-format";
+import { registry } from "@fabwright/parts";
 import { checkDesign, planDevice, ProjectSession } from "../src/index.ts";
 import { sketchCameraPins } from "../src/drc-camera.ts";
 
@@ -45,7 +45,7 @@ function devkitWithCamera(skip: string[] = []): Project {
   const wires = Object.entries(map)
     .filter(([p]) => !skip.includes(p))
     .map(([p, g], i) => ({ id: `w${i}`, from: { part: "cam", pin: p }, to: { part: "esp", pin: g } }));
-  return { format: "jumper/1", name: "t", parts: [{ id: "esp", type: "esp32-devkitc", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires, scenarios: [], firmware: { board: "esp", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn: "esp32:esp32:esp32" } } } as unknown as Project;
+  return { format: "fabwright/1", name: "t", parts: [{ id: "esp", type: "esp32-devkitc", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires, scenarios: [], firmware: { board: "esp", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn: "esp32:esp32:esp32" } } } as unknown as Project;
 }
 const codes = (issues: { code: string }[]) => issues.map((i) => i.code);
 
@@ -96,13 +96,13 @@ describe("check_design: cameras", () => {
   });
 
   it("a board without a camera interface is an error", () => {
-    const p: Project = { format: "jumper/1", name: "t", parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires: [], scenarios: [], firmware: { board: "uno", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.hex", build: { tool: "arduino-cli", fqbn: "arduino:avr:uno" } } } as unknown as Project;
+    const p: Project = { format: "fabwright/1", name: "t", parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires: [], scenarios: [], firmware: { board: "uno", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.hex", build: { tool: "arduino-cli", fqbn: "arduino:avr:uno" } } } as unknown as Project;
     expect(checkDesign(p, registry, "").find((i) => i.code === "camera-board")?.severity).toBe("error");
   });
 
   it("the Sense: its own pins pass, PSRAM off in the build is a warning, a small cell against camera + Wi-Fi bursts", () => {
     const sense = (fqbn: string, capacity: number): Project =>
-      ({ format: "jumper/1", name: "t", parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0 }, { id: "bat", type: "lipo-battery", x: 200, y: 0, props: { capacity } }], wires: [{ id: "w1", from: { part: "bat", pin: "POS" }, to: { part: "sense", pin: "BAT" } }, { id: "w2", from: { part: "bat", pin: "NEG" }, to: { part: "sense", pin: "GND.2" } }], scenarios: [], firmware: { board: "sense", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn } } }) as unknown as Project;
+      ({ format: "fabwright/1", name: "t", parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0 }, { id: "bat", type: "lipo-battery", x: 200, y: 0, props: { capacity } }], wires: [{ id: "w1", from: { part: "bat", pin: "POS" }, to: { part: "sense", pin: "BAT" } }, { id: "w2", from: { part: "bat", pin: "NEG" }, to: { part: "sense", pin: "GND.2" } }], scenarios: [], firmware: { board: "sense", dir: "firmware", sketch: "main.ino", artifact: "firmware/main.bin", build: { tool: "arduino-cli", fqbn } } }) as unknown as Project;
     const src = `#include "esp_camera.h"\n#include <WiFi.h>\nvoid setup(){ camera_config_t c; c.pin_xclk = 10; c.pin_sccb_sda = 40; c.pin_sccb_scl = 39; c.pin_d0 = 15; c.pin_d7 = 48; c.pin_vsync = 38; c.pin_href = 47; c.pin_pclk = 13; c.fb_location = CAMERA_FB_IN_PSRAM; esp_camera_init(&c);} void loop(){}`;
     const small = checkDesign(sense("esp32:esp32:XIAO_ESP32S3", 150), registry, src);
     expect(codes(small)).not.toContain("camera-pins");
@@ -118,7 +118,7 @@ describe("check_design: cameras", () => {
 
 describe("set_camera_frame without a camera", () => {
   it("says to place one", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-cam-none-"));
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-cam-none-"));
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       await s.call("new_project", { template: "uno" });

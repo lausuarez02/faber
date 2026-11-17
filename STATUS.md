@@ -1,13 +1,13 @@
 # Status: agents, displays and robots (on top of M0)
 
-Last updated 2026-11-13 (round 15 integrated: cases that hold a non-electronic object, reed / Hall lid sensors, e-paper and memory-LCD screens, deep sleep with battery life in days, RTC parts on the test clock; round 14 integrated: behaviour over time made testable (seeds, NTP clock, capture timing, request bodies, OpenAPI mocks, local services, flash across reboots, duty-cycle battery life, camera indicator); round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Jumper says
+Last updated 2026-11-13 (round 15 integrated: cases that hold a non-electronic object, reed / Hall lid sensors, e-paper and memory-LCD screens, deep sleep with battery life in days, RTC parts on the test clock; round 14 integrated: behaviour over time made testable (seeds, NTP clock, capture timing, request bodies, OpenAPI mocks, local services, flash across reboots, duty-cycle battery life, camera indicator); round 13 integrated: cameras, I2S audio and the API relay on main, one QEMU series jb7, examples/see-and-say; round 12 integrated: how the parts go inside any case, the build kit, the hardware skill for Claude and other agents; round 11: native builds without Docker; rounds 9-10 integrated: ESP32 / STM32 / nRF52 boards, firmware languages, the device network, docs/boards.md; round 8b: what each case choice costs, thin at a fixed size; round 7: case outlines are fully custom, at any size, and Fabwright says
 which pieces fit; a DFPlayer + speaker that says things. Round 6: the battery really powers the
 board, colour screens in replays and history, clean project switching, canvas controls that work
 while it runs, a printable case and a factory pack). M0 is done (below). An agent (Claude Code, Codex, any MCP client) goes from a
-one-line goal to a wired, programmed and tested device using only Jumper's tools, and a person
+one-line goal to a wired, programmed and tested device using only Fabwright's tools, and a person
 watches it happen on the canvas and in 3D, then runs it themselves.
 
-<p align="center"><img src="docs/media/hero.png" alt="Jumper running the AI pet Claude Code built" width="720"></p>
+<p align="center"><img src="docs/media/hero.png" alt="Fabwright running the AI pet Claude Code built" width="720"></p>
 
 ## Round 15, integrated on main (2026-11-13): cases that hold things, lids, always-on screens, deep sleep, days
 
@@ -16,7 +16,7 @@ each area does; guides: [docs/low-power.md](docs/low-power.md),
 [docs/enclosures.md](docs/enclosures.md#things-the-case-holds-round-15). The README's case paragraph now
 links both.
 
-Checks on the merged main (worktree `jumper-wt-r15-main`, native runtimes, Docker down):
+Checks on the merged main (worktree `fabwright-wt-r15-main`, native runtimes, Docker down):
 
 | Check | Result |
 | --- | --- |
@@ -37,12 +37,12 @@ Not verified / honest notes:
   memory-LCD power figures are datasheet / vendor typicals.
 - Gaps carried from the track: deep sleep for the ESP32 family only, no slow-clock drift or wake boot
   time, GxEPD2 / Adafruit_EPD / Adafruit_SharpMem not in the pinned library set, a custom held shape is
-  its bounding box, lid sensors are checked rather than auto-placed, the Docker image lacks JumperSleep.
+  its bounding box, lid sensors are checked rather than auto-placed, the Docker image lacks FabwrightSleep.
 
 ## Round 15, track gaps (2026-11-13): cases that hold things, lids, always-on screens, deep sleep, days
 
 Branch `round15/gaps`. What a "pocket case for a tin with a screen that shows a face per day's count"
-needs from Jumper, built as general capabilities (the tin holder is only a test case). Guide:
+needs from Fabwright, built as general capabilities (the tin holder is only a test case). Guide:
 [docs/low-power.md](docs/low-power.md), [docs/enclosures.md](docs/enclosures.md#things-the-case-holds-round-15).
 
 | Area | What works | Check it with |
@@ -50,12 +50,12 @@ needs from Jumper, built as general capabilities (the tin holder is only a test 
 | Held objects | `enclosure.held`: cylinder (flat / upright), box, custom (bounding box); size + clearance; slide / pocket / snap / captive; the packer keeps parts out, the shell gets its slot or pocket (through curved walls and domes), 1.2 mm sleeve walls where there is room; checks `held-object` (room, opening, thinnest wall, pocket rim vs round-over) and `held-sensor`; `report.held`, the kit's "What it holds" with the calipers check; the assembly plan puts it in last (captive: before closing) | `packages/enclosure/test/held.test.ts`, `held-cad.test.ts` (real CAD, watertight), `packages/session/test/round15-held.test.ts` |
 | Lids | `reed-switch` (pull-in / drop-out from a disc magnet's field), `hall-switch-drv5032` (TI datasheet thresholds, 5 / 20 Hz sampling, push-pull / open-drain, 0.69 µA); magnet distance as the live slider, hold-to-press on the reed, `{"set": "lid.magnet", "value": "away"}` in tests | part tests, `apps/web/src/interact/controls.test.ts` |
 | Screens | `epaper-154-ssd1681` (SSD1681 RAM / windows / entry modes / full and partial refresh with ghosting / BUSY / deep sleep / refresh energy), `sharp-memory-lcd-128` (LS013B7DH03 protocol, active-high CS `spi-cs-high`, VCOM check); both as colour frames for screenshots and `expect_display` | part tests; the e-paper from real firmware in the deep-sleep integration test |
-| Deep sleep | sim-core: a sleeping board runs no firmware, time jumps between part events (1 h ≈ 1 s), wakes on timer / pin level, reboots with flash kept; the JumperSleep shim (ESP32 family, simulation builds only, MIT) keeps RTC memory, the clock and the wake cause; board state `asleep` / `sleeps` / `wakes` | `packages/sim-core/src/sleep.test.ts`, `packages/session/test/deep-sleep.integration.test.ts` (real XIAO ESP32-C3 firmware in QEMU) |
+| Deep sleep | sim-core: a sleeping board runs no firmware, time jumps between part events (1 h ≈ 1 s), wakes on timer / pin level, reboots with flash kept; the FabwrightSleep shim (ESP32 family, simulation builds only, MIT) keeps RTC memory, the clock and the wake cause; board state `asleep` / `sleeps` / `wakes` | `packages/sim-core/src/sleep.test.ts`, `packages/session/test/deep-sleep.integration.test.ts` (real XIAO ESP32-C3 firmware in QEMU) |
 | Days | `set_clock` and a scenario's `clock` also set RTC parts (DS3231): midnight rollovers testable without a network | `packages/session/test/round15-time.test.ts` |
 | Power | `power.wakes_per_day` / `awake_s` (set_power, estimate_power; else the firmware's sleep timer or the last run's measured wakes), board sleep current (`current_ma.standby_ua`), per-event parts (`event_ms`), results in days and µA | `round15-time.test.ts` |
 | Agents | skill rules held-object and low-power-always-on, tool descriptions, AGENTS.md, docs | `agent-skill-sync.test.ts` |
 
-Checks (worktree `jumper-wt-r15-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
+Checks (worktree `fabwright-wt-r15-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
 exit 0; `pnpm test` exit 0, **243 files passed, 2 skipped; 1967 tests passed, 5 expected fail, 5 skipped**
 (includes the real-QEMU deep-sleep tests: one hour of virtual sleep in about a second of wall time).
 
@@ -66,7 +66,7 @@ models are tested with raw SPI and byte benches); red / yellow e-paper and other
 part.json (the SSD168x controller model is size-generic); a held object's custom outline is packed as its
 bounding box; a lid sensor's placement next to the object is checked (`held-sensor`), not auto-placed;
 a removable object's sleeve walls need gap room and are skipped (said) where parts are too close;
-the Docker build image does not have JumperSleep yet (Dockerfile.sim updated, not built: Docker broken
+the Docker build image does not have FabwrightSleep yet (Dockerfile.sim updated, not built: Docker broken
 here); e2e not run (the only UI change is the live-control filter, unit-tested); nothing was printed or
 tried on a real board, magnet or panel.
 
@@ -77,7 +77,7 @@ with no conflicts. The track section below lists what each area does; guide:
 [docs/behaviour-tests.md](docs/behaviour-tests.md), plus [network.md](docs/network.md),
 [power.md](docs/power.md), [cameras.md](docs/cameras.md), [esp32-peripherals.md](docs/esp32-peripherals.md).
 
-Checks on the merged main (worktree `jumper-wt-r14-main`, native runtimes, Docker down):
+Checks on the merged main (worktree `fabwright-wt-r14-main`, native runtimes, Docker down):
 
 | Check | Result |
 | --- | --- |
@@ -94,7 +94,7 @@ multipart upload accepted by an OpenAPI mock with 201; `http://mystar.local/` re
 Not verified / honest notes:
 - The two first-run e2e failures were load flakes, not round 14 code: "Build it opens from the Case
   view" waited 60 s for `kit-summary` (it takes about 49 s alone, close to its budget), and "AI pet: a
-  quick click on TALK" got "Port 13200 is in use" from the previous test's `jumper serve` on the same
+  quick click on TALK" got "Port 13200 is in use" from the previous test's `fabwright serve` on the same
   worker port still closing. Neither was changed.
 - `apps/cli/test/cli.test.ts` "round 12 skill" timed out at vitest's 5 s default under that load; it
   now has the same 30 s budget as its neighbour (seven CLI processes).
@@ -106,7 +106,7 @@ Not verified / honest notes:
 ## Round 14, track gaps (2026-11-12): behaviour over time, testable and general
 
 Branch `round14/gaps`. What a "takes a picture at a random moment, says so 10 s before, posts it later"
-device needs from Jumper, built as general capabilities (the star keychain is only a test case). Guide:
+device needs from Fabwright, built as general capabilities (the star keychain is only a test case). Guide:
 [docs/behaviour-tests.md](docs/behaviour-tests.md).
 
 | Area | What works | Check it with |
@@ -119,7 +119,7 @@ device needs from Jumper, built as general capabilities (the star keychain is on
 | Privacy | `check_design` `camera-indicator` for any camera without an LED, a screen or `LED_BUILTIN` in the firmware | `round14-checks.test.ts` |
 | Agents | skill rules (test-behaviour-over-time, camera-privacy, battery-target), tool descriptions, AGENTS.md, docs | `agent-skill-sync.test.ts` |
 
-Checks (worktree `jumper-wt-r14-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
+Checks (worktree `fabwright-wt-r14-gaps`, native runtimes, Docker down): `pnpm gen` exit 0; `pnpm typecheck`
 exit 0; `pnpm test` exit 0, **233 files passed, 2 skipped; 1896 tests passed, 5 expected fail, 5 skipped**
 (includes the real-QEMU random-photo test: three scenarios, about 25 s).
 
@@ -141,15 +141,15 @@ capabilities; the "funny keychain" is a project built from them, `examples/see-a
   Bridge protocol v6 plus the camera's `CC` / `CD` lines. `NATIVE_QEMU_TAG` / `QEMU_ESP_IMAGE`
   `9.2.2-20260417-jb7`, `QEMU_SRC_BRANCH` `jumper-jb7` (new branch in the spike QEMU repo; 0001-0006
   applied to Espressif's tag reproduce it file for file, checked with `diff -r`). Built natively with
-  `jumper setup esp32` (JUMPER_QEMU_SRC) in 50 s; every camera, I2S, audio-stream and relay firmware
+  `fabwright setup esp32` (FABWRIGHT_QEMU_SRC) in 50 s; every camera, I2S, audio-stream and relay firmware
   test passes on it (19/19 run together, plus the full suite).
 - **`examples/see-and-say`** (XIAO ESP32-S3 Sense + GC9A01 + MAX98357A + 20 mm speaker + button): a
   press captures a 320 × 240 JPEG, POSTs it base64 in an OpenAI-compatible chat-completions body to
-  a vision API through `jumperRelayUrl()`, sends the answer to an OpenAI-compatible `/audio/speech`
+  a vision API through `fabwrightRelayUrl()`, sends the answer to an OpenAI-compatible `/audio/speech`
   (`response_format: pcm`, 24 kHz) through the relay, and streams the PCM into I2S at 50 % volume.
   Offline: the vision API is a mock, the speech API a cassette; both are written by
   `scripts/make-network.mjs` and are **not recordings of a real provider** (the audio is a generated
-  chirp). Scenarios `see-and-say` and `vision-down` pass (`jumper test`, 3/3 runs);
+  chirp). Scenarios `see-and-say` and `vision-down` pass (`fabwright test`, 3/3 runs);
   `packages/session/test/see-and-say.test.ts` also checks both calls went through the relay (mock,
   then cassette), the run's recording peaks at the firmware's volume, and the device build has no
   relay settings. README: parts, pins, what is emulated / shimmed / mocked, real APIs, the relay.
@@ -161,11 +161,11 @@ capabilities; the "funny keychain" is a project built from them, `examples/see-a
 
 Emulated vs shimmed vs not, for the joined project: the firmware, PSRAM, SPI to the screen, I2S + DMA
 to the amplifier and the Wi-Fi / TLS / HTTP stack are the real arduino-esp32 code in QEMU; the
-esp32-camera calls are shimmed in the simulation build (frames rendered by Jumper; DVP / LCD_CAM, SCCB
+esp32-camera calls are shimmed in the simulation build (frames rendered by Fabwright; DVP / LCD_CAM, SCCB
 and XCLK not emulated); the Wi-Fi radio is not emulated (an Ethernet card carries it); the APIs are a
 mock and a cassette.
 
-Checks (worktree `jumper-wt-r13-main`, native runtimes, Docker down, load average 6 to 460 from other
+Checks (worktree `fabwright-wt-r13-main`, native runtimes, Docker down, load average 6 to 460 from other
 work): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **228 files passed,
 2 skipped; 1864 tests passed, 5 expected fail, 5 skipped** (the first run after the merges, before the
 example: exit 0, 227 / 1860). Full e2e, desktop + mobile (`E2E_PORT=6360 E2E_HUB_PORT_BASE=13100`, 2
@@ -174,11 +174,11 @@ test change from the new example), 16 skipped, 2 did not run; after the fix, pro
 and the final full run **exit 0: 114 passed, 0 failed, 16 skipped**.
 
 Gaps (round 13, integrated): the jb7 Docker image is not built (Docker broken here), so anyone without
-a native jb7 must run `jumper setup esp32` again, and older emulators lack I2S or the camera; the
+a native jb7 must run `fabwright setup esp32` again, and older emulators lack I2S or the camera; the
 user's server (port 7780, proof/star-r12) still runs jb5 code; nothing was run on a real Sense,
 amplifier or speaker, and no real vision / TTS provider was called (the shapes follow the
 OpenAI-compatible APIs; other providers need `describe()` / `say()` changed); the star keychain's
-XIAO RP2040 has no Wi-Fi, camera or I2S in Jumper, so a seeing, talking star needs the XIAO ESP32-S3
+XIAO RP2040 has no Wi-Fi, camera or I2S in Fabwright, so a seeing, talking star needs the XIAO ESP32-S3
 Sense; in the simulation build `Serial` is on UART0 (GPIO43 / 44), so a sketch using D6 / D7 as GPIO
 silences the Serial panel (the real board uses USB serial; no design check for it yet); the browser
 microphone does not feed the Sense's mic.
@@ -187,21 +187,21 @@ microphone does not feed the Sense's mic.
 
 The person wants a keychain that sees (camera) and says things through an API. This track is the general
 piece the REAL device needs for any API: a relay that holds the keys, generated from the project's
-`jumper.json` `network` (allow list, secret names, header templates, new `network.relay` limits). No
+`fabwright.json` `network` (allow list, secret names, header templates, new `network.relay` limits). No
 camera / voice / star code. Branch `round13/relay`. Guide: [docs/api-relay.md](docs/api-relay.md).
 
 | Area | What works | Check it with |
 | --- | --- | --- |
 | Relay core (MIT, Fetch API, no deps) | Device token in `X-Device-Token` (relay keeps SHA-256 hashes only, `RELAY_DEVICE_TOKENS=name:hash,...`; revoke = remove the name), allow list + ports, `{{secret:NAME}}` from templates or the device only to hosts given NAME, never over plain HTTP, rate / size / stream-time limits per device, streamed answers and chunked uploads, keys echoed back masked, one JSON log line per request with no key, token or query value; every refusal says why and fix (401 / 403 / 413 / 429 / 502) | `packages/device-net/test/relay.test.ts` (14) |
-| Node relay | `jumper relay serve` (project's config + .env) and the generated `relay/server.mjs` (runs alone with `node`); WebSocket piped with the key on the upgrade | same, incl. `node server.mjs` as a child process |
+| Node relay | `fabwright relay serve` (project's config + .env) and the generated `relay/server.mjs` (runs alone with `node`); WebSocket piped with the key on the upgrade | same, incl. `node server.mjs` as a child process |
 | Cloudflare Worker | `relay/worker.js` + `wrangler.toml` (secrets by `wrangler secret put`), WebSocket bridged with `WebSocketPair` | the generated worker.js imported in Node with a fetch mock and a fake WebSocketPair (wrangler not installed; nothing deployed) |
-| Simulator parity | The sandbox answers `relay.sandbox.jumper/<host>/<path>` with the core's own `authorize()`, then serves the target like a direct request (mocks, cassettes, faults, internet, secrets at the edge); log entries `via: "relay"` | `relay.test.ts`; **real firmware**: `packages/session/test/relay-firmware.integration.test.ts` (XIAO ESP32-S3 built natively, run in QEMU: 200 from a mock through the relay, 403 for a host off the list) |
-| Firmware | `JumperRelay.h` (MIT): `jumperRelayUrl`, `jumperRelayEndpoint` (WebSocket), `JUMPER_TOKEN_HEADER`, `jumperRelayReady/Why`, default root CAs (ISRG X1/X2, GTS R1/R4, GlobalSign; workers.dev chains to GTS R4). The build adds it when included; simulation builds add a sandbox `jumper_device.h`; the runner drops the person's `jumper_device.h` from every Jumper build | firmware test checks the token string is absent from the sim and device images |
-| Wi-Fi + token on the device | Default: git-ignored `jumper_device.h` from `.env` (`jumper relay token add <device>`, `jumper relay device-header [--ca]`); .gitignore updated. Captive portal documented as the option for gifted devices, not built (soft-AP is not emulated) | `apps/cli/test/relay-cli.test.ts` |
-| Packs | `relay/` in `jumper relay init`, the factory pack (NETWORK.md points at it) and the build kit download | `packages/session/test/kit-connect.test.ts` |
+| Simulator parity | The sandbox answers `relay.sandbox.fabwright/<host>/<path>` with the core's own `authorize()`, then serves the target like a direct request (mocks, cassettes, faults, internet, secrets at the edge); log entries `via: "relay"` | `relay.test.ts`; **real firmware**: `packages/session/test/relay-firmware.integration.test.ts` (XIAO ESP32-S3 built natively, run in QEMU: 200 from a mock through the relay, 403 for a host off the list) |
+| Firmware | `FabwrightRelay.h` (MIT): `fabwrightRelayUrl`, `fabwrightRelayEndpoint` (WebSocket), `FABWRIGHT_TOKEN_HEADER`, `fabwrightRelayReady/Why`, default root CAs (ISRG X1/X2, GTS R1/R4, GlobalSign; workers.dev chains to GTS R4). The build adds it when included; simulation builds add a sandbox `fabwright_device.h`; the runner drops the person's `fabwright_device.h` from every Fabwright build | firmware test checks the token string is absent from the sim and device images |
+| Wi-Fi + token on the device | Default: git-ignored `fabwright_device.h` from `.env` (`fabwright relay token add <device>`, `fabwright relay device-header [--ca]`); .gitignore updated. Captive portal documented as the option for gifted devices, not built (soft-AP is not emulated) | `apps/cli/test/relay-cli.test.ts` |
+| Packs | `relay/` in `fabwright relay init`, the factory pack (NETWORK.md points at it) and the build kit download | `packages/session/test/kit-connect.test.ts` |
 | Kit Connect | Keys by name (set / missing here), relay on a computer or Cloudflare, a token per device, Wi-Fi via the device header, a check, generic cost (provider price per call; worst case per day from the rate limit); says first when the board has no Wi-Fi (the star's XIAO RP2040 has none). KIT.md, kit.html, `get_build_kit`, web Build it **Connect** tab | `kit-connect.test.ts`, `apps/web/e2e/build-kit.spec.ts` (Connect, desktop + mobile) |
 
-Checks (worktree `jumper-wt-r13-relay`, native runtimes, Docker down, load average 14 to 100 from other
+Checks (worktree `fabwright-wt-r13-relay`, native runtimes, Docker down, load average 14 to 100 from other
 tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **216 files passed, 2
 skipped; 1785 tests passed, 5 expected fail, 5 skipped** (includes the real-QEMU relay firmware test).
 Full e2e (`E2E_PORT=6340 E2E_HUB_PORT_BASE=13000`, 2 workers, desktop + mobile): exit 1, **107 passed, 1
@@ -225,15 +225,15 @@ speaker), not a feature. Guide: [docs/esp32-peripherals.md](docs/esp32-periphera
 
 | Area | What works | Emulated / shimmed / not | Check it with |
 | --- | --- | --- | --- |
-| QEMU I2S device | patch `0004-jumper-i2s.patch` (`hw/misc/jumper_i2s.c`, bridge v6, tag `9.2.2-20260417-jb6`): ESP32 I2S0/I2S1 with their own lldesc DMA + interrupt; S3 I2S0/I2S1 and C3 I2S0 through the GDMA channel bound to them (EOF descriptor + interrupt on that channel). Rate from the clock registers (fractional MCLK, BCK, slots); 8/16/24/32-bit, mono / stereo / TDM; PDM RX (the XIAO Sense mic) and PDM TX as PCM. `ST` frames out (silence as `z<n>`), `SR` frames in | **emulated** at register + DMA level; frames (not BCK / WS edges) cross to Jumper; APLL rate, slave timing, A/u-law, bit-order swaps not modelled | `services/runner/src/lang/esp-audio.integration.test.ts` (ESP32, S3, C3: tones at 8 / 16 / 22.05 / 44.1 / 48 kHz with frequency, length and level checked, 32-bit stereo, a WAV from flash, write() paced by the DMA, a mic read; an MP3 decoded on the S3) |
+| QEMU I2S device | patch `0004-fabwright-i2s.patch` (`hw/misc/fabwright_i2s.c`, bridge v6, tag `9.2.2-20260417-jb6`): ESP32 I2S0/I2S1 with their own lldesc DMA + interrupt; S3 I2S0/I2S1 and C3 I2S0 through the GDMA channel bound to them (EOF descriptor + interrupt on that channel). Rate from the clock registers (fractional MCLK, BCK, slots); 8/16/24/32-bit, mono / stereo / TDM; PDM RX (the XIAO Sense mic) and PDM TX as PCM. `ST` frames out (silence as `z<n>`), `SR` frames in | **emulated** at register + DMA level; frames (not BCK / WS edges) cross to Fabwright; APLL rate, slave timing, A/u-law, bit-order swaps not modelled | `services/runner/src/lang/esp-audio.integration.test.ts` (ESP32, S3, C3: tones at 8 / 16 / 22.05 / 44.1 / 48 kHz with frequency, length and level checked, 32-bit stereo, a WAV from flash, write() paced by the DMA, a mic read; an MP3 decoded on the S3) |
 | Audio from an API | raw PCM and a chunked WAV streamed from a mock API over HTTP into I2S, gap-free | the network path is the generic device network (mocks / cassettes / allow list) | `packages/device-net/test/audio-stream.integration.test.ts` |
-| Network fixes found | a slow reader stalled streamed downloads: QEMU's OpenCores Ethernet now queues RX frames until the driver frees a buffer (patch `0005-jumper-eth-rx.patch`), and the netstack's zero-window probe takes its sequence number | general, not audio-specific | `test/netstack.test.ts` (probe), the stream test |
-| Session + page | each `run` keeps a WAV of what the board played over I2S (`.jumper/audio/run-<seq>.wav`, last 20), names it in the log entry and the result (`audio`), `GET /api/audio/<file>`; the followed page plays it with WebAudio in step with the run's frames, never under a test driver, hidden tab or muted page (`window.__jumperAudio` counts); a level bar under any part reporting `playing` + `level` | the sound is the I2S stream (mono, 16 kHz), not the amp's analog output or the speaker's response | `packages/session/test/esp32-audio-session.test.ts`, `apps/web/e2e/esp32-audio.spec.ts` |
+| Network fixes found | a slow reader stalled streamed downloads: QEMU's OpenCores Ethernet now queues RX frames until the driver frees a buffer (patch `0005-fabwright-eth-rx.patch`), and the netstack's zero-window probe takes its sequence number | general, not audio-specific | `test/netstack.test.ts` (probe), the stream test |
+| Session + page | each `run` keeps a WAV of what the board played over I2S (`.fabwright/audio/run-<seq>.wav`, last 20), names it in the log entry and the result (`audio`), `GET /api/audio/<file>`; the followed page plays it with WebAudio in step with the run's frames, never under a test driver, hidden tab or muted page (`window.__fabwrightAudio` counts); a level bar under any part reporting `playing` + `level` | the sound is the I2S stream (mono, 16 kHz), not the amp's analog output or the speaker's response | `packages/session/test/esp32-audio-session.test.ts`, `apps/web/e2e/esp32-audio.spec.ts` |
 | Parts and checks | MAX98357A: an unwired GAIN pin read 0 V (12 dB) and is now 9 dB (floating); check_design `amp-speaker-overpower` (watts at full scale vs the speaker's rating, with the safe level in % / dBFS and the fixes), `amp-no-speaker`, `amp-out-shorted`, `amp-speaker-impedance`; speaker texts name the I2S amp; get_part hints for the MAX98357A and INMP441 (PCM / WAV streaming, the Sense's PDM mic, decoder licences) | | `packages/session/test/audio-checks.test.ts`, `packages/parts/src/i2s.integration.test.ts` |
 | Runner fix | two processes building the same sketch at once deleted each other's work folder (the second browser's run never played); work folders are now per process | general | the e2e (failed 2/2 cold without the fix, passed 2/2 with it) |
 
 Licences: QEMU stays GPL-2.0 in its own process (patches 0004 / 0005 are GPL like the rest of the
-series). Nothing new is shipped in Jumper's code. The MP3 test links arduino-esp32's prebuilt
+series). Nothing new is shipped in Fabwright's code. The MP3 test links arduino-esp32's prebuilt
 libhelix-mp3 (RealNetworks RPSL / RCSL), so it is built at test time and no image with it is
 committed. Hints say: minimp3 is CC0 (fine to bundle); ESP32-audioI2S, ESP8266Audio and
 arduino-audio-tools are GPL-3.0 (not shipped, and they make firmware GPL); WebSockets is LGPL-2.1.
@@ -243,8 +243,8 @@ Behaviour of the drivers the emulator reproduces (asserted, not bugs of the mode
 128 frames after an idle ring then 112 of silence; reconfiguring right after `write()` cuts what is
 still in the DMA ring (up to 1440 frames) and plays its tail at the new rate.
 
-Checks (worktree `jumper-wt-r13-audio`, native runtimes, Docker down, load average 40 to 150 from
-other tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` (JUMPER_RUNTIME=native)
+Checks (worktree `fabwright-wt-r13-audio`, native runtimes, Docker down, load average 40 to 150 from
+other tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` (FABWRIGHT_RUNTIME=native)
 first run exit 1 (3 failed: the boot test still expected bridge v5, fixed; the stream test lost a
 WAV when the wall-clock network paused it past the sketch's 3 s idle timeout under load, fixed by
 checking every sample with pauses allowed; a CLI test hit vitest's 5 s timeout under load, passed
@@ -254,17 +254,17 @@ skipped**. The stream test then passed 8 / 8 in a row. e2e full suite, desktop +
 the 6 were desktop only (agentparts, case-view, micropython, projects-flow, switch-projects x2) and
 all 10 tests of those specs passed re-run alone (1 worker, exit 0). `esp32-audio.spec.ts` passed on
 both in the full run, and 2 / 2 with a cold build cache in parallel. The native QEMU installer
-(`installNativeQemu`, JUMPER_QEMU_SRC = the spike repo, branch `jumper-jb6`) built jb6 from source.
+(`installNativeQemu`, FABWRIGHT_QEMU_SRC = the spike repo, branch `jumper-jb6`) built jb6 from source.
 
 Gaps (round 13 audio):
-- **The star keychain's board (XIAO RP2040) has no I2S in Jumper**: the RP2040 does I2S with PIO,
-  which rp2040js runs but Jumper does not turn into audio. A talking device should use an ESP32-S3
+- **The star keychain's board (XIAO RP2040) has no I2S in Fabwright**: the RP2040 does I2S with PIO,
+  which rp2040js runs but Fabwright does not turn into audio. A talking device should use an ESP32-S3
   (the XIAO ESP32-S3 Sense also has the camera and a PDM mic) + MAX98357A + a 20 mm 8 ohm speaker.
-- No Docker image was built (Docker Desktop is broken here): `jumper/qemu-esp:9.2.2-20260417-jb6`
+- No Docker image was built (Docker Desktop is broken here): `fabwright/qemu-esp:9.2.2-20260417-jb6`
   is only built natively; the Dockerfile applies 0001-0005 and the series was checked to rebuild the
   branch exactly (`git apply` on the upstream tag = `jumper-jb6`), but `docker build` never ran.
-- Machines with only jb5 installed need `jumper setup esp32` (it builds jb6). The person's server on
-  port 7780 (worktree jumper-wt-r12-star) still uses jb5 until it is restarted from code with jb6.
+- Machines with only jb5 installed need `fabwright setup esp32` (it builds jb6). The person's server on
+  port 7780 (worktree fabwright-wt-r12-star) still uses jb5 until it is restarted from code with jb6.
 - The emulated CPU runs at 125 MIPS (icount shift 3), slower than a 240 MHz ESP32 / S3: per-sample
   math can underrun in the emulator where the chip might not. Not changed (it is every test's time base).
 - WebSocket audio was not run as audio (the WebSocket path itself is round 10's `esp32-ws-stream`).
@@ -274,7 +274,7 @@ Gaps (round 13 audio):
   here was compared against a MAX98357A on a bench.
 - On the followed page, a run that fails in the session (e.g. a build error) shows no toast: the
   e2e saw only "waiting" when the build race hit. Not fixed in this track.
-- Camera track overlap: it also adds a 0004 patch (`0004-jumper-camera.patch`) and edits the S3
+- Camera track overlap: it also adds a 0004 patch (`0004-fabwright-camera.patch`) and edits the S3
   machine file; the two patches touch different files except `hw/xtensa/esp32s3.c` / `esp32.c` and
   meson.build (one line each) and must be renumbered / rebased into one series at integration.
 
@@ -288,7 +288,7 @@ an ESP32 / ESP32-S3), not a star feature. Branch `round13/camera` (worktree, not
 | Area | What works | Check it with |
 | --- | --- | --- |
 | Parts | `seeed-xiao-esp32s3-sense` (XIAO ESP32-S3 + Sense board: OV2640 / OV3660 on its own GPIOs, PDM mic as an I2S source, microSD, 8 MB octal PSRAM, charger; 21 x 17.8 x 15 mm, 6 g, 110 / 380 mA, $13.99, lens as a `camera` feature with fov 66) and `ov2640-camera` (2 x 9 header DVP module, every esp32-camera signal on a pin). Original SVGs: the lens shows the last captured picture (`<image>` bound to a data:image URL only) | `packages/parts/src/parts/*/model.test.ts` |
-| Emulation | QEMU patch `0004-jumper-camera.patch`: a camera port next to Espressif's virtual RGB panel (`CC` / `CD` blocking lines, frame window). Simulation builds of sketches that include `esp_camera.h` link `JumperCamera` (`-Wl,--wrap` of the esp32-camera API: pins checked, fb_count, PSRAM / DRAM, FB-OVF, settings, capture time); device builds use the real driver. Frames (scene, image, webcam) rendered by `sim-core/camera.ts` (own baseline JPEG encoder / decoder, PNG decoder) as JPEG / RGB565 / grayscale / YUYV / BGR888. Boards with `mcu.psram` get QEMU's SPI PSRAM (octal on the Sense) | `camera.integration.test.ts` (S3 with Sense pins, ESP32 with ESP32-CAM pins), `boards.integration.test.ts` (Sense) |
+| Emulation | QEMU patch `0004-fabwright-camera.patch`: a camera port next to Espressif's virtual RGB panel (`CC` / `CD` blocking lines, frame window). Simulation builds of sketches that include `esp_camera.h` link `FabwrightCamera` (`-Wl,--wrap` of the esp32-camera API: pins checked, fb_count, PSRAM / DRAM, FB-OVF, settings, capture time); device builds use the real driver. Frames (scene, image, webcam) rendered by `sim-core/camera.ts` (own baseline JPEG encoder / decoder, PNG decoder) as JPEG / RGB565 / grayscale / YUYV / BGR888. Boards with `mcu.psram` get QEMU's SPI PSRAM (octal on the Sense) | `camera.integration.test.ts` (S3 with Sense pins, ESP32 with ESP32-CAM pins), `boards.integration.test.ts` (Sense) |
 | Agent / tests | `set_camera_frame {scene \| image}` (live, never saved), scenario step `camera_frame`, template `xiao-esp32s3-sense` (camera starter + light / dark test), get_part hints; `plan_device` picks the Sense for camera / see / photo wishes (drops camera, mic, Wi-Fi and TP4056 modules it has; burst-aware cell); `check_design`: camera-board, camera-unwired, camera-pins (camera_config_t through #defines), camera-psram, camera-battery (bursts vs 1C, battery-life estimate) | `packages/session/test/camera-session.test.ts`, `camera-design.test.ts` |
 | Web | Inspector camera section: scene, picture (picked or dropped), webcam (permission, indicator in the section + a pill, 0.7 s frames to the local simulator only, off after 3 min / hidden page / project switch); Device view draws the lens in its hole, red ring while capturing | `apps/web/e2e/camera.spec.ts` |
 | Case | `camera` features are exposed; the engine cuts a `lens` opening of lens diameter + 2 x (standoff + wall) x tan(fov / 2) | `packages/enclosure/test/camera-hole.test.ts` |
@@ -297,9 +297,9 @@ Emulated vs shimmed vs not: the firmware and PSRAM are emulated; the esp32-camer
 simulation builds; the camera hardware (DVP / LCD_CAM / I2S camera mode, DMA, XCLK, SCCB) is not
 emulated, and frames are clean renders (no exposure, noise or lens effects).
 
-Checks (worktree `jumper-wt-r13-camera`, native runtimes, Docker down, load average 80 to 220 from the
+Checks (worktree `fabwright-wt-r13-camera`, native runtimes, Docker down, load average 80 to 220 from the
 other tracks): `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` first run exit 1 (an
-old planner test still said "Jumper does not simulate cameras": updated), second run exit 1:
+old planner test still said "Fabwright does not simulate cameras": updated), second run exit 1:
 **218 files passed, 1 failed, 2 skipped; 1820 tests passed, 1 failed, 5 expected fail, 5 skipped**;
 the failure was apps/cli/test/cli.test.ts "round 12 skill" timing out at 5 s (load ~170), re-run
 alone 5/5 passed. Every emulator integration test ran natively (QEMU jb5-cam1). e2e desktop + mobile
@@ -307,9 +307,9 @@ alone 5/5 passed. Every emulator integration test ran natively (QEMU jb5-cam1). 
 2 did not run**; camera.spec passed on both. The 4 (case-view desktop, micropython desktop, build-kit
 mobile, case-assembly mobile) re-run alone with 1 worker: 9 passed, case-view desktop failed again
 ("Loading the case…" past 30 s, the round 12 load flake), then passed alone (exit 0). The native QEMU
-installer with JUMPER_QEMU_SRC built jb5-cam1 in 64 s and the camera tests passed on that build.
+installer with FABWRIGHT_QEMU_SRC built jb5-cam1 in 64 s and the camera tests passed on that build.
 
-Gaps: Docker images not built (`jumper/qemu-esp:…-jb5-cam1`, arduino-esp32 with JumperCamera; the
+Gaps: Docker images not built (`fabwright/qemu-esp:…-jb5-cam1`, arduino-esp32 with FabwrightCamera; the
 wrapper and Dockerfiles are updated, untested); the Sense's PDM mic reaches firmware only when the
 QEMU I2S RX path lands (audio track); no browser mic for it; frame rates and init time are estimates;
 nothing bought or run on a real Sense / OV2640.
@@ -330,11 +330,11 @@ The three tracks below are merged on main and joined:
   The shape-guessing adapter and its two fixture plans are gone; a stale case still never uses its plan.
 - **Skill** (`packages/agent-skill`): the loop now says think assembly with `propose_layout` before the
   case, `get_assembly_plan` right after `design_case` (it needs a case; fix its checks before printing)
-  and `get_build_kit` for "what do I need". Server instructions, prompts, `jumper://docs/hardware`,
+  and `get_build_kit` for "what do I need". Server instructions, prompts, `fabwright://docs/hardware`,
   the project skill + CLAUDE.md + AGENTS.md and the plugin are regenerated with the real tool names.
   Guide: [docs/agent-skill.md](docs/agent-skill.md); kit: [docs/build-kit.md](docs/build-kit.md).
 
-Checks (worktree `jumper-wt-r12-main`, native runtimes, Docker down, machine load average 40 to 70):
+Checks (worktree `fabwright-wt-r12-main`, native runtimes, Docker down, machine load average 40 to 70):
 `pnpm gen` exit 0, no diff; `pnpm typecheck` exit 0; `pnpm test` exit 0, **212 files passed, 2 skipped;
 1761 tests passed, 5 expected fail, 5 skipped**. Full e2e (desktop + mobile, `E2E_PORT=6260
 E2E_HUB_PORT_BASE=12600`, 2 workers): first run exit 1, 102 passed, 4 failed (build-kit on both: it
@@ -345,7 +345,7 @@ micropython (editor still in C++ mode) at load average 64; both specs re-run alo
 4 passed, exit 0. micropython failed the same way on plain main in the skill track's runs.
 
 The rp2040 live-track test (failed in the assembly and skill tracks' runs, and once alone here) was a
-real test bug: the previous test's `jumper serve` was still closing when the next one started on the
+real test bug: the previous test's `fabwright serve` was still closing when the next one started on the
 same port with `--strict-port`; afterEach now waits for it to exit (6/6 three times after the fix).
 
 Gaps (round 12, all tracks): no live Claude Code run over MCP has used `get_assembly_plan` /
@@ -354,7 +354,7 @@ bought, printed or soldered from a plan or kit; tight layouts still fall back to
 modules; print estimates not compared against a real slicer; the plugin's MCP address is fixed at
 port 7780; `plan_device` still picks a board without a charger for some battery devices.
 
-## Round 12, track assembly (2026-11-12): Jumper plans how the parts go inside, and checks it
+## Round 12, track assembly (2026-11-12): Fabwright plans how the parts go inside, and checks it
 
 The person asked to go from the designed case to "all the pieces I need to build it, what to print,
 and how I put the stuff inside". Branch `round12/assembly` (worktree, not merged). Guide:
@@ -392,7 +392,7 @@ together inside the case, how to flash it and what to do when it does not work. 
 | --- | --- | --- |
 | Tool | `get_build_kit {region?, prefer?, slicer?, write?, pdf?}` (read-only on the project): `{summary, kit, files, next}`; writes `build-kit/<name>-kit/` (kit.html with pictures inside, kit.pdf, KIT.md, SHOPPING.csv / .md, PRINT-LIST.md, the STLs / 3MF / renders, the file to flash, sd-card/) + zip. AGENT_LOOP, AGENTS.md, docs/agents.md name it | `packages/session/test/kit.test.ts` |
 | Buy | Every part from the factory BOM with the exact variant (a 250 mAh cell is the 502030 pouch), settings in words with what the module ships with ("Charge current (R_PROG): 250 mA (it usually comes set to 1000 mA ...)"), store links per region (Amazon searches move to .de / .co.uk), prices, alternatives (same-chip boards, "any module sold as"), and rules for what people forget: microSD for a card slot, the mating JST socket for a cell lead (with the polarity warning), a data USB cable per connector type, wire per gauge (metres and colours from the cut list), heat-shrink, solder, Kapton, foam tape, M2 screws + inserts, filament grams. Totals per store, still to buy, and with what they may already have. Lines without a link get store searches and a `no_link` note | same |
-| Print | Each STL: material, named colour, face on the bed, supports, layer, infill, grams and minutes from the mesh (documented formula: area x 1 mm solid + infill, 4 mm³/s + 3 s per layer), the 3MF plate, print-service notes (JLC3DP, Craftcloud). PrusaSlicer is used when installed (`JUMPER_SLICER`, cached per STL hash, never bundled); OrcaSlicer detected only | same (fake slicer) |
+| Print | Each STL: material, named colour, face on the bed, supports, layer, infill, grams and minutes from the mesh (documented formula: area x 1 mm solid + infill, 4 mm³/s + 3 s per layer), the 3MF plate, print-service notes (JLC3DP, Craftcloud). PrusaSlicer is used when installed (`FABWRIGHT_SLICER`, cached per STL hash, never bundled); OrcaSlicer detected only | same (fake slicer) |
 | Assemble | From the case engine's plan when there is one (`case/assembly/plan.json`, round12/assembly's shape, tested on a real case-6 Muse plan), else derived: print + test-fit, inserts, flash bare, cut list, power and ground first, one module at a time (inline resistors with their module), parts into the case layer by layer (the screen first, which wall each port lines up with), the cell last, close, final check from the scenarios; each with picture, wires (from / to in words, colour, cut, gauge), cautions, a check | same |
 | Flash, help | Per backend: UF2 drag-drop, esptool (the board's own command), avrdude / arduino-cli (old-bootloader note), arduino-cli for nRF52 / STM32 (ST-Link / DFU), mpremote; where the file is. Troubleshooting: rules per part category, check_design and case checks, the fidelity "test on the real device" list; tool names turned into people's words | same |
 | Factory pack | `build-kit/` added (kit.html, KIT.md, SHOPPING.*, PRINT-LIST.md); the factory files and README.zh-CN unchanged | same |
@@ -402,7 +402,7 @@ Sample (the talking egg of round 8b with its case, firmware built natively):
 `jumper-evals/round12/kit-sample/talking-egg-kit/` (kit.html, kit.pdf, zip). Read as a first-time
 maker; fixed what was confusing (see the commit "what a first-time maker tripped on").
 
-Checks (worktree `jumper-wt-r12-kit`, native runtimes, Docker down): `pnpm gen` exit 0, no diff;
+Checks (worktree `fabwright-wt-r12-kit`, native runtimes, Docker down): `pnpm gen` exit 0, no diff;
 `pnpm typecheck` exit 0; `pnpm test` exit 0, **207 files passed, 2 skipped; 1723 tests passed, 5 expected
 fail, 5 skipped** (run before the last adapter commit; after it `kit.test.ts`, `kit-routes.test.ts`,
 `round6-integration`, `case-tools`: 21/21, exit 0). e2e (`E2E_PORT=6220 E2E_HUB_PORT_BASE=12400
@@ -417,7 +417,7 @@ Known gaps (round 12 kit):
 - Print estimates are not checked against a real slicer here (no PrusaSlicer on this Mac; a fake one tests the path).
 - Nothing was bought, printed or soldered from a kit.
 
-## Round 12, track skill (2026-11-12): Jumper's hardware know-how injected into every agent
+## Round 12, track skill (2026-11-12): Fabwright's hardware know-how injected into every agent
 
 The person asked: "can I ask Claude for all the pieces I need to build it, and what to print, and
 always think how I'm going to put the stuff inside". The know-how is now written once
@@ -426,14 +426,14 @@ always think how I'm going to put the stuff inside". The know-how is now written
 
 | Face | What | Check it with |
 | --- | --- | --- |
-| MCP, every client | server instructions end with a "Design for assembly" block; prompts `design-device` (goal), `build-kit`, `design-for-assembly`; resource `jumper://docs/hardware` | `packages/mcp/test/mcp.test.ts` |
-| Project folder | `new_project`, `jumper new`, Open in Agent → Launch and `jumper skill install --project <dir>` write `.claude/skills/jumper-hardware/SKILL.md`, `AGENTS.md` and `CLAUDE.md` (imports AGENTS.md, so Claude Code always has the guide); files the person wrote are kept unless `--force`; `JUMPER_AGENT_FILES=0` turns it off | `packages/agent-skill/test`, `apps/cli/test/cli.test.ts`, `serve.test.ts` |
-| Plugin | `plugins/jumper` (skill + the running app's MCP) and `.claude-plugin/marketplace.json`; the person installs it (`claude --plugin-dir …/plugins/jumper`); `claude plugin validate` passes | `plugins/jumper/README.md` |
-| CLI | `jumper skill print [--target skill\|agents\|guide\|instructions]`, `jumper skill install` | `apps/cli/test/cli.test.ts` |
+| MCP, every client | server instructions end with a "Design for assembly" block; prompts `design-device` (goal), `build-kit`, `design-for-assembly`; resource `fabwright://docs/hardware` | `packages/mcp/test/mcp.test.ts` |
+| Project folder | `new_project`, `fabwright new`, Open in Agent → Launch and `fabwright skill install --project <dir>` write `.claude/skills/fabwright-hardware/SKILL.md`, `AGENTS.md` and `CLAUDE.md` (imports AGENTS.md, so Claude Code always has the guide); files the person wrote are kept unless `--force`; `FABWRIGHT_AGENT_FILES=0` turns it off | `packages/agent-skill/test`, `apps/cli/test/cli.test.ts`, `serve.test.ts` |
+| Plugin | `plugins/fabwright` (skill + the running app's MCP) and `.claude-plugin/marketplace.json`; the person installs it (`claude --plugin-dir …/plugins/fabwright`); `claude plugin validate` passes | `plugins/fabwright/README.md` |
+| CLI | `fabwright skill print [--target skill\|agents\|guide\|instructions]`, `fabwright skill install` | `apps/cli/test/cli.test.ts` |
 | Sync | a test fails when the skill names a tool that does not exist, mentions get_build_kit / get_assembly_plan before they exist (each has a fallback), or a rule contradicts the instructions, AGENTS.md or a tool description (one pocket number: 20 mm) | `packages/session/test/agent-skill-sync.test.ts` |
 | read_file | reads the case and build pack's text files (`case/PRINT.md`, `manufacturing/<pack>/BOM.md`, ASSEMBLY.md, FLASHING.md), so an agent with only the tools can summarise buy / print / assemble / flash | same test |
 
-Real headless Claude Code (Opus, `claude -p`, only `mcp__jumper` + Skill allowed, empty project, the
+Real headless Claude Code (Opus, `claude -p`, only `mcp__fabwright` + Skill allowed, empty project, the
 keychain-with-a-smiley wish with a mind change), three runs, each about $1.1 to $1.3 and 2.5 to 3 min:
 
 - Every run: plan_device first, the last version of the wish, firmware tested, propose_layout →
@@ -450,7 +450,7 @@ keychain-with-a-smiley wish with a mind change), three runs, each about $1.1 to 
 
 Checks (2026-11-12, local): `pnpm gen` no diff; `pnpm typecheck` 0; `pnpm test` 207 files, 1729
 passed (exit 0); `pnpm test:e2e` desktop + mobile 95 passed, 5 failed, 16 skipped (exit 1) while two
-headless Claude runs and a Jumper server ran beside it: device-case, micropython, renode-board,
+headless Claude runs and a Fabwright server ran beside it: device-case, micropython, renode-board,
 rp2040, switch-projects (desktop). Re-run as the same 5-spec set, plain main fails micropython and
 switch-projects too (same load flake); device-case, renode-board and rp2040 pass on this branch when
 re-run (rp2040 twice alone).
@@ -460,27 +460,27 @@ battery pocket device; the agent swaps it only because the skill says so.
 
 ## Round 11 (2026-11-11): native builds, firmware and emulators without Docker
 
-Docker Desktop on this Mac is broken (its VM disk has EXT4 errors), so Jumper now builds and runs
-firmware natively. Docker stays supported (Linux, CI, or `JUMPER_RUNTIME=docker`). Guide:
+Docker Desktop on this Mac is broken (its VM disk has EXT4 errors), so Fabwright now builds and runs
+firmware natively. Docker stays supported (Linux, CI, or `FABWRIGHT_RUNTIME=docker`). Guide:
 [docs/native-runtime.md](docs/native-runtime.md). Branch `round11/native-builds`.
 
 | Area | What works |
 | --- | --- |
-| Runtime choice | `JUMPER_RUNTIME=auto` (default): Docker when `docker info` answers within 4 s and has the image, else Jumper's native install; `docker` / `native` force one. One probe per 30 s. Nothing usable: what failed, why, and `jumper setup <family>` or start Docker |
-| Toolchain | arduino-cli 1.5.1 (SHA-256 checked) in `~/.jumper/toolchains/arduino/1.5.1` with its own data / user dirs: arduino:avr 1.8.8, rp2040 6.3.1, esp32 3.3.12, STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13, the libs3 set; the ESP32 set adds the r3 network libraries + JumperEth + JumperSim. The images' post-build steps run natively (RP2040 ihex, ESP32 Wi-Fi/TLS shim + 4 MB flash, nRF52 sim.hex) |
-| Emulators | Espressif QEMU 9.2.2 + patches 0001-0003 (bridge v5) compiled into `~/.jumper/emulators/qemu-esp/9.2.2-20260417-jb5` (45 s, 50 MB); Renode 1.17.0 from the release .dmg (SHA-256 checked, 13 s, 180 MB) |
-| Setup | `jumper setup` (all) / `jumper setup avr|rp2040|esp32|stm32|nrf52|renode` / `jumper setup list`, with progress; the app: `GET /api/runtime`, `POST /api/runtime/setup` (same lines, NDJSON) |
+| Runtime choice | `FABWRIGHT_RUNTIME=auto` (default): Docker when `docker info` answers within 4 s and has the image, else Fabwright's native install; `docker` / `native` force one. One probe per 30 s. Nothing usable: what failed, why, and `fabwright setup <family>` or start Docker |
+| Toolchain | arduino-cli 1.5.1 (SHA-256 checked) in `~/.fabwright/toolchains/arduino/1.5.1` with its own data / user dirs: arduino:avr 1.8.8, rp2040 6.3.1, esp32 3.3.12, STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13, the libs3 set; the ESP32 set adds the r3 network libraries + FabwrightEth + FabwrightSim. The images' post-build steps run natively (RP2040 ihex, ESP32 Wi-Fi/TLS shim + 4 MB flash, nRF52 sim.hex) |
+| Emulators | Espressif QEMU 9.2.2 + patches 0001-0003 (bridge v5) compiled into `~/.fabwright/emulators/qemu-esp/9.2.2-20260417-jb5` (45 s, 50 MB); Renode 1.17.0 from the release .dmg (SHA-256 checked, 13 s, 180 MB) |
+| Setup | `fabwright setup` (all) / `fabwright setup avr|rp2040|esp32|stm32|nrf52|renode` / `fabwright setup list`, with progress; the app: `GET /api/runtime`, `POST /api/runtime/setup` (same lines, NDJSON) |
 | Same output | AVR Blink and the RP2040 / libs3 fixtures byte-identical to the Docker builds, except FastLED (a few bytes of register allocation; runs identically, checked on the simulator). ESP32: same image size as Docker's; paths mapped to the image's (`-ffile-prefix-map`), no home folder in firmware |
 | Pending fixtures | built natively and run: esp-periph `esp_io` / `esp_bus` on ESP32, S3 and C3 (LEDC PWM, servo, tone, fade, IRQ, ADC raw, I2C on both controllers, Arduino SPI, UART1/2 both ways), `esp_neopixel` (built at test time, LGPL), `net-probe` on the S3 through the device network (2/2), both network examples' scenarios (4/4) |
 | Fixes found | servo fixture at 14 bit (the S3 / C3 LEDC maximum); the device-net test's upstream server moved to its own thread (the lockstep loop starved it); run_tests / screenshot now plug an ESP32 into the device network (examples failed "no network card"); native builds set TMPDIR (ctags failed under MCP stdio); unexplained build failures are no longer cached; ESP32 network libraries pinned (PubSubClient 2.8.0, MQTT 2.5.3, ArduinoJson 7.4.3, WebSockets 2.7.2); stale esp32-session expectation; a fake-QEMU cleanup race |
 
 Install (M4 Max): avr 30 s, rp2040 27 s, esp32 92 s, stm32 34 s, mbed_nano 17 s, nrf52 31 s, QEMU 45 s,
-Renode 13 s: about 5 minutes and 10 GB in `~/.jumper` (esp32 3.9 GB, stm32 2.2 GB, rp2040 1.1 GB, nRF52 0.9 GB,
+Renode 13 s: about 5 minutes and 10 GB in `~/.fabwright` (esp32 3.9 GB, stm32 2.2 GB, rp2040 1.1 GB, nRF52 0.9 GB,
 mbed 0.5 GB, avr 0.25 GB, libraries 0.4 GB, Renode 0.18 GB, QEMU 0.05 GB). QEMU needs Homebrew's glib,
 pixman, libgcrypt, libslirp (`libslirp` was installed for this round: Espressif's 9.2.2 compiles net/slirp.c
 even with slirp disabled).
 
-Checks (worktree `jumper-wt-r11-native`, no Docker stub, Docker down):
+Checks (worktree `fabwright-wt-r11-native`, no Docker stub, Docker down):
 - `pnpm test`: exit 0, **205 files passed, 2 skipped; 1711 tests passed, 5 expected fail, 5 skipped**. Every
   emulator integration test ran natively: ESP board fixtures, ESP I2C0, MicroPython ESP32 / C3, ESP
   peripherals (MicroPython + the new Arduino fixtures), esp32-session (5/5), device-net firmware (2/2),
@@ -499,10 +499,10 @@ Gaps:
 
 ## Rounds 9-10, integrated on main (2026-11-11): every board family, one registry, one pipeline
 
-Round 9 spiked the ESP32 family (Espressif QEMU + a Jumper bridge), STM32 / nRF52 boards (Renode)
+Round 9 spiked the ESP32 family (Espressif QEMU + a Fabwright bridge), STM32 / nRF52 boards (Renode)
 and a device network. Round 10 ran five tracks on it (esp-app, esp-periph, net, renode, lang); this
 merge joins them into one board registry (part.json `mcu` + `availability`), one server-side backend
-factory (`@jumper/sim-backends/node`: avr8js, rp2040js, QEMU, Renode), one runner (one Platform table
+factory (`@fabwright/sim-backends/node`: avr8js, rp2040js, QEMU, Renode), one runner (one Platform table
 for every Arduino core, one `BuildResult` for every language) and one support matrix.
 
 **What each board emulates, peripheral by peripheral, with the test behind each cell:
@@ -511,17 +511,17 @@ library shows a board's row, `get_part` returns it as `emulation`).
 
 | Area | Done in this merge |
 | --- | --- |
-| ESP32 emulator | QEMU patches are a series: 0001 bridge (jb2), 0002 peripherals (esp-periph), 0003 pad pulls + lockstep handshake (esp-app); bridge protocol v5; tag `jumper/qemu-esp:9.2.2-20260417-jb5`. The series applied to clean upstream equals branch `jumper-jb5` of the spike QEMU repo, and it compiles on macOS. `JUMPER_QEMU_ESP_RUNTIME=native` runs a local build. |
+| ESP32 emulator | QEMU patches are a series: 0001 bridge (jb2), 0002 peripherals (esp-periph), 0003 pad pulls + lockstep handshake (esp-app); bridge protocol v5; tag `fabwright/qemu-esp:9.2.2-20260417-jb5`. The series applied to clean upstream equals branch `jumper-jb5` of the spike QEMU repo, and it compiles on macOS. `FABWRIGHT_QEMU_ESP_RUNTIME=native` runs a local build. |
 | ESP32 backend | esp-periph's pump (stopAt, waveforms, buses) + esp-app's async `prepare()`, why/fix `EmulatorError`, flash padding, pull modes; pad voltages set before boot survive it; network card from the session's device network |
 | Renode | the new one-socket Renode backend replaces round 9's ELF adapter in the factory; container labels shared with QEMU (one reaper); native runtime honoured by the runner's checks |
-| Builds | ESP32 sketches build with `jumper/arduino-esp32:3.3.12-r3` (Wi-Fi / TLS shim; r2 then r3 built on first use); `purpose: "device"` builds with `JUMPER_SIM=0` for the factory pack; MicroPython / ESP-IDF / PlatformIO through the same `BuildResult` (`format` ihex / esp-flash / elf) |
+| Builds | ESP32 sketches build with `fabwright/arduino-esp32:3.3.12-r3` (Wi-Fi / TLS shim; r2 then r3 built on first use); `purpose: "device"` builds with `FABWRIGHT_SIM=0` for the factory pack; MicroPython / ESP-IDF / PlatformIO through the same `BuildResult` (`format` ihex / esp-flash / elf) |
 | Languages | chip families (stm32f103c8 -> stm32f103), Renode loads Intel HEX, MicroPython verified on ESP32 / ESP32-C3 (the filesystem goes after the last partition, as MicroPython 1.24+ expects) |
-| Product | `jumper setup esp32` / `jumper setup renode`; the followed page's Run goes to the session for every process board; plan_device never picks a Docker board on its own; Docker that hangs gets its own why / fix |
+| Product | `fabwright setup esp32` / `fabwright setup renode`; the followed page's Run goes to the session for every process board; plan_device never picks a Docker board on its own; Docker that hangs gets its own why / fix |
 
-Checks on this merge (worktree `jumper-wt-r10-main`, branch `main`):
+Checks on this merge (worktree `fabwright-wt-r10-main`, branch `main`):
 - `pnpm gen`: exit 0, no diff. `pnpm typecheck`: exit 0.
 - `pnpm test`: exit 0, **197 files passed, 4 skipped; 1657 tests passed, 2 expected fail, 27 skipped**.
-  Run with `JUMPER_QEMU_ESP_RUNTIME=native` (the jb5 sources built natively), native Renode 1.17.0
+  Run with `FABWRIGHT_QEMU_ESP_RUNTIME=native` (the jb5 sources built natively), native Renode 1.17.0
   and the `docker` command stubbed to fail fast, because **Docker Desktop was hung on this machine
   for the whole merge** (disk filled earlier; containerd I/O errors; every `docker` call hangs; not
   restarted). So the emulator integration tests ran on native emulators, and none ran in Docker:
@@ -531,16 +531,16 @@ Checks on this merge (worktree `jumper-wt-r10-main`, branch `main`):
   - skipped (need Docker builds or keys): runner.test 4, libs3 image builds 10, ESP-IDF 2, PlatformIO 1,
     esp32-session 5 (needs an ESP build), device-net firmware 2 (fixture never built), AI gateway / MCP live 3.
 - e2e, full suite, `E2E_PORT=5900 E2E_HUB_PORT_BASE=11500 --workers=2`, desktop + mobile + case-costs +
-  perf: 94 passed, 17 skipped, 1 failed + 2 did not run (rp2040.spec.ts: `jumper serve` did not start
+  perf: 94 passed, 17 skipped, 1 failed + 2 did not run (rp2040.spec.ts: `fabwright serve` did not start
   within 45 s while a QEMU compile loaded the machine); `rp2040.spec.ts` re-run on desktop + mobile: 6/6
   passed. `renode-board.spec.ts` passed on native Renode.
 - Speed (native QEMU, 1.5 s of device time): XIAO ESP32-S3 2.65x real time, XIAO C3 5.05x, C3
   SuperMini 5.73x, ESP32 DevKitC 0.63x, S3 DevKitC-1 2.59x; boot to t = 0 in 37 to 56 ms (no container).
 
 Gaps (rounds 9-10):
-- **Docker**: nothing ran in Docker during the merge. Not built: `jumper/qemu-esp:9.2.2-20260417-jb5`,
-  `jumper/arduino-esp32:3.3.12-r3` with net's MAC fix, `jumper/arduino-nrf52:1.1.13-libs3-r2`. Until
-  the jb5 image is built (`pnpm jumper setup esp32`), ESP boards in Docker fail with "image missing"
+- **Docker**: nothing ran in Docker during the merge. Not built: `fabwright/qemu-esp:9.2.2-20260417-jb5`,
+  `fabwright/arduino-esp32:3.3.12-r3` with net's MAC fix, `fabwright/arduino-nrf52:1.1.13-libs3-r2`. Until
+  the jb5 image is built (`pnpm fabwright setup esp32`), ESP boards in Docker fail with "image missing"
   and its fix. After a Docker restart: build the images, re-run `pnpm test` without the stub.
 - **ESP32 SPI does not work** on real firmware (C3: MOSI arrives as 00 00; ESP32: the transfer hangs).
   RMT, the S3's peripherals, I2C1 and UART2 are written but unverified; I2S has no QEMU device.
@@ -563,14 +563,14 @@ use. Branch `round10/net`. Guide: [docs/network.md](docs/network.md); decision
 | Area | What works | Check it with |
 | --- | --- | --- |
 | Netstack | TypeScript netstack between emulated NICs and the gateway: QEMU `-netdev stream` frames, ARP, DHCP (10.0.2.15, .16 per MAC), ICMP echo, DNS / NTP to the gateway, server-side TCP (window, retransmission, zero-window probe), a switch between boards, a Wi-Fi control channel (EtherType 0x88B5). Runs with the gateway in a worker (`DeviceNetHost`) so lockstep emulators do not starve it | `packages/device-net/test/netstack.test.ts` (frame-level test device: DHCP, DNS, TCP, a 50 kB body through a 2920 B window, TLS with the sandbox CA, blocked hosts, Wi-Fi join / wrong password / unknown SSID / scan / drop / RSSI, the worker host) |
-| Firmware | `jumper/arduino-esp32:3.3.12-r3` (`Dockerfile.sim`): simulation builds of sketches that include network headers link JumperSim: `esp_wifi_*` wrapped onto the emulated Ethernet card (WiFi.begin / status / localIP / RSSI / scan, events, auto-reconnect unchanged) and mbedTLS chain verification wrapped to also trust the sandbox CA (sent by the netstack at join). Same source as the device; `JUMPER_SIM=0` builds without. PubSubClient, arduino-mqtt, ArduinoJson, WebSockets pinned in the image | real ESP32-C3 run (below) |
-| Product | jumper.json `network` (mode, allow, secret names, mocks file, cassette, Wi-Fi); tools `read_network`, `add_mock_api`, `inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request` / `network_fault` (run_tests forces mock mode, counts per scenario); firmware/NETWORK.md in the factory pack; fidelity note; delays and log times on the simulation's virtual clock; `QemuEspBackend {network: {framePort, mac}}` and `session.networkFor(n)` | `packages/session/test/network-tools.test.ts`, `packages/device-net/test/vclock.test.ts` |
+| Firmware | `fabwright/arduino-esp32:3.3.12-r3` (`Dockerfile.sim`): simulation builds of sketches that include network headers link FabwrightSim: `esp_wifi_*` wrapped onto the emulated Ethernet card (WiFi.begin / status / localIP / RSSI / scan, events, auto-reconnect unchanged) and mbedTLS chain verification wrapped to also trust the sandbox CA (sent by the netstack at join). Same source as the device; `FABWRIGHT_SIM=0` builds without. PubSubClient, arduino-mqtt, ArduinoJson, WebSockets pinned in the image | real ESP32-C3 run (below) |
+| Product | fabwright.json `network` (mode, allow, secret names, mocks file, cassette, Wi-Fi); tools `read_network`, `add_mock_api`, `inject_network_fault` (+ `weak_signal`), `set_network`, `try_request`; scenario steps `request` / `network_fault` (run_tests forces mock mode, counts per scenario); firmware/NETWORK.md in the factory pack; fidelity note; delays and log times on the simulation's virtual clock; `QemuEspBackend {network: {framePort, mac}}` and `session.networkFor(n)` | `packages/session/test/network-tools.test.ts`, `packages/device-net/test/vclock.test.ts` |
 | Network panel | Rail → Network (phone menu → Network): Wi-Fi state, mode, secrets by name (set / missing), requests with status / source / time / TLS / secret names, WS and MQTT sessions summarized, Wi-Fi / DHCP / DNS events, blocked with why and fix; Drop Wi-Fi / Weak signal / Clear faults; a Try box (`GET /api/network`, `POST /api/network/fault`, `POST /api/network/try`) | `apps/web/e2e/network-panel.spec.ts`, `apps/web/src/views/network/devnet.test.ts` |
 | Examples | `examples/esp32-api-demo` (XIAO ESP32-S3 + SSD1306: HTTPS JSON from Open-Meteo with the real root CA, replayed from a real recorded cassette; MQTT publish to a mock broker; Wi-Fi drop and 503 scenarios) and `examples/esp32-ws-stream` (XIAO ESP32-C3, 40 binary chunks over wss://) | need the ESP32 boards from round10/esp-app (see gaps) |
 
 Real firmware (earlier in this round, before Docker failed): the `wifi-https` fixture, a plain
 WiFi.h sketch with the ISRG Root X1 CA set, built with the r3 image for the ESP32-C3 and run
-free-running in `jumper/qemu-esp` with its NIC on the netstack: scan finds "JumperNet", joins,
+free-running in `fabwright/qemu-esp` with its NIC on the netstack: scan finds "FabwrightNet", joins,
 DHCP 10.0.2.15 / gw 10.0.2.2, DNS → 198.18.0.1, HTTPS GET to a mock → 200 with the body (mbedTLS
 accepted the sandbox CA through the shim; 1.0 to 1.4 s virtual, handshake included), a blocked host
 → NXDOMAIN with why / fix, weak_signal → `WiFi.RSSI()` -82, wifi_drop → status 5 then 1 with
@@ -591,7 +591,7 @@ Known gaps (round 10 net):
   WebSockets example (`beginSslWithCA`) and the S3 build were never compiled.
 - **Examples need round10/esp-app**: they use its `seeed-xiao-esp32s3` / `seeed-xiao-esp32c3` parts
   and its session wiring for ESP32 boards. On this branch alone they list with unknown parts. After
-  the merge: set `ESP32_IMAGE` to `jumper/arduino-esp32:3.3.12-r3` (build it from `Dockerfile.sim`)
+  the merge: set `ESP32_IMAGE` to `fabwright/arduino-esp32:3.3.12-r3` (build it from `Dockerfile.sim`)
   and pass `network: await session.networkFor(n)` instead of `network: false` to `QemuEspBackend`
   when `project.network` is set.
 - **OLED on the S3**: QEMU's S3 machine has no I2C controller model (round 9), so the demo's display
@@ -610,29 +610,29 @@ one output rule per chip ([docs/firmware-languages.md](docs/firmware-languages.m
 | Area | What works | Check it with |
 | --- | --- | --- |
 | MicroPython on RP2040 | Official MicroPython 1.29.0 (RPI_PICO bundled, SEEED_XIAO_RP2040 downloaded + SHA-256) + a littlefs image with the project's `.py` files, built in process (no Docker), as one Intel HEX; boots on rp2040js, runs main.py, Pin / hardware I2C on the board's bus, REPL in the Serial panel; syntax errors (mpy-cross) and tracebacks at file:line | `services/runner/src/lang/lang.test.ts`, `packages/session/test/languages.test.ts`, `apps/web/e2e/micropython.spec.ts` |
-| Mechanism | `firmware.language` in the schema, `set_firmware` tool / `jumper firmware`, starters, templates `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `plan_device` proposes a language, `run {serial_write}` and `run.errors`, `jumper setup <language>` | same |
+| Mechanism | `firmware.language` in the schema, `set_firmware` tool / `fabwright firmware`, starters, templates `pico-micropython`, `pico-micropython-oled`, `uno-platformio`, `plan_device` proposes a language, `run {serial_write}` and `run.errors`, `fabwright setup <language>` | same |
 | Web | Python mode in the code editor, tabs show paths (main/main.c), the Serial panel has a send line (REPL, `Serial.read()`), language-aware build status, runtime errors at their line | `e2e/micropython.spec.ts` |
-| ESP-IDF, PlatformIO | Images `jumper/esp-idf:5.5.5-r1` and `jumper/platformio:6.2.0-avr5.3.0-r1` built; builders and Docker tests written; **not verified**: Docker Desktop's disk failed mid-round | `espidf.integration.test.ts`, `platformio.integration.test.ts` (skip without the images) |
+| ESP-IDF, PlatformIO | Images `fabwright/esp-idf:5.5.5-r1` and `fabwright/platformio:6.2.0-avr5.3.0-r1` built; builders and Docker tests written; **not verified**: Docker Desktop's disk failed mid-round | `espidf.integration.test.ts`, `platformio.integration.test.ts` (skip without the images) |
 | Fix | RP2040 backend: an output pin's input register reads its own level (as on the chip) | `lang.test.ts` |
 
-## Round 8b (2026-11-11): Jumper says what each case choice costs, and steers to thin
+## Round 8b (2026-11-11): Fabwright says what each case choice costs, and steers to thin
 
 Evidence: a real Claude rebuilt the talking egg on round-8 code and got 74 x 96 x 44.4 mm, worse
 than round 7's 34.3 mm, with small parts. Its own case choices made it thick (a 6 mm dome on both
 faces, the eyes and the speaker pinned on the front with `y_mm`, a fixed 74 x 96 mm size after
-60 x 78 failed, where "balanced" picked round 7's 3-layer stack), and Jumper never said what they cost.
+60 x 78 failed, where "balanced" picked round 7's 3-layer stack), and Fabwright never said what they cost.
 One branch (`round8b/costs`), merged into main.
 
 | Area | What works | Check it with |
 | --- | --- | --- |
 | Choice costs | `check_fit`, `propose_layout`, `design_case`, `update_case` return `costs`: for each choice (a placement's x / y, layer, face, on_edge; dome over 1.5 mm; numeric edges; a fixed w / h or d; wall over 1.6; gap over 1.5; screws) the light proposal search runs again with it relaxed, and with all relaxed (`relax_all`); each says what it adds (thickness, length, cm³) with the `update_case` call that relaxes it, e.g. "A 6 mm dome on both faces adds 9 mm of thickness (37.2 -> 28.2 mm thick with a 1.5 mm dome). Fix: update_case {\"params\":{\"dome_mm\":1.5}}". Time-boxed (10 s; check_fit 5 s), what is not reached is `skipped`. `next` names the costliest | `packages/enclosure/test/costs.test.ts`, `packages/session/test/round8b-costs.test.ts` |
 | Steer to thin | At a fixed w / h the optimizer goes deeper until a layout fits (and searches a slightly smaller outline when the finished case pokes out); balanced = the thinnest that fits that outline. A dome over 3 mm a face is a `dome` warning with what it adds. A speaker pinned on the front is weighed against its grille on the back. A fixed size that fails names the choice that breaks it and `sizes_that_work` (flat and stacked) | same |
-| Case view | Layout tab, "What's making it bigger": each costly choice in plain words (no tool names) with an Apply button, "Let Jumper decide all of these", the sizes a failing fixed outline works at (`POST /api/case/costs`) | `e2e/case-costs.spec.ts` |
+| Case view | Layout tab, "What's making it bigger": each costly choice in plain words (no tool names) with an Apply button, "Let Fabwright decide all of these", the sizes a failing fixed outline works at (`POST /api/case/costs`) | `e2e/case-costs.spec.ts` |
 | Agent guidance | Tool descriptions (the design_case example no longer shows `dome_mm: 3`), MCP server instructions, AGENTS.md and `plan_device`'s plan for held devices: do not pin unless the person asked, dome and edges on auto, `propose_layout` before `design_case`, read `costs` and relax the costly ones, aim for 20 mm or less for a pocket device | `round8b-costs.test.ts` |
 | Window bug | The red in round 8's exploded egg was the speaker seen by parallax: the front shell moved 20 mm out, the screen stayed behind. The screen-window check only compared sizes. Now it looks through the window (rays must land on the display's active area; a window off the screen, a part in front or nothing behind fail, naming what is seen), and the parts the front shell holds move out with it in the exploded render and the web explode. Engine `case-5`; the Muse example regenerated (same size) | `packages/enclosure/test/sight.test.ts`, `engine.test.ts` |
 
 The talking egg, end to end (lead, in process through `ProjectSession`, not port 7780): round 8's
-`talking-egg-2/jumper.json` copied to a temp folder.
+`talking-egg-2/fabwright.json` copied to a temp folder.
 
 | Egg | Size | Layers | Volume | Checks | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -651,8 +651,8 @@ mobile, perf and the new `case-costs` project, `E2E_PORT=5700`, hub ports from 1
 at the default 3 workers (2 once) had 1 to 3 failures each, different specs every time (rp2040
 follow, power-usb, switch-projects, voice mute, case-outline, case-layout), each passing when re-run
 alone, while the machine's load average was 14 to 39 (other processes). Two real causes found and
-fixed on the way: the costs blocked jumper serve for seconds (now they give way between searches,
-and the Case view's own saves skip them), and a case spec's jumper serve kept running in CAD after
+fixed on the way: the costs blocked fabwright serve for seconds (now they give way between searches,
+and the Case view's own saves skip them), and a case spec's fabwright serve kept running in CAD after
 SIGTERM (now killed); the `case-costs` spec runs alone after the others.
 
 Known gaps (round 8b):
@@ -668,10 +668,10 @@ Known gaps (round 8b):
   heavier by one spec (about 6 minutes of CAD).
 - **Not checked**: a live Claude Code run over MCP with the new guidance; print and hand feel.
 
-## Round 8 (2026-11-11): Jumper works out how the parts go inside, and shows it
+## Round 8 (2026-11-11): Fabwright works out how the parts go inside, and shows it
 
 The person saw the talking egg a real Claude built (78.2 x 102 x 34.3 mm, "bulky", though the parts
-are only about 23 cm³) and asked for Jumper itself to work out the best way to distribute the parts,
+are only about 23 cm³) and asked for Fabwright itself to work out the best way to distribute the parts,
 and to propose or show it, for any custom shape. Three tracks merged into main (layout-engine, then
 parts-advice, then view; no textual conflicts).
 
@@ -690,7 +690,7 @@ mobile and perf, `E2E_PORT=5660`, hub ports from 10500): 90 passed, 17 skipped b
 exit 0, first run. Decision note [0005](docs/decisions/0005-round8-auto-layout.md).
 
 The talking egg, end to end with the merged code (lead, through `ProjectSession`, no server, not
-port 7780): round 7's `talking-egg-2/jumper.json` copied to a temp folder, the agent's outline,
+port 7780): round 7's `talking-egg-2/fabwright.json` copied to a temp folder, the agent's outline,
 `dome_mm: 3` and pins kept, auto size, auto layout.
 
 | Egg | Built case (balanced) | Volume (shell) | Fill | Pocket | Checks | Other proposals |
@@ -699,7 +699,7 @@ port 7780): round 7's `talking-egg-2/jumper.json` copied to a temp folder, the a
 | As-is, round 8 | 97.6 x 127.3 x 23 mm, 1 layer | 204.4 cm³ | 0.18 | no | all ok (`design_case` 67 s) | thinnest 100.7 x 131.3 x 21.5; smallest = round 7's stack |
 | After the parts advice (Apply: boost removed, `sw.1` → `d1.A`; 20 mm speaker; check_design 0 errors, no notes left) | 79.6 x 103.8 x 28.8 mm, 2 layers | 171.4 cm³ | 0.14 | no | all ok (`design_case` 127 s) | thinnest 111.4 x 145.2 x 21.5 |
 
-Renders (front / back / exploded / inside, report.json, log.json, jumper.json):
+Renders (front / back / exploded / inside, report.json, log.json, fabwright.json):
 `jumper-evals/round8/integ-renders/{asis,advised}/` (outside the repo), checked by eye: one layer
 with lots of empty room in the as-is egg; the advised egg stacks the cell behind the screen, the
 20 mm grille is a hex field in the back shell.
@@ -712,7 +712,7 @@ are 17.5 mm thick. The egg never reaches "pocket": the footprint stays over 110 
 Known gaps (round 8):
 - **Pins:** an agent's early `y_mm` pins can make the flat layout much bigger (advised egg
   111 x 145 vs 85 x 110 mm without them), and removing parts can then make the thinnest proposal
-  larger. Jumper does not yet say what a pin costs or offer to drop it.
+  larger. Fabwright does not yet say what a pin costs or offer to drop it.
 - **Search quality:** heuristic, not an optimum; fill ratios 0.12 to 0.19 on the egg. Presets keep
   round 6's full stacker search (2 to 5 s); a 15-part project was not timed.
 - **Proposal vs built volume:** a proposal's `volume_cm3` is the outline-box estimate (egg 223.9),
@@ -728,7 +728,7 @@ Known gaps (round 8):
 ## Round 7 (2026-11-10): any case outline, and a part that talks
 
 The person asked for "the shape of an egg, with eyes and a speaker to say stuff", and then made it
-clear that an egg is only an example: a case should be any custom shape at any size, with Jumper
+clear that an egg is only an example: a case should be any custom shape at any size, with Fabwright
 working out which pieces fit. Two tracks merged into main (shape, then voice; no textual conflicts),
 then the lead's integration. There is no "egg" preset on purpose: `shape: "custom"` takes any outline
 the agent draws.
@@ -811,7 +811,7 @@ Known gaps (round 6):
   foam tape; the pebble keeps a near-square edge where a USB port sits near the back; no IGES (STEP
   AP214 only); wire cuts are straight-line distances × 1.3, not routed; LCSC / JLC numbers empty
   until checked; 3 to 20 s per case; the factory pack holds the saved case only (variants stay in
-  `case/variants/`); the Case view needs `jumper serve`. The print, the plastic, snap strength and
+  `case/variants/`); the Case view needs `fabwright serve`. The print, the plastic, snap strength and
   the hand feel are not tested. The resistor and the robot chassis have no `mechanical` block (not
   needed by any shipped case).
 - **Colour frames:** runs logged before round 6 stay dark in History; FastLED on RP2040 sends a few
@@ -845,7 +845,7 @@ Known gaps (round 6b):
   search, not an optimum; a pebble takes ~27 s; the back edge is rounded only 2.7 mm where the
   charger port sits off mid-depth; a puck or pill that still needs a flat gets smaller edge radii; a
   replicad "failed to compute a normal" message prints on keychain generation (harmless); the old
-  round-6 Muse factory pack in `jumper-evals` is not regenerated. Print, plastic, snap strength and
+  round-6 Muse factory pack in `fabwright-evals` is not regenerated. Print, plastic, snap strength and
   hand feel not tested.
 - **UI:** hold-to-shake is measured in simulation time (at 0.5× a 2.4 s hold is a 1.2 s shake); a
   copied example trusts its shipped hex until its sketch changes; reopening Projects shows the last
@@ -862,19 +862,19 @@ after the merge: `pnpm gen` no diff, `pnpm typecheck` 0 errors, `pnpm test` 110 
 | --- | --- | --- |
 | Projects and versions | Projects gallery (logo): your projects, registered folders, examples and agent-built ones, with board, part count, tests, server-rendered thumbnails and an agent-made badge; opening an example copies it. History scrubber: every change in the action log is a version (who, why, what changed, the code, the firmware hash, a preview with that run's device state) and `restore_version` brings it back as an undoable step. Code editor (CodeMirror 6) with Save and Build & Run, compile errors underlined at the line. Switching projects keeps one MCP endpoint and one live hub | `apps/cli/test/projects.test.ts`, `e2e/projects-flow.spec.ts`, [docs/projects.md](docs/projects.md) |
 | Run it here | The page that follows an agent runs the device itself with the agent's latest hex, reloads on a new build and auto-runs after an agent build / run / run_tests (Auto-run checkbox, `?autorun=`). Hold buttons, flip switches, drag knobs, tilt / shake an IMU, slide sensor values while it runs; the project file never changes. One agent state (none / building / idle / done) behind the pill, the avatar, the Install MCP popover and the steps panel. Run with nothing to run says why and what to do | `e2e/live-run.spec.ts`, `apps/cli/test/live-routes.test.ts`, `packages/session/test/agent-state.test.ts` |
-| Pocket boards (RP2040) | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero run real arduino-pico 6.3.1 firmware on rp2040js with Jumper's own boot ROM: GPIO, PWM, 12-bit ADC, USB serial, Serial1 on pins, I2C and SPI to the existing parts, PIO on the virtual clock, deterministic timing; templates `pico`, `xiao-rp2040`, `rp2040-zero`; export writes a UF2. Runs in Node and in the page (followed or `?local`). Example `examples/pocket-oled` | `packages/parts/src/rp2040.integration.test.ts`, `packages/sim-backends/src/rp2040/rp2040.test.ts`, `e2e/rp2040.spec.ts`, [docs/rp2040.md](docs/rp2040.md) |
+| Pocket boards (RP2040) | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero run real arduino-pico 6.3.1 firmware on rp2040js with Fabwright's own boot ROM: GPIO, PWM, 12-bit ADC, USB serial, Serial1 on pins, I2C and SPI to the existing parts, PIO on the virtual clock, deterministic timing; templates `pico`, `xiao-rp2040`, `rp2040-zero`; export writes a UF2. Runs in Node and in the page (followed or `?local`). Example `examples/pocket-oled` | `packages/parts/src/rp2040.integration.test.ts`, `packages/sim-backends/src/rp2040/rp2040.test.ts`, `e2e/rp2040.spec.ts`, [docs/rp2040.md](docs/rp2040.md) |
 | Parts | 14 new: bump switch, TTP223 touch, capacitive soil probe, relay module, water pump, vibration motor, passive buzzer (tone frequency and melody), PIR, IR obstacle, DHT22, LiPo cell, TP4056 charger, WS2812 strip, GC9A01 round TFT. Every part (41) has dimensions, mass, current, price and buy links. Robot physics feeds the IR sensors and presses bump switches | `packages/parts/src/spec/physical.test.ts`, `e2e/parts-r5.spec.ts`, [docs/adding-a-part.md](docs/adding-a-part.md) |
 | Agents create parts | `create_part` / `update_part` / `list_project_parts`: a part as data (pins, physical facts, one behaviour template: digital input, analog sensor, actuator / relay, I2C register map, UART line device, display on the SSD1306 / ST7735 / ILI9341 / GC9A01 controller), never code. Works with place / connect / run / tests / DRC / exports / screenshots / canvas; SVGs rebuilt from an allowlist; labelled "agent-made: behavioral, unverified" everywhere | `packages/parts/src/custom/custom.test.ts`, `packages/session/test/agentparts.test.ts`, `e2e/agentparts.spec.ts`, [docs/custom-parts.md](docs/custom-parts.md) |
 | Plan first, show me | `plan_device`: board and why (pocket wishes get the XIAO RP2040, 5 V-only parts steer to a 5 V board), BOM with source per line, size, battery life (catalog LiPo + TP4056; a boost converter only when the board has no input that takes a 1S cell), price, links, one question, what the sim cannot check. `record` (MP4), `viewer_url` / `GET /v/:id`, inline screenshots, `delete_file`, `mark_stand_in`, `new_project {folder}` (switches the live page) | `packages/session/test/agent-tools.test.ts`, `apps/cli/test/agent-routes.test.ts` |
 | check_design | LED resistor along the whole path, `logic-level`, `part-needs-5v`, `parallel-regulators`, `rail-3v3-budget`, `far-apart`; the I2C fix names the board's own Wire pins (XIAO GP6/GP7, Pico GP4/GP5) | `packages/session/test/drc-round5.test.ts`, `packages/session/test/rp2040-session.test.ts` |
-| AI pet | `m=` message to the model; `jumper serve` starts the gateway; "Say something to the pet" box | `services/ai-gateway/test/pet-message.test.ts`, `e2e/devices.spec.ts` |
+| AI pet | `m=` message to the model; `fabwright serve` starts the gateway; "Say something to the pet" box | `services/ai-gateway/test/pet-message.test.ts`, `e2e/devices.spec.ts` |
 
 Known gaps (round 5):
-- **RP2040:** no official boot ROM (licence); Jumper's ROM matches IEEE-754 for basic arithmetic,
+- **RP2040:** no official boot ROM (licence); Fabwright's ROM matches IEEE-754 for basic arithmetic,
   sin/cos/exp/log may differ in the last bit, ROM call timings are typical. Not simulated: core 1
   (`setup1`/`loop1`), the on-board WS2812 LEDs, bus pins moved with `Wire.setSDA()` and similar,
   UART formats other than 8N1, flash across a reset, an MCU's own TX wired to its RX. The
-  `jumper/arduino-pico:6.3.1-r1` image is built locally only; without it RP2040 sketches don't build
+  `fabwright/arduino-pico:6.3.1-r1` image is built locally only; without it RP2040 sketches don't build
   (golden hexes run). In the browser it runs at about 0.8 to 1x real time.
 - **Libraries** (fixed in round 6, libs3 images): sketches using Adafruit_GC9A01A, TFT_eSPI, the DHT library, FastLED or Adafruit
   NeoPixel do not compile yet (no `-libs3` image; NeoPixel is LGPL-3.0 and needs a decision). The
@@ -901,11 +901,11 @@ Known gaps (round 5):
 | Area | What works | Check it with |
 | --- | --- | --- |
 | UI review | Every screen captured at 1440x900 and 390x844, reviewed against the reference and fixed (`e9cb3cf`): live wires glow in their own colour instead of green dashes, wires route around part labels, softer screen and LED glow, a "Start here" card on an empty project, outlined secondary buttons, parts library and minimap no longer cover things. Review: [docs/design/review-v2.md](docs/design/review-v2.md) | `node apps/web/scripts/ui-shots.mjs <url> <dir>` |
-| Live build: AI pet | Claude Code 2.1.319 (claude-opus-5-5) over HTTP MCP, only Jumper's tools, canvas recorded: Uno + ILI9341 + ESP-01 + 3 buttons + buzzer, 457-line sketch (AI speech bubble, 5 faces, hunger/joy, attention beeps, OFFLINE + retry). 576 s, $2.69, 98 calls (4 failed), 5/5 tests. Real Claude Haiku replies on the 3D handheld (2.2 to 4.1 s each) | `examples/agent-built/claude-ai-pet`, `docs/media/live-claude-ai-pet.{mp4,gif}` |
+| Live build: AI pet | Claude Code 2.1.319 (claude-opus-5-5) over HTTP MCP, only Fabwright's tools, canvas recorded: Uno + ILI9341 + ESP-01 + 3 buttons + buzzer, 457-line sketch (AI speech bubble, 5 faces, hunger/joy, attention beeps, OFFLINE + retry). 576 s, $2.69, 98 calls (4 failed), 5/5 tests. Real Claude Haiku replies on the 3D handheld (2.2 to 4.1 s each) | `examples/agent-built/claude-ai-pet`, `docs/media/live-claude-ai-pet.{mp4,gif}` |
 | Live build: robot | Same setup: Uno + L298N + 2 motors + HC-SR04 + SSD1306 face + 2S LiPo + 2WD chassis. First sketch collided 3 times; Claude saw it in the arena view and fixed it. 277 s, $1.57, 66 calls (1 failed), 3/3 tests: 60 s with 0 collisions, 9 cm closest, faces matched pixel by pixel | `examples/agent-built/claude-robot`, `docs/media/live-claude-robot.{mp4,gif}` |
-| Run what the agent built | `GET /api/project` on `jumper serve` (project + built hex, local requests only); `/?local` opens it with the firmware; the followed page has **Run a copy ↗** in the Live bar, and Run there opens that copy instead of silently doing nothing | `apps/cli/test/serve.test.ts`, `apps/web/src/lib/localCopy.test.ts` |
+| Run what the agent built | `GET /api/project` on `fabwright serve` (project + built hex, local requests only); `/?local` opens it with the firmware; the followed page has **Run a copy ↗** in the Live bar, and Run there opens that copy instead of silently doing nothing | `apps/cli/test/serve.test.ts`, `apps/web/src/lib/localCopy.test.ts` |
 | Colour screens in tests | `read_display` / `expect_display` work on the ILI9341 / ST7735 (a pixel is lit when it is not black) | `packages/session/test/ai-pet-session.test.ts` |
-| Tests panel after restart | `run_tests` saves `.jumper/visual-report.json`; the server falls back to it, so filmstrips survive a restart; the empty state names `pnpm jumper test --visual -p <dir>` | `packages/session/test/ai-pet-session.test.ts` |
+| Tests panel after restart | `run_tests` saves `.fabwright/visual-report.json`; the server falls back to it, so filmstrips survive a restart; the empty state names `pnpm fabwright test --visual -p <dir>` | `packages/session/test/ai-pet-session.test.ts` |
 | `remove` a test | `remove` deletes a scenario by id (undoable) | `packages/session/test/connect-polish.test.ts` |
 | Owner guide | [docs/try-it.md](docs/try-it.md): what to click for the pet (TALK/FEED/PLAY, Mock vs Live, Device view), the robot (cameras, filmstrips) and Claude Code building something new | walked through in Chromium on copies of both projects |
 
@@ -953,19 +953,19 @@ Known gaps (round 5):
 | Area | What you can do | Check it with |
 | --- | --- | --- |
 | UI v2 | Full-window canvas with floating containers: title block, top-right actions (Serial, Tests, Device view, Install MCP, Open in Agent, Run pill), left tool rail with the parts library, right panel column, minimap and status bottom-left, agent pill bottom-right; light theme; phone layout with a bottom bar and sheets. Spec: [docs/design/ui-v2.md](docs/design/ui-v2.md) | `e2e/*.spec.ts`, `node apps/web/scripts/ui-shots.mjs <url> <dir>` |
-| One-step connect | `pnpm start` serves the canvas, `ws://…/live` and MCP over Streamable HTTP at `http://localhost:7780/mcp`, all on one session. **`claude mcp add --transport http jumper http://localhost:7780/mcp`** (verified with a real Claude Code 2.1.319 run: it placed, wired, wrote and ran Blink and the open canvas showed each step live, labelled "Claude Code"). Codex: `codex mcp add jumper --url http://localhost:7780/mcp`. Stdio clients: `jumper mcp --attach http://localhost:7780`. Local-only (Host/Origin checks) | `apps/cli/test/serve.test.ts`, `e2e/devices.spec.ts` (Install MCP) |
-| AI pet | `examples/ai-pet`: Uno + ILI9341 colour TFT + ESP-01 on SoftwareSerial (AT firmware emulated bit by bit) + 3 buttons. The pet asks `http://ai.jumper/v1/pet` on the sandbox Wi-Fi and draws the reply in a speech bubble. Mock AI by default (deterministic); Live = `ANTHROPIC_API_KEY` or the logged-in `claude` CLI (a real Claude reply was shown on the simulated TFT). 5 scenarios. [Decision record](docs/decisions/0002-ai-pet.md) | `pnpm jumper test -p examples/ai-pet`, `packages/session/test/ai-pet-session.test.ts`, `e2e/devices.spec.ts` |
-| Parts | 24 (was 21): `ili9341-tft`, `st7735-tft`, `esp01-wifi`, each tested with the real Adafruit library / AT sketch. Build image `jumper/arduino-cli:…-libs2`, runner `jumper/arduino-runner:…-libs2-r1` (adds Adafruit ILI9341 1.7.0, ST7735/ST7789 1.12.0; older sketches build byte-identical) | `pnpm --filter @jumper/parts gen:check` |
+| One-step connect | `pnpm start` serves the canvas, `ws://…/live` and MCP over Streamable HTTP at `http://localhost:7780/mcp`, all on one session. **`claude mcp add --transport http fabwright http://localhost:7780/mcp`** (verified with a real Claude Code 2.1.319 run: it placed, wired, wrote and ran Blink and the open canvas showed each step live, labelled "Claude Code"). Codex: `codex mcp add fabwright --url http://localhost:7780/mcp`. Stdio clients: `fabwright mcp --attach http://localhost:7780`. Local-only (Host/Origin checks) | `apps/cli/test/serve.test.ts`, `e2e/devices.spec.ts` (Install MCP) |
+| AI pet | `examples/ai-pet`: Uno + ILI9341 colour TFT + ESP-01 on SoftwareSerial (AT firmware emulated bit by bit) + 3 buttons. The pet asks `http://ai.fabwright/v1/pet` on the sandbox Wi-Fi and draws the reply in a speech bubble. Mock AI by default (deterministic); Live = `ANTHROPIC_API_KEY` or the logged-in `claude` CLI (a real Claude reply was shown on the simulated TFT). 5 scenarios. [Decision record](docs/decisions/0002-ai-pet.md) | `pnpm fabwright test -p examples/ai-pet`, `packages/session/test/ai-pet-session.test.ts`, `e2e/devices.spec.ts` |
+| Parts | 24 (was 21): `ili9341-tft`, `st7735-tft`, `esp01-wifi`, each tested with the real Adafruit library / AT sketch. Build image `fabwright/arduino-cli:…-libs2`, runner `fabwright/arduino-runner:…-libs2-r1` (adds Adafruit ILI9341 1.7.0, ST7735/ST7789 1.12.0; older sketches build byte-identical) | `pnpm --filter @fabwright/parts gen:check` |
 | Network tools | `set_ai_mode`, `read_network_log`, `run_live` (37 tools); `inject_fault wifi_drop` is real | `docs/mcp-tools.md` |
-| Device view | The Device view button: the project as a physical device in 3D (react-three-fiber). Handheld with the live OLED or colour TFT behind glass, buttons that travel and drive the sim (keys 1-3); rover in an arena built from `jumper.json` with spinning wheels, sonar beam and trail (track / chase / arena cameras, F); arm on a table following the servos. 60 fps measured | `e2e/devices.spec.ts` (pet handheld, rover moving) |
+| Device view | The Device view button: the project as a physical device in 3D (react-three-fiber). Handheld with the live OLED or colour TFT behind glass, buttons that travel and drive the sim (keys 1-3); rover in an arena built from `fabwright.json` with spinning wheels, sonar beam and trail (track / chase / arena cameras, F); arm on a table following the servos. 60 fps measured | `e2e/devices.spec.ts` (pet handheld, rover moving) |
 | Visual tests | Tests panel: each scenario as a filmstrip of the device at every check with what the check saw; click a frame to open the 3D device at that exact moment (replayed from the recorded inputs). Fed by `GET /api/visual-report` (the server's latest `run_tests`) or the prebuilt `apps/web/public/reports/<example>.json`. `run_tests` returns `visual` lines per check and, with `images: true`, screen PNGs as MCP images | `packages/session/test/visual-capture.test.ts`, `apps/cli/test/serve.test.ts` |
-| Pictures for agents | `screenshot` draws colour TFT pixels; `screenshot {"view": "device", "ms": 6000}` renders the 3D device (Playwright + Vite, about 5 s); CLI `jumper screenshot --view device`, `jumper render-device --ms … / --every … --until …` (frames for a video), `jumper test --visual`, `jumper network` | `packages/session/test/ai-pet-session.test.ts` |
+| Pictures for agents | `screenshot` draws colour TFT pixels; `screenshot {"view": "device", "ms": 6000}` renders the 3D device (Playwright + Vite, about 5 s); CLI `fabwright screenshot --view device`, `fabwright render-device --ms … / --every … --until …` (frames for a video), `fabwright test --visual`, `fabwright network` | `packages/session/test/ai-pet-session.test.ts` |
 
 The round-2 open items are fixed (each with a test in `packages/session/test/connect-polish.test.ts`):
 press/`hold_ms` failures explain the hidden reaction; no false "already held 0 ms" warning;
 timeouts suggest a `timeout_ms`; the compile hint names the real sketch folder; `run` returns
 `world.first_collision`; the sonar trigger is no longer "servo-style"; every action-log line has
-`actor`, `sid` and `client`, and `jumper replay` / `record` filter by them.
+`actor`, `sid` and `client`, and `fabwright replay` / `record` filter by them.
 
 ### Checks (round 3, local, 2026-11-09)
 
@@ -975,7 +975,7 @@ timeouts suggest a `timeout_ms`; the compile hint names the real sketch folder; 
 | `pnpm typecheck` | 0 errors |
 | `pnpm test` | 69 files, **537 passed**, 2 skipped (live-AI tests, opt-in) |
 | `pnpm test:e2e` | **39 passed, 4 skipped** (device-specific): desktop and phone each run Install MCP, AI pet TFT + mock reply bubble, Device view (pet handheld, rover driving), the visual Tests panel, plus every earlier test; the 200-part benchmark holds 60 fps |
-| Real Claude Code over HTTP | `pnpm start`, then `claude -p … --mcp-config <{"mcpServers":{"jumper":{"type":"http","url":"http://localhost:7780/mcp"}}}> --strict-mcp-config --allowedTools mcp__jumper`: new project, LED + 220 Ω, 3 wires, Blink sketch, run; 18.6 s, 0 failed calls; the open canvas showed each step and "Connected: Claude Code"; serial `on/off` x3 |
+| Real Claude Code over HTTP | `pnpm start`, then `claude -p … --mcp-config <{"mcpServers":{"fabwright":{"type":"http","url":"http://localhost:7780/mcp"}}}> --strict-mcp-config --allowedTools mcp__fabwright`: new project, LED + 220 Ω, 3 wires, Blink sketch, run; 18.6 s, 0 failed calls; the open canvas showed each step and "Connected: Claude Code"; serial `on/off` x3 |
 
 ### Known gaps (round 3)
 
@@ -995,30 +995,30 @@ timeouts suggest a `timeout_ms`; the compile hint names the real sketch folder; 
 
 | Area | What you can do | Check it with |
 | --- | --- | --- |
-| MCP server | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <dir>`: 34 tools, the recommended loop as server instructions, 3 resources, screenshots returned as images. Verified from outside the repo with Claude Code 2.1.319 (`--mcp-config`) and codex-cli 0.163.0 (`config.toml`) | `packages/mcp/test/mcp.test.ts`, [docs/agents.md](docs/agents.md) |
-| CLI | `jumper` with every operation as a subcommand (`--json`), `call <tool>`, `mcp`, `serve` (add `--no-web` for the hub only), `replay`, `record`, `runner` | `apps/cli/test/cli.test.ts` |
+| MCP server | `node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project <dir>`: 34 tools, the recommended loop as server instructions, 3 resources, screenshots returned as images. Verified from outside the repo with Claude Code 2.1.319 (`--mcp-config`) and codex-cli 0.163.0 (`config.toml`) | `packages/mcp/test/mcp.test.ts`, [docs/agents.md](docs/agents.md) |
+| CLI | `fabwright` with every operation as a subcommand (`--json`), `call <tool>`, `mcp`, `serve` (add `--no-web` for the hub only), `replay`, `record`, `runner` | `apps/cli/test/cli.test.ts` |
 | Build service | arduino-cli in Docker, content-hash cache, pinned libraries (Adafruit SSD1306/GFX/BusIO/BME280/MPU6050, RTClib, U8g2, LiquidCrystal_PCF8574, Servo…), compile errors as file:line with a fix | `services/runner/test/runner.test.ts` (Docker build byte-identical to the golden Blink) |
-| Session engine | `packages/session`: validated, logged (`.jumper/actions.jsonl`), undoable steps grouped by "why"; design-rule checks; fidelity report; export; fault injection (`disconnect`, `noisy`, `i2c_nack`, `i2c_nack_data`, `i2c_garbage`; faults survive `run {reset: true}`) | `packages/session/test/*.test.ts` |
-| Scenarios | `jumper.json` scenarios with press / set / serial / fault / expect_serial / expect_pin / expect_part steps; robots assert on `world.<field>` (collisions, min_clearance_cm, travelled_cm, pose, sonar_cm, gripper, reached) | `packages/session/test/examples.test.ts` runs every example's scenarios |
+| Session engine | `packages/session`: validated, logged (`.fabwright/actions.jsonl`), undoable steps grouped by "why"; design-rule checks; fidelity report; export; fault injection (`disconnect`, `noisy`, `i2c_nack`, `i2c_nack_data`, `i2c_garbage`; faults survive `run {reset: true}`) | `packages/session/test/*.test.ts` |
+| Scenarios | `fabwright.json` scenarios with press / set / serial / fault / expect_serial / expect_pin / expect_part steps; robots assert on `world.<field>` (collisions, min_clearance_cm, travelled_cm, pose, sonar_cm, gripper, reached) | `packages/session/test/examples.test.ts` runs every example's scenarios |
 | I2C / SPI | AVR TWI with real SCL timing, SPI, bus faults, wiring errors that name the exact wire (`i2c-swapped`, `i2c-address-conflict`…) | `packages/sim-core/src/bus.test.ts`, `packages/sim-backends/src/twi.test.ts` |
 | PWM | cycle-timed edges on every MCU pin (`sim.pwm(part, pin)`), duty-averaged solving for fast PWM, cycle-exact part events (`pulseIn` works) | `packages/sim-core/src/pwm.test.ts`, [PWM.md](packages/sim-core/PWM.md) |
-| Parts | 21 (was 10): SSD1306 OLED, LCD1602 I2C, DS3231, BME280, MPU6050, SG90 servo, DC motor, L298N, HC-SR04, battery pack, 2WD chassis. Each bus part is tested with real compiled firmware and a real Arduino library | `pnpm --filter @jumper/parts gen:check` |
+| Parts | 21 (was 10): SSD1306 OLED, LCD1602 I2C, DS3231, BME280, MPU6050, SG90 servo, DC motor, L298N, HC-SR04, battery pack, 2WD chassis. Each bus part is tested with real compiled firmware and a real Arduino library | `pnpm --filter @fabwright/parts gen:check` |
 | Physics | `packages/physics`: Rapier 2D rover (motors → wheels, sonar raycast, IMU feed), arm kinematics, stepped every 4 ms on the CPU clock (deterministic: Node and Chromium agree to the last digit) | `packages/physics/src/*.test.ts` |
 | Web app | Open any example from the project menu or `?example=tamagotchi` / `rover` / `robot-arm`; OLED and LCD pixels drawn live on the part; a World panel (arena top view or arm side view) for projects with a world; follow mode (`?follow=ws://…`) and replay mode (`?replay=<log>`) | `e2e/robots.spec.ts`, `e2e/follow.spec.ts`, `e2e/live.spec.ts` |
 | Headless screenshot | PNG of the canvas with lit LEDs, OLED pixels and, for robots, the arena / arm panel drawn by the same painters as the web app | `packages/session/test/examples.test.ts` |
-| Examples | `examples/tamagotchi` (6 scenarios), `examples/rover` (2), `examples/robot-arm` (2), each with golden firmware and a video in `media/` | `pnpm jumper test -p examples/<name>` |
+| Examples | `examples/tamagotchi` (6 scenarios), `examples/rover` (2), `examples/robot-arm` (2), each with golden firmware and a video in `media/` | `pnpm fabwright test -p examples/<name>` |
 | Agent runs | Round 2 (after the fixes below): Claude Code built the tamagotchi (8/8 tests, 6 min) and the record-and-playback arm (6/6, 2 min), Codex the rover (2/2, 109 s, 0 failed calls), each with only the MCP tools. The projects are kept as the agents left them, with prompts, numbers and 1440x900 replay videos; round 1 is in `docs/media/agent-runs` | [examples/agent-built](examples/agent-built/README.md), `packages/session/test/examples.test.ts` ("agent-built examples") |
 
 ### Videos and agent-built examples (2026-11-09, third pass)
 
 | What | Where |
 | --- | --- |
-| Agent replays, 1440x900 H.264 + GIF: parts appear with the agent's cursor and "why" captions, wires draw, the firmware card, the device running (OLED pet, rover in the arena view, arm side view), tests turning green, ending on a new **fidelity card** (area levels and the first real-device checks) | `docs/media/agent-claude-tamagotchi.mp4` (44 s), `agent-codex-rover.mp4` (37 s), `agent-claude-robot-arm.mp4` (35 s); recorded with `jumper record <log> --speed 2 --size 1440x900` from the agent-only lines of each log, cut at the agent's `fidelity_report` |
+| Agent replays, 1440x900 H.264 + GIF: parts appear with the agent's cursor and "why" captions, wires draw, the firmware card, the device running (OLED pet, rover in the arena view, arm side view), tests turning green, ending on a new **fidelity card** (area levels and the first real-device checks) | `docs/media/agent-claude-tamagotchi.mp4` (44 s), `agent-codex-rover.mp4` (37 s), `agent-claude-robot-arm.mp4` (35 s); recorded with `fabwright record <log> --speed 2 --size 1440x900` from the agent-only lines of each log, cut at the agent's `fidelity_report` |
 | Reference examples running in the web app (feed / play / sleep / neglect on the OLED; the rover 48 virtual seconds at 2x; both knobs swept and the cup reached) | `docs/media/example-{tamagotchi,rover,robot-arm}.mp4` (32 / 25 / 24 s), re-record with `node apps/web/scripts/record-examples.mjs` while `pnpm dev` runs |
 | The three agent-built projects, unedited, with README (exact prompt, agent and flags, numbers, what a person verified, fidelity, friction) and the agent-only action log | `examples/agent-built/{claude-tamagotchi,codex-rover,claude-robot-arm}` |
 | Replay layout: with a World card the steps list stops above it, the caption moves under the replay bar, and the arena stats line wraps instead of being cut off | `apps/web/src/live/live.css`, `packages/physics/src/paint.ts` (test in `physics.test.tsx`) |
 
-Re-checked on the current `main`: `jumper check`, `test`, `fidelity` on a copy of each agent-built
+Re-checked on the current `main`: `fabwright check`, `test`, `fidelity` on a copy of each agent-built
 folder. Tamagotchi 8/8 (1 false-alarm warning, below), rover 2/2, arm 6/6; the arm now gets the new
 power-budget warning (two servos on the Uno 5V), as intended.
 
@@ -1036,13 +1036,13 @@ power-budget warning (two servos on the Uno 5V), as intended.
 - Nothing tells an agent to accept its steps, so replays end with every step "pending".
 - The power-budget fix text for servos suggests "the driver's 12V" as the supply pin.
 - The round-2 runs were not repeated after the round-1 fixes landed in their final form; the arm run
-  listed Claude Code's built-in tools (no `--disallowedTools`) though it called only Jumper's.
+  listed Claude Code's built-in tools (no `--disallowedTools`) though it called only Fabwright's.
 
 ### Next (agents)
 
 1. Fix the open round-2 items above (part-specific battery and motor hints first, since one could
    damage hardware), then run all three evals again in the strict setup and re-record.
-2. Tag every action-log line with its session and source; `jumper record --actor mcp`.
+2. Tag every action-log line with its session and source; `fabwright record --actor mcp`.
 3. Evaluate a device none of the examples cover (an LCD weather station, a line follower) to find
    friction the reference builds hide.
 
@@ -1074,7 +1074,7 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 | `pnpm typecheck` | 0 errors |
 | `pnpm test` | 54 files, **452 tests passed** (including the three agent-built projects' own scenarios; Docker build tests run when Docker is up) |
 | `pnpm test:e2e` | **27 passed, 4 skipped** (device-specific tests on the other device): desktop and phone each run the tamagotchi OLED test, the rover World view test, CLI-driven live follow and replay, plus the M0 tests; the 200-part benchmark still holds 60 fps |
-| Outsider smoke test | From a folder outside the repo: `jumper new`, `place`, `connect`, `check`, `write`, `build` (including a compile error with its fix hint), `run`, `test`, `screenshot`; then an MCP SDK client driving a pet build (I2C wired swapped on purpose, fixed from the error text, OLED read back, button click, fault injection, screenshot): 0 failed calls |
+| Outsider smoke test | From a folder outside the repo: `fabwright new`, `place`, `connect`, `check`, `write`, `build` (including a compile error with its fix hint), `run`, `test`, `screenshot`; then an MCP SDK client driving a pet build (I2C wired swapped on purpose, fixed from the error text, OLED read back, button click, fault injection, screenshot): 0 failed calls |
 
 ### Measured numbers (this round)
 
@@ -1089,8 +1089,8 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 
 - **Faults not simulated yet:** brownout, clock drift, flash full (the tool says so). Wi-Fi drop is simulated since round 3.
 - **Sonar cone is ±15°** (not ±7.5°), `pulseIn()` reads about 0.6 % short on the emulated chip, wheels do not load the motors, and the motor model assumes continuous current. All in the fidelity files.
-- **Servo library** is in the agents' build image (`jumper/arduino-runner:…-r1`, Servo 1.3.0) but not in `toolchains/arduino` (the examples' golden builds); the arm example drives Timer1 directly.
-- **The CLI is one process per command**, so simulation state does not carry over between `jumper run` calls (`jumper screenshot --ms N` runs first). The MCP server keeps state.
+- **Servo library** is in the agents' build image (`fabwright/arduino-runner:…-r1`, Servo 1.3.0) but not in `toolchains/arduino` (the examples' golden builds); the arm example drives Timer1 directly.
+- **The CLI is one process per command**, so simulation state does not carry over between `fabwright run` calls (`fabwright screenshot --ms N` runs first). The MCP server keeps state.
 - **The web app does not build firmware**; it loads the examples' committed hex. Agents build through the CLI / MCP server (Docker).
 - **The browser World panel** shows the local simulation and follow / replay; the screenshot only shows the world after a `run` in the same session.
 - **`ir-obstacle` and `ws2812`** parts were not done.
@@ -1104,12 +1104,12 @@ Their friction is fixed at the tool, with a regression test each (`packages/sess
 | Area | What you can do | Check it with |
 | --- | --- | --- |
 | Monorepo | pnpm 10 workspaces, TypeScript sources exported directly (no inter-package build), Node 24 | `pnpm i && pnpm typecheck` |
-| Project format | `jumper.json` with a zod schema, readable errors (`wires[0].to.part: …`), stable git-friendly serialization, exported JSON Schema | `pnpm gen` writes `packages/project-format/jumper.schema.json` |
-| Circuit solver | MNA DC solver in `@jumper/sim-core`: resistors, sources, piecewise-linear diodes, switches, floating-node detection (a wired input with nothing driving it gets a `floating-input` warning); re-solves only when something changes | `pnpm vitest run packages/sim-core` |
+| Project format | `fabwright.json` with a zod schema, readable errors (`wires[0].to.part: …`), stable git-friendly serialization, exported JSON Schema | `pnpm gen` writes `packages/project-format/fabwright.schema.json` |
+| Circuit solver | MNA DC solver in `@fabwright/sim-core`: resistors, sources, piecewise-linear diodes, switches, floating-node detection (a wired input with nothing driving it gets a `floating-input` warning); re-solves only when something changes | `pnpm vitest run packages/sim-core` |
 | Deterministic clock | Virtual time is the MCU cycle count; same project gives the same trace hash whatever the frame slicing | `packages/sim-backends/src/simulation.integration.test.ts`, `packages/parts/src/blink.integration.test.ts` |
 | AVR backend | avr8js ATmega328P (Uno and Nano pin maps), GPIO, UART, ADC, timers | `pnpm vitest run packages/sim-backends` |
 | Golden firmware | Blink built with arduino-cli 1.5.1 + `arduino:avr@1.8.8` in Docker; byte-identical on arm64 and amd64; committed as `examples/blink/firmware/blink.hex` | `scripts/build-firmware.sh` (see `examples/blink/firmware/BUILD.md`) |
-| Parts | 10 parts (Uno, Nano, LED, RGB LED, resistor, pushbutton, slide switch, potentiometer, photoresistor, buzzer), each with `part.json`, `model.ts`, `visual.svg`, `fidelity.json`, `model.test.ts`; codegen registry with a validator | `pnpm gen`, `pnpm --filter @jumper/parts gen:check` |
+| Parts | 10 parts (Uno, Nano, LED, RGB LED, resistor, pushbutton, slide switch, potentiometer, photoresistor, buzzer), each with `part.json`, `model.ts`, `visual.svg`, `fidelity.json`, `model.test.ts`; codegen registry with a validator | `pnpm gen`, `pnpm --filter @fabwright/parts gen:check` |
 | Canvas | Pan, zoom, pinch, dot grid, snap, minimap; place from the library (click or drag); wire pin to pin; select, delete, rotate, recolour; undo/redo (top bar and keyboard on desktop, the bottom dock on phones); inspector; light/dark theme; phone layout with a bottom sheet | `pnpm test:e2e` (`e2e/viewport.spec.ts`, `e2e/wire.spec.ts`, `e2e/app.spec.ts`) |
 | Live simulation | Blink opens by default. Run lights the LED and the board's L LED from the simulated current, HIGH wires glow, the serial console prints `LED on` / `LED off` | `pnpm test:e2e` (`e2e/blink.spec.ts`) |
 | Brand | Logo, wordmark, favicon, social card, `brand/tokens.css` (dark-first, light theme, OS preference) | `brand/README.md` |
@@ -1155,7 +1155,7 @@ The benchmark is `apps/web/e2e/perf.spec.ts`; it writes `apps/web/test-results/p
 - **Firmware is not built from the browser.** You load the committed `.hex` or open your own; building happens with `scripts/build-firmware.sh` (Docker).
 - **CI has not run on GitHub** because there is no remote yet. Every step of `ci.yml` was run locally.
 - **`RESET` and `AREF` are not wired to the emulated CPU.** The ADC always uses AVCC = 5 V as its reference.
-- **Contact addresses are placeholders**: `conduct@jumper.dev (TBD)` in `CODE_OF_CONDUCT.md` and `security@jumper.dev (TBD)` in `SECURITY.md`.
+- **Contact addresses are placeholders**: `conduct@fabwright.dev (TBD)` in `CODE_OF_CONDUCT.md` and `security@fabwright.dev (TBD)` in `SECURITY.md`.
 - **The Contributor Covenant text was written from memory.** Check it against the official 2.1 text before publishing.
 
 ## Next
@@ -1164,4 +1164,4 @@ The benchmark is `apps/web/e2e/perf.spec.ts`; it writes `apps/web/test-results/p
 2. Build firmware from the web app (call the runner service), so a person can edit code on the canvas.
 3. A built-in agent panel in the web app on top of the same session operations.
 4. Run the simulation in a Web Worker (raises the browser speed ceiling above about 5×).
-5. More parts (`ir-obstacle`, `ws2812`, keypad), a GitHub Action example running `jumper test`, and the first CI run once a remote exists.
+5. More parts (`ir-obstacle`, `ws2812`, keypad), a GitHub Action example running `fabwright test`, and the first CI run once a remote exists.

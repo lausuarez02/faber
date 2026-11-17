@@ -1,6 +1,6 @@
-// A plain ESP32 Wi-Fi sketch, written for the real device (no Jumper code in it): joins Wi-Fi,
+// A plain ESP32 Wi-Fi sketch, written for the real device (no Fabwright code in it): joins Wi-Fi,
 // fetches JSON over HTTPS with the real root CA set (ISRG Root X1), then keeps reporting its
-// Wi-Fi status and RSSI and fetches again after every reconnect. Jumper's simulation build runs it
+// Wi-Fi status and RSSI and fetches again after every reconnect. Fabwright's simulation build runs it
 // unchanged: the Wi-Fi shim joins the sandbox network, the TLS shim also trusts the sandbox CA.
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -39,7 +39,7 @@ static const char *ROOT_CA =
 "emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\n"
 "-----END CERTIFICATE-----\n";
 
-static const char *SSID = "JumperNet";
+static const char *SSID = "FabwrightNet";
 static const char *PASS = "hunter22-wifi";
 static const char *URL = "https://api.weather.test/v1/now?city=Lisbon";
 

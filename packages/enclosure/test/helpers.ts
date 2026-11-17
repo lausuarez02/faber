@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { registry } from "@jumper/parts";
-import type { Project } from "@jumper/project-format";
+import { registry } from "@fabwright/parts";
+import type { Project } from "@fabwright/project-format";
 import type { Mesh } from "../src/mesh.ts";
 
 const ROOT = join(import.meta.dirname, "../../..");
 
 /** The Muse: the committed example when present (power track), else the fixture copy. */
 export function muse(): Project {
-  const ex = join(ROOT, "examples/agent-built/claude-pocket-muse/jumper.json");
+  const ex = join(ROOT, "examples/agent-built/claude-pocket-muse/fabwright.json");
   const file = existsSync(ex) ? ex : join(import.meta.dirname, "fixtures/pocket-muse.json");
   const p = JSON.parse(readFileSync(file, "utf8")) as Project;
   return { ...p, scenarios: p.scenarios ?? [], wires: p.wires ?? [] };

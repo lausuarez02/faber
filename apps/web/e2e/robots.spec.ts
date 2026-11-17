@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { expectWithinSimTime, shot, waitForSimTime } from "./helpers.ts";
 
-type W = { jumper: { engine: { simulation?: { timeMs: number; partState(id: string): Record<string, unknown> | undefined }; world?: { stats(): { pose?: { x: number; y: number }; travelledCm: number; collisions: number } } } } };
+type W = { fabwright: { engine: { simulation?: { timeMs: number; partState(id: string): Record<string, unknown> | undefined }; world?: { stats(): { pose?: { x: number; y: number }; travelledCm: number; collisions: number } } } } };
 
 async function openExample(page: import("@playwright/test").Page, name: string): Promise<void> {
   await page.goto(`/?example=${name}`);
@@ -16,7 +16,7 @@ test("tamagotchi: the firmware draws the pet on the OLED (non-blank pixels)", as
   await expect(page.getByTestId("sim-error")).toHaveCount(0);
   // The OLED part reports lit pixels; the canvas over its glass shows them.
   // Within 20 s of virtual time (sim time, not wall time: CI may simulate below 1x).
-  await expectWithinSimTime(page, 20_000, async () => (await page.evaluate(() => Number((window as unknown as W).jumper.engine.simulation?.partState("oled")?.lit ?? 0))) > 50, "the OLED should light more than 50 pixels");
+  await expectWithinSimTime(page, 20_000, async () => (await page.evaluate(() => Number((window as unknown as W).fabwright.engine.simulation?.partState("oled")?.lit ?? 0))) > 50, "the OLED should light more than 50 pixels");
   await expect(page.getByTestId("part-oled")).toHaveAttribute("data-state-blank", "false");
   const canvasLit = await page.evaluate(() => {
     const c = document.querySelector('[data-testid="part-oled"] [data-display-layer] canvas') as HTMLCanvasElement | null;
@@ -36,7 +36,7 @@ test("rover: the robot drives in the World view", async ({ page }, info) => {
   await expect(page.getByTestId("world-panel")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("world-panel")).toHaveAttribute("data-world", "robot");
   await expect(page.getByTestId("world-panel").getByTestId("physics-canvas")).toBeVisible();
-  const read = () => page.evaluate(() => (window as unknown as W).jumper.engine.world?.stats());
+  const read = () => page.evaluate(() => (window as unknown as W).fabwright.engine.world?.stats());
   await expectWithinSimTime(page, 20_000, async () => ((await read())?.travelledCm ?? 0) > 20, "the rover should travel more than 20 cm");
   const a = await read();
   await waitForSimTime(page, 1500);
@@ -45,7 +45,7 @@ test("rover: the robot drives in the World view", async ({ page }, info) => {
   expect(Math.hypot(b!.pose!.x - a!.pose!.x, b!.pose!.y - a!.pose!.y) + (b!.travelledCm - a!.travelledCm)).toBeGreaterThan(5);
   expect(b!.collisions).toBe(0);
   // The chassis part mirrors the pose, so scenarios and agents can read it like any other part.
-  const chassis = await page.evaluate(() => (window as unknown as W).jumper.engine.simulation?.partState("chassis"));
+  const chassis = await page.evaluate(() => (window as unknown as W).fabwright.engine.simulation?.partState("chassis"));
   expect(typeof chassis?.x).toBe("number");
   await shot(page, info, "rover-world");
 });

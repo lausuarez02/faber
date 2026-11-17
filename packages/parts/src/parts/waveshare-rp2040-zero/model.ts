@@ -1,11 +1,11 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createRp2040BoardModel, limit } from "../raspberry-pi-pico/rp2040-board.ts";
 
 /**
  * Waveshare RP2040-Zero: RP2040 pads (shared RP2040 board model). Its only LED is a WS2812 on GP16,
  * which is not drawn.
  *
- * Power (round 6): the "5V" pin is VBUS. USB (jumper.json power.usb, default plugged) puts 5 V on it;
+ * Power (round 6): the "5V" pin is VBUS. USB (fabwright.json power.usb, default plugged) puts 5 V on it;
  * without USB the board runs from what is wired to it. The on-board 3.3 V LDO (ME6217-class) feeds
  * 3V3; the MCU runs while 3V3 ≥ min3v3V.
  */

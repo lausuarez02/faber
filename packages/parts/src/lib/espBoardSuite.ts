@@ -1,6 +1,6 @@
 // Shared datasheet-style checks for the ESP32-family boards (round 10). Imported by their model.test.ts.
 import { describe, expect, it } from "vitest";
-import { GROUND, PartSpecSchema, type McuBackend, type PartDefinition, type PinState } from "@jumper/sim-core";
+import { GROUND, PartSpecSchema, type McuBackend, type PartDefinition, type PinState } from "@fabwright/sim-core";
 import { registry } from "../registry.gen.ts";
 import { mount, need } from "./bench.ts";
 import { ESP_PULL_OHMS } from "./espBoard.ts";

@@ -204,7 +204,7 @@ export interface BuildKit {
   /** "assembly-plan" when the case engine's plan was used, else "derived" (from the case report and the wiring). */
   steps_source: string;
   flash: FlashPlan;
-  /** Round 13: present when the project reaches the network (jumper.json network). */
+  /** Round 13: present when the project reaches the network (fabwright.json network). */
   connect?: ConnectPlan;
   /** Round 14: battery life from each load's duty cycle (when the device has a LiPo cell). */
   power?: import("../power-budget.ts").PowerBudget;

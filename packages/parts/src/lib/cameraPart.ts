@@ -3,7 +3,7 @@
 // test scene, or a still image (a data URL of a PNG / JPEG: a scenario's camera_frame step, the agent's
 // set_camera_frame, an image the person drops in, or a frame from their webcam). Frames are rendered at
 // the size and format the firmware asks for (sim-core camera.ts). Deterministic.
-import { CAMERA_SCENES, cameraSourceOf, previewDataUrl, renderCameraFrame, type CameraDevice, type CameraFrame, type CameraImage, type CameraScene, type CameraSensorId, type PartContext, type VisualState } from "@jumper/sim-core";
+import { CAMERA_SCENES, cameraSourceOf, previewDataUrl, renderCameraFrame, type CameraDevice, type CameraFrame, type CameraImage, type CameraScene, type CameraSensorId, type PartContext, type VisualState } from "@fabwright/sim-core";
 import { str } from "./props.ts";
 
 /** Props every camera part has (part.json "props"). */

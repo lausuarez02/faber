@@ -1,6 +1,6 @@
 // Standalone Device view (dev and headless renders). Runs an example (or any project handed in
 // through window.__device.load) with the real parts, avr8js and Rapier, and shows the 3D stage.
-//   pnpm --filter @jumper/web exec vite --port 5287
+//   pnpm --filter @fabwright/web exec vite --port 5287
 //   open http://localhost:5287/src/views/device/dev/index.html?example=tamagotchi
 // Params: example=<name>, ms=<virtual ms to run before showing>, run=1 (keep running), hud=0,
 //   camera=track|chase|arena, finish=ceramic|graphite|signal, theme=light, press=<part>@<ms>[,<part>@<ms>…] (held 120 ms).
@@ -11,13 +11,13 @@ import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { parseProject, type Project } from "@jumper/project-format";
-import { Simulation, type ColorFrame } from "@jumper/sim-core";
-import { createSandboxNetwork } from "@jumper/ai-gateway";
+import { parseProject, type Project } from "@fabwright/project-format";
+import { Simulation, type ColorFrame } from "@fabwright/sim-core";
+import { createSandboxNetwork } from "@fabwright/ai-gateway";
 import { hasWifiPart } from "../../network/webNetwork.ts";
-import { backendFactory } from "@jumper/sim-backends";
-import { registry } from "@jumper/parts";
-import { attachPhysics, initPhysics } from "@jumper/physics";
+import { backendFactory } from "@fabwright/sim-backends";
+import { registry } from "@fabwright/parts";
+import { attachPhysics, initPhysics } from "@fabwright/physics";
 import { loadExample, loadExampleFirmware } from "../../../lib/examples.ts";
 import { DeviceStage } from "../DeviceStage.tsx";
 import { ownedSimSource, type OwnedSimSource } from "../source.ts";

@@ -47,7 +47,7 @@ export interface RelayCtx {
 }
 
 export const TOKEN_HEADER: "x-device-token";
-export const SIM_RELAY_HOST: "relay.sandbox.jumper";
+export const SIM_RELAY_HOST: "relay.sandbox.fabwright";
 export const SIM_RELAY_URL: string;
 export const SIM_DEVICE_TOKEN: string;
 export const DEFAULT_LIMITS: Readonly<RelayLimits>;

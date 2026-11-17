@@ -5,9 +5,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseScenarioStep, type Project } from "@jumper/project-format";
-import { registry } from "@jumper/parts";
-import type { NetEvent, NetView } from "@jumper/device-net";
+import { parseScenarioStep, type Project } from "@fabwright/project-format";
+import { registry } from "@fabwright/parts";
+import type { NetEvent, NetView } from "@fabwright/device-net";
 import { checkDesign, ProjectSession } from "../src/index.ts";
 import { powerBudget } from "../src/power-budget.ts";
 import { precededWhy, speechTextOf, spokenSoFar } from "../src/scenario-events.ts";
@@ -22,7 +22,7 @@ void loop() {}
 
 function starLike(extra: Partial<Project> = {}, parts: Project["parts"] = []): Project {
   return {
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "cam keychain",
     parts: [
       { id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0 },
@@ -56,7 +56,7 @@ describe("battery life from duty cycles", () => {
     expect(b.peak_ma).toBeGreaterThan(340);
   });
 
-  it("duty cycles from jumper.json change the estimate; deep sleep shrinks the CPU's share", () => {
+  it("duty cycles from fabwright.json change the estimate; deep sleep shrinks the CPU's share", () => {
     const always = powerBudget(starLike(), registry, NET_CAM);
     const periodic = powerBudget(starLike({ power: { duty: { camera: { on_s: 2, every_s: 600 }, wifi: { on_s: 10, every_s: 3600 } }, sleep: "light" } } as never), registry, NET_CAM);
     expect(periodic.hours!).toBeGreaterThan(always.hours! * 5);
@@ -86,7 +86,7 @@ describe("battery life from duty cycles", () => {
   });
 
   it("estimate_power and set_power {target_hours, duty} through the session; bad duties say how to fix", { timeout: 120_000 }, async () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-r14-power-"));
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-r14-power-"));
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       await s.call("new_project", { template: "xiao-esp32s3-sense" });
@@ -127,7 +127,7 @@ describe("camera capture indicator (privacy)", () => {
     expect(sense([], "void setup(){ pinMode(LED_BUILTIN, OUTPUT); }")).toBeUndefined();
   });
   it("applies to any camera project (an ESP32 with an OV2640 module too)", () => {
-    const p = { format: "jumper/1", name: "t", parts: [{ id: "esp", type: "esp32-devkitc", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires: [], scenarios: [] } as unknown as Project;
+    const p = { format: "fabwright/1", name: "t", parts: [{ id: "esp", type: "esp32-devkitc", x: 0, y: 0 }, { id: "cam", type: "ov2640-camera", x: 300, y: 0 }], wires: [], scenarios: [] } as unknown as Project;
     expect(checkDesign(p, registry, "").some((i) => i.code === "camera-indicator")).toBe(true);
   });
 });

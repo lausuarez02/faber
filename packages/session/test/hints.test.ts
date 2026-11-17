@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPart } from "@jumper/parts";
+import { getPart } from "@fabwright/parts";
 import { usageFor } from "../src/hints.ts";
 
 describe("wiring hints never suggest damaging the board", () => {

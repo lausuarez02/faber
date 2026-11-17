@@ -1,5 +1,5 @@
-// Starts Espressif's QEMU (Jumper image) for one chip, connected back to a bridge port.
-// Docker by default (jumper/qemu-esp image, GPL-2.0 QEMU in its own process); a native
+// Starts Espressif's QEMU (Fabwright image) for one chip, connected back to a bridge port.
+// Docker by default (fabwright/qemu-esp image, GPL-2.0 QEMU in its own process); a native
 // qemu-system-* on PATH works the same with runtime "native".
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { openSync, closeSync } from "node:fs";
@@ -11,25 +11,25 @@ import { nativeQemuBinary, nativeQemuDir, nativeQemuInstalled, pickRuntime, prob
  * Bridge protocol 5: GPIO + matrix + interrupts, UART0-2, I2C on every chip (two buses on the ESP32),
  * LEDC, SPI, RMT, ADC (round 10 esp-periph) and pad pull-ups / pull-downs answered in lockstep
  * (round 10 esp-app); plus the camera port (patch 0004, round 13: "CC" / "CD" lines).
- * Override with JUMPER_QEMU_ESP_IMAGE.
+ * Override with FABWRIGHT_QEMU_ESP_IMAGE.
  */
-export const QEMU_ESP_IMAGE = "jumper/qemu-esp:9.2.2-20260417-jb7";
+export const QEMU_ESP_IMAGE = "fabwright/qemu-esp:9.2.2-20260417-jb7";
 
-/** Docker labels every emulator container carries, so a later Jumper process can reap leftovers. */
-export const EMULATOR_LABEL = "jumper.emulator";
-export const OWNER_LABEL = "jumper.owner-pid";
+/** Docker labels every emulator container carries, so a later Fabwright process can reap leftovers. */
+export const EMULATOR_LABEL = "fabwright.emulator";
+export const OWNER_LABEL = "fabwright.owner-pid";
 
 /**
- * Docker or Jumper's patched QEMU built on this machine (round 11: ~/.jumper/emulators/qemu-esp/<tag>,
- * installed by `jumper setup esp32`; else qemu-system-* on PATH). JUMPER_QEMU_ESP_RUNTIME=docker|native
- * forces one; otherwise JUMPER_RUNTIME (auto: Docker when it answers and has the image, else native
+ * Docker or Fabwright's patched QEMU built on this machine (round 11: ~/.fabwright/emulators/qemu-esp/<tag>,
+ * installed by `fabwright setup esp32`; else qemu-system-* on PATH). FABWRIGHT_QEMU_ESP_RUNTIME=docker|native
+ * forces one; otherwise FABWRIGHT_RUNTIME (auto: Docker when it answers and has the image, else native
  * when installed).
  */
 export function qemuRuntime(): "docker" | "native" {
   return pickRuntime({
-    override: process.env.JUMPER_QEMU_ESP_RUNTIME,
+    override: process.env.FABWRIGHT_QEMU_ESP_RUNTIME,
     nativeInstalled: nativeQemuInstalled,
-    dockerReady: () => spawnSync("docker", ["image", "inspect", process.env.JUMPER_QEMU_ESP_IMAGE ?? QEMU_ESP_IMAGE], { stdio: "ignore", timeout: 10_000 }).status === 0,
+    dockerReady: () => spawnSync("docker", ["image", "inspect", process.env.FABWRIGHT_QEMU_ESP_IMAGE ?? QEMU_ESP_IMAGE], { stdio: "ignore", timeout: 10_000 }).status === 0,
   });
 }
 
@@ -44,8 +44,8 @@ export interface QemuLaunchOptions {
   icountShift?: number;
   /**
    * The emulated network card (OpenCores Ethernet, "open_eth"):
-   *   true (default): QEMU's own user networking (NAT, no Jumper policy);
-   *   { framePort }: plugged into Jumper's device network (DeviceNetHost.framePort), where the
+   *   true (default): QEMU's own user networking (NAT, no Fabwright policy);
+   *   { framePort }: plugged into Fabwright's device network (DeviceNetHost.framePort), where the
    *     sandbox DNS, mocks, secrets, faults and the Wi-Fi shim's access point live;
    *   false: no card.
    */
@@ -64,7 +64,7 @@ export interface QemuLaunchOptions {
    * survive a reset or power cycle, like on the chip). false: QEMU's -snapshot (writes are lost).
    */
   persistFlash?: boolean;
-  /** Extra Docker labels (key → value). jumper.emulator=1 and jumper.owner-pid=<pid> are always set. */
+  /** Extra Docker labels (key → value). fabwright.emulator=1 and fabwright.owner-pid=<pid> are always set. */
   labels?: Record<string, string>;
 }
 
@@ -119,10 +119,10 @@ export function launchQemu(o: QemuLaunchOptions): QemuProcess {
   let argv: string[];
   let name: string | undefined;
   if ((o.runtime ?? qemuRuntime()) === "docker") {
-    name = `jumper-qemu-esp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+    name = `fabwright-qemu-esp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
     argv = [
       "docker", "run", "--rm", "--name", name,
-      "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "jumper.backend=qemu-esp",
+      "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "fabwright.backend=qemu-esp",
       ...Object.entries(o.labels ?? {}).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
       "--add-host=host.docker.internal:host-gateway",
       "-v", `${dirname(o.flashImage)}:/fw${o.persistFlash === false ? ":ro" : ""}`,
@@ -161,18 +161,18 @@ export function qemuPreflight(o: { runtime?: "docker" | "native"; image?: string
     const r = spawnSync(bin, ["--version"], { stdio: "ignore", timeout: 10_000 });
     if (r.status === 0) return undefined;
     const docker = probeDocker();
-    return `the native ESP32 emulator is not installed (no ${name} in ${nativeQemuDir()}/bin or on PATH)${docker.ok ? "" : `, and Docker cannot run it instead: ${docker.why}`}. Fix: run \`jumper setup esp32\` (builds Jumper's patched QEMU on this machine, about 3 minutes)${docker.ok ? "" : ", or start Docker Desktop"}, then press Run again.`;
+    return `the native ESP32 emulator is not installed (no ${name} in ${nativeQemuDir()}/bin or on PATH)${docker.ok ? "" : `, and Docker cannot run it instead: ${docker.why}`}. Fix: run \`fabwright setup esp32\` (builds Fabwright's patched QEMU on this machine, about 3 minutes)${docker.ok ? "" : ", or start Docker Desktop"}, then press Run again.`;
   }
   const image = o.image ?? QEMU_ESP_IMAGE;
   const probe = probeDocker();
   if (!probe.ok) {
     return nativeQemuInstalled()
-      ? `Docker is not usable (${probe.why}), and the runtime is forced to Docker, so the ESP32 emulator cannot start. Fix: unset JUMPER_RUNTIME / JUMPER_QEMU_ESP_RUNTIME (Jumper's native QEMU is installed and runs without Docker), or start Docker Desktop, then press Run again.`
-      : `Docker is not usable (${probe.why}), so the ESP32 emulator (QEMU in a container) cannot start, and Jumper's native QEMU is not installed either. Fix: run \`jumper setup esp32\` to install it natively (no Docker needed), or start Docker Desktop, then press Run again.`;
+      ? `Docker is not usable (${probe.why}), and the runtime is forced to Docker, so the ESP32 emulator cannot start. Fix: unset FABWRIGHT_RUNTIME / FABWRIGHT_QEMU_ESP_RUNTIME (Fabwright's native QEMU is installed and runs without Docker), or start Docker Desktop, then press Run again.`
+      : `Docker is not usable (${probe.why}), so the ESP32 emulator (QEMU in a container) cannot start, and Fabwright's native QEMU is not installed either. Fix: run \`fabwright setup esp32\` to install it natively (no Docker needed), or start Docker Desktop, then press Run again.`;
   }
   const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
   if (img.status !== 0) {
-    return `The ESP32 emulator image ${image} is not installed. Fix: run \`jumper setup esp32\` (or docker build -t ${image} toolchains/qemu-esp).`;
+    return `The ESP32 emulator image ${image} is not installed. Fix: run \`fabwright setup esp32\` (or docker build -t ${image} toolchains/qemu-esp).`;
   }
   return undefined;
 }

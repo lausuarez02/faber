@@ -3,7 +3,7 @@
  * keep the electronics and their wires out of the object's room, and the checks (room, opening,
  * walls, a sensor that must sit next to the object).
  */
-import type { HeldObject } from "@jumper/project-format";
+import type { HeldObject } from "@fabwright/project-format";
 import { heldFrom, heldInsert, heldProblems, heldSize, heldSpec, isHeldMech, measureText, SLEEVE_WALL_MM, type HeldCtx, type HeldReport } from "./held.ts";
 import type { LayoutInput, Opening, Placed, Rib } from "./layout.ts";
 import { contains, rayExit, type Plan } from "./plan.ts";
@@ -105,7 +105,7 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
     const open = c.openings.find((o) => o.part === p.mech.id && o.feature === "access");
     const others = c.placed.filter((q) => q !== p);
     const clash = others.filter((q) => overlaps(room, q, -0.01));
-    if (clash.length) c.issues.push({ id: "held-object", ok: false, severity: "error", message: `${h.name ?? h.id}'s room overlaps ${clash.map((q) => q.mech.id).join(", ")}. Why: a part was pinned into it. Fix: remove that part's placements so Jumper packs it elsewhere, or make the case bigger.`, parts: [h.id, ...clash.map((q) => q.mech.id)] });
+    if (clash.length) c.issues.push({ id: "held-object", ok: false, severity: "error", message: `${h.name ?? h.id}'s room overlaps ${clash.map((q) => q.mech.id).join(", ")}. Why: a part was pinned into it. Fix: remove that part's placements so Fabwright packs it elsewhere, or make the case bigger.`, parts: [h.id, ...clash.map((q) => q.mech.id)] });
     // ---- the sleeve: a wall on each side that faces the inside of the case
     const made: string[] = [];
     const skipped: string[] = [];
@@ -169,7 +169,7 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
       }
       made.push(sd.name);
     }
-    if (skipped.length) c.issues.push({ id: "held-object", ok: true, severity: "warning", message: `${h.name ?? h.id} has no sleeve wall on the ${skipped.join(", ")}: there is no ${T} mm of free room between it and that part. Why: wires could reach the object's room there and the object rests on the part. Fix: more wiring room (params.gap_mm 2), or let Jumper place that part (remove its placements).`, parts: [h.id] });
+    if (skipped.length) c.issues.push({ id: "held-object", ok: true, severity: "warning", message: `${h.name ?? h.id} has no sleeve wall on the ${skipped.join(", ")}: there is no ${T} mm of free room between it and that part. Why: wires could reach the object's room there and the object rests on the part. Fix: more wiring room (params.gap_mm 2), or let Fabwright place that part (remove its placements).`, parts: [h.id] });
     // ---- the walls round the room and the rim round the opening
     const wall = c.wall ?? MIN_WALL;
     let rim = Infinity;
@@ -296,7 +296,7 @@ export function sleeveFor(c: SleeveContext): HeldReport[] {
       ...(opening && h.removable !== false ? { opening_mm: opening } : {}),
       wall_mm: r1(thinnest),
       sleeve: made,
-      source: h.source ?? "declared in jumper.json enclosure.held",
+      source: h.source ?? "declared in fabwright.json enclosure.held",
       measure: measureText(h, ctx),
       min: room.min,
       max: room.max,

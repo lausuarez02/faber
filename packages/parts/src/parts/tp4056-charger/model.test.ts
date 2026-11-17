@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { GROUND, Simulation, type CircuitBuilder } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject } from "@fabwright/project-format";
+import { GROUND, Simulation, type CircuitBuilder } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 
@@ -81,7 +81,7 @@ describe("tp4056-charger", () => {
 describe("tp4056-charger + lipo-battery in a simulation (×3600 time, so 1 s = 1 h)", () => {
   it("charges a half-full 500 mAh cell through CC, then CV, to full, and the LEDs follow", () => {
     const project = parseProject({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: "charge",
       parts: [
         { id: "cell", type: "lipo-battery", x: 0, y: 0, props: { capacity: 500, soc: 50, speedup: 3600 } },
@@ -114,7 +114,7 @@ describe("tp4056-charger + lipo-battery in a simulation (×3600 time, so 1 s = 1
 
   it("warns when the 1 A it is sold with charges a 500 mAh cell", () => {
     const project = parseProject({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: "charge",
       parts: [
         { id: "cell", type: "lipo-battery", x: 0, y: 0, props: { capacity: 500, soc: 50 } },

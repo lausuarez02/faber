@@ -1,4 +1,4 @@
-// The sandbox CA: a per-machine certificate authority Jumper uses to terminate TLS for hosts it
+// The sandbox CA: a per-machine certificate authority Fabwright uses to terminate TLS for hosts it
 // inspects (mocks, secret injection, cassettes). Emulated firmware trusts it the way a real board
 // trusts a root CA bundle; the CA never leaves this machine and is never in an export. Leaf certs
 // are made on demand per host name (ECDSA P-256, short-lived) and cached.
@@ -47,7 +47,7 @@ export class SandboxCA {
     const now = Date.now();
     const cert = await x509.X509CertificateGenerator.createSelfSigned({
       serialNumber: serial(),
-      name: "CN=Jumper Sandbox CA (this machine only), O=Jumper",
+      name: "CN=Fabwright Sandbox CA (this machine only), O=Fabwright",
       notBefore: new Date(now - 86_400_000),
       notAfter: new Date(now + 5 * 365 * 86_400_000),
       keys,

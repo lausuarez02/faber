@@ -1,8 +1,8 @@
 import { cameraParts, cameraProps, cameraSourceSpec, pickCamera } from "./camera.ts";
-import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@jumper/project-format";
-import type { PartRegistry, VisualValue } from "@jumper/sim-core";
-import { checkRequest, resolveMocks, validateMock, type Fault, type Mock, type NetView } from "@jumper/device-net";
-import { fail, JumperError } from "./errors.ts";
+import { parseScenarioStep, type Project, type Scenario, type ScenarioStep } from "@fabwright/project-format";
+import type { PartRegistry, VisualValue } from "@fabwright/sim-core";
+import { checkRequest, resolveMocks, validateMock, type Fault, type Mock, type NetView } from "@fabwright/device-net";
+import { fail, FabwrightError } from "./errors.ts";
 import { findPart, resolvePin, specOf, splitRef } from "./pins.ts";
 import type { Frame, SimHost } from "./sim.ts";
 import { clampRegion, diffFraction, litCount, regionRows, type DisplaySnapshot } from "./snapshots.ts";
@@ -144,7 +144,7 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
       if ("expect_capture" in step && typeof step.expect_capture === "string") pickCamera(project, registry, step.expect_capture);
       else if ("expect_capture" in step && !cameraParts(project, registry).length) pickCamera(project, registry);
       if (typeof pb?.capture === "string") pickCamera(project, registry, pb.capture);
-      if ("reset_board" in step && !project.firmware) fail("no-firmware", "reset_board", "this project has no firmware board to reboot", "write firmware first (write_file) and point jumper.json firmware at the board");
+      if ("reset_board" in step && !project.firmware) fail("no-firmware", "reset_board", "this project has no firmware board to reboot", "write firmware first (write_file) and point fabwright.json firmware at the board");
       if (typeof step.expect_display === "string") {
         const part = findPart(project, step.expect_display);
         const spec = specOf(registry, part);
@@ -180,7 +180,7 @@ export function validateScenario(s: Scenario, project: Project, registry: PartRe
         } else findPart(project, ref);
       }
     } catch (err) {
-      if (err instanceof JumperError) fail(err.code, `Scenario '${s.id}' step ${i} ${stepText(raw)}`, `${err.what} (${err.why})`, err.fix);
+      if (err instanceof FabwrightError) fail(err.code, `Scenario '${s.id}' step ${i} ${stepText(raw)}`, `${err.what} (${err.why})`, err.fix);
       throw err;
     }
     steps.push(r.step);

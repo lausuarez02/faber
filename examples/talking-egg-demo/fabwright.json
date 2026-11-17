@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Talking egg (Nano + DFPlayer)",
   "description": "Press the button and the egg says something: an Arduino Nano sends DFPlayer Mini commands over SoftwareSerial, the DFPlayer plays the clip through an 8 ohm speaker. The clips are text (the DFPlayer's clips), so the canvas shows a speech bubble and the browser speaks the words; export_manufacturing writes the microSD card's files.",
   "parts": [

@@ -1,4 +1,4 @@
-// jumper-ai-gateway [--port 8787] [--host 0.0.0.0] [--provider anthropic-api|claude-cli|mock] [--ask talk]
+// fabwright-ai-gateway [--port 8787] [--host 0.0.0.0] [--provider anthropic-api|claude-cli|mock] [--ask talk]
 import { chooseProvider } from "./providers.ts";
 import { startGatewayServer } from "./server.ts";
 import { parsePetQuery } from "../protocol.ts";

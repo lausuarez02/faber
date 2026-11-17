@@ -4,7 +4,7 @@ import type { Usage } from "./hints.ts";
  * Round 7 (voice): get_part hints for the DFPlayer Mini and the speaker. The example uses no
  * library: a 10-byte frame helper (dfSend) so no third-party licence question arises. (The common
  * DFRobotDFPlayerMini library says "GNU Lesser General Public License" in its header; it works in
- * Jumper too if the person installs it, but Jumper does not ship or require it.)
+ * Fabwright too if the person installs it, but Fabwright does not ship or require it.)
  */
 
 /** The frame helper, shared by the hint and the docs. */

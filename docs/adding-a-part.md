@@ -73,7 +73,7 @@ No scripts, styles, images or external links; any `id` starts with `tilt-switch-
 ## 3. `model.ts` (3 min)
 
 ```ts
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { truthy } from "../../lib/props.ts";
 
 export const create: PartModelFactory = (ctx): PartModel => {
@@ -126,7 +126,7 @@ Test the behaviour a datasheet promises, through the real solver:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { GROUND, PULLUP_OHMS } from "@jumper/sim-core";
+import { GROUND, PULLUP_OHMS } from "@fabwright/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 

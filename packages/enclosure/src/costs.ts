@@ -4,14 +4,14 @@
  * An agent (or a person) makes choices that the parts do not need: a big dome, a part pinned to a
  * spot on a face, a speaker on the front next to the screen, a fixed outline size, a thick wall.
  * Each one can make the case bigger, and nothing said by how much. For every such choice the fast
- * proposal search (no CAD) runs again with that one choice relaxed (back to Jumper's default), and
+ * proposal search (no CAD) runs again with that one choice relaxed (back to Fabwright's default), and
  * the size, thickness and volume with and without it are compared. A last run relaxes them all.
  *
  * Time-boxed: the choices most likely to cost (the dome, a fixed size, pins) go first, the rest are
  * listed as skipped when the budget runs out. Every number comes from the same quick search, so
  * "with" and "without" are measured the same way (the built case can differ by a few tenths).
  */
-import type { CasePlacement, Enclosure } from "@jumper/project-format";
+import type { CasePlacement, Enclosure } from "@fabwright/project-format";
 import { resolveMech } from "./mech.ts";
 import { autoLayouts, DOME_WARN_MM, type Layout, type LayoutInput, specWithProps } from "./layout.ts";
 import { goalOf, layersOf, type LayoutGoal, pocketOf, proposeWithLayouts, volumeOf } from "./proposals.ts";
@@ -161,10 +161,10 @@ export function choicesOf(input: LayoutInput): Relax[] {
   const sz = e.size_mm ?? {};
   if (sz.w !== undefined || sz.h !== undefined) {
     const keys = (["w", "h"] as const).filter((k) => sz[k] !== undefined);
-    out.push({ id: "size", kind: "size", choice: `the fixed ${sz.w ?? "auto"} x ${sz.h ?? "auto"} mm size`, change: { size_mm: Object.fromEntries(keys.map((k) => [k, null])) }, label: "Let Jumper size it", without: "at the size Jumper picks", tradeoff: "the outline's size is no longer the one asked", apply: (x) => withSize(x, [...keys]), prio: 1 });
+    out.push({ id: "size", kind: "size", choice: `the fixed ${sz.w ?? "auto"} x ${sz.h ?? "auto"} mm size`, change: { size_mm: Object.fromEntries(keys.map((k) => [k, null])) }, label: "Let Fabwright size it", without: "at the size Fabwright picks", tradeoff: "the outline's size is no longer the one asked", apply: (x) => withSize(x, [...keys]), prio: 1 });
   }
   const depth = sz.d ?? (typeof p.depth_mm === "number" ? p.depth_mm : undefined);
-  if (depth !== undefined) out.push({ id: "depth", kind: "depth", choice: `the fixed ${fmtMm(depth)} mm thickness`, change: sz.d !== undefined ? { size_mm: { d: null } } : { params: { depth_mm: "auto" } }, label: "Let Jumper pick the thickness", without: "at the thickness Jumper picks", apply: (x) => withParams(withSize(x, ["d"]), { depth_mm: null }), prio: 1 });
+  if (depth !== undefined) out.push({ id: "depth", kind: "depth", choice: `the fixed ${fmtMm(depth)} mm thickness`, change: sz.d !== undefined ? { size_mm: { d: null } } : { params: { depth_mm: "auto" } }, label: "Let Fabwright pick the thickness", without: "at the thickness Fabwright picks", apply: (x) => withParams(withSize(x, ["d"]), { depth_mm: null }), prio: 1 });
   for (const [k, name] of [["edge_radius_front_mm", "front"], ["edge_radius_back_mm", "back"]] as const) {
     const v = p[k];
     if (typeof v === "number") out.push({ id: `edge-${name}`, kind: "edge", choice: `the ${fmtMm(v)} mm ${name} rim round-over`, change: { params: { [k]: "auto" } }, label: `Automatic ${name} rim`, without: `with the automatic ${name} rim`, apply: (x) => withParams(x, { [k]: null }), prio: 3 });
@@ -187,15 +187,15 @@ export function choicesOf(input: LayoutInput): Relax[] {
     if (!ids.has(id)) continue;
     if (pl.x_mm !== undefined || pl.y_mm !== undefined) {
       const at = [pl.x_mm !== undefined ? `x ${pl.x_mm}` : "", pl.y_mm !== undefined ? `y ${pl.y_mm}` : ""].filter(Boolean).join(", ");
-      out.push({ id: `pin:${id}`, kind: "pin", part: id, choice: `${id} pinned at ${at} mm${pl.face ? ` on the ${pl.face}` : ""}`, change: { placements: { [id]: { x_mm: null, y_mm: null } } }, label: `Let Jumper place ${id}`, without: `with ${id} placed by Jumper`, apply: (x) => withPlacement(x, id, { x_mm: null, y_mm: null }), prio: 2 });
+      out.push({ id: `pin:${id}`, kind: "pin", part: id, choice: `${id} pinned at ${at} mm${pl.face ? ` on the ${pl.face}` : ""}`, change: { placements: { [id]: { x_mm: null, y_mm: null } } }, label: `Let Fabwright place ${id}`, without: `with ${id} placed by Fabwright`, apply: (x) => withPlacement(x, id, { x_mm: null, y_mm: null }), prio: 2 });
     }
-    if (pl.layer !== undefined) out.push({ id: `layer:${id}`, kind: "layer", part: id, choice: `${id} kept in layer ${pl.layer}`, change: { placements: { [id]: { layer: null } } }, label: `Let Jumper pick ${id}'s layer`, without: `with ${id}'s layer picked by Jumper`, apply: (x) => withPlacement(x, id, { layer: null }), prio: 2 });
+    if (pl.layer !== undefined) out.push({ id: `layer:${id}`, kind: "layer", part: id, choice: `${id} kept in layer ${pl.layer}`, change: { placements: { [id]: { layer: null } } }, label: `Let Fabwright pick ${id}'s layer`, without: `with ${id}'s layer picked by Fabwright`, apply: (x) => withPlacement(x, id, { layer: null }), prio: 2 });
     if (pl.on_edge) out.push({ id: `on-edge:${id}`, kind: "on-edge", part: id, choice: `${id} stood on its edge`, change: { placements: { [id]: { on_edge: null } } }, label: `Lay ${id} flat`, without: `with ${id} lying flat`, apply: (x) => withPlacement(x, id, { on_edge: null }), prio: 3 });
     if (pl.face && pl.face !== "inside" && id !== frontId && !(pl.face === "front" && !frontId && isScreen(input, id))) {
       // a speaker on the front competes with the screen for the front: its grille can go on the back
       if (pl.face === "front" && grille(id))
         out.push({ id: `face:${id}`, kind: "face", part: id, choice: `${id}'s grille on the front`, change: { placements: { [id]: { face: "back", y_mm: null, x_mm: null } } }, label: `Put ${id}'s grille on the back`, without: `with ${id}'s grille on the back`, tradeoff: "the sound comes out of the back, a little quieter facing you; the front stays free for the screen", apply: (x) => withPlacement(x, id, { face: "back", x_mm: null, y_mm: null }), prio: 2 });
-      else out.push({ id: `face:${id}`, kind: "face", part: id, choice: `${id} on the ${pl.face}`, change: { placements: { [id]: { face: null } } }, label: `Let Jumper pick ${id}'s side`, without: `with ${id}'s side picked by Jumper`, tradeoff: `${id} may end up on another side`, apply: (x) => withPlacement(x, id, { face: null }), prio: 3 });
+      else out.push({ id: `face:${id}`, kind: "face", part: id, choice: `${id} on the ${pl.face}`, change: { placements: { [id]: { face: null } } }, label: `Let Fabwright pick ${id}'s side`, without: `with ${id}'s side picked by Fabwright`, tradeoff: `${id} may end up on another side`, apply: (x) => withPlacement(x, id, { face: null }), prio: 3 });
     }
   }
   return out.sort((a, b) => a.prio - b.prio);
@@ -270,7 +270,7 @@ function* costSteps(input: LayoutInput, opts: CostOptions): Generator<void, Cost
   const skipped: string[] = [];
   const left = () => budget - (performance.now() - t0);
   const fixedWH = input.enclosure.size_mm?.w !== undefined || input.enclosure.size_mm?.h !== undefined;
-  // every choice relaxed at once, first (it says how far the case can go), then one at a time (the pins, faces, dome and size all back to Jumper's defaults)
+  // every choice relaxed at once, first (it says how far the case can go), then one at a time (the pins, faces, dome and size all back to Fabwright's defaults)
   let relax_all: CostsReport["relax_all"];
   const allR = relax;
   if (allR.length > 1 && left() > per * 0.5) {
@@ -293,9 +293,9 @@ function* costSteps(input: LayoutInput, opts: CostOptions): Generator<void, Cost
         adds_cm3,
         choices: allR.map((r) => r.id),
         message: `Together (${allR.map((r) => r.choice).join("; ")}) they ${lead.replace(/^adds/, "add").replace(/^saves/, "save").replace("keeps it", "keep it")}. Fix: ${toolCall(change)}.`,
-        say: `Letting Jumper decide all of these (${allR.map((r) => r.choice).join("; ")}) makes it ${fmtSay(wo)} instead of ${fmtSay(base)}.`,
+        say: `Letting Fabwright decide all of these (${allR.map((r) => r.choice).join("; ")}) makes it ${fmtSay(wo)} instead of ${fmtSay(base)}.`,
         change,
-        label: "Let Jumper decide all of these",
+        label: "Let Fabwright decide all of these",
       };
   } else if (allR.length > 1) skipped.push("relax-all");
   const runs: Relax[] = [...relax];

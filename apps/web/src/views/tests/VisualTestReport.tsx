@@ -3,13 +3,13 @@
  * filmstrip of the device at every check; click a frame to open the device at that exact moment.
  *
  * Where the report comes from, first that answers:
- *   1. `?report=<url>` (a jumper-visual-report/1 JSON)
- *   2. the jumper server: GET /api/visual-report (ProjectSession's latest run_tests)
+ *   1. `?report=<url>` (a fabwright-visual-report/1 JSON)
+ *   2. the fabwright server: GET /api/visual-report (ProjectSession's latest run_tests)
  *   3. the example's prebuilt report: public/reports/<example>.json
  *      (node --import tsx packages/session/src/visual-report.ts examples/<name> apps/web/public/reports/<name>.json)
  */
 import { useEffect, useState } from "react";
-import { initialExample, useJumper } from "../../lib/app.ts";
+import { initialExample, useFabwright } from "../../lib/app.ts";
 import { VisualTestReportView } from "./VisualTestReportView.tsx";
 import { isVisualReport, type VisualReport } from "./types.ts";
 
@@ -27,8 +27,8 @@ async function fetchReport(url: string): Promise<VisualReport | undefined> {
 }
 
 export function VisualTestReport({ report: given }: { report?: VisualReport } = {}) {
-  const project = useJumper((s) => s.project);
-  const firmware = useJumper((s) => s.firmware);
+  const project = useFabwright((s) => s.project);
+  const firmware = useFabwright((s) => s.firmware);
   const [state, setState] = useState<{ report?: VisualReport; note?: string; loading: boolean }>({ loading: !given, ...(given ? { report: given } : {}) });
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function VisualTestReport({ report: given }: { report?: VisualReport } = 
     return (
       <div className="vt vt-empty" data-testid="visual-test-report-empty">
         No visual test report for this project yet. Ask your agent to <code>run_tests</code>, or run the tests from a terminal:{" "}
-        <code>pnpm jumper test --visual -p &lt;project dir&gt;</code> (the server shows the newest report; reopen this panel)
+        <code>pnpm fabwright test --visual -p &lt;project dir&gt;</code> (the server shows the newest report; reopen this panel)
       </div>
     );
   return <VisualTestReportView report={state.report} project={project} hex={firmware.status === "ready" ? firmware.hex : undefined} {...(state.note ? { sourceNote: state.note } : {})} />;

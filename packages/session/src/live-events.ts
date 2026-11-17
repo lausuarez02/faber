@@ -1,10 +1,10 @@
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import type { ActionEntry } from "./session.ts";
 import type { AgentPresence } from "./live.ts";
 
 /**
  * Round 5 (decision 0003, C6): every message the server sends on ws://…/live, as one union, so the
- * hub (session/live.ts), jumper serve and the web app (apps/web/src/live) agree. New kinds are added
+ * hub (session/live.ts), fabwright serve and the web app (apps/web/src/live) agree. New kinds are added
  * here first. Clients ignore kinds they do not know.
  */
 

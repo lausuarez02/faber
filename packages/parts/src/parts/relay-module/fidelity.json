@@ -9,5 +9,5 @@
   },
   "emulates": ["Active-low and active-high modules", "Coil pull-in voltage (no click on 3.3 V)", "Operate / release delay", "COM–NO / COM–NC switching of a DC load", "Partial turn-on of active-low modules from a 3.3 V GPIO (warning)"],
   "doesNotEmulate": ["Contact bounce (1–5 ms)", "AC loads, arcing and contact wear", "The JD-VCC jumper (separate coil supply)", "Inductive kick from the load (put a diode across DC motor / pump loads)"],
-  "testOnRealDevice": ["Which level your module switches on (silkscreen or H/L jumper)", "That the module turns fully off from a 3.3 V board", "Mains wiring: only with a proper enclosure and someone qualified; this simulation does not check it"]
+  "testOnRealDevice": ["Which level your module switches on (silkscreen or H/L fabwright)", "That the module turns fully off from a 3.3 V board", "Mains wiring: only with a proper enclosure and someone qualified; this simulation does not check it"]
 }

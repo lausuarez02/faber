@@ -1,17 +1,17 @@
-// examples/rover end to end: the real jumper.json (incl. its world), the real parts, the avr8js
+// examples/rover end to end: the real fabwright.json (incl. its world), the real parts, the avr8js
 // backend running the committed golden firmware, and Rapier stepping on the simulation clock.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
-import { registry } from "@jumper/parts";
+import { parseProject } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
+import { registry } from "@fabwright/parts";
 import { attachPhysics, initPhysics, worldOf } from "./index.ts";
 
 const dir = new URL("../../../examples/rover/", import.meta.url);
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, dir)), "utf8");
-const raw = read("jumper.json");
+const raw = read("fabwright.json");
 const project = parseProject(raw);
 const firmware = read("firmware/rover.hex");
 

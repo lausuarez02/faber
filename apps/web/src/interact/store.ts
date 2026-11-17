@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import type { PropValue } from "@jumper/project-format";
+import type { PropValue } from "@fabwright/project-format";
 
 /**
  * Live interaction state (round 5, live track; round 6, canvas track): whether the page's own
  * simulation exists (so parts take presses, knob turns and sensor values instead of drags), and the
  * values the person set while it runs. Values are simulation-only, like the agent's
- * set_sensor_value: jumper.json never changes.
+ * set_sensor_value: fabwright.json never changes.
  */
 export interface InteractState {
   /** A local simulation exists (running or paused) and takes input. */

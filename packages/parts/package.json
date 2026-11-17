@@ -1,5 +1,5 @@
 {
-  "name": "@jumper/parts",
+  "name": "@fabwright/parts",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -14,12 +14,12 @@
     "gen:check": "tsx scripts/gen-registry.ts --check && tsx scripts/gen-custom-schema.ts --check"
   },
   "dependencies": {
-    "@jumper/project-format": "workspace:*",
-    "@jumper/sim-core": "workspace:*",
+    "@fabwright/project-format": "workspace:*",
+    "@fabwright/sim-core": "workspace:*",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@jumper/runner": "workspace:*",
-    "@jumper/sim-backends": "workspace:*"
+    "@fabwright/runner": "workspace:*",
+    "@fabwright/sim-backends": "workspace:*"
   }
 }

@@ -1,14 +1,14 @@
-// Round 13: what a build adds for the API relay. A sketch that includes JumperRelay.h gets the header
-// (when its folder has none) and, in a simulation build, a jumper_device.h that points at the sandbox
-// relay with the simulation token. The person's own jumper_device.h (their relay token and Wi-Fi
-// password) is never compiled by Jumper (the runner drops it), so the factory pack and the build kit
+// Round 13: what a build adds for the API relay. A sketch that includes FabwrightRelay.h gets the header
+// (when its folder has none) and, in a simulation build, a fabwright_device.h that points at the sandbox
+// relay with the simulation token. The person's own fabwright_device.h (their relay token and Wi-Fi
+// password) is never compiled by Fabwright (the runner drops it), so the factory pack and the build kit
 // firmware never carry it.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEVICE_HEADER, parseNetworkConfig, RELAY_HEADER, RELAY_HEADER_SOURCE, simDeviceHeader, type NetworkConfig } from "@jumper/device-net";
-import type { Project } from "@jumper/project-format";
+import { DEVICE_HEADER, parseNetworkConfig, RELAY_HEADER, RELAY_HEADER_SOURCE, simDeviceHeader, type NetworkConfig } from "@fabwright/device-net";
+import type { Project } from "@fabwright/project-format";
 
-const INCLUDES_RELAY = /#\s*include\s*[<"]JumperRelay\.h[>"]/;
+const INCLUDES_RELAY = /#\s*include\s*[<"]FabwrightRelay\.h[>"]/;
 
 export function sketchUsesRelay(sketchDir: string): boolean {
   if (!existsSync(sketchDir)) return false;

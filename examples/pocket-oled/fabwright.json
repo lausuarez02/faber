@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Pocket OLED (XIAO RP2040)",
   "description": "A Seeed XIAO RP2040 drives a 0.96 in SSD1306 OLED over I2C (D4/D5): a title, a frame counter and a bar that swings with sinf(). Real arduino-pico firmware on the rp2040js simulator.",
   "parts": [

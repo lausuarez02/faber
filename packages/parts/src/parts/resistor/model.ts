@@ -1,4 +1,4 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { formatOhms, resistorBands } from "../../lib/resistorBands.ts";
 import { num, round } from "../../lib/props.ts";
 

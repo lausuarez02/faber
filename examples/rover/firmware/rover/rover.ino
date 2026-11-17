@@ -1,4 +1,4 @@
-// Obstacle-avoiding 2WD rover for Jumper (examples/rover).
+// Obstacle-avoiding 2WD rover for Fabwright (examples/rover).
 //
 // Parts: Arduino Uno, L298N dual H-bridge, two TT gear motors, HC-SR04 sonar, 4xAA pack.
 //   L298N  ENA <- D5 (PWM)  IN1 <- D7  IN2 <- D8   -> left motor  (OUT1/OUT2)

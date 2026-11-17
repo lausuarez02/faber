@@ -2,7 +2,7 @@
   "id": "waveshare-rp2040-zero",
   "name": "Waveshare RP2040-Zero",
   "category": "board",
-  "description": "Tiny RP2040 board (23.5 × 18 mm, USB-C) at 3.3 V logic with 20 GPIOs on castellated edges (GP0-GP15, GP26-GP29) and a WS2812 RGB LED on GP16. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP0…GP29). 3.3 V only. Power: USB-C (jumper.json power.usb, default plugged in), or 3.5 to 5.5 V into the 5V pin (a 1S LiPo through a charger, a switch and a Schottky diode). No BAT pin, no charger on board.",
+  "description": "Tiny RP2040 board (23.5 × 18 mm, USB-C) at 3.3 V logic with 20 GPIOs on castellated edges (GP0-GP15, GP26-GP29) and a WS2812 RGB LED on GP16. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP0…GP29). 3.3 V only. Power: USB-C (fabwright.json power.usb, default plugged in), or 3.5 to 5.5 V into the 5V pin (a 1S LiPo through a charger, a switch and a Schottky diode). No BAT pin, no charger on board.",
   "pins": [
     {
       "id": "VBUS",
@@ -34,7 +34,7 @@
         "min": 3.2,
         "max": 3.4
       },
-      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout): 3.3 V while the input is above about 3.55 V, then it follows the input down. Keep the load modest (Jumper checks against 300 mA)."
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout): 3.3 V while the input is above about 3.55 V, then it follows the input down. Keep the load modest (Fabwright checks against 300 mA)."
     },
     {
       "id": "GP29",

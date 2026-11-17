@@ -41,7 +41,7 @@ describe("camera lens holes", () => {
 describe("camera-view check (round 14)", () => {
   it("the case report says the lens hole is there, where, and that the view clears the wall", async () => {
     const { generateCase } = await import("../src/engine.ts");
-    const p = { format: "jumper/1", name: "cam", parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0, rotation: 0 }, { id: "bat", type: "lipo-battery", x: 0, y: 0, rotation: 0 }], wires: [], scenarios: [], enclosure: { shape: "rounded-box", params: {} } } as unknown as Parameters<typeof generateCase>[0];
+    const p = { format: "fabwright/1", name: "cam", parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0, rotation: 0 }, { id: "bat", type: "lipo-battery", x: 0, y: 0, rotation: 0 }], wires: [], scenarios: [], enclosure: { shape: "rounded-box", params: {} } } as unknown as Parameters<typeof generateCase>[0];
     const g = await generateCase(p, specOf, { renders: false });
     const c = g.report.checks.find((x) => x.id === "camera-view");
     expect(c, JSON.stringify(g.report.checks.map((x) => x.id))).toBeDefined();

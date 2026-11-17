@@ -1,10 +1,10 @@
 {
-  "name": "@jumper/physics",
+  "name": "@fabwright/physics",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Deterministic 2D physics for Jumper robots: a top-down arena with a differential-drive rover (Rapier 2D), sonar raycasts, and planar servo-arm kinematics, stepped by the simulation clock.",
+  "description": "Deterministic 2D physics for Fabwright robots: a top-down arena with a differential-drive rover (Rapier 2D), sonar raycasts, and planar servo-arm kinematics, stepped by the simulation clock.",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -13,11 +13,11 @@
   },
   "dependencies": {
     "@dimforge/rapier2d-compat": "0.21.0",
-    "@jumper/project-format": "workspace:*",
-    "@jumper/sim-core": "workspace:*"
+    "@fabwright/project-format": "workspace:*",
+    "@fabwright/sim-core": "workspace:*"
   },
   "devDependencies": {
-    "@jumper/parts": "workspace:*",
-    "@jumper/sim-backends": "workspace:*"
+    "@fabwright/parts": "workspace:*",
+    "@fabwright/sim-backends": "workspace:*"
   }
 }

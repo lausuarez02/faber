@@ -1,12 +1,12 @@
 // End to end without a browser, for the RP2040 boards: the real part registry, the real rp2040js
-// backend (with Jumper's own boot ROM) and golden arduino-pico firmware from
+// backend (with Fabwright's own boot ROM) and golden arduino-pico firmware from
 // packages/sim-backends/fixtures (see BUILD.md there). Like blink.integration.test.ts for the Uno.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
-import { colorFrameAverage, monoPixel, Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
+import { colorFrameAverage, monoPixel, Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "./registry.gen.ts";
 import { asciiOf, frameOf, serialLines } from "./lib/firmwareBench.ts";
 
@@ -14,7 +14,7 @@ const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`../../sim-
 
 function sim(board: { id: string; type: string }, parts: NonNullable<ProjectInput["parts"]>, wires: [string, string][], hex: string): Simulation {
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "rp2040-it",
     parts: [{ ...board, x: 0, y: 0 }, ...parts],
     wires: wires.map(([a, b], i) => {
@@ -122,7 +122,7 @@ describe("Seeed XIAO RP2040 + SSD1306 OLED on Wire (I2C1, D4/D5): golden oled", 
     expect(s.diagnostics().filter((d) => d.severity === "error")).toEqual([]);
   });
 
-  it("the OLED on the wrong pins is not on the bus, and Jumper says which wires are missing", () => {
+  it("the OLED on the wrong pins is not on the bus, and Fabwright says which wires are missing", () => {
     const s = sim(
       XIAO,
       [{ id: "oled", type: "ssd1306-oled-i2c", x: 0, y: 0 }],

@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createRenodeBoardModel, limitOf, STM32_GPIO } from "../../lib/renodeBoard.ts";
 
 /**

@@ -2,9 +2,9 @@
 // wires, for model tests: exampleSim("hc-sr04", parts, wires).
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "../registry.gen.ts";
 
 type Ref = `${string}.${string}`;
@@ -16,7 +16,7 @@ export function exampleSim(partType: string, parts: ProjectInput["parts"], wires
     return { part: r.slice(0, i), pin: r.slice(i + 1) };
   };
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: `${partType} example`,
     parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }, ...(parts ?? [])],
     wires: wires.map(([a, b], i) => ({ id: `w${i}`, from: ref(a), to: ref(b) })),

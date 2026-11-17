@@ -3,8 +3,8 @@
 // colour screens), or the built firmware run headless when the project has no log yet (examples).
 import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@jumper/project-format";
-import type { PartRegistry, VisualState } from "@jumper/sim-core";
+import type { Project } from "@fabwright/project-format";
+import type { PartRegistry, VisualState } from "@fabwright/sim-core";
 import { SimHost, type ColorFrameImage, type Frame } from "./sim.ts";
 
 /** The device at one moment, for a still picture (gallery thumbnail): part states, HIGH wires, colour screens. */
@@ -19,9 +19,9 @@ export interface DeviceStill {
 /** Bytes read from the end of a big action log when looking for the last frames. */
 const TAIL_BYTES = 8_000_000;
 
-/** The last run's frames in <dir>/.jumper/actions.jsonl, merged into one still; undefined when none. */
+/** The last run's frames in <dir>/.fabwright/actions.jsonl, merged into one still; undefined when none. */
 export function lastLoggedStill(dir: string): DeviceStill | undefined {
-  const log = join(dir, ".jumper", "actions.jsonl");
+  const log = join(dir, ".fabwright", "actions.jsonl");
   if (!existsSync(log)) return undefined;
   let text: string;
   const fd = openSync(log, "r");
@@ -87,7 +87,7 @@ export async function deviceStill(dir: string, project: Project, registry: PartR
 /** Changes when the still a thumbnail shows may have changed (the action log grew). For cache keys. */
 export function stillKey(dir: string): string {
   try {
-    return String(statSync(join(dir, ".jumper", "actions.jsonl")).size);
+    return String(statSync(join(dir, ".fabwright", "actions.jsonl")).size);
   } catch {
     return "";
   }

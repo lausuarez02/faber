@@ -191,7 +191,7 @@ export function BuildKitView({ onClose }: { onClose(): void }) {
           ) : null}
           {kit.check_first?.length ? (
             <div className="kv-missing" data-testid="kit-check-first">
-              <b>Check before you buy:</b> Jumper's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why.
+              <b>Check before you buy:</b> Fabwright's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why.
               <ul>
                 {kit.check_first.map((c) => (
                   <li key={c.code}>
@@ -392,7 +392,7 @@ function PrintTab({ kit, ticks, tick }: TabProps) {
 function AssembleTab({ kit, ticks, tick }: TabProps) {
   const groups: [string, (s: string) => boolean][] = [
     ["Common problems", (s) => s === "general" || s === "part" || s === "case"],
-    ["What Jumper's checks said", (s) => s === "check_design"],
+    ["What Fabwright's checks said", (s) => s === "check_design"],
     ["Check on the real device", (s) => s === "fidelity"],
   ];
   return (

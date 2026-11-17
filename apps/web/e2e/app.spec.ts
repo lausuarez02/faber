@@ -75,7 +75,7 @@ test("the shell: floating chrome, agent dropdowns, device view, panels", async (
     await page.getByTestId("phone-menu").click();
     await page.getByRole("menuitem", { name: "Install MCP" }).click();
   } else {
-    // One agent state (C6): "No agent" here, unless a local jumper serve on 7780 reports a real one.
+    // One agent state (C6): "No agent" here, unless a local fabwright serve on 7780 reports a real one.
     await expect(page.getByTestId("agent-pill")).toHaveAttribute("data-agent-status", /^(none|building|idle|done)$/);
     await page.getByTestId("install-mcp").click();
   }

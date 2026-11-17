@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getPart } from "@jumper/parts";
-import type { ColorFrame } from "@jumper/sim-core";
+import { getPart } from "@fabwright/parts";
+import type { ColorFrame } from "@fabwright/sim-core";
 import { diffRect, mountTft, registerTftRenderers, TftPainter } from "./index.ts";
 
 function frame(w: number, h: number): ColorFrame {

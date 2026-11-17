@@ -6,7 +6,7 @@ import { openCanvas, requireFastWebGL, SHOTS } from "./helpers.ts";
 // (so every Blink edge re-solves a ~200-node circuit and repaints 66 LEDs), plus 67 spare parts.
 // Measures real frame intervals with requestAnimationFrame and writes them to test-results/perf.json.
 // A frame-rate benchmark of the GPU compositor: @gpu, so it skips on CI runners with software WebGL
-// (see requireFastWebGL in helpers.ts; JUMPER_E2E_GPU=1 forces it).
+// (see requireFastWebGL in helpers.ts; FABWRIGHT_E2E_GPU=1 forces it).
 test("perf: 200 parts while Blink runs @gpu", async ({ page }) => {
   test.setTimeout(90_000);
   await requireFastWebGL(page);
@@ -14,7 +14,7 @@ test("perf: 200 parts while Blink runs @gpu", async ({ page }) => {
   await expect(page.getByTestId("app")).toHaveAttribute("data-firmware", "ready");
 
   const count = await page.evaluate(() => {
-    const { store } = (window as unknown as { jumper: { store: { getState(): any } } }).jumper;
+    const { store } = (window as unknown as { fabwright: { store: { getState(): any } } }).fabwright;
     const s = store.getState();
     const base = s.project;
     const parts = [base.parts.find((p: any) => p.type === "arduino-uno")];

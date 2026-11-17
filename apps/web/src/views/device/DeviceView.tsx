@@ -7,13 +7,13 @@
  * Mount: {deviceOpen ? <DeviceView onClose={() => setDeviceOpen(false)} /> : null}
  */
 import { useMemo } from "react";
-import { engine, useJumper } from "../../lib/app.ts";
+import { engine, useFabwright } from "../../lib/app.ts";
 import { useCase } from "../../case/store.ts";
 import { DeviceStage } from "./DeviceStage.tsx";
 import { engineSource, type DeviceSource } from "./source.ts";
 
 export function DeviceView({ onClose, source }: { onClose(): void; source?: DeviceSource }) {
-  const fromEngine = useMemo(() => source ?? engineSource(engine, useJumper), [source]);
+  const fromEngine = useMemo(() => source ?? engineSource(engine, useFabwright), [source]);
   return (
     <div className="device-view" data-testid="device-view" role="dialog" aria-modal="true" aria-label="Device view">
       <DeviceStage

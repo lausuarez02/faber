@@ -2,25 +2,25 @@
 
 Status: round 10, track renode (`round10/renode`). Five boards run real Arduino firmware in
 [Renode](https://renode.io) 1.17.0 (MIT), an emulator in another process, driven in lockstep by
-Jumper's clock through the generic `McuBackend` contract. Measured on an Apple M4 Max, macOS 15.
+Fabwright's clock through the generic `McuBackend` contract. Measured on an Apple M4 Max, macOS 15.
 
 ## Boards
 
 | Board | Chip | Core (build image) | Parts library | Fixture test |
 | --- | --- | --- | --- | --- |
-| STM32 Blue Pill | STM32F103C8, 72 MHz | STM32duino 2.11.0 (`jumper/arduino-stm32:2.11.0-libs3-r1`, amd64) | available | pins out + in, Wire, SPI, ADC, PWM, IRQ, Serial |
+| STM32 Blue Pill | STM32F103C8, 72 MHz | STM32duino 2.11.0 (`fabwright/arduino-stm32:2.11.0-libs3-r1`, amd64) | available | pins out + in, Wire, SPI, ADC, PWM, IRQ, Serial |
 | WeAct Black Pill | STM32F411CE, 100 MHz | STM32duino 2.11.0 | available | all of the above |
 | ST Nucleo-F401RE | STM32F401RE, 84 MHz | STM32duino 2.11.0 | **planned**: `attachInterrupt` never fires (cause not found) | pins, Wire, SPI, ADC, PWM, Serial pass |
-| Arduino Nano 33 BLE | nRF52840, 64 MHz | arduino:mbed_nano 4.4.1 (`jumper/arduino-mbed-nano:4.4.1-libs3-r1`) | available | all but Serial1 RX (known gap) |
-| Seeed XIAO nRF52840 | nRF52840, 64 MHz | Seeeduino:nrf52 1.1.13, Adafruit core (`jumper/arduino-nrf52:1.1.13-libs3-r2`) | available | all of the above |
+| Arduino Nano 33 BLE | nRF52840, 64 MHz | arduino:mbed_nano 4.4.1 (`fabwright/arduino-mbed-nano:4.4.1-libs3-r1`) | available | all but Serial1 RX (known gap) |
+| Seeed XIAO nRF52840 | nRF52840, 64 MHz | Seeeduino:nrf52 1.1.13, Adafruit core (`fabwright/arduino-nrf52:1.1.13-libs3-r2`) | available | all of the above |
 
 A board part (`packages/parts/src/parts/<type>`) says `availability: {status, reason}`: `planned`
 boards show greyed out in the parts library with the reason, `search_parts` lists them apart, and
 `place_part` refuses them with what, why and fix. The status only changes when
 `packages/sim-backends/src/renode/boards.integration.test.ts` passes for the board.
 
-Verified 2026-11-11 with Renode 1.17.0's native macOS build (`JUMPER_RENODE_RUNTIME=native`). The
-Docker image `jumper/renode:1.17.0-r1` is the same Renode release and runs the same start script;
+Verified 2026-11-11 with Renode 1.17.0's native macOS build (`FABWRIGHT_RENODE_RUNTIME=native`). The
+Docker image `fabwright/renode:1.17.0-r1` is the same Renode release and runs the same start script;
 it could not be re-run that day because Docker Desktop on the test machine was failing (its disk
 filled up and containerd reported I/O errors). The round-9 Blue Pill bridge test did pass through
 the new bridge in Docker earlier the same day.
@@ -31,7 +31,7 @@ the new bridge in Docker earlier the same day.
 Simulation ── McuBackend.step(cycles) ──► RenodeBackend (TS, synchronous)
                                             │ SyncBridgeLink (worker thread + Atomics.wait)
                                             ▼ one TCP socket, text lines, virtual-ns stamps
-                          Renode process ── JumperBridge.cs (compiled into Renode at start)
+                          Renode process ── FabwrightBridge.cs (compiled into Renode at start)
 ```
 
 `step()` sends `R <ns>`; Renode runs (`EmulationManager.RunFor`) and the bridge sends every event
@@ -43,21 +43,21 @@ one instruction per core clock cycle: `PerformanceInMips` = the board clock).
 | --- | --- | --- |
 | GPIO out | `G <pin> <level> <o/i> <ns>` from a state hook on every board pin | direction from the port's config writes (F1 CRL/CRH, F4 MODER, nRF DIR / PIN_CNF), so `pinMode` shows even without a level change |
 | GPIO in | `I <gpio> <pin> <level>` between steps | applied again after the firmware reconfigures that pin (pull-ups), through the other level on F1 / nRF so the first edge reaches EXTI / GPIOTE |
-| Pin interrupts | the chip's own EXTI / GPIOTE models | F4: Jumper's SYSCFG model muxes ports into EXTI by EXTICR |
+| Pin interrupts | the chip's own EXTI / GPIOTE models | F4: Fabwright's SYSCFG model muxes ports into EXTI by EXTICR |
 | UART | `U <id> <ns> <byte>` per byte; `X` into RX | the board's console UART is `Serial` |
-| I2C | Renode's controller + a `JumperI2cTarget` per address the project's parts answer (`IW` one way, `IR` waits for `D`) | XIAO: Jumper's TWIM model asks every address ACK (`IC` → `K`), so NACKs and scanners are real |
-| SPI | a `JumperSpiTarget` (or the XIAO's SPIM model); `SX` waits for MISO, `SW` one way | one way when no wired device drives MISO (display modules), which keeps screens fast |
-| ADC | `A <adc> <ch> <mV>` | F1: Jumper's ADC model; F4: Renode's STM32_ADC fed by Jumper; nRF52: Jumper's SAADC model (gain, reference, resolution as configured) |
-| PWM | STM32: the timers' outputs reach the pins in Renode's platform, so they are GPIO edges; nRF52: Jumper's PWM model reports `P <pin> <period> <high>` and the backend draws the edges | |
+| I2C | Renode's controller + a `FabwrightI2cTarget` per address the project's parts answer (`IW` one way, `IR` waits for `D`) | XIAO: Fabwright's TWIM model asks every address ACK (`IC` → `K`), so NACKs and scanners are real |
+| SPI | a `FabwrightSpiTarget` (or the XIAO's SPIM model); `SX` waits for MISO, `SW` one way | one way when no wired device drives MISO (display modules), which keeps screens fast |
+| ADC | `A <adc> <ch> <mV>` | F1: Fabwright's ADC model; F4: Renode's STM32_ADC fed by Fabwright; nRF52: Fabwright's SAADC model (gain, reference, resolution as configured) |
+| PWM | STM32: the timers' outputs reach the pins in Renode's platform, so they are GPIO edges; nRF52: Fabwright's PWM model reports `P <pin> <period> <high>` and the backend draws the edges | |
 
 Boards are data (`packages/sim-backends/src/renode/boards.ts`): platform file, C# models, console
 UART, pin map, ADC channels, Wire / SPI controllers, vector table, boot quirks. The platform files
 and models are in `packages/sim-backends/src/renode/platforms`.
 
-Firmware is Intel HEX for every board (what Jumper keeps for every build); the board says where the
+Firmware is Intel HEX for every board (what Fabwright keeps for every build); the board says where the
 vector table is. Boot details that matter:
 
-- STM32F1 has no RCC model in Renode: Jumper's minimal RCC / FLASH (round 9) and a DWT cycle
+- STM32F1 has no RCC model in Renode: Fabwright's minimal RCC / FLASH (round 9) and a DWT cycle
   counter (STM32duino and Mbed busy-wait on `DWT->CYCCNT`).
 - Nano 33 BLE: the app is linked at 0x10000 behind Arduino's bootloader. Mbed writes the UICR and
   resets once, and Renode puts `VectorTableOffset` back to 0 on a reset, so the bridge copies the
@@ -71,7 +71,7 @@ vector table is. Boot details that matter:
   event flag on every peripheral interrupt line (SEVONPEND behaviour).
 
 `Serial` is USB CDC on both nRF52 boards. USB is not emulated, so the simulator build prints
-`Serial` on `Serial1` (the UART Jumper reads): Nano 33 BLE through a header the runner
+`Serial` on `Serial1` (the UART Fabwright reads): Nano 33 BLE through a header the runner
 force-includes, XIAO through a two-line prelude in front of the main `.ino` (`#line 1` keeps the
 person's line numbers). The factory pack says to build the real board's firmware with its own core.
 
@@ -91,7 +91,7 @@ firmware load + bridge connect, native Renode; Docker adds about 1.5 s (round 9)
 
 ## Not emulated or not working (said in each board's fidelity.json)
 
-- **Bluetooth LE / the radio.** Renode 1.17 has an nRF52840 RADIO model, but Jumper connects it to
+- **Bluetooth LE / the radio.** Renode 1.17 has an nRF52840 RADIO model, but Fabwright connects it to
   nothing: advertising, scanning and connections do nothing, and `BLE.begin()` /
   `Bluefruit.begin()` may fail. Not tried this round: two nRF52 machines on Renode's wireless medium.
 - USB (CDC, HID, mass storage), NFC, QSPI flash, low-power modes and their currents.
@@ -105,16 +105,16 @@ firmware load + bridge connect, native Renode; Docker adds about 1.5 s (round 9)
 
 ## Running it
 
-- Docker (default): build the image once, `docker build -t jumper/renode:1.17.0-r1 toolchains/renode`.
+- Docker (default): build the image once, `docker build -t fabwright/renode:1.17.0-r1 toolchains/renode`.
   Errors say what is missing: Docker not installed / not answering / image missing, with the fix.
-- Native: `JUMPER_RENODE_RUNTIME=native JUMPER_RENODE_BIN=/path/to/Renode.app/Contents/MacOS/renode`
+- Native: `FABWRIGHT_RENODE_RUNTIME=native FABWRIGHT_RENODE_BIN=/path/to/Renode.app/Contents/MacOS/renode`
   (the macOS build is not notarised; the platform files are copied into the run folder).
 - Builds: the runner picks the image from the FQBN (`services/runner/src/config.ts` `PLATFORMS`) and
   builds it on first use. STM32duino has no linux/aarch64 tools, so its image is linux/amd64 and runs
   emulated on Apple silicon.
-- In the web app, a Renode board runs in the `jumper serve` session: Run on the followed page sends
+- In the web app, a Renode board runs in the `fabwright serve` session: Run on the followed page sends
   the session's `run` and the canvas shows that run (3 s of device time per press). A page without
-  `jumper serve` says so instead of failing.
+  `fabwright serve` says so instead of failing.
 - Tests: `packages/sim-backends/src/renode/backend.test.ts` (protocol, no Docker),
   `boards.integration.test.ts` and `packages/parts/src/renode.integration.test.ts` (skipped with
   the reason when Renode is not available), `apps/web/e2e/renode-board.spec.ts`. Fixtures:

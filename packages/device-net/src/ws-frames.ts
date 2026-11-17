@@ -1,4 +1,4 @@
-// A passive WebSocket frame reader, for summarizing frames that Jumper forwards to a real host
+// A passive WebSocket frame reader, for summarizing frames that Fabwright forwards to a real host
 // (it does not terminate the WebSocket there, it only watches the bytes go by). Masked client
 // frames are unmasked for the preview only.
 

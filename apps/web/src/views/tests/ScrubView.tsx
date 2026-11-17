@@ -4,8 +4,8 @@
 // Run continues live from that moment.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import type { Project } from "@jumper/project-format";
-import type { WorldSpec } from "@jumper/physics";
+import type { Project } from "@fabwright/project-format";
+import type { WorldSpec } from "@fabwright/physics";
 import { DeviceStage } from "../device/DeviceStage.tsx";
 import { createScrubber, type Scrubber } from "./replay.ts";
 import type { VisualScenario } from "./types.ts";

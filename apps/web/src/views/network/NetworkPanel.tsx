@@ -2,7 +2,7 @@
 // (method, path, status, latency, who answered, the body), and the Mock / Live switch for the AI.
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Bot, Globe, Radio, Send, Wifi, WifiOff, X } from "lucide-react";
-import type { SandboxNet } from "@jumper/ai-gateway";
+import type { SandboxNet } from "@fabwright/ai-gateway";
 import { toRows } from "./model.ts";
 import { DEFAULT_GATEWAY, discoverGateway, GATEWAY_COMMAND, probeGateway, useGateway } from "./webNetwork.ts";
 import "./network.css";
@@ -93,7 +93,7 @@ export function NetworkPanel({ net, gatewayUrl, onClose, showEvents = true }: Ne
         <h2>Network</h2>
         <span className={`netp-chip ${status.wifiDropped ? "err" : joined ? "ok" : "muted"}`}>
           {status.wifiDropped ? <WifiOff size={13} aria-hidden /> : <Wifi size={13} aria-hidden />}
-          {status.wifiDropped ? "Wi-Fi dropped" : joined ? `JumperNet · ${stations.map(([p]) => p).join(", ")}` : "JumperNet · nobody joined"}
+          {status.wifiDropped ? "Wi-Fi dropped" : joined ? `FabwrightNet · ${stations.map(([p]) => p).join(", ")}` : "FabwrightNet · nobody joined"}
         </span>
         {onClose && (
           <button className="netp-icon" onClick={onClose} aria-label="Close network panel">
@@ -106,7 +106,7 @@ export function NetworkPanel({ net, gatewayUrl, onClose, showEvents = true }: Ne
         <div className="netp-ai-label">
           <Bot size={14} aria-hidden />
           <span>Pet AI</span>
-          <span className="netp-muted">ai.jumper</span>
+          <span className="netp-muted">ai.fabwright</span>
         </div>
         <div className="netp-seg" role="radiogroup" aria-label="AI mode">
           <button role="radio" aria-checked={status.mode === "mock"} className={status.mode === "mock" ? "on" : ""} onClick={() => void setMode("mock")}>
@@ -138,7 +138,7 @@ export function NetworkPanel({ net, gatewayUrl, onClose, showEvents = true }: Ne
         {rows.length === 0 && (
           <li className="netp-empty">
             <Radio size={16} aria-hidden />
-            No traffic yet. Run the simulation: a Wi-Fi module joins JumperNet in about 2.5 s, then its requests show here.
+            No traffic yet. Run the simulation: a Wi-Fi module joins FabwrightNet in about 2.5 s, then its requests show here.
           </li>
         )}
         {rows.map((r) =>

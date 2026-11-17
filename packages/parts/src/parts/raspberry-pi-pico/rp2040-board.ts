@@ -1,5 +1,5 @@
 // Shared model for the RP2040 boards (raspberry-pi-pico, seeed-xiao-rp2040, waveshare-rp2040-zero).
-import { createMcuBoardModel, GROUND, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@jumper/sim-core";
+import { createMcuBoardModel, GROUND, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@fabwright/sim-core";
 
 export interface Rp2040BoardModelOptions {
   /** Power pins → volts. */

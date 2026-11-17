@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { buildKit } from "@jumper/session";
+import { buildKit } from "@fabwright/session";
 import type { ApiRoute, RouteContext } from "./types.ts";
 
 /**
@@ -11,7 +11,7 @@ import type { ApiRoute, RouteContext } from "./types.ts";
  *   POST /api/kit/files             → { region?, prefer? } writes build-kit/<name>-kit/ + zip (get_build_kit,
  *                                     actor web); { zip_url, html_url, pdf_url?, missing }
  *   GET  /api/kit/file?path=        → a file from <project>/build-kit/ (kit.html inline, the rest as downloads)
- * Local-only like every route; POST needs x-jumper-token. Errors: { error: "<what>. Why: … Fix: …" }.
+ * Local-only like every route; POST needs x-fabwright-token. Errors: { error: "<what>. Why: … Fix: …" }.
  */
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
@@ -57,7 +57,7 @@ export const kitRoutes: ApiRoute[] = [
     path: "/api/kit/files",
     label: "POST /api/kit/files",
     async handle(req, res, ctx) {
-      if (req.headers["x-jumper-token"] !== ctx.token) return ctx.json(res, 403, err("Missing or wrong x-jumper-token", "making the kit's files needs the token from GET /api/connect, which only pages served by this Jumper server can read", "open the Jumper app from the jumper serve URL and try again"));
+      if (req.headers["x-fabwright-token"] !== ctx.token) return ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "making the kit's files needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
       let body: Record<string, unknown> = {};
       try {
         body = await ctx.body(req);

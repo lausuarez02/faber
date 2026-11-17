@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { composeSvg, ProjectSession } from "../src/index.ts";
 
 // The robot and display examples, run through the session exactly as an agent would (run_tests,
@@ -23,10 +23,10 @@ afterEach(() => {
 
 /** Copy an example to a temp folder, keeping the hex newer than its sources (so it is "fresh"). */
 function open(name: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), `jumper-example-${name.replace(/\//g, "-")}-`));
+  const dir = mkdtempSync(join(tmpdir(), `fabwright-example-${name.replace(/\//g, "-")}-`));
   dirs.push(dir);
   cpSync(join(EXAMPLES, name), dir, { recursive: true, preserveTimestamps: true });
-  const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { firmware?: { artifact: string } };
+  const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { firmware?: { artifact: string } };
   if (p.firmware) {
     const hex = join(dir, p.firmware.artifact);
     const later = new Date(Date.now() + 60_000);
@@ -97,7 +97,7 @@ describe("examples through the agent surface", () => {
 });
 
 // Devices AI agents built from a one-line goal (examples/agent-built), kept as the agents left them:
-// their own scenarios must keep passing as Jumper changes.
+// their own scenarios must keep passing as Fabwright changes.
 describe("agent-built examples", () => {
   for (const [name, min] of [["claude-tamagotchi", 8], ["codex-rover", 2], ["claude-robot-arm", 6], ["claude-robot", 3], ["claude-ai-pet", 5]] as const) {
     it(`${name}: the agent's scenarios pass`, async () => {

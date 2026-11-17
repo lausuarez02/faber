@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { parseScenarioStep } from "@jumper/project-format";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { parseScenarioStep } from "@fabwright/project-format";
 import { ProjectSession } from "../src/index.ts";
 
 // Regression tests for the friction real agents hit (Claude Code: tamagotchi and arm; Codex: rover).
@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 function fresh(): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-evals-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-evals-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
   sessions.push(s);
@@ -34,10 +34,10 @@ function fresh(): ProjectSession {
 
 /** An example copied to a temp folder with its golden hex kept fresh (no Docker). */
 function example(name: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), `jumper-evals-${name}-`));
+  const dir = mkdtempSync(join(tmpdir(), `fabwright-evals-${name}-`));
   dirs.push(dir);
   cpSync(join(EXAMPLES, name), dir, { recursive: true, preserveTimestamps: true });
-  const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { firmware?: { artifact: string } };
+  const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { firmware?: { artifact: string } };
   if (p.firmware) {
     const hex = join(dir, p.firmware.artifact);
     const later = new Date(Date.now() + 60_000);
@@ -72,7 +72,7 @@ describe("scenario regex (claude-tamagotchi: 6 failed write_scenario calls)", ()
     });
     expect(r.normalized).toHaveLength(2);
     expect(r.normalized[0]).toMatch(/moved "regex" inside expect_serial/);
-    const saved = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).scenarios.find((x: { id: string }) => x.id === "moods");
+    const saved = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).scenarios.find((x: { id: string }) => x.id === "moods");
     expect(saved.steps[0]).toEqual({ expect_serial: { regex: "MOOD \\w+ -> sad" }, within_ms: 50000 });
     expect(saved.steps[1]).toEqual({ expect_serial: { regex: "ready|hello" }, within_ms: 1000 });
   });
@@ -249,7 +249,7 @@ describe("scenario failure hints (codex-rover, claude-arm)", () => {
 describe("robot arm surface (claude-arm)", () => {
   it("set_world for an arm hints the arm fields, not the rover's", async () => {
     const s = example("robot-arm");
-    const world = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).world;
+    const world = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).world;
     const r = await call(s, "set_world", { world });
     expect(r.next).toMatch(/world\.gripper_x/);
     expect(r.next).not.toMatch(/chassis|collisions/);
@@ -264,7 +264,7 @@ describe("robot arm surface (claude-arm)", () => {
 
   it("screenshot can replay a scenario up to a step", async () => {
     const s = example("robot-arm");
-    const sc = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).scenarios[0];
+    const sc = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).scenarios[0];
     const r = await call(s, "screenshot", { path: "shots/at.svg", scenario: sc.id, at_step: 2 });
     expect(r.scenario).toBe(sc.id);
     expect(r.at_step).toBe(2);

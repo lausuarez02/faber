@@ -1,7 +1,7 @@
 // Like fidelity.crosscheck.test.ts for AVR: every rp2040js board's fidelity.json and pins are
-// checked against what @jumper/sim-backends actually does, so the card people read cannot drift.
+// checked against what @fabwright/sim-backends actually does, so the card people read cannot drift.
 import { describe, expect, it } from "vitest";
-import { RP2040_BACKEND_FACTS, RP2040_BOARDS, ROM_FUNCTION_NAMES, type Rp2040BoardType } from "@jumper/sim-backends";
+import { RP2040_BACKEND_FACTS, RP2040_BOARDS, ROM_FUNCTION_NAMES, type Rp2040BoardType } from "@fabwright/sim-backends";
 import { partDefinitions } from "./index.ts";
 
 const NAMES: Record<keyof typeof RP2040_BACKEND_FACTS.peripherals, RegExp> = {
@@ -54,7 +54,7 @@ describe("RP2040 board fidelity matches the rp2040js backend", () => {
         }
       }
 
-      it("says the boot ROM is Jumper's own and that transcendental maths may differ", () => {
+      it("says the boot ROM is Fabwright's own and that transcendental maths may differ", () => {
         expect(ROM_FUNCTION_NAMES).toEqual(expect.arrayContaining(["fsin", "dsin", "memcpy", "flash_range_erase"]));
         expect(f.areas.logic.note).toMatch(/not Raspberry Pi's ROM code/);
         expect(f.doesNotEmulate.join("\n")).toMatch(/last bit/);

@@ -4,7 +4,7 @@
 import "./tests.css";
 import { useMemo, useState } from "react";
 import { Check, ChevronRight, Film, X as XIcon } from "lucide-react";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import type { VisualFrame, VisualReport, VisualScenario } from "./types.ts";
 import { FrameThumb, useWorldSpec } from "./thumbs.tsx";
 import { ScrubView } from "./ScrubView.tsx";

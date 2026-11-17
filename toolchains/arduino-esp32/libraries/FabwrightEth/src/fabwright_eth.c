@@ -1,4 +1,4 @@
-// Jumper: emulated Ethernet bring-up (OpenCores MAC from ESP-IDF + an always-up PHY), Apache-2.0.
+// Fabwright: emulated Ethernet bring-up (OpenCores MAC from ESP-IDF + an always-up PHY), Apache-2.0.
 #include <string.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
@@ -8,7 +8,7 @@
 #include "esp_eth.h"
 #include "esp_eth_netif_glue.h"
 #include "esp_netif.h"
-#include "jumper_eth.h"
+#include "fabwright_eth.h"
 
 esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
 
@@ -50,12 +50,12 @@ static esp_eth_phy_t *stub_phy_new(void) {
   return p;
 }
 
-int jumper_eth_present(void) {
+int fabwright_eth_present(void) {
   return REG_READ(DR_REG_EMAC_BASE) == 0xa000; /* OpenCores MODER reset value: only in the emulator */
 }
 
-void *jumper_eth_install(const uint8_t mac[6]) {
-  if (!jumper_eth_present()) return NULL;
+void *fabwright_eth_install(const uint8_t mac[6]) {
+  if (!fabwright_eth_present()) return NULL;
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
   esp_eth_mac_t *m = esp_eth_mac_new_openeth(&mac_config);
   esp_eth_config_t config = ETH_DEFAULT_CONFIG(m, stub_phy_new());
@@ -65,9 +65,9 @@ void *jumper_eth_install(const uint8_t mac[6]) {
   return h;
 }
 
-esp_netif_t *jumper_eth_begin(void) {
-  if (!jumper_eth_present()) {
-    ESP_LOGW("jumper_eth", "no emulated Ethernet MAC here");
+esp_netif_t *fabwright_eth_begin(void) {
+  if (!fabwright_eth_present()) {
+    ESP_LOGW("fabwright_eth", "no emulated Ethernet MAC here");
     return NULL;
   }
   esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();

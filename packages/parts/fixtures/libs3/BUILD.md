@@ -16,14 +16,14 @@ drives (decision 0004, R7). Golden builds, committed; rebuild them only on purpo
 Build (Docker, the pinned images; `ensureImage` builds them on first use):
 
 ```sh
-docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs3 toolchains/arduino
-docker build --build-arg BASE_IMAGE=jumper/arduino-cli:1.5.1-avr1.8.8-libs3 -t jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1 services/runner/docker
-docker build --build-arg BASE_IMAGE=jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1 -t jumper/arduino-pico:6.3.1-libs3-r1 toolchains/arduino-pico
+docker build -t fabwright/arduino-cli:1.5.1-avr1.8.8-libs3 toolchains/arduino
+docker build --build-arg BASE_IMAGE=fabwright/arduino-cli:1.5.1-avr1.8.8-libs3 -t fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1 services/runner/docker
+docker build --build-arg BASE_IMAGE=fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1 -t fabwright/arduino-pico:6.3.1-libs3-r1 toolchains/arduino-pico
 pnpm exec vitest run packages/parts/src/libs3.integration.test.ts   # rebuilds and compares when the images exist
 ```
 
 To regenerate a hex on purpose, build the sketch through the runner (`buildFirmware` from
-`@jumper/runner` with the FQBN and library above) and write `result.hex` to `<sketch>.hex`.
+`@fabwright/runner` with the FQBN and library above) and write `result.hex` to `<sketch>.hex`.
 
 Toolchain: arduino-cli 1.5.1, `arduino:avr` 1.8.8, `rp2040:rp2040` 6.3.1, libraries at the versions
 of `toolchains/arduino/LIBRARIES.md`.

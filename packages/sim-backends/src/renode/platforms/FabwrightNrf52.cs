@@ -1,15 +1,15 @@
-// nRF52840 peripherals Renode 1.17 does not model, for Jumper (MIT, like Renode):
-//   JumperNrf52Saadc  SAADC (analogRead): single-ended channels, EasyDMA results, gain / reference /
-//                     resolution as configured; the input is the voltage Jumper set on the AIN pin.
-//   JumperNrf52Uicr   the UICR flash page: erased (0xFFFFFFFF) until written, and like flash it keeps
+// nRF52840 peripherals Renode 1.17 does not model, for Fabwright (MIT, like Renode):
+//   FabwrightNrf52Saadc  SAADC (analogRead): single-ended channels, EasyDMA results, gain / reference /
+//                     resolution as configured; the input is the voltage Fabwright set on the AIN pin.
+//   FabwrightNrf52Uicr   the UICR flash page: erased (0xFFFFFFFF) until written, and like flash it keeps
 //                     what was written across a reset (Mbed and the SoftDevice write REGOUT0 / NFCPINS
 //                     and reset once).
-//   JumperNrf52Twim   TWIM0 (EasyDMA I2C master, the Adafruit core's Wire): each transfer goes to
-//                     Jumper's I2C bus, with the address ACK / NACK the part models give (ERRORSRC.ANACK).
-//   JumperNrf52Spim   SPIM (EasyDMA SPI master; SPIM3 is the Adafruit core's SPI): each byte goes to
-//                     Jumper's SPI bus; MISO is asked for only when a wired device can drive it.
-//   JumperNrf52Pwm    PWM0..3 (analogWrite, Servo, tone): reads the first value of the sequence from
-//                     RAM and tells Jumper each connected pin's period and high time ("P" line); Jumper
+//   FabwrightNrf52Twim   TWIM0 (EasyDMA I2C master, the Adafruit core's Wire): each transfer goes to
+//                     Fabwright's I2C bus, with the address ACK / NACK the part models give (ERRORSRC.ANACK).
+//   FabwrightNrf52Spim   SPIM (EasyDMA SPI master; SPIM3 is the Adafruit core's SPI): each byte goes to
+//                     Fabwright's SPI bus; MISO is asked for only when a wired device can drive it.
+//   FabwrightNrf52Pwm    PWM0..3 (analogWrite, Servo, tone): reads the first value of the sequence from
+//                     RAM and tells Fabwright each connected pin's period and high time ("P" line); Fabwright
 //                     draws the edges. Events (SEQSTARTED / SEQEND / STOPPED / LOOPSDONE) fire at once.
 // Not modelled: differential inputs, oversampling, the analog limits, burst and continuous sampling
 // (SAADC); per-step sequence playback, NEXTSTEP, PWM waveform mode's per-period TOP (PWM).
@@ -20,9 +20,9 @@ using Antmicro.Renode.Peripherals.Bus;
 
 namespace Antmicro.Renode.Peripherals.Miscellaneous
 {
-    public class JumperNrf52Uicr : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightNrf52Uicr : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperNrf52Uicr(IMachine machine) { }
+        public FabwrightNrf52Uicr(IMachine machine) { }
         public long Size => 0x1000;
         public void Reset() { } // flash: survives a reset
         public uint ReadDoubleWord(long offset) => regs.TryGetValue(offset, out var v) ? v : 0xFFFFFFFF;
@@ -30,9 +30,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private readonly System.Collections.Generic.Dictionary<long, uint> regs = new System.Collections.Generic.Dictionary<long, uint>();
     }
 
-    public class JumperNrf52Twim : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightNrf52Twim : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperNrf52Twim(IMachine machine)
+        public FabwrightNrf52Twim(IMachine machine)
         {
             this.machine = machine;
             IRQ = new GPIO();
@@ -74,7 +74,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
 
         private bool Connect(bool read)
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             if(b == null) return false;
             return b.Ask($"IC {Address:X2} {(read ? 'r' : 'w')} {b.Now}", 'K') == "1";
         }
@@ -82,7 +82,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private void StartTx()
         {
             Event(0x150); // TXSTARTED
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             if(!Connect(false))
             {
                 regs[0x4C4 / 4] |= 2; // ANACK
@@ -93,7 +93,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             }
             var n = (int)(regs[0x548 / 4] & 0xFFFF);
             var data = n > 0 ? machine.SystemBus.ReadBytes(regs[0x544 / 4], n) : new byte[0];
-            if(n > 0) b?.Send($"IW {Address:X2} {b.Now} {JumperBridge.Hex(data)}");
+            if(n > 0) b?.Send($"IW {Address:X2} {b.Now} {FabwrightBridge.Hex(data)}");
             regs[0x54C / 4] = (uint)n;
             Event(0x160); // LASTTX
             var shorts = regs[0x200 / 4];
@@ -105,7 +105,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private void StartRx()
         {
             Event(0x14C); // RXSTARTED
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             if(!Connect(true))
             {
                 regs[0x4C4 / 4] |= 2;
@@ -117,7 +117,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             var n = (int)(regs[0x538 / 4] & 0xFFFF);
             if(n > 0 && b != null)
             {
-                var data = JumperBridge.Hex(b.Ask($"IR {Address:X2} {n} {b.Now}", 'D'));
+                var data = FabwrightBridge.Hex(b.Ask($"IR {Address:X2} {n} {b.Now}", 'D'));
                 machine.SystemBus.WriteBytes(data.Take(n).ToArray(), regs[0x534 / 4]);
             }
             regs[0x53C / 4] = (uint)n;
@@ -127,7 +127,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
 
         private void Stop()
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             b?.Send($"IP {Address:X2} {b.Now}");
             Event(0x104); // STOPPED
         }
@@ -154,9 +154,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private uint[] regs;
     }
 
-    public class JumperNrf52Spim : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightNrf52Spim : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperNrf52Spim(IMachine machine, string bus = "spim3")
+        public FabwrightNrf52Spim(IMachine machine, string bus = "spim3")
         {
             this.machine = machine;
             this.bus = bus;
@@ -195,7 +195,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private void Start()
         {
             Event(0x14C); // STARTED
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             var txn = (int)(regs[0x548 / 4] & 0xFFFF);
             var rxn = (int)(regs[0x538 / 4] & 0xFFFF);
             var n = Math.Max(txn, rxn);
@@ -249,9 +249,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private uint[] regs;
     }
 
-    public class JumperNrf52Saadc : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightNrf52Saadc : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperNrf52Saadc(IMachine machine, string name = "saadc")
+        public FabwrightNrf52Saadc(IMachine machine, string name = "saadc")
         {
             this.machine = machine;
             this.name = name;
@@ -313,7 +313,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                 if(pselp == 0) continue;
                 if(amount >= max) break;
                 var config = regs[(0x518 + ch * 16) / 4];
-                double volts = pselp == 9 ? 3.3 : (JumperBridge.Instance?.AnalogMv(name, (int)pselp - 1) ?? 0) / 1000.0; // AIN0..7 = 1..8, VDD = 9
+                double volts = pselp == 9 ? 3.3 : (FabwrightBridge.Instance?.AnalogMv(name, (int)pselp - 1) ?? 0) / 1000.0; // AIN0..7 = 1..8, VDD = 9
                 var gain = new[] { 1.0 / 6, 1.0 / 5, 1.0 / 4, 1.0 / 3, 1.0 / 2, 1.0, 2.0, 4.0 }[(config >> 8) & 7];
                 var reference = ((config >> 12) & 1) == 1 ? 3.3 / 4 : 0.6;
                 var full = 1 << resBits;
@@ -352,9 +352,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private int amount;
     }
 
-    public class JumperNrf52Pwm : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightNrf52Pwm : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperNrf52Pwm(IMachine machine, string name = "pwm0")
+        public FabwrightNrf52Pwm(IMachine machine, string name = "pwm0")
         {
             this.machine = machine;
             this.name = name;
@@ -439,7 +439,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                 var line = $"P {pin} {(ulong)Math.Round(periodNs)} {(ulong)Math.Round(periodNs * high)}";
                 if(reported[k] == line) continue;
                 reported[k] = line;
-                var b = JumperBridge.Instance;
+                var b = FabwrightBridge.Instance;
                 b?.Send($"{line} {b.Now}");
             }
         }
@@ -450,7 +450,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             {
                 if(reported[k] == null) continue;
                 var psel = regs[(0x560 + 4 * k) / 4];
-                var b = JumperBridge.Instance;
+                var b = FabwrightBridge.Instance;
                 b?.Send($"P {(psel >> 5) & 1}.{psel & 0x1F} 0 0 {b.Now}");
                 reported[k] = null;
             }

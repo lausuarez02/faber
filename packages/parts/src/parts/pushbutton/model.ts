@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { truthy } from "../../lib/props.ts";
 
 export const create: PartModelFactory = (ctx): PartModel => {

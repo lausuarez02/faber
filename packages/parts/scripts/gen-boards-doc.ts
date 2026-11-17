@@ -1,5 +1,5 @@
 // Writes docs/boards.md from src/board-support.ts and the boards' part.json (name, availability).
-// Run: pnpm --filter @jumper/parts gen (or `pnpm gen` at the root). The output is committed.
+// Run: pnpm --filter @fabwright/parts gen (or `pnpm gen` at the root). The output is committed.
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { BOARD_SUPPORT, boardSupportMarkdown } from "../src/board-support.ts";

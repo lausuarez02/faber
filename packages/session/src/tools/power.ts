@@ -1,5 +1,5 @@
-import { buildNets, type Project } from "@jumper/project-format";
-import { Simulation, type PartRegistry, type VisualValue } from "@jumper/sim-core";
+import { buildNets, type Project } from "@fabwright/project-format";
+import { Simulation, type PartRegistry, type VisualValue } from "@fabwright/sim-core";
 import { assemblyReason, assemblyStyle } from "../assembly.ts";
 import { fail } from "../errors.ts";
 import { checkDuty, measuredSleep, powerBudget, type Duty, type PowerProfile } from "../power-budget.ts";
@@ -8,7 +8,7 @@ import type { ToolModule } from "./types.ts";
 /**
  * Track "power" (owner): set_power, set_assembly. Contract: docs/decisions/0004-round6-real-device.md, R2.
  *
- * set_power plugs or unplugs the board's USB cable (jumper.json power.usb): with it unplugged the
+ * set_power plugs or unplugs the board's USB cable (fabwright.json power.usb): with it unplugged the
  * board runs only from what is wired to its supply pins (a LiPo through a charger, a switch and a
  * Schottky diode), and the firmware is held in reset when nothing powers it. set_assembly says how the
  * device is built (breadboard or soldered), which decides what export writes.
@@ -78,12 +78,12 @@ export const powerTools: ToolModule = {
       name: "set_power",
       title: "Plug or unplug the board's USB cable",
       description:
-        'Say whether a USB cable is plugged into the board (jumper.json power.usb; default true, as before). {"usb": false} runs the device only from what is wired to the board\'s supply pins: check that a pocket device really runs from its battery (cell → charger BAT, charger OUT → switch → schottky-diode → the board\'s 5V / VBUS, or a Pico\'s VSYS). Without a battery path the firmware is held in reset (no serial, nothing on the screen) and check_design reports no-power-path. Applies live to a running simulation (unplugging mid-run is a power cut; plugging in boots it from reset). The TP4056 module\'s own USB socket is separate: set_part_property <charger> usb true plugs a charger into it. Returns {usb, board_powered, supply: {net, volts, from}, battery?: {part, volts, ma, hours_left}} (from the running simulation, or the circuit at 0 ms when nothing ran yet).',
+        'Say whether a USB cable is plugged into the board (fabwright.json power.usb; default true, as before). {"usb": false} runs the device only from what is wired to the board\'s supply pins: check that a pocket device really runs from its battery (cell → charger BAT, charger OUT → switch → schottky-diode → the board\'s 5V / VBUS, or a Pico\'s VSYS). Without a battery path the firmware is held in reset (no serial, nothing on the screen) and check_design reports no-power-path. Applies live to a running simulation (unplugging mid-run is a power cut; plugging in boots it from reset). The TP4056 module\'s own USB socket is separate: set_part_property <charger> usb true plugs a charger into it. Returns {usb, board_powered, supply: {net, volts, from}, battery?: {part, volts, ma, hours_left}} (from the running simulation, or the circuit at 0 ms when nothing ran yet).',
       inputSchema: {
         type: "object",
         properties: {
           usb: { type: "boolean", description: "true = a USB cable is plugged into the board; false = it runs from its battery path only." },
-          target_hours: { type: ["number", "null"], description: "Round 14: hours the device should run on one charge (jumper.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it." },
+          target_hours: { type: ["number", "null"], description: "Round 14: hours the device should run on one charge (fabwright.json power.target_hours); check_design then warns (battery-life) under it, with the cell size that would make it. null removes it." },
           duty: { type: ["object", "null"], description: 'Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: "always", "off" or {"on_s": 2, "every_s": 600}. Merged into power.duty; null clears it.' },
           sleep: { type: ["string", "null"], enum: ["none", "light", "deep", null], description: "Round 14: what the board does between active moments." },
           wakes_per_day: { type: ["number", "null"], description: "Round 15: a sleeping board wakes this many times a day (timer + button / lid). null removes it." },
@@ -97,7 +97,7 @@ export const powerTools: ToolModule = {
       name: "estimate_power",
       title: "Battery life from duty cycles",
       description:
-        'Round 14: how long the battery lasts, from each load\'s datasheet current and how much of the time it is on: the board CPU (and its sleep), Wi-Fi (connected vs bursts), cameras, screens, audio amplifiers, any part with a current figure. Loads without a duty in jumper.json power.duty are guessed from the firmware (listed in assumptions: correct them). Try other patterns without saving: {"duty": {"camera": {"on_s": 2, "every_s": 600}, "wifi": {"on_s": 10, "every_s": 3600}}, "target_hours": 24}. Returns {summary, battery {part, capacity_mah, usable_mah}, avg_ma, peak_ma, hours, target_hours, loads [{load, part, active_ma, idle_ma, duty, duty_text, avg_ma, share, source}], assumptions, suggestions (the cell that meets the target, and what to duty-cycle)}. Save a pattern with set_power {duty, target_hours}. Round 15, devices that deep-sleep: the board\'s awake share comes from power.wakes_per_day x awake_s (or the firmware\'s sleep timer, or the wakes measured in the last run), its sleep current includes the board\'s own (XIAO ESP32-C3 44 µA); parts with an event (an e-paper refresh: 8 mA for 2 s) count per wake and draw microamps otherwise; the answer has days. Estimates, not measurements: measure a real unit.',
+        'Round 14: how long the battery lasts, from each load\'s datasheet current and how much of the time it is on: the board CPU (and its sleep), Wi-Fi (connected vs bursts), cameras, screens, audio amplifiers, any part with a current figure. Loads without a duty in fabwright.json power.duty are guessed from the firmware (listed in assumptions: correct them). Try other patterns without saving: {"duty": {"camera": {"on_s": 2, "every_s": 600}, "wifi": {"on_s": 10, "every_s": 3600}}, "target_hours": 24}. Returns {summary, battery {part, capacity_mah, usable_mah}, avg_ma, peak_ma, hours, target_hours, loads [{load, part, active_ma, idle_ma, duty, duty_text, avg_ma, share, source}], assumptions, suggestions (the cell that meets the target, and what to duty-cycle)}. Save a pattern with set_power {duty, target_hours}. Round 15, devices that deep-sleep: the board\'s awake share comes from power.wakes_per_day x awake_s (or the firmware\'s sleep timer, or the wakes measured in the last run), its sleep current includes the board\'s own (XIAO ESP32-C3 44 µA); parts with an event (an e-paper refresh: 8 mA for 2 s) count per wake and draw microamps otherwise; the answer has days. Estimates, not measurements: measure a real unit.',
       inputSchema: {
         type: "object",
         properties: {
@@ -140,7 +140,7 @@ export const powerTools: ToolModule = {
       const measured = live ? measuredSleep(live.log, live.t_ms) : undefined;
       const b = powerBudget(s.project, s.registry, s.firmwareSource(), { ...(duty ? { duty } : {}), ...(typeof args.target_hours === "number" ? { target_hours: args.target_hours } : {}), ...(typeof args.sleep === "string" ? { sleep: args.sleep as PowerProfile["sleep"] } : {}), ...(typeof args.wakes_per_day === "number" ? { wakes_per_day: args.wakes_per_day } : {}), ...(typeof args.awake_s === "number" ? { awake_s: args.awake_s } : {}) }, measured ? { measured } : {});
       x.summary(b.summary);
-      return { ...b, next: b.assumptions.length ? "correct the guesses with set_power {duty: {...}} (saved in jumper.json power.duty), then check_design" : "check_design reports battery-life against power.target_hours" };
+      return { ...b, next: b.assumptions.length ? "correct the guesses with set_power {duty: {...}} (saved in fabwright.json power.duty), then check_design" : "check_design reports battery-life against power.target_hours" };
     },
     set_power(args, x) {
       const s = x.session;

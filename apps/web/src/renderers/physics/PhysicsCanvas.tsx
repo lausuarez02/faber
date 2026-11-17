@@ -1,7 +1,7 @@
 // One <canvas> that repaints from a snapshot getter on every animation frame. Sized to its
 // container (ResizeObserver) at device-pixel resolution; colours from the brand tokens.
 import { useEffect, useRef } from "react";
-import type { WorldSnapshot } from "@jumper/physics";
+import type { WorldSnapshot } from "@fabwright/physics";
 import { readPalette, type Ctx2D, type View } from "./paint.ts";
 
 export interface PhysicsCanvasProps {

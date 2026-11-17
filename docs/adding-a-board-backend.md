@@ -1,8 +1,8 @@
 # Adding a board backend (draft)
 
-A **backend** is the CPU emulator behind a board part. The simulator core (`@jumper/sim-core`)
+A **backend** is the CPU emulator behind a board part. The simulator core (`@fabwright/sim-core`)
 never talks to an emulator directly; it talks to the `McuBackend` interface, and
-`@jumper/sim-backends` maps a board's `part.json` `mcu` block to an implementation.
+`@fabwright/sim-backends` maps a board's `part.json` `mcu` block to an implementation.
 
 Today there is one: **avr8js** for the ATmega328P (Arduino Uno and Nano), in
 `packages/sim-backends/src/avr.ts`. This page is what you need to add another (a different AVR,

@@ -22,7 +22,7 @@ export interface AgentStateTracker {
   presence(agents: AgentPresence[]): void;
   action(entry: ActionEntry): void;
   state(): AgentState;
-  /** jumper serve switched the active project: lines from the new session are no longer foreign. */
+  /** fabwright serve switched the active project: lines from the new session are no longer foreign. */
   setOwnSid(sid: string | undefined): void;
   dispose(): void;
 }

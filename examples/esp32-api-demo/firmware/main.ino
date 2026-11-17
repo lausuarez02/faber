@@ -1,7 +1,7 @@
 // API demo for a Seeed XIAO ESP32-S3 with a 0.96" SSD1306 OLED: joins Wi-Fi, fetches the current
 // weather as JSON over HTTPS (Open-Meteo, no key needed), shows it on the OLED, and posts a reading
 // over MQTT. Written for the real board: the real root CA (ISRG Root X1, Open-Meteo is on Let's
-// Encrypt), plain WiFi.h, HTTPClient, ArduinoJson, PubSubClient. In Jumper the same source runs
+// Encrypt), plain WiFi.h, HTTPClient, ArduinoJson, PubSubClient. In Fabwright the same source runs
 // in the emulator; the simulation build joins the sandbox Wi-Fi, and the tests answer from a
 // recorded cassette (network/cassettes/open-meteo.json) and a mock broker (network/mocks.json).
 #include <WiFi.h>
@@ -14,13 +14,13 @@
 #include <Adafruit_SSD1306.h>
 
 // Your network. On a real device put your own here (or load them from Preferences).
-#define WIFI_SSID "JumperNet"
+#define WIFI_SSID "FabwrightNet"
 #define WIFI_PASS "change-me-123"
 
 static const char *WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=38.72&longitude=-9.14&current=temperature_2m,wind_speed_10m";
 static const char *MQTT_HOST = "test.mosquitto.org";
-static const char *MQTT_TOPIC = "jumper-demo/xiao-s3/reading";
-static const char *MQTT_ACK = "jumper-demo/xiao-s3/ack";
+static const char *MQTT_TOPIC = "fabwright-demo/xiao-s3/reading";
+static const char *MQTT_ACK = "fabwright-demo/xiao-s3/ack";
 static const unsigned long FETCH_EVERY_MS = 60000;
 
 static const char *ROOT_CA =

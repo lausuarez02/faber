@@ -4,7 +4,7 @@
 // the read commands Adafruit's libraries use. Driven byte by byte from the SPI bus with the D/C
 // level of each byte. Pixels land in a viewer-oriented RGB565 framebuffer with a dirty rect, so a
 // renderer repaints only what changed. Deterministic: no clock, no randomness.
-import { DirtyTracker, type ColorFrame } from "@jumper/sim-core";
+import { DirtyTracker, type ColorFrame } from "@fabwright/sim-core";
 
 export const CMD = {
   NOP: 0x00,

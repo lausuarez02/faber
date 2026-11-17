@@ -1,5 +1,5 @@
 // Baseline JPEG encoder (JFIF, Huffman, the standard tables of ITU-T T.81 Annex K), written for
-// Jumper's camera frames. Colour images are 4:2:2 (Y sampled 2 x 1, like the OV2640's own JPEG
+// Fabwright's camera frames. Colour images are 4:2:2 (Y sampled 2 x 1, like the OV2640's own JPEG
 // output), grayscale images one component. Deterministic: same pixels and quality, same bytes.
 // Quality 1..100 scales the Annex K tables the way the IJG library does.
 

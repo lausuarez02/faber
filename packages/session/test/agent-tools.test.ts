@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { registry } from "@jumper/parts";
-import { createRegistry, type PartDefinition } from "@jumper/sim-core";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { registry } from "@fabwright/parts";
+import { createRegistry, type PartDefinition } from "@fabwright/sim-core";
 import { chromiumProblem, listRegisteredProjects, planDevice, ProjectSession, projectId, recordProject, setServerBase } from "../src/index.ts";
 
 // Round 5, track agent (decision 0003, C5): plan_device, new_project {folder}, run_tests accepting
@@ -21,18 +21,18 @@ let root: string;
 let dir: string;
 let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args, { actor: "mcp", client: "test-agent 1.0" }) as Promise<Record<string, any>>;
-const oldHome = process.env.JUMPER_HOME;
+const oldHome = process.env.FABWRIGHT_HOME;
 
 beforeAll(() => {
-  process.env.JUMPER_HOME = mkdtempSync(join(tmpdir(), "jumper-home-"));
+  process.env.FABWRIGHT_HOME = mkdtempSync(join(tmpdir(), "fabwright-home-"));
 });
 afterAll(() => {
-  rmSync(process.env.JUMPER_HOME!, { recursive: true, force: true });
-  if (oldHome === undefined) delete process.env.JUMPER_HOME;
-  else process.env.JUMPER_HOME = oldHome;
+  rmSync(process.env.FABWRIGHT_HOME!, { recursive: true, force: true });
+  if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
+  else process.env.FABWRIGHT_HOME = oldHome;
 });
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "jumper-agent-"));
+  root = mkdtempSync(join(tmpdir(), "fabwright-agent-"));
   dir = join(root, "playground");
   mkdirSync(dir);
   s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
@@ -129,7 +129,7 @@ describe("plan_device", () => {
   });
 
   it("missing parts: agent-made when create_part exists, else a stand-in to mark, else not simulated", () => {
-    // The catalog now has a soil sensor; take it out to check what happens to a part Jumper lacks.
+    // The catalog now has a soil sensor; take it out to check what happens to a part Fabwright lacks.
     const noSoil = createRegistry(registry.list().filter((d) => !/soil/.test(d.spec.id)));
     const stand = planDevice("water my plant when the soil is dry", {}, noSoil);
     const soil = stand.bom.find((l) => /soil/.test(l.name))!;
@@ -181,12 +181,12 @@ describe("new_project {folder}", () => {
     expect(r.opened).toBe(true);
     expect(r.viewer_url).toBe(`http://localhost:7845/v/${r.id}`);
     expect(opened).toEqual([r.dir]);
-    expect(JSON.parse(readFileSync(join(r.dir, "jumper.json"), "utf8")).name).toBe("Plant Waterer");
-    const log = readFileSync(join(r.dir, ".jumper", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    expect(JSON.parse(readFileSync(join(r.dir, "fabwright.json"), "utf8")).name).toBe("Plant Waterer");
+    const log = readFileSync(join(r.dir, ".fabwright", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
     expect(log[0]).toMatchObject({ op: "new_project", actor: "mcp", client: "test-agent 1.0", ok: true });
     expect(listRegisteredProjects()[0]).toMatchObject({ dir: r.dir, name: "Plant Waterer", source: "agent" });
     // the playground is untouched
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).parts.length).toBe(3);
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).parts.length).toBe(3);
     // a second one with the same name gets -2
     expect((await call("new_project", { folder: "plant waterer" })).dir).toBe(join(root, "plant-waterer-2"));
   });
@@ -221,7 +221,7 @@ describe("run_tests accepts pending steps when everything passes", () => {
     expect(r.passed).toBe(1);
     expect(r.accepted_steps.by).toBe("tests");
     expect((await call("get_project")).pending_steps).toBe(0);
-    const hist = JSON.parse(readFileSync(join(dir, ".jumper", "history.json"), "utf8"));
+    const hist = JSON.parse(readFileSync(join(dir, ".fabwright", "history.json"), "utf8"));
     expect(hist.steps.every((st: { status: string; accepted_by?: string }) => st.status === "accepted" && st.accepted_by === "tests")).toBe(true);
     await call("undo"); // still undoable
   });
@@ -239,7 +239,7 @@ describe("run_tests accepts pending steps when everything passes", () => {
 });
 
 describe("delete_file", () => {
-  it("text files are an undoable step; binary files go to .jumper/trash; protected files are refused", async () => {
+  it("text files are an undoable step; binary files go to .fabwright/trash; protected files are refused", async () => {
     await blinkWithTest();
     await call("write_file", { path: "firmware/probe.ino", content: "// probe\n" });
     const r = await call("delete_file", { path: "firmware/probe.ino", why: "clean up" });
@@ -252,8 +252,8 @@ describe("delete_file", () => {
     const b = await call("delete_file", { path: "shots/old.png" });
     expect(b.undoable).toBe(false);
     expect(existsSync(b.kept_in)).toBe(true);
-    await expect(call("delete_file", { path: "jumper.json" })).rejects.toThrow(/refusing.*Fix:/);
-    await expect(call("delete_file", { path: ".jumper/actions.jsonl" })).rejects.toThrow(/action log.*Fix:/);
+    await expect(call("delete_file", { path: "fabwright.json" })).rejects.toThrow(/refusing.*Fix:/);
+    await expect(call("delete_file", { path: ".fabwright/actions.jsonl" })).rejects.toThrow(/action log.*Fix:/);
     await expect(call("delete_file", { path: "firmware/main.ino" })).rejects.toThrow(/main sketch.*Fix: overwrite it with write_file/);
     await expect(call("delete_file", { path: "../escape.txt" })).rejects.toThrow(/outside the project/);
     await expect(call("delete_file", { path: "nope.txt" })).rejects.toThrow(/no file nope\.txt/);
@@ -269,7 +269,7 @@ describe("stand-ins and agent-made parts in exports", () => {
     expect(m.stand_in_for).toBe("capacitive soil moisture sensor");
     const e = await call("export");
     const bom = readFileSync(join(dir, "export/BOM.md"), "utf8");
-    expect(bom).toMatch(/\| 1 | \*\*capacitive soil moisture sensor\*\* \| – \| see the real part \| soil1 \|.*STAND-IN: Jumper simulated it as a .*Potentiometer/);
+    expect(bom).toMatch(/\| 1 | \*\*capacitive soil moisture sensor\*\* \| – \| see the real part \| soil1 \|.*STAND-IN: Fabwright simulated it as a .*Potentiometer/);
     expect(bom).toMatch(/## STAND-IN parts \(not what you buy\)/);
     expect(bom).not.toMatch(/\| Potentiometer/);
     const wiring = readFileSync(join(dir, "export/WIRING.md"), "utf8");
@@ -277,7 +277,7 @@ describe("stand-ins and agent-made parts in exports", () => {
     expect(readFileSync(join(dir, "export/TEST-ON-HARDWARE.md"), "utf8")).toMatch(/soil1: the real capacitive soil moisture sensor/);
     expect(e.check_first).toEqual(["soil1: STAND-IN for capacitive soil moisture sensor"]);
     await call("mark_stand_in", { id: "soil1", real: null });
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).parts.find((p: { id: string }) => p.id === "soil1").standIn).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).parts.find((p: { id: string }) => p.id === "soil1").standIn).toBeUndefined();
   });
 
   it("agent-made parts say agent-made: behavioral, unverified", async () => {
@@ -296,8 +296,8 @@ describe("stand-ins and agent-made parts in exports", () => {
 });
 
 describe("show me", () => {
-  it("viewer_url: a local link when Jumper's server runs, otherwise how to get one", async () => {
-    await expect(call("viewer_url")).rejects.toThrow(/no Jumper server is running.*Fix: ask the person to start Jumper's local server/);
+  it("viewer_url: a local link when Fabwright's server runs, otherwise how to get one", async () => {
+    await expect(call("viewer_url")).rejects.toThrow(/no Fabwright server is running.*Fix: ask the person to start Fabwright's local server/);
     setServerBase("http://localhost:7846/");
     const r = await call("viewer_url");
     expect(r.url).toBe(`http://localhost:7846/v/${projectId(dir)}`);
@@ -329,14 +329,14 @@ describe("show me", () => {
   });
 
   const chromium = !chromiumProblem();
-  it.skipIf(!chromium || process.env.JUMPER_SKIP_RECORD === "1")(
+  it.skipIf(!chromium || process.env.FABWRIGHT_SKIP_RECORD === "1")(
     "record makes a real MP4 of the agent's build (Chromium + ffmpeg)",
     async () => {
       await blinkWithTest();
       await call("run", { ms: 2500 });
       const r = await call("record", { speed: 8, size: "640x360" });
       expect(existsSync(r.path)).toBe(true);
-      expect(r.path.startsWith(join(dir, ".jumper", "media"))).toBe(true);
+      expect(r.path.startsWith(join(dir, ".fabwright", "media"))).toBe(true);
       expect(r.format === "mp4" || r.format === "webm").toBe(true);
       expect(r.duration_s).toBeGreaterThan(1);
       expect(r.url).toMatch(/^file:\/\//);

@@ -14,8 +14,8 @@
  * 4. Openings, button plungers, light pipes, screen ribs, standoffs, the cell cradle and screw bosses
  *    are derived from the placed parts.
  */
-import type { CasePlacement, CaseShape, Enclosure } from "@jumper/project-format";
-import type { PartSpec } from "@jumper/sim-core";
+import type { CasePlacement, CaseShape, Enclosure } from "@fabwright/project-format";
+import type { PartSpec } from "@fabwright/sim-core";
 import { apply, envelopeZ, FACE_DIR, faceAxes, I3, type LocalFeature, type Mat3, mul, type PartMech, resolveMech, ROTATIONS, rotAbout, eqv } from "./mech.ts";
 import { contains, type Flat, growPlan, withFastOutline, type Need, outline, type Plan, type PlanKind, planBounds, polyDistance, polyOuter, rayExit, sizePlan, sizePoly } from "./plan.ts";
 import { outlineFeatureIssues, parseOutline, presetOutline, presetPoints, type ParsedOutline } from "./outline.ts";
@@ -742,7 +742,7 @@ function layoutOnce(input0: LayoutInput, connPerm?: string[], opts: LayoutOption
           r = r2;
           Lc = L2;
         }
-        if (process.env.JUMPER_LAYOUT_DEBUG) console.log(`[layout] ${ct.label} D=${D.toFixed(1)} size=${r.size.toFixed(3)} failed=${r.failed.map((k) => items[k]!.id)} fits=${Lc?.fit?.fits} scale=${Lc?.fit?.scale}`);
+        if (process.env.FABWRIGHT_LAYOUT_DEBUG) console.log(`[layout] ${ct.label} D=${D.toFixed(1)} size=${r.size.toFixed(3)} failed=${r.failed.map((k) => items[k]!.id)} fits=${Lc?.fit?.fits} scale=${Lc?.fit?.scale}`);
         if (!Lc) continue;
         if (Lc.fit?.fits !== false && !Lc.issues.some((i) => i.severity === "error")) fitting++;
         cands.push({ layout: Lc, D, size: r.size, failed: r.failed.map((k) => items[k]!.id), iters: r.iters, container: ct.label });

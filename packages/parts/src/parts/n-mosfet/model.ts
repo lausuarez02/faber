@@ -1,6 +1,6 @@
 // AO3400 logic-level N-MOSFET: the D-S channel is a resistance chosen from the gate voltage of the
 // last solve (re-solved when it changes step), plus the body diode S → D.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { round } from "../../lib/props.ts";
 
 /** Rds(on) steps vs Vgs (AO3400A typical curves): below the first threshold the channel is off. */

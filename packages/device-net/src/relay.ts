@@ -1,12 +1,12 @@
 // Round 13, the API relay: what a REAL device uses to reach APIs without any key in its firmware,
-// generated from the project's network config (jumper.json "network": allow list, secrets by NAME,
+// generated from the project's network config (fabwright.json "network": allow list, secrets by NAME,
 // header templates, relay limits). Generic: nothing here knows which API or what the device does.
 //
 // - relaySpecFrom: the relay's config (no values), the same rules the simulator's sandbox relay uses.
 // - relayPack: the files of relay/ (Node server, Cloudflare Worker, the shared core, README, the
-//   firmware header), MIT, for the factory pack, the build kit and `jumper relay init`.
+//   firmware header), MIT, for the factory pack, the build kit and `fabwright relay init`.
 // - device tokens: generated here, stored only in the person's .env (raw for flashing, hash for the
-//   relay), burned into their own device build through jumper_device.h.
+//   relay), burned into their own device build through fabwright_device.h.
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { NetworkConfig } from "./config.ts";
@@ -28,9 +28,9 @@ export const RELAY_ENV = {
   wifiPassword: "WIFI_PASSWORD",
 } as const;
 
-/** The header file a device build includes; git-ignored, never compiled by Jumper's own builds. */
-export const DEVICE_HEADER = "jumper_device.h";
-export const RELAY_HEADER = "JumperRelay.h";
+/** The header file a device build includes; git-ignored, never compiled by Fabwright's own builds. */
+export const DEVICE_HEADER = "fabwright_device.h";
+export const RELAY_HEADER = "FabwrightRelay.h";
 
 /** Does the project reach any API the relay could serve (inspect hosts)? */
 export function relayUseful(config: NetworkConfig): boolean {
@@ -97,36 +97,36 @@ export function setEnvVar(text: string, key: string, value: string | undefined):
 
 const cstr = (s: string) => JSON.stringify(s).replace(/\?\?/g, "?\\?");
 
-/** jumper_device.h for the simulation build: the sandbox relay and the simulation token. */
+/** fabwright_device.h for the simulation build: the sandbox relay and the simulation token. */
 export function simDeviceHeader(config: NetworkConfig): string {
   return [
-    "// Added by Jumper to the simulation build only (not in your project): the simulator plays the relay.",
-    `#define JUMPER_RELAY_URL ${cstr(SIM_RELAY_URL)}`,
-    `#define JUMPER_DEVICE_TOKEN ${cstr(SIM_DEVICE_TOKEN)}`,
-    `#define JUMPER_WIFI_SSID ${cstr(config.wifi?.ssid ?? "JumperNet")}`,
-    `#define JUMPER_WIFI_PASSWORD ${cstr(config.wifi?.password ?? "")}`,
+    "// Added by Fabwright to the simulation build only (not in your project): the simulator plays the relay.",
+    `#define FABWRIGHT_RELAY_URL ${cstr(SIM_RELAY_URL)}`,
+    `#define FABWRIGHT_DEVICE_TOKEN ${cstr(SIM_DEVICE_TOKEN)}`,
+    `#define FABWRIGHT_WIFI_SSID ${cstr(config.wifi?.ssid ?? "FabwrightNet")}`,
+    `#define FABWRIGHT_WIFI_PASSWORD ${cstr(config.wifi?.password ?? "")}`,
     "",
   ].join("\n");
 }
 
-/** jumper_device.h for the person's own device: from their .env. Contains a token and a Wi-Fi password: git-ignored. */
+/** fabwright_device.h for the person's own device: from their .env. Contains a token and a Wi-Fi password: git-ignored. */
 export function deviceHeader(o: { relayUrl: string; token: string; ssid?: string; password?: string; rootCa?: string }): string {
   const ca = o.rootCa?.trim()
-    ? `#define JUMPER_RELAY_ROOT_CA \\\n${o.rootCa
+    ? `#define FABWRIGHT_RELAY_ROOT_CA \\\n${o.rootCa
         .trim()
         .split(/\r?\n/)
         .map((l) => `  ${cstr(`${l}\n`)}`)
         .join(" \\\n")}\n`
     : "";
   return [
-    "// Your device's relay settings, written by `jumper relay device-header` from the project's .env.",
+    "// Your device's relay settings, written by `fabwright relay device-header` from the project's .env.",
     "// SECRET: it holds this device's token and your Wi-Fi password. It is git-ignored; never commit or",
-    "// share it. Jumper's own builds (simulator, factory pack, build kit) never compile it.",
+    "// share it. Fabwright's own builds (simulator, factory pack, build kit) never compile it.",
     "#pragma once",
-    `#define JUMPER_RELAY_URL ${cstr(o.relayUrl.replace(/\/+$/, ""))}`,
-    `#define JUMPER_DEVICE_TOKEN ${cstr(o.token)}`,
-    `#define JUMPER_WIFI_SSID ${cstr(o.ssid ?? "")}`,
-    `#define JUMPER_WIFI_PASSWORD ${cstr(o.password ?? "")}`,
+    `#define FABWRIGHT_RELAY_URL ${cstr(o.relayUrl.replace(/\/+$/, ""))}`,
+    `#define FABWRIGHT_DEVICE_TOKEN ${cstr(o.token)}`,
+    `#define FABWRIGHT_WIFI_SSID ${cstr(o.ssid ?? "")}`,
+    `#define FABWRIGHT_WIFI_PASSWORD ${cstr(o.password ?? "")}`,
     ca,
   ].join("\n");
 }
@@ -135,7 +135,7 @@ export const RELAY_HEADER_SOURCE = (): string => own(`firmware/${RELAY_HEADER}`)
 
 const MIT = (year: number) => `MIT License
 
-Copyright (c) ${year} Jumper Authors
+Copyright (c) ${year} Fabwright Authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -176,7 +176,7 @@ export function relayPack(config: NetworkConfig, project: string): Record<string
   const spec = relaySpecFrom(config, project);
   const slug = relaySlug(project);
   const files: Record<string, string> = {};
-  files["relay.config.mjs"] = `// Generated by Jumper from jumper.json "network" (${project}). Regenerate with: jumper relay init\n// Names only: the values live on the relay (.env, or wrangler secret put NAME). MIT License.\nexport default ${JSON.stringify(spec, null, 2)};\n`;
+  files["relay.config.mjs"] = `// Generated by Fabwright from fabwright.json "network" (${project}). Regenerate with: fabwright relay init\n// Names only: the values live on the relay (.env, or wrangler secret put NAME). MIT License.\nexport default ${JSON.stringify(spec, null, 2)};\n`;
   files["relay-core.mjs"] = own("relay-core.mjs");
   files["server.mjs"] = own("node-server.mjs");
   files["worker.js"] = own("worker.mjs");
@@ -184,15 +184,15 @@ export function relayPack(config: NetworkConfig, project: string): Record<string
   files["package.json"] = `${JSON.stringify({ name: `${slug}-relay`, private: true, version: "1.0.0", license: "MIT", type: "module", description: `API relay for ${project}: devices call it with a device token; it adds the API keys and calls only the allowed hosts.`, engines: { node: ">=20" }, scripts: { start: "node server.mjs", deploy: "wrangler deploy" } }, null, 2)}\n`;
   files[".env.example"] = [
     "# Copy to .env (git-ignored) for `node server.mjs`. For Cloudflare use wrangler secret put instead.",
-    `# ${RELAY_ENV.tokens}: from \`jumper relay token add <device name>\` (hashes only, comma separated)`,
+    `# ${RELAY_ENV.tokens}: from \`fabwright relay token add <device name>\` (hashes only, comma separated)`,
     `${RELAY_ENV.tokens}=`,
     ...spec.secrets.map((n) => `${n}=`),
     "",
   ].join("\n");
   files[".gitignore"] = ".env\n.dev.vars\nnode_modules/\n.wrangler/\n";
   files["LICENSE"] = MIT(new Date().getUTCFullYear());
-  files["firmware/JumperRelay.h"] = own(`firmware/${RELAY_HEADER}`);
-  files["firmware/jumper_device.example.h"] = deviceHeader({ relayUrl: "https://<your relay>", token: "<from jumper relay token add>", ssid: "<your Wi-Fi>", password: "<your Wi-Fi password>" }).replace("#pragma once", "#pragma once\n// EXAMPLE: copy to your sketch folder as jumper_device.h, or run `jumper relay device-header`.");
+  files["firmware/FabwrightRelay.h"] = own(`firmware/${RELAY_HEADER}`);
+  files["firmware/fabwright_device.example.h"] = deviceHeader({ relayUrl: "https://<your relay>", token: "<from fabwright relay token add>", ssid: "<your Wi-Fi>", password: "<your Wi-Fi password>" }).replace("#pragma once", "#pragma once\n// EXAMPLE: copy to your sketch folder as fabwright_device.h, or run `fabwright relay device-header`.");
   files["README.md"] = relayReadme(spec, slug);
   return files;
 }
@@ -212,30 +212,30 @@ device ── https://<relay>/<api host>/<path> + X-Device-Token ──▶ relay
 \`\`\`
 
 - A device token reaches only this relay, and the relay reaches only these hosts. Lose a device: revoke
-  its token (\`jumper relay token revoke <name>\`, then update ${RELAY_ENV.tokens} on the relay). The API
+  its token (\`fabwright relay token revoke <name>\`, then update ${RELAY_ENV.tokens} on the relay). The API
   keys stay where they are.
 - The relay keeps only SHA-256 hashes of device tokens. Logs (one JSON line per request) never contain a
   key, a token or query values: secrets show as \`[secret:NAME]\`.
-- Same rules as Jumper's simulator, which plays this relay at \`${SIM_RELAY_URL}\`: firmware that works
+- Same rules as Fabwright's simulator, which plays this relay at \`${SIM_RELAY_URL}\`: firmware that works
   there gets the same answers (and the same refusals) here.
 
 | Host | Ports | Keys it receives | Headers the relay adds | Sent to |
 | --- | --- | --- | --- | --- |
-${hosts.join("\n") || "| (none: add hosts to network.allow in jumper.json, then jumper relay init) | | | | |"}
-${routed.length ? `\n**Sent to**: the device keeps calling ${routed.map((a) => a.host).join(", ")}; the relay sends those requests to the address in the last column (\`to\` in relay.config.mjs, from jumper.json). An address on 127.0.0.1 or your home network works only when the relay runs on that computer or network (2a); a relay in the cloud (2b) needs the service's public https URL there instead.\n` : ""}${spec.direct?.length ? `\nNot relayed (TLS passthrough; the device calls them directly): ${spec.direct.map((d) => d.host).join(", ")}.\n` : ""}
+${hosts.join("\n") || "| (none: add hosts to network.allow in fabwright.json, then fabwright relay init) | | | | |"}
+${routed.length ? `\n**Sent to**: the device keeps calling ${routed.map((a) => a.host).join(", ")}; the relay sends those requests to the address in the last column (\`to\` in relay.config.mjs, from fabwright.json). An address on 127.0.0.1 or your home network works only when the relay runs on that computer or network (2a); a relay in the cloud (2b) needs the service's public https URL there instead.\n` : ""}${spec.direct?.length ? `\nNot relayed (TLS passthrough; the device calls them directly): ${spec.direct.map((d) => d.host).join(", ")}.\n` : ""}
 Limits per device: ${l.requests_per_minute} requests a minute, requests up to ${Math.round(l.max_request_bytes / 1024)} KiB,
 answers and WebSocket streams up to ${Math.round(l.max_response_bytes / 1024)} KiB and ${l.max_stream_seconds} s
-(jumper.json \`network.relay\`; regenerate after changing them).
+(fabwright.json \`network.relay\`; regenerate after changing them).
 
 ## 1. Make a device token
 
-In the Jumper project:
+In the Fabwright project:
 
 \`\`\`sh
-jumper relay token add ${slug}-1        # prints the token once; writes DEVICE_TOKEN and ${RELAY_ENV.tokens} to .env
+fabwright relay token add ${slug}-1        # prints the token once; writes DEVICE_TOKEN and ${RELAY_ENV.tokens} to .env
 \`\`\`
 
-One token per device. \`jumper relay token list\` shows them (names only); \`revoke\` removes one.
+One token per device. \`fabwright relay token list\` shows them (names only); \`revoke\` removes one.
 
 ## 2a. Run it on a computer (home, a Raspberry Pi, any server)
 
@@ -246,7 +246,7 @@ cp .env.example .env     # fill in ${[RELAY_ENV.tokens, ...spec.secrets].join(",
 node server.mjs          # http://<this computer>:8787, PORT=... to change
 \`\`\`
 
-From the project you can also run \`jumper relay serve\` (it reads the project's .env directly).
+From the project you can also run \`fabwright relay serve\` (it reads the project's .env directly).
 Plain \`http://\` is fine on your own Wi-Fi for trying it out; anything reachable from the internet
 must be HTTPS (a reverse proxy with a certificate, or the Cloudflare option below).
 
@@ -268,26 +268,26 @@ runaway device, not an exact quota.
 
 \`\`\`sh
 # in the project's .env: RELAY_URL=https://${slug}-relay.<account>.workers.dev  WIFI_SSID=...  WIFI_PASSWORD=...
-jumper relay device-header [--ca relay-root.pem]
+fabwright relay device-header [--ca relay-root.pem]
 \`\`\`
 
-That writes \`jumper_device.h\` (git-ignored: it holds the token and the Wi-Fi password) and
-\`JumperRelay.h\` into the sketch folder. Build and flash from that folder (Arduino IDE or
+That writes \`fabwright_device.h\` (git-ignored: it holds the token and the Wi-Fi password) and
+\`FabwrightRelay.h\` into the sketch folder. Build and flash from that folder (Arduino IDE or
 \`arduino-cli compile --upload\`). In the sketch:
 
 \`\`\`cpp
-#include "JumperRelay.h"
-WiFi.begin(JUMPER_WIFI_SSID, JUMPER_WIFI_PASSWORD);
-http.begin(client, jumperRelayUrl("${spec.allow[0]?.host ?? "api.example.com"}", "/v1/..."));
-http.addHeader(JUMPER_TOKEN_HEADER, JUMPER_DEVICE_TOKEN);
+#include "FabwrightRelay.h"
+WiFi.begin(FABWRIGHT_WIFI_SSID, FABWRIGHT_WIFI_PASSWORD);
+http.begin(client, fabwrightRelayUrl("${spec.allow[0]?.host ?? "api.example.com"}", "/v1/..."));
+http.addHeader(FABWRIGHT_TOKEN_HEADER, FABWRIGHT_DEVICE_TOKEN);
 \`\`\`
 
-WebSocket clients take the relay apart with \`jumperRelayEndpoint(host, path)\` (host, port, tls, path).
-HTTPS: set the relay's root CA (\`client.setCACert(JUMPER_RELAY_ROOT_CA)\`, from \`--ca\`); never
+WebSocket clients take the relay apart with \`fabwrightRelayEndpoint(host, path)\` (host, port, tls, path).
+HTTPS: set the relay's root CA (\`client.setCACert(FABWRIGHT_RELAY_ROOT_CA)\`, from \`--ca\`); never
 \`setInsecure()\` outside a quick test.
 
-The firmware file in Jumper's factory pack and build kit has **no** token and no Wi-Fi password
-(\`jumperRelayReady()\` is false there), so it is safe to share.
+The firmware file in Fabwright's factory pack and build kit has **no** token and no Wi-Fi password
+(\`fabwrightRelayReady()\` is false there), so it is safe to share.
 
 ## What it costs
 

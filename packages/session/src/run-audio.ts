@@ -10,17 +10,17 @@
  */
 import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { I2sBlock, Simulation } from "@jumper/sim-core";
+import type { I2sBlock, Simulation } from "@fabwright/sim-core";
 
 export const RUN_AUDIO_RATE = 16_000;
 /** Runs longer than this keep no audio (the page plays at most 10 s of a run at real speed). */
 export const RUN_AUDIO_MAX_MS = 20_000;
-/** WAV files kept in .jumper/audio (the oldest go). */
+/** WAV files kept in .fabwright/audio (the oldest go). */
 const KEEP = 20;
 
 /** What the log entry of a run carries so the page can play its sound. */
 export interface RunAudio {
-  /** File name under .jumper/audio, served at GET /api/audio/<file>. */
+  /** File name under .fabwright/audio, served at GET /api/audio/<file>. */
   file: string;
   /** The I2S sink(s) the sound went to (the amplifier part ids). */
   parts: string[];
@@ -95,7 +95,7 @@ export function wavBytes(pcm: Int16Array, rate = RUN_AUDIO_RATE): Buffer {
 }
 
 /** The folder run audio lives in. */
-export const runAudioDir = (projectDir: string) => join(projectDir, ".jumper", "audio");
+export const runAudioDir = (projectDir: string) => join(projectDir, ".fabwright", "audio");
 
 /** A safe file name from GET /api/audio/<file> (no paths), or undefined. */
 export function runAudioFile(projectDir: string, name: string): string | undefined {

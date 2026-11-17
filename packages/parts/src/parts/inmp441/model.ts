@@ -3,8 +3,8 @@
 // clip, at the set sound pressure with the datasheet sensitivity (94 dB SPL = -26 dBFS), as 24-bit
 // data left-justified in the slot width the firmware asked for. Generic audio input.
 // Deterministic: a fixed-seed generator and frame counters, no wall clock or Math.random.
-import type { I2sRequest, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { base64ToBytes, GROUND } from "@jumper/sim-core";
+import type { I2sRequest, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { base64ToBytes, GROUND } from "@fabwright/sim-core";
 import { num, round, str } from "../../lib/props.ts";
 
 const HOLD_MS = 100;

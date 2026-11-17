@@ -3,14 +3,14 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject, type Scenario } from "@jumper/project-format";
-import { registry } from "@jumper/parts";
+import { parseProject, type Scenario } from "@fabwright/project-format";
+import { registry } from "@fabwright/parts";
 import { SimHost } from "../src/sim.ts";
 import { runScenario } from "../src/scenario.ts";
 
 const HEX = readFileSync(fileURLToPath(new URL("../../parts/src/parts/ds3231-rtc/example.hex", import.meta.url)), "utf8");
 const project = parseProject({
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "rtc day",
   parts: [
     { id: "uno", type: "arduino-uno", x: 0, y: 0 },
@@ -44,7 +44,7 @@ describe("round 15: RTC parts follow the test clock", { timeout: 60_000 }, () =>
   });
 
   it("set_clock with neither a network nor an RTC says what to add", () => {
-    const bare = parseProject({ format: "jumper/1", name: "bare", parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }], wires: [], firmware: { board: "uno", artifact: "firmware/main.hex" } });
+    const bare = parseProject({ format: "fabwright/1", name: "bare", parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }], wires: [], firmware: { board: "uno", artifact: "firmware/main.hex" } });
     const r = runScenario(new SimHost(bare, registry, HEX), { id: "x", steps: [{ set_clock: "2026-11-20T08:00:00Z" }] } as Scenario, bare, registry);
     expect(r.passed).toBe(false);
     expect(r.reason).toMatch(/no device network and no real-time-clock part.*Fix: .*add an RTC part/);
@@ -55,7 +55,7 @@ import { measuredSleep, powerBudget, sleepTimerSeconds } from "../src/power-budg
 
 describe("round 15: battery life of a device that deep-sleeps", () => {
   const counter = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "counter",
     parts: [
       { id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0 },

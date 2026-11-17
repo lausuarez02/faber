@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createProject, parseProject } from "@jumper/project-format";
-import { createJumperStore, withoutItems } from "./store.ts";
+import { createProject, parseProject } from "@fabwright/project-format";
+import { createFabwrightStore, withoutItems } from "./store.ts";
 
 const base = () =>
   parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "t",
     parts: [
       { id: "uno", type: "arduino-uno", x: 0, y: 0 },
@@ -16,7 +16,7 @@ const base = () =>
 
 describe("project store", () => {
   it("adds parts with unique ids and undoes/redoes", () => {
-    const store = createJumperStore(createProject("x"));
+    const store = createFabwrightStore(createProject("x"));
     const a = store.getState().addPart("led", 0, 0);
     const b = store.getState().addPart("led", 20, 0);
     expect([a, b]).toEqual(["led1", "led2"]);
@@ -27,7 +27,7 @@ describe("project store", () => {
   });
 
   it("connects pins once and cycles wire colors", () => {
-    const store = createJumperStore(base());
+    const store = createFabwrightStore(base());
     const id = store.getState().connect({ part: "uno", pin: "GND.1" }, { part: "led1", pin: "C" });
     expect(id).toBe("w2");
     expect(store.getState().connect({ part: "led1", pin: "C" }, { part: "uno", pin: "GND.1" })).toBeUndefined();
@@ -45,7 +45,7 @@ describe("project store", () => {
   });
 
   it("drag = one undo step (checkpoint + live updates)", () => {
-    const store = createJumperStore(base());
+    const store = createFabwrightStore(base());
     store.getState().checkpoint();
     for (let x = 0; x <= 50; x += 10)
       store.getState().setLive((p) => ({ ...p, parts: p.parts.map((q) => (q.id === "led1" ? { ...q, x: 100 + x } : q)) }));
@@ -55,7 +55,7 @@ describe("project store", () => {
   });
 
   it("a click without a move does not cost an undo step", () => {
-    const store = createJumperStore(createProject("x"));
+    const store = createFabwrightStore(createProject("x"));
     store.getState().addPart("led", 0, 0);
     store.getState().checkpoint(); // drag start, no move
     store.getState().undo();

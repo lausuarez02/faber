@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { isFreshPlayground, isServerLanding, landOnProjects } from "./firstRun.ts";
 
 // Round 6, switch track: someone new lands on the Projects page, not on a canvas they did not ask for.
-const empty: Project = { format: "jumper/1", name: "playground", parts: [], wires: [], scenarios: [] };
+const empty: Project = { format: "fabwright/1", name: "playground", parts: [], wires: [], scenarios: [] };
 const built: Project = { ...empty, name: "Pocket Muse", parts: [{ id: "nano", type: "arduino-nano", x: 0, y: 0, rotation: 0 }] };
 const landing = { host: "localhost:7780", search: `?follow=${encodeURIComponent("ws://localhost:7780/live")}` };
 

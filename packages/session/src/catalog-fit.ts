@@ -1,7 +1,7 @@
 // Round 6, track "power" (owner): search_parts that says when nothing fits (with a create_part
 // template ready to fill in) and get_part that finds "rp2040-zero" → waveshare-rp2040-zero.
 // Decision 0004, R4 ("Changes to existing tools").
-import type { PartDefinition } from "@jumper/sim-core";
+import type { PartDefinition } from "@fabwright/sim-core";
 
 const words = (s: string) => s.toLowerCase().split(/[^a-z0-9.+]+/).filter(Boolean);
 

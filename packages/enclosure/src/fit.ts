@@ -6,8 +6,8 @@
  * The same answer drives check_fit / design_case {dry_run: true} for agents and the Case view's
  * live preview for a person.
  */
-import type { Enclosure } from "@jumper/project-format";
-import type { PartSpec } from "@jumper/sim-core";
+import type { Enclosure } from "@fabwright/project-format";
+import type { PartSpec } from "@fabwright/sim-core";
 import { LIPO_CELLS, type Layout, type LayoutInput, specWithProps } from "./layout.ts";
 import { layoutCase, type LayoutProposals, proposalsFor } from "./proposals.ts";
 import { contains, outline, polyOuter } from "./plan.ts";
@@ -67,7 +67,7 @@ export interface FitReport {
   /** Layout problems other than fit (exposed features, outline warnings). */
   issues: FitCheck[];
   notes: string[];
-  /** Round 8: the ways to distribute the parts Jumper proposes (thinnest, smallest, balanced) and the one the case uses. */
+  /** Round 8: the ways to distribute the parts Fabwright proposes (thinnest, smallest, balanced) and the one the case uses. */
   proposals?: Omit<LayoutProposals, "proposals"> & { proposals: Omit<LayoutProposals["proposals"][number], "views">[]; chosen: string };
   ms: number;
 }

@@ -1,7 +1,7 @@
 // TTP223 one-key capacitive touch module. Output is CMOS push-pull at VCC (no pull-up needed).
 // Jumper A: active high / low. Jumper B: momentary / toggle. A finger is press / release / set.
-import type { Diagnostic, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { str, truthy } from "../../lib/props.ts";
 
 const MIN_VCC = 2.0;

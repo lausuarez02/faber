@@ -1,11 +1,11 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createRp2040BoardModel, limit } from "../raspberry-pi-pico/rp2040-board.ts";
 
 /**
  * Seeed XIAO RP2040: RP2040 pads (shared RP2040 board model) and the RGB user LED: red GP17
  * (LED_BUILTIN), green GP16, blue GP25, each lit when its pin is LOW. The WS2812 on GP12 is not drawn.
  *
- * Power (round 6): the "5V" pad is VBUS. USB (jumper.json power.usb, default plugged) puts 5 V on it;
+ * Power (round 6): the "5V" pad is VBUS. USB (fabwright.json power.usb, default plugged) puts 5 V on it;
  * without USB the board runs from whatever is wired to that pad (3.5 to 5.5 V, e.g. a LiPo through
  * a Schottky diode). The on-board 3.3 V LDO feeds 3V3 and the RP2040; in dropout 3V3 follows the
  * input minus the dropout. The MCU runs while 3V3 ≥ min3v3V (the flash chip's 2.7 V).

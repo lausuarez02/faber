@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-// Jumper API relay for Node 20+ (a computer at home, a small server, a Raspberry Pi). Copyright (c)
-// Jumper Authors. MIT License. No dependencies.
+// Fabwright API relay for Node 20+ (a computer at home, a small server, a Raspberry Pi). Copyright (c)
+// Fabwright Authors. MIT License. No dependencies.
 //
 //   node server.mjs                 (reads relay.config.mjs next to it and .env from this folder)
 //   PORT=8787 node server.mjs
@@ -176,14 +176,14 @@ async function main() {
   const env = { ...(existsSync(envFile) ? parseDotEnv(readFileSync(envFile, "utf8")) : {}), ...process.env };
   const missing = (spec.secrets || []).filter((n) => !env[n]);
   const r = await startRelay({ spec, env, port: Number(process.env.PORT || 8787) });
-  process.stderr.write(`Jumper relay for ${spec.project} on ${r.url} (hosts: ${(spec.allow || []).map((a) => a.host).join(", ") || "none"})\n`);
-  if (!env.RELAY_DEVICE_TOKENS) process.stderr.write("No device tokens yet: every device is refused. Make one: jumper relay token add <device name> (it writes RELAY_DEVICE_TOKENS to .env)\n");
+  process.stderr.write(`Fabwright relay for ${spec.project} on ${r.url} (hosts: ${(spec.allow || []).map((a) => a.host).join(", ") || "none"})\n`);
+  if (!env.RELAY_DEVICE_TOKENS) process.stderr.write("No device tokens yet: every device is refused. Make one: fabwright relay token add <device name> (it writes RELAY_DEVICE_TOKENS to .env)\n");
   if (missing.length) process.stderr.write(`Missing secrets: ${missing.join(", ")}. Requests that need them get 500 with the fix. Put NAME=value in ${envFile}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
-    process.stderr.write(`jumper relay: ${e.message}\n`);
+    process.stderr.write(`fabwright relay: ${e.message}\n`);
     process.exit(1);
   });
 }

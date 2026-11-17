@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 // Connected agents and the agent state live in ../live/agentState.ts (one shared socket, C6).
 
 /**
- * Talks to the local `jumper serve` (default http://localhost:7780): its URLs, install snippets,
+ * Talks to the local `fabwright serve` (default http://localhost:7780): its URLs, install snippets,
  * starter prompt, the agents connected over MCP (live, over a presence-only websocket), and the
- * "Launch Claude Code here" endpoint. Works when the app is served by jumper serve (same origin,
+ * "Launch Claude Code here" endpoint. Works when the app is served by fabwright serve (same origin,
  * launch allowed) and from `pnpm dev` (reads the public /api/info; launch shows the command instead).
  */
 
@@ -34,7 +34,7 @@ export interface AgentInfo {
 }
 
 export interface ServerInfo {
-  name: "jumper";
+  name: "fabwright";
   url: string;
   mcpUrl: string;
   wsUrl: string;
@@ -44,7 +44,7 @@ export interface ServerInfo {
   install: InstallSnippet[];
   starterPrompt: string;
   launch: { available: boolean; why?: string; command: string; mcpConfigFile: string };
-  /** Only when this page is served by the same jumper server. */
+  /** Only when this page is served by the same fabwright server. */
   token?: string;
 }
 
@@ -73,7 +73,7 @@ async function fetchInfo(base: string, signal: AbortSignal): Promise<ServerInfo>
   const r = await fetch(`${base}${same ? "/api/connect" : "/api/info"}`, { signal, cache: "no-store" });
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   const info = (await r.json()) as ServerInfo;
-  if (info?.name !== "jumper") throw new Error("not a Jumper server");
+  if (info?.name !== "fabwright") throw new Error("not a Fabwright server");
   return info;
 }
 
@@ -134,11 +134,11 @@ export interface LaunchResult {
 /** POST /api/launch/claude-code (needs the same-origin token). */
 export async function launchClaudeCode(base: string, token: string, withPrompt: boolean): Promise<LaunchResult> {
   try {
-    const r = await fetch(`${base}/api/launch/claude-code`, { method: "POST", headers: { "content-type": "application/json", "x-jumper-token": token }, body: JSON.stringify({ withPrompt }) });
+    const r = await fetch(`${base}/api/launch/claude-code`, { method: "POST", headers: { "content-type": "application/json", "x-fabwright-token": token }, body: JSON.stringify({ withPrompt }) });
     const body = (await r.json()) as LaunchResult;
     return r.ok ? body : { ok: false, error: body.error ?? `${r.status} ${r.statusText}`, ...(body.command ? { command: body.command } : {}) };
   } catch (err) {
-    return { ok: false, error: `Could not reach the Jumper server at ${base} (${(err as Error).message}). Fix: start it with pnpm start.` };
+    return { ok: false, error: `Could not reach the Fabwright server at ${base} (${(err as Error).message}). Fix: start it with pnpm start.` };
   }
 }
 

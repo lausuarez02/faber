@@ -6,24 +6,24 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
-// Follow mode end to end: `jumper serve --no-web` runs the live hub on a project folder, the page
+// Follow mode end to end: `fabwright serve --no-web` runs the live hub on a project folder, the page
 // follows it over WebSocket, and parts / wires added with the plain CLI show up on the canvas.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 
-function jumper(dir: string, ...args: string[]): string {
+function fabwright(dir: string, ...args: string[]): string {
   const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000 });
-  if (r.status !== 0) throw new Error(`jumper ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
+  if (r.status !== 0) throw new Error(`fabwright ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
   return r.stdout;
 }
 
 test.describe.configure({ mode: "serial" });
 
 test("live follow: place and connect from the CLI appear on the canvas", async ({ page }, info) => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-follow-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-follow-"));
   const port = hubPort(info);
   let hub: ChildProcess | undefined;
   try {
-    jumper(dir, "new", dir, "--template", "uno");
+    fabwright(dir, "new", dir, "--template", "uno");
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--live-port", String(port)], { stdio: ["ignore", "pipe", "pipe"] });
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error("live hub did not start in 20 s")), 20_000);
@@ -39,9 +39,9 @@ test("live follow: place and connect from the CLI appear on the canvas", async (
     await expect(page.getByTestId("live-bar")).toBeVisible();
     await expect(page.getByTestId("part-uno")).toBeVisible({ timeout: 15_000 });
 
-    jumper(dir, "place", "led", "--id", "led1", "--x", "420", "--y", "-160", "--why", "status light");
+    fabwright(dir, "place", "led", "--id", "led1", "--x", "420", "--y", "-160", "--why", "status light");
     await expect(page.getByTestId("part-led1")).toBeVisible({ timeout: 15_000 });
-    jumper(dir, "connect", "uno.D13", "led1.A", "--why", "drive the LED from D13");
+    fabwright(dir, "connect", "uno.D13", "led1.A", "--why", "drive the LED from D13");
     await expect(page.locator('[data-testid^="wire-w"]')).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("live-steps")).toContainText("drive the LED from D13");
     await shot(page, info, "follow-cli");

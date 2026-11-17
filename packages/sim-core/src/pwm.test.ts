@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
+import { parseProject } from "@fabwright/project-format";
 import {
   createMcuBoardModel,
   createRegistry,
@@ -157,7 +157,7 @@ const ticker: PartDefinition = {
 
 const registry = createRegistry([board, ledLoad, ticker]);
 const project = parseProject({
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "pwm",
   parts: [
     { id: "b", type: "pwm-board", x: 0, y: 0 },

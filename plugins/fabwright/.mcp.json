@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "jumper": {
+    "fabwright": {
       "type": "http",
       "url": "http://localhost:7780/mcp"
     }

@@ -1,5 +1,5 @@
 // Writes packages/parts/custom-part.schema.json (agent-made part.json, decision 0003 C4) from the zod schema.
-// Run: pnpm --filter @jumper/parts gen   (or `pnpm gen` at the root). --check: exit 1 when stale.
+// Run: pnpm --filter @fabwright/parts gen   (or `pnpm gen` at the root). --check: exit 1 when stale.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { customPartJsonSchema } from "../src/custom/schema.ts";

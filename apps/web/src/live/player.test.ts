@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { useLive } from "./liveStore.ts";
 import { ReplayPlayer, entryDuration, fidelityView, parseLog, type CanvasPort, type LogEntry, type Timers } from "./player.ts";
 
 const proj = (parts: string[], wires: number): Project => ({
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "t",
   parts: parts.map((id) => ({ id, type: "led", x: 0, y: 0, rotation: 0 })),
   wires: Array.from({ length: wires }, (_, i) => ({ id: `w${i + 1}`, from: { part: parts[0]!, pin: "A" }, to: { part: parts[0]!, pin: "C" } })),
@@ -81,7 +81,7 @@ describe("replay player", () => {
     expect(live.code?.path).toBe("firmware/main.ino");
     expect(live.tests).toMatchObject({ passed: 1, failed: 0 });
     expect(live.steps[0]?.why).toBe("light");
-    expect((globalThis as { __jumperReplay?: { done: boolean } }).__jumperReplay?.done).toBe(true);
+    expect((globalThis as { __fabwrightReplay?: { done: boolean } }).__fabwrightReplay?.done).toBe(true);
   });
 
   it("paces ops for video and parses logs with torn lines", () => {

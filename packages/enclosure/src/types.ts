@@ -7,7 +7,7 @@
  * Every STL / 3MF / STEP file is written in this frame (the slicer re-orients for printing; the
  * print orientation we recommend is in CaseFile.print).
  */
-import type { CaseShape, Enclosure } from "@jumper/project-format";
+import type { CaseShape, Enclosure } from "@fabwright/project-format";
 
 export type Vec3 = [number, number, number];
 
@@ -25,7 +25,7 @@ export interface CaseFile {
 
 /** A part placed inside the case. */
 export interface PlacedPart {
-  id: string; // part instance id from jumper.json
+  id: string; // part instance id from fabwright.json
   type: string;
   /** Box of the part body in the case frame (mm), after rotation. */
   min: Vec3;

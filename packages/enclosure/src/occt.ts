@@ -1,7 +1,7 @@
 /**
  * Lazy OpenCascade (replicad-opencascadejs, LGPL-2.1, unmodified wasm loaded at run time) and the
  * replicad wrapper (MIT). Only the case engine imports this, and only when it builds geometry, so
- * nothing else in Jumper loads ~10 MB of wasm.
+ * nothing else in Fabwright loads ~10 MB of wasm.
  */
 import { createRequire } from "node:module";
 

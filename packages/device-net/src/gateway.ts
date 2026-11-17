@@ -83,7 +83,7 @@ interface FlowCtx {
   port: number;
   tls: "inspect" | "passthrough" | "none";
   decision: Decision;
-  /** Round 13: the request came through the sandbox relay (relay.sandbox.jumper/<host>/<path>). */
+  /** Round 13: the request came through the sandbox relay (relay.sandbox.fabwright/<host>/<path>). */
   via?: "relay";
 }
 
@@ -201,7 +201,7 @@ export class DeviceNet {
     const { mode, allow } = this.opts.config;
     const mockHint = `add a mock for ${host} (add_mock_api {"host": "${host}", "path": "/...", "response": {...}} or network/mocks.json)`;
     if (mode === "offline") {
-      return { ok: false, why: `the project's network mode is offline: the device has Wi-Fi but no host answers (this is how a test checks the no-internet path)`, fix: `set jumper.json network.mode to "mock" and ${mockHint}, or to "internet" with {"host": "${host}"} in network.allow` };
+      return { ok: false, why: `the project's network mode is offline: the device has Wi-Fi but no host answers (this is how a test checks the no-internet path)`, fix: `set fabwright.json network.mode to "mock" and ${mockHint}, or to "internet" with {"host": "${host}"} in network.allow` };
     }
     // Round 13: the simulator plays the project's API relay (same allow list, token and limits as the real one).
     if (host === SIM_RELAY_HOST) return { ok: true };
@@ -221,7 +221,7 @@ export class DeviceNet {
     if (mode === "mock") {
       return { ok: false, why: `${host} has no mock and no recorded cassette, and mode "mock" never reaches the internet`, fix: `${mockHint}, or set network.mode "internet" and add {"host": "${host}"} to network.allow` };
     }
-    return { ok: false, why: `${host} is not on the project's allow list (jumper.json network.allow), so the sandbox refuses it`, fix: `if the device should reach it, add {"host": "${host}"} to network.allow; otherwise ${mockHint}` };
+    return { ok: false, why: `${host} is not on the project's allow list (fabwright.json network.allow), so the sandbox refuses it`, fix: `if the device should reach it, add {"host": "${host}"} to network.allow; otherwise ${mockHint}` };
   }
 
   private blocked(d: Omit<NetEvent, "seq" | "t_ms" | "kind" | "summary">, why: string, fix: string, what: string): NetEvent {
@@ -349,7 +349,7 @@ export class DeviceNet {
       const handshakeFailed = (e?: Error) => {
         if (secured || failed) return;
         failed = true;
-        this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS handshake with the device failed${e ? `: ${e.message}` : " (the device closed the connection)"}`, why: "the firmware did not accept the Jumper sandbox certificate for this host, or closed during the handshake", fix: "build with Jumper's ESP32 image (its simulation build trusts the sandbox CA next to the sketch's own CAs), or set tls passthrough for this host in network.allow" });
+        this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS handshake with the device failed${e ? `: ${e.message}` : " (the device closed the connection)"}`, why: "the firmware did not accept the Fabwright sandbox certificate for this host, or closed during the handshake", fix: "build with Fabwright's ESP32 image (its simulation build trusts the sandbox CA next to the sketch's own CAs), or set tls passthrough for this host in network.allow" });
       };
       t.on("error", handshakeFailed);
       t.on("close", () => handshakeFailed());
@@ -357,7 +357,7 @@ export class DeviceNet {
       if (!app) {
         // Some TLS stacks finish the handshake and only then check the certificate, and close.
         if (secured && !failed) {
-          this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS session with ${host} closed by the device before any request`, why: "the device closed right after the handshake; usually its TLS rejected the Jumper sandbox certificate after checking it", fix: "build with Jumper's ESP32 image (its simulation build trusts the sandbox CA), or set tls passthrough for this host in network.allow" });
+          this.log.push({ kind: "connect", host, port: dst.port, tls: "inspect", source: "sandbox", summary: `TLS session with ${host} closed by the device before any request`, why: "the device closed right after the handshake; usually its TLS rejected the Fabwright sandbox certificate after checking it", fix: "build with Fabwright's ESP32 image (its simulation build trusts the sandbox CA), or set tls passthrough for this host in network.allow" });
         }
         return;
       }
@@ -515,7 +515,7 @@ export class DeviceNet {
     }
     const mock = this.mocks.http(ctx.host, method, path);
     if (ctx.via && reqBody.length > maxBody) {
-      const err = new RelayError(413, "request-too-large", `the request body is ${reqBody.length} bytes, over the relay's limit of ${maxBody}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in jumper.json");
+      const err = new RelayError(413, "request-too-large", `the request body is ${reqBody.length} bytes, over the relay's limit of ${maxBody}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in fabwright.json");
       const body = Buffer.from(JSON.stringify(err.body()));
       res.writeHead(413, { "content-type": "application/json", "content-length": String(body.length) });
       res.end(body);
@@ -534,7 +534,7 @@ export class DeviceNet {
       const { mock: om, hit } = mock.openapi;
       if (!om.spec_doc) {
         const why = `the OpenAPI mock for ${om.host} has no loaded spec (${typeof om.spec === "string" ? om.spec : "inline"})`;
-        const fix = "add it with add_mock_api or network/mocks.json in the project, so Jumper reads the spec file";
+        const fix = "add it with add_mock_api or network/mocks.json in the project, so Fabwright reads the spec file";
         const body = Buffer.from(JSON.stringify({ error: "mock spec not loaded", why, fix }));
         res.writeHead(500, { "content-type": "application/json", "content-length": String(body.length) });
         res.end(body);

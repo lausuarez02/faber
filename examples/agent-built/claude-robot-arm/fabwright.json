@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "claude-arm",
   "parts": [
     { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },

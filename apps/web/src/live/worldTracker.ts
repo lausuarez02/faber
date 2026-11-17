@@ -1,6 +1,6 @@
-import { armPose, parseWorld, type WorldSnapshot, type WorldSpec } from "@jumper/physics";
-import type { Project } from "@jumper/project-format";
-import type { VisualState } from "@jumper/sim-core";
+import { armPose, parseWorld, type WorldSnapshot, type WorldSpec } from "@fabwright/physics";
+import type { Project } from "@fabwright/project-format";
+import type { VisualState } from "@fabwright/sim-core";
 
 /**
  * Follow / replay have no local simulation, so the arena view is rebuilt from what the session

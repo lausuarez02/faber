@@ -7,7 +7,7 @@ import { toContent } from "../src/server.ts";
 // Round 5 (decision 0003, C5): a screenshot comes back as an image the agent can show, plus its absolute path.
 describe("screenshot content", () => {
   it("inlines the PNG and keeps the absolute path and viewer link in the text", () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-content-"));
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-content-"));
     try {
       const path = join(dir, "shot.png");
       writeFileSync(path, Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]));

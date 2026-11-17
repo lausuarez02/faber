@@ -12,9 +12,9 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(() => {
-  process.env.JUMPER_CASE_PDF = "0";
-  dir = mkdtempSync(join(tmpdir(), "jumper-layouts-"));
-  writeFileSync(join(dir, "jumper.json"), JSON.stringify(MUSE));
+  process.env.FABWRIGHT_CASE_PDF = "0";
+  dir = mkdtempSync(join(tmpdir(), "fabwright-layouts-"));
+  writeFileSync(join(dir, "fabwright.json"), JSON.stringify(MUSE));
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {
@@ -35,7 +35,7 @@ describe("layout proposals through the tools", () => {
     expect(thin.placements.eye.face).toBe("front");
     expect(thin.views).toBeUndefined();
     expect(r.next).toMatch(/layout/);
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).enclosure).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure).toBeUndefined();
     const v = await call("propose_layout", { shape: "rounded-box", views: true });
     expect(v.proposals[0].views.front.parts.length).toBe(Object.keys(thin.placements).length);
     // the same project, the same answer
@@ -52,14 +52,14 @@ describe("layout proposals through the tools", () => {
   it("design_case {layout: thinnest} builds that proposal and records it; update_case goes back to auto", async () => {
     const d = await call("design_case", { shape: "rounded-box", layout: "thinnest", images: false });
     expect(d.ok).toBe(true);
-    const enc = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).enclosure;
+    const enc = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure;
     expect(enc.layout).toBe("thinnest");
     const rep = JSON.parse(readFileSync(join(dir, "case", "report.json"), "utf8"));
     expect(rep.layout.goal).toBe("thinnest");
     expect(rep.layout.fill_ratio).toBeGreaterThan(0.05);
     const u = await call("update_case", { layout: "auto", images: false });
     expect(u.ok).toBe(true);
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).enclosure.layout).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure.layout).toBeUndefined();
     expect(JSON.parse(readFileSync(join(dir, "case", "report.json"), "utf8")).layout.goal).toBe("balanced");
   }, 240_000);
 });

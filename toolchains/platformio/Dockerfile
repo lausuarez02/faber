@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-# Jumper build image for PlatformIO projects (firmware.language "platformio"), round 10.
+# Fabwright build image for PlatformIO projects (firmware.language "platformio"), round 10.
 #
-#   docker build -t jumper/platformio:6.2.0-avr5.3.0-r1 toolchains/platformio
+#   docker build -t fabwright/platformio:6.2.0-avr5.3.0-r1 toolchains/platformio
 #
 # PlatformIO Core (Apache-2.0) pinned, with the atmelavr platform (Apache-2.0) and the packages a
 # build for the Arduino Uno / Nano needs (avr-gcc, the Arduino AVR core) installed at image build
@@ -25,8 +25,8 @@ RUN pio pkg install -g --platform "${AVR_PLATFORM}" \
  && rm -rf /tmp/warm /root/.cache \
  && chmod -R a+rwX ${PLATFORMIO_CORE_DIR}
 
-COPY jumper-platformio.sh /usr/local/bin/jumper-platformio
-RUN chmod a+rx /usr/local/bin/jumper-platformio
+COPY fabwright-platformio.sh /usr/local/bin/fabwright-platformio
+RUN chmod a+rx /usr/local/bin/fabwright-platformio
 WORKDIR /work
-ENTRYPOINT ["/usr/local/bin/jumper-platformio"]
+ENTRYPOINT ["/usr/local/bin/fabwright-platformio"]
 CMD ["--version"]

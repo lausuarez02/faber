@@ -9,31 +9,31 @@ export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
  * Base toolchain image (toolchains/arduino): arduino-cli 1.5.1 + arduino:avr 1.8.8 + the pinned display /
  * sensor libraries listed in toolchains/arduino/LIBRARIES.md. Keep the tag in sync with that Dockerfile.
  */
-export const BASE_IMAGE = process.env.JUMPER_ARDUINO_IMAGE ?? "jumper/arduino-cli:1.5.1-avr1.8.8-libs3";
+export const BASE_IMAGE = process.env.FABWRIGHT_ARDUINO_IMAGE ?? "fabwright/arduino-cli:1.5.1-avr1.8.8-libs3";
 /** Runner image = base + the robot libraries (Servo) from services/runner/docker/Dockerfile. */
-export const RUNNER_IMAGE = process.env.JUMPER_RUNNER_IMAGE ?? "jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1";
+export const RUNNER_IMAGE = process.env.FABWRIGHT_RUNNER_IMAGE ?? "fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1";
 
 /**
  * RP2040 image (toolchains/arduino-pico): the runner image + Earle Philhower's arduino-pico core
  * 6.3.1 (rp2040:rp2040), which writes the firmware as Intel HEX like the AVR builds. Keep the tag in
  * sync with that Dockerfile (decision 0003, C1 / C9). Round 6 (decision 0004, R7): built FROM the
  * libs3 runner, so RP2040 sketches get the same pinned libraries as AVR ones. Older tags stay
- * buildable: set JUMPER_ARDUINO_IMAGE / JUMPER_RUNNER_IMAGE / JUMPER_PICO_IMAGE.
+ * buildable: set FABWRIGHT_ARDUINO_IMAGE / FABWRIGHT_RUNNER_IMAGE / FABWRIGHT_PICO_IMAGE.
  */
-export const PICO_IMAGE = process.env.JUMPER_PICO_IMAGE ?? "jumper/arduino-pico:6.3.1-libs3-r1";
+export const PICO_IMAGE = process.env.FABWRIGHT_PICO_IMAGE ?? "fabwright/arduino-pico:6.3.1-libs3-r1";
 
 /**
  * ESP32-family image (toolchains/arduino-esp32, decision 0006): the runner image + Espressif's
- * arduino-esp32 core 3.3.12 (ESP-IDF 5.5) + JumperEth. Builds write a merged flash image
+ * arduino-esp32 core 3.3.12 (ESP-IDF 5.5) + FabwrightEth. Builds write a merged flash image
  * (<sketch>.ino.merged.bin) that the QEMU backend boots. About 6.5 GB: built on the first ESP build.
  */
-export const ESP32_IMAGE = process.env.JUMPER_ESP32_IMAGE ?? "jumper/arduino-esp32:3.3.12-r3";
+export const ESP32_IMAGE = process.env.FABWRIGHT_ESP32_IMAGE ?? "fabwright/arduino-esp32:3.3.12-r3";
 /**
  * The image r3 is built on (toolchains/arduino-esp32/Dockerfile): arduino-cli + the esp32 core +
- * JumperEth. r3 (Dockerfile.sim, round 10 network) adds the simulation shim (JumperSim) and pinned
- * network libraries; device builds (target "device") turn the shim off with JUMPER_SIM=0.
+ * FabwrightEth. r3 (Dockerfile.sim, round 10 network) adds the simulation shim (FabwrightSim) and pinned
+ * network libraries; device builds (target "device") turn the shim off with FABWRIGHT_SIM=0.
  */
-export const ESP32_BASE_IMAGE = process.env.JUMPER_ESP32_BASE_IMAGE ?? "jumper/arduino-esp32:3.3.12-r2";
+export const ESP32_BASE_IMAGE = process.env.FABWRIGHT_ESP32_BASE_IMAGE ?? "fabwright/arduino-esp32:3.3.12-r2";
 
 /**
  * Round 10 (Renode boards). STM32duino 2.11.0 (toolchains/arduino-stm32): linux/amd64 only (STM32Tools
@@ -41,9 +41,9 @@ export const ESP32_BASE_IMAGE = process.env.JUMPER_ESP32_BASE_IMAGE ?? "jumper/a
  * display libraries. arduino:mbed_nano 4.4.1 (toolchains/arduino-mbed-nano) and Seeed's nRF52 core
  * 1.1.13 (toolchains/arduino-nrf52) are native arm64. All carry the libs3 libraries.
  */
-export const STM32_IMAGE = process.env.JUMPER_STM32_IMAGE ?? "jumper/arduino-stm32:2.11.0-libs3-r1";
-export const MBED_NANO_IMAGE = process.env.JUMPER_MBED_NANO_IMAGE ?? "jumper/arduino-mbed-nano:4.4.1-libs3-r1";
-export const NRF52_IMAGE = process.env.JUMPER_NRF52_IMAGE ?? "jumper/arduino-nrf52:1.1.13-libs3-r2";
+export const STM32_IMAGE = process.env.FABWRIGHT_STM32_IMAGE ?? "fabwright/arduino-stm32:2.11.0-libs3-r1";
+export const MBED_NANO_IMAGE = process.env.FABWRIGHT_MBED_NANO_IMAGE ?? "fabwright/arduino-mbed-nano:4.4.1-libs3-r1";
+export const NRF52_IMAGE = process.env.FABWRIGHT_NRF52_IMAGE ?? "fabwright/arduino-nrf52:1.1.13-libs3-r2";
 
 export interface Platform {
   prefix: string;
@@ -128,9 +128,9 @@ export const QEMU_ESP_DOCKERFILE_DIR = join(REPO_ROOT, "toolchains/qemu-esp");
 
 export const DEFAULT_PORT = 7781;
 
-/** Where builds, cached hex files and extra libraries live. Override with JUMPER_CACHE_DIR. */
+/** Where builds, cached hex files and extra libraries live. Override with FABWRIGHT_CACHE_DIR. */
 export function cacheDir(): string {
-  return process.env.JUMPER_CACHE_DIR ?? join(homedir(), ".cache", "jumper");
+  return process.env.FABWRIGHT_CACHE_DIR ?? join(homedir(), ".cache", "fabwright");
 }
 
 /**

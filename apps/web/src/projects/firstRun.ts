@@ -1,13 +1,13 @@
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 
 /**
- * Round 6, switch track (decision 0004): someone new opening `jumper serve` lands on the Projects
+ * Round 6, switch track (decision 0004): someone new opening `fabwright serve` lands on the Projects
  * page (the pitch and the cards), not on a canvas full of an agent's pending steps they did not ask
  * for. That happens on the server's own landing (its root redirects to ?follow=ws://<same host>/live)
  * when the active project is a fresh playground, or when this browser never opened a project.
  */
 
-const KEY = "jumper.opened";
+const KEY = "fabwright.opened";
 
 /** The person opened or created a project (or chose to stay on the canvas): no more landing on Projects. */
 export function markOpened(): void {
@@ -26,7 +26,7 @@ export function hasOpened(): boolean {
   }
 }
 
-/** True on the page `jumper serve` redirects its root to: only ?follow, pointing at this very server's /live. */
+/** True on the page `fabwright serve` redirects its root to: only ?follow, pointing at this very server's /live. */
 export function isServerLanding(loc: { search: string; host: string } = typeof location !== "undefined" ? location : { search: "", host: "" }): boolean {
   const q = new URLSearchParams(loc.search);
   const keys = [...q.keys()];
@@ -39,7 +39,7 @@ export function isServerLanding(loc: { search: string; host: string } = typeof l
   }
 }
 
-/** A playground nobody built anything in yet (`jumper serve`'s default folder). */
+/** A playground nobody built anything in yet (`fabwright serve`'s default folder). */
 export function isFreshPlayground(project: Project, dir: string): boolean {
   const name = dir.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
   return name === "playground" && project.parts.length === 0 && project.wires.length === 0;

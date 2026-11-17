@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { PartInstance, Project, PropValue, Rotation, Wire, PinRef } from "@jumper/project-format";
+import type { PartInstance, Project, PropValue, Rotation, Wire, PinRef } from "@fabwright/project-format";
 import { nextPartId } from "./parts.ts";
 
 export const WIRE_COLORS = ["#FF4D2E", "#FFB23F", "#F2E14A", "#4DA3FF", "#E9EDF2", "#2B3038", "#B47CFF"] as const;
@@ -27,7 +27,7 @@ export interface Toast {
   detail?: string;
 }
 
-export interface JumperState {
+export interface FabwrightState {
   project: Project;
   past: Project[];
   future: Project[];
@@ -101,7 +101,7 @@ export function withoutItems(p: Project, partIds: readonly string[], wireIds: re
 
 export function readTheme(): ThemeChoice {
   try {
-    const t = localStorage.getItem("jumper.theme");
+    const t = localStorage.getItem("fabwright.theme");
     if (t === "dark" || t === "light" || t === "system") return t;
   } catch {
     // storage blocked
@@ -109,8 +109,8 @@ export function readTheme(): ThemeChoice {
   return "system";
 }
 
-export function createJumperStore(initial: Project) {
-  return create<JumperState>()((set, get) => ({
+export function createFabwrightStore(initial: Project) {
+  return create<FabwrightState>()((set, get) => ({
     project: initial,
     past: [],
     future: [],
@@ -241,7 +241,7 @@ export function createJumperStore(initial: Project) {
     },
     setTheme(theme) {
       try {
-        localStorage.setItem("jumper.theme", theme);
+        localStorage.setItem("fabwright.theme", theme);
       } catch {
         // storage blocked
       }
@@ -262,7 +262,7 @@ function sameList(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
-function pruneSelection(p: Project, s: JumperState): Pick<JumperState, "selectedParts" | "selectedWires"> {
+function pruneSelection(p: Project, s: FabwrightState): Pick<FabwrightState, "selectedParts" | "selectedWires"> {
   const parts = new Set(p.parts.map((x) => x.id));
   const wires = new Set(p.wires.map((x) => x.id));
   return {
@@ -271,4 +271,4 @@ function pruneSelection(p: Project, s: JumperState): Pick<JumperState, "selected
   };
 }
 
-export type JumperStore = ReturnType<typeof createJumperStore>;
+export type FabwrightStore = ReturnType<typeof createFabwrightStore>;

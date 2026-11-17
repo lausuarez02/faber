@@ -9,20 +9,20 @@ import { hubPort, shot } from "./helpers.ts";
 // Round 7, track shape: a person draws the case outline in the Case view (any shape, any size),
 // sees where the parts go inside it as they edit (red where one runs into the wall), types a size
 // that is too small, reads what misses and what would fit, takes the size that fits and designs
-// it. Against a real `jumper serve` on a temp copy of the Muse (real CAD on the server).
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+// it. Against a real `fabwright serve` on a temp copy of the Muse (real CAD on the server).
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const MUSE = readFileSync(fileURLToPath(new URL("../../../packages/enclosure/test/fixtures/pocket-muse.json", import.meta.url)), "utf8");
 
 async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-outline-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-outline-"));
   const dir = join(root, "muse");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "jumper.json"), MUSE);
+  writeFileSync(join(dir, "fabwright.json"), MUSE);
   const port = hubPort(info, 7);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -32,7 +32,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -127,7 +127,7 @@ test("Case view: draw a custom outline, see the fit as you edit, type a size, ta
     await expect(page.getByTestId("case-size")).toContainText(new RegExp(`^${w} × ${h} × [\\d.]+ mm`), { timeout: 360_000 });
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date", { timeout: 60_000 }); // (after the mesh of the new case loads)
-    const saved = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8"));
+    const saved = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8"));
     expect(saved.enclosure.shape).toBe("custom");
     expect(saved.enclosure.size_mm).toEqual({ w, h });
     expect(saved.enclosure.outline.smooth).toBe(true);

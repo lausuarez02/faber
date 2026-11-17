@@ -1,5 +1,5 @@
 {
-  "format": "jumper-part/1",
+  "format": "fabwright-part/1",
   "id": "st7789-240-round",
   "name": "Round 1.3 in ST7789 240x240",
   "category": "display",

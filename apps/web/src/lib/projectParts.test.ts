@@ -46,7 +46,7 @@ describe("project parts in the web app", () => {
     const sync = createProjectPartsSync("http://x", (t) => changed.push([...t]), (m) => {
       throw new Error(m);
     }, fake);
-    const project = { format: "jumper/1", name: "p", parts: [{ id: "s", type: "soil-x", x: 0, y: 0, rotation: 0 }], wires: [], scenarios: [] } as never;
+    const project = { format: "fabwright/1", name: "p", parts: [{ id: "s", type: "soil-x", x: 0, y: 0, rotation: 0 }], wires: [], scenarios: [] } as never;
     expect(unknownTypes(project)).toEqual(["soil-x"]);
     expect(await sync.check(project)).toBe(true);
     expect(registry.get("soil-x")?.fidelity.origin).toBe("agent-made");

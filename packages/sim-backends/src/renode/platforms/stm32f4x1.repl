@@ -1,9 +1,9 @@
-// STM32F401 / F411 (WeAct Black Pill F411CE, Nucleo-F401RE) for Jumper. Renode 1.17's
+// STM32F401 / F411 (WeAct Black Pill F411CE, Nucleo-F401RE) for Fabwright. Renode 1.17's
 // platforms/cpus/stm32f4.repl (MIT, Antmicro; written for the F407 family, whose RCC, GPIO, EXTI,
 // USART, I2C, SPI and timer blocks the F401 / F411 share at the same addresses), copied here with one
-// change: the GPIO ports reach EXTI through Jumper's SYSCFG model, which honours EXTICR (Renode's
+// change: the GPIO ports reach EXTI through Fabwright's SYSCFG model, which honours EXTICR (Renode's
 // platform wires every port straight into EXTI, so another port's pin on the same line masks the
-// edges of the pin the firmware chose). Plus ADC1 (Renode's STM32_ADC, fed by Jumper) and its common
+// edges of the pin the firmware chose). Plus ADC1 (Renode's STM32_ADC, fed by Fabwright) and its common
 // registers. The board files set the SysTick clock to the core clock.
 fsmcBank1: Memory.MappedMemory @ sysbus 0x60000000
     size: 0x10000000
@@ -404,7 +404,7 @@ sysbus:
         // FLASH and USB tags are required for CubeMX-based projects to pass the initialization phase
         Tag <0x50000010, 0x5000003f> "USB:RESET" 0x80000000
 
-syscfg: Miscellaneous.JumperStm32Syscfg @ sysbus 0x40013800
+syscfg: Miscellaneous.FabwrightStm32Syscfg @ sysbus 0x40013800
     exti: exti
 
 cpu:
@@ -416,4 +416,4 @@ adc1: Analog.STM32_ADC @ sysbus 0x40012000
 adcCommon: Python.PythonPeripheral @ sysbus 0x40012300
     size: 0x100
     initable: true
-    filename: "/jumper/platforms/regstore.py"
+    filename: "/fabwright/platforms/regstore.py"

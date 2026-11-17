@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { engine, useJumper } from "../lib/app.ts";
+import { engine, useFabwright } from "../lib/app.ts";
 import { CONTROL_SELECTORS, controlHitRect, knobValue, tiltFromDrag, type ControlKind, type Rect } from "./controls.ts";
 import { tilt } from "./imu.ts";
 import { pressPart, releasePart } from "./press.ts";
@@ -246,7 +246,7 @@ export function ImuSurface({ id, name }: { id: string; name: string }) {
         const d = drag.current;
         drag.current = undefined;
         setDragging(false);
-        if (d && !d.moved) useJumper.getState().select([id], []);
+        if (d && !d.moved) useFabwright.getState().select([id], []);
       }}
       onPointerCancel={() => {
         drag.current = undefined;

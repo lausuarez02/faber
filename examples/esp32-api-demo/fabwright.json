@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "API demo (XIAO ESP32-S3)",
   "description": "A Seeed XIAO ESP32-S3 joins Wi-Fi, fetches the weather as JSON over HTTPS (Open-Meteo), shows it on an SSD1306 OLED and posts a reading over MQTT. Tests run offline: the API answers from a recorded cassette, the broker is a mock, and Wi-Fi drops and API errors are rehearsed.",
   "parts": [
@@ -187,7 +187,7 @@
   "network": {
     "mode": "mock",
     "wifi": {
-      "ssid": "JumperNet"
+      "ssid": "FabwrightNet"
     },
     "cassette": "open-meteo",
     "allow": [

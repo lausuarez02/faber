@@ -1,13 +1,13 @@
 # Tamagotchi pet, built by Claude Code
 
-Built from a one-line goal by Claude Code with **only Jumper's MCP tools** (no shell, no file
-tools, no access to Jumper's source). This folder is the agent's final project, unedited: wiring,
+Built from a one-line goal by Claude Code with **only Fabwright's MCP tools** (no shell, no file
+tools, no access to Fabwright's source). This folder is the agent's final project, unedited: wiring,
 firmware, scenario tests, saved OLED reference images, its own screenshot and its export.
 
 <p align="center"><img src="../../../docs/media/agent-claude-tamagotchi.gif" alt="Replay of Claude Code building the pet: parts appear, wires draw, the firmware is written, the pet animates on the OLED and 8 of 8 tests pass" width="720"></p>
 
 Video (44 s at 1440x900, the session replayed at 2x): [`docs/media/agent-claude-tamagotchi.mp4`](../../../docs/media/agent-claude-tamagotchi.mp4).
-Replay it yourself: `pnpm jumper replay examples/agent-built/claude-tamagotchi/agent-actions.jsonl`.
+Replay it yourself: `pnpm fabwright replay examples/agent-built/claude-tamagotchi/agent-actions.jsonl`.
 
 ## The prompt (exact)
 
@@ -15,24 +15,24 @@ Replay it yourself: `pnpm jumper replay examples/agent-built/claude-tamagotchi/a
 > (feed, play, sleep) and a buzzer. The pet has hunger, happiness and energy that change over time,
 > shows an animated face that reflects its mood, beeps when it needs something, and logs its state
 > over serial. Prove it works with scenario tests (e.g. pressing feed lowers hunger; ignoring it for
-> a while makes it sad and it beeps). Use the jumper MCP tools; the canvas is watched live, explain
+> a while makes it sad and it beeps). Use the fabwright MCP tools; the canvas is watched live, explain
 > each step briefly in the step's why.
 
 ## The agent and how it ran
 
 - **Agent:** Claude Code 2.1.319, default model, headless (`claude -p`), 2026-11-09.
 - **Command** (from an empty folder outside the repo):
-  `claude -p "<prompt>" --mcp-config jumper.mcp.json --strict-mcp-config --tools "" --allowedTools "mcp__jumper" --disallowedTools "Bash Edit Write Read" --output-format stream-json --verbose`.
-  The init event listed exactly 34 `mcp__jumper__*` tools and no built-in tools.
-- **MCP config:** `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <folder>` with `MCP_TOOL_TIMEOUT=600000`.
+  `claude -p "<prompt>" --mcp-config fabwright.mcp.json --strict-mcp-config --tools "" --allowedTools "mcp__fabwright" --disallowedTools "Bash Edit Write Read" --output-format stream-json --verbose`.
+  The init event listed exactly 34 `mcp__fabwright__*` tools and no built-in tools.
+- **MCP config:** `node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project <folder>` with `MCP_TOOL_TIMEOUT=600000`.
 
 | What | Number |
 | --- | --- |
 | Wall time | 358 s |
 | Cost | $1.48 |
 | Turns / tool calls | 60 / 59 |
-| Failed calls | 2: a compile error (fixed with one `read_file` and two `write_file`), and one call to the bare name `write_file` instead of `mcp__jumper__write_file` (a Claude Code naming slip, retried at once) |
-| Firmware builds | 2 (1 compile error: Arduino's auto-prototypes above `struct Button`; Jumper's hint named the fix) |
+| Failed calls | 2: a compile error (fixed with one `read_file` and two `write_file`), and one call to the bare name `write_file` instead of `mcp__fabwright__write_file` (a Claude Code naming slip, retried at once) |
+| Firmware builds | 2 (1 compile error: Arduino's auto-prototypes above `struct Button`; Fabwright's hint named the fix) |
 | Test runs | 3: 3/6, then 6/6, then 8/8 (all failures were the agent's own test timing) |
 | Workarounds for simulator bugs | none |
 
@@ -63,11 +63,11 @@ the agent-eval fixes), on a copy of this folder:
 
 | Check | Result |
 | --- | --- |
-| `jumper check` | 0 errors, 0 warnings |
-| `jumper build --force` (right after the run) | OK, not from cache, 1.3 s; flash 19806 / 32256 B, RAM 640 / 2048 B; Adafruit SSD1306 2.5.17, GFX 1.13.0, BusIO 1.17.4 |
-| `jumper test` | 8 passed, 0 failed (1 warning, see the open items) |
-| `jumper fidelity` | 6 behavioral parts, 13 items to test on real hardware |
-| `jumper screenshot --ms 30000` | `final.png`: the hungry face with "food", the stat bars, correct wiring |
+| `fabwright check` | 0 errors, 0 warnings |
+| `fabwright build --force` (right after the run) | OK, not from cache, 1.3 s; flash 19806 / 32256 B, RAM 640 / 2048 B; Adafruit SSD1306 2.5.17, GFX 1.13.0, BusIO 1.17.4 |
+| `fabwright test` | 8 passed, 0 failed (1 warning, see the open items) |
+| `fabwright fidelity` | 6 behavioral parts, 13 items to test on real hardware |
+| `fabwright screenshot --ms 30000` | `final.png`: the hungry face with "food", the stat bars, correct wiring |
 
 The tests check the goal, not just that something ran. Not asserted: the blink and bounce
 animation (visible in the video and screenshots, but no test pins them).
@@ -97,7 +97,7 @@ Still open (all minor, none blocked the agent):
 - The auto-prototype compile hint says `firmware/<sketch folder>/types.h` instead of the project's
   real path (`firmware/types.h`).
 - The action log does not say which session wrote each line, so a person's CLI checks land in the
-  same `.jumper/actions.jsonl` (`agent-actions.jsonl` here has only the agent's `mcp` lines).
+  same `.fabwright/actions.jsonl` (`agent-actions.jsonl` here has only the agent's `mcp` lines).
 - The agent never accepted its steps (nothing told it to), so the replay ends with every step
   "pending".
 
@@ -105,10 +105,10 @@ Still open (all minor, none blocked the agent):
 
 | File | What |
 | --- | --- |
-| `jumper.json` | parts, wires, scenarios |
+| `fabwright.json` | parts, wires, scenarios |
 | `firmware/main.ino`, `firmware/pet_types.h`, `firmware/main.hex` | the agent's sketch and its build |
 | `snapshots/happy-mouth.json`, `snapshots/sad-mouth.json` | OLED reference images saved with `read_display {save_as}` |
 | `shots/sad-pet.png` | the agent's own screenshot |
-| `final.png` | the verifier's `jumper screenshot --ms 30000` |
+| `final.png` | the verifier's `fabwright screenshot --ms 30000` |
 | `export/` | BOM, wiring table, firmware.hex, hardware checklist (`export` tool) |
 | `agent-actions.jsonl` | the session's action log, agent calls only (58 lines) |

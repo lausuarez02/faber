@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { BatteryMedium, Plug, PlugZap, Unplug } from "lucide-react";
-import type { Project } from "@jumper/project-format";
-import { engine, useJumper } from "../lib/app.ts";
+import type { Project } from "@fabwright/project-format";
+import { engine, useFabwright } from "../lib/app.ts";
 import { registry } from "../lib/parts.ts";
 import { useIsPhone } from "../lib/ui.ts";
 import "./power.css";
 
 /**
- * Round 6, track "power" (owner): the board's USB cable as a switch (jumper.json power.usb, decision
+ * Round 6, track "power" (owner): the board's USB cable as a switch (fabwright.json power.usb, decision
  * 0004 R2). Shown for projects with a battery or with USB already unplugged. Unplugging while it runs
  * is a power cut: the firmware stops unless the battery path powers the board; plugging back in boots
  * it from reset. While it runs it shows what powers the board and the battery's volts, current and
@@ -44,14 +44,14 @@ function read(p: Project): Reading | undefined {
 }
 
 export function setUsb(usb: boolean): void {
-  useJumper.getState().commit((p) => ({ ...p, power: { ...p.power, usb } }));
+  useFabwright.getState().commit((p) => ({ ...p, power: { ...p.power, usb } }));
   // Live in a running simulation; a new run picks it up from the project anyway.
   engine.simulation?.setPower({ usb });
 }
 
 export function PowerPill() {
-  const project = useJumper((s) => s.project);
-  const run = useJumper((s) => s.run);
+  const project = useFabwright((s) => s.project);
+  const run = useFabwright((s) => s.run);
   const phone = useIsPhone();
   const [reading, setReading] = useState<Reading | undefined>(undefined);
   const hasBattery = project.parts.some((x) => BATTERIES.has(x.type));
@@ -60,7 +60,7 @@ export function PowerPill() {
 
   useEffect(() => {
     if (!show) return;
-    const tick = () => setReading(read(useJumper.getState().project));
+    const tick = () => setReading(read(useFabwright.getState().project));
     tick();
     const t = setInterval(tick, 300);
     return () => clearInterval(t);

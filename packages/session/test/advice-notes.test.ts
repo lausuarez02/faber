@@ -5,8 +5,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
-import { parseProject } from "@jumper/project-format";
+import { registry } from "@fabwright/parts";
+import { parseProject } from "@fabwright/project-format";
 import { checkDesign } from "../src/drc.ts";
 import { adviceNotes, opsForApply, ProjectSession } from "../src/index.ts";
 
@@ -18,9 +18,9 @@ afterEach(() => {
 });
 
 function session(): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-advice-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-advice-"));
   dirs.push(dir);
-  writeFileSync(join(dir, "jumper.json"), RAW);
+  writeFileSync(join(dir, "fabwright.json"), RAW);
   return new ProjectSession({ dir, actor: "test" });
 }
 
@@ -71,7 +71,7 @@ describe("advice notes", () => {
       const ws = s.project.wires.map((w) => [w.from, w.to].map((e) => `${e.part}.${e.pin}`).sort().join("-"));
       expect(ws).toContain("d1.A-sw.1"); // the diode before the XIAO's VBUS stays
       // the XIAO's ground (it was on the boost's output ground) is still ground
-      const { buildNets } = await import("@jumper/project-format");
+      const { buildNets } = await import("@fabwright/project-format");
       const gnd = buildNets(s.project).find((n) => n.pins.some((p) => p.part === "chg" && p.pin === "GND.3"))!;
       expect(gnd.pins.some((p) => p.part === "xiao" && p.pin.startsWith("GND"))).toBe(true);
       // and undo takes the whole change back in one step

@@ -1,5 +1,5 @@
 {
-  "name": "jumper",
+  "name": "fabwright",
   "version": "0.0.0",
   "private": true,
   "description": "Figma for hardware, with a real simulator underneath.",
@@ -10,15 +10,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm --filter @jumper/web dev",
-    "build": "pnpm gen && pnpm --filter @jumper/web build",
+    "dev": "pnpm --filter @fabwright/web dev",
+    "build": "pnpm gen && pnpm --filter @fabwright/web build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "pnpm --filter @jumper/web test:e2e",
-    "gen": "pnpm --filter @jumper/project-format gen:schema && pnpm --if-present --filter @jumper/parts gen && pnpm --filter @jumper/mcp gen:docs",
-    "jumper": "node apps/cli/bin/jumper.mjs",
-    "start": "node apps/cli/bin/jumper.mjs serve"
+    "test:e2e": "pnpm --filter @fabwright/web test:e2e",
+    "gen": "pnpm --filter @fabwright/project-format gen:schema && pnpm --if-present --filter @fabwright/parts gen && pnpm --filter @fabwright/mcp gen:docs",
+    "fabwright": "node apps/cli/bin/fabwright.mjs",
+    "start": "node apps/cli/bin/fabwright.mjs serve"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

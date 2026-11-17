@@ -1,7 +1,7 @@
 # Tamagotchi firmware: how the golden .hex is built
 
 ```sh
-export JUMPER_ARDUINO_IMAGE=jumper/arduino-cli:1.5.1-avr1.8.8-libs1
+export FABWRIGHT_ARDUINO_IMAGE=fabwright/arduino-cli:1.5.1-avr1.8.8-libs1
 scripts/build-firmware.sh examples/tamagotchi/firmware/tamagotchi arduino:avr:uno examples/tamagotchi/firmware/build
 cp examples/tamagotchi/firmware/build/tamagotchi.ino.hex examples/tamagotchi/firmware/tamagotchi.hex
 rm -rf examples/tamagotchi/firmware/build

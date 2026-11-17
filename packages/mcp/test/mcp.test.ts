@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { canBuildArduino, TOOLS } from "@jumper/session";
+import { canBuildArduino, TOOLS } from "@fabwright/session";
 
-const BIN = fileURLToPath(new URL("../bin/jumper-mcp.mjs", import.meta.url));
+const BIN = fileURLToPath(new URL("../bin/fabwright-mcp.mjs", import.meta.url));
 // Round 11: Docker or the native AVR toolchain can build Blink.
 const dockerUp = canBuildArduino("arduino:avr:uno").ok || (() => {
   try {
@@ -22,13 +22,13 @@ const dockerUp = canBuildArduino("arduino:avr:uno").ok || (() => {
 type ToolResult = { isError?: boolean; content: { type: string; text?: string; data?: string }[] };
 const json = (r: ToolResult) => JSON.parse(r.content[0]!.text!) as Record<string, unknown>;
 
-describe("jumper MCP server over stdio", () => {
+describe("fabwright MCP server over stdio", () => {
   let dir: string;
   let client: Client;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-mcp-"));
-    client = new Client({ name: "jumper-test", version: "0.0.0" });
+    dir = mkdtempSync(join(tmpdir(), "fabwright-mcp-"));
+    client = new Client({ name: "fabwright-test", version: "0.0.0" });
     await client.connect(new StdioClientTransport({ command: process.execPath, args: [BIN, "--project", dir], stderr: "ignore" }));
   }, 30_000);
 
@@ -49,13 +49,13 @@ describe("jumper MCP server over stdio", () => {
 
   it("serves the agent guide, catalog and project as resources", async () => {
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual(["jumper://docs/hardware", "jumper://docs/agents", "jumper://parts", "jumper://project"]);
-    const hw = await client.readResource({ uri: "jumper://docs/hardware" });
+    expect(resources.map((r) => r.uri)).toEqual(["fabwright://docs/hardware", "fabwright://docs/agents", "fabwright://parts", "fabwright://project"]);
+    const hw = await client.readResource({ uri: "fabwright://docs/hardware" });
     const text = String((hw.contents[0] as { text?: string }).text);
     expect(text).toMatch(/Always think how it goes inside/);
     expect(text).toMatch(/Insertion order/);
     expect(text).toMatch(/Buy.*\n.*Print.*\n.*Assemble.*\n.*Flash/);
-    const parts = await client.readResource({ uri: "jumper://parts" });
+    const parts = await client.readResource({ uri: "fabwright://parts" });
     expect(String((parts.contents[0] as { text?: string }).text)).toMatch(/arduino-uno \[board/);
   });
 
@@ -76,7 +76,7 @@ describe("jumper MCP server over stdio", () => {
     await expect(client.getPrompt({ name: "nope" })).rejects.toThrow(/No prompt 'nope'.*Fix:/);
     const ins = client.getInstructions() ?? "";
     expect(ins).toMatch(/Design for assembly/);
-    expect(ins).toMatch(/resource jumper:\/\/docs\/hardware; prompts design-device, build-kit, design-for-assembly/);
+    expect(ins).toMatch(/resource fabwright:\/\/docs\/hardware; prompts design-device, build-kit, design-for-assembly/);
   });
 
   it("returns errors that say what, why and how to fix", async () => {

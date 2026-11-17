@@ -1,6 +1,6 @@
 // ST7735 1.8in 128x160 colour TFT (black-tab glass) on SPI: the same MIPI-DCS controller model
 // as the ILI9341 (lib/mipiPanel.ts) with the ST7735's geometry, RGB glass and rotation table.
-import type { PartModelFactory } from "@jumper/sim-core";
+import type { PartModelFactory } from "@fabwright/sim-core";
 import type { PanelOptions } from "../../lib/mipiPanel.ts";
 import { createTftModule } from "../ili9341-tft/model.ts";
 

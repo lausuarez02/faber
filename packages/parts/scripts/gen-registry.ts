@@ -2,7 +2,7 @@
 // Each folder: part.json, fidelity.json, visual.svg, model.ts (exports `create: PartModelFactory`), model.test.ts.
 // JSON and SVG are inlined so the registry works in the browser, Node tests and the CLI without bundler tricks.
 // Every folder is validated first (see src/spec/validate.ts); any problem aborts without writing.
-// Run: pnpm --filter @jumper/parts gen   (or `pnpm gen` at the root). The output is committed.
+// Run: pnpm --filter @fabwright/parts gen   (or `pnpm gen` at the root). The output is committed.
 //   --check   exit 1 if the committed file is stale instead of writing it.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { REGISTRY_FILE, renderRegistry } from "./registry-codegen.ts";

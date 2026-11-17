@@ -4,7 +4,7 @@
 // Built through the CAD kernel; the STLs are measured.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { generateCase } from "../src/engine.ts";
 import { checkMesh, type Mesh } from "../src/mesh.ts";
 import { specOf, zHits } from "./helpers.ts";

@@ -1,11 +1,11 @@
 import { ASSEMBLY_CHECKLIST, BUILD_KIT_ANSWER, BUILD_KIT_PARTS, LOOP, PROMPTS, RULES, type LoopStep, type PromptName } from "./knowledge.ts";
 
-export const SKILL_NAME = "jumper-hardware";
+export const SKILL_NAME = "fabwright-hardware";
 export const SKILL_DESCRIPTION =
-  "Load this first, before any jumper tool call. Design and build a real hardware device with Jumper's tools (the jumper MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something.";
+  "Load this first, before any fabwright tool call. Design and build a real hardware device with Fabwright's tools (the fabwright MCP server): plan it, pick the smallest parts that fit, think how every part goes inside (mounting, insertion order, wire room, USB and button access, battery safety), design the printable case, test the firmware, and answer what to buy, what to print and how to put it together. Use whenever the person wants a device, gadget, circuit, Arduino / ESP32 / Pico project, a case or 3D print, a parts list, or asks what they need to build something.";
 
-/** The line that marks a file Jumper wrote (and may rewrite). Files without it are never overwritten. */
-export const MARKER = "Written by Jumper (jumper skill install).";
+/** The line that marks a file Fabwright wrote (and may rewrite). Files without it are never overwritten. */
+export const MARKER = "Written by Fabwright (fabwright skill install).";
 
 export interface RenderOptions {
   /** Tool names the server really has (TOOLS.map(t => t.name)); steps that need a missing one use their fallback. */
@@ -33,9 +33,9 @@ function buildKitMd(o: RenderOptions): string {
 /** The guide body every long face shares (skill, AGENTS.md, the MCP resource). */
 export function renderGuide(o: RenderOptions): string {
   return [
-    "# Building a real device with Jumper",
+    "# Building a real device with Fabwright",
     "",
-    "Jumper is a hardware sandbox with a real simulator, reached through the `jumper` MCP tools (or the `jumper` CLI with the same operations). A person who wants a device wants to **hold it**: so from the first answer, think about what they will buy, what they will print and how they will put the stuff inside. Every error from Jumper says what failed, why and the fix: do what it says.",
+    "Fabwright is a hardware sandbox with a real simulator, reached through the `fabwright` MCP tools (or the `fabwright` CLI with the same operations). A person who wants a device wants to **hold it**: so from the first answer, think about what they will buy, what they will print and how they will put the stuff inside. Every error from Fabwright says what failed, why and the fix: do what it says.",
     "",
     "## The loop",
     "",
@@ -64,7 +64,7 @@ export function renderGuide(o: RenderOptions): string {
   ].join("\n");
 }
 
-/** <project>/.claude/skills/jumper-hardware/SKILL.md (and the plugin's copy). */
+/** <project>/.claude/skills/fabwright-hardware/SKILL.md (and the plugin's copy). */
 export function renderSkillMd(o: RenderOptions): string {
   return [
     "---",
@@ -72,7 +72,7 @@ export function renderSkillMd(o: RenderOptions): string {
     `description: ${JSON.stringify(SKILL_DESCRIPTION)}`,
     "---",
     "",
-    `<!-- ${MARKER} Regenerate with: jumper skill install --project <dir>. A copy edited by hand is kept unless --force. -->`,
+    `<!-- ${MARKER} Regenerate with: fabwright skill install --project <dir>. A copy edited by hand is kept unless --force. -->`,
     "",
     renderGuide(o),
   ].join("\n");
@@ -81,11 +81,11 @@ export function renderSkillMd(o: RenderOptions): string {
 /** <project>/AGENTS.md for Codex and other agents that read it. */
 export function renderAgentsMd(o: RenderOptions, projectName?: string): string {
   return [
-    `<!-- ${MARKER} Regenerate with: jumper skill install --project <dir>. -->`,
+    `<!-- ${MARKER} Regenerate with: fabwright skill install --project <dir>. -->`,
     "",
     `# AGENTS.md${projectName ? `: ${projectName}` : ""}`,
     "",
-    "This folder is a Jumper project (jumper.json, firmware/, case/). Change it through the `jumper` MCP server (`jumper mcp --project .`, or the running Jumper app's /mcp) or the `jumper` CLI, never by editing jumper.json by hand. The same guide is in `.claude/skills/jumper-hardware/SKILL.md`.",
+    "This folder is a Fabwright project (fabwright.json, firmware/, case/). Change it through the `fabwright` MCP server (`fabwright mcp --project .`, or the running Fabwright app's /mcp) or the `fabwright` CLI, never by editing fabwright.json by hand. The same guide is in `.claude/skills/fabwright-hardware/SKILL.md`.",
     "",
     renderGuide(o).replace(/^# .*\n/, ""),
   ].join("\n");
@@ -97,11 +97,11 @@ export function renderAgentsMd(o: RenderOptions, projectName?: string): string {
  */
 export function renderClaudeMd(): string {
   return [
-    `<!-- ${MARKER} Regenerate with: jumper skill install --project <dir>. -->`,
+    `<!-- ${MARKER} Regenerate with: fabwright skill install --project <dir>. -->`,
     "",
-    "# Jumper project",
+    "# Fabwright project",
     "",
-    `This folder is a Jumper hardware project: build it with the \`jumper\` MCP tools. Jumper's hardware guide is imported below (the same guide is the \`${SKILL_NAME}\` skill): from the first answer, think how the person will put the parts inside, what they will buy and what they will print.`,
+    `This folder is a Fabwright hardware project: build it with the \`fabwright\` MCP tools. Fabwright's hardware guide is imported below (the same guide is the \`${SKILL_NAME}\` skill): from the first answer, think how the person will put the parts inside, what they will buy and what they will print.`,
     "",
     "@AGENTS.md",
     "",
@@ -112,11 +112,11 @@ export function renderClaudeMd(): string {
 export function renderInstructionsBlock(o: RenderOptions): string {
   const kit = (BUILD_KIT_ANSWER.needs ?? []).every((n) => o.tools.includes(n)) ? "get_build_kit" : "export_manufacturing (then read_file its BOM.md, PRINT.md, ASSEMBLY.md)";
   return [
-    `Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print. If your client lists the ${SKILL_NAME} skill (Claude Code in a Jumper project), load it first.`,
+    `Design for assembly (any device a person will hold): always think how the stuff goes inside, what they buy and what they print. If your client lists the ${SKILL_NAME} skill (Claude Code in a Fabwright project), load it first.`,
     ...RULES.filter((r) => r.short).map((r) => `- ${r.short}`),
     `- Before design_case think how it goes together: what mounts where, the insertion order, wire room, USB / button / switch access, battery safety.${o.tools.includes("get_assembly_plan") ? " After it, get_assembly_plan works out the shell, holder and order of every part with a picture per step: fix what its assembly-* checks flag." : ""}`,
     `- "What do I need to build it?": ${kit}, then answer Buy / Print / Assemble / Flash with totals.`,
-    `Hardware guide: resource jumper://docs/hardware; prompts ${PROMPTS.map((p) => p.name).join(", ")}.`,
+    `Hardware guide: resource fabwright://docs/hardware; prompts ${PROMPTS.map((p) => p.name).join(", ")}.`,
   ].join("\n");
 }
 
@@ -141,6 +141,6 @@ export function renderPrompt(name: PromptName | string, args: Record<string, str
         "Tell me the insertion order in a few numbered steps and what you changed.",
       ].join("\n");
     default:
-      throw new Error(`No prompt '${name}'. Why: Jumper's prompts are ${PROMPTS.map((p) => p.name).join(", ")}. Fix: call prompts/get with one of those names.`);
+      throw new Error(`No prompt '${name}'. Why: Fabwright's prompts are ${PROMPTS.map((p) => p.name).join(", ")}. Fix: call prompts/get with one of those names.`);
   }
 }

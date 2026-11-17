@@ -4,11 +4,11 @@ import { defineConfig, devices } from "@playwright/test";
 // and a phone viewport (the brief requires both). Screenshots land in test-results/.
 //
 // Ports (decision 0003, C9): E2E_PORT is the Vite port (default 5173) and E2E_HUB_PORT_BASE the
-// first port specs give to the `jumper serve` processes they start (default 7900, see
+// first port specs give to the `fabwright serve` processes they start (default 7900, see
 // e2e/helpers.ts hubPort). Parallel worktrees each pick their own pair, e.g. E2E_PORT=5174
 // E2E_HUB_PORT_BASE=8000. Never 7780: a person may be using it.
 const PORT = Number(process.env.E2E_PORT ?? 5173);
-if (!Number.isInteger(PORT) || PORT <= 0 || PORT === 7780) throw new Error(`E2E_PORT=${process.env.E2E_PORT} is not a usable port (7780 is reserved for a person's jumper serve). Fix: pick another, e.g. 5174.`);
+if (!Number.isInteger(PORT) || PORT <= 0 || PORT === 7780) throw new Error(`E2E_PORT=${process.env.E2E_PORT} is not a usable port (7780 is reserved for a person's fabwright serve). Fix: pick another, e.g. 5174.`);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({

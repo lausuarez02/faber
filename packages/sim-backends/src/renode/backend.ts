@@ -1,25 +1,25 @@
 // Renode as a synchronous McuBackend (round 10), so sim-core's Simulation drives STM32 and nRF52
 // boards exactly like avr8js and rp2040js.
 //
-// Renode runs in its own process (Docker image jumper/renode). A C# bridge compiled into it
-// (platforms/JumperBridge.cs) dials back to a SyncBridgeLink and carries every signal as a
+// Renode runs in its own process (Docker image fabwright/renode). A C# bridge compiled into it
+// (platforms/FabwrightBridge.cs) dials back to a SyncBridgeLink and carries every signal as a
 // time-stamped line, in emulation order, on one socket:
 //   GPIO     every board pin's output edges (G) with virtual ns; inputs (I) applied between steps
 //   UART     Serial's TX bytes (U), each with its own virtual ns; RX bytes (X)
-//   I2C      one JumperI2cTarget per address the project's I2C parts answer on: writes (IW) go one
+//   I2C      one FabwrightI2cTarget per address the project's I2C parts answer on: writes (IW) go one
 //            way, reads (IR) block the CPU until the part models answer (D)
-//   SPI      a JumperSpiTarget on the controller SPI uses: each byte (SX) waits for the MISO byte the
+//   SPI      a FabwrightSpiTarget on the controller SPI uses: each byte (SX) waits for the MISO byte the
 //            part models return (M), or flows one way (SW) when every SPI part is write-only
 //   ADC      the voltage on an analog pin (A), read by the board's ADC model at conversion time
 // Time: Renode only moves inside R (RunFor), and step() blocks until it parks again (T), so
-// Jumper owns the clock and runs are deterministic.
+// Fabwright owns the clock and runs are deterministic.
 //
 // Renode starts lazily on the first step(): by then the Simulation has attached the parts, so the
 // bridge knows which I2C addresses to answer and whether SPI needs MISO.
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { I2cBus, McuBackend, McuBusPins, McuCapability, PinState, SpiBus, Unsubscribe } from "@jumper/sim-core";
+import type { I2cBus, McuBackend, McuBusPins, McuCapability, PinState, SpiBus, Unsubscribe } from "@fabwright/sim-core";
 import { BridgeTimeoutError, SyncBridgeLink } from "../qemu-esp/sync-link.ts";
 import { renodeBoardOf, renodeBusPins, type RenodeBoard } from "./boards.ts";
 import { launchRenode, PLATFORMS_DIR, renodeRuntime, renodeUnavailable, type RenodeProcess } from "./launcher.ts";
@@ -53,7 +53,7 @@ const BLOCKING = ["T ", "IR ", "IC ", "SX ", "H ", "E "];
 const ELF_MAGIC = [0x7f, 0x45, 0x4c, 0x46];
 
 export class RenodeBackend implements McuBackend {
-  /** Renode runs in another process (Docker or a native Renode): only the Jumper server starts it. */
+  /** Renode runs in another process (Docker or a native Renode): only the Fabwright server starts it. */
   readonly kind = "process" as const;
   readonly cyclesPerSecond: number;
   readonly vcc: number;
@@ -110,7 +110,7 @@ export class RenodeBackend implements McuBackend {
     return this.link !== undefined;
   }
 
-  /** Intel HEX text (what Jumper's build keeps for every board) or an ELF file's bytes. */
+  /** Intel HEX text (what Fabwright's build keeps for every board) or an ELF file's bytes. */
   load(firmware: Uint8Array | string): void {
     const bytes = typeof firmware === "string" ? undefined : firmware;
     if (bytes && ELF_MAGIC.every((b, i) => bytes[i] === b)) {
@@ -234,54 +234,54 @@ export class RenodeBackend implements McuBackend {
   private ensureStarted(): void {
     if (this.link) return;
     const fw = this.firmware;
-    if (!fw) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (Jumper's build writes what the Renode backend loads).`);
+    if (!fw) throw new Error(`no firmware loaded on '${this.board.type}'. Fix: build the sketch first (Fabwright's build writes what the Renode backend loads).`);
     const runtime = this.opts.runtime ?? renodeRuntime();
     const why = this.opts.launch ? undefined : renodeUnavailable(this.opts.image, runtime);
     if (why) throw new Error(why);
     const t0 = Date.now();
-    const runDir = mkdtempSync(join(tmpdir(), "jumper-renode-"));
+    const runDir = mkdtempSync(join(tmpdir(), "fabwright-renode-"));
     this.runDir = runDir;
     const fwFile = fw.kind === "elf" ? "firmware.elf" : "firmware.hex";
     writeFileSync(join(runDir, fwFile), fw.data);
-    writeFileSync(join(runDir, "models.cs"), bundleCSharp(["JumperBridge.cs", ...(this.board.csharp ?? [])]));
+    writeFileSync(join(runDir, "models.cs"), bundleCSharp(["FabwrightBridge.cs", ...(this.board.csharp ?? [])]));
     writeFileSync(join(runDir, "extra.repl"), this.extraRepl());
     const link = new SyncBridgeLink({ blocking: BLOCKING });
     this.link = link;
     const docker = runtime === "docker";
     const host = docker ? "host.docker.internal" : "127.0.0.1";
-    // Docker mounts ./platforms at /jumper/platforms; a native Renode gets a copy with those paths rewritten.
-    let root = "/jumper";
+    // Docker mounts ./platforms at /fabwright/platforms; a native Renode gets a copy with those paths rewritten.
+    let root = "/fabwright";
     if (!docker) {
       root = runDir;
       cpSync(PLATFORMS_DIR, join(runDir, "platforms"), { recursive: true });
       for (const f of readdirSync(join(runDir, "platforms"))) {
         if (!/\.(repl|py)$/.test(f)) continue;
         const file = join(runDir, "platforms", f);
-        writeFileSync(file, readFileSync(file, "utf8").replaceAll("/jumper/platforms", join(runDir, "platforms")));
+        writeFileSync(file, readFileSync(file, "utf8").replaceAll("/fabwright/platforms", join(runDir, "platforms")));
       }
     }
-    const platform = this.board.platform.startsWith("/jumper/") ? this.board.platform.replace("/jumper", root) : this.board.platform;
-    const run = docker ? "/jumper/run" : runDir;
+    const platform = this.board.platform.startsWith("/fabwright/") ? this.board.platform.replace("/fabwright", root) : this.board.platform;
+    const run = docker ? "/fabwright/run" : runDir;
     writeFileSync(
       join(runDir, "start.resc"),
       [
         `include @${run}/models.cs`,
-        `mach create "jumper"`,
+        `mach create "fabwright"`,
         `machine LoadPlatformDescription @${platform}`,
         `machine LoadPlatformDescription @${run}/extra.repl`,
-        ...(this.board.erasedFlash ?? []).map((r) => `sysbus.jumper Fill ${r.start} ${r.size} 255`),
+        ...(this.board.erasedFlash ?? []).map((r) => `sysbus.fabwright Fill ${r.start} ${r.size} 255`),
         fw.kind === "elf" ? `sysbus LoadELF @${run}/${fwFile}` : `sysbus LoadHEX @${run}/${fwFile}`,
         // An Intel HEX has no symbols to find the vector table from: the board says where it is.
-        ...(this.board.bootFrom !== undefined ? [`sysbus.jumper BootVector ${this.board.bootFrom}`] : []),
+        ...(this.board.bootFrom !== undefined ? [`sysbus.fabwright BootVector ${this.board.bootFrom}`] : []),
         ...(fw.kind === "ihex" || this.board.erasedFlash || this.board.bootFrom !== undefined ? [`sysbus.cpu VectorTableOffset 0x${this.board.vectorTableOffset.toString(16)}`] : []),
         // One instruction per core clock cycle, so DWT->CYCCNT and busy loops match the chip's clock.
         `sysbus.cpu PerformanceInMips ${Math.round(this.board.clockHz / 1e6)}`,
         ...(this.board.cpuSettings ?? []).map((c) => `sysbus.cpu ${c}`),
-        ...(this.board.wakeWfeOnInterrupts ? ["sysbus.jumper WakeWfeOnInterrupts"] : []),
+        ...(this.board.wakeWfeOnInterrupts ? ["sysbus.fabwright WakeWfeOnInterrupts"] : []),
         `emulation SetGlobalAdvanceImmediately true`,
         `logLevel ${this.opts.logLevel ?? 3}`,
-        `sysbus.jumper SpiNeedsMiso ${this.spi?.needsMiso() ?? true}`,
-        `sysbus.jumper Connect "${host}" ${link.port}`,
+        `sysbus.fabwright SpiNeedsMiso ${this.spi?.needsMiso() ?? true}`,
+        `sysbus.fabwright Connect "${host}" ${link.port}`,
         "",
       ].join("\n"),
     );
@@ -296,7 +296,7 @@ export class RenodeBackend implements McuBackend {
       this.close();
       throw new Error(
         `Renode did not start board '${this.board.type}': ${(e as Error).message}${errLines ? `. Renode said: ${errLines}` : ""}. ` +
-          `Fix: if Docker is fine, this is a bug in Jumper's ${this.board.type} platform or models: report it with the Renode log (run with RenodeBackendOptions.logFile to keep it).`,
+          `Fix: if Docker is fine, this is a bug in Fabwright's ${this.board.type} platform or models: report it with the Renode log (run with RenodeBackendOptions.logFile to keep it).`,
       );
     }
     this.startupMs = Date.now() - t0;
@@ -319,15 +319,15 @@ export class RenodeBackend implements McuBackend {
   private extraRepl(): string {
     const b = this.board;
     // Every board: the bridge and a DWT cycle counter (STM32duino and Mbed busy-wait on DWT->CYCCNT).
-    const lines: string[] = ["jumper: Miscellaneous.JumperBridge @ sysbus 0x5FFF0000", "", "dwt: Miscellaneous.JumperDwt @ sysbus 0xE0001000", ""];
+    const lines: string[] = ["fabwright: Miscellaneous.FabwrightBridge @ sysbus 0x5FFF0000", "", "dwt: Miscellaneous.FabwrightDwt @ sysbus 0xE0001000", ""];
     if (b.i2c && this.i2c && (b.i2c.bridge ?? "targets") === "targets") {
       const addrs = [...new Set(this.i2c.list().map((d) => d.address))].sort((x, y) => x - y);
       for (const a of addrs) {
-        lines.push(`jumperI2c${a.toString(16)}: Miscellaneous.JumperI2cTarget @ ${b.i2c.controller} 0x${a.toString(16)}`, `    address: ${a}`, "");
+        lines.push(`fabwrightI2c${a.toString(16)}: Miscellaneous.FabwrightI2cTarget @ ${b.i2c.controller} 0x${a.toString(16)}`, `    address: ${a}`, "");
       }
     }
     if (b.spi && this.spi && this.spi.list().length > 0 && (b.spi.bridge ?? "targets") === "targets") {
-      lines.push(`jumperSpi: Miscellaneous.JumperSpiTarget @ ${b.spi.controller}`, `    bus: "${b.spi.controller}"`, `    sync: ${this.spi.needsMiso() ? "true" : "false"}`, "");
+      lines.push(`fabwrightSpi: Miscellaneous.FabwrightSpiTarget @ ${b.spi.controller}`, `    bus: "${b.spi.controller}"`, `    sync: ${this.spi.needsMiso() ? "true" : "false"}`, "");
     }
     if (this.opts.extraRepl) lines.push(this.opts.extraRepl);
     return lines.join("\n") + "\n";
@@ -383,7 +383,7 @@ export class RenodeBackend implements McuBackend {
             const v: 0 | 1 = f[2] === "1" ? 1 : 0;
             if (this.pwm.has(id)) break; // a PWM peripheral owns the pin
             if (f[3] !== "o") {
-              // An input: its level is what Jumper drives (the port echoes it); only a direction change matters.
+              // An input: its level is what Fabwright drives (the port echoes it); only a direction change matters.
               if (this.driven.delete(id)) {
                 const st: PinState = { mode: "input", value: this.inputs.get(id) ?? 0 };
                 for (const cb of this.pinListeners) cb(id, st, this._cycles);
@@ -416,7 +416,7 @@ export class RenodeBackend implements McuBackend {
             break;
           }
           case "IC": {
-            // Jumper's own controller model asks whether a device ACKs the address.
+            // Fabwright's own controller model asks whether a device ACKs the address.
             this.advance(BigInt(f[3]!));
             const ack = this.i2cBegin(parseInt(f[1]!, 16), f[2] === "r", true);
             this.send(`K ${ack ? 1 : 0}`);

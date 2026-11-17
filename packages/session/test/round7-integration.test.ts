@@ -7,8 +7,8 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
-import { layoutCase, layoutInput } from "@jumper/enclosure";
+import { registry } from "@fabwright/parts";
+import { layoutCase, layoutInput } from "@fabwright/enclosure";
 import { ProjectSession } from "../src/index.ts";
 import { planDevice } from "../src/planner.ts";
 
@@ -18,8 +18,8 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(async () => {
-  process.env.JUMPER_CASE_PDF = "0";
-  dir = mkdtempSync(join(tmpdir(), "jumper-r7-"));
+  process.env.FABWRIGHT_CASE_PDF = "0";
+  dir = mkdtempSync(join(tmpdir(), "fabwright-r7-"));
   s = new ProjectSession({ dir, actor: "test" });
   await call("new_project", { template: "blank", name: "Talking egg" });
   for (const [type, id, props] of [
@@ -58,7 +58,7 @@ describe("round 7 integration: the talking egg", () => {
     expect(r.size_mm.h / r.size_mm.w).toBeLessThan(1.4);
     expect(r.misses).toEqual([]);
     // the same layout design_case cuts: the speaker's grille is a field of holes in the back
-    const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+    const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
     const L = layoutCase(layoutInput({ ...p, enclosure: { shape: "custom", outline: EGG } }, (t) => registry.get(t)?.spec));
     const g = L.openings.find((o) => o.kind === "grille" && o.part === "spk1")!;
     expect(g.face).toBe("back");
@@ -77,6 +77,6 @@ describe("round 7 integration: the talking egg", () => {
     for (const x of r.suggestions) expect(x.change.length).toBeGreaterThan(0);
     const d = await call("design_case", { shape: "custom", outline: EGG, size_mm: { w: 60, h: 78 } });
     expect(d.saved).toBe(false);
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).enclosure).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure).toBeUndefined();
   }, 120_000);
 });

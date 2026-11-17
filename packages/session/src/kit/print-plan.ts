@@ -3,14 +3,14 @@
  * its material, colour, orientation, supports, layer height, infill, and an estimate of the grams
  * and the time, plus what to send a print service. The estimate comes from the mesh with a
  * documented formula (MESH_METHOD); when PrusaSlicer is installed on this computer (never bundled:
- * it is AGPL) it can slice the STL instead and Jumper reads its own numbers from the G-code.
+ * it is AGPL) it can slice the STL instead and Fabwright reads its own numbers from the G-code.
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
-import type { CaseFile, CaseReport } from "@jumper/enclosure";
+import type { CaseFile, CaseReport } from "@fabwright/enclosure";
 import { stlStats } from "./stl.ts";
 import type { PrintItem, PrintPlan } from "./types.ts";
 
@@ -70,13 +70,13 @@ function orientationWords(p: CaseFile["print"]): string {
 export interface Slicer {
   name: string;
   path: string;
-  /** Jumper can drive its command line (PrusaSlicer); others are only detected. */
+  /** Fabwright can drive its command line (PrusaSlicer); others are only detected. */
   cli: boolean;
 }
 
-/** PrusaSlicer / OrcaSlicer installed on this computer (JUMPER_SLICER points at one; JUMPER_SLICER=none turns it off). */
+/** PrusaSlicer / OrcaSlicer installed on this computer (FABWRIGHT_SLICER points at one; FABWRIGHT_SLICER=none turns it off). */
 export function detectSlicer(env: NodeJS.ProcessEnv = process.env): Slicer | undefined {
-  const forced = env.JUMPER_SLICER;
+  const forced = env.FABWRIGHT_SLICER;
   if (forced === "none" || forced === "0") return undefined;
   if (forced) return existsSync(forced) ? { name: /orca/i.test(forced) ? "OrcaSlicer" : "PrusaSlicer", path: forced, cli: !/orca/i.test(forced) } : undefined;
   const cands: Slicer[] = [
@@ -100,7 +100,7 @@ export function parseGcodeEstimate(gcode: string): { minutes: number; grams: num
 }
 
 function sliceOnce(slicer: Slicer, stl: string, o: { layer: number; infill: number; walls: number; material: string }, timeoutMs: number): Promise<{ minutes: number; grams: number } | { error: string }> {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-slice-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-slice-"));
   const out = join(dir, "out.gcode");
   const args = ["--export-gcode", "--layer-height", String(o.layer), "--first-layer-height", "0.2", "--fill-density", `${Math.round(o.infill * 100)}%`, "--perimeters", String(o.walls), "--top-solid-layers", "5", "--bottom-solid-layers", "5", "--filament-type", o.material.includes("PETG") ? "PETG" : "PLA", "--filament-density", String(DENSITY[o.material] ?? 1.24), "--output", out, stl];
   return new Promise((res) => {
@@ -125,7 +125,7 @@ export interface PrintPlanInput {
   stale?: string;
   /** "auto" slices when a slicer with a command line is found (results cached), "cached" uses only earlier slices, "off" never. */
   slicer: "auto" | "cached" | "off";
-  /** Where slicer results are cached (.jumper/kit-slicer.json). */
+  /** Where slicer results are cached (.fabwright/kit-slicer.json). */
   cacheFile?: string;
   env?: NodeJS.ProcessEnv;
   timeoutMs?: number;
@@ -136,7 +136,7 @@ export async function printPlan(inp: PrintPlanInput): Promise<PrintPlan> {
   const proc = (r?.enclosure.params?.process ?? "fdm") as PrintPlan["process"];
   const found = inp.slicer === "off" ? undefined : detectSlicer(inp.env);
   const slicerInfo: PrintPlan["slicer"] = found ? { found: true, name: found.name, path: found.path, used: false } : { found: false, used: false };
-  if (found && !found.cli) slicerInfo.why = `${found.name} is installed, but Jumper drives only PrusaSlicer's command line: the numbers are estimated from the meshes (open case.3mf in ${found.name} for its own)`;
+  if (found && !found.cli) slicerInfo.why = `${found.name} is installed, but Fabwright drives only PrusaSlicer's command line: the numbers are estimated from the meshes (open case.3mf in ${found.name} for its own)`;
   if (!r) {
     return { process: "none", items: [], total_grams: 0, total_minutes: 0, method: MESH_METHOD, slicer: slicerInfo, service: { files: [], material: "", say: [] }, settings: [], ...(inp.stale ? { stale: inp.stale } : {}) };
   }

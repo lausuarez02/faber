@@ -2,8 +2,8 @@
 // backpack modules. PCF8574 pin map (the one LiquidCrystal_PCF8574 and LiquidCrystal_I2C use):
 // P0 = RS, P1 = RW, P2 = EN, P3 = backlight, P4..P7 = D4..D7. The HD44780 latches a nibble on
 // the falling edge of EN; it powers up in 8-bit mode and the library switches it to 4-bit.
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { bytesToBase64 } from "@jumper/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { bytesToBase64 } from "@fabwright/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { str } from "../../lib/props.ts";
 

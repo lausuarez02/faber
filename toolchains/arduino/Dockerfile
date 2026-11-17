@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-# Reproducible Arduino build image for Jumper firmware.
+# Reproducible Arduino build image for Fabwright firmware.
 # Multi-arch: builds natively on linux/amd64 and linux/arm64 (Apple Silicon).
-#   docker build -t jumper/arduino-cli:1.5.1-avr1.8.8-libs3 toolchains/arduino
+#   docker build -t fabwright/arduino-cli:1.5.1-avr1.8.8-libs3 toolchains/arduino
 # The -libsN suffix counts the pinned library set below (LIBRARIES.md). Bump N when it changes.
 # Versions are pinned; bump them together and record the change in examples/*/firmware/BUILD.md.
 FROM debian:bookworm-20251020-slim
@@ -63,7 +63,7 @@ RUN arduino-cli lib update-index \
 
 # libs3 (2026-11-10): the libraries agents reach for on round screens, LED strips and DHT sensors.
 # A layer of its own so the libs2 layer above stays cached. Adafruit NeoPixel is LGPL-3.0: it is
-# compiled into the person's own firmware inside this image, never shipped in Jumper (LIBRARIES.md).
+# compiled into the person's own firmware inside this image, never shipped in Fabwright (LIBRARIES.md).
 RUN arduino-cli lib install --no-deps \
       "Adafruit GC9A01A@1.2.0" \
       "DHT sensor library@1.4.7" \
@@ -74,7 +74,7 @@ RUN arduino-cli lib install --no-deps \
  && chmod -R a+rX /opt/arduino \
  && arduino-cli lib list
 
-# Jumper's own Apache-2.0 LiquidCrystal_I2C (the API of the popular library, whose upstream has no
+# Fabwright's own Apache-2.0 LiquidCrystal_I2C (the API of the popular library, whose upstream has no
 # license). Lives in toolchains/arduino/libraries/.
 COPY libraries/LiquidCrystal_I2C /opt/arduino/user/libraries/LiquidCrystal_I2C
 RUN chmod -R a+rX /opt/arduino/user/libraries/LiquidCrystal_I2C

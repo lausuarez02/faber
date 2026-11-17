@@ -13,14 +13,14 @@
     { "id": "delay_s", "label": "Hold time (Tx knob)", "type": "number", "default": 5, "min": 3, "max": 300, "step": 1, "unit": "s", "description": "How long OUT stays HIGH after motion. Knob fully anticlockwise ≈ 3 s, clockwise ≈ 300 s." },
     {
       "id": "retrigger",
-      "label": "Trigger mode (jumper)",
+      "label": "Trigger mode (fabwright)",
       "type": "enum",
       "default": "repeat",
       "options": [
         { "value": "repeat", "label": "Repeat (H): motion keeps OUT HIGH" },
         { "value": "single", "label": "Single (L): one fixed pulse per trigger" }
       ],
-      "description": "Jumper H restarts the hold time on every movement; L gives one pulse, then a new one if motion is still there after the block time."
+      "description": "Fabwright H restarts the hold time on every movement; L gives one pulse, then a new one if motion is still there after the block time."
     },
     { "id": "warmup_s", "label": "Warm-up time", "type": "number", "default": 0, "min": 0, "max": 60, "step": 1, "unit": "s", "description": "Time after power-up during which motion is ignored. Real modules need 30–60 s (and may trigger falsely meanwhile); 0 keeps tests fast." }
   ],

@@ -1,6 +1,6 @@
-import { buildNets, type PartInstance, type Project } from "@jumper/project-format";
-import { AGENT_MADE_LABEL } from "@jumper/parts";
-import type { PartRegistry } from "@jumper/sim-core";
+import { buildNets, type PartInstance, type Project } from "@fabwright/project-format";
+import { AGENT_MADE_LABEL } from "@fabwright/parts";
+import type { PartRegistry } from "@fabwright/sim-core";
 import { assemblyReason, assemblyStyle, wireTotals, type AssemblyStyle, type WireCut } from "./assembly.ts";
 
 /**
@@ -66,7 +66,7 @@ export function partValue(p: PartInstance, registry: PartRegistry): string | und
 export function partLabel(p: PartInstance, registry: PartRegistry): { name: string; note: string } {
   const spec = registry.get(p.type)?.spec;
   const simName = spec?.name ?? p.type;
-  if (p.standIn) return { name: p.standIn, note: `STAND-IN: Jumper simulated it as a ${simName}; buy the real part and wire its matching pins (check its datasheet)` };
+  if (p.standIn) return { name: p.standIn, note: `STAND-IN: Fabwright simulated it as a ${simName}; buy the real part and wire its matching pins (check its datasheet)` };
   if (!spec) return { name: p.type, note: "not in the catalog: not simulated" };
   if (isAgentMade(registry, p.type)) return { name: simName, note: `${AGENT_MADE_LABEL} (made by the agent from a description, check it against the real part's datasheet)` };
   return { name: simName, note: "" };
@@ -99,7 +99,7 @@ export function bomMarkdown(project: Project, registry: PartRegistry, style: Ass
     const note = made ? "made by the agent from a description; check it against the real part's datasheet" : label.note;
     const value = g.p.standIn ? undefined : partValue(g.p, registry);
     lines.push(`| ${g.ids.length} | ${name} | ${value ?? "–"} | ${props} | ${g.ids.join(", ")} | ${links} | ${note || "–"} |`);
-    if (g.p.standIn) standIns.push(`- **${g.ids.join(", ")}**: buy a ${g.p.standIn}. Jumper had no such part, so a ${spec?.name ?? g.p.type} stood in for it: the tests checked the firmware against the stand-in, not the real part.`);
+    if (g.p.standIn) standIns.push(`- **${g.ids.join(", ")}**: buy a ${g.p.standIn}. Fabwright had no such part, so a ${spec?.name ?? g.p.type} stood in for it: the tests checked the firmware against the stand-in, not the real part.`);
     else if (isAgentMade(registry, g.p.type)) agentMade.push(`- **${g.ids.join(", ")}** (${spec?.name ?? g.p.type}): ${AGENT_MADE_LABEL}. Its pins and behaviour came from the agent's description; check them against the real part's datasheet before wiring.`);
   }
   // round 7 voice: the DFPlayer's microSD card

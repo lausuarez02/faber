@@ -16,7 +16,7 @@ import type { ToolModule } from "./types.ts";
 const why = { type: "string", description: 'Short reason shown to the human in the step list, e.g. "remove the old test shots".' };
 
 const NO_SERVER_FIX =
-  "ask the person to start Jumper's local server (pnpm start in the Jumper repo, or jumper serve --project <this folder>) and connect this agent to http://localhost:7780/mcp; meanwhile use screenshot (an image) or record (a video file)";
+  "ask the person to start Fabwright's local server (pnpm start in the Fabwright repo, or fabwright serve --project <this folder>) and connect this agent to http://localhost:7780/mcp; meanwhile use screenshot (an image) or record (a video file)";
 
 function relProjectPath(dir: string, path: unknown): string {
   if (typeof path !== "string" || !path.trim()) fail("missing-arg", "delete_file needs 'path'", "no path was given", 'pass a path inside the project, e.g. "shots/old.png" or "firmware/debug.ino"');
@@ -40,7 +40,7 @@ export const agentTools: ToolModule = {
       name: "plan_device",
       title: "Plan a device before building it",
       description:
-        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Jumper simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, size_budget {footprint_mm2, flat_mm, max_thickness_mm, thickest, parts_volume_cm3, choices} (compact plans: each smaller choice and the mm it saves), total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
+        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Fabwright simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, size_budget {footprint_mm2, flat_mm, max_thickness_mm, thickest, parts_volume_cm3, choices} (compact plans: each smaller choice and the mm it saves), total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
       inputSchema: {
         type: "object",
         properties: {
@@ -66,7 +66,7 @@ export const agentTools: ToolModule = {
       name: "record",
       title: "Video of the build",
       description:
-        'Record an MP4 the person can watch: your build replayed from the action log (parts appearing with your "why" captions, wires, the sketch, the device running in each run / run_tests, tests turning green). Only your calls by default (actor "mcp"); "all" adds the person\'s and the CLI\'s. Takes about as long as the video (speed is picked for about a minute unless given). Returns {path (absolute), url (open it in a browser), viewer_url (the live project, when Jumper\'s server runs), duration_s}. Give the person the path or url, not a terminal command. Fails within seconds, saying how to install it, when Chromium is missing. Example: {} or {"speed": 3, "size": "1280x720"}.',
+        'Record an MP4 the person can watch: your build replayed from the action log (parts appearing with your "why" captions, wires, the sketch, the device running in each run / run_tests, tests turning green). Only your calls by default (actor "mcp"); "all" adds the person\'s and the CLI\'s. Takes about as long as the video (speed is picked for about a minute unless given). Returns {path (absolute), url (open it in a browser), viewer_url (the live project, when Fabwright\'s server runs), duration_s}. Give the person the path or url, not a terminal command. Fails within seconds, saying how to install it, when Chromium is missing. Example: {} or {"speed": 3, "size": "1280x720"}.',
       inputSchema: {
         type: "object",
         properties: {
@@ -81,7 +81,7 @@ export const agentTools: ToolModule = {
       name: "viewer_url",
       title: "Link to watch and play",
       description:
-        "A link the person opens in their browser on this computer: the project live on the canvas, the device running with its real firmware, buttons and knobs they can press, following every change you make. Needs Jumper's local server (jumper serve / pnpm start); over plain stdio it says how to start one. Returns {url, note}. Give it to the person whenever they ask to see or try the device.",
+        "A link the person opens in their browser on this computer: the project live on the canvas, the device running with its real firmware, buttons and knobs they can press, following every change you make. Needs Fabwright's local server (fabwright serve / pnpm start); over plain stdio it says how to start one. Returns {url, note}. Give it to the person whenever they ask to see or try the device.",
       inputSchema: { type: "object", properties: {} },
       readOnly: true,
     },
@@ -89,7 +89,7 @@ export const agentTools: ToolModule = {
       name: "delete_file",
       title: "Delete a file",
       description:
-        'Delete a file inside the project, e.g. a stale screenshot or a debug sketch: {"path": "shots/old.png"} or {"path": "firmware/probe.ino"}. Text files are an undoable step (undo brings them back); images, videos and other binary files are moved to .jumper/trash/ (the result says where). Refuses jumper.json, Jumper\'s own .jumper/ state and the board\'s main sketch (overwrite it with write_file instead).',
+        'Delete a file inside the project, e.g. a stale screenshot or a debug sketch: {"path": "shots/old.png"} or {"path": "firmware/probe.ino"}. Text files are an undoable step (undo brings them back); images, videos and other binary files are moved to .fabwright/trash/ (the result says where). Refuses fabwright.json, Fabwright\'s own .fabwright/ state and the board\'s main sketch (overwrite it with write_file instead).',
       inputSchema: { type: "object", properties: { path: { type: "string", description: "Relative to the project folder." }, why }, required: ["path"] },
       edits: true,
     },
@@ -97,7 +97,7 @@ export const agentTools: ToolModule = {
       name: "mark_stand_in",
       title: "Mark a part as a stand-in",
       description:
-        'Say that a placed part stands in for a real part Jumper does not have, so BOM / WIRING exports print the real part with a STAND-IN note instead of the stand-in: {"id": "soil1", "real": "capacitive soil moisture sensor"}. plan_device lists stand-ins in its bom (source "stand-in"). Prefer a real part, or create_part, over a stand-in. {"id": "soil1", "real": null} clears it.',
+        'Say that a placed part stands in for a real part Fabwright does not have, so BOM / WIRING exports print the real part with a STAND-IN note instead of the stand-in: {"id": "soil1", "real": "capacitive soil moisture sensor"}. plan_device lists stand-ins in its bom (source "stand-in"). Prefer a real part, or create_part, over a stand-in. {"id": "soil1", "real": null} clears it.',
       inputSchema: { type: "object", properties: { id: { type: "string", description: "Part id, e.g. soil1." }, real: { type: ["string", "null"], description: "The real part in plain words." }, why }, required: ["id", "real"] },
       edits: true,
     },
@@ -151,7 +151,7 @@ export const agentTools: ToolModule = {
         ...(args.ms !== undefined ? { maxMs: Number(args.ms) } : {}),
       });
       const base = serverBase();
-      const inMedia = r.path.startsWith(join(dir, ".jumper", "media") + sep);
+      const inMedia = r.path.startsWith(join(dir, ".fabwright", "media") + sep);
       const url = base && inMedia ? `${base}/api/media/${encodeURIComponent(basename(r.path))}` : pathToFileURL(r.path).href;
       const viewer = viewerUrlFor(dir);
       x.summary(`recorded a ${r.duration_s} s video (${r.entries} steps)`);
@@ -165,22 +165,22 @@ export const agentTools: ToolModule = {
         actor: r.actor,
         steps: r.entries,
         ...(r.truncated ? { truncated: true } : {}),
-        notes: [...r.notes, ...(viewer ? [] : ["no viewer_url: Jumper's local server is not running, so the person can watch the file but not open the live project"])],
+        notes: [...r.notes, ...(viewer ? [] : ["no viewer_url: Fabwright's local server is not running, so the person can watch the file but not open the live project"])],
       };
     },
 
     async viewer_url(_args, x) {
       const url = viewerUrlFor(x.session.dir);
-      if (!url) fail("no-server", "viewer_url: no Jumper server is running for this project", "this MCP connection has no web page (a stdio server or the CLI)", NO_SERVER_FIX);
+      if (!url) fail("no-server", "viewer_url: no Fabwright server is running for this project", "this MCP connection has no web page (a stdio server or the CLI)", NO_SERVER_FIX);
       return { url, note: "Open it in a browser on this computer: the project runs live with its firmware, the person can press its buttons and turn its knobs, and it follows every change you make. It is a local link (it does not work on another device)." };
     },
 
     async delete_file(args, x) {
       const s = x.session;
       const rel = relProjectPath(s.dir, args.path);
-      if (rel === "jumper.json") fail("protected-file", "delete_file: refusing to delete jumper.json", "it is the project itself", "remove parts, wires or tests with remove; start over with new_project");
-      if (rel === ".jumper" || (rel.startsWith(".jumper/") && !rel.startsWith(".jumper/media/") && !rel.startsWith(".jumper/test-frames/"))) {
-        fail("protected-file", `delete_file: refusing to delete ${rel}`, "the .jumper folder holds the action log, undo history and build cache", "leave it; only .jumper/media and .jumper/test-frames files can be deleted");
+      if (rel === "fabwright.json") fail("protected-file", "delete_file: refusing to delete fabwright.json", "it is the project itself", "remove parts, wires or tests with remove; start over with new_project");
+      if (rel === ".fabwright" || (rel.startsWith(".fabwright/") && !rel.startsWith(".fabwright/media/") && !rel.startsWith(".fabwright/test-frames/"))) {
+        fail("protected-file", `delete_file: refusing to delete ${rel}`, "the .fabwright folder holds the action log, undo history and build cache", "leave it; only .fabwright/media and .fabwright/test-frames files can be deleted");
       }
       const abs = join(s.dir, rel);
       if (!existsSync(abs)) fail("no-file", `delete_file: no file ${rel}`, `nothing exists at ${abs}`, "check the path (list_files shows firmware files)");
@@ -189,13 +189,13 @@ export const agentTools: ToolModule = {
       if (sketch && rel === sketch) fail("protected-file", `delete_file: ${rel} is the board's main sketch`, "the firmware build points at it", "overwrite it with write_file instead");
       const buf = readFileSync(abs);
       if (isBinary(buf) || buf.length > 2_000_000) {
-        const trash = join(s.dir, ".jumper", "trash");
+        const trash = join(s.dir, ".fabwright", "trash");
         mkdirSync(trash, { recursive: true });
         let dest = join(trash, basename(rel));
         for (let i = 2; existsSync(dest); i++) dest = join(trash, basename(rel).replace(/(\.[^.]*)?$/, `-${i}$1`));
         renameSync(abs, dest);
-        x.summary(`deleted ${rel} (moved to .jumper/trash)`);
-        return { deleted: rel, undoable: false, kept_in: dest, note: "binary files are not part of the undo history; it is kept in .jumper/trash in case it is needed" };
+        x.summary(`deleted ${rel} (moved to .fabwright/trash)`);
+        return { deleted: rel, undoable: false, kept_in: dest, note: "binary files are not part of the undo history; it is kept in .fabwright/trash in case it is needed" };
       }
       x.commit(`delete_file ${rel}`, s.project, { [rel]: null });
       x.summary(`deleted ${rel}`);

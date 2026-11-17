@@ -1,7 +1,7 @@
-import { parseProject, safeParseProject, type Project } from "@jumper/project-format";
+import { parseProject, safeParseProject, type Project } from "@fabwright/project-format";
 
 // Globs are tolerant: a file that does not exist yet just is not in the map.
-const projectFiles = import.meta.glob("../../../../examples/*/jumper.json", {
+const projectFiles = import.meta.glob("../../../../examples/*/fabwright.json", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -14,10 +14,10 @@ const hexFiles = import.meta.glob(["../../../../examples/*/firmware/**/*.hex", "
 
 const EXAMPLES_PREFIX = "../../../../examples/";
 
-/** The Blink example built in code, used when examples/blink/jumper.json is not there yet. */
+/** The Blink example built in code, used when examples/blink/fabwright.json is not there yet. */
 export function blinkFallback(): Project {
   return parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "Blink",
     description: "Arduino Uno blinking a red LED on D13 through 220 Ω.",
     parts: [
@@ -52,16 +52,16 @@ export function loadBlinkExample(): ExampleProject {
   return loadExample("blink");
 }
 
-/** Names of the examples bundled with the app (folders in examples/ with a jumper.json). */
+/** Names of the examples bundled with the app (folders in examples/ with a fabwright.json). */
 export function exampleNames(): string[] {
   return Object.keys(projectFiles)
     .map((k) => k.slice(EXAMPLES_PREFIX.length).split("/")[0]!)
     .sort((a, b) => (a === "blink" ? -1 : b === "blink" ? 1 : a.localeCompare(b)));
 }
 
-/** Load examples/<name>/jumper.json. Unknown or invalid examples fall back to the built-in Blink, with issues saying why. */
+/** Load examples/<name>/fabwright.json. Unknown or invalid examples fall back to the built-in Blink, with issues saying why. */
 export function loadExample(name: string): ExampleProject {
-  const raw = projectFiles[`${EXAMPLES_PREFIX}${name}/jumper.json`];
+  const raw = projectFiles[`${EXAMPLES_PREFIX}${name}/fabwright.json`];
   if (raw !== undefined) {
     const res = safeParseProject(raw);
     if (res.ok) return { project: res.project, example: name, source: "file" };
@@ -69,7 +69,7 @@ export function loadExample(name: string): ExampleProject {
       project: blinkFallback(),
       example: "blink",
       source: "built-in",
-      issues: [`examples/${name}/jumper.json is invalid:`, ...res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`)],
+      issues: [`examples/${name}/fabwright.json is invalid:`, ...res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`)],
     };
   }
   if (name !== "blink") {
@@ -139,7 +139,7 @@ function firstSentence(text: string | undefined, max = 140): string | undefined 
 /** Every bundled example with what a card shows (Blink first). */
 export function exampleInfos(): ExampleInfo[] {
   return exampleNames().flatMap((example) => {
-    const raw = projectFiles[`${EXAMPLES_PREFIX}${example}/jumper.json`];
+    const raw = projectFiles[`${EXAMPLES_PREFIX}${example}/fabwright.json`];
     const res = raw ? safeParseProject(raw) : undefined;
     if (!res?.ok) return [];
     const p = res.project;

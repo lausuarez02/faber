@@ -1,8 +1,8 @@
 // Shared datasheet-style checks for the RP2040 boards. Imported by their model.test.ts.
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { GROUND, Simulation, type McuBackend, type PartDefinition, type PinState } from "@jumper/sim-core";
-import { RP2040_BOARDS, type Rp2040BoardType } from "@jumper/sim-backends";
+import { parseProject } from "@fabwright/project-format";
+import { GROUND, Simulation, type McuBackend, type PartDefinition, type PinState } from "@fabwright/sim-core";
+import { RP2040_BOARDS, type Rp2040BoardType } from "@fabwright/sim-backends";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 
@@ -156,7 +156,7 @@ export function describeRp2040Board(id: Rp2040BoardType, opts: { gnd: string; le
 
     it("runs inside a Simulation with the parts registry", () => {
       const project = parseProject({
-        format: "jumper/1",
+        format: "fabwright/1",
         name: "rp2040-check",
         parts: [
           { id: "board", type: id, x: 0, y: 0 },

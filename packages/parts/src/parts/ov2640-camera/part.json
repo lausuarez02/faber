@@ -2,7 +2,7 @@
   "id": "ov2640-camera",
   "name": "OV2640 camera module (2 MP, DVP)",
   "category": "sensor",
-  "description": "2 MP colour camera (OmniVision OV2640, up to 1600 × 1200, JPEG built in) on a module with its own regulators: 3.3 V in, an 8-bit parallel (DVP) pixel bus, PCLK / VSYNC / HREF, an XCLK input and an SCCB control bus. For ESP32 / ESP32-S3 boards with Espressif's esp32-camera driver (esp_camera.h): wire the 16 signals to free GPIOs and give the same pins to camera_config_t. This is the 2 × 9 header module you can wire by hand; the ESP32-CAM-style 24-pin flex module is the same sensor and signals but needs an FPC breakout with 2.8 V / 1.2 V regulators. In Jumper's simulator it sees a test scene, an image, or your webcam (frames come from Jumper; the bus timing is not simulated).",
+  "description": "2 MP colour camera (OmniVision OV2640, up to 1600 × 1200, JPEG built in) on a module with its own regulators: 3.3 V in, an 8-bit parallel (DVP) pixel bus, PCLK / VSYNC / HREF, an XCLK input and an SCCB control bus. For ESP32 / ESP32-S3 boards with Espressif's esp32-camera driver (esp_camera.h): wire the 16 signals to free GPIOs and give the same pins to camera_config_t. This is the 2 × 9 header module you can wire by hand; the ESP32-CAM-style 24-pin flex module is the same sensor and signals but needs an FPC breakout with 2.8 V / 1.2 V regulators. In Fabwright's simulator it sees a test scene, an image, or your webcam (frames come from Fabwright; the bus timing is not simulated).",
   "pins": [
     {
       "id": "3V3",

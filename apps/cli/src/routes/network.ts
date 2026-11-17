@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { networkSnapshot } from "@jumper/session";
+import { networkSnapshot } from "@fabwright/session";
 import type { ApiRoute, RouteContext } from "./types.ts";
 
 /**
@@ -8,13 +8,13 @@ import type { ApiRoute, RouteContext } from "./types.ts";
  *                                  {enabled: false} when the project has no network and none is running.
  *   POST /api/network/fault        {fault} → inject_network_fault (drop Wi-Fi, weak signal, clear, ...)
  *   POST /api/network/try          {url, method?, headers?, body?} → try_request
- * Local-only like every route; changing routes need x-jumper-token.
+ * Local-only like every route; changing routes need x-fabwright-token.
  */
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-jumper-token"] === ctx.token) return true;
-  ctx.json(res, 403, err("Missing or wrong x-jumper-token", "changing the device network needs the token from GET /api/connect, which only pages served by this Jumper server can read", "open the Jumper app from the jumper serve URL and try again"));
+  if (req.headers["x-fabwright-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "changing the device network needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
   return false;
 }
 

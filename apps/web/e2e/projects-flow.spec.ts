@@ -8,8 +8,8 @@ import { hubPort, shot } from "./helpers.ts";
 
 // Round 5, projects track (decision 0003, C3): the Projects home, opening an example as its own
 // project, the History scrubber with restore, and the code editor's save / Build & Run, against a
-// real `jumper serve` (web app served by it, so the page has the token) on a temp projects folder.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+// real `fabwright serve` (web app served by it, so the page has the token) on a temp projects folder.
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 
 interface Served {
   url: string;
@@ -20,22 +20,22 @@ interface Served {
 }
 
 /**
- * One `jumper serve` per test on hubPort(info, 0): tests in a worker run one after another and each
+ * One `fabwright serve` per test on hubPort(info, 0): tests in a worker run one after another and each
  * waits for its server to exit, so the port is free for the next (and a run can stay in a narrow
  * port range, e.g. E2E_HUB_PORT_BASE=7834 --workers 1).
  */
 async function serve(info: TestInfo): Promise<Served> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-projects-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-projects-"));
   const home = join(root, "home");
   mkdirSync(join(root, "projects", "playground"), { recursive: true });
   const port = hubPort(info, 0);
   const proc = spawn(process.execPath, [CLI, "serve", "--project", join(root, "projects", "playground"), "--port", String(port), "--strict-port", "--no-open"], {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, JUMPER_HOME: home },
+    env: { ...process.env, FABWRIGHT_HOME: home },
   });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -45,7 +45,7 @@ async function serve(info: TestInfo): Promise<Served> {
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -63,9 +63,9 @@ async function serve(info: TestInfo): Promise<Served> {
   };
 }
 
-function jumper(dir: string, home: string, ...args: string[]): string {
-  const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000, env: { ...process.env, JUMPER_HOME: home } });
-  if (r.status !== 0) throw new Error(`jumper ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
+function fabwright(dir: string, home: string, ...args: string[]): string {
+  const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000, env: { ...process.env, FABWRIGHT_HOME: home } });
+  if (r.status !== 0) throw new Error(`fabwright ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
   return r.stdout;
 }
 
@@ -85,7 +85,7 @@ async function openBlinkCopy(page: Page, s: Served): Promise<string> {
   await card.click();
   await expect(page.getByTestId("part-led1")).toBeVisible({ timeout: 20_000 });
   const dir = join(s.root, "projects", "blink");
-  expect(existsSync(join(dir, "jumper.json"))).toBe(true);
+  expect(existsSync(join(dir, "fabwright.json"))).toBe(true);
   return dir;
 }
 
@@ -113,7 +113,7 @@ test.describe("projects (served)", () => {
       const dir = await openBlinkCopy(page, s);
       await expect(page.getByTestId("project-subtitle")).toContainText("projects/blink");
       // The repo's example is untouched (the copy is in the temp projects folder).
-      expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).name).toBe("Blink");
+      expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).name).toBe("Blink");
 
       await page.getByTestId("open-projects").click();
       const home = page.getByTestId("projects-home");
@@ -136,7 +136,7 @@ test.describe("projects (served)", () => {
       await expect(home).toHaveCount(0, { timeout: 20_000 });
       await expect(page.getByTestId("empty-state")).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("project-subtitle")).toContainText("projects/untitled-device");
-      expect(existsSync(join(s.root, "projects", "untitled-device", "jumper.json"))).toBe(true);
+      expect(existsSync(join(s.root, "projects", "untitled-device", "fabwright.json"))).toBe(true);
 
       // Back to the Blink copy through its card.
       await page.getByTestId("empty-state-all").click();
@@ -155,10 +155,10 @@ test.describe("projects (served)", () => {
     try {
       await openServed(page, s);
       const dir = await openBlinkCopy(page, s);
-      jumper(dir, s.home, "place", "buzzer", "--id", "buzzer1", "--x", "520", "--y", "-160", "--why", "beep on each blink");
+      fabwright(dir, s.home, "place", "buzzer", "--id", "buzzer1", "--x", "520", "--y", "-160", "--why", "beep on each blink");
       await expect(page.getByTestId("part-buzzer1")).toBeVisible({ timeout: 15_000 });
-      jumper(dir, s.home, "connect", "uno.D8", "buzzer1.POS", "--why", "beep on each blink");
-      jumper(dir, s.home, "set", "led1", "color", "green", "--why", "green is calmer");
+      fabwright(dir, s.home, "connect", "uno.D8", "buzzer1.POS", "--why", "beep on each blink");
+      fabwright(dir, s.home, "set", "led1", "color", "green", "--why", "green is calmer");
 
       await page.getByTestId("open-history").click();
       const view = page.getByTestId("history-view");
@@ -189,7 +189,7 @@ test.describe("projects (served)", () => {
       await expect(details).toContainText("You");
       await page.getByTestId("history-close").click();
       await expect(page.locator('[data-testid^="wire-"]')).toHaveCount(3, { timeout: 15_000 });
-      const project = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { parts: { id: string; props?: { color?: string } }[] };
+      const project = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { parts: { id: string; props?: { color?: string } }[] };
       expect(project.parts.find((p) => p.id === "led1")?.props?.color).toBe("red");
       expect(project.parts.map((p) => p.id)).toContain("buzzer1");
     } finally {
@@ -200,9 +200,9 @@ test.describe("projects (served)", () => {
   test("Code: the sketch opens in the editor, saves through write_file, and Build & Run shows errors at their line", async ({ page }, info) => {
     test.skip(info.project.name !== "desktop", "the editor is exercised once, on desktop");
     const docker = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
-    // Round 11: or Jumper's native AVR toolchain (jumper setup avr), which builds without Docker.
-    const nativeAvr = existsSync(join(process.env.JUMPER_NATIVE_HOME || join(homedir(), ".jumper"), "toolchains/arduino/1.5.1/installed/avr.json"));
-    test.skip(docker.status !== 0 && !nativeAvr, "Build & Run compiles with arduino-cli (Docker or `jumper setup avr`), and neither is ready here");
+    // Round 11: or Fabwright's native AVR toolchain (fabwright setup avr), which builds without Docker.
+    const nativeAvr = existsSync(join(process.env.FABWRIGHT_NATIVE_HOME || join(homedir(), ".fabwright"), "toolchains/arduino/1.5.1/installed/avr.json"));
+    test.skip(docker.status !== 0 && !nativeAvr, "Build & Run compiles with arduino-cli (Docker or `fabwright setup avr`), and neither is ready here");
     const s = await serve(info);
     try {
       await openServed(page, s);
@@ -244,7 +244,7 @@ test.describe("projects (served)", () => {
       await expect(editor.getByTestId("code-status")).toContainText("Built");
       await expect(editor.locator(".cm-lintRange-error")).toHaveCount(0);
       await shot(page, info, "code-built");
-      const log = readFileSync(join(dir, ".jumper/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { op: string; actor: string; ok: boolean });
+      const log = readFileSync(join(dir, ".fabwright/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { op: string; actor: string; ok: boolean });
       expect(log.filter((e) => e.op === "write_file" && e.actor === "web").length).toBeGreaterThanOrEqual(2);
       expect(log.some((e) => e.op === "build" && e.actor === "web" && e.ok)).toBe(true);
       expect(log.some((e) => e.op === "run" && e.actor === "web" && e.ok)).toBe(true);

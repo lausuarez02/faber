@@ -1,7 +1,7 @@
 # Exploring robot with an OLED face, built live by Claude Code
 
-Built from a one-line goal by Claude Code connected to `jumper serve` over **HTTP MCP**, with
-**only Jumper's tools** allowed. The live canvas was open in a browser the whole time and recorded.
+Built from a one-line goal by Claude Code connected to `fabwright serve` over **HTTP MCP**, with
+**only Fabwright's tools** allowed. The live canvas was open in a browser the whole time and recorded.
 This folder is the agent's final project, unedited (plus `final.png` and one browser shot).
 
 <p align="center"><img src="../../../docs/media/live-claude-robot.gif" alt="Claude Code builds the robot on the live canvas, the arena view shows 3 collisions and then the fix, the robot explores in the 3D Device view, and the Tests panel filmstrip is scrubbed" width="720"></p>
@@ -13,7 +13,7 @@ surprised faces on the OLED, 3/3 tests); 0:35 the Device view (3D) running the r
 virtual seconds with track, chase, arena and orbit cameras, 0 collisions; 1:02 the canvas with
 the serial log; 1:08 the Tests panel; 1:18 a filmstrip frame opened in 3D at 1.26 s (the first dodge).
 
-Replay the agent's steps yourself: `pnpm jumper replay examples/agent-built/claude-robot/agent-actions.jsonl`.
+Replay the agent's steps yourself: `pnpm fabwright replay examples/agent-built/claude-robot/agent-actions.jsonl`.
 
 ## The prompt (exact)
 
@@ -22,26 +22,26 @@ Replay the agent's steps yourself: `pnpm jumper replay examples/agent-built/clau
 > cruising and surprised when it has to dodge something. Use an Arduino, an L298N motor driver, two
 > DC motors on a 2WD chassis and a battery. Prove with scenario tests that it explores for 60
 > seconds without colliding and that the face changes when it dodges, then show it running in the
-> 3D device view. Use the jumper tools; the owner is watching the canvas live, so explain each step
+> 3D device view. Use the fabwright tools; the owner is watching the canvas live, so explain each step
 > in its why.
 
 ## The agent and how it ran
 
 - **Agent:** Claude Code 2.1.319, model claude-opus-5-5, 2026-11-09.
-- **Server:** `pnpm jumper serve --project <empty folder> --port 7791` (Docker running for builds).
+- **Server:** `pnpm fabwright serve --project <empty folder> --port 7791` (Docker running for builds).
 - **Command** (run from the project folder; your real `~/.claude` is not touched):
 
 ```sh
 claude -p "<prompt>" \
-  --mcp-config '{"mcpServers":{"jumper":{"type":"http","url":"http://localhost:7791/mcp"}}}' \
-  --strict-mcp-config --allowedTools mcp__jumper \
+  --mcp-config '{"mcpServers":{"fabwright":{"type":"http","url":"http://localhost:7791/mcp"}}}' \
+  --strict-mcp-config --allowedTools mcp__fabwright \
   --output-format stream-json --verbose --max-turns 250
 ```
 
 | What | Number |
 | --- | --- |
 | Wall time | **277 s** (4 min 37 s), 73 turns |
-| Jumper tool calls | 66, **1 error** (`remove boots`, see friction) |
+| Fabwright tool calls | 66, **1 error** (`remove boots`, see friction) |
 | Other tool attempts | 3 denied by the harness (2 `Edit`, 1 `Bash` on `firmware/main.ino`; a `Read` of it went through); it fell back to `write_file` |
 | Tokens | 1.85 M cache read, 86 k cache write, 25 k out; reported cost $1.57 |
 | Firmware writes | 3 (`write_file`), every build compiled first time |
@@ -58,7 +58,7 @@ chassis, 2S LiPo (7.4 V) on the driver and the Uno's VIN, HC-SR04 on D9/D10, SSD
 Arena 250x200 cm with a crate, a pillar and a box. Firmware: cruise with a gentle weave, dodge at
 < 40 cm (back up, spin until > 70 cm clear, random extra turn), face redrawn only on mood change.
 
-## Tests (the agent's, in `jumper.json`)
+## Tests (the agent's, in `fabwright.json`)
 
 | Scenario | Checks |
 | --- | --- |
@@ -68,9 +68,9 @@ Arena 250x200 cm with a crate, a pillar and a box. Firmware: cruise with a gentl
 
 ## Verified by a person (the experimenter), not by the agent
 
-- `jumper check` on a copy: 0 errors, 0 warnings. `jumper build --force`: compiles (Adafruit
-  SSD1306 2.5.17, GFX 1.13.0, BusIO 1.17.4). `jumper test`: **3/3 pass**; 60 s run 0 collisions,
-  closest 9.0 cm, 23.2 m travelled; face matches 0.6-1.6 % pixel difference. `jumper fidelity`:
+- `fabwright check` on a copy: 0 errors, 0 warnings. `fabwright build --force`: compiles (Adafruit
+  SSD1306 2.5.17, GFX 1.13.0, BusIO 1.17.4). `fabwright test`: **3/3 pass**; 60 s run 0 collisions,
+  closest 9.0 cm, 23.2 m travelled; face matches 0.6-1.6 % pixel difference. `fabwright fidelity`:
   8 behavioural parts, 25 checks for the real robot.
 - In the browser (Device view, local copy) it drove **77 virtual seconds with 0 collisions**,
   closest 9.0 cm, 29.8 m, 49 dodges; the OLED on the canvas alternated happy / surprised.
@@ -84,12 +84,12 @@ Arena 250x200 cm with a crate, a pillar and a box. Firmware: cruise with a gentl
    wires, so I'm leaving it in."** No tool deleted a scenario. **Fixed in this round:** `remove`
    now deletes a test scenario by id (undoable; the miss message lists scenario ids too), with a
    test in `connect-polish.test.ts`.
-2. **"Editing the file directly needs a permission I don't have, so I'll go through Jumper's
-   `write_file` instead."** The agent wanted a two-line change; Jumper has no partial edit, so it
+2. **"Editing the file directly needs a permission I don't have, so I'll go through Fabwright's
+   `write_file` instead."** The agent wanted a two-line change; Fabwright has no partial edit, so it
    resent the whole 168-line sketch three times. Root cause: `write_file` is whole-file only.
 3. **Device view Run did nothing while following the agent** (`pnpm start` page): the "Following
    an agent session" toast is hidden behind the full-screen Device view. To film the robot I had
-   to open `/?local`, import `jumper.json` and load `firmware/main.hex` by hand. A fix (`GET
+   to open `/?local`, import `fabwright.json` and load `firmware/main.hex` by hand. A fix (`GET
    /api/project` + a clearer toast) was in progress in the working tree by another session at the
    time of writing.
 4. **The Tests filmstrip shows the arena, not the screen,** for the face checks of a robot: the

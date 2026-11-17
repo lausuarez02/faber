@@ -41,7 +41,7 @@ export function startRunnerServer(port = DEFAULT_PORT, host = "127.0.0.1"): Prom
       let tmp: string | undefined;
       let sketchDir = body.sketchDir;
       if (body.files) {
-        tmp = mkdtempSync(join(tmpdir(), "jumper-build-"));
+        tmp = mkdtempSync(join(tmpdir(), "fabwright-build-"));
         for (const [name, content] of Object.entries(body.files)) {
           const rel = normalize(name);
           if (rel.startsWith("..") || rel.startsWith("/")) return send(400, { ok: false, error: { code: "bad-path", message: `File name '${name}' escapes the sketch folder. Use plain relative names like "main.ino" or "src/util.h".` } });

@@ -1,6 +1,6 @@
-import { partDefinitions as builtinDefinitions, registry as builtinRegistry, withProjectParts } from "@jumper/parts";
-import type { PartCategory, PartDefinition, PartSpec, PinSpec } from "@jumper/sim-core";
-import type { Rotation } from "@jumper/project-format";
+import { partDefinitions as builtinDefinitions, registry as builtinRegistry, withProjectParts } from "@fabwright/parts";
+import type { PartCategory, PartDefinition, PartSpec, PinSpec } from "@fabwright/sim-core";
+import type { Rotation } from "@fabwright/project-format";
 import { TFT_PART_TYPES } from "../renderers/tft/index.ts";
 
 /**

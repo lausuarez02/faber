@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
+import { registry } from "@fabwright/parts";
 import { SimHost } from "../src/sim.ts";
 import { runScenario } from "../src/scenario.ts";
 import { applyInput, compactVisual, displayPng, runScenarioVisual, snapshotDevice } from "../src/visual-capture.ts";
@@ -67,7 +67,7 @@ describe("visual capture", () => {
 describe("colour displays", () => {
   it("keeps a small RGB565 thumbnail of a TFT frame (box filtered, inversion applied)", async () => {
     const { colorThumb } = await import("../src/visual-capture.ts");
-    const { base64ToBytes } = await import("@jumper/sim-core");
+    const { base64ToBytes } = await import("@fabwright/sim-core");
     const data = new Uint16Array(320 * 240).fill(0xf800); // red
     for (let y = 0; y < 240; y++) for (let x = 160; x < 320; x++) data[y * 320 + x] = 0x001f; // right half blue
     const t = colorThumb({ width: 320, height: 240, data, version: 1, on: true, inverted: false } as never, 80);

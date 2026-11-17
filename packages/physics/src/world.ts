@@ -1,4 +1,4 @@
-// The "world" block of jumper.json: what the robot lives in. Units are what people measure with
+// The "world" block of fabwright.json: what the robot lives in. Units are what people measure with
 // a tape: centimetres and degrees. Coordinates are top-down, x to the right, y DOWN (like the
 // canvas), heading 0 = facing +x, 90 = facing +y (clockwise on screen).
 //
@@ -288,7 +288,7 @@ export function parseWorld(raw: unknown, project?: PartsView): WorldSpec {
   return { arena, walls, obstacles, ...(robot ? { robot } : {}), ...(arm ? { arm } : {}) };
 }
 
-/** The `world` block of a raw jumper.json (text or parsed), or undefined when it has none. */
+/** The `world` block of a raw fabwright.json (text or parsed), or undefined when it has none. */
 export function worldOf(projectJson: string | unknown): unknown {
   const o = typeof projectJson === "string" ? (JSON.parse(projectJson) as unknown) : projectJson;
   return isObj(o) ? o.world : undefined;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GROUND, type CircuitBuilder } from "@jumper/sim-core";
+import { GROUND, type CircuitBuilder } from "@fabwright/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 

@@ -10,7 +10,7 @@
 // While a RUN_FOR is in flight the server sends events (GPIO edges, SPI bytes) and blocks the
 // emulation until each one is answered, so a GPIO callback here sees the exact virtual time of the
 // edge and can answer an SPI byte before the firmware reads it. That is what makes the time model
-// deterministic: Renode never runs ahead of Jumper.
+// deterministic: Renode never runs ahead of Fabwright.
 import { Socket } from "node:net";
 
 /** Command ids, in sync with Antmicro.Renode.Network.ExternalControl.Command. */
@@ -99,7 +99,7 @@ export class ExternalControlClient {
     }
     throw new ExternalControlError(
       `could not reach Renode's ExternalControl server on ${host}:${port} within ${timeoutMs} ms (${String(lastErr)}). ` +
-        `Fix: start it in the monitor with 'emulation CreateExternalControlServer "jumper" ${port}' and make sure the port is published.`,
+        `Fix: start it in the monitor with 'emulation CreateExternalControlServer "fabwright" ${port}' and make sure the port is published.`,
     );
   }
 

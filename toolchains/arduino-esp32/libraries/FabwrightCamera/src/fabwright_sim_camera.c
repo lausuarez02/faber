@@ -1,10 +1,10 @@
-// Jumper camera shim (simulation builds only), Apache-2.0.
+// Fabwright camera shim (simulation builds only), Apache-2.0.
 //
 // QEMU models neither the ESP32's I2S camera mode nor the ESP32-S3's LCD_CAM (DVP) block, so the
 // official esp32-camera driver cannot capture anything in the emulator. In a simulation build of a
-// sketch that includes esp_camera.h, Jumper wraps the driver's API at link time (each __wrap_ below
-// is a -Wl,--wrap target) and this file takes frames from Jumper's camera port in the emulator
-// (QEMU patch 0006, hw/misc/jumper_camera.c): Jumper renders the frame (a test image, a still the
+// sketch that includes esp_camera.h, Fabwright wraps the driver's API at link time (each __wrap_ below
+// is a -Wl,--wrap target) and this file takes frames from Fabwright's camera port in the emulator
+// (QEMU patch 0006, hw/misc/fabwright_camera.c): Fabwright renders the frame (a test image, a still the
 // person dropped in, their webcam) at the size and format the sketch asked for and encodes it (JPEG,
 // RGB565, grayscale, YUV422, RGB888). The real-device build links Espressif's driver unchanged.
 //
@@ -40,8 +40,8 @@
 #define JCAM_RES(i) (0x40 + 4 * (i))
 
 enum { JCAM_INIT = 1, JCAM_CAPTURE = 2, JCAM_DEINIT = 3 };
-// Jumper's answer codes (RES0).
-enum { JCAM_OK = 0, JCAM_NOT_DETECTED = 1, JCAM_NOT_SUPPORTED = 2, JCAM_BAD_SIZE = 3, JCAM_NO_JUMPER = 0xffffffffu };
+// Fabwright's answer codes (RES0).
+enum { JCAM_OK = 0, JCAM_NOT_DETECTED = 1, JCAM_NOT_SUPPORTED = 2, JCAM_BAD_SIZE = 3, JCAM_NO_FABWRIGHT = 0xffffffffu };
 
 #define MAX_FB 4
 #define FB_GET_TIMEOUT_MS 4000
@@ -95,12 +95,12 @@ static esp_err_t alloc_fbs(void) {
   size_t n = s_cfg.fb_count < 1 ? 1 : (s_cfg.fb_count > MAX_FB ? MAX_FB : s_cfg.fb_count);
   size_t size = fb_size_for(s_sensor.pixformat, s_sensor.status.framesize);
   bool psram = s_cfg.fb_location == CAMERA_FB_IN_PSRAM && s_psram_mode;
-#ifdef JUMPER_SIM_PSRAM_FALLBACK
+#ifdef FABWRIGHT_SIM_PSRAM_FALLBACK
   // The board has PSRAM, but the emulator does not (esp_psram_init fails in QEMU): frame buffers go
   // in internal RAM in the simulator only, so a sketch written for the board still runs.
   if (psram && heap_caps_get_total_size(MALLOC_CAP_SPIRAM) == 0) {
     static bool told;
-    if (!told) ESP_LOGW(TAG, "Jumper simulation: the board's PSRAM is not emulated, frame buffers are in internal RAM");
+    if (!told) ESP_LOGW(TAG, "Fabwright simulation: the board's PSRAM is not emulated, frame buffers are in internal RAM");
     told = true;
     psram = false;
   }
@@ -166,7 +166,7 @@ static int st_reset(sensor_t *s) { return 0; }
 static int st_get_reg(sensor_t *s, int reg, int mask) { return s_regs[reg & 7] & mask; }
 static int st_set_reg(sensor_t *s, int reg, int mask, int value) {
   static bool told;
-  if (!told) ESP_LOGW(TAG, "set_reg: sensor registers are not emulated in Jumper (the value is kept, the image does not change)");
+  if (!told) ESP_LOGW(TAG, "set_reg: sensor registers are not emulated in Fabwright (the value is kept, the image does not change)");
   told = true;
   s_regs[reg & 7] = (s_regs[reg & 7] & ~mask) | (value & mask);
   return 0;
@@ -238,7 +238,7 @@ esp_err_t __wrap_esp_camera_init(const camera_config_t *config) {
     return ESP_ERR_INVALID_STATE;
   }
   if (!jcam_present()) {
-    ESP_LOGE(TAG, "Jumper: this emulator has no camera port. Fix: run `jumper setup esp32` again (it builds the emulator with the camera), then Run.");
+    ESP_LOGE(TAG, "Fabwright: this emulator has no camera port. Fix: run `fabwright setup esp32` again (it builds the emulator with the camera), then Run.");
     return ESP_ERR_NOT_FOUND;
   }
   if (!s_lock) s_lock = xSemaphoreCreateMutex();
@@ -255,18 +255,18 @@ esp_err_t __wrap_esp_camera_init(const camera_config_t *config) {
     (uint32_t)config->jpeg_buffer_size,
   };
   uint32_t r = jcam_cmd(JCAM_INIT, a);
-  if (r == JCAM_NO_JUMPER) {
-    ESP_LOGE(TAG, "Jumper: no simulator is listening on the camera port");
+  if (r == JCAM_NO_FABWRIGHT) {
+    ESP_LOGE(TAG, "Fabwright: no simulator is listening on the camera port");
     return ESP_ERR_NOT_FOUND;
   }
   delay_us(JCAM_REG(JCAM_RES(6)));
   if (r == JCAM_NOT_DETECTED) {
     ESP_LOGE(TAG, "Camera probe failed with error 0x%x(ESP_ERR_NOT_FOUND)", ESP_ERR_NOT_FOUND);
-    ESP_LOGE(TAG, "Jumper: no camera answers on these pins (see Jumper's design checks for which pins the camera is wired to)");
+    ESP_LOGE(TAG, "Fabwright: no camera answers on these pins (see Fabwright's design checks for which pins the camera is wired to)");
     return ESP_ERR_NOT_FOUND;
   }
   if (r != JCAM_OK) {
-    ESP_LOGE(TAG, "Camera init failed (Jumper said %u)", (unsigned)r);
+    ESP_LOGE(TAG, "Camera init failed (Fabwright said %u)", (unsigned)r);
     return r == JCAM_BAD_SIZE ? ESP_ERR_CAMERA_FAILED_TO_SET_FRAME_SIZE : ESP_ERR_CAMERA_NOT_SUPPORTED;
   }
   s_max_size = (framesize_t)JCAM_REG(JCAM_RES(4));
@@ -275,7 +275,7 @@ esp_err_t __wrap_esp_camera_init(const camera_config_t *config) {
     ESP_LOGE(TAG, "Failed to set frame size (the sensor's largest is %ux%u)", resolution[s_max_size].width, resolution[s_max_size].height);
     return ESP_ERR_CAMERA_FAILED_TO_SET_FRAME_SIZE;
   }
-  ESP_LOGI(TAG, "Detected camera PID=0x%x (Jumper simulation: frames come from Jumper, not a sensor)", s_sensor.id.PID);
+  ESP_LOGI(TAG, "Detected camera PID=0x%x (Fabwright simulation: frames come from Fabwright, not a sensor)", s_sensor.id.PID);
   esp_err_t e = alloc_fbs();
   if (e != ESP_OK) return e;
   s_inited = true;
@@ -326,7 +326,7 @@ camera_fb_t *__wrap_esp_camera_fb_get(void) {
   int64_t t0 = esp_timer_get_time();
   if (r != JCAM_OK) {
     xSemaphoreGive(s_lock);
-    ESP_LOGE("cam_hal", "capture failed (Jumper said %u)", (unsigned)r);
+    ESP_LOGE("cam_hal", "capture failed (Fabwright said %u)", (unsigned)r);
     delay_us(lat);
     return NULL;
   }
@@ -363,12 +363,12 @@ bool __wrap_esp_camera_available_frames(void) { return s_inited && free_slot() !
 sensor_t *__wrap_esp_camera_sensor_get(void) { return s_inited ? &s_sensor : NULL; }
 
 esp_err_t __wrap_esp_camera_save_to_nvs(const char *key) {
-  ESP_LOGW(TAG, "esp_camera_save_to_nvs is not emulated in Jumper");
+  ESP_LOGW(TAG, "esp_camera_save_to_nvs is not emulated in Fabwright");
   return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t __wrap_esp_camera_load_from_nvs(const char *key) {
-  ESP_LOGW(TAG, "esp_camera_load_from_nvs is not emulated in Jumper");
+  ESP_LOGW(TAG, "esp_camera_load_from_nvs is not emulated in Fabwright");
   return ESP_ERR_NOT_SUPPORTED;
 }
 

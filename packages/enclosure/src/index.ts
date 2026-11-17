@@ -1,10 +1,10 @@
 /**
- * @jumper/enclosure: printable cases for Jumper projects (round 6, decision 0004).
+ * @fabwright/enclosure: printable cases for Fabwright projects (round 6, decision 0004).
  * layout (auto-pack) → OpenCascade bodies (replicad, loaded lazily) → STL / 3MF / STEP / PNG /
  * SVG drawing / PRINT.md + a CaseReport with fit checks.
  */
 export type { CaseFile, CaseMesh, CaseReport, FitCheck, FitCheckId, PlacedPart, Vec3 } from "./types.ts";
-export { CASE_SHAPES } from "@jumper/project-format";
+export { CASE_SHAPES } from "@fabwright/project-format";
 export { generateCase, layoutInput, frontOutline, caseHash, pocketVerdict, pocketText, resolveEnclosure, readManifest, readReport, readMeshCache, writeMeshCache, writeCaseFiles, ENGINE_VERSION, type Generated, type GenerateOptions, type CaseManifest } from "./engine.ts";
 export { stackLayout, autoLayouts, resolveParams, toCase, specWithProps, LIPO_CELLS, type Layout, type LayoutFit, type LayoutOptions, type Placed, type Opening } from "./layout.ts";
 export { parseOutline, presetPoints, presetOutline, svgPathToPolylines, catmullRomClosed, OutlineError, type ParsedOutline, type Pt } from "./outline.ts";

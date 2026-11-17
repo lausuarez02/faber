@@ -7,7 +7,7 @@
 // whose screen changed, at most every COLOR_EVERY_MS of virtual time while a run is going, and
 // limitColorFrames thins a long run so one log entry stays around a megabyte at most.
 import { deflateSync } from "node:zlib";
-import { colorFrameToRgba, type ColorFrame } from "@jumper/sim-core";
+import { colorFrameToRgba, type ColorFrame } from "@fabwright/sim-core";
 import type { ColorFrameImage, Frame } from "./sim.ts";
 
 /** Smallest virtual-time gap between two colour images of one part during a run's periodic frames. */

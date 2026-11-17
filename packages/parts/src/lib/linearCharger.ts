@@ -3,8 +3,8 @@
 // input into the cell (trickle below 2.9 V, then the set current), clamped at 4.2 V by a diode into
 // a 4.2 V reference (CC, then CV with a tapering current); ends below a tenth of the set current
 // and restarts below 4.05 V. Generic: any board names its own input / battery nodes and currents.
-import type { CircuitBuilder, ElementId, NodeId, SolveResultView } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { CircuitBuilder, ElementId, NodeId, SolveResultView } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 
 export interface LinearChargerSpec {
   /** Fast (constant-current) charge current, A. */

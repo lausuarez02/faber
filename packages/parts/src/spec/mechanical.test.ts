@@ -16,7 +16,7 @@ function exampleTypes(): Set<string> {
       const p = join(dir, name);
       if (name === "node_modules" || name.startsWith(".")) continue;
       if (statSync(p).isDirectory()) walk(p);
-      else if (name === "jumper.json") for (const part of (JSON.parse(readFileSync(p, "utf8")) as { parts: { type: string }[] }).parts) out.add(part.type);
+      else if (name === "fabwright.json") for (const part of (JSON.parse(readFileSync(p, "utf8")) as { parts: { type: string }[] }).parts) out.add(part.type);
     }
   };
   walk(join(ROOT, "examples"));

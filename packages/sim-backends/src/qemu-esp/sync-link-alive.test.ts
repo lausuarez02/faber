@@ -1,6 +1,6 @@
 // SyncBridgeLink.nextAsync keeps a short-lived process alive while the emulator boots: its worker
 // and the emulator are unref'd and Atomics.waitAsync holds no handle, so before the fix Node exited
-// with "unsettled top-level await" (exit 13) when the only thing left was the wait (`jumper test`
+// with "unsettled top-level await" (exit 13) when the only thing left was the wait (`fabwright test`
 // booting the third scenario's QEMU). The child script is the whole program, as in the CLI.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -13,7 +13,7 @@ const LINK = fileURLToPath(new URL("./sync-link.ts", import.meta.url));
 
 describe("SyncBridgeLink.nextAsync", () => {
   it("holds the event loop until the emulator answers (no other handle open)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-sync-link-"));
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-sync-link-"));
     try {
       const script = join(dir, "main.mts");
       // The "emulator" is a detached, unref'd process with no stdio that connects 600 ms later.

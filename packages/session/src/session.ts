@@ -17,18 +17,18 @@ import {
   normalizeScenarioStep,
   firmwareLanguage,
   type FirmwareLanguage,
-} from "@jumper/project-format";
-import { AGENT_MADE_LABEL, boardSupportOf, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@jumper/parts";
-import { isProcessBackend, PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@jumper/sim-core";
-import { hexToUf2 } from "@jumper/sim-backends";
-import { buildFirmware, CHIP_IMAGE, chipFamily, LANGUAGES, languagesFor, microPythonErrors, outputFormatFor, supportOf, type BuildRequest, type BuildResult } from "@jumper/runner";
+} from "@fabwright/project-format";
+import { AGENT_MADE_LABEL, boardSupportOf, boardWiring, formatClips, parseClips, rankParts, registry as defaultRegistry, withProjectParts } from "@fabwright/parts";
+import { isProcessBackend, PART_CATEGORIES, type PartRegistry, type PartSpec, type VisualValue } from "@fabwright/sim-core";
+import { hexToUf2 } from "@fabwright/sim-backends";
+import { buildFirmware, CHIP_IMAGE, chipFamily, LANGUAGES, languagesFor, microPythonErrors, outputFormatFor, supportOf, type BuildRequest, type BuildResult } from "@fabwright/runner";
 import { checkDesign, type DesignIssue } from "./drc.ts";
-import { asJumperError, didYouMean, fail, JumperError } from "./errors.ts";
+import { asFabwrightError, didYouMean, fail, FabwrightError } from "./errors.ts";
 import { bomMarkdown, solderedAssemblyMarkdown, wiringMarkdown } from "./exporter.ts";
 import { assemblyStyle, wireCuts, wireCutsCsv } from "./assembly.ts"; // round 6 power
 import { createPartTemplate, fits, resolvePartType } from "./catalog-fit.ts"; // round 6 power
 import { fidelityReport } from "./fidelity.ts";
-import { installProjectFiles } from "@jumper/agent-skill";
+import { installProjectFiles } from "@fabwright/agent-skill";
 import { TOOLS } from "./catalog.ts";
 import { suggestConnections, usageFor } from "./hints.ts";
 import {
@@ -51,8 +51,8 @@ import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
 import { relayBuildSources } from "./relay-build.ts"; // round 13 relay
-import { DEVICE_HEADER, NETWORK_HINTS } from "@jumper/device-net";
-import type { DeviceNetHost } from "@jumper/device-net";
+import { DEVICE_HEADER, NETWORK_HINTS } from "@fabwright/device-net";
+import type { DeviceNetHost } from "@fabwright/device-net";
 import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
 import { limitColorFrames } from "./color-frames.ts"; // round 6 frames
@@ -71,7 +71,7 @@ import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type V
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
 
 export interface SessionOptions {
-  /** Project folder (jumper.json + firmware/). Created on the first change if missing. */
+  /** Project folder (fabwright.json + firmware/). Created on the first change if missing. */
   dir: string;
   registry?: PartRegistry;
   /** Firmware builder; default: the local Docker runner. */
@@ -80,7 +80,7 @@ export interface SessionOptions {
   actor?: string;
   /**
    * Round 5 (decision 0003, C3): lets new_project {folder} make the new folder the active project
-   * of the host (jumper serve swaps its session, hub and MCP binding). Without it, new_project
+   * of the host (fabwright serve swaps its session, hub and MCP binding). Without it, new_project
    * {folder} creates and registers the folder and tells the caller to reopen with --project.
    */
   openProject?: (dir: string) => Promise<void>;
@@ -88,7 +88,7 @@ export interface SessionOptions {
   projectsRoot?: string;
 }
 
-/** One line of .jumper/actions.jsonl: what happened, when (wall + virtual), and the state after. */
+/** One line of .fabwright/actions.jsonl: what happened, when (wall + virtual), and the state after. */
 export interface ActionEntry {
   seq: number;
   /** Wall time, ISO. */
@@ -117,7 +117,7 @@ export interface ActionEntry {
   steps?: ReturnType<typeof stepSummary>[];
   /**
    * Firmware hex after a successful build (replay loads it for live LEDs). Round 5 (decision 0003,
-   * C3/C6): `hash` is the sha256 of the hex and a copy is kept at .jumper/builds/<hash>.hex, so
+   * C3/C6): `hash` is the sha256 of the hex and a copy is kept at .fabwright/builds/<hash>.hex, so
    * history can show the device at any version and followers can tell new firmware from old.
    */
   firmware?: { artifact: string; hash?: string; /** sourceHash() the hex was built from (round 6b) */ source?: string };
@@ -127,7 +127,7 @@ export interface ActionEntry {
 
 export type SessionEvent = { type: "action"; entry: ActionEntry };
 
-/** Who makes one call, when one session serves several faces (jumper serve: web canvas + MCP clients). */
+/** Who makes one call, when one session serves several faces (fabwright serve: web canvas + MCP clients). */
 export interface CallMeta {
   /** Overrides the session's actor for this call: "mcp", "web", "cli"… */
   actor?: string;
@@ -198,7 +198,7 @@ function round(n: number): number {
 
 /**
  * A project folder as a headless editing + simulation session. Every public op validates its input,
- * returns a compact JSON-able result, and is appended to .jumper/actions.jsonl. Edits are grouped
+ * returns a compact JSON-able result, and is appended to .fabwright/actions.jsonl. Edits are grouped
  * into steps (with the caller's "why") that can be undone, redone, accepted or rejected.
  */
 export class ProjectSession {
@@ -213,7 +213,7 @@ export class ProjectSession {
   private seq = 0;
   private host: SimHost | undefined;
   private hostKey = "";
-  /** Round 13: what each camera sees in live runs (set_camera_frame, the page); never saved in jumper.json. */
+  /** Round 13: what each camera sees in live runs (set_camera_frame, the page); never saved in fabwright.json. */
   readonly cameraInputs = new Map<string, Record<string, string>>();
   private diskStamp = "";
   private listeners = new Set<(e: SessionEvent) => void>();
@@ -251,10 +251,10 @@ export class ProjectSession {
   // =================================================================== plumbing
 
   get projectFile(): string {
-    return join(this.dir, "jumper.json");
+    return join(this.dir, "fabwright.json");
   }
   private get metaDir(): string {
-    return join(this.dir, ".jumper");
+    return join(this.dir, ".fabwright");
   }
   get actionLogFile(): string {
     return join(this.metaDir, "actions.jsonl");
@@ -281,7 +281,7 @@ export class ProjectSession {
     return parts.join("|");
   }
 
-  /** Re-read jumper.json / history / log position if another process (CLI, web, another agent) changed them. */
+  /** Re-read fabwright.json / history / log position if another process (CLI, web, another agent) changed them. */
   sync(force = false): void {
     // --- agentparts (decision 0003, C4): reload parts/ when it changed; a changed part restarts the sim
     if (refreshProjectParts(this.dir, this.registry, force)) this.hostKey = "";
@@ -293,7 +293,7 @@ export class ProjectSession {
       if (!res.ok) {
         fail(
           "invalid-project",
-          `jumper.json in ${this.dir} is invalid`,
+          `fabwright.json in ${this.dir} is invalid`,
           res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`).join("; "),
           "fix the file by hand (or restore it with git), then retry",
         );
@@ -352,7 +352,7 @@ export class ProjectSession {
     writeFileSync(this.projectFile, serializeProject(this.project));
     writeFileSync(join(this.metaDir, "history.json"), JSON.stringify(this.history));
     const gi = join(this.metaDir, ".gitignore");
-    if (!existsSync(gi)) writeFileSync(gi, "# Jumper session state (undo history, build cache info). The action log is worth keeping for replays.\nhistory.json\nbuild.json\nbuilds/\nthumbs/\n");
+    if (!existsSync(gi)) writeFileSync(gi, "# Fabwright session state (undo history, build cache info). The action log is worth keeping for replays.\nhistory.json\nbuild.json\nbuilds/\nthumbs/\n");
   }
 
   // round 6 power: planning calls (plan_device, search_parts, get_part) before new_project {folder} belong to the
@@ -378,8 +378,8 @@ export class ProjectSession {
     if (!n) return 0;
     const lines = this.planBuffer.splice(0).map((e) => JSON.stringify({ ...e, moved_from: this.dir }) + "\n").join("");
     try {
-      mkdirSync(join(dir, ".jumper"), { recursive: true });
-      appendFileSync(join(dir, ".jumper", "actions.jsonl"), lines);
+      mkdirSync(join(dir, ".fabwright"), { recursive: true });
+      appendFileSync(join(dir, ".fabwright", "actions.jsonl"), lines);
     } catch {
       // logging must never break an op
     }
@@ -448,7 +448,7 @@ export class ProjectSession {
       });
       return result;
     } catch (err) {
-      const je = asJumperError(err, `${op} failed`);
+      const je = asFabwrightError(err, `${op} failed`);
       this.logAction({ seq: ctx.seq, t, ...(vt !== undefined ? { vt } : {}), ...who, op, args: trimArgs(args), ok: false, error: je.message });
       throw je;
     }
@@ -469,7 +469,7 @@ export class ProjectSession {
     };
   }
 
-  /** Apply a project change as one recorded edit. Validates, writes jumper.json and files, records the step. */
+  /** Apply a project change as one recorded edit. Validates, writes fabwright.json and files, records the step. */
   private commit(ctx: OpCtx, label: string, next: Project, files: Record<string, string | null> = {}): Step {
     const res = safeParseProject(next);
     if (!res.ok) {
@@ -569,12 +569,12 @@ export class ProjectSession {
   }
 
   /**
-   * Round 12 skill: a project carries Jumper's hardware guide for whichever agent opens it
-   * (.claude/skills/jumper-hardware/SKILL.md for Claude Code, AGENTS.md for Codex and others).
-   * Never fails the op; JUMPER_AGENT_FILES=0 turns it off. Files someone else wrote are kept.
+   * Round 12 skill: a project carries Fabwright's hardware guide for whichever agent opens it
+   * (.claude/skills/fabwright-hardware/SKILL.md for Claude Code, AGENTS.md for Codex and others).
+   * Never fails the op; FABWRIGHT_AGENT_FILES=0 turns it off. Files someone else wrote are kept.
    */
   private installAgentFiles(projectName: string): string[] {
-    if (process.env.JUMPER_AGENT_FILES === "0") return [];
+    if (process.env.FABWRIGHT_AGENT_FILES === "0") return [];
     try {
       const r = installProjectFiles(this.dir, { tools: TOOLS.map((t) => t.name), projectName });
       return r.files.filter((f) => f.action === "written" || f.action === "updated").map((f) => f.path);
@@ -624,7 +624,7 @@ export class ProjectSession {
         ? "This is now the open project: every next call (place_part, connect…) works on it, and the canvas shows it."
         : openError
           ? `Created, but the server could not switch to it: ${openError}. Fix: open it from the Projects gallery, or reconnect with --project ${dir}.`
-          : `Created and registered, but this connection stays on ${this.dir}. Fix: reconnect the MCP server with --project ${dir} (jumper mcp --project ${dir}), or open it from the Projects gallery of jumper serve.`,
+          : `Created and registered, but this connection stays on ${this.dir}. Fix: reconnect the MCP server with --project ${dir} (fabwright mcp --project ${dir}), or open it from the Projects gallery of fabwright serve.`,
     };
   }
 
@@ -739,7 +739,7 @@ export class ProjectSession {
       ...(usage.libraries ? { libraries: usage.libraries } : {}),
       ...(usage.controls ? { controls: usage.controls } : {}),
       ...(usage.example ? { example: usage.example } : {}),
-      // Round 13: a board that joins Jumper's device network gets the network guide (APIs through the relay, keys by name).
+      // Round 13: a board that joins Fabwright's device network gets the network guide (APIs through the relay, keys by name).
       ...(spec.category === "board" && spec.tags?.includes("wifi") && spec.mcu?.backend === "qemu-esp" ? { network: NETWORK_HINTS } : {}),
     };
   }
@@ -971,7 +971,7 @@ export class ProjectSession {
     const language = args.language as (typeof usable)[number];
     if (!usable.includes(language)) {
       const planned = ["rust", "zephyr"].includes(String(args.language));
-      fail("bad-language", `Language '${args.language}' cannot be built in Jumper${planned ? " yet" : ""}`, planned ? `${args.language === "rust" ? "Rust" : "Zephyr"} is planned (no toolchain image yet, docs/firmware-languages.md)` : "it is not one Jumper knows", `pass one of ${usable.map((l) => `"${l}"`).join(", ")}`);
+      fail("bad-language", `Language '${args.language}' cannot be built in Fabwright${planned ? " yet" : ""}`, planned ? `${args.language === "rust" ? "Rust" : "Zephyr"} is planned (no toolchain image yet, docs/firmware-languages.md)` : "it is not one Fabwright knows", `pass one of ${usable.map((l) => `"${l}"`).join(", ")}`);
     }
     const boardPart = args.board ? findPart(this.project, args.board) : (this.project.firmware ? this.project.parts.find((p) => p.id === this.project.firmware!.board) : undefined) ?? this.project.parts.find((p) => this.registry.get(p.type)?.spec.mcu);
     const mcu = boardPart ? this.registry.get(boardPart.type)?.spec.mcu : undefined;
@@ -980,7 +980,7 @@ export class ProjectSession {
     const sup = supportOf(language, chip);
     const verified = languagesFor(chip);
     if (sup.status !== "verified") {
-      fail("language-unsupported", `${LANGUAGES[language].label} does not run on ${boardPart.id} (${chip}) in Jumper yet`, sup.why ?? "nobody has made it work yet", `use one of ${verified.map((l) => `"${l}"`).join(", ")} on this board, or a board where it is verified (docs/firmware-languages.md)`);
+      fail("language-unsupported", `${LANGUAGES[language].label} does not run on ${boardPart.id} (${chip}) in Fabwright yet`, sup.why ?? "nobody has made it work yet", `use one of ${verified.map((l) => `"${l}"`).join(", ")} on this board, or a board where it is verified (docs/firmware-languages.md)`);
     }
     const st = starterFor(language, { chip, type: boardPart.type, ...(mcu.fqbn ? { fqbn: mcu.fqbn } : {}) });
     const build: Record<string, string> = { ...st.build, ...(args.firmware ? { firmware: args.firmware } : {}), ...(args.target ? { target: args.target } : {}), ...(args.env ? { env: args.env } : {}) };
@@ -1019,7 +1019,7 @@ export class ProjectSession {
       delete next.world;
     } else {
       if (typeof args.world !== "object" || Array.isArray(args.world)) fail("bad-world", "world must be an object", `got ${JSON.stringify(args.world)}`, "pass { arena, obstacles, robot } or { arm }");
-      const { parseWorld } = await import("@jumper/physics");
+      const { parseWorld } = await import("@fabwright/physics");
       try {
         parseWorld(args.world, this.project);
       } catch (err) {
@@ -1086,7 +1086,7 @@ export class ProjectSession {
         next = { ...next, firmware: { board: board.id, language: "micropython", dir: "firmware", sketch: st.sketch, artifact: st.artifact, build: { tool: "micropython" } } as NonNullable<Project["firmware"]> };
         notes.push(`the project is MicroPython now: ${rel} runs on ${board.id} (MicroPython ${"1.29.0"}); print() shows in the Serial panel`);
       } else if (fw && firmwareLanguage(fw) === "arduino") {
-        notes.push(chip && supportOf("micropython", chip).status !== "verified" ? `${rel} is not used: MicroPython does not run on ${board?.id} (${chip}) in Jumper (${supportOf("micropython", chip).why})` : `${rel} is not used: this project's firmware is Arduino (firmware/${fw.sketch}). To switch, call set_firmware {"language": "micropython"}`);
+        notes.push(chip && supportOf("micropython", chip).status !== "verified" ? `${rel} is not used: MicroPython does not run on ${board?.id} (${chip}) in Fabwright (${supportOf("micropython", chip).why})` : `${rel} is not used: this project's firmware is Arduino (firmware/${fw.sketch}). To switch, call set_firmware {"language": "micropython"}`);
       }
     }
     if (isSketch) {
@@ -1114,7 +1114,7 @@ export class ProjectSession {
   async readFile(args: { path: string }): Promise<unknown> {
     const doc = typeof args.path === "string" ? this.relPackDocPath(args.path) : undefined;
     if (doc) return doc;
-    const rel = args.path === "jumper.json" ? "jumper.json" : this.relFirmwarePath(args.path);
+    const rel = args.path === "fabwright.json" ? "fabwright.json" : this.relFirmwarePath(args.path);
     const abs = join(this.dir, rel);
     if (!existsSync(abs)) fail("no-file", `No file ${rel}`, `files are: ${this.listFirmwareFiles().join(", ") || "none"}`, "list_files shows what exists; write_file creates one");
     const content = readFileSync(abs, "utf8");
@@ -1174,7 +1174,7 @@ export class ProjectSession {
   private sourceFiles(info: NonNullable<ReturnType<ProjectSession["firmwareInfo"]>>): string[] {
     if (!info.sketchDir || !existsSync(info.sketchDir)) return [];
     const ext = info.language === "arduino" ? SOURCE_EXT : LANGUAGES[info.language].sourceExt;
-    // jumper_device.h (the person's relay token and Wi-Fi password) is never built by Jumper, so it never makes the firmware stale
+    // fabwright_device.h (the person's relay token and Wi-Fi password) is never built by Fabwright, so it never makes the firmware stale
     if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f) && f !== DEVICE_HEADER).sort();
     const out: string[] = [];
     const walk = (d: string) => {
@@ -1305,7 +1305,7 @@ export class ProjectSession {
       const sup = supportOf(info.language, info.chip);
       if (sup.status !== "verified") {
         const ok = languagesFor(info.chip).map((l) => `"${l}"`).join(", ");
-        fail("language-unsupported", `${lang.label} does not run on this board (${info.chip}) in Jumper yet`, sup.why ?? "nobody has made it work yet", `use one of ${ok || '"arduino"'} on this board (set_firmware {"language": ...}), or a board where ${lang.label} is verified (docs/firmware-languages.md)`);
+        fail("language-unsupported", `${lang.label} does not run on this board (${info.chip}) in Fabwright yet`, sup.why ?? "nobody has made it work yet", `use one of ${ok || '"arduino"'} on this board (set_firmware {"language": ...}), or a board where ${lang.label} is verified (docs/firmware-languages.md)`);
       }
     }
     const displayPrefix = `${relative(this.dir, info.sketchDir!).split(sep).join("/")}/`;
@@ -1377,7 +1377,7 @@ export class ProjectSession {
     if (!info?.sketchDir || !info.sketchAbs) return { error: "the project has no sketch", fix: "write_file the sketch and build" };
     const mcu = this.registry.get(this.project.parts.find((p) => p.id === info.fw.board)?.type ?? "")?.spec.mcu;
     const flash = mcu?.toolchain?.flash;
-    // ESP32 simulator builds carry Jumper's Wi-Fi / TLS shim, so the device build is always separate.
+    // ESP32 simulator builds carry Fabwright's Wi-Fi / TLS shim, so the device build is always separate.
     // Other languages (MicroPython, ESP-IDF, PlatformIO) build the same image for both.
     if (info.language !== "arduino" || (info.buildFqbn === info.deviceFqbn && !info.buildProperties.length && info.format !== "bin")) {
       const st = this.firmwareState();
@@ -1394,7 +1394,7 @@ export class ProjectSession {
     if (!r.ok) return { error: `the sketch does not compile for the real board (${info.deviceFqbn}): ${r.diagnostics.filter((d) => d.severity === "error").map(fmtDiag).slice(0, 3).join(" | ")}`, fix: "fix the errors (build shows them), then export again" };
     const data = r.hex ?? r.binary;
     if (data === undefined) return { error: "the build wrote no firmware file", fix: "build again; if it repeats, report the build log" };
-    return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}${info.format === "bin" ? " without Jumper's simulation shims (JUMPER_SIM=0)" : ""}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
+    return { format: outputFormatFor(info.deviceFqbn), data, fqbn: info.deviceFqbn, ...(flash ? { flash } : {}), differs: `built for the real board with ${info.deviceFqbn}${info.format === "bin" ? " without Fabwright's simulation shims (FABWRIGHT_SIM=0)" : ""}; the simulator ran ${info.buildFqbn}${info.simNote ? ` (${info.simNote})` : ""}` };
   }
 
   /** The built firmware: Intel HEX text, or the flash image bytes (ESP32 family). */
@@ -1763,7 +1763,7 @@ export class ProjectSession {
         results.push(result);
         visuals.push(visual);
       } catch (err) {
-        const je = asJumperError(err);
+        const je = asFabwrightError(err);
         results.push({ id: s.id, passed: false, t_ms: round(host.timeMs), failed_step: -1, reason: je.message, serial_tail: "", steps: [] });
         visuals.push({ id: s.id, ...(s.name ? { name: s.name } : {}), passed: false, t_ms: round(host.timeMs), reason: je.message, inputs: [], frames: [], replayable: false });
       } finally {
@@ -1783,8 +1783,8 @@ export class ProjectSession {
     if (frames.length) ctx.frames = limitColorFrames(frames); // round 6 frames
     const passed = results.filter((r) => r.passed).length;
     ctx.summary = `${passed}/${results.length} scenarios passed`;
-    this.lastVisualReport = { format: "jumper-visual-report/1", project: this.project.name, passed, failed: results.length - passed, scenarios: visuals };
-    // Kept on disk so the web Tests panel still shows it after `jumper serve` restarts.
+    this.lastVisualReport = { format: "fabwright-visual-report/1", project: this.project.name, passed, failed: results.length - passed, scenarios: visuals };
+    // Kept on disk so the web Tests panel still shows it after `fabwright serve` restarts.
     try {
       mkdirSync(this.metaDir, { recursive: true });
       writeFileSync(join(this.metaDir, "visual-report.json"), JSON.stringify(this.lastVisualReport));
@@ -1837,7 +1837,7 @@ export class ProjectSession {
   /** PNGs of the screen at each scenario's first failing check (or its last check), for run_tests {images: true}. */
   private writeFrameImages(visuals: VisualScenario[]): string[] {
     const out: string[] = [];
-    const dir = join(this.dir, ".jumper", "test-frames");
+    const dir = join(this.dir, ".fabwright", "test-frames");
     for (const v of visuals) {
       const checks = v.frames.filter((f) => f.kind.startsWith("expect") || !f.ok);
       const f = checks.find((c) => !c.ok) ?? checks[checks.length - 1];
@@ -1865,7 +1865,7 @@ export class ProjectSession {
     // round 12: the built case's design-for-assembly checks (how the parts go in), when it is current
     let caseNote: string | undefined;
     if (this.project.enclosure) {
-      const E = await import("@jumper/enclosure");
+      const E = await import("@fabwright/enclosure");
       const caseDir = join(this.dir, "case");
       const report = E.readReport(caseDir);
       const fresh = report && E.readManifest(caseDir)?.hash === E.caseHash(this.project, (t) => this.registry.get(t)?.spec);
@@ -1919,7 +1919,7 @@ export class ProjectSession {
     }
   }
 
-  /** Round 5 (C5): pictures carry the live viewer link when Jumper's server runs, so the person can open the real thing. */
+  /** Round 5 (C5): pictures carry the live viewer link when Fabwright's server runs, so the person can open the real thing. */
   private withViewer(r: Record<string, unknown>): Record<string, unknown> {
     const viewer = viewerUrlFor(this.dir);
     return viewer ? { ...r, viewer_url: viewer } : r;
@@ -1940,7 +1940,7 @@ export class ProjectSession {
     try {
       png = (await renderDevice({ dir: this.dir, shots: [ms] }))[0];
     } catch (err) {
-      fail("device-render-failed", "screenshot: the device view could not be rendered", (err as Error).message, "use the canvas view (leave view out) meanwhile; the device view needs Playwright Chromium (pnpm --filter @jumper/web exec playwright install chromium)");
+      fail("device-render-failed", "screenshot: the device view could not be rendered", (err as Error).message, "use the canvas view (leave view out) meanwhile; the device view needs Playwright Chromium (pnpm --filter @fabwright/web exec playwright install chromium)");
     }
     if (!png) fail("device-render-failed", "screenshot: the device view returned no image", "the render page did not produce a frame", "try again with a smaller ms, or use the canvas view");
     writeFileSync(out, png);
@@ -1967,11 +1967,11 @@ export class ProjectSession {
     if (!png) {
       const svgPath = out.replace(/\.png$/, ".svg");
       writeFileSync(svgPath, svg);
-      return { path: svgPath, format: "svg", note: "Playwright/Chromium is not installed, so the screenshot is an SVG. Install with: pnpm --filter @jumper/web exec playwright install chromium" };
+      return { path: svgPath, format: "svg", note: "Playwright/Chromium is not installed, so the screenshot is an SVG. Install with: pnpm --filter @fabwright/web exec playwright install chromium" };
     }
     writeFileSync(out, png);
     ctx.summary = `screenshot ${relative(this.dir, out) || out}`;
-    return { path: out, format: "png", bytes: png.length, t_ms: host ? round(host.timeMs) : null, ...(host ? {} : { note: "nothing has run in this session yet, so LEDs and displays show their idle look (and no robot world). Fix: call run first (CLI: jumper screenshot out.png --ms 3000, since each CLI command is a fresh session)" }) };
+    return { path: out, format: "png", bytes: png.length, t_ms: host ? round(host.timeMs) : null, ...(host ? {} : { note: "nothing has run in this session yet, so LEDs and displays show their idle look (and no robot world). Fix: call run first (CLI: fabwright screenshot out.png --ms 3000, since each CLI command is a fresh session)" }) };
   }
 
   async export(args: { dir?: string }, ctx: OpCtx): Promise<unknown> {
@@ -2251,7 +2251,7 @@ function trimArgs(args: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-export { JumperError };
+export { FabwrightError };
 export type { Json };
 
 // round 6 switch: the `run` summary people read in toasts, captions and the step list.

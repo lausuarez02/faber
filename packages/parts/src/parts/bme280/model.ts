@@ -3,7 +3,7 @@
 // 32-bit), written with divisions the way Adafruit_BME280 2.3.0 does (C division truncates toward
 // zero, so negative intermediates differ from the datasheet's shifts by one LSB). Raw ADC values are found by inverting those
 // formulas, so a library reading this sensor gets back the prop values to the formula's resolution.
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { clamp, num, round } from "../../lib/props.ts";
 

@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { I2cBus, SpiBus, type I2cDevice, type McuBackend } from "@jumper/sim-core";
+import { I2cBus, SpiBus, type I2cDevice, type McuBackend } from "@fabwright/sim-core";
 import { createBackend } from "./index.ts";
 
 const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url)), "utf8");

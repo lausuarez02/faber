@@ -1,7 +1,7 @@
 // InvenSense MPU-6050 (register map RM-MPU-6000A-00 rev 4.2) on a GY-521 board.
 // Accelerometer, gyroscope and temperature come from props (or sim.setProps from a physics step),
 // scaled by the full-scale ranges the sketch selects, and saturate like the real ADCs.
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { clamp, num, round } from "../../lib/props.ts";
 

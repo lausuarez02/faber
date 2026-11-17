@@ -1,4 +1,4 @@
-/* Jumper: ESP-IDF v5.5.5 components/esp_eth/src/openeth/esp_eth_mac_openeth.c (Apache-2.0), built into the sketch
+/* Fabwright: ESP-IDF v5.5.5 components/esp_eth/src/openeth/esp_eth_mac_openeth.c (Apache-2.0), built into the sketch
  * because the precompiled arduino-esp32 libs leave CONFIG_ETH_USE_OPENETH off. Unmodified below these defines. */
 #define CONFIG_ETH_USE_OPENETH 1
 #define CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM 4

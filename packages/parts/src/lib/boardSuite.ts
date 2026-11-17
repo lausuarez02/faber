@@ -1,7 +1,7 @@
 // Shared datasheet-style checks for ATmega328P boards (Uno, Nano). Imported by their model.test.ts.
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { GROUND, Simulation, type PartDefinition } from "@jumper/sim-core";
+import { parseProject } from "@fabwright/project-format";
+import { GROUND, Simulation, type PartDefinition } from "@fabwright/sim-core";
 import { registry } from "../registry.gen.ts";
 import { mount, need, ScriptedMcu } from "./bench.ts";
 
@@ -73,7 +73,7 @@ export function describeAtmega328Board(id: string, gnd: string): void {
 
     it("runs inside a Simulation with the parts registry", () => {
       const project = parseProject({
-        format: "jumper/1",
+        format: "fabwright/1",
         name: "blink-check",
         parts: [
           { id: "board", type: id, x: 0, y: 0 },

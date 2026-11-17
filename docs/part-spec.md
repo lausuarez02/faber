@@ -1,4 +1,4 @@
-# Jumper part spec
+# Fabwright part spec
 
 Every part on the canvas is one folder in `packages/parts/src/parts/<id>/`. The folder is the
 whole part: its electrical pins, its behaviour in the simulator, how it looks, how honest the
@@ -18,7 +18,7 @@ which inlines `part.json`, `fidelity.json` and the SVG text and imports each `mo
 `pnpm test` re-runs the same validation plus the model checks (`src/spec.test.ts`) and fails if
 the generated registry is stale.
 
-The zod schemas and TypeScript types live in `@jumper/sim-core` (`PartSpecSchema`,
+The zod schemas and TypeScript types live in `@fabwright/sim-core` (`PartSpecSchema`,
 `FidelitySchema`, `PartModel`, …); see `docs/contracts.md` for the full type listing. This page is
 the rulebook on top of them.
 
@@ -26,7 +26,7 @@ the rulebook on top of them.
 
 | Field | Required | Rules |
 | --- | --- | --- |
-| `id` | yes | kebab-case, equal to the folder name. This is the `type` in `jumper.json`. Never rename a shipped id. |
+| `id` | yes | kebab-case, equal to the folder name. This is the `type` in `fabwright.json`. Never rename a shipped id. |
 | `name` | yes | Human name, may include the common model number: `"Photoresistor (LDR, GL5528)"`. |
 | `category` | yes | `board`, `output`, `input`, `passive`, `sensor`, `power`, `display`, `motor`, `communication`, `misc`. |
 | `description` | yes | One or two sentences a beginner can act on: what it does and how to wire it. |
@@ -244,7 +244,7 @@ rewrite the DOM every frame.
 ## 4. `model.ts`
 
 ```ts
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 
 export const create: PartModelFactory = (ctx): PartModel => ({
   stamp(c) { /* add elements between ctx.node(pin) nodes, every solve */ },
@@ -294,7 +294,7 @@ Use `warning` for "works but out of spec", `error` for "this would damage real h
 Prove the model against its datasheet with the real solver. Use the bench in `src/lib/bench.ts`:
 
 ```ts
-import { GROUND } from "@jumper/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need, supply } from "../../lib/bench.ts";
 
@@ -332,7 +332,7 @@ documented key is produced by `visualState()` with the documented type, that the
 every prop value and interaction with a converged solve and finite numbers, that it only touches
 its own pins, and that `registry.gen.ts` matches what the generator would write.
 
-## 7. Package API (`@jumper/parts`)
+## 7. Package API (`@fabwright/parts`)
 
 ```ts
 partDefinitions: PartDefinition[]                 // generated, sorted by id

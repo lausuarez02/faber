@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build an Arduino sketch with the pinned Jumper toolchain image (toolchains/arduino/Dockerfile).
+# Build an Arduino sketch with the pinned Fabwright toolchain image (toolchains/arduino/Dockerfile).
 #
 #   scripts/build-firmware.sh <sketchDir> <fqbn> <outDir>
 #   scripts/build-firmware.sh examples/blink/firmware/blink arduino:avr:uno examples/blink/firmware/build
 #
 # The image is built on first use (native arch: arm64 on Apple Silicon, amd64 elsewhere).
 # Outputs <sketch>.ino.hex (+ .elf etc.) into <outDir>. Paths must be inside the repo.
-# Env: JUMPER_ARDUINO_IMAGE overrides the image tag; JUMPER_DOCKER_PLATFORM forces e.g. linux/amd64.
+# Env: FABWRIGHT_ARDUINO_IMAGE overrides the image tag; FABWRIGHT_DOCKER_PLATFORM forces e.g. linux/amd64.
 set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
@@ -15,9 +15,9 @@ if [[ $# -ne 3 ]]; then
 fi
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE="${JUMPER_ARDUINO_IMAGE:-jumper/arduino-cli:1.5.1-avr1.8.8-libs3}"
+IMAGE="${FABWRIGHT_ARDUINO_IMAGE:-fabwright/arduino-cli:1.5.1-avr1.8.8-libs3}"
 PLATFORM_ARGS=()
-if [[ -n "${JUMPER_DOCKER_PLATFORM:-}" ]]; then PLATFORM_ARGS=(--platform "$JUMPER_DOCKER_PLATFORM"); fi
+if [[ -n "${FABWRIGHT_DOCKER_PLATFORM:-}" ]]; then PLATFORM_ARGS=(--platform "$FABWRIGHT_DOCKER_PLATFORM"); fi
 
 abs() { (cd "$1" && pwd); }
 SKETCH="$(abs "$1")"

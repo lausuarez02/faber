@@ -3,24 +3,24 @@
 // simulator FQBN, the camera shim linked in), run in QEMU with the camera port: frames reach the
 // firmware, set_camera_frame changes what it sees (a scene, an image in the project), the tests'
 // camera_frame step, errors that say what to fix, and the factory build without the shim.
-// Needs the native ESP32 toolchain + QEMU jb7 (jumper setup esp32) or Docker; skipped otherwise.
+// Needs the native ESP32 toolchain + QEMU jb7 (fabwright setup esp32) or Docker; skipped otherwise.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { buildFirmware, canBuildArduino } from "@jumper/runner";
-import { qemuImageAvailable } from "@jumper/sim-backends/node";
-import { encodePng, encodeJpeg, renderScene } from "@jumper/sim-core";
+import { buildFirmware, canBuildArduino } from "@fabwright/runner";
+import { qemuImageAvailable } from "@fabwright/sim-backends/node";
+import { encodePng, encodeJpeg, renderScene } from "@fabwright/sim-core";
 import { ProjectSession } from "../src/index.ts";
 
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
-if (!ready) console.warn("skipping the camera session test: the ESP32 toolchain or the emulator with the camera port is not ready (Fix: pnpm jumper setup esp32)");
+if (!ready) console.warn("skipping the camera session test: the ESP32 toolchain or the emulator with the camera port is not ready (Fix: pnpm fabwright setup esp32)");
 
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 const means = (serial: string) => [...serial.matchAll(/mean=(\d+)/g)].map((m) => Number(m[1]));
 
 describe.skipIf(!ready)("a camera through the session (XIAO ESP32-S3 Sense, real build, QEMU camera port)", { timeout: 400_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-camera-session-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-camera-session-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();

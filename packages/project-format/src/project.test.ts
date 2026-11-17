@@ -12,7 +12,7 @@ import {
 } from "./index.ts";
 
 const blink: ProjectInput = {
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "Blink",
   description: "The classic.",
   parts: [
@@ -37,7 +37,7 @@ const blink: ProjectInput = {
 
 describe("parseProject", () => {
   it("parses a valid project and fills defaults", () => {
-    const p = parseProject({ format: "jumper/1", name: "x", parts: [{ id: "a", type: "led", x: 1, y: 2 }] });
+    const p = parseProject({ format: "fabwright/1", name: "x", parts: [{ id: "a", type: "led", x: 1, y: 2 }] });
     expect(p.parts[0]!.rotation).toBe(0);
     expect(p.wires).toEqual([]);
     expect(p.scenarios).toEqual([]);
@@ -45,7 +45,7 @@ describe("parseProject", () => {
 
   it("reports readable errors with paths", () => {
     const res = safeParseProject({
-      format: "jumper/2",
+      format: "fabwright/2",
       name: "",
       parts: [{ id: "a", type: "led", x: 0, y: 0, rotation: 45 }],
       wires: [{ id: "w", from: { part: "a", pin: "A" }, to: { part: "ghost", pin: "1" } }],
@@ -60,7 +60,7 @@ describe("parseProject", () => {
 
   it("reports dangling wire ends and duplicate ids", () => {
     const res = safeParseProject({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: "x",
       parts: [
         { id: "a", type: "led", x: 0, y: 0 },
@@ -117,7 +117,7 @@ describe("serializeProject", () => {
     expect(lines).toContain(
       '    { "id": "w2", "from": { "part": "r1", "pin": "2" }, "to": { "part": "led1", "pin": "A" } },',
     );
-    expect(lines[1]).toBe('  "format": "jumper/1",');
+    expect(lines[1]).toBe('  "format": "fabwright/1",');
     // moving one part changes exactly one line
     const moved = parseProject(blink);
     moved.parts[1]!.x = 310;
@@ -127,7 +127,7 @@ describe("serializeProject", () => {
 
   it("serializes an empty project", () => {
     expect(serializeProject(createProject("Empty"))).toBe(
-      '{\n  "format": "jumper/1",\n  "name": "Empty",\n  "parts": [],\n  "wires": [],\n  "scenarios": []\n}\n',
+      '{\n  "format": "fabwright/1",\n  "name": "Empty",\n  "parts": [],\n  "wires": [],\n  "scenarios": []\n}\n',
     );
   });
 });
@@ -145,7 +145,7 @@ describe("buildNets", () => {
 
   it("merges chains and is deterministic", () => {
     const p = parseProject({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: "chain",
       parts: ["a", "b", "c", "d"].map((id) => ({ id, type: "x", x: 0, y: 0 })),
       wires: [

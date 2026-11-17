@@ -69,7 +69,7 @@ export async function simTimeMs(page: Page): Promise<number> {
     const v = document.querySelector('[data-testid="sim-clock"]')?.getAttribute("data-time-ms");
     if (v != null) return Number(v);
     // The readout is not mounted (e.g. under a full-screen overlay): read the engine directly.
-    const j = (window as unknown as { jumper?: { engine: { simulation?: { timeMs: number } } } }).jumper;
+    const j = (window as unknown as { fabwright?: { engine: { simulation?: { timeMs: number } } } }).fabwright;
     return j?.engine.simulation?.timeMs ?? 0;
   });
 }
@@ -133,7 +133,7 @@ export async function expectAttrWithinSimTime(page: Page, locator: Locator, name
 // The 3D Device view renders with three.js. With software WebGL (SwiftShader / llvmpipe) on a 2-vCPU
 // CI runner it starves the main-thread sim loop and page.screenshot can take minutes, so the tests
 // that measure the 3D scene only run where WebGL is fast:
-//   JUMPER_E2E_GPU=1  always run them;  JUMPER_E2E_GPU=0  always skip them;
+//   FABWRIGHT_E2E_GPU=1  always run them;  FABWRIGHT_E2E_GPU=0  always skip them;
 //   otherwise on CI they run only when the renderer is a hardware GPU; locally they always run
 //   (software WebGL on a fast desktop is enough).
 
@@ -151,10 +151,10 @@ const SOFTWARE_GL = /SwiftShader|llvmpipe|softpipe|Software|^none$/i;
 
 /** Skip the current test (with the reason in the report) when fast WebGL is not available. */
 export async function requireFastWebGL(page: Page): Promise<void> {
-  const flag = process.env.JUMPER_E2E_GPU;
+  const flag = process.env.FABWRIGHT_E2E_GPU;
   if (flag === "1") return;
   if (flag === "0") {
-    test.skip(true, "@gpu: needs fast WebGL; skipped because JUMPER_E2E_GPU=0");
+    test.skip(true, "@gpu: needs fast WebGL; skipped because FABWRIGHT_E2E_GPU=0");
     return;
   }
   if (!process.env.CI) return;
@@ -162,18 +162,18 @@ export async function requireFastWebGL(page: Page): Promise<void> {
   test.skip(
     SOFTWARE_GL.test(renderer),
     `@gpu: needs hardware WebGL, but this CI runner renders with "${renderer}" (software), which starves the sim loop and stalls screenshots. ` +
-      `Covered by the Device view smoke test here; run with JUMPER_E2E_GPU=1 on a GPU machine.`,
+      `Covered by the Device view smoke test here; run with FABWRIGHT_E2E_GPU=1 on a GPU machine.`,
   );
 }
 
 /**
- * A port for a `jumper serve` / live hub a spec starts (decision 0003, C9): E2E_HUB_PORT_BASE
+ * A port for a `fabwright serve` / live hub a spec starts (decision 0003, C9): E2E_HUB_PORT_BASE
  * (default 7900) + 2 per parallel worker slot + 1 on the phone project + `slot` * 50 for a spec's extra servers.
  * Parallel worktrees set different bases so their hubs never collide; 7780 is never handed out.
  */
 export function hubPort(info: TestInfo, slot = 0): number {
   const base = Number(process.env.E2E_HUB_PORT_BASE ?? 7900);
   const port = base + slot * 50 + info.parallelIndex * 2 + (info.project.name === "mobile" ? 1 : 0);
-  if (port === 7780) throw new Error("hubPort would hand out 7780, which is reserved for a person's jumper serve. Fix: set E2E_HUB_PORT_BASE to another range, e.g. 8000.");
+  if (port === 7780) throw new Error("hubPort would hand out 7780, which is reserved for a person's fabwright serve. Fix: set E2E_HUB_PORT_BASE to another range, e.g. 8000.");
   return port;
 }

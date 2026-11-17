@@ -5,7 +5,7 @@
 // LSB first, independent of the calendar), user RAM, the EEPROM interface 0x25-0x27 and the
 // configuration EEPROM mirrored in RAM at 0x30-0x37 (0x37: backup switchover BSM, trickle charge
 // TCE). Time is deterministic: startTime prop + simulation time (+ whatever the sketch set).
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { clamp, round, truthy } from "../../lib/props.ts";
 import { bcd, formatTime, fromEpoch, parseTime, toEpoch, unbcd } from "../../lib/calendar.ts";

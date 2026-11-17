@@ -1,7 +1,7 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "AI pet",
-  "description": "A pet with an AI inside, on a colour screen: an Uno draws it on a 2.8in ILI9341 TFT and asks the pet AI (http://ai.jumper/v1/pet, a language model behind the sandbox Wi-Fi) what to say through an ESP-01 Wi-Fi module. Talk, feed and play buttons, a buzzer, offline icon and retry when the Wi-Fi drops.",
+  "description": "A pet with an AI inside, on a colour screen: an Uno draws it on a 2.8in ILI9341 TFT and asks the pet AI (http://ai.fabwright/v1/pet, a language model behind the sandbox Wi-Fi) what to say through an ESP-01 Wi-Fi module. Talk, feed and play buttons, a buzzer, offline icon and retry when the Wi-Fi drops.",
   "parts": [
     { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
     { "id": "tft", "type": "ili9341-tft", "x": 640, "y": -20, "rotation": 0 },
@@ -55,7 +55,7 @@
     ]
   },
   "scenarios": [
-    { "id": "boots-and-joins", "name": "Draws the pet in colour, joins JumperNet and shows the online icon", "steps": [{ "expect_serial": "Pet hatched", "within_ms": 3000 }, { "expect_part": "tft.on", "op": "==", "value": true }, { "expect_part": "tft.lit", "op": ">", "value": 70000 }, { "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "icon: online", "within_ms": 500 }, { "expect_part": "esp.online", "op": "==", "value": true }, { "expect_no_errors": true }] },
+    { "id": "boots-and-joins", "name": "Draws the pet in colour, joins FabwrightNet and shows the online icon", "steps": [{ "expect_serial": "Pet hatched", "within_ms": 3000 }, { "expect_part": "tft.on", "op": "==", "value": true }, { "expect_part": "tft.lit", "op": ">", "value": 70000 }, { "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "icon: online", "within_ms": 500 }, { "expect_part": "esp.online", "op": "==", "value": true }, { "expect_no_errors": true }] },
     { "id": "talk-shows-reply-bubble", "name": "TALK asks the AI and shows its reply in a speech bubble", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "hold_ms": 80, "press": "btnTalk" }, { "expect_serial": "ask a=talk", "within_ms": 300 }, { "expect_serial": { "regex": "reply 200 (happy|hungry|sleepy|sad|excited)\\|[ -~]{1,60}\\r\\n" }, "within_ms": 2500 }, { "expect_serial": "bubble: ", "within_ms": 300 }, { "expect_part": "tft.bright", "op": ">", "value": 10000, "within_ms": 500 }] },
     { "id": "feed-raises-food", "name": "FEED adds 25 food and the AI reacts", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "hold_ms": 80, "press": "btnFeed" }, { "expect_serial": { "regex": "feed food=9\\d" }, "within_ms": 300 }, { "expect_serial_value": "food", "op": ">=", "value": 85, "within_ms": 100 }, { "expect_serial": "ask a=feed", "within_ms": 300 }, { "expect_serial": "reply 200 happy|", "within_ms": 2500 }] },
     { "id": "wifi-drop-offline-and-retry", "name": "Wi-Fi drops: offline icon, the question waits, the pet reconnects and asks again", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "inject_fault": "esp", "kind": "wifi_drop" }, { "expect_serial": "wifi: offline", "within_ms": 1000 }, { "expect_serial": "icon: offline", "within_ms": 300 }, { "expect_part": "esp.online", "op": "==", "value": false }, { "hold_ms": 80, "press": "btnTalk" }, { "expect_serial": "will retry when online", "within_ms": 500 }, { "inject_fault": "esp", "kind": "clear" }, { "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "icon: online", "within_ms": 500 }, { "expect_serial": "ask a=talk", "within_ms": 10000 }, { "expect_serial": "reply 200", "within_ms": 3000 }] },

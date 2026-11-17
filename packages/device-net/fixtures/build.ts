@@ -1,5 +1,5 @@
-// Rebuilds net-probe.esp32s3.merged.bin.gz (and audio-stream's, round 13) through Jumper's own build pipeline (services/runner):
-// the arduino-esp32 r3 image in Docker or, without it, the native toolchain (round 11, `jumper setup
+// Rebuilds net-probe.esp32s3.merged.bin.gz (and audio-stream's, round 13) through Fabwright's own build pipeline (services/runner):
+// the arduino-esp32 r3 image in Docker or, without it, the native toolchain (round 11, `fabwright setup
 // esp32`). The simulation build links the Wi-Fi / TLS shim (the output says "Wi-Fi shim on").
 //   node_modules/.bin/tsx packages/device-net/fixtures/build.ts
 import { writeFileSync } from "node:fs";

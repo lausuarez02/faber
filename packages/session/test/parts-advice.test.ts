@@ -1,4 +1,4 @@
-// Round 8 (parts-advice): Jumper picks and suggests smaller parts by itself. check_design says which
+// Round 8 (parts-advice): Fabwright picks and suggests smaller parts by itself. check_design says which
 // parts a device may not need (with the mm they cost) and plan_device picks the smallest parts that
 // do the job when the person wants something to hold. The fixture is the talking egg a real Claude
 // built in round 7 (jumper-evals/round7/egg/talking-egg-2: 78.2 x 102 x 34.3 mm, "bulky").
@@ -6,10 +6,10 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
-import { roleOf } from "@jumper/enclosure";
-import { parseProject, type Project } from "@jumper/project-format";
-import type { PartRegistry } from "@jumper/sim-core";
+import { registry } from "@fabwright/parts";
+import { roleOf } from "@fabwright/enclosure";
+import { parseProject, type Project } from "@fabwright/project-format";
+import type { PartRegistry } from "@fabwright/sim-core";
 import { checkDesign } from "../src/drc.ts";
 import { planDevice } from "../src/planner.ts";
 import { ProjectSession } from "../src/index.ts";
@@ -26,7 +26,7 @@ const dimsOf = (type: string, props?: Record<string, unknown>) => {
 
 function project(parts: [string, string, Record<string, unknown>?][], wires: [string, string][], extra: Partial<Project> = {}): Project {
   return parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "t",
     parts: parts.map(([id, type, props], i) => ({ id, type, x: i * 100, y: 0, ...(props ? { props } : {}) })),
     wires: wires.map(([a, b], i) => {
@@ -207,8 +207,8 @@ describe("check_fit can suggest the new smaller parts", () => {
   });
 
   it("the round-7 egg at a fixed size too small for it: a smaller speaker is among the swaps, tried with the layout", async () => {
-    process.env.JUMPER_CASE_PDF = "0";
-    const dir = mkdtempSync(join(tmpdir(), "jumper-r8-"));
+    process.env.FABWRIGHT_CASE_PDF = "0";
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-r8-"));
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       await s.call("new_project", { template: "blank", name: "egg" });

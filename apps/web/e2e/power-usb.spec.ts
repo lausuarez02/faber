@@ -1,4 +1,4 @@
-// Round 6, track power (decision 0004, R2): the pocket Muse served by `jumper serve` runs in the page
+// Round 6, track power (decision 0004, R2): the pocket Muse served by `fabwright serve` runs in the page
 // from its LiPo with USB unplugged; the power pill shows the battery's volts, current and time left;
 // plugging USB in takes the load off the cell; the slide switch cuts the power and the firmware stops.
 import { spawn, type ChildProcess } from "node:child_process";
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { expectAttrWithinSimTime, hubPort, shot } from "./helpers.ts";
 
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse", import.meta.url));
 
 test.describe("pocket Muse on battery power", () => {
@@ -19,10 +19,10 @@ test.describe("pocket Muse on battery power", () => {
   let port = 0;
 
   test.beforeEach(async ({}, info) => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-e2e-muse-"));
-    home = mkdtempSync(join(tmpdir(), "jumper-e2e-home-"));
+    dir = mkdtempSync(join(tmpdir(), "fabwright-e2e-muse-"));
+    home = mkdtempSync(join(tmpdir(), "fabwright-e2e-home-"));
     cpSync(MUSE, dir, { recursive: true });
-    const env = { ...process.env, JUMPER_HOME: home, JUMPER_AI_GATEWAY_PORT: "0" };
+    const env = { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_AI_GATEWAY_PORT: "0" };
     port = hubPort(info, 9);
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env });
     await expect
@@ -68,7 +68,7 @@ test.describe("pocket Muse on battery power", () => {
     await page.getByTestId("power-usb").click();
     await expect(pill).toHaveAttribute("data-usb", "unplugged");
     // The switch is off-screen in the fitted view: press it the way a click on the part does.
-    await page.evaluate(() => (window as unknown as { jumper: { engine: { interact(id: string, kind: "press"): void } } }).jumper.engine.interact("pwr", "press"));
+    await page.evaluate(() => (window as unknown as { fabwright: { engine: { interact(id: string, kind: "press"): void } } }).fabwright.engine.interact("pwr", "press"));
     await expect(page.getByTestId("part-pwr")).toHaveAttribute("data-state-position", "1");
     await expectAttrWithinSimTime(page, xiao, "data-state-powered", "false", 500);
     await expect(pill).toHaveAttribute("data-powered", "false", { timeout: 5_000 });

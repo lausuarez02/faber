@@ -2,8 +2,8 @@
 // A module: VCC/GND pins, SDA/SCL pins (protocols "i2c-sda"/"i2c-scl" in part.json), optional
 // on-board pull-ups (part.json bus.i2c.pullUpOhms), an address that may come from a prop, and a
 // supply current. The module only answers on the bus while it is powered.
-import type { PropValue } from "@jumper/project-format";
-import { GROUND, type CircuitBuilder, type Diagnostic, type PartContext, type SolveResultView } from "@jumper/sim-core";
+import type { PropValue } from "@fabwright/project-format";
+import { GROUND, type CircuitBuilder, type Diagnostic, type PartContext, type SolveResultView } from "@fabwright/sim-core";
 
 export interface I2cModuleOptions {
   /** Supply pin id (default "VCC") and ground pin id (default "GND"). */

@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 /** GL5528-class constants (typical): R at 10 lux, slope γ = log10(R10/R100), dark resistance. */

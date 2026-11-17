@@ -1,5 +1,5 @@
 // Pure view model of the network panel: log entries → rows (tested without a DOM).
-import type { NetLogEntry } from "@jumper/ai-gateway";
+import type { NetLogEntry } from "@fabwright/ai-gateway";
 
 export interface RequestRow {
   key: string;

@@ -1,5 +1,5 @@
 /**
- * `/?local` on the same `jumper serve` server, when the page follows that server
+ * `/?local` on the same `fabwright serve` server, when the page follows that server
  * (`?follow=ws://<same host>/live`); undefined otherwise. That page opens the followed project with
  * its built firmware, so Run, the buttons and the Device view work there.
  */

@@ -3,12 +3,12 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, wri
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import {
-  JumperError,
+  FabwrightError,
   ProjectSession,
   composeSvg,
   deviceStill, // round 6 frames
   diskFirmwareFiles,
-  jumperHome,
+  fabwrightHome,
   lastTestsFromLog,
   listRegisteredProjects,
   listVersions,
@@ -22,7 +22,7 @@ import {
   TEMPLATES,
   versionCount,
   versionDetail,
-} from "@jumper/session";
+} from "@fabwright/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 type Project = ProjectSession["project"];
@@ -46,7 +46,7 @@ export interface ProjectCard {
   board?: string;
   boardName?: string;
   parts: number;
-  /** Scenarios in jumper.json (beyond the contract's fields). */
+  /** Scenarios in fabwright.json (beyond the contract's fields). */
   scenarios?: number;
   /** ISO. */
   updatedAt: string;
@@ -70,19 +70,19 @@ export interface ProjectCard {
 const originCache = new Map<string, string | null>();
 
 /**
- * The example a project folder was copied from: `.jumper/origin.json`, or (copies made before it
+ * The example a project folder was copied from: `.fabwright/origin.json`, or (copies made before it
  * existed) the `open_example` entry of its action log, which is then written to origin.json so the
  * log is read once. Undefined for a project that is not a copy.
  */
 export function copiedFrom(dir: string): string | undefined {
-  const file = join(dir, ".jumper", "origin.json");
+  const file = join(dir, ".fabwright", "origin.json");
   const cached = originCache.get(dir);
   if (cached !== undefined) return cached ?? undefined;
   let from: string | undefined;
   try {
     if (existsSync(file)) from = (JSON.parse(readFileSync(file, "utf8")) as { from?: string }).from;
     else {
-      const log = join(dir, ".jumper", "actions.jsonl");
+      const log = join(dir, ".fabwright", "actions.jsonl");
       if (existsSync(log)) {
         for (const line of readFileSync(log, "utf8").split("\n")) {
           if (!line.includes('"open_example"')) continue;
@@ -105,8 +105,8 @@ export function copiedFrom(dir: string): string | undefined {
 
 function writeOrigin(dir: string, from: string): void {
   try {
-    mkdirSync(join(dir, ".jumper"), { recursive: true });
-    writeFileSync(join(dir, ".jumper", "origin.json"), JSON.stringify({ from }) + "\n");
+    mkdirSync(join(dir, ".fabwright"), { recursive: true });
+    writeFileSync(join(dir, ".fabwright", "origin.json"), JSON.stringify({ from }) + "\n");
     originCache.set(dir, from);
   } catch {
     // read-only folder: the log scan answers next time
@@ -131,7 +131,7 @@ function registryOf(dir: string, ctx: RouteContext): PartRegistry {
   return existsSync(join(dir, "parts")) ? registryForProjectDir(dir) : s.registry;
 }
 
-/** jumper.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
+/** fabwright.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
 function drawingKey(dir: string, raw: string): string {
   raw += `\nstill:${stillKey(dir)}`; // round 6 frames: a new run redraws the screens in the thumbnail
   const root = join(dir, "parts");
@@ -151,20 +151,20 @@ function drawingKey(dir: string, raw: string): string {
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
 
-/** A JumperError ("what: why. Fix: fix") in the server's error shape. */
+/** A FabwrightError ("what: why. Fix: fix") in the server's error shape. */
 function opError(e: unknown): { error: string; code?: string } {
-  if (e instanceof JumperError) return { error: `${e.what}. Why: ${e.why.replace(/\.$/, "")}. Fix: ${e.fix}`, code: e.code };
+  if (e instanceof FabwrightError) return { error: `${e.what}. Why: ${e.why.replace(/\.$/, "")}. Fix: ${e.fix}`, code: e.code };
   return { error: (e as Error).message };
 }
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-jumper-token"] === ctx.token) return true;
-  ctx.json(res, 403, err("Missing or wrong x-jumper-token", "changing a project needs the token from GET /api/connect, which only pages served by this Jumper server can read", "open the Jumper app from the jumper serve URL and try again"));
+  if (req.headers["x-fabwright-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "changing a project needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
   return false;
 }
 
 function host(ctx: RouteContext) {
-  if (!ctx.projects) throw new Error("This server has no projects host. Why: startJumperServer did not pass `projects` to the routes. Fix: start it with `jumper serve`.");
+  if (!ctx.projects) throw new Error("This server has no projects host. Why: startFabwrightServer did not pass `projects` to the routes. Fix: start it with `fabwright serve`.");
   return ctx.projects;
 }
 
@@ -180,11 +180,11 @@ async function readBody<T>(req: IncomingMessage, res: ServerResponse, ctx: Route
 // ------------------------------------------------------------------------------------------ cards
 
 function readProject(dir: string): { project?: Project; raw?: string } {
-  const file = join(dir, "jumper.json");
+  const file = join(dir, "fabwright.json");
   if (!existsSync(file)) return {};
   const raw = readFileSync(file, "utf8");
   try {
-    // Shape check only (the CLI does not depend on project-format); `jumper check` validates fully.
+    // Shape check only (the CLI does not depend on project-format); `fabwright check` validates fully.
     const p = JSON.parse(raw) as Project;
     return p && Array.isArray(p.parts) && Array.isArray(p.wires) ? { project: { ...p, scenarios: Array.isArray(p.scenarios) ? p.scenarios : [] }, raw } : { raw };
   } catch {
@@ -226,10 +226,10 @@ function makeCard(dir: string, kind: ProjectCard["kind"], ctx: RouteContext): Pr
   const boardPart = project?.parts.find((p) => p.id === boardId) ?? project?.parts.find((p) => registry.get(p.type)?.spec.category === "board");
   const readme = join(dir, "README.md");
   const description = oneLine(project?.description) ?? (existsSync(readme) ? oneLine(firstParagraph(readFileSync(readme, "utf8"))) : undefined);
-  const ownLog = join(dir, ".jumper", "actions.jsonl");
+  const ownLog = join(dir, ".fabwright", "actions.jsonl");
   const agentLog = join(dir, "agent-actions.jsonl");
   const tests = lastTestsFromLog(existsSync(ownLog) ? ownLog : agentLog);
-  const updated = Math.max(mtime(join(dir, "jumper.json")), mtime(ownLog));
+  const updated = Math.max(mtime(join(dir, "fabwright.json")), mtime(ownLog));
   const id = projectId(dir);
   const readOnly = kind === "example" || kind === "agent-built";
   const agentMade = new Set((project?.parts ?? []).filter((p) => registry.get(p.type)?.fidelity.origin === "agent-made").map((p) => p.type)).size;
@@ -261,7 +261,7 @@ function childProjects(root: string, skip: Set<string> = new Set()): string[] {
   return names
     .filter((n) => !n.startsWith(".") && !skip.has(n))
     .map((n) => join(root, n))
-    .filter((d) => existsSync(join(d, "jumper.json")));
+    .filter((d) => existsSync(join(d, "fabwright.json")));
 }
 
 interface Listing {
@@ -299,7 +299,7 @@ function listing(ctx: RouteContext): Listing {
   };
   add(active, isInside(active, h.root) ? "project" : "registered");
   for (const d of childProjects(h.root)) add(d, "project");
-  for (const r of listRegisteredProjects()) if (existsSync(join(r.dir, "jumper.json"))) add(r.dir, isInside(r.dir, h.root) ? "project" : "registered");
+  for (const r of listRegisteredProjects()) if (existsSync(join(r.dir, "fabwright.json"))) add(r.dir, isInside(r.dir, h.root) ? "project" : "registered");
   projects.sort((a, b) => (a.dir === active ? -1 : b.dir === active ? 1 : b.updatedAt.localeCompare(a.updatedAt)));
   // Round 6b: which project is the person's copy of which example (the newest copy wins).
   const copyOfExample = new Map<string, string>();
@@ -322,7 +322,7 @@ function findCard(ctx: RouteContext, id: string): ProjectCard | undefined {
 }
 
 function noProject(id: string) {
-  return err(`No project with id '${id}'`, "it is not in the projects folder, examples/ or the registry ($JUMPER_HOME/projects.json), or its folder was moved", "reload the Projects view (GET /api/projects) and use one of its ids");
+  return err(`No project with id '${id}'`, "it is not in the projects folder, examples/ or the registry ($FABWRIGHT_HOME/projects.json), or its folder was moved", "reload the Projects view (GET /api/projects) and use one of its ids");
 }
 
 // ------------------------------------------------------------------------------------ thumbnails
@@ -364,17 +364,17 @@ async function thumbSvg(dir: string, project: Project, ctx: RouteContext): Promi
   return composeSvg(project, registry, still ? { states: still.states, liveWires: still.live, ...(still.color ? { color: still.color } : {}) } : {});
 }
 
-/** Where a card's PNG is cached: examples (read-only, C3) under $JUMPER_HOME, projects in their .jumper/. */
+/** Where a card's PNG is cached: examples (read-only, C3) under $FABWRIGHT_HOME, projects in their .fabwright/. */
 function thumbFile(card: ProjectCard, raw: string): string {
   const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
-  return card.readOnly ? join(jumperHome(), "thumbs", `${card.id}-${hash}.png`) : join(card.dir, ".jumper", "thumbs", `${hash}.png`);
+  return card.readOnly ? join(fabwrightHome(), "thumbs", `${card.id}-${hash}.png`) : join(card.dir, ".fabwright", "thumbs", `${hash}.png`);
 }
 
 async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Promise<void> {
   const card = findCard(ctx, id);
   if (!card) return ctx.json(res, 404, noProject(id));
   const { project, raw } = readProject(card.dir);
-  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${join(card.dir, "jumper.json")} is missing or invalid`, `run \`jumper check -p ${card.dir}\``));
+  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${join(card.dir, "fabwright.json")} is missing or invalid`, `run \`fabwright check -p ${card.dir}\``));
   const file = thumbFile(card, raw);
   const headers = { "cache-control": "max-age=31536000, immutable" };
   if (existsSync(file)) {
@@ -389,13 +389,13 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
     return;
   }
   // No Chromium for Playwright: the same drawing as SVG (an <img> shows it all the same), not cached.
-  res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-jumper-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
+  res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-fabwright-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
   res.end(await thumbSvg(card.dir, project, ctx)); // round 6 frames
 }
 
 // -------------------------------------------------------------------------------- create / open
 
-const COPY_SKIP_DIRS = new Set([".jumper", "media", "shots", "export", "node_modules", ".git"]);
+const COPY_SKIP_DIRS = new Set([".fabwright", "media", "shots", "export", "node_modules", ".git"]);
 const COPY_SKIP_EXT = /\.(mp4|webm|mov|gif)$/i;
 
 /** Copy an example into a new project folder; an agent-built example's log becomes the copy's history. */
@@ -412,8 +412,8 @@ function copyExample(from: string, to: string): void {
   });
   const agentLog = join(from, "agent-actions.jsonl");
   if (existsSync(agentLog)) {
-    mkdirSync(join(to, ".jumper"), { recursive: true });
-    cpSync(agentLog, join(to, ".jumper", "actions.jsonl"));
+    mkdirSync(join(to, ".fabwright"), { recursive: true });
+    cpSync(agentLog, join(to, ".fabwright", "actions.jsonl"));
   }
 }
 
@@ -446,13 +446,13 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
     mkdirSync(h.root, { recursive: true });
     dir = newProjectFolder(h.root, name);
   } catch (e) {
-    return ctx.json(res, 500, err(`Could not create a folder for '${name}' in ${h.root}`, (e as Error).message, "check that the folder is writable, or start jumper serve with --project in a writable place"));
+    return ctx.json(res, 500, err(`Could not create a folder for '${name}' in ${h.root}`, (e as Error).message, "check that the folder is writable, or start fabwright serve with --project in a writable place"));
   }
   try {
     if (source) {
       copyExample(source.dir, dir);
       // The copy is its own project with the chosen name.
-      const file = join(dir, "jumper.json");
+      const file = join(dir, "fabwright.json");
       const data = JSON.parse(readFileSync(file, "utf8")) as { name?: string };
       if (data.name !== name) writeFileSync(file, JSON.stringify({ ...data, name }, null, 2) + "\n");
       // Round 6: the copy as it came is a version, so the person can always go back to it.
@@ -594,7 +594,7 @@ export const projectsRoutes: ApiRoute[] = [
       const card = findCard(ctx, id!);
       if (!card) return ctx.json(res, 404, noProject(id!));
       const { project } = readProject(card.dir);
-      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${join(card.dir, "jumper.json")} is missing or invalid`, `run \`jumper check -p ${card.dir}\` to see what is wrong`));
+      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${join(card.dir, "fabwright.json")} is missing or invalid`, `run \`fabwright check -p ${card.dir}\` to see what is wrong`));
       return ctx.json(res, 200, { card, project, files: diskFirmwareFiles(card.dir) });
     },
   },
@@ -662,7 +662,7 @@ export const projectsRoutes: ApiRoute[] = [
         const r = await ctx.call("restore_version", { version: Number(version), ...(typeof body.why === "string" && body.why ? { why: body.why } : {}) }, { actor: "web" });
         return ctx.json(res, 200, r);
       } catch (e) {
-        return ctx.json(res, e instanceof JumperError && e.code === "unknown-version" ? 404 : 400, opError(e));
+        return ctx.json(res, e instanceof FabwrightError && e.code === "unknown-version" ? 404 : 400, opError(e));
       }
     },
   },
@@ -744,10 +744,10 @@ const versionEvents: ServerHook = (ctx) => {
 /**
  * Round 6 (switch): draw the gallery's thumbnails in the background shortly after the server starts,
  * so the first Projects page shows every card's circuit instead of blank tiles while each render
- * (about 1 s, one at a time) runs. Off in unit tests and with JUMPER_WARM_THUMBS=0.
+ * (about 1 s, one at a time) runs. Off in unit tests and with FABWRIGHT_WARM_THUMBS=0.
  */
 const warmThumbnails: ServerHook = (ctx) => {
-  if (process.env.VITEST || process.env.JUMPER_WARM_THUMBS === "0" || !ctx.projects) return;
+  if (process.env.VITEST || process.env.FABWRIGHT_WARM_THUMBS === "0" || !ctx.projects) return;
   let stopped = false;
   const timer = setTimeout(() => {
     void (async () => {

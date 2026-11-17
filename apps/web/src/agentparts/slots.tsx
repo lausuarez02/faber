@@ -1,11 +1,11 @@
 import type { ComponentType } from "react";
 import { useEffect } from "react";
-import { engine, useJumper } from "../lib/app.ts";
+import { engine, useFabwright } from "../lib/app.ts";
 import { createProjectPartsSync, servedBase } from "../lib/projectParts.ts";
 
 /**
  * Round 5, track "agentparts" (owner): keeps the open project's agent-made parts (parts/<id>/ on
- * the jumper serve that the page follows) in the part registry, so they draw and simulate like
+ * the fabwright serve that the page follows) in the part registry, so they draw and simulate like
  * built-ins. Renders nothing.
  */
 function ProjectPartsSync() {
@@ -16,15 +16,15 @@ function ProjectPartsSync() {
     const sync = createProjectPartsSync(
       base,
       (types) => {
-        const s = useJumper.getState();
+        const s = useFabwright.getState();
         // New part objects for the affected types so the canvas re-creates their nodes with the new definition.
-        useJumper.setState({ project: { ...s.project, parts: s.project.parts.map((p) => (types.has(p.type) ? { ...p } : p)) } });
+        useFabwright.setState({ project: { ...s.project, parts: s.project.parts.map((p) => (types.has(p.type) ? { ...p } : p)) } });
         if (s.run !== "idle" && s.project.parts.some((p) => types.has(p.type))) engine.stop();
       },
-      (message) => useJumper.getState().toast({ kind: "error", title: "Agent-made part problem", detail: message }),
+      (message) => useFabwright.getState().toast({ kind: "error", title: "Agent-made part problem", detail: message }),
     );
-    void sync.check(useJumper.getState().project);
-    return useJumper.subscribe((s, prev) => {
+    void sync.check(useFabwright.getState().project);
+    return useFabwright.subscribe((s, prev) => {
       if (s.project !== prev.project) void sync.check(s.project);
     });
   }, []);

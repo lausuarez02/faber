@@ -1,12 +1,12 @@
-import { factoryNetworkNotes, relayPack, relayUseful } from "@jumper/device-net";
+import { factoryNetworkNotes, relayPack, relayUseful } from "@fabwright/device-net";
 import { networkConfigOf } from "../device-network.ts";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { CASE_SHAPES, EnclosureSchema, type Enclosure, type Project } from "@jumper/project-format";
-import { heldProblems } from "@jumper/enclosure";
-import type { CaseReport } from "@jumper/enclosure";
-import { parseOutline as parseOutlineSync } from "@jumper/enclosure/outline";
-import { hexToUf2 } from "@jumper/sim-backends";
+import { CASE_SHAPES, EnclosureSchema, type Enclosure, type Project } from "@fabwright/project-format";
+import { heldProblems } from "@fabwright/enclosure";
+import type { CaseReport } from "@fabwright/enclosure";
+import { parseOutline as parseOutlineSync } from "@fabwright/enclosure/outline";
+import { hexToUf2 } from "@fabwright/sim-backends";
 import { fail } from "../errors.ts";
 import { wiringMarkdown } from "../exporter.ts";
 import { fidelityReport } from "../fidelity.ts";
@@ -23,7 +23,7 @@ import type { ToolModule } from "./types.ts";
 /**
  * Round 6, track "case" (owner). Decision 0004, R3 to R6.
  * design_case / update_case / get_case / export_manufacturing. The enclosure config lives in
- * jumper.json (an undoable edit); the generated files in <project>/case/ are outputs, never in the
+ * fabwright.json (an undoable edit); the generated files in <project>/case/ are outputs, never in the
  * undo history, regenerated whenever the hash of the config + the parts' mechanical data changes.
  */
 
@@ -65,7 +65,7 @@ const sizeArg = {
 };
 const placements = {
   type: "object",
-  description: 'Only for what the person asked for (Jumper places every part by itself; each pin can cost many mm: read costs). Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front | back | left | right | top | bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}).',
+  description: 'Only for what the person asked for (Fabwright places every part by itself; each pin can cost many mm: read costs). Per part id, where it goes: {"pet": {"face": "right", "y_mm": 4}, "bat": {"face": "inside"}, "xiao": {"on_edge": true}}. face: front | back | left | right | top | bottom (as seen holding it, screen towards you) or inside (no opening); x_mm / y_mm from the centre of that face (+x right, +y up looking straight at it); rotation 0 / 90 / 180 / 270; on_edge: stand the board on its edge (narrower, thicker). Parts left out are auto-packed (screen front, USB bottom, buttons on the sides, buzzer / speaker grille at the back; a speaker that should talk through the front: {"spk": {"face": "front"}}).',
   additionalProperties: true,
 };
 const why = { type: "string", description: "Short reason shown in the step list." };
@@ -73,7 +73,7 @@ const layoutArg = {
   type: "string",
   enum: ["auto", "thinnest", "smallest", "balanced"],
   description:
-    'How the parts are distributed inside (round 8). Jumper works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it.',
+    'How the parts are distributed inside (round 8). Fabwright works it out automatically: it lays the parts out flat first (side by side, one layer), then in two or three layers, inside the real outline, and proposes three layouts: "thinnest" (fewest layers), "smallest" (least volume), "balanced" (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). "auto" (default) = balanced. See them first with propose_layout. Pin a part with placements ({"bat": {"x_mm": 0, "y_mm": -20}} or {"layer": 1}) and the rest is arranged around it.',
 };
 
 const heldArg = {
@@ -93,7 +93,7 @@ export const caseTools: ToolModule = {
     {
       name: "design_case",
       title: "Design a printable case",
-      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body in print orientation (front, back, button plungers, light pipes), case.3mf (a coloured build plate for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole) are starting points; "custom" is ANY outline you draw (an egg, a heart, a bean, a guitar pick ...) with outline, at any size with size_mm: Jumper packs the parts inside that real outline (a narrow end holds less) and, when they do not fit a fixed size, says what misses by how much and which smaller parts would fit (fits: false, misses, suggestions; nothing is saved). Check a fit first in under a second with check_fit (or dry_run: true). Before it: propose_layout (how the parts go inside) and read its costs. Do not pin positions (placements) unless the person asked; leave dome_mm and the edges on auto; a pocket or hand-held device should be 20 mm thick or less. Example: {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 70.7 x 94.3 x 19.6), inner_mm, pocket (thickness first: "fits" = comfortable, ≤ 18 mm thick within 110 x 70 mm; "tight" ≤ 22 mm; "no" = bulky), volume_cm3, ok, checks (fits, screen-window, buttons-reachable, connector-access, camera-view (a camera lens: its hole, where, and that the field of view clears the wall), held-object / held-sensor (round 15: a thing the case holds, its room, opening and walls, and a lid sensor's gap; report.held has its sizes and how to check them with calipers), min-wall, printable, watertight, no-intersection, size-match), files, costs (what each of your choices adds: pins, faces, dome, edges, a fixed size, wall, each with the update_case call that relaxes it, the costliest first, and relax_all), plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves jumper.json alone (compare shapes). Takes 3 to 30 s (real CAD; a pebble with domed faces is the slowest). ${CANNOT}`,
+      description: `Pack the project's parts into a two-part printable case and write everything needed to make it into <project>/case/: STL per body in print orientation (front, back, button plungers, light pipes), case.3mf (a coloured build plate for slicers), STEP (assembly with the parts as named solids, front, back: what factories ask for), renders (front / back / exploded / inside), an A3 drawing (SVG, PDF when Chromium is installed) with sizes, hole positions, tolerances, material and print settings, and PRINT.md. Shapes: "rounded-box", "pill", "pebble" (organic oval), "puck" (round), "keychain" (tab with a lanyard hole) are starting points; "custom" is ANY outline you draw (an egg, a heart, a bean, a guitar pick ...) with outline, at any size with size_mm: Fabwright packs the parts inside that real outline (a narrow end holds less) and, when they do not fit a fixed size, says what misses by how much and which smaller parts would fit (fits: false, misses, suggestions; nothing is saved). Check a fit first in under a second with check_fit (or dry_run: true). Before it: propose_layout (how the parts go inside) and read its costs. Do not pin positions (placements) unless the person asked; leave dome_mm and the edges on auto; a pocket or hand-held device should be 20 mm thick or less. Example: {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"} or {"shape": "puck", "params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}. Returns the CaseReport: size_mm (e.g. 70.7 x 94.3 x 19.6), inner_mm, pocket (thickness first: "fits" = comfortable, ≤ 18 mm thick within 110 x 70 mm; "tight" ≤ 22 mm; "no" = bulky), volume_cm3, ok, checks (fits, screen-window, buttons-reachable, connector-access, camera-view (a camera lens: its hole, where, and that the field of view clears the wall), held-object / held-sensor (round 15: a thing the case holds, its room, opening and walls, and a lid sensor's gap; report.held has its sizes and how to check them with calipers), min-wall, printable, watertight, no-intersection, size-match), files, costs (what each of your choices adds: pins, faces, dome, edges, a fixed size, wall, each with the update_case call that relaxes it, the costliest first, and relax_all), plus the front and exploded renders inline. save: false writes to case/variants/<shape>/ and leaves fabwright.json alone (compare shapes). Takes 3 to 30 s (real CAD; a pebble with domed faces is the slowest). ${CANNOT}`,
       inputSchema: {
         type: "object",
         properties: {
@@ -108,7 +108,7 @@ export const caseTools: ToolModule = {
           held: heldArg,
           follow: followArg,
           dry_run: { type: "boolean", description: "true: only test the fit (no CAD, nothing written, under a second): the same answer as check_fit." },
-          save: { type: "boolean", description: "Default true: store the case in jumper.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
+          save: { type: "boolean", description: "Default true: store the case in fabwright.json (undoable) and write case/. false: write case/variants/<shape>/ only." },
           images: { type: "boolean", description: "Default true: return the front and exploded renders inline." },
           costs: { type: "boolean", description: "Default true: add costs (what each of your choices adds to the size), a few seconds after the CAD." },
           why,
@@ -142,7 +142,7 @@ export const caseTools: ToolModule = {
       name: "propose_layout",
       title: "Propose how the parts are distributed",
       description:
-        'Work out, automatically, the best ways to distribute the project\'s parts inside a case of ANY outline and size (no CAD, nothing written, about 1 to 2 s): Jumper lays the parts out flat first (every part side by side in one layer inside the real outline, rotated 0 / 90, a board on its edge where it helps), then in two or three layers (e.g. the cell behind the screen), keeping the screen behind its window, the speaker grille on its face, each USB port / button / switch reaching its wall, the cell flat, wiring room between parts and the rim round-over at each part\'s depth (heavy parts low in an upright outline). Returns {proposals: [{id: "thinnest" | "smallest" | "balanced", label, size_mm, volume_cm3, pocket, fill_ratio, layers: [{index, z_mm, parts}], placements: {part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}, why: [reasons in plain words], misses, warnings, source}], best, chosen, parts_volume_cm3, ms}. Same arguments as check_fit (with none it uses the saved case). Also costs: what each of your choices (a pinned part, a face, the dome, edges, a fixed size, wall) adds in thickness / size / volume, measured by proposing again without it, each with the update_case call that relaxes it, and relax_all. Call it before design_case; relax the costly choices unless the person asked for them; a pocket or hand-held device should be 20 mm thick or less. Then make the one you want with design_case / update_case {layout: "<id>"}; pin a part only where the person asked for it (the rest is arranged around it). views: true adds front and side views (outline + part rectangles per layer) for drawing them. Deterministic: the same project gives the same proposals.',
+        'Work out, automatically, the best ways to distribute the project\'s parts inside a case of ANY outline and size (no CAD, nothing written, about 1 to 2 s): Fabwright lays the parts out flat first (every part side by side in one layer inside the real outline, rotated 0 / 90, a board on its edge where it helps), then in two or three layers (e.g. the cell behind the screen), keeping the screen behind its window, the speaker grille on its face, each USB port / button / switch reaching its wall, the cell flat, wiring room between parts and the rim round-over at each part\'s depth (heavy parts low in an upright outline). Returns {proposals: [{id: "thinnest" | "smallest" | "balanced", label, size_mm, volume_cm3, pocket, fill_ratio, layers: [{index, z_mm, parts}], placements: {part: {x_mm, y_mm, z_mm, rot, on_edge, layer, face}}, why: [reasons in plain words], misses, warnings, source}], best, chosen, parts_volume_cm3, ms}. Same arguments as check_fit (with none it uses the saved case). Also costs: what each of your choices (a pinned part, a face, the dome, edges, a fixed size, wall) adds in thickness / size / volume, measured by proposing again without it, each with the update_case call that relaxes it, and relax_all. Call it before design_case; relax the costly choices unless the person asked for them; a pocket or hand-held device should be 20 mm thick or less. Then make the one you want with design_case / update_case {layout: "<id>"}; pin a part only where the person asked for it (the rest is arranged around it). views: true adds front and side views (outline + part rectangles per layer) for drawing them. Deterministic: the same project gives the same proposals.',
       inputSchema: {
         type: "object",
         properties: { shape: { type: "string", enum: [...CASE_SHAPES] }, outline: outlineArg, size_mm: sizeArg, params, front: { type: "string" }, placements, exclude: { type: "array", items: { type: "string" } }, layout: layoutArg, held: heldArg, follow: followArg, views: { type: "boolean", description: "Add the front and side views per proposal (default false)." }, costs: { type: "boolean", description: "Default true: add costs, what each of your choices (pins, faces, dome, edges, a fixed size, wall) adds to the size, a few seconds." } },
@@ -152,7 +152,7 @@ export const caseTools: ToolModule = {
     {
       name: "get_case",
       title: "Case report",
-      description: "The current case's CaseReport (sizes, pocket verdict, checks, files). If a part, the wiring of the case config or an undo changed things since the files were written, it regenerates them first (stale: true in the answer). Does not change jumper.json. Fails when there is no case yet.",
+      description: "The current case's CaseReport (sizes, pocket verdict, checks, files). If a part, the wiring of the case config or an undo changed things since the files were written, it regenerates them first (stale: true in the answer). Does not change fabwright.json. Fails when there is no case yet.",
       inputSchema: { type: "object", properties: {} },
       readOnly: true,
     },
@@ -160,14 +160,14 @@ export const caseTools: ToolModule = {
       name: "get_assembly_plan",
       title: "How to build it",
       description:
-        'How to build the real device, worked out by Jumper at design time for this case (any shape): everything to BUY (parts with MPNs, wire by gauge and length, screws, inserts, Kapton, foam), everything to PRINT (each STL with the face that goes on the bed), the consumables and tools, and the ASSEMBLY STEPS in an order that is physically possible: which shell each part goes into and in what order (a part another covers goes in first; a switch whose lever pokes through its hole slides in before what would block it; plungers before the parts behind them), when each wire is soldered (as soon as both of its parts are in; pads a later part covers get their lead on the bench first; wires between the two shells with the case open like a book, cut long enough for it), the battery last and insulated, a power-on test before closing, the closure, a closed test. Each step: {n, title, say (plain words for the person), shell, parts, action (place | press-fit | screw | glue | solder | tape | route-wire | close | flash | test), fasteners, wires [{id, from, to, length_mm, gauge, color}], tools, cautions, view {explode, highlight, camera}, image (a picture of that step)}. Also how each part is held (mounts: the case adds seat posts, hold-downs, backstops, guides, cell corners and strap slots where they fit) and the design-for-assembly checks (assembly-close, assembly-insert, assembly-solder, assembly-wires, assembly-access, assembly-battery, assembly-screws, assembly-held), each with what failed, why, the fix and the sizes. Regenerates the case first when it is stale. Example: {} or {"images": true} (attach the step pictures). Use it when the person asks what to buy, what to print or how to put it together; show them the steps and pictures in plain words. Fails when there is no case yet (design_case first).',
+        'How to build the real device, worked out by Fabwright at design time for this case (any shape): everything to BUY (parts with MPNs, wire by gauge and length, screws, inserts, Kapton, foam), everything to PRINT (each STL with the face that goes on the bed), the consumables and tools, and the ASSEMBLY STEPS in an order that is physically possible: which shell each part goes into and in what order (a part another covers goes in first; a switch whose lever pokes through its hole slides in before what would block it; plungers before the parts behind them), when each wire is soldered (as soon as both of its parts are in; pads a later part covers get their lead on the bench first; wires between the two shells with the case open like a book, cut long enough for it), the battery last and insulated, a power-on test before closing, the closure, a closed test. Each step: {n, title, say (plain words for the person), shell, parts, action (place | press-fit | screw | glue | solder | tape | route-wire | close | flash | test), fasteners, wires [{id, from, to, length_mm, gauge, color}], tools, cautions, view {explode, highlight, camera}, image (a picture of that step)}. Also how each part is held (mounts: the case adds seat posts, hold-downs, backstops, guides, cell corners and strap slots where they fit) and the design-for-assembly checks (assembly-close, assembly-insert, assembly-solder, assembly-wires, assembly-access, assembly-battery, assembly-screws, assembly-held), each with what failed, why, the fix and the sizes. Regenerates the case first when it is stale. Example: {} or {"images": true} (attach the step pictures). Use it when the person asks what to buy, what to print or how to put it together; show them the steps and pictures in plain words. Fails when there is no case yet (design_case first).',
       inputSchema: { type: "object", properties: { images: { type: "boolean", description: "Attach the step pictures inline (the first four; every step has its path in image). Default false." } } },
       readOnly: true,
     },
     {
       name: "export_manufacturing",
       title: "Factory pack",
-      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, jumper.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), build-kit/ (the person-facing build kit, as get_build_kit: kit.html, KIT.md, SHOPPING.csv / .md, PRINT-LIST.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
+      description: 'Write the factory pack to <project>/manufacturing/<name>-v<version>/ and zip it: README.md for the supplier (what it is, how to build, flash and test), README.zh-CN.md (short summary), NOTES.md (honest limits: no PCB layout yet, hand-wired / perfboard; what was only simulated; what to verify on a real unit), BOM.csv (line, refs, qty, name, mpn, manufacturer, lcsc, jlc, package, generic, unit_usd, ext_usd, buy_url, source, notes) + BOM.md, electronics/ (WIRING.md, netlist.csv, fabwright.net KiCad netlist, WIRE-CUTS.csv), firmware/ (firmware.hex, firmware.uf2 for RP2040, firmware.bin for ESP32 boards built for the real board, FLASHING.md, source/), enclosure/ (the case files), assembly/ASSEMBLY.md (numbered steps with the renders), test/ (TEST-PLAN.md from the scenarios, TEST-ON-HARDWARE.md), build-kit/ (the person-facing build kit, as get_build_kit: kit.html, KIT.md, SHOPPING.csv / .md, PRINT-LIST.md), manifest.json (sha256 per file). Example: {} or {"zh_cn": false}. Returns {dir, zip, files, missing: [{item, why, fix}], notes, next}. Build the firmware and design_case first for a complete pack (missing[] says what is absent).',
       inputSchema: {
         type: "object",
         properties: {
@@ -209,7 +209,7 @@ export const caseTools: ToolModule = {
     async update_case(args, x) {
       const s = x.session;
       const cur = s.project.enclosure;
-      if (!cur) fail("no-case", "No case yet", "update_case changes an existing case and this project has none (jumper.json has no enclosure)", 'design_case {"shape": "pebble"}');
+      if (!cur) fail("no-case", "No case yet", "update_case changes an existing case and this project has none (fabwright.json has no enclosure)", 'design_case {"shape": "pebble"}');
       const merged: Record<string, unknown> = { ...cur };
       if (args.shape) merged.shape = args.shape;
       if (args.outline !== undefined) merged.outline = args.outline;
@@ -280,7 +280,7 @@ export const caseTools: ToolModule = {
     },
     async get_case(_args, x) {
       const s = x.session;
-      if (!s.project.enclosure) fail("no-case", "No case yet", "this project has no enclosure in jumper.json", 'design_case {"shape": "pebble"}');
+      if (!s.project.enclosure) fail("no-case", "No case yet", "this project has no enclosure in fabwright.json", 'design_case {"shape": "pebble"}');
       const st = await caseState(s);
       x.summary(`case: ${st.report.shape} ${fmtSize(st.report)}${st.regenerated ? " (regenerated)" : ""}`);
       return { ...compact(st.report), dir: join(s.dir, "case"), stale: st.regenerated, files: st.report.files.map((f) => f.path) };
@@ -318,7 +318,7 @@ function encFromArgs(args: Record<string, unknown>, fallbackShape?: string): Rec
 }
 
 /**
- * Round 8: the layouts Jumper proposes for an enclosure (propose_layout, POST /api/case/layouts):
+ * Round 8: the layouts Fabwright proposes for an enclosure (propose_layout, POST /api/case/layouts):
  * thinnest, smallest and balanced, each a finished layout, and which one the case uses.
  */
 export async function layoutProposals(s: ProjectSession, args: Record<string, unknown>, opts: { views?: boolean; costs?: boolean; costsBudgetMs?: number } = {}) {
@@ -326,7 +326,7 @@ export async function layoutProposals(s: ProjectSession, args: Record<string, un
   if (!has && !s.project.enclosure) fail("no-case", "Nothing to lay out", "propose_layout with no shape uses the saved case, and this project has none", 'pass a shape, e.g. {"shape": "pebble"} or {"shape": "custom", "outline": "M 0 -40 C ... Z"}');
   const base = s.project.enclosure && !args.shape ? s.project.enclosure : undefined;
   const enc = has || args.placements || args.params || args.layout || args.exclude || args.front || args.held || args.follow ? validateEnclosure(s, { ...(base ?? {}), ...encFromArgs(args, s.project.enclosure?.shape) }) : s.project.enclosure!;
-  const { layoutInput, proposalsFor, layoutCase } = await import("@jumper/enclosure");
+  const { layoutInput, proposalsFor, layoutCase } = await import("@fabwright/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   if (!input.parts.length) fail("no-parts", "No parts to lay out", "the project has no parts with a case footprint", "place parts first (place_part)");
   let L;
@@ -354,11 +354,11 @@ export async function layoutProposals(s: ProjectSession, args: Record<string, un
  * Time-boxed; undefined when there is nothing to relax.
  */
 export async function caseCosts(s: ProjectSession, enc: Enclosure, budgetMs = 10000) {
-  const { choiceCostsAsync, choicesOf, layoutInput } = await import("@jumper/enclosure");
+  const { choiceCostsAsync, choicesOf, layoutInput } = await import("@fabwright/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   if (!input.parts.length || !choicesOf(input).length) return undefined;
-  // (JUMPER_COSTS_BUDGET_MS: a fixed budget, e.g. for tests on a loaded machine)
-  const env = Number(process.env.JUMPER_COSTS_BUDGET_MS);
+  // (FABWRIGHT_COSTS_BUDGET_MS: a fixed budget, e.g. for tests on a loaded machine)
+  const env = Number(process.env.FABWRIGHT_COSTS_BUDGET_MS);
   try {
     // (giving way between the searches: a server keeps answering while it weighs them)
     return await choiceCostsAsync(input, { budgetMs: Number.isFinite(env) && env > 0 ? env : budgetMs });
@@ -376,8 +376,8 @@ function costsNext(c: Awaited<ReturnType<typeof caseCosts>>): string {
 }
 
 /** The quick fit report (check_fit, dry_run, the Case view's preview) for an enclosure. */
-export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { preview?: boolean; layout?: import("@jumper/enclosure").Layout; budgetMs?: number } = {}) {
-  const { checkFit, layoutInput } = await import("@jumper/enclosure");
+export async function fitReport(s: ProjectSession, enc: Enclosure, opts: { preview?: boolean; layout?: import("@fabwright/enclosure").Layout; budgetMs?: number } = {}) {
+  const { checkFit, layoutInput } = await import("@fabwright/enclosure");
   const input = layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec);
   let r;
   try {
@@ -412,7 +412,7 @@ export async function draftCosts(s: ProjectSession, body: Record<string, unknown
 async function fixedSizeMiss(s: ProjectSession, enc: Enclosure) {
   const fixed = enc.size_mm && Object.keys(enc.size_mm).length ? true : typeof enc.params?.depth_mm === "number";
   if (!fixed) return undefined;
-  const { layoutCase, layoutInput } = await import("@jumper/enclosure");
+  const { layoutCase, layoutInput } = await import("@fabwright/enclosure");
   let L;
   try {
     L = layoutCase(layoutInput({ ...s.project, enclosure: enc }, (t) => s.registry.get(t)?.spec));
@@ -453,7 +453,7 @@ function validateEnclosure(s: ProjectSession, raw: Record<string, unknown>): Enc
   if (!r.success) {
     const i = r.error.issues[0]!;
     const path = i.path.join(".");
-    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : path.startsWith("size_mm") ? "size_mm.w and .h are 15 to 250 mm and .d is 6 to 120 mm (leave one out for auto)" : path.startsWith("outline") ? "outline is an SVG path string or {\"points\": [[x, y], ...], \"smooth\": true} with 3 to 400 points" : `check ${path} against design_case's input schema (get it with jumper tools --json)`);
+    fail("bad-arg", `The case setting ${path || "(root)"} is not valid`, i.message, path.endsWith("wall_mm") ? "wall_mm must be at least 1.2 (FDM) and at most 5" : path.startsWith("size_mm") ? "size_mm.w and .h are 15 to 250 mm and .d is 6 to 120 mm (leave one out for auto)" : path.startsWith("outline") ? "outline is an SVG path string or {\"points\": [[x, y], ...], \"smooth\": true} with 3 to 400 points" : `check ${path} against design_case's input schema (get it with fabwright tools --json)`);
   }
   const enc = r.data;
   if (enc.shape === "custom") {
@@ -490,7 +490,7 @@ interface Out {
 
 let pdfOk: boolean | undefined;
 async function pdfFromSvg(svg: string): Promise<{ pdf?: Uint8Array; why?: string }> {
-  if (process.env.JUMPER_CASE_PDF === "0" || pdfOk === false) return { why: pdfOk === false ? "Playwright's Chromium did not start earlier in this session" : "PDF output is turned off (JUMPER_CASE_PDF=0)" };
+  if (process.env.FABWRIGHT_CASE_PDF === "0" || pdfOk === false) return { why: pdfOk === false ? "Playwright's Chromium did not start earlier in this session" : "PDF output is turned off (FABWRIGHT_CASE_PDF=0)" };
   const pw = loadPlaywright();
   if (!pw) return { why: "Playwright is not installed" };
   try {
@@ -512,22 +512,22 @@ async function pdfFromSvg(svg: string): Promise<{ pdf?: Uint8Array; why?: string
 
 /** Round 12: the cut list (power track's wireCuts) on a layout, as the assembly plan takes it. */
 export function planWires(project: Project, reg: ProjectSession["registry"]) {
-  return (L: import("@jumper/enclosure").Layout) =>
+  return (L: import("@fabwright/enclosure").Layout) =>
     wireCuts(project, reg, pinPositions(L.placed, (t) => reg.get(t)?.spec)).map((c) => ({ id: c.wire, from: c.from, to: c.to, length_mm: c.length_mm, gauge: c.gauge_awg, color: c.color }));
 }
 
 async function generateInto(s: ProjectSession, project: Project, caseDir: string): Promise<Out> {
-  const { generateCase, writeCaseFiles, writeMeshCache } = await import("@jumper/enclosure");
+  const { generateCase, writeCaseFiles, writeMeshCache } = await import("@fabwright/enclosure");
   const fw = firmwareText(s);
   const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg, wires: planWires(project, s.registry), ...(fw !== undefined ? { firmwareText: fw } : {}) });
   writeCaseFiles(caseDir, g.files);
-  if (caseDir === join(s.dir, "case")) writeMeshCache(join(s.dir, ".jumper", "case-mesh.json"), g.mesh);
+  if (caseDir === join(s.dir, "case")) writeMeshCache(join(s.dir, ".fabwright", "case-mesh.json"), g.mesh);
   return { report: g.report, dir: caseDir, missing: g.missing };
 }
 
 /** The saved case, regenerated first when its files are stale (hash of config + parts' mechanical data). */
 export async function caseState(s: ProjectSession): Promise<{ report: CaseReport; regenerated: boolean; missing: Out["missing"] }> {
-  const { caseHash, readManifest, readReport } = await import("@jumper/enclosure");
+  const { caseHash, readManifest, readReport } = await import("@fabwright/enclosure");
   const caseDir = join(s.dir, "case");
   const hash = caseHash(s.project, (t) => s.registry.get(t)?.spec);
   const m = readManifest(caseDir);
@@ -539,7 +539,7 @@ export async function caseState(s: ProjectSession): Promise<{ report: CaseReport
 
 export async function caseIsStale(s: ProjectSession): Promise<boolean> {
   if (!s.project.enclosure) return false;
-  const { caseHash, readManifest } = await import("@jumper/enclosure");
+  const { caseHash, readManifest } = await import("@fabwright/enclosure");
   return readManifest(join(s.dir, "case"))?.hash !== caseHash(s.project, (t) => s.registry.get(t)?.spec);
 }
 
@@ -550,12 +550,12 @@ export async function caseIsStale(s: ProjectSession): Promise<boolean> {
  * made before the wires changed is made again (no CAD) and says its pictures are from the last build.
  */
 export async function assemblyPlanFor(s: ProjectSession) {
-  if (!s.project.enclosure) fail("no-case", "No case yet", "the assembly plan is how the parts go into the case, and this project has no case (jumper.json has no enclosure)", 'design_case {"shape": "pebble"} (or any shape; check_fit first), then get_assembly_plan');
+  if (!s.project.enclosure) fail("no-case", "No case yet", "the assembly plan is how the parts go into the case, and this project has no case (fabwright.json has no enclosure)", 'design_case {"shape": "pebble"} (or any shape; check_fit first), then get_assembly_plan');
   const st = await caseState(s);
-  const E = await import("@jumper/enclosure");
+  const E = await import("@fabwright/enclosure");
   const caseDir = join(s.dir, "case");
   const specOf = (t: string) => s.registry.get(t)?.spec;
-  let plan: import("@jumper/enclosure").AssemblyPlan | undefined;
+  let plan: import("@fabwright/enclosure").AssemblyPlan | undefined;
   try {
     plan = JSON.parse(readFileSync(join(caseDir, "assembly", "plan.json"), "utf8"));
   } catch {
@@ -564,7 +564,7 @@ export async function assemblyPlanFor(s: ProjectSession) {
   // round 13: the firmware decides whether a board's own card slot gets a card, so a plan made for other firmware is stale too
   const fw = firmwareText(s);
   const boards = new Set(s.project.parts.filter((p) => s.registry.get(p.type)?.spec.category === "board").map((p) => p.id));
-  const cardFits = (pl: import("@jumper/enclosure").AssemblyPlan) => {
+  const cardFits = (pl: import("@fabwright/enclosure").AssemblyPlan) => {
     if (fw === undefined) return true;
     const uses = E.firmwareUsesCard(fw);
     if (pl.firmware_card !== undefined) return pl.firmware_card === uses;
@@ -658,8 +658,8 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     report = st.report;
     for (const m of st.missing) missing.push({ ...m, item: `enclosure/${m.item}` });
     copyTree(join(s.dir, "case"), join(root, "enclosure"), (rel) => rel.startsWith("variants") || rel.startsWith("."));
-    if (existsSync(join(root, "enclosure", "drawing")) && !existsSync(join(root, "enclosure", "drawing", "drawing.pdf")) && !st.missing.length) missing.push({ item: "enclosure/drawing/drawing.pdf", why: "no PDF was printed when the case was generated (Playwright's Chromium was not available, or JUMPER_CASE_PDF=0)", fix: "pnpm --filter @jumper/web exec playwright install chromium, then design_case again (drawing.svg has the same drawing)" });
-    const { layoutCase } = await import("@jumper/enclosure");
+    if (existsSync(join(root, "enclosure", "drawing")) && !existsSync(join(root, "enclosure", "drawing", "drawing.pdf")) && !st.missing.length) missing.push({ item: "enclosure/drawing/drawing.pdf", why: "no PDF was printed when the case was generated (Playwright's Chromium was not available, or FABWRIGHT_CASE_PDF=0)", fix: "pnpm --filter @fabwright/web exec playwright install chromium, then design_case again (drawing.svg has the same drawing)" });
+    const { layoutCase } = await import("@fabwright/enclosure");
     const L = layoutCase({ parts: project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: project.enclosure });
     positions = pinPositions(L.placed, (t) => reg.get(t)?.spec);
     if (project.enclosure.params?.closure === "screws" && L.bosses.length) screws = { count: L.bosses.length, size: "M2 pan head (length in enclosure/PRINT.md)", inserts: "M2 x 3 mm brass heat-set inserts" };
@@ -678,7 +678,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   writeText(root, "BOM.md", bomMd(lines, project.name));
   writeText(root, "electronics/WIRING.md", wiringMarkdown(project, reg));
   writeText(root, "electronics/netlist.csv", netlistCsv(project));
-  writeText(root, "electronics/jumper.net", kicadNetlist(project, reg));
+  writeText(root, "electronics/fabwright.net", kicadNetlist(project, reg));
   writeText(root, "electronics/WIRE-CUTS.csv", wireCutsCsv(cuts, !positions));
   // round 7 voice: the DFPlayer's microSD card (clip texts, a list, and a script that makes the MP3s)
   const sd = sdCardFiles(project, reg);
@@ -687,7 +687,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
   // round 10 network: what the real device needs on the network (hosts, ports, secret NAMES, how keys reach it)
   if (project.network) {
     const net = factoryNetworkNotes(networkConfigOf(project)).replace(/^## Network/, `# Network: ${project.name}`);
-    writeText(root, "firmware/NETWORK.md", `${net}\n\nBuild: the simulation build adds Jumper's Wi-Fi and TLS shims; the device build must not. With Jumper's ESP32 image: JUMPER_SIM=0 (plain arduino-cli builds never contain them). No secret value is in this pack.\n`);
+    writeText(root, "firmware/NETWORK.md", `${net}\n\nBuild: the simulation build adds Fabwright's Wi-Fi and TLS shims; the device build must not. With Fabwright's ESP32 image: FABWRIGHT_SIM=0 (plain arduino-cli builds never contain them). No secret value is in this pack.\n`);
     notes.push("firmware/NETWORK.md lists the hosts, ports and secret names the real device needs, and the options for getting a key onto it (no secret values are in the pack).");
     // round 13: the API relay the real device calls (Node server + Cloudflare Worker), generated from the same config
     const cfg = networkConfigOf(project);
@@ -752,7 +752,7 @@ export async function exportManufacturing(s: ProjectSession, args: { dir?: strin
     ...(zipPath ? { zip: zipPath, zip_bytes: statSync(zipPath).size } : {}),
     files: all,
     missing,
-    notes: [...notes, "No PCB layout yet: the pack describes a hand-wired (perfboard / point-to-point) build; jumper.net is a netlist a PCB designer can start from.", "LCSC / JLC numbers are only filled where checked; the supplier quotes the rest from the MPN or the description."],
+    notes: [...notes, "No PCB layout yet: the pack describes a hand-wired (perfboard / point-to-point) build; fabwright.net is a netlist a PCB designer can start from.", "LCSC / JLC numbers are only filled where checked; the supplier quotes the rest from the MPN or the description."],
     next: missing.length ? `Complete it: ${missing.map((m) => m.fix).join("; ")}` : `Send ${zipPath ?? root} to the supplier, or open README.md to build it yourself.`,
   };
 }
@@ -805,7 +805,7 @@ function assemblyMd(project: Project, reg: ProjectSession["registry"], report: C
 
 /** Round 12: ASSEMBLY.md from the assembly plan: what to buy and print, then every step with its picture. */
 function planMd(project: Project, ap: Awaited<ReturnType<typeof assemblyPlanFor>>): string {
-  const out: string[] = [`# Assembly: ${project.name}`, "", "Hand-wired build (point to point) in a 3D-printed case. Jumper worked out this order at design time: parts another one covers go in first, every joint is soldered while it can be reached, the battery goes in last, and it is tested before it is closed.", ""];
+  const out: string[] = [`# Assembly: ${project.name}`, "", "Hand-wired build (point to point) in a 3D-printed case. Fabwright worked out this order at design time: parts another one covers go in first, every joint is soldered while it can be reached, the battery goes in last, and it is tested before it is closed.", ""];
   out.push("## Print", "", "| File | Face on the bed | Supports |", "| --- | --- | --- |", ...ap.print.map((p) => `| enclosure/${p.file.replace(/^case\//, "")} | ${p.face_down} | ${p.supports ? "yes" : "no"} |`), "", "Settings and material: `enclosure/PRINT.md`.", "");
   out.push("## Consumables", "", ...ap.consumables.map((c) => `- ${c.item}: ${c.qty} (${c.why})`), "", "## Tools", "", ...ap.tools.map((t) => `- ${t}`), "");
   out.push("## How each part is held", "", "| Part | Shell | How it goes in | Held by |", "| --- | --- | --- | --- |", ...ap.mounts.map((m) => `| ${m.part} | ${m.shell} | ${m.insert} | ${m.how.join(", ")}${m.missing ? ` (${m.missing})` : ""} |`), "");
@@ -836,7 +836,7 @@ function stepText(st: Record<string, unknown>): string {
 }
 
 function testPlanMd(project: Project): string {
-  const out = [`# Test plan: ${project.name}`, "", "Each test passed in Jumper's simulator. Repeat it on the real unit; tick when it behaves the same.", ""];
+  const out = [`# Test plan: ${project.name}`, "", "Each test passed in Fabwright's simulator. Repeat it on the real unit; tick when it behaves the same.", ""];
   if (!project.scenarios.length) out.push("No scenarios were written. Power it up and check every function by hand.");
   for (const sc of project.scenarios) {
     out.push(`## ${sc.name ?? sc.id}`, "");
@@ -868,7 +868,7 @@ ${report ? `\nCase: **${report.shape}**, ${report.size_mm.w} x ${report.size_mm.
 | Folder | What |
 | --- | --- |
 | BOM.csv, BOM.md | parts, quantities, MPNs, prices |
-| electronics/ | WIRING.md, netlist.csv, jumper.net (KiCad netlist), WIRE-CUTS.csv |
+| electronics/ | WIRING.md, netlist.csv, fabwright.net (KiCad netlist), WIRE-CUTS.csv |
 | firmware/ | firmware.hex${board.includes("RP2040") || board.includes("Pico") ? ", firmware.uf2" : ""}, FLASHING.md, source/ |
 | enclosure/ | stl/, case.3mf, step/, drawing/, renders/, PRINT.md |
 | assembly/ | ASSEMBLY.md |
@@ -889,7 +889,7 @@ function readmeZh(project: Project, board: string, report: CaseReport | undefine
 ## 内容
 
 - BOM.csv：物料清单（数量、型号 MPN、通用描述、参考单价）
-- electronics/：接线表 WIRING.md、网表 netlist.csv 与 jumper.net（KiCad）、导线下料表 WIRE-CUTS.csv
+- electronics/：接线表 WIRING.md、网表 netlist.csv 与 fabwright.net（KiCad）、导线下料表 WIRE-CUTS.csv
 - firmware/：固件（.hex / .uf2）、源代码、烧录步骤 FLASHING.md
 - enclosure/：外壳 STL 与 3MF（3D 打印）、STEP（报价与开模）、尺寸图（SVG / PDF）、打印说明 PRINT.md
 - assembly/ASSEMBLY.md：装配步骤（每一步一张图：零件放入顺序、焊接、电池最后安装、合壳前通电测试）
@@ -897,7 +897,7 @@ function readmeZh(project: Project, board: string, report: CaseReport | undefine
 
 ## 注意
 
-- 目前没有 PCB 设计：按接线表手工接线（洞洞板 / 飞线）。jumper.net 可作为 PCB 设计的起点。
+- 目前没有 PCB 设计：按接线表手工接线（洞洞板 / 飞线）。fabwright.net 可作为 PCB 设计的起点。
 - 功能只在仿真中验证过：请先做一台样机，按 test/TEST-PLAN.md 逐项检查。
 - 外壳尺寸基于模块的典型尺寸，不同厂家的模块可能相差约 1 mm，请用实物核对屏幕窗口和 USB 开孔。
 - LCSC 编号只填写已核实的；其余请按型号或描述报价。
@@ -912,13 +912,13 @@ function notesMd(project: Project, reg: ProjectSession["registry"], report: Case
 
 ## Not designed yet
 
-- **No PCB layout.** This is a ${soldered ? "hand-wired build (point-to-point or perfboard)" : "breadboard build"}. \`electronics/jumper.net\` is a netlist a PCB designer can import into KiCad to start one; no footprints or placement were chosen.
+- **No PCB layout.** This is a ${soldered ? "hand-wired build (point-to-point or perfboard)" : "breadboard build"}. \`electronics/fabwright.net\` is a netlist a PCB designer can import into KiCad to start one; no footprints or placement were chosen.
 - No certification work (CE / FCC / UKCA), no ESD or EMC design.
 
 ## Only simulated
 
 - ${fidSummary}
-- The tests in \`test/TEST-PLAN.md\` passed in Jumper's simulator, which runs the real compiled firmware against models of the parts; real parts can differ (timing, noise, clone chips).
+- The tests in \`test/TEST-PLAN.md\` passed in Fabwright's simulator, which runs the real compiled firmware against models of the parts; real parts can differ (timing, noise, clone chips).
 ${flagged.map((p) => `- **${p.id}**: ${p.standIn ? `simulated with a stand-in for the real ${p.standIn}` : "agent-made part (behavioral, unverified)"}: check its wiring against the real datasheet.`).join("\n")}
 
 ## Case
@@ -938,10 +938,10 @@ ${report ? `- Checks at design time: ${report.checks.map((c) => `${c.id} ${c.ok 
 }
 
 /** Meshes for the web Case view (R6 GET /api/case/mesh): from the cache, rebuilt when it is missing or stale. */
-export async function caseMesh(s: ProjectSession): Promise<{ mesh: import("@jumper/enclosure").CaseMesh; regenerated: boolean; report: CaseReport }> {
+export async function caseMesh(s: ProjectSession): Promise<{ mesh: import("@fabwright/enclosure").CaseMesh; regenerated: boolean; report: CaseReport }> {
   const st = await caseState(s);
-  const { readMeshCache, generateCase, writeMeshCache } = await import("@jumper/enclosure");
-  const file = join(s.dir, ".jumper", "case-mesh.json");
+  const { readMeshCache, generateCase, writeMeshCache } = await import("@fabwright/enclosure");
+  const file = join(s.dir, ".fabwright", "case-mesh.json");
   const cached = readMeshCache(file, st.report.hash);
   if (cached) return { mesh: cached, regenerated: st.regenerated, report: st.report };
   const g = await generateCase(s.project, (t) => s.registry.get(t)?.spec, { renders: false });
@@ -983,7 +983,7 @@ export interface DeviceCase {
   shape: string;
   color?: string;
   size_mm: { w: number; h: number; d: number };
-  mesh: import("@jumper/enclosure").CaseMesh;
+  mesh: import("@fabwright/enclosure").CaseMesh;
   openings: DeviceCaseOpening[];
   /** Built from this many ms of work on the server (0 = all from the cache). */
   ms: number;
@@ -1002,7 +1002,7 @@ const v3 = (v: readonly number[]) => [r3(v[0]!), r3(v[1]!), r3(v[2]!)] as [numbe
 export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> {
   if (!s.project.enclosure) return null;
   const t0 = Date.now();
-  const E = await import("@jumper/enclosure");
+  const E = await import("@fabwright/enclosure");
   const specOf = (t: string) => s.registry.get(t)?.spec;
   const caseDir = join(s.dir, "case");
   const manifest = E.readManifest(caseDir);
@@ -1012,9 +1012,9 @@ export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> 
   const stale = manifest.hash !== hash;
   // the project the case was built from: today's parts with the enclosure as it was saved then
   const built: Project = stale ? { ...s.project, enclosure: (manifest.enclosure ?? report.enclosure ?? s.project.enclosure) as Enclosure } : s.project;
-  const cacheFile = join(s.dir, ".jumper", "case-mesh.json");
+  const cacheFile = join(s.dir, ".fabwright", "case-mesh.json");
   let mesh = E.readMeshCache(cacheFile, report.hash);
-  let L: import("@jumper/enclosure").Layout | undefined;
+  let L: import("@fabwright/enclosure").Layout | undefined;
   if (!mesh) {
     // the meshes are not cached yet: tessellate the case as built (CAD, once; the Case view reads the same cache)
     const g = await E.generateCase(built, specOf, { renders: false });

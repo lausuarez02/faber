@@ -9,20 +9,20 @@ import { hubPort, shot } from "./helpers.ts";
 // Round 8 (view): the Case view shows how the parts are distributed inside, on the talking egg a
 // real Claude built in round 7 (10 parts in the case). Three proposals with front and side drawings,
 // a 3D preview, "Use" builds it, dragging a part pins it and the rest re-arranges with the new size,
-// and the parts advice applies a swap. Real `jumper serve`, real layouts and CAD on the server.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+// and the parts advice applies a swap. Real `fabwright serve`, real layouts and CAD on the server.
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const EGG = readFileSync(fileURLToPath(new URL("../../../packages/session/test/fixtures/talking-egg-2.json", import.meta.url)), "utf8");
 
 async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-layout-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-layout-"));
   const dir = join(root, "egg");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "jumper.json"), EGG);
+  writeFileSync(join(dir, "fabwright.json"), EGG);
   const port = hubPort(info, 2);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -32,7 +32,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -58,7 +58,7 @@ async function openCase(page: Page, info: TestInfo): Promise<void> {
   await expect(page.getByTestId("case-view")).toBeVisible();
 }
 
-const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
 
 test("Case view, Layout: see how the parts are distributed, preview one in 3D, use it, drag a part to pin it, apply a smaller part", async ({ page }, info) => {
   test.setTimeout(600_000);
@@ -84,7 +84,7 @@ test("Case view, Layout: see how the parts are distributed, preview one in 3D, u
       await expect(page.getByTestId(`case-layout-thick-${id}`)).toContainText(/\d+(\.\d)? mm thick/);
       await expect(page.getByTestId(`case-layout-size-${id}`)).toContainText(/× \d+(\.\d)? mm · \d layers? · parts fill \d+ % of the inside/);
     }
-    // the built case is Jumper's pick (auto = balanced), and the card says so
+    // the built case is Fabwright's pick (auto = balanced), and the card says so
     await expect(page.getByTestId("case-layout-balanced")).toHaveAttribute("aria-checked", "true");
     await expect(page.getByTestId("case-layout-balanced")).toContainText("built");
     await expect(page.getByTestId("case-layout-built-note")).toBeVisible();
@@ -155,8 +155,8 @@ test("Case view, Layout: see how the parts are distributed, preview one in 3D, u
       .toMatch(/voice (moved by you|would land|went back)/);
     await expect(page.getByTestId("case-layout-newsize")).not.toContainText("Re-arranging", { timeout: 60_000 });
     await shot(page, info, "layout-pinned");
-    // let Jumper place the voice again, then build with the battery where it was put
-    if (await page.getByRole("button", { name: "Let Jumper place voice again" }).isVisible()) await page.getByRole("button", { name: "Let Jumper place voice again" }).click();
+    // let Fabwright place the voice again, then build with the battery where it was put
+    if (await page.getByRole("button", { name: "Let Fabwright place voice again" }).isVisible()) await page.getByRole("button", { name: "Let Fabwright place voice again" }).click();
     await expect(page.getByTestId("case-pins")).not.toContainText("voice");
     await expect(page.getByTestId("case-layout-newsize")).not.toContainText("Re-arranging", { timeout: 60_000 });
     const use = page.getByTestId("case-layout-use");

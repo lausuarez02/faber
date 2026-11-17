@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Obstacle-avoiding rover",
   "description": "2WD robot car: an Arduino Uno drives two TT motors through an L298N and steers away from walls with an HC-SR04 sonar. Runs in a 300 x 200 cm arena with three obstacles.",
   "parts": [

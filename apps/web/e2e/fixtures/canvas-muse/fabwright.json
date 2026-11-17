@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Pocket Muse",
   "parts": [
     { "id": "xiao", "type": "seeed-xiao-rp2040", "x": 0, "y": 0, "rotation": 0 },

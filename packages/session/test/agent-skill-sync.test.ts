@@ -1,12 +1,12 @@
 // Round 12 skill: the hardware know-how in packages/agent-skill is rendered into the server
 // instructions, MCP prompts, the project skill, AGENTS.md and the plugin. These tests fail when the
-// skill names a tool Jumper does not have, or when a rule in it contradicts the server instructions
+// skill names a tool Fabwright does not have, or when a rule in it contradicts the server instructions
 // or a tool description.
 import { mkdtempSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LOOP, BUILD_KIT_ANSWER, MENTIONED_TOOLS, POCKET_MAX_MM, PROMPTS, RULES, renderAgentsMd, renderGuide, renderInstructionsBlock, renderPrompt, renderSkillMd, SKILL_PATH } from "@jumper/agent-skill";
+import { LOOP, BUILD_KIT_ANSWER, MENTIONED_TOOLS, POCKET_MAX_MM, PROMPTS, RULES, renderAgentsMd, renderGuide, renderInstructionsBlock, renderPrompt, renderSkillMd, SKILL_PATH } from "@fabwright/agent-skill";
 import { AGENT_LOOP, ProjectSession, TOOLS } from "../src/index.ts";
 
 const names = TOOLS.map((t) => t.name);
@@ -44,11 +44,11 @@ describe("the hardware skill stays in sync with the tools", () => {
     faces([...names, ...OPLIST()]); // render every branch so every mention is collected
     faces(names);
     const unknown = [...MENTIONED_TOOLS].filter((n) => !names.includes(n) && !OPTIONAL.has(n));
-    expect(unknown, `tools named in packages/agent-skill that Jumper does not have: ${unknown.join(", ")}`).toEqual([]);
+    expect(unknown, `tools named in packages/agent-skill that Fabwright does not have: ${unknown.join(", ")}`).toEqual([]);
     for (const s of [...LOOP, BUILD_KIT_ANSWER]) if (s.needs?.length) expect(s.fallback, `${s.title} needs ${s.needs.join(", ")} and must say what to do without it`).toBeDefined();
   });
 
-  it("rendered for this Jumper, no face mentions an operation that is not a tool or a field", () => {
+  it("rendered for this Fabwright, no face mentions an operation that is not a tool or a field", () => {
     const fields = schemaWords();
     for (const [face, text] of Object.entries(faces(names))) {
       const bad = [...new Set(text.match(OP_WORD) ?? [])].filter((w) => !names.includes(w) && !fields.has(w));
@@ -56,7 +56,7 @@ describe("the hardware skill stays in sync with the tools", () => {
     }
   });
 
-  it("optional tools (get_build_kit, get_assembly_plan) are named exactly when Jumper has them", () => {
+  it("optional tools (get_build_kit, get_assembly_plan) are named exactly when Fabwright has them", () => {
     const text = Object.values(faces(names)).join("\n");
     for (const n of OPTIONAL) expect(text.includes(n), n).toBe(names.includes(n));
   });
@@ -90,14 +90,14 @@ describe("the hardware skill stays in sync with the tools", () => {
 });
 
 describe("new_project gives the project the skill", () => {
-  it("writes .claude/skills/jumper-hardware/SKILL.md and AGENTS.md, outside the undo history; JUMPER_AGENT_FILES=0 skips it", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-skill-proj-"));
+  it("writes .claude/skills/fabwright-hardware/SKILL.md and AGENTS.md, outside the undo history; FABWRIGHT_AGENT_FILES=0 skips it", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-skill-proj-"));
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       const r = (await s.call("new_project", { template: "blank", name: "Smiley keychain" })) as { agent_files?: string[] };
       expect(r.agent_files).toEqual([SKILL_PATH, "AGENTS.md", "CLAUDE.md"]);
       expect(readFileSync(join(dir, "CLAUDE.md"), "utf8")).toMatch(/@AGENTS\.md/);
-      expect(readFileSync(join(dir, SKILL_PATH), "utf8")).toMatch(/^---\nname: jumper-hardware\n/);
+      expect(readFileSync(join(dir, SKILL_PATH), "utf8")).toMatch(/^---\nname: fabwright-hardware\n/);
       expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).toMatch(/AGENTS.md: Smiley keychain/);
       const steps = (await s.call("list_steps", {})) as { steps: { label?: string; changes?: unknown }[] };
       expect(JSON.stringify(steps)).not.toMatch(/SKILL\.md|AGENTS\.md/);
@@ -105,24 +105,24 @@ describe("new_project gives the project the skill", () => {
       s.dispose();
       rmSync(dir, { recursive: true, force: true });
     }
-    const dir2 = mkdtempSync(join(tmpdir(), "jumper-skill-proj-"));
-    const prev = process.env.JUMPER_AGENT_FILES;
-    process.env.JUMPER_AGENT_FILES = "0";
+    const dir2 = mkdtempSync(join(tmpdir(), "fabwright-skill-proj-"));
+    const prev = process.env.FABWRIGHT_AGENT_FILES;
+    process.env.FABWRIGHT_AGENT_FILES = "0";
     const s2 = new ProjectSession({ dir: dir2, actor: "test" });
     try {
       const r = (await s2.call("new_project", { template: "blank" })) as { agent_files?: string[] };
       expect(r.agent_files).toBeUndefined();
       expect(existsSync(join(dir2, SKILL_PATH))).toBe(false);
     } finally {
-      if (prev === undefined) delete process.env.JUMPER_AGENT_FILES;
-      else process.env.JUMPER_AGENT_FILES = prev;
+      if (prev === undefined) delete process.env.FABWRIGHT_AGENT_FILES;
+      else process.env.FABWRIGHT_AGENT_FILES = prev;
       s2.dispose();
       rmSync(dir2, { recursive: true, force: true });
     }
   });
 
   it("read_file reads the case and build pack's text files, not binaries, not outside the project", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "jumper-skill-read-"));
+    const dir = mkdtempSync(join(tmpdir(), "fabwright-skill-read-"));
     const s = new ProjectSession({ dir, actor: "test" });
     try {
       const { mkdirSync, writeFileSync } = await import("node:fs");

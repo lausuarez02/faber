@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GROUND, PULLUP_OHMS } from "@jumper/sim-core";
+import { GROUND, PULLUP_OHMS } from "@fabwright/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 

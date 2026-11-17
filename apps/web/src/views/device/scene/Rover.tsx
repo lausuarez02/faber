@@ -1,4 +1,4 @@
-// The robot in its world: the arena from jumper.json (floor, walls, obstacles), a modeled 2WD rover
+// The robot in its world: the arena from fabwright.json (floor, walls, obstacles), a modeled 2WD rover
 // whose wheels spin at the simulated speed, its HC-SR04 "eyes" with a sonar cone as long as the
 // measured distance, an OLED face when the project has one, and the trail it drove.
 //
@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import type { PhysicsBinding, WorldSnapshot } from "@jumper/physics";
+import type { PhysicsBinding, WorldSnapshot } from "@fabwright/physics";
 import { ReadoutsContext, useDeviceSource } from "../context.ts";
 import type { DeviceLayout } from "../classify.ts";
 import { screenTypeOf } from "../classify.ts";

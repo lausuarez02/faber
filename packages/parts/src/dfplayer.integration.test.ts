@@ -4,9 +4,9 @@
 // reply and only then plays track 1, so the second clip proves the reply reached the firmware.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "./registry.gen.ts";
 
 const CLIPS = "1: hi! I'm Eggy\n2: whoa, I'm dizzy!";
@@ -18,7 +18,7 @@ function sim(board: { id: string; type: string; tx: string; rx: string; v: strin
     return { id, from: { part: ap!, pin: aq! }, to: { part: bp!, pin: bq! } };
   };
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "df firmware",
     parts: [
       { id: board.id, type: board.type, x: 0, y: 0 },

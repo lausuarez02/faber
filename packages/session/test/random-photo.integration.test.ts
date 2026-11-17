@@ -9,18 +9,18 @@
 //     queue is still there, Wi-Fi comes back and it posts later;
 //   - a service on this computer reached by a ".local" name (mDNS) through "local": true + "to";
 //   - set_clock: NTP gives the time the test chose.
-// Needs the native ESP32 toolchain + QEMU (jumper setup esp32) or Docker; skipped otherwise.
+// Needs the native ESP32 toolchain + QEMU (fabwright setup esp32) or Docker; skipped otherwise.
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { canBuildArduino } from "@jumper/runner";
-import { qemuImageAvailable } from "@jumper/sim-backends/node";
+import { canBuildArduino } from "@fabwright/runner";
+import { qemuImageAvailable } from "@fabwright/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
-if (!ready) console.warn("skipping the random-photo firmware test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm jumper setup esp32)");
+if (!ready) console.warn("skipping the random-photo firmware test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm fabwright setup esp32)");
 
 const SKETCH = `// Random photo: at a random moment it says it will take a picture in 10 s; a press skips it;
 // otherwise it takes it, queues it on flash and posts it when Wi-Fi is up.
@@ -105,7 +105,7 @@ void setup() {
   Serial.printf("queue %d\\n", queued());
   Serial.println(initCamera() ? "camera ok" : "camera failed");
   tls.setInsecure();
-  WiFi.begin("JumperNet", "password");
+  WiFi.begin("FabwrightNet", "password");
   for (int i = 0; i < 60 && WiFi.status() != WL_CONNECTED; i++) delay(100);
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("wifi ok");
@@ -181,7 +181,7 @@ const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {})
 const POST_REQ = { host: "api.social.test", method: "POST", path: "/v1/posts", status: 201, content_type: "multipart/form-data", body_json: { "photo.content_type": "image/jpeg", "photo.filename": "photo.jpg", caption: "?" }, min_bytes: 1000 };
 
 describe.skipIf(!ready)("random photo device: deterministic randomness, countdown, skip, offline queue (real build, real QEMU)", { timeout: 900_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-random-photo-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-random-photo-"));
   const s = new ProjectSession({ dir, actor: "test" });
   // "A service the person runs on this computer": its own process, as it would be (run_tests runs the
   // simulation synchronously, so a server on this test's own event loop could not answer in time).

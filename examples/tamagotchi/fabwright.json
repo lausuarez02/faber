@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Tamagotchi pet",
   "description": "A pixel pet on an SSD1306 OLED: feed, play and put it to sleep with three buttons, it beeps when it needs you. Uno + 128x64 I2C OLED + 3 buttons (INPUT_PULLUP) + active buzzer.",
   "parts": [

@@ -3,7 +3,7 @@
 //   - case: the project's own designed case (Case view meshes), live screen in its window, caps
 //     pressable at their openings, LEDs at their light pipes, rings at the grille
 //   - handheld / pet (no case yet): generic shell, live screen, pressable buttons (mouse or keys 1-9), LEDs, buzzer rings
-//   - rover: arena from jumper.json, modeled 2WD robot, sonar cone, trail, follow camera
+//   - rover: arena from fabwright.json, modeled 2WD robot, sonar cone, trail, follow camera
 //   - arm: servo arm on a table, targets light up when reached
 //   - anything else: the board on a desk with its LEDs
 import "./device.css";
@@ -228,7 +228,7 @@ export function DeviceStage({ source, onClose, onOpenCase, capture = false, hud 
           {casePending ? (
             <div className="dv-empty" data-testid="device-case-loading">
               <strong>Loading the case…</strong>
-              <span>The first time, Jumper tessellates the case the Case view built (a few seconds); then it is kept.</span>
+              <span>The first time, Fabwright tessellates the case the Case view built (a few seconds); then it is kept.</span>
             </div>
           ) : null}
           {needsWorld && !world ? (

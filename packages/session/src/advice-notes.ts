@@ -4,8 +4,8 @@
  * swap or removal, the agent operations that make it (remove, place_part, connect), so the page can
  * offer one Apply button that does exactly what an agent would. The rest stay notes.
  */
-import { buildNets, pinKey, type Project } from "@jumper/project-format";
-import type { PartRegistry } from "@jumper/sim-core";
+import { buildNets, pinKey, type Project } from "@fabwright/project-format";
+import type { PartRegistry } from "@fabwright/sim-core";
 import { partsAdvice } from "./advice.ts";
 import { fail } from "./errors.ts";
 

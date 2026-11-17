@@ -5,13 +5,13 @@
 // Checked on the frames the I2S bus receives: sample rate, bit depth, channel count, frequency
 // (zero crossings) and level of every burst, the DMA pacing write() (it blocks for as long as the
 // samples take to play), and the microphone reading what a source on the bus provides.
-// Needs the QEMU image (Docker) or the native QEMU (jumper setup esp32); skipped otherwise.
+// Needs the QEMU image (Docker) or the native QEMU (fabwright setup esp32); skipped otherwise.
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { afterAll, describe, expect, it } from "vitest";
-import { I2sBus, type I2sBlock } from "@jumper/sim-core";
-import { QemuEspBackend, qemuImageAvailable } from "@jumper/sim-backends/qemu-esp";
+import { I2sBus, type I2sBlock } from "@fabwright/sim-core";
+import { QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
 import { buildFirmware, flashImageOf } from "../build.ts";
 import { canBuildArduino } from "../runtime.ts";
 
@@ -207,13 +207,13 @@ describe.skipIf(!available)("I2S audio on real ESP firmware (ESP_I2S, QEMU jb6)"
 
   // MP3 decoded on the device: ESP_I2S::playMP3() uses libhelix-mp3 (RealNetworks RPSL / RCSL,
   // prebuilt in arduino-esp32 3.x), so no image linking it is committed: built here when a toolchain
-  // is ready (Docker image or `jumper setup esp32`), then run.
+  // is ready (Docker image or `fabwright setup esp32`), then run.
   const mp3Build = canBuildArduino("esp32:esp32:esp32s3");
   it.skipIf(!mp3Build.ok)("esp32s3: an MP3 (1 kHz, 16 kHz mono) decoded on the device plays through I2S", async () => {
     const { cpSync, mkdtempSync, rmSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
-    const work = mkdtempSync(join(tmpdir(), "jumper-mp3-"));
+    const work = mkdtempSync(join(tmpdir(), "fabwright-mp3-"));
     cpSync(`${FIX}esp_mp3`, join(work, "esp_mp3"), { recursive: true });
     const r = await buildFirmware({ sketchDir: join(work, "esp_mp3"), fqbn: "esp32:esp32:esp32s3:FlashMode=dio" });
     rmSync(work, { recursive: true, force: true });

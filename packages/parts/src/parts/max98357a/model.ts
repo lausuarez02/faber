@@ -3,8 +3,8 @@
 // applies the gain and drives an RMS voltage across OUT+ / OUT- (bridge-tied load, so the speaker
 // part sees the right power). Generic audio output: nothing here knows what the audio is.
 // Deterministic: levels come from the samples and virtual time only.
-import type { I2sBlock, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { I2sBlock, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { num, round } from "../../lib/props.ts";
 
 /** Full-scale output at 9 dB gain: the datasheet's 3.2 W into 4 Ω at 5 V ≈ 3.6 V RMS; scales with VIN. */

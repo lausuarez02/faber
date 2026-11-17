@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { ProjectSession } from "../src/index.ts";
 
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse", import.meta.url));
@@ -19,7 +19,7 @@ afterEach(() => {
   if (dir) rmSync(dir, { recursive: true, force: true });
 });
 function open(): ProjectSession {
-  dir = mkdtempSync(join(tmpdir(), "jumper-muse-"));
+  dir = mkdtempSync(join(tmpdir(), "fabwright-muse-"));
   cpSync(MUSE, dir, { recursive: true, preserveTimestamps: true });
   const hex = join(dir, "firmware/main.hex");
   const later = new Date(Date.now() + 60_000);
@@ -32,7 +32,7 @@ const call = (op: string, args: Record<string, unknown> = {}) => s!.call(op, arg
 describe("claude-pocket-muse (round 6 power)", () => {
   it("is wired to run from its battery: power.usb false, soldered, check_design 0 errors", async () => {
     open();
-    const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8"));
+    const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
     expect(p.power).toEqual({ usb: false });
     expect(p.assembly).toBe("soldered");
     const c = await call("check_design");

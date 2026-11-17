@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Blink",
   "description": "The Arduino Blink sketch: pin D13 drives a red LED through a 220 ohm resistor, on for 1 s, off for 1 s.",
   "parts": [

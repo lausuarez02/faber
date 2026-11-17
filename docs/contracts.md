@@ -8,7 +8,7 @@ Read with: `docs/brief.md`, `docs/decisions/0001-m0-foundations.md`.
 ## Ground rules
 
 - pnpm workspaces, Node 24, pnpm 10.34.6. **Do not run `pnpm add`/`pnpm install` for new deps**: everything is installed (list at the end).
-- Internal packages export TypeScript source: `"exports": { ".": "./src/index.ts" }`. No build step between packages. Import with `.ts` extensions inside a package (`./foo.ts`); import other packages by name (`@jumper/sim-core`).
+- Internal packages export TypeScript source: `"exports": { ".": "./src/index.ts" }`. No build step between packages. Import with `.ts` extensions inside a package (`./foo.ts`); import other packages by name (`@fabwright/sim-core`).
 - TypeScript **7.0.2** (native `tsc`) works with this setup; no pin-down was needed. Config is strict + `noUncheckedIndexedAccess` + `verbatimModuleSyntax` (use `import type` for types).
 - Determinism: no `Date`, `Math.random`, `performance.now` or timers inside `sim-core`, `sim-backends` or part models.
 - Original work only (no Wokwi assets/code), MIT/Apache-2.0 compatible, no secrets, no remotes, do not commit.
@@ -20,39 +20,39 @@ Read with: `docs/brief.md`, `docs/decisions/0001-m0-foundations.md`.
 | `pnpm typecheck` | `tsc -p tsconfig.json` over every workspace (`packages/*/src`, `packages/*/scripts`, `apps/web/src`, `apps/web/e2e`, configs). |
 | `pnpm test` | Vitest, one project per workspace (`vitest.config.ts` → `packages/*` + `apps/web`). Picks up any `*.test.ts(x)` under a package. |
 | `pnpm test:e2e` | Playwright in `apps/web` (desktop + Pixel 7 projects; starts Vite on :5173 itself). |
-| `pnpm gen` | Writes `packages/project-format/jumper.schema.json` and `packages/parts/src/registry.gen.ts`. Run after touching any part folder. Generated files are committed. |
+| `pnpm gen` | Writes `packages/project-format/fabwright.schema.json` and `packages/parts/src/registry.gen.ts`. Run after touching any part folder. Generated files are committed. |
 | `pnpm dev` / `pnpm build` | Vite dev server / production build of `apps/web`. |
 
-Per-package: `pnpm --filter @jumper/<name> test`, or `pnpm vitest run packages/<name>`.
+Per-package: `pnpm --filter @fabwright/<name> test`, or `pnpm vitest run packages/<name>`.
 
 ## Layout
 
 ```
-apps/web/                     Vite + React app (@jumper/web). vite.config.ts, vitest.config.ts (jsdom), playwright.config.ts, e2e/
-packages/project-format/      @jumper/project-format  (DONE)
-packages/sim-core/            @jumper/sim-core        (DONE)
-packages/sim-backends/        @jumper/sim-backends    (avr8js backend)
-packages/parts/               @jumper/parts           (10 parts + generator)
+apps/web/                     Vite + React app (@fabwright/web). vite.config.ts, vitest.config.ts (jsdom), playwright.config.ts, e2e/
+packages/project-format/      @fabwright/project-format  (DONE)
+packages/sim-core/            @fabwright/sim-core        (DONE)
+packages/sim-backends/        @fabwright/sim-backends    (avr8js backend)
+packages/parts/               @fabwright/parts           (10 parts + generator)
   scripts/gen-registry.ts
   src/parts/<part-id>/{part.json, model.ts, visual.svg, fidelity.json, model.test.ts}
   src/registry.gen.ts         GENERATED
   src/index.ts                export { partDefinitions, registry }
-examples/blink/               jumper.json + firmware/{blink/blink.ino, blink.hex, build/blink.ino.hex}
+examples/blink/               fabwright.json + firmware/{blink/blink.ino, blink.hex, build/blink.ino.hex}
 toolchains/arduino/           Dockerfile (arduino-cli + pinned arduino:avr core)
 brand/tokens.css              design tokens (DONE)
 ```
 
 ---
 
-## @jumper/project-format
+## @fabwright/project-format
 
 File: `packages/project-format/src/{schema.ts, project.ts, jsonSchema.ts, index.ts}`.
 
-### jumper.json shape (`ProjectSchema`, zod 4)
+### fabwright.json shape (`ProjectSchema`, zod 4)
 
 ```ts
 {
-  format: "jumper/1",
+  format: "fabwright/1",
   name: string,                       // min 1
   description?: string,
   parts: Array<{                      // default []
@@ -73,7 +73,7 @@ File: `packages/project-format/src/{schema.ts, project.ts, jsonSchema.ts, index.
     board: string,                    // part id of the MCU board
     dir: "firmware",                  // default "firmware"
     sketch?: string,                  // e.g. "blink.ino"
-    artifact: string,                 // e.g. "firmware/blink.hex" (relative to jumper.json)
+    artifact: string,                 // e.g. "firmware/blink.hex" (relative to fabwright.json)
     build?: { tool: "arduino-cli", fqbn: string },
   },
   scenarios: Array<{ id: string, name?: string, [k: string]: unknown }>,  // default []; M1 placeholder
@@ -87,7 +87,7 @@ Unknown keys are dropped on parse. Pin ids are **not** checked against the regis
 
 ```ts
 // values
-FORMAT_VERSION                       // "jumper/1"
+FORMAT_VERSION                       // "fabwright/1"
 ProjectSchema, PartInstanceSchema, WireSchema, PinRefSchema, PointSchema, RotationSchema,
 PropValueSchema, FirmwareSchema, FirmwareBuildSchema, ScenarioSchema
 parseProject(input: string | unknown): Project                 // throws ProjectParseError
@@ -99,7 +99,7 @@ buildNets(project: Pick<Project, "wires">, options?: BuildNetsOptions): Net[]
 netIndex(nets: readonly Net[]): Map<string /* "part:pin" */, string /* net id */>
 pinKey(ref: PinRef): string          // "partId:pinId"
 projectJsonSchema(): Record<string, unknown>   // JSON Schema draft 2020-12 (input side)
-JSON_SCHEMA_ID                       // "urn:jumper:project-format:1"
+JSON_SCHEMA_ID                       // "urn:fabwright:project-format:1"
 
 // types
 Project (parsed, defaults filled), ProjectInput (what you may write), PartInstance, Wire, PinRef,
@@ -110,13 +110,13 @@ Net { id: string; pins: PinRef[] }, BuildNetsOptions { extraPins?: Iterable<PinR
 - `ProjectIssue = { path: string; message: string }`, path like `"wires[2].from.part"` (`""` = root).
 - `serializeProject`: fixed top-level key order (`format, name, description, parts, wires, firmware, scenarios`), part keys `id, type, x, y, rotation, props` (props sorted), wire keys `id, from, to, color, waypoints`, 2-space indent, **each part / wire / scenario on one line**, trailing `\n`. Byte-identical for equal projects. Moving a part = one-line diff.
 - `buildNets`: union-find over wire ends. Net ids `n0, n1, …` ordered by each net's first pin (pins sorted by part id, then pin id). Pins no wire touches are only included when passed in `extraPins` (the Simulation passes every pin of every part).
-- Schema file: `packages/project-format/jumper.schema.json` (also exported as `@jumper/project-format/jumper.schema.json`). Regenerate with `pnpm gen`.
+- Schema file: `packages/project-format/fabwright.schema.json` (also exported as `@fabwright/project-format/fabwright.schema.json`). Regenerate with `pnpm gen`.
 
 ---
 
-## @jumper/sim-core
+## @fabwright/sim-core
 
-Files: `packages/sim-core/src/{clock.ts, circuit.ts, part.ts, mcu.ts, board.ts, simulation.ts, bindings.ts, hex.ts, hash.ts, index.ts}`. Everything below is exported from `@jumper/sim-core`.
+Files: `packages/sim-core/src/{clock.ts, circuit.ts, part.ts, mcu.ts, board.ts, simulation.ts, bindings.ts, hex.ts, hash.ts, index.ts}`. Everything below is exported from `@fabwright/sim-core`.
 
 ### Clock (`clock.ts`)
 
@@ -270,7 +270,7 @@ resolveProps(spec: PartSpec, props?: Record<string, PropValue>): Record<string, 
 
 `model.ts` must export **`create`**: `export const create: PartModelFactory = (ctx) => { … }` (or `export function create(ctx: PartContext): PartModel`).
 
-### McuBackend (`mcu.ts`) — implemented by `@jumper/sim-backends`
+### McuBackend (`mcu.ts`) — implemented by `@fabwright/sim-backends`
 
 ```ts
 type PinMode = "input" | "input_pullup" | "output" | "analog";
@@ -401,7 +401,7 @@ interface SandboxNetwork { accessPoints(); join(ssid, pwd, tMs, partId) → 0..4
 interface SandboxSocket { connectMs; write(data, tMs); read(tMs) → { data, closed }; close(tMs); pending }
 ```
 
-### Physics (`@jumper/physics`, M1) — full description in `packages/physics/README.md`
+### Physics (`@fabwright/physics`, M1) — full description in `packages/physics/README.md`
 
 ```ts
 initPhysics(): Promise<void>                         // loads Rapier 2D (WebAssembly) once
@@ -411,14 +411,14 @@ drawWorld(ctx, snap, view, pal?) / drawArm(...)      // pure painters over a Ctx
 armPose(spec, servoAngles) / armReach(spec, x, y)    // forward / inverse kinematics
 ```
 
-### Agent surface (`@jumper/session`, `@jumper/mcp`, `apps/cli`, `@jumper/runner`)
+### Agent surface (`@fabwright/session`, `@fabwright/mcp`, `apps/cli`, `@fabwright/runner`)
 
 ```ts
-new ProjectSession({ dir, builder?, actor? }).call(op, args)   // the 34 operations of docs/mcp-tools.md, logged to <dir>/.jumper/actions.jsonl
+new ProjectSession({ dir, builder?, actor? }).call(op, args)   // the 34 operations of docs/mcp-tools.md, logged to <dir>/.fabwright/actions.jsonl
 // run() result: { t_ms, serial, pins, parts, displays?, world?: { robot?, collisions, min_clearance_cm, travelled_cm, sonar_cm, arm?, assert } }
 // scenarios: expect_part "world.<field>" reads SimHost.worldFields() (robot pose / collisions / arm gripper / reached)
 // run { reset: true } restarts at 0 ms and keeps injected faults
-startStdioServer(argv)                                          // @jumper/mcp; `jumper mcp --project <dir>`
+startStdioServer(argv)                                          // @fabwright/mcp; `fabwright mcp --project <dir>`
 startLiveHub({ dir, port })                                     // WebSocket hub the web app follows (?follow=ws://…)
 ```
 
@@ -445,14 +445,14 @@ applyVisualState(root, state: VisualState): void   // applies to every [data-bin
 
 ## Part folders (`packages/parts/src/parts/<id>/`)
 
-`part.json` (PartSpec), `fidelity.json` (Fidelity), `visual.svg`, `model.ts` (exports `create`), `model.test.ts` (Vitest; test the model by stamping it into a `Circuit` with a fake `PartContext`, or via a small `Simulation`). Then `pnpm gen`. `@jumper/parts` exports `partDefinitions: PartDefinition[]` and `registry: PartRegistry`, plus `parts` (id → definition), `listParts`, `getPart`, `searchParts`, and the helpers `LED_COLORS`, `ledBrightness`, `resistorBands`, `formatOhms`, `ldrResistance`. `pnpm --filter @jumper/parts gen:check` fails when `registry.gen.ts` is stale. Board pins carry no `mcuPin` field: a board's pin id *is* the McuBackend pin id. The full rulebook is `docs/part-spec.md`.
+`part.json` (PartSpec), `fidelity.json` (Fidelity), `visual.svg`, `model.ts` (exports `create`), `model.test.ts` (Vitest; test the model by stamping it into a `Circuit` with a fake `PartContext`, or via a small `Simulation`). Then `pnpm gen`. `@fabwright/parts` exports `partDefinitions: PartDefinition[]` and `registry: PartRegistry`, plus `parts` (id → definition), `listParts`, `getPart`, `searchParts`, and the helpers `LED_COLORS`, `ledBrightness`, `resistorBands`, `formatOhms`, `ldrResistance`. `pnpm --filter @fabwright/parts gen:check` fails when `registry.gen.ts` is stale. Board pins carry no `mcuPin` field: a board's pin id *is* the McuBackend pin id. The full rulebook is `docs/part-spec.md`.
 
 Pin id conventions the example project relies on:
 - `led`: `A` (anode), `C` (cathode); props `color` (enum/color, default `"red"`); visualState `brightness` 0..1, `color`. Overcurrent diagnostic code `led-overcurrent` above `limits.maxCurrentmA` (20).
 - `resistor`: `1`, `2`; prop `resistance` (Ω, default 220; `ohms` is accepted as an alias).
 - `arduino-uno`: `D0`–`D13`, `A0`–`A5`, `5V`, `3V3`, `VIN`, `AREF`, `IOREF`, `RESET`, `GND.1`, `GND.2`, `GND.3` (type `ground`); `mcu: { backend: "avr8js", chip: "atmega328p", clockHz: 16000000, vcc: 5, fqbn: "arduino:avr:uno" }`.
 
-## @jumper/sim-backends
+## @fabwright/sim-backends
 
 ```ts
 interface AvrBackendOptions { chip?: "atmega328p"; clockHz?: number; vcc?: number; board?: "uno" | "nano" }
@@ -468,7 +468,7 @@ Deps available: `avr8js@0.21.1`, `rp2040js@1.4.1`, `intel-hex@0.2.0` (or use `pa
 
 ## examples/blink
 
-`examples/blink/jumper.json` (Uno `uno`, `r1` 220 Ω, `led1`; D13 → r1.1, r1.2 → led1.A, led1.C → uno.GND.1; `firmware: { board: "uno", dir: "firmware", sketch: "blink/blink.ino", artifact: "firmware/blink.hex", build: { tool: "arduino-cli", fqbn: "arduino:avr:uno" } }`), `firmware/blink/blink.ino`, `firmware/blink.hex` (golden, committed) and `firmware/build/blink.ino.hex` (the same bytes as arduino-cli writes them; a test asserts they are identical). Write it with `serializeProject`. Rebuild with `scripts/build-firmware.sh` (see `firmware/BUILD.md`).
+`examples/blink/fabwright.json` (Uno `uno`, `r1` 220 Ω, `led1`; D13 → r1.1, r1.2 → led1.A, led1.C → uno.GND.1; `firmware: { board: "uno", dir: "firmware", sketch: "blink/blink.ino", artifact: "firmware/blink.hex", build: { tool: "arduino-cli", fqbn: "arduino:avr:uno" } }`), `firmware/blink/blink.ino`, `firmware/blink.hex` (golden, committed) and `firmware/build/blink.ino.hex` (the same bytes as arduino-cli writes them; a test asserts they are identical). Write it with `serializeProject`. Rebuild with `scripts/build-firmware.sh` (see `firmware/BUILD.md`).
 
 ## Brand
 
@@ -477,7 +477,7 @@ Deps available: `avr8js@0.21.1`, `rp2040js@1.4.1`, `intel-hex@0.2.0` (or use `pa
 ## Installed dependencies (do not add more)
 
 - root: typescript 7.0.2, vitest 5.1.0, tsx 4.23.15, @types/node 24.19.2
-- project-format: zod 4.6.7 · sim-core: zod 4.6.7, @jumper/project-format
-- sim-backends: avr8js 0.21.1, intel-hex 0.2.0, @jumper/sim-core
-- parts: @jumper/sim-core, @jumper/project-format, dev @jumper/sim-backends
-- web: react/react-dom 19.3.1, @xyflow/react 12.12.1, zustand 5.1.0, @fontsource/{bricolage-grotesque, ibm-plex-sans, ibm-plex-mono} 5.3.0, all @jumper/*; dev: vite 8.3.6, @vitejs/plugin-react 6.2.1, @playwright/test 1.65.0, jsdom 31.0.0, @testing-library/react 16.3.3, @testing-library/dom, @types/react(-dom) 19.3.0
+- project-format: zod 4.6.7 · sim-core: zod 4.6.7, @fabwright/project-format
+- sim-backends: avr8js 0.21.1, intel-hex 0.2.0, @fabwright/sim-core
+- parts: @fabwright/sim-core, @fabwright/project-format, dev @fabwright/sim-backends
+- web: react/react-dom 19.3.1, @xyflow/react 12.12.1, zustand 5.1.0, @fontsource/{bricolage-grotesque, ibm-plex-sans, ibm-plex-mono} 5.3.0, all @fabwright/*; dev: vite 8.3.6, @vitejs/plugin-react 6.2.1, @playwright/test 1.65.0, jsdom 31.0.0, @testing-library/react 16.3.3, @testing-library/dom, @types/react(-dom) 19.3.0

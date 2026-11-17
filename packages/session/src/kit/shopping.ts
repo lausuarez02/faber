@@ -7,9 +7,9 @@
  * breadboard for a breadboard build, screws and inserts for a screwed case, filament for the case,
  * the magnet a reed / Hall switch senses (round 15).
  */
-import { firmwareUsesCard } from "@jumper/enclosure";
-import { buildNets, type Project } from "@jumper/project-format";
-import type { PartRegistry, PartSpec } from "@jumper/sim-core";
+import { firmwareUsesCard } from "@fabwright/enclosure";
+import { buildNets, type Project } from "@fabwright/project-format";
+import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
 import { wireTotals, type WireCut } from "../assembly.ts";
 import { bomLines } from "../manufacturing.ts";
 import type { KitLink, ShopLine, Shopping, ShopSection, StoreTotal } from "./types.ts";
@@ -150,7 +150,7 @@ export function shoppingList(inp: ShoppingInput): Shopping {
     if (inp.prefer) links = [...links.filter((l) => l.store.toLowerCase() === inp.prefer!.toLowerCase()), ...links.filter((l) => l.store.toLowerCase() !== inp.prefer!.toLowerCase())];
     let noLink: string | undefined;
     if (!links.length) {
-      noLink = standIn ? `Jumper simulated it with a stand-in, so it has no link for the real ${first!.standIn}: search for it by name and check its datasheet` : "The part data has no store link: these are store searches for its description";
+      noLink = standIn ? `Fabwright simulated it with a stand-in, so it has no link for the real ${first!.standIn}: search for it by name and check its datasheet` : "The part data has no store link: these are store searches for its description";
       links = searchLinks(askFor, region);
     }
     const alternatives: string[] = [];

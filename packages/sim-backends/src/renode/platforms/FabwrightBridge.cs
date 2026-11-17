@@ -1,12 +1,12 @@
-// Jumper bridge for Renode (MIT, like Renode): one socket between a Renode machine and Jumper that
+// Fabwright bridge for Renode (MIT, like Renode): one socket between a Renode machine and Fabwright that
 // carries every signal the circuit can see as a time-stamped text line, in emulation order.
 //
-// Compiled into Renode at start (`include @/jumper/platforms/JumperBridge.cs`) and placed on the
-// bus as `jumper: Miscellaneous.JumperBridge @ sysbus 0x5FFF0000` (a 4-byte dummy register so the
-// monitor can reach it as `sysbus.jumper`). `sysbus.jumper Connect "<host>" <port>` dials Jumper.
+// Compiled into Renode at start (`include @/fabwright/platforms/FabwrightBridge.cs`) and placed on the
+// bus as `fabwright: Miscellaneous.FabwrightBridge @ sysbus 0x5FFF0000` (a 4-byte dummy register so the
+// monitor can reach it as `sysbus.fabwright`). `sysbus.fabwright Connect "<host>" <port>` dials Fabwright.
 //
-//   Jumper -> Renode                         Renode -> Jumper
-//   R <ns>        run for ns, then T         H jumper-renode-bridge <version>
+//   Fabwright -> Renode                         Renode -> Fabwright
+//   R <ns>        run for ns, then T         H fabwright-renode-bridge <version>
 //   I <gpio> <pin> <0|1>  drive an input     T <ns>             parked (virtual ns)
 //   X <uart> <hex>        bytes into RX      G <id> <0|1> <o|i> <ns>  watched pin: level, direction
 //   A <adc> <ch> <mv>     analog input       U <id> <ns> <hex>  UART TX bytes
@@ -20,8 +20,8 @@
 //                                            P <key> <periodNs> <highNs> <ns>  PWM output (models without pins)
 //                                            E <text>              error
 //
-// Virtual time is the machine's local time source. Outputs never wait for Jumper; only an I2C read
-// and an SPI byte whose MISO matters block the emulation until Jumper answers, which keeps it fast.
+// Virtual time is the machine's local time source. Outputs never wait for Fabwright; only an I2C read
+// and an SPI byte whose MISO matters block the emulation until Fabwright answers, which keeps it fast.
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -43,12 +43,12 @@ using Antmicro.Renode.Time;
 
 namespace Antmicro.Renode.Peripherals.Miscellaneous
 {
-    public class JumperBridge : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightBridge : IDoubleWordPeripheral, IKnownSize
     {
         public const int Version = 1;
-        public static JumperBridge Instance { get; private set; }
+        public static FabwrightBridge Instance { get; private set; }
 
-        public JumperBridge(IMachine machine)
+        public FabwrightBridge(IMachine machine)
         {
             this.machine = machine;
             Instance = this;
@@ -59,7 +59,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         public void WriteDoubleWord(long offset, uint value) { }
         public void Reset() { }
 
-        /// <summary>Dial Jumper and start serving commands (returns at once).</summary>
+        /// <summary>Dial Fabwright and start serving commands (returns at once).</summary>
         public void Connect(string host, int port)
         {
             client = new TcpClient();
@@ -68,8 +68,8 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             var stream = client.GetStream();
             writer = new StreamWriter(stream, new UTF8Encoding(false), 1 << 16) { NewLine = "\n", AutoFlush = false };
             reader = new StreamReader(stream, Encoding.ASCII);
-            Send($"H jumper-renode-bridge {Version}", flush: true);
-            var t = new Thread(ReadLoop) { IsBackground = true, Name = "jumper-bridge" };
+            Send($"H fabwright-renode-bridge {Version}", flush: true);
+            var t = new Thread(ReadLoop) { IsBackground = true, Name = "fabwright-bridge" };
             t.Start();
         }
 
@@ -173,26 +173,26 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             }
         }
 
-        /// <summary>Send a request and block (the emulation thread) until Jumper answers with a line starting with `answer`.</summary>
+        /// <summary>Send a request and block (the emulation thread) until Fabwright answers with a line starting with `answer`.</summary>
         public string Ask(string line, char answer)
         {
             Send(line, flush: true);
             if(answers.TryTake(out var a, AnswerTimeoutMs))
             {
                 if(a.Length > 0 && a[0] == answer) return a.Length > 2 ? a.Substring(2) : "";
-                this.Log(LogLevel.Warning, "jumper bridge: expected '{0}' answer, got '{1}'", answer, a);
+                this.Log(LogLevel.Warning, "fabwright bridge: expected '{0}' answer, got '{1}'", answer, a);
                 return "";
             }
-            this.Log(LogLevel.Error, "jumper bridge: no answer to '{0}' within {1} ms", line, AnswerTimeoutMs);
+            this.Log(LogLevel.Error, "fabwright bridge: no answer to '{0}' within {1} ms", line, AnswerTimeoutMs);
             return "";
         }
 
         public int AnswerTimeoutMs { get; set; } = 30000;
 
-        /// <summary>Set by Jumper at start: some SPI device can drive MISO, so controller models ask for each byte.</summary>
+        /// <summary>Set by Fabwright at start: some SPI device can drive MISO, so controller models ask for each byte.</summary>
         public bool SpiNeedsMiso { get; set; } = true;
 
-        /// <summary>Analog input in millivolts set by Jumper, for ADC models that read it (key "adc:channel").</summary>
+        /// <summary>Analog input in millivolts set by Fabwright, for ADC models that read it (key "adc:channel").</summary>
         public int AnalogMv(string adc, int channel)
         {
             return analog.TryGetValue(adc + ":" + channel, out var mv) ? mv : 0;
@@ -218,7 +218,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             }
             catch(Exception)
             {
-                // socket closed: Jumper went away
+                // socket closed: Fabwright went away
             }
             Environment.Exit(0);
         }
@@ -244,7 +244,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                     {
                         Send("E R: " + e.Message.Replace('\n', ' '), flush: true);
                     }
-                }) { IsBackground = true, Name = "jumper-run" };
+                }) { IsBackground = true, Name = "fabwright-run" };
                 t.Start();
                 break;
             }
@@ -323,7 +323,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             public GPIO Gpio;
         }
 
-        /// <summary>Knows each pin's direction from the port's configuration writes, so Jumper sees pinMode() even when the level does not change, and can tell an output from an input that echoes the level it drives.</summary>
+        /// <summary>Knows each pin's direction from the port's configuration writes, so Fabwright sees pinMode() even when the level does not change, and can tell an output from an input that echoes the level it drives.</summary>
         private class PortWatch
         {
             public string Kind;
@@ -359,7 +359,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
                 bus.AddWatchpointHook(w.Base + o, SysbusAccessWidth.DoubleWord, Access.Write, (cpu, addr, width, value) =>
                 {
                     var before = w.OutputMask;
-                    // Pins whose own configuration this write touches: the inputs Jumper drives are applied
+                    // Pins whose own configuration this write touches: the inputs Fabwright drives are applied
                     // again at the next step, so they win over the port's pull state and every model on the
                     // way (STM32 AFIO / EXTI) has seen their level.
                     var touched = Touched(w, o, (uint)value);
@@ -416,7 +416,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         }
 
         private readonly Dictionary<string, PortWatch> ports = new Dictionary<string, PortWatch>();
-        /// <summary>The level Jumper drives on each input ("gpio:pin").</summary>
+        /// <summary>The level Fabwright drives on each input ("gpio:pin").</summary>
         private readonly ConcurrentDictionary<string, bool> inputs = new ConcurrentDictionary<string, bool>();
         /// <summary>Pins (a mask per port) the firmware reconfigured since the last step.</summary>
         private readonly Dictionary<string, ulong> dirty = new Dictionary<string, ulong>();
@@ -441,8 +441,8 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         }
 
         /// <summary>
-        /// Before a step: the inputs Jumper drives on pins the firmware just reconfigured are applied
-        /// again, so the port and the models behind it (STM32 AFIO / EXTI) hold Jumper's level.
+        /// Before a step: the inputs Fabwright drives on pins the firmware just reconfigured are applied
+        /// again, so the port and the models behind it (STM32 AFIO / EXTI) hold Fabwright's level.
         /// </summary>
         private void ReapplyInputs()
         {
@@ -504,33 +504,33 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private StreamReader reader;
     }
 
-    /// <summary>An I2C target at one address whose bytes go to Jumper's I2C bus (the part models answer).</summary>
-    public class JumperI2cTarget : II2CPeripheral
+    /// <summary>An I2C target at one address whose bytes go to Fabwright's I2C bus (the part models answer).</summary>
+    public class FabwrightI2cTarget : II2CPeripheral
     {
-        public JumperI2cTarget(int address)
+        public FabwrightI2cTarget(int address)
         {
             this.address = address;
         }
 
         public void Write(byte[] data)
         {
-            var b = JumperBridge.Instance;
-            b?.Send($"IW {address:X2} {b.Now} {JumperBridge.Hex(data)}");
+            var b = FabwrightBridge.Instance;
+            b?.Send($"IW {address:X2} {b.Now} {FabwrightBridge.Hex(data)}");
         }
 
         public byte[] Read(int count = 1)
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             if(b == null) return Enumerable.Repeat((byte)0xFF, count).ToArray();
             var hex = b.Ask($"IR {address:X2} {count} {b.Now}", 'D');
-            var r = JumperBridge.Hex(hex);
+            var r = FabwrightBridge.Hex(hex);
             if(r.Length < count) r = r.Concat(Enumerable.Repeat((byte)0xFF, count - r.Length)).ToArray();
             return r;
         }
 
         public void FinishTransmission()
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             b?.Send($"IP {address:X2} {b.Now}");
         }
 
@@ -539,10 +539,10 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
         private readonly int address;
     }
 
-    /// <summary>The device side of an SPI controller, forwarded to Jumper's SPI bus. With Sync false the MISO byte is not asked for (write-only devices such as displays) and reads 0xFF.</summary>
-    public class JumperSpiTarget : ISPIPeripheral
+    /// <summary>The device side of an SPI controller, forwarded to Fabwright's SPI bus. With Sync false the MISO byte is not asked for (write-only devices such as displays) and reads 0xFF.</summary>
+    public class FabwrightSpiTarget : ISPIPeripheral
     {
-        public JumperSpiTarget(string bus = "spi0", bool sync = true)
+        public FabwrightSpiTarget(string bus = "spi0", bool sync = true)
         {
             this.bus = bus;
             Sync = sync;
@@ -552,7 +552,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
 
         public byte Transmit(byte data)
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             if(b == null) return 0xFF;
             if(!Sync)
             {
@@ -565,7 +565,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
 
         public void FinishTransmission()
         {
-            var b = JumperBridge.Instance;
+            var b = FabwrightBridge.Instance;
             b?.Send($"SE {bus} {b.Now}");
         }
 
@@ -575,9 +575,9 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
     }
 
     /// <summary>Cortex-M DWT with a CYCCNT that counts executed instructions (CPI 1, the core clock is the CPU's MIPS). STM32duino and Mbed busy-wait on it; Renode has no DWT model.</summary>
-    public class JumperDwt : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightDwt : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperDwt(IMachine machine)
+        public FabwrightDwt(IMachine machine)
         {
             this.machine = machine;
         }

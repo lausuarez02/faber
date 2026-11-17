@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
-import { registry } from "@jumper/parts";
-import { createRegistry, type PartDefinition } from "@jumper/sim-core";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
+import { registry } from "@fabwright/parts";
+import { createRegistry, type PartDefinition } from "@fabwright/sim-core";
 import { checkDesign } from "../src/index.ts";
 
 // Round 5 (decision 0003, C5): check_design fixes from the persona report.
@@ -9,7 +9,7 @@ import { checkDesign } from "../src/index.ts";
 type W = [string, string];
 function project(parts: [string, string, Record<string, unknown>?][], wires: W[], extra: Partial<ProjectInput> = {}) {
   return parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "t",
     parts: parts.map(([id, type, o], i) => ({ id, type, x: (o?.x as number) ?? i * 120, y: (o?.y as number) ?? 0, ...(o?.props ? { props: o.props } : {}) })),
     wires: wires.map(([a, b], i) => {

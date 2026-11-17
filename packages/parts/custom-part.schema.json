@@ -1,13 +1,13 @@
 {
-  "$id": "urn:jumper:custom-part:1",
-  "title": "Jumper agent-made part (parts/<id>/part.json)",
+  "$id": "urn:fabwright:custom-part:1",
+  "title": "Fabwright agent-made part (parts/<id>/part.json)",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "format": {
-      "default": "jumper-part/1",
+      "default": "fabwright-part/1",
       "type": "string",
-      "const": "jumper-part/1"
+      "const": "fabwright-part/1"
     },
     "id": {
       "type": "string",

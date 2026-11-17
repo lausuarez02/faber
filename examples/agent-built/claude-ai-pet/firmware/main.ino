@@ -108,7 +108,7 @@ void espInit() {
 }
 
 void joinWifi(unsigned long ms) {
-  esp.print(F("AT+CWJAP=\"JumperNet\",\"\"\r\n"));
+  esp.print(F("AT+CWJAP=\"FabwrightNet\",\"\"\r\n"));
   uint8_t r = expectAny("OK", "FAIL", ms);
   if (r == 1) { online = false; setOnline(true); }
   else setOnline(false);
@@ -119,11 +119,11 @@ void joinWifi(unsigned long ms) {
 char body[96];
 bool askBrain() {
   if (!online) return false;
-  esp.print(F("AT+CIPSTART=\"TCP\",\"ai.jumper\",80\r\n"));
+  esp.print(F("AT+CIPSTART=\"TCP\",\"ai.fabwright\",80\r\n"));
   if (expectAny("OK", "ERROR", 5000) != 1) return false;
   char req[100];
   int n = snprintf_P(req, sizeof(req),
-                     PSTR("GET /v1/pet?a=talk&f=%d&j=%d&e=%d&n=Pip HTTP/1.0\r\nHost: ai.jumper\r\n\r\n"),
+                     PSTR("GET /v1/pet?a=talk&f=%d&j=%d&e=%d&n=Pip HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n"),
                      food, joy, energy);
   esp.print(F("AT+CIPSEND="));
   esp.print(n);

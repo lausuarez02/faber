@@ -1,28 +1,28 @@
-diff --git a/hw/misc/jumper_camera.c b/hw/misc/jumper_camera.c
+diff --git a/hw/misc/fabwright_camera.c b/hw/misc/fabwright_camera.c
 new file mode 100644
 index 0000000..589c85d
 --- /dev/null
-+++ b/hw/misc/jumper_camera.c
++++ b/hw/misc/fabwright_camera.c
 @@ -0,0 +1,148 @@
 +/*
-+ * Jumper camera port: a small virtual peripheral (like Espressif's virtual RGB panel at 0x21000000)
-+ * through which a simulation build of the firmware gets camera frames from Jumper. QEMU does not
++ * Fabwright camera port: a small virtual peripheral (like Espressif's virtual RGB panel at 0x21000000)
++ * through which a simulation build of the firmware gets camera frames from Fabwright. QEMU does not
 + * model the ESP32 I2S camera mode or the ESP32-S3 LCD_CAM (DVP) block, so the official esp32-camera
-+ * driver cannot run here; Jumper's build wraps its API (esp_camera_init / esp_camera_fb_get / ...)
++ * driver cannot run here; Fabwright's build wraps its API (esp_camera_init / esp_camera_fb_get / ...)
 + * in simulation builds only and the wrapper talks to this port. The real device build uses the real
 + * driver from the same source.
 + *
-+ * Registers at JUMPER_CAMERA_BASE (32-bit):
++ * Registers at FABWRIGHT_CAMERA_BASE (32-bit):
 + *   0x00 ID       "JCAM" (0x4d41434a)            0x04 VERSION  1
 + *   0x08 WINDOW   address of the frame window      0x0c WINSIZE  its size in bytes
 + *   0x10..0x2c ARG0..ARG7 (read / write)
-+ *   0x30 CMD      write: sends "CC <ns> <cmd> <arg0> ... <arg7>" to Jumper and blocks until it
++ *   0x30 CMD      write: sends "CC <ns> <cmd> <arg0> ... <arg7>" to Fabwright and blocks until it
 + *                 answers "Q <hex>" (up to 8 little-endian words, copied to RES0..RES7). For
 + *                 cmd 2 (capture), when RES0 = 0 and RES1 = frame length, the frame bytes are
 + *                 fetched into the window with "CD <offset> <n>" queries (each answered "Q <hex>").
-+ *   0x40..0x5c RES0..RES7 (read only). RES0 = 0xffffffff when no Jumper is listening.
-+ * The window (JUMPER_CAMERA_WINDOW, 4 MB of RAM) holds the last frame; the firmware copies it out.
-+ * Protocol reference: Jumper's packages/sim-backends/src/qemu-esp/protocol.ts.
++ *   0x40..0x5c RES0..RES7 (read only). RES0 = 0xffffffff when no Fabwright is listening.
++ * The window (FABWRIGHT_CAMERA_WINDOW, 4 MB of RAM) holds the last frame; the firmware copies it out.
++ * Protocol reference: Fabwright's packages/sim-backends/src/qemu-esp/protocol.ts.
 + *
 + * This program is free software; you can redistribute it and/or modify it under the terms of the
 + * GNU General Public License version 2 or (at your option) any later version.
@@ -34,48 +34,48 @@ index 0000000..589c85d
 +#include "qapi/error.h"
 +#include "qemu/timer.h"
 +#include "exec/memory.h"
-+#include "hw/misc/jumper_bridge.h"
-+#include "hw/misc/jumper_camera.h"
++#include "hw/misc/fabwright_bridge.h"
++#include "hw/misc/fabwright_camera.h"
 +
 +#define JCAM_ID 0x4d41434au
 +#define JCAM_VERSION 1u
 +#define JCAM_CMD_CAPTURE 2u
 +#define JCAM_CHUNK 4096
 +
-+typedef struct JumperCamera {
++typedef struct FabwrightCamera {
 +    MemoryRegion iomem;
 +    MemoryRegion window;
 +    uint32_t args[8];
 +    uint32_t res[8];
-+} JumperCamera;
++} FabwrightCamera;
 +
-+static JumperCamera jumper_camera;
++static FabwrightCamera fabwright_camera;
 +
-+static void jcam_words(JumperCamera *s, const char *hex)
++static void jcam_words(FabwrightCamera *s, const char *hex)
 +{
 +    uint8_t b[32];
-+    int n = jumper_hex_decode(b, sizeof(b), hex);
++    int n = fabwright_hex_decode(b, sizeof(b), hex);
 +    memset(s->res, 0, sizeof(s->res));
 +    for (int i = 0; i < 8 && 4 * i + 3 < n; i++) {
 +        s->res[i] = b[4 * i] | (b[4 * i + 1] << 8) | (b[4 * i + 2] << 16) | ((uint32_t)b[4 * i + 3] << 24);
 +    }
 +}
 +
-+static void jcam_fetch(JumperCamera *s, uint32_t len)
++static void jcam_fetch(FabwrightCamera *s, uint32_t len)
 +{
 +    static char answer[JCAM_CHUNK * 2 + 16];
 +    uint8_t *dst = memory_region_get_ram_ptr(&s->window);
 +    uint32_t off = 0;
 +    while (off < len) {
 +        uint32_t want = MIN((uint32_t)JCAM_CHUNK, len - off);
-+        int n = jumper_bridge_query(answer, sizeof(answer), "CD %x %x\n", off, want);
++        int n = fabwright_bridge_query(answer, sizeof(answer), "CD %x %x\n", off, want);
 +        if (n < 0) {
 +            s->res[0] = 0xffffffffu;
 +            return;
 +        }
-+        int got = jumper_hex_decode(dst + off, want, answer);
++        int got = fabwright_hex_decode(dst + off, want, answer);
 +        if (got <= 0) {
-+            /* Jumper sent less than it announced: the frame ends here. */
++            /* Fabwright sent less than it announced: the frame ends here. */
 +            s->res[1] = off;
 +            return;
 +        }
@@ -83,16 +83,16 @@ index 0000000..589c85d
 +    }
 +}
 +
-+static void jcam_command(JumperCamera *s, uint32_t cmd)
++static void jcam_command(FabwrightCamera *s, uint32_t cmd)
 +{
 +    char answer[128];
-+    if (!jumper_bridge_active()) {
++    if (!fabwright_bridge_active()) {
 +        memset(s->res, 0, sizeof(s->res));
 +        s->res[0] = 0xffffffffu;
 +        return;
 +    }
-+    int n = jumper_bridge_query(answer, sizeof(answer), "CC %" PRIx64 " %x %x %x %x %x %x %x %x %x\n",
-+                                jumper_bridge_now(), cmd, s->args[0], s->args[1], s->args[2], s->args[3],
++    int n = fabwright_bridge_query(answer, sizeof(answer), "CC %" PRIx64 " %x %x %x %x %x %x %x %x %x\n",
++                                fabwright_bridge_now(), cmd, s->args[0], s->args[1], s->args[2], s->args[3],
 +                                s->args[4], s->args[5], s->args[6], s->args[7]);
 +    if (n < 0) {
 +        memset(s->res, 0, sizeof(s->res));
@@ -101,8 +101,8 @@ index 0000000..589c85d
 +    }
 +    jcam_words(s, answer);
 +    if (cmd == JCAM_CMD_CAPTURE && s->res[0] == 0) {
-+        if (s->res[1] > JUMPER_CAMERA_WINDOW_SIZE) {
-+            s->res[1] = JUMPER_CAMERA_WINDOW_SIZE;
++        if (s->res[1] > FABWRIGHT_CAMERA_WINDOW_SIZE) {
++            s->res[1] = FABWRIGHT_CAMERA_WINDOW_SIZE;
 +        }
 +        jcam_fetch(s, s->res[1]);
 +    }
@@ -110,12 +110,12 @@ index 0000000..589c85d
 +
 +static uint64_t jcam_read(void *opaque, hwaddr addr, unsigned size)
 +{
-+    JumperCamera *s = opaque;
++    FabwrightCamera *s = opaque;
 +    switch (addr) {
 +    case 0x00: return JCAM_ID;
 +    case 0x04: return JCAM_VERSION;
-+    case 0x08: return JUMPER_CAMERA_WINDOW;
-+    case 0x0c: return JUMPER_CAMERA_WINDOW_SIZE;
++    case 0x08: return FABWRIGHT_CAMERA_WINDOW;
++    case 0x0c: return FABWRIGHT_CAMERA_WINDOW_SIZE;
 +    default:
 +        if (addr >= 0x10 && addr < 0x30) {
 +            return s->args[(addr - 0x10) / 4];
@@ -129,7 +129,7 @@ index 0000000..589c85d
 +
 +static void jcam_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
 +{
-+    JumperCamera *s = opaque;
++    FabwrightCamera *s = opaque;
 +    if (addr >= 0x10 && addr < 0x30) {
 +        s->args[(addr - 0x10) / 4] = (uint32_t)value;
 +    } else if (addr == 0x30) {
@@ -144,13 +144,13 @@ index 0000000..589c85d
 +    .valid = { .min_access_size = 4, .max_access_size = 4 },
 +};
 +
-+void jumper_camera_attach(MemoryRegion *sys_mem)
++void fabwright_camera_attach(MemoryRegion *sys_mem)
 +{
-+    JumperCamera *s = &jumper_camera;
-+    memory_region_init_io(&s->iomem, NULL, &jcam_ops, s, "jumper.camera", JUMPER_CAMERA_IO_SIZE);
-+    memory_region_add_subregion_overlap(sys_mem, JUMPER_CAMERA_BASE, &s->iomem, 1);
-+    memory_region_init_ram(&s->window, NULL, "jumper.camera.window", JUMPER_CAMERA_WINDOW_SIZE, &error_fatal);
-+    memory_region_add_subregion_overlap(sys_mem, JUMPER_CAMERA_WINDOW, &s->window, 1);
++    FabwrightCamera *s = &fabwright_camera;
++    memory_region_init_io(&s->iomem, NULL, &jcam_ops, s, "fabwright.camera", FABWRIGHT_CAMERA_IO_SIZE);
++    memory_region_add_subregion_overlap(sys_mem, FABWRIGHT_CAMERA_BASE, &s->iomem, 1);
++    memory_region_init_ram(&s->window, NULL, "fabwright.camera.window", FABWRIGHT_CAMERA_WINDOW_SIZE, &error_fatal);
++    memory_region_add_subregion_overlap(sys_mem, FABWRIGHT_CAMERA_WINDOW, &s->window, 1);
 +}
 diff --git a/hw/misc/meson.build b/hw/misc/meson.build
 index 19715ae..e8fbc5c 100644
@@ -158,9 +158,9 @@ index 19715ae..e8fbc5c 100644
 +++ b/hw/misc/meson.build
 @@ -138,6 +138,7 @@ system_ss.add(when: 'CONFIG_MSF2', if_true: files('msf2-sysreg.c'))
  system_ss.add(when: 'CONFIG_NRF51_SOC', if_true: files('nrf51_rng.c'))
- system_ss.add(when: 'CONFIG_JUMPER_PERIPH', if_true: files('jumper_periph.c'))
- system_ss.add(when: 'CONFIG_JUMPER_PERIPH', if_true: files('jumper_i2s.c'))
-+system_ss.add(when: 'CONFIG_JUMPER_PERIPH', if_true: files('jumper_camera.c'))
+ system_ss.add(when: 'CONFIG_FABWRIGHT_PERIPH', if_true: files('fabwright_periph.c'))
+ system_ss.add(when: 'CONFIG_FABWRIGHT_PERIPH', if_true: files('fabwright_i2s.c'))
++system_ss.add(when: 'CONFIG_FABWRIGHT_PERIPH', if_true: files('fabwright_camera.c'))
  system_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files(
    'esp32_crosscore_int.c',
    'esp32_dport.c',
@@ -170,18 +170,18 @@ index 36e137b..15d799d 100644
 +++ b/hw/xtensa/esp32.c
 @@ -21,6 +21,7 @@
  #include "hw/gpio/esp32_gpio.h"
- #include "hw/misc/jumper_bridge.h"
- #include "hw/misc/jumper_i2s.h"
-+#include "hw/misc/jumper_camera.h"
+ #include "hw/misc/fabwright_bridge.h"
+ #include "hw/misc/fabwright_i2s.h"
++#include "hw/misc/fabwright_camera.h"
  #include "hw/xtensa/xtensa_memory.h"
  #include "hw/misc/unimp.h"
  #include "hw/irq.h"
 @@ -561,6 +562,8 @@ static void esp32_soc_realize(DeviceState *dev, Error **errp)
-     jumper_periph_attach(&jcfg);
-     /* Jumper: I2S0 / I2S1 with their DMA, frames over the bridge (hw/misc/jumper_i2s.c). */
-     jumper_i2s_attach(JUMPER_CHIP_ESP32, sys_mem, intmatrix_dev, NULL);
-+    /* Jumper: camera frames for simulation builds of esp32-camera sketches (hw/misc/jumper_camera.c). */
-+    jumper_camera_attach(sys_mem);
+     fabwright_periph_attach(&jcfg);
+     /* Fabwright: I2S0 / I2S1 with their DMA, frames over the bridge (hw/misc/fabwright_i2s.c). */
+     fabwright_i2s_attach(FABWRIGHT_CHIP_ESP32, sys_mem, intmatrix_dev, NULL);
++    /* Fabwright: camera frames for simulation builds of esp32-camera sketches (hw/misc/fabwright_camera.c). */
++    fabwright_camera_attach(sys_mem);
  
      qemu_register_reset((QEMUResetHandler*) esp32_soc_reset, dev);
  }
@@ -191,29 +191,29 @@ index 0d7bec2..3160276 100644
 +++ b/hw/xtensa/esp32s3.c
 @@ -63,6 +63,7 @@
  #include "hw/gpio/esp32s3_gpio.h"
- #include "hw/misc/jumper_bridge.h"
- #include "hw/misc/jumper_i2s.h"
-+#include "hw/misc/jumper_camera.h"
+ #include "hw/misc/fabwright_bridge.h"
+ #include "hw/misc/fabwright_i2s.h"
++#include "hw/misc/fabwright_camera.h"
  #include "hw/misc/esp32s3_xts_aes.h"
  #include "hw/misc/esp32s3_pms.h"
  #include "hw/net/can/esp32s3_twai.h"
 @@ -883,6 +884,8 @@ static void esp32s3_machine_init(MachineState *machine)
-         jumper_periph_attach(&jcfg);
-         /* Jumper: I2S0 / I2S1 through the GDMA, frames over the bridge (hw/misc/jumper_i2s.c). */
-         jumper_i2s_attach(JUMPER_CHIP_ESP32S3, sys_mem, intmatrix_dev, &ss->gdma);
-+        /* Jumper: camera frames for simulation builds of esp32-camera sketches (hw/misc/jumper_camera.c). */
-+        jumper_camera_attach(sys_mem);
+         fabwright_periph_attach(&jcfg);
+         /* Fabwright: I2S0 / I2S1 through the GDMA, frames over the bridge (hw/misc/fabwright_i2s.c). */
+         fabwright_i2s_attach(FABWRIGHT_CHIP_ESP32S3, sys_mem, intmatrix_dev, &ss->gdma);
++        /* Fabwright: camera frames for simulation builds of esp32-camera sketches (hw/misc/fabwright_camera.c). */
++        fabwright_camera_attach(sys_mem);
      }
  
      
-diff --git a/include/hw/misc/jumper_camera.h b/include/hw/misc/jumper_camera.h
+diff --git a/include/hw/misc/fabwright_camera.h b/include/hw/misc/fabwright_camera.h
 new file mode 100644
 index 0000000..62fce58
 --- /dev/null
-+++ b/include/hw/misc/jumper_camera.h
++++ b/include/hw/misc/fabwright_camera.h
 @@ -0,0 +1,17 @@
 +/*
-+ * Jumper camera port (hw/misc/jumper_camera.c): frames from Jumper for simulation builds that use
++ * Fabwright camera port (hw/misc/fabwright_camera.c): frames from Fabwright for simulation builds that use
 + * the esp32-camera API. Next to Espressif's virtual RGB panel (0x20000000 / 0x21000000).
 + *
 + * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -223,9 +223,9 @@ index 0000000..62fce58
 +
 +#include "exec/memory.h"
 +
-+#define JUMPER_CAMERA_BASE        0x21100000
-+#define JUMPER_CAMERA_IO_SIZE     0x100
-+#define JUMPER_CAMERA_WINDOW      0x22000000
-+#define JUMPER_CAMERA_WINDOW_SIZE (4 * 1024 * 1024)
++#define FABWRIGHT_CAMERA_BASE        0x21100000
++#define FABWRIGHT_CAMERA_IO_SIZE     0x100
++#define FABWRIGHT_CAMERA_WINDOW      0x22000000
++#define FABWRIGHT_CAMERA_WINDOW_SIZE (4 * 1024 * 1024)
 +
-+void jumper_camera_attach(MemoryRegion *sys_mem);
++void fabwright_camera_attach(MemoryRegion *sys_mem);

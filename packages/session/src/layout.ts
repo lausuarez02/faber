@@ -1,5 +1,5 @@
-import type { PartInstance, Project, Rotation } from "@jumper/project-format";
-import type { PartRegistry, PartSpec } from "@jumper/sim-core";
+import type { PartInstance, Project, Rotation } from "@fabwright/project-format";
+import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
 
 const GRID = 20;
 const MARGIN = 40;

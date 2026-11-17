@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
 import {
   I2cBus,
   Simulation,
@@ -321,7 +321,7 @@ function sim(parts: ProjectInput["parts"], wires: ProjectInput["wires"]) {
   const mcu = new BusMcu();
   const factory: BackendFactory = () => mcu;
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "bus",
     parts: [{ id: "b", type: "bus-board", x: 0, y: 0 }, ...(parts ?? [])],
     wires,

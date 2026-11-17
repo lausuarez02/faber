@@ -3,15 +3,15 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
-import { registry } from "@jumper/parts";
+import { parseProject } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
+import { registry } from "@fabwright/parts";
 import { armPose, armReach, attachPhysics, parseWorld, worldOf } from "./index.ts";
 
 const dir = new URL("../../../examples/robot-arm/", import.meta.url);
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, dir)), "utf8");
-const raw = read("jumper.json");
+const raw = read("fabwright.json");
 const project = parseProject(raw);
 const firmware = read("firmware/robot-arm.hex");
 const angle = (sim: Simulation, id: string) => Number(sim.partState(id)!.angle);

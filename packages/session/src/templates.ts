@@ -1,7 +1,7 @@
-import type { ProjectInput } from "@jumper/project-format";
+import type { ProjectInput } from "@fabwright/project-format";
 import { MICROPYTHON_OLED_MAIN, MICROPYTHON_SSD1306, micropythonMain, platformioFiles } from "./starters.ts";
 
-/** Starting points for new_project. Each is a jumper.json plus firmware files. */
+/** Starting points for new_project. Each is a fabwright.json plus firmware files. */
 export interface Template {
   description: string;
   /** Part types it needs (checked against the catalog). */
@@ -54,7 +54,7 @@ function rp2040Template(type: string, id: string, fqbn: string, name: string, le
     description: `A ${name} (RP2040, 3.3 V) and a sketch (firmware/main.ino) that prints 'ready'${led ? " and blinks the on-board LED" : ""}.`,
     needs: [type],
     project: (projectName) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: projectName,
       parts: [{ id, type, x: 0, y: 0 }],
       wires: [],
@@ -81,7 +81,7 @@ function espTemplate(type: string, id: string, fqbn: string, name: string, chip:
     description: `A ${name} (${chip}, 3.3 V; runs in a local emulator, needs Docker) and a sketch (firmware/main.ino) that prints 'ready'${led ? " and blinks the on-board LED" : ""}.`,
     needs: [type],
     project: (projectName) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name: projectName,
       parts: [{ id, type, x: 0, y: 0 }],
       wires: [],
@@ -98,7 +98,7 @@ function espTemplate(type: string, id: string, fqbn: string, name: string, chip:
  * something and react", motion, light or sending a JPEG to an API.
  */
 export const CAMERA_STARTER_INO = `// Camera starter (XIAO ESP32-S3 Sense pins): a 160x120 grayscale frame twice a second, its mean brightness.
-// Same source on the board (the real esp32-camera driver) and in Jumper (frames from Jumper).
+// Same source on the board (the real esp32-camera driver) and in Fabwright (frames from Fabwright).
 #include "esp_camera.h"
 
 camera_config_t cameraConfig() {
@@ -149,14 +149,14 @@ export const TEMPLATES: Record<string, Template> = {
   blank: {
     description: "Empty canvas, no parts, no firmware.",
     needs: [],
-    project: (name) => ({ format: "jumper/1", name, parts: [], wires: [], scenarios: [] }),
+    project: (name) => ({ format: "fabwright/1", name, parts: [], wires: [], scenarios: [] }),
     files: {},
   },
   uno: {
     description: "An Arduino Uno and an empty sketch (firmware/main.ino) that prints 'ready'.",
     needs: ["arduino-uno"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }],
       wires: [],
@@ -169,7 +169,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "An Arduino Nano and an empty sketch (firmware/main.ino).",
     needs: ["arduino-nano"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [{ id: "nano", type: "arduino-nano", x: 0, y: 0 }],
       wires: [],
@@ -188,7 +188,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "A Seeed XIAO ESP32-S3 Sense (camera, microphone, microSD; runs in a local emulator) and a camera starter (firmware/main.ino): a grayscale frame twice a second and its mean brightness. Tests show the camera a white and a black scene.",
     needs: ["seeed-xiao-esp32s3-sense"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [{ id: "sense", type: "seeed-xiao-esp32s3-sense", x: 0, y: 0 }],
       wires: [],
@@ -208,7 +208,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "A Raspberry Pi Pico running MicroPython: firmware/main.py blinks the on-board LED and prints to the Serial panel, which is also the REPL.",
     needs: ["raspberry-pi-pico"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [{ id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 }],
       wires: [],
@@ -221,7 +221,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "A Raspberry Pi Pico running MicroPython with an SSD1306 OLED on I2C0 (GP4 / GP5): main.py draws a counter and a bar with a small ssd1306.py driver.",
     needs: ["raspberry-pi-pico", "ssd1306-oled-i2c"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [
         { id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 },
@@ -242,7 +242,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "An Arduino Uno built with PlatformIO: firmware/platformio.ini ([env:uno], atmelavr) and firmware/src/main.cpp blinking D13.",
     needs: ["arduino-uno"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }],
       wires: [],
@@ -255,7 +255,7 @@ export const TEMPLATES: Record<string, Template> = {
     description: "Uno + 220 Ω + red LED on D13, the Blink sketch and two passing scenarios.",
     needs: ["arduino-uno", "resistor", "led"],
     project: (name) => ({
-      format: "jumper/1",
+      format: "fabwright/1",
       name,
       description: "D13 drives a red LED through 220 Ω, 1 s on / 1 s off.",
       parts: [

@@ -1,8 +1,8 @@
 // nRF52840 for the Seeed XIAO nRF52840 (Adafruit nRF52 core): Renode 1.17's platforms/cpus/nrf52840.repl
 // (MIT, Antmicro), copied here because TWI0 is replaced: the Adafruit core drives it as TWIM (EasyDMA),
-// which Renode's NRF52840_I2C does not model; Jumper's JumperNrf52Twim does, with real address NACKs.
-// SPIM3 (the core's SPI) is Jumper's JumperNrf52Spim.
-// Plus what nrf52840.repl adds for every Jumper nRF52 board (UICR, SAADC, PWM0..3).
+// which Renode's NRF52840_I2C does not model; Fabwright's FabwrightNrf52Twim does, with real address NACKs.
+// SPIM3 (the core's SPI) is Fabwright's FabwrightNrf52Spim.
+// Plus what nrf52840.repl adds for every Fabwright nRF52 board (UICR, SAADC, PWM0..3).
 nvic: IRQControllers.NVIC @ sysbus 0xE000E000
     -> cpu@0
 
@@ -44,7 +44,7 @@ ram: Memory.MappedMemory @ { sysbus 0x800000; sysbus 0x20000000 }
 clock: Miscellaneous.NRF_CLOCK @ sysbus 0x40000000
     -> nvic@0
 
-twi0: Miscellaneous.JumperNrf52Twim @ sysbus 0x40003000
+twi0: Miscellaneous.FabwrightNrf52Twim @ sysbus 0x40003000
     -> nvic@0x3
 
 spi2: SPI.NRF52840_SPI @ sysbus 0x40023000
@@ -124,29 +124,29 @@ sysbus:
         Tag <0x10001200, 0x10001203> "PSELRESET"
 
 // SPIM3: the Adafruit core's SPI (Renode 1.17 has no SPIM3).
-spim3: Miscellaneous.JumperNrf52Spim @ sysbus 0x4002F000
+spim3: Miscellaneous.FabwrightNrf52Spim @ sysbus 0x4002F000
     bus: "spim3"
     -> nvic@47
 
-uicr: Miscellaneous.JumperNrf52Uicr @ sysbus 0x10001000
+uicr: Miscellaneous.FabwrightNrf52Uicr @ sysbus 0x10001000
 
-saadc: Miscellaneous.JumperNrf52Saadc @ sysbus 0x40007000
+saadc: Miscellaneous.FabwrightNrf52Saadc @ sysbus 0x40007000
     name: "saadc"
     IRQ -> nvic@7
 
-pwm0: Miscellaneous.JumperNrf52Pwm @ sysbus 0x4001C000
+pwm0: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x4001C000
     name: "pwm0"
     IRQ -> nvic@28
 
-pwm1: Miscellaneous.JumperNrf52Pwm @ sysbus 0x40021000
+pwm1: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x40021000
     name: "pwm1"
     IRQ -> nvic@33
 
-pwm2: Miscellaneous.JumperNrf52Pwm @ sysbus 0x40022000
+pwm2: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x40022000
     name: "pwm2"
     IRQ -> nvic@34
 
-pwm3: Miscellaneous.JumperNrf52Pwm @ sysbus 0x4002D000
+pwm3: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x4002D000
     name: "pwm3"
     IRQ -> nvic@45
 

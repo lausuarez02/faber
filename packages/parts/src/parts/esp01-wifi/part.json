@@ -2,7 +2,7 @@
   "id": "esp01-wifi",
   "name": "Wi-Fi module ESP-01S (ESP8266, AT firmware)",
   "category": "communication",
-  "description": "ESP8266 Wi-Fi module with Espressif's AT command firmware, talked to over a serial port. Uno wiring: VCC → 3V3, GND → GND, TX → D2 (SoftwareSerial RX), RX → D3 (SoftwareSerial TX) through a 1 kΩ / 2 kΩ divider. In Jumper it joins the sandbox Wi-Fi \"JumperNet\" (open) and reaches sandbox hosts such as the pet AI at http://ai.jumper/v1/pet.",
+  "description": "ESP8266 Wi-Fi module with Espressif's AT command firmware, talked to over a serial port. Uno wiring: VCC → 3V3, GND → GND, TX → D2 (SoftwareSerial RX), RX → D3 (SoftwareSerial TX) through a 1 kΩ / 2 kΩ divider. In Fabwright it joins the sandbox Wi-Fi \"FabwrightNet\" (open) and reaches sandbox hosts such as the pet AI at http://ai.fabwright/v1/pet.",
   "pins": [
     { "id": "TX", "label": "TX", "x": 16, "y": 30, "type": "digital", "protocols": ["uart-tx"], "voltage": { "min": 0, "max": 3.6 }, "description": "Serial out of the module (3.3 V logic). To the board's RX pin, e.g. Uno D2 for SoftwareSerial esp(2, 3)." },
     { "id": "GND", "label": "GND", "x": 36, "y": 30, "type": "ground", "description": "Ground." },
@@ -38,7 +38,7 @@
     { "key": "powered", "type": "boolean", "description": "3.0 to 3.6 V on VCC with EN and RST high." },
     { "key": "wifi", "type": "string", "description": "off, idle (booted, not joined), connecting, connected, or down (the Wi-Fi went away; the module reconnects by itself)." },
     { "key": "online", "type": "boolean", "description": "Joined with an IP (after WIFI GOT IP)." },
-    { "key": "ssid", "type": "string", "description": "Network joined, e.g. JumperNet." },
+    { "key": "ssid", "type": "string", "description": "Network joined, e.g. FabwrightNet." },
     { "key": "ip", "type": "string", "description": "Station IP, empty when not joined." },
     { "key": "links", "type": "number", "description": "Open TCP / SSL links (AT+CIPSTART)." },
     { "key": "led", "type": "boolean", "description": "Blue LED: blinks while the module sends on its TX pin." },

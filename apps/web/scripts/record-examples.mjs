@@ -22,7 +22,7 @@ async function select(page, id) {
   // Point at the part, then select it through the store (a wire over the part can catch the click).
   const box = await page.getByTestId(`part-${id}`).boundingBox();
   if (box) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 8 });
-  await page.evaluate((p) => window.jumper.store.getState().select([p], []), id);
+  await page.evaluate((p) => window.fabwright.store.getState().select([p], []), id);
   await page.waitForTimeout(250);
 }
 
@@ -43,7 +43,7 @@ async function sweep(page, id, prop, from, to, ms) {
   const steps = Math.max(2, Math.round(ms / 50));
   for (let i = 0; i <= steps; i++) {
     const v = from + ((to - from) * i) / steps;
-    await page.evaluate(([p, k, val]) => window.jumper.store.getState().setPartProp(p, k, val), [id, prop, v]);
+    await page.evaluate(([p, k, val]) => window.fabwright.store.getState().setPartProp(p, k, val), [id, prop, v]);
     await page.waitForTimeout(ms / steps);
   }
 }
@@ -77,7 +77,7 @@ const scripts = {
     // Neglect it: fast-forward until a stat drops under 20 (sad face, alarm beeps).
     await select(page, "oled");
     await speed(page, 8);
-    await page.waitForFunction(() => /mood=sad|needs care|I need you/.test(window.jumper.engine.serialText), undefined, { timeout: 90_000 });
+    await page.waitForFunction(() => /mood=sad|needs care|I need you/.test(window.fabwright.engine.serialText), undefined, { timeout: 90_000 });
     await speed(page, 1);
     await page.waitForTimeout(3500);
     await press(page, "btnFeed");
@@ -111,7 +111,7 @@ const scripts = {
 const names = only.length ? only : Object.keys(scripts);
 const browser = await chromium.launch();
 for (const name of names) {
-  const tmp = mkdtempSync(join(tmpdir(), "jumper-example-"));
+  const tmp = mkdtempSync(join(tmpdir(), "fabwright-example-"));
   const ctx = await browser.newContext({ viewport: size, colorScheme: "dark", deviceScaleFactor: 1, recordVideo: { dir: tmp, size } });
   const page = await ctx.newPage();
   const t0 = Date.now();

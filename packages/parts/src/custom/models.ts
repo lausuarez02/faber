@@ -2,8 +2,8 @@
 // part.json `behavior` block into a PartModel built from the same pieces as the built-in parts
 // (resistors and sources in the circuit, the I2C bus interface, the bit-level soft UART). No code
 // from the part file runs. Deterministic: virtual time only.
-import type { PropValue } from "@jumper/project-format";
-import type { Diagnostic, ElementId, I2cDevice, PartContext, PartModel, PartModelFactory, SolveResultView, VisualState } from "@jumper/sim-core";
+import type { PropValue } from "@fabwright/project-format";
+import type { Diagnostic, ElementId, I2cDevice, PartContext, PartModel, PartModelFactory, SolveResultView, VisualState } from "@fabwright/sim-core";
 import { createI2cModule, hex2 } from "../lib/i2cModule.ts";
 import { clamp, num, round, truthy } from "../lib/props.ts";
 import { UartReceiver, UartTransmitter } from "../lib/softUart.ts";

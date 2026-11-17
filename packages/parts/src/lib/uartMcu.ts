@@ -1,7 +1,7 @@
 // A fake MCU for UART part tests (round 7, voice): it bit-bangs bytes onto a pin at a baud rate,
 // cycle-exact, the way firmware with SoftwareSerial / a hardware UART on its pins would, and records
 // the edges a part drives on another pin so the test can decode the replies. No firmware needed.
-import type { McuBackend, PinState } from "@jumper/sim-core";
+import type { McuBackend, PinState } from "@fabwright/sim-core";
 
 type Listener = (pin: string, state: PinState, cycle: number) => void;
 

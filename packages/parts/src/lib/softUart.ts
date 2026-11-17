@@ -3,7 +3,7 @@
 // edges through ctx.watch and samples each bit in its middle; the transmitter changes its output
 // level at scheduled virtual times through ctx.schedule, so the firmware's pin-change interrupt
 // sees every edge on the right cycle. Deterministic: virtual time only.
-import type { PartContext } from "@jumper/sim-core";
+import type { PartContext } from "@fabwright/sim-core";
 
 /** Decodes bytes the MCU sends on `pin` (the part's RX). */
 export class UartReceiver {

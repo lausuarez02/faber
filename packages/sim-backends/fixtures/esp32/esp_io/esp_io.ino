@@ -1,4 +1,4 @@
-// Jumper golden fixture (ESP32 family): GPIO interrupts, LEDC PWM (analogWrite, a 50 Hz servo
+// Fabwright golden fixture (ESP32 family): GPIO interrupts, LEDC PWM (analogWrite, a 50 Hz servo
 // pulse, tone()) and the ADC. Prints one status line every 100 ms of virtual time.
 #include "esp_pins.h"
 

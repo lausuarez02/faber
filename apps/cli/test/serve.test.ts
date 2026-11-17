@@ -8,13 +8,13 @@ import WebSocket from "ws";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { TOOLS } from "@jumper/session";
-import { installSnippets, startJumperServer, type JumperServer } from "../src/serve.ts";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { TOOLS } from "@fabwright/session";
+import { installSnippets, startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
 
-// `jumper serve`: one server with the live websocket and MCP over Streamable HTTP on the same session.
+// `fabwright serve`: one server with the live websocket and MCP over Streamable HTTP on the same session.
 const GOLDEN = readFileSync(fileURLToPath(new URL("../../../examples/blink/firmware/blink.hex", import.meta.url)), "utf8");
-const BIN = fileURLToPath(new URL("../bin/jumper.mjs", import.meta.url));
+const BIN = fileURLToPath(new URL("../bin/fabwright.mjs", import.meta.url));
 const fakeBuilder = async (_req: BuildRequest): Promise<BuildResult> => ({ ok: true, hex: GOLDEN, cached: false, durationMs: 1, hash: "y", diagnostics: [], errors: 0, warnings: 0, libraries: [], logTail: "" });
 const BLINK = 'void setup(){Serial.begin(115200);pinMode(13,OUTPUT);}\nvoid loop(){digitalWrite(13,HIGH);Serial.println("LED on");delay(1000);digitalWrite(13,LOW);Serial.println("LED off");delay(1000);}\n';
 
@@ -57,14 +57,14 @@ function follow(url: string): Promise<Follower> {
   });
 }
 
-describe("jumper serve: canvas + MCP over HTTP on one session", () => {
+describe("fabwright serve: canvas + MCP over HTTP on one session", () => {
   let dir: string;
-  let srv: JumperServer;
+  let srv: FabwrightServer;
   let client: Client;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-serve-"));
-    srv = await startJumperServer({ dir, port: 0, web: "none", builder: fakeBuilder, launcher: async () => {} });
+    dir = mkdtempSync(join(tmpdir(), "fabwright-serve-"));
+    srv = await startFabwrightServer({ dir, port: 0, web: "none", builder: fakeBuilder, launcher: async () => {} });
     client = new Client({ name: "claude-code", version: "9.9.9" });
     await client.connect(new StreamableHTTPClientTransport(new URL(srv.mcpUrl)));
   }, 30_000);
@@ -140,7 +140,7 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
       ws.on("error", bad);
     });
     expect(web).toMatchObject({ ok: true, result: { t_ms: 2000 } });
-    const log = readFileSync(join(dir, ".jumper/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { actor: string; op: string });
+    const log = readFileSync(join(dir, ".fabwright/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { actor: string; op: string });
     expect(log.at(-1)).toMatchObject({ actor: "web", op: "run" });
   });
 
@@ -154,7 +154,7 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
     expect(r.passed).toBe(1);
     expect((r.results as { visual: string[] }[])[0]!.visual[0]).toMatch(/^ok +\d+ms +serial "LED on"/);
     const report = (await (await fetch(`${srv.url}/api/visual-report`)).json()) as { format: string; passed: number; scenarios: { id: string; frames: unknown[] }[] };
-    expect(report).toMatchObject({ format: "jumper-visual-report/1", passed: 1 });
+    expect(report).toMatchObject({ format: "fabwright-visual-report/1", passed: 1 });
     expect(report.scenarios[0]!.frames.length).toBeGreaterThan(0);
   });
 
@@ -184,26 +184,26 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
   it("serves install commands and a starter prompt; the launch needs the token", async () => {
     const info = (await (await fetch(`${srv.url}/api/info`)).json()) as { mcpUrl: string; install: { id: string; text: string }[]; starterPrompt: string; token?: string };
     expect(info.token).toBeUndefined();
-    expect(info.install.find((i) => i.id === "claude-code")!.text).toBe(`claude mcp add --transport http jumper ${srv.mcpUrl}`);
+    expect(info.install.find((i) => i.id === "claude-code")!.text).toBe(`claude mcp add --transport http fabwright ${srv.mcpUrl}`);
     expect(info.starterPrompt).toMatch(/watching the live canvas/);
     const noToken = await fetch(`${srv.url}/api/launch/claude-code`, { method: "POST", body: "{}" });
     expect(noToken.status).toBe(403);
-    expect(await noToken.text()).toMatch(/x-jumper-token/);
+    expect(await noToken.text()).toMatch(/x-fabwright-token/);
     const cross = await fetch(`${srv.url}/api/connect`, { headers: { "sec-fetch-site": "cross-site" } });
     expect(cross.status).toBe(403);
     const { token } = (await (await fetch(`${srv.url}/api/connect`)).json()) as { token: string };
-    const dry = (await (await fetch(`${srv.url}/api/launch/claude-code`, { method: "POST", headers: { "x-jumper-token": token }, body: JSON.stringify({ dryRun: true, withPrompt: true }) })).json()) as { ok: boolean; command: string; osascript: string[]; mcpConfigFile: string };
+    const dry = (await (await fetch(`${srv.url}/api/launch/claude-code`, { method: "POST", headers: { "x-fabwright-token": token }, body: JSON.stringify({ dryRun: true, withPrompt: true }) })).json()) as { ok: boolean; command: string; osascript: string[]; mcpConfigFile: string };
     expect(dry.ok).toBe(true);
-    expect(dry.command).toMatch(/^cd '.+' && claude --mcp-config '.+jumper-mcp-\d+\.json' '/);
+    expect(dry.command).toMatch(/^cd '.+' && claude --mcp-config '.+fabwright-mcp-\d+\.json' '/);
     expect(dry.osascript.at(-1)).toMatch(/^tell application "Terminal" to do script "cd /);
-    expect(JSON.parse(readFileSync(dry.mcpConfigFile, "utf8"))).toEqual({ mcpServers: { jumper: { type: "http", url: srv.mcpUrl } } });
+    expect(JSON.parse(readFileSync(dry.mcpConfigFile, "utf8"))).toEqual({ mcpServers: { fabwright: { type: "http", url: srv.mcpUrl } } });
     // round 12 skill: Claude Code starts in the project folder, where the project skill now is
-    expect(info.starterPrompt).toMatch(/jumper-hardware skill in this folder/);
-    expect(readFileSync(join(srv.dir, ".claude/skills/jumper-hardware/SKILL.md"), "utf8")).toMatch(/^---\nname: jumper-hardware\n/);
-    expect(readFileSync(join(srv.dir, "AGENTS.md"), "utf8")).toMatch(/Written by Jumper/);
+    expect(info.starterPrompt).toMatch(/fabwright-hardware skill in this folder/);
+    expect(readFileSync(join(srv.dir, ".claude/skills/fabwright-hardware/SKILL.md"), "utf8")).toMatch(/^---\nname: fabwright-hardware\n/);
+    expect(readFileSync(join(srv.dir, "AGENTS.md"), "utf8")).toMatch(/Written by Fabwright/);
   });
 
-  it("jumper mcp --attach: a stdio client drives the same live session", async () => {
+  it("fabwright mcp --attach: a stdio client drives the same live session", async () => {
     const f = await follow(srv.wsUrl);
     const stdio = new Client({ name: "codex-mcp-client", version: "0.163.0" });
     try {
@@ -228,16 +228,16 @@ describe("jumper serve: canvas + MCP over HTTP on one session", () => {
     child.stderr.on("data", (d) => (err += d));
     const code = await new Promise<number | null>((r) => child.on("exit", r));
     expect(code).not.toBe(0);
-    expect(err).toMatch(/No Jumper server at http:\/\/127\.0\.0\.1:9.*Fix: start it with `pnpm start`/);
+    expect(err).toMatch(/No Fabwright server at http:\/\/127\.0\.0\.1:9.*Fix: start it with `pnpm start`/);
   }, 20_000);
 });
 
 describe("install snippets", () => {
   it("name the server URL for every agent", () => {
-    const s = installSnippets(7780, "/usr/local/bin/node", "/repo/apps/cli/bin/jumper.mjs");
+    const s = installSnippets(7780, "/usr/local/bin/node", "/repo/apps/cli/bin/fabwright.mjs");
     expect(s.map((x) => x.id)).toEqual(["claude-code", "codex", "claude-desktop", "cursor", "stdio"]);
-    expect(s[1]!.text).toBe('[mcp_servers.jumper]\nurl = "http://localhost:7780/mcp"');
-    expect(JSON.parse(s[2]!.text)).toEqual({ mcpServers: { jumper: { command: "/usr/local/bin/node", args: ["/repo/apps/cli/bin/jumper.mjs", "mcp", "--attach", "http://localhost:7780"] } } });
-    expect(JSON.parse(s[3]!.text)).toEqual({ mcpServers: { jumper: { url: "http://localhost:7780/mcp" } } });
+    expect(s[1]!.text).toBe('[mcp_servers.fabwright]\nurl = "http://localhost:7780/mcp"');
+    expect(JSON.parse(s[2]!.text)).toEqual({ mcpServers: { fabwright: { command: "/usr/local/bin/node", args: ["/repo/apps/cli/bin/fabwright.mjs", "mcp", "--attach", "http://localhost:7780"] } } });
+    expect(JSON.parse(s[3]!.text)).toEqual({ mcpServers: { fabwright: { url: "http://localhost:7780/mcp" } } });
   });
 });

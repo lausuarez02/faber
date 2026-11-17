@@ -1,16 +1,16 @@
-// Jumper's Wi-Fi control channel, between the netstack (the "access point") and the Wi-Fi shim in
+// Fabwright's Wi-Fi control channel, between the netstack (the "access point") and the Wi-Fi shim in
 // a simulation build of the firmware. Real Wi-Fi radios are not emulated; the shim maps the
 // firmware's Wi-Fi API (esp_wifi_* under WiFi.h) onto the emulated Ethernet card, and asks the
 // netstack over this channel whether it may join, what the RSSI is, which networks a scan finds,
-// and which CA the sandbox TLS uses. Jumper decides, so a scenario or an agent can drop the Wi-Fi,
+// and which CA the sandbox TLS uses. Fabwright decides, so a scenario or an agent can drop the Wi-Fi,
 // weaken the signal or refuse a wrong password.
 //
 // Frames: EtherType 0x88B5, payload = ASCII lines "JWIFI/1 <verb> k=v k=v" (values %-encoded).
-//   device → Jumper   hello chip=esp32s3 shim=1
+//   device → Fabwright   hello chip=esp32s3 shim=1
 //                     connect ssid=<s> pass=<s>
 //                     disconnect
 //                     scan
-//   Jumper → device   connected ssid=<s> bssid=<mac> channel=<n> rssi=<dBm> auth=<n>
+//   Fabwright → device   connected ssid=<s> bssid=<mac> channel=<n> rssi=<dBm> auth=<n>
 //                     failed reason=<n> after_ms=<n>         (wifi_err_reason_t, e.g. 201 no AP)
 //                     lost reason=<n>                        (link dropped: beacon timeout = 200)
 //                     rssi v=<dBm>
@@ -98,10 +98,10 @@ export function decideJoin(w: WifiState, ssid: string, pass: string): JoinDecisi
   if (!w.aps.length) return { ok: true, ssid };
   const ap = w.aps.find((a) => a.ssid === ssid);
   if (!ap) {
-    return { ok: false, ssid, reason: WIFI_REASON.NO_AP_FOUND, why: `the firmware asked for "${ssid}", but the sandbox only has ${w.aps.map((a) => `"${a.ssid}"`).join(", ")} (jumper.json network.wifi)`, fix: `use the same SSID in the sketch and in network.wifi.ssid, or remove network.wifi to accept any SSID` };
+    return { ok: false, ssid, reason: WIFI_REASON.NO_AP_FOUND, why: `the firmware asked for "${ssid}", but the sandbox only has ${w.aps.map((a) => `"${a.ssid}"`).join(", ")} (fabwright.json network.wifi)`, fix: `use the same SSID in the sketch and in network.wifi.ssid, or remove network.wifi to accept any SSID` };
   }
   if (ap.password !== undefined && ap.password !== pass) {
-    return { ok: false, ssid, reason: WIFI_REASON.HANDSHAKE_4WAY_TIMEOUT, why: `the password the firmware sent for "${ssid}" (${pass.length} characters) does not match network.wifi.password`, fix: "use the same password in the sketch and in jumper.json network.wifi, or remove network.wifi.password to accept any password" };
+    return { ok: false, ssid, reason: WIFI_REASON.HANDSHAKE_4WAY_TIMEOUT, why: `the password the firmware sent for "${ssid}" (${pass.length} characters) does not match network.wifi.password`, fix: "use the same password in the sketch and in fabwright.json network.wifi, or remove network.wifi.password to accept any password" };
   }
   return { ok: true, ssid };
 }

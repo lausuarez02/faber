@@ -18,7 +18,7 @@ see `apps/web/src/renderers/physics/demo/record.mjs`).
 | Battery pack | `bat` | 2S LiPo (8.4 V) on the L298N 12V terminal; the on-board regulator powers the driver logic. |
 | 2WD chassis | `chassis` | Mechanical: wheel radius 3.25 cm, track 13.5 cm, 20 × 15 cm, 450 g. |
 
-The `world` block in `jumper.json` places three obstacles and starts the robot at (40, 40) facing
+The `world` block in `fabwright.json` places three obstacles and starts the robot at (40, 40) facing
 +x. See [`packages/physics/README.md`](../../packages/physics/README.md) for the format.
 
 ## The sketch
@@ -26,9 +26,9 @@ The `world` block in `jumper.json` places three obstacles and starts the robot a
 Drive forward at PWM 170 while the sonar reads ≥ 28 cm. Closer: stop, back up 220 ms, then turn
 right in 90 ms steps until it reads ≥ 55 cm. Each decision is printed on Serial (115200 baud).
 
-## Scenarios (`jumper test`)
+## Scenarios (`fabwright test`)
 
-`jumper.json` has two scenarios an agent can run with `run_tests` (or `pnpm jumper test -p examples/rover`):
+`fabwright.json` has two scenarios an agent can run with `run_tests` (or `pnpm fabwright test -p examples/rover`):
 `drives-without-crashing` (20 s, `world.collisions == 0`, more than 3 m driven, never closer than
 3 cm) and `sees-the-wall` (the sonar reads the far wall at start). Open the example in the app with
 `?example=rover` to watch it drive in the World view.

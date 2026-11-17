@@ -111,7 +111,7 @@
     {
       "key": "pixels",
       "type": "string",
-      "description": "The displayed image (after remap, offset, invert): base64 of 1 bit per pixel, row-major, MSB = leftmost pixel, 16 bytes per row, 64 rows. Decode with decodeMonoFrame(pixels, 128, 64) from @jumper/sim-core."
+      "description": "The displayed image (after remap, offset, invert): base64 of 1 bit per pixel, row-major, MSB = leftmost pixel, 16 bytes per row, 64 rows. Decode with decodeMonoFrame(pixels, 128, 64) from @fabwright/sim-core."
     },
     {
       "key": "frame",

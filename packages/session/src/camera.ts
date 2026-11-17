@@ -3,8 +3,8 @@
 // with a camera (part.json "camera") takes a test scene or a still image.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
-import type { Project } from "@jumper/project-format";
-import { CAMERA_SCENES, decodeImage, type PartRegistry } from "@jumper/sim-core";
+import type { Project } from "@fabwright/project-format";
+import { CAMERA_SCENES, decodeImage, type PartRegistry } from "@fabwright/sim-core";
 import { fail } from "./errors.ts";
 
 /** Largest image accepted as a camera source (bytes): a phone photo fits, a raw video frame does not need more. */
@@ -69,7 +69,7 @@ function checkDecodes(bytes: Uint8Array, what: string): void {
   }
 }
 
-/** The props that make `part` see `src` (applied live with sim.setProp, never saved in jumper.json). */
+/** The props that make `part` see `src` (applied live with sim.setProp, never saved in fabwright.json). */
 export function cameraProps(dir: string, src: CameraSourceSpec): { camera_source: string; camera_image: string } {
   if ("scene" in src) {
     if (!(CAMERA_SCENES as readonly string[]).includes(src.scene)) fail("bad-scene", `No test scene '${src.scene}'`, `the scenes are ${CAMERA_SCENES.join(", ")}`, "pick one, or pass an image file");

@@ -1,6 +1,6 @@
 // Round 6 (power): the firmware board only runs while its supply is up (USB or a battery path).
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
 import { createMcuBoardModel, createRegistry, GROUND, Simulation, type Fidelity, type McuBackend, type PartDefinition, type PartSpec, type PinState } from "./index.ts";
 
 /** "Firmware" that prints one byte every 100 ms of its own time since reset. */
@@ -66,7 +66,7 @@ const registry = createRegistry([board, cell]);
 
 function sim(extra: Partial<ProjectInput> = {}, withCell = false) {
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "p",
     parts: [{ id: "b", type: "fake-board", x: 0, y: 0 }, ...(withCell ? [{ id: "c", type: "cell", x: 0, y: 0 }] : [])],
     wires: withCell ? [{ id: "w1", from: { part: "c", pin: "POS" }, to: { part: "b", pin: "5V" } }] : [],

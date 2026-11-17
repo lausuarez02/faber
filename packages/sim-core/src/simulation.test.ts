@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
 import {
   createMcuBoardModel,
   createRegistry,
@@ -199,7 +199,7 @@ const registry = createRegistry([board, resistor, led, button]);
 const backendFactory: BackendFactory = () => new FakeMcu();
 
 const input: ProjectInput = {
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "fake blink",
   parts: [
     { id: "b", type: "fake-board", x: 0, y: 0 },
@@ -341,7 +341,7 @@ describe("Simulation", () => {
   });
 
   it("flags unknown part types instead of crashing", () => {
-    const p = parseProject({ format: "jumper/1", name: "x", parts: [{ id: "q", type: "nope", x: 0, y: 0 }] });
+    const p = parseProject({ format: "fabwright/1", name: "x", parts: [{ id: "q", type: "nope", x: 0, y: 0 }] });
     const sim = new Simulation({ project: p, registry });
     expect(sim.diagnostics()[0]).toMatchObject({ partId: "q", code: "unknown-part-type", severity: "error" });
   });

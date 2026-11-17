@@ -1,4 +1,4 @@
-import { buildNets, netIndex, pinKey, type Net, type Project, type PropValue } from "@jumper/project-format";
+import { buildNets, netIndex, pinKey, type Net, type Project, type PropValue } from "@fabwright/project-format";
 import { Circuit, GROUND, scopedBuilder, type NodeId, type SolveResult } from "./circuit.ts";
 import { I2C_FAULTS, I2cBus, SPI_FAULTS, SpiBus, type I2cFault, type SpiFault } from "./bus.ts";
 import { I2sBus } from "./i2s.ts";
@@ -161,7 +161,7 @@ export class Simulation {
   /** Node → the firmware board GPIO that drives it directly or through resistors (cached; nets never change). */
   private driverCache = new Map<NodeId, string | null>();
   // round 6 power
-  /** jumper.json power.usb (live: adoptProps / setPower change it). */
+  /** fabwright.json power.usb (live: adoptProps / setPower change it). */
   private powerState = { usb: true };
   /** The firmware board had power after the last solve (its model's powered()). */
   private _boardPowered = true;
@@ -386,7 +386,7 @@ export class Simulation {
     return this._boardPowered;
   }
 
-  /** jumper.json power.usb as the simulation sees it. */
+  /** fabwright.json power.usb as the simulation sees it. */
   get usb(): boolean {
     return this.powerState.usb;
   }
@@ -1157,7 +1157,7 @@ export class Simulation {
     return Math.max(0, s.req.wakeAfterMs - (this.timeMs - this.clock.toMs(s.since)));
   }
 
-  /** Sleep lines from a shim this Jumper does not understand (what failed, why, fix). */
+  /** Sleep lines from a shim this Fabwright does not understand (what failed, why, fix). */
   sleepProblems(): readonly string[] {
     return this.sleepErrors;
   }

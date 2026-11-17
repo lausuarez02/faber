@@ -1,6 +1,6 @@
 // Round 5, track "agent" (decision 0003, C5 `record`): a video of the agent building the device and
 // the device running, for the person. It replays the project's action log in the web app (the same
-// player as `jumper replay`: parts appear with the agent's cursor and "why" captions, wires draw,
+// player as `fabwright replay`: parts appear with the agent's cursor and "why" captions, wires draw,
 // the sketch, the simulation frames of run / run_tests, tests turning green) in headless Chromium,
 // records it, and converts it to H.264 MP4 with ffmpeg (WebM when ffmpeg is missing).
 //
@@ -13,7 +13,7 @@ import { fail } from "./errors.ts";
 import { actorCounts, filterActionLog, startLiveHub } from "./live.ts";
 import { loadPlaywright } from "./screenshot.ts";
 
-const INSTALL_CHROMIUM = "pnpm --filter @jumper/web exec playwright install chromium";
+const INSTALL_CHROMIUM = "pnpm --filter @fabwright/web exec playwright install chromium";
 
 interface RecPage {
   goto(u: string): Promise<unknown>;
@@ -30,7 +30,7 @@ export interface RecorderPlaywright {
 }
 
 export interface RecordOptions {
-  /** Project folder (its .jumper/actions.jsonl is replayed). */
+  /** Project folder (its .fabwright/actions.jsonl is replayed). */
   dir: string;
   /** "mcp" (default): only the agent's calls; "all": the person's and the CLI's too. */
   actor?: "mcp" | "all";
@@ -40,9 +40,9 @@ export interface RecordOptions {
   size?: string;
   /** Longest video in wall ms (default: the replay's length with room to spare, at least 90000); a longer replay is cut and says so. */
   maxMs?: number;
-  /** Output file; default <dir>/.jumper/media/build-<time>.mp4. */
+  /** Output file; default <dir>/.fabwright/media/build-<time>.mp4. */
   out?: string;
-  /** A running web app to use (jumper serve's own URL); otherwise a Vite dev server is started. */
+  /** A running web app to use (fabwright serve's own URL); otherwise a Vite dev server is started. */
   webUrl?: string;
   /** Tests: replace Playwright. */
   playwright?: () => RecorderPlaywright | undefined;
@@ -64,7 +64,7 @@ export interface RecordResult {
 /** Why recording cannot work here, with the fix, or undefined when Chromium is ready. Fast (no browser start). */
 export function chromiumProblem(load: () => RecorderPlaywright | undefined = () => loadPlaywright() as unknown as RecorderPlaywright | undefined): string | undefined {
   const pw = load();
-  if (!pw) return `Playwright is not installed. Fix: run pnpm install at the Jumper repo root, then ${INSTALL_CHROMIUM}`;
+  if (!pw) return `Playwright is not installed. Fix: run pnpm install at the Fabwright repo root, then ${INSTALL_CHROMIUM}`;
   let exe: string | undefined;
   try {
     exe = pw.chromium.executablePath?.();
@@ -121,7 +121,7 @@ function ffmpegConvert(bin: string, raw: string, out: string): Promise<boolean> 
 export async function recordProject(opts: RecordOptions): Promise<RecordResult> {
   const actor = opts.actor ?? "mcp";
   if (actor !== "mcp" && actor !== "all") fail("bad-arg", `record: unknown actor '${String(actor)}'`, 'actor picks whose calls the video shows: "mcp" (the agent) or "all"', 'pass { "actor": "mcp" } (default) or { "actor": "all" }');
-  const log = join(opts.dir, ".jumper", "actions.jsonl");
+  const log = join(opts.dir, ".fabwright", "actions.jsonl");
   if (!existsSync(log)) fail("nothing-to-record", "record: this project has no action log yet", `${log} does not exist, so nothing has been built here`, "build something first (place_part, connect, write_file, run), then record");
   const text = readFileSync(log, "utf8");
   const plan = replayPlan(text, actor);
@@ -142,7 +142,7 @@ export async function recordProject(opts: RecordOptions): Promise<RecordResult> 
   if (problem) fail("no-browser", "record: cannot record a video here", problem, `meanwhile use screenshot (a PNG of the circuit), or the viewer_url link; after installing, call record again`);
   const pw = load()!;
 
-  const media = join(opts.dir, ".jumper", "media");
+  const media = join(opts.dir, ".fabwright", "media");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "");
   const out = opts.out ?? join(media, `build-${stamp}.mp4`);
   mkdirSync(dirname(out), { recursive: true });
@@ -150,7 +150,7 @@ export async function recordProject(opts: RecordOptions): Promise<RecordResult> 
 
   const hub = await startLiveHub({ dir: opts.dir, port: 0, replayFiles: [log] });
   let vite: { url: string; close(): Promise<void> } | undefined;
-  const videoDir = mkdtempSync(join(tmpdir(), "jumper-record-"));
+  const videoDir = mkdtempSync(join(tmpdir(), "fabwright-record-"));
   let browser: RecBrowser | undefined;
   try {
     let web = opts.webUrl?.replace(/\/+$/, "");
@@ -168,7 +168,7 @@ export async function recordProject(opts: RecordOptions): Promise<RecordResult> 
     await page.goto(url);
     let truncated = false;
     try {
-      await page.waitForFunction("globalThis.__jumperReplay && globalThis.__jumperReplay.done === true", undefined, { timeout: Math.max(1000, maxMs - 1800), polling: 250 });
+      await page.waitForFunction("globalThis.__fabwrightReplay && globalThis.__fabwrightReplay.done === true", undefined, { timeout: Math.max(1000, maxMs - 1800), polling: 250 });
       await page.waitForTimeout(1800); // hold the last frame
     } catch {
       truncated = true;
@@ -199,7 +199,7 @@ export async function recordProject(opts: RecordOptions): Promise<RecordResult> 
   }
 }
 
-/** File name under .jumper/media that GET /api/media/:file may serve. */
+/** File name under .fabwright/media that GET /api/media/:file may serve. */
 export function mediaName(path: string): string {
   return basename(path);
 }

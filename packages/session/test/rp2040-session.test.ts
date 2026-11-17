@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { ProjectSession, TEMPLATES } from "../src/index.ts";
 
 const FIXTURES = fileURLToPath(new URL("../../sim-backends/fixtures/", import.meta.url));
@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 function fresh(): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-rp2040-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-rp2040-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, builder, actor: "test" });
   sessions.push(s);
@@ -65,7 +65,7 @@ describe("RP2040 templates", { timeout: 60_000 }, () => {
       const t = await call(s, "run_tests", {});
       expect(t.failed).toBe(0);
       expect(t.passed).toBeGreaterThan(0);
-      expect(JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).parts[0]).toMatchObject({ id: board });
+      expect(JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).parts[0]).toMatchObject({ id: board });
     });
   }
 

@@ -2,8 +2,8 @@
 // text-to-speech model to say the answer, and plays it. Built only from general parts:
 //   Seeed XIAO ESP32-S3 Sense (camera on its own pins, Wi-Fi), GC9A01 round screen (SPI),
 //   MAX98357A I2S amplifier + 20 mm speaker, one button.
-// No API key is in this file: every call goes through the project's relay (JumperRelay.h), which
-// adds the keys. In Jumper the relay is the sandbox one and the APIs are mocks / a cassette.
+// No API key is in this file: every call goes through the project's relay (FabwrightRelay.h), which
+// adds the keys. In Fabwright the relay is the sandbox one and the APIs are mocks / a cassette.
 //
 // The two calls use the OpenAI-compatible shapes most providers accept:
 //   vision: POST <VISION_HOST><VISION_PATH>  {"model", "messages": [{text, image_url: data:image/jpeg;base64,...}]}
@@ -19,7 +19,7 @@
 #include <ArduinoJson.h>
 #include "esp_camera.h"
 #include "mbedtls/base64.h"
-#include "JumperRelay.h"
+#include "FabwrightRelay.h"
 
 // ---- the APIs (change these to the provider you use; the relay's allow list must name the hosts)
 #define VISION_HOST "api.vision.example"
@@ -36,7 +36,7 @@
 // ---- pins (XIAO labels in brackets; the camera uses the Sense board's own GPIOs)
 const int BUTTON = 1;                         // [D0] to GND, INPUT_PULLUP
 const int I2S_BCLK = 2, I2S_LRC = 3, I2S_DIN = 4;  // [D1] [D2] [D3] -> MAX98357A
-// D6 / D7 (GPIO43 / 44) stay free: they are UART0, which carries Serial in Jumper's simulation build.
+// D6 / D7 (GPIO43 / 44) stay free: they are UART0, which carries Serial in Fabwright's simulation build.
 const int TFT_SCK = 7, TFT_MOSI = 9, TFT_CS = 6, TFT_DC = 5, TFT_RST = -1;  // [D8] [D10] [D5] [D4]; RST tied to 3V3
 
 Adafruit_GC9A01A tft(TFT_CS, TFT_DC, TFT_RST);
@@ -84,8 +84,8 @@ static void caption(const String &text) {
 static void post(HTTPClient &http, const char *host, const char *path) {
   http.useHTTP10(true);  // the body arrives as plain bytes (no chunk framing to strip from audio)
   http.setTimeout(20000);
-  http.begin(tls, jumperRelayUrl(host, path));
-  http.addHeader(JUMPER_TOKEN_HEADER, JUMPER_DEVICE_TOKEN);
+  http.begin(tls, fabwrightRelayUrl(host, path));
+  http.addHeader(FABWRIGHT_TOKEN_HEADER, FABWRIGHT_DEVICE_TOKEN);
   http.addHeader("Content-Type", "application/json");
 }
 
@@ -184,19 +184,19 @@ void setup() {
   i2s.setPins(I2S_BCLK, I2S_LRC, I2S_DIN);
   if (!i2s.begin(I2S_MODE_STD, SPEECH_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO)) Serial.println("i2s failed");
   if (!initCamera()) return;
-  if (!jumperRelayReady()) {
-    Serial.println(jumperRelayWhy());
+  if (!fabwrightRelayReady()) {
+    Serial.println(fabwrightRelayWhy());
     caption("no relay: see README");
     return;
   }
-  WiFi.begin(JUMPER_WIFI_SSID, JUMPER_WIFI_PASSWORD);
+  WiFi.begin(FABWRIGHT_WIFI_SSID, FABWRIGHT_WIFI_PASSWORD);
   for (int i = 0; i < 150 && WiFi.status() != WL_CONNECTED; i++) delay(100);
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("wifi failed");
     caption("no wifi");
     return;
   }
-  tls.setCACert(JUMPER_RELAY_ROOT_CA);
+  tls.setCACert(FABWRIGHT_RELAY_ROOT_CA);
   Serial.println("ready");
 }
 

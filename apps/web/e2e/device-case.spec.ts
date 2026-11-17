@@ -7,24 +7,24 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
 // The Device view shows the project's own designed case (not the generic handheld) when the Case
-// view built one: a real `jumper serve` (it serves the page, so GET /api/device/case answers) on a
+// view built one: a real `fabwright serve` (it serves the page, so GET /api/device/case answers) on a
 // temp copy of the agent-built Pocket Muse, whose pebble case is committed in case/. The first
 // open tessellates the case once (CAD on the server); then it is cached.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse/", import.meta.url));
 
 async function serve(info: TestInfo): Promise<{ url: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-device-case-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-device-case-"));
   const dir = join(root, "muse");
   cpSync(MUSE, dir, { recursive: true });
   // the committed hex is newer than the sketch, so Run needs no build (no Docker)
   const t = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware", "main.hex"), t, t);
   const port = hubPort(info, 15);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const timer = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -34,7 +34,7 @@ async function serve(info: TestInfo): Promise<{ url: string; close(): Promise<vo
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -60,8 +60,8 @@ async function openDevice(page: Page): Promise<void> {
   await expect(page.getByTestId("device-view")).toBeVisible();
 }
 
-type W = { jumper: { engine: { simulation?: { partState(id: string): Record<string, unknown> | undefined } } } };
-const pressed = (page: Page, id: string) => page.evaluate((id) => (window as unknown as W).jumper.engine.simulation?.partState(id)?.pressed === true, id);
+type W = { fabwright: { engine: { simulation?: { partState(id: string): Record<string, unknown> | undefined } } } };
+const pressed = (page: Page, id: string) => page.evaluate((id) => (window as unknown as W).fabwright.engine.simulation?.partState(id)?.pressed === true, id);
 
 test("Device view: a project with a designed case is shown as that case, buttons pressable at their caps", async ({ page }, info) => {
   test.setTimeout(240_000);
@@ -88,7 +88,7 @@ test("Device view: a project with a designed case is shown as that case, buttons
 
     await page.getByTestId("device-run").click();
     await expect(page.getByTestId("device-run")).toHaveText(/Pause/, { timeout: 20_000 });
-    await expect.poll(() => page.evaluate(() => !!(window as unknown as W).jumper.engine.simulation), { timeout: 20_000 }).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as unknown as W).fabwright.engine.simulation), { timeout: 20_000 }).toBe(true);
     // key 1 is the case's one button (pet), pressed while held
     await page.keyboard.down("1");
     await expect.poll(() => pressed(page, "pet"), { timeout: 5_000 }).toBe(true);

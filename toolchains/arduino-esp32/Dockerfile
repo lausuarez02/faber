@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
-# Jumper build image for ESP32-family boards (ESP32, ESP32-S3, ESP32-C3), round 9 spike.
+# Fabwright build image for ESP32-family boards (ESP32, ESP32-S3, ESP32-C3), round 9 spike.
 # The AVR runner image (arduino-cli 1.5.1 + pinned libraries) plus Espressif's arduino-esp32 core, pinned.
 # arduino-esp32 is LGPL-2.1, ESP-IDF inside it Apache-2.0 (see NOTICE). Firmware built with it is user-side code.
 #
-#   docker build -t jumper/arduino-esp32:3.3.12-r2 toolchains/arduino-esp32
+#   docker build -t fabwright/arduino-esp32:3.3.12-r2 toolchains/arduino-esp32
 #
 # The wrapper writes <sketch>.ino.merged.bin (bootloader + partitions + boot_app0 + app, 4 MB, via
 # esptool merge-bin): the image qemu-system-xtensa / qemu-system-riscv32 boot with -drive file=...,if=mtd.
-ARG BASE_IMAGE=jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1
+ARG BASE_IMAGE=fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1
 FROM ${BASE_IMAGE}
 
 # Pinned core release 3.3.12 (esp32-core-3.3.12.zip, 51102895 bytes; arduino-cli checks its SHA-256
@@ -33,10 +33,10 @@ RUN arduino-cli config init --overwrite --additional-urls "${ESP32_INDEX}" \
     arduino-cli core list
 
 ENV ARDUINO_BOARD_MANAGER_ADDITIONAL_URLS=${ESP32_INDEX}
-# JumperEth: networking in the emulator (ESP-IDF's OpenCores MAC driver, Apache-2.0, + Jumper glue).
-COPY libraries/JumperEth /opt/arduino/user/libraries/JumperEth
-COPY jumper-arduino-esp32.sh /usr/local/bin/jumper-arduino-esp32
-RUN chmod a+rx /usr/local/bin/jumper-arduino-esp32
+# FabwrightEth: networking in the emulator (ESP-IDF's OpenCores MAC driver, Apache-2.0, + Fabwright glue).
+COPY libraries/FabwrightEth /opt/arduino/user/libraries/FabwrightEth
+COPY fabwright-arduino-esp32.sh /usr/local/bin/fabwright-arduino-esp32
+RUN chmod a+rx /usr/local/bin/fabwright-arduino-esp32
 WORKDIR /work
-ENTRYPOINT ["/usr/local/bin/jumper-arduino-esp32"]
+ENTRYPOINT ["/usr/local/bin/fabwright-arduino-esp32"]
 CMD ["version"]

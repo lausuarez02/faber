@@ -112,18 +112,18 @@ export interface ProviderChoice {
 
 /**
  * The provider chain. `prefer` forces one ("anthropic-api", "claude-cli", "mock"); the env var
- * JUMPER_AI_PROVIDER does the same. Under tests (VITEST / CI set) nothing live is chosen.
+ * FABWRIGHT_AI_PROVIDER does the same. Under tests (VITEST / CI set) nothing live is chosen.
  */
 export function chooseProvider(opts: { prefer?: string; env?: NodeJS.ProcessEnv; claudeBin?: string } = {}): ProviderChoice {
   const env = opts.env ?? process.env;
-  const prefer = (opts.prefer ?? env.JUMPER_AI_PROVIDER ?? "").toLowerCase();
-  if (prefer === "mock") return { provider: undefined, reason: "mock forced (JUMPER_AI_PROVIDER=mock)" };
+  const prefer = (opts.prefer ?? env.FABWRIGHT_AI_PROVIDER ?? "").toLowerCase();
+  if (prefer === "mock") return { provider: undefined, reason: "mock forced (FABWRIGHT_AI_PROVIDER=mock)" };
   if ((env.VITEST || env.CI) && !prefer) return { provider: undefined, reason: "tests / CI: the deterministic mock only" };
   if ((prefer === "" || prefer === "anthropic-api") && env.ANTHROPIC_API_KEY) {
     return { provider: anthropicProvider(), reason: "ANTHROPIC_API_KEY is set" };
   }
-  if (prefer === "anthropic-api") return { provider: undefined, reason: "JUMPER_AI_PROVIDER=anthropic-api but ANTHROPIC_API_KEY is not set" };
-  const bin = opts.claudeBin ?? env.JUMPER_CLAUDE_BIN ?? "claude";
+  if (prefer === "anthropic-api") return { provider: undefined, reason: "FABWRIGHT_AI_PROVIDER=anthropic-api but ANTHROPIC_API_KEY is not set" };
+  const bin = opts.claudeBin ?? env.FABWRIGHT_CLAUDE_BIN ?? "claude";
   if (hasCommand(bin)) return { provider: claudeCliProvider({ bin }), reason: `'${bin}' CLI found (uses its logged-in account)` };
   return { provider: undefined, reason: "no ANTHROPIC_API_KEY and no claude CLI on PATH: mock only" };
 }

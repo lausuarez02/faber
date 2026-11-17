@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@jumper/session";
+import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@fabwright/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
 
 /**
@@ -25,14 +25,14 @@ import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
  *   POST /api/manufacturing        → export_manufacturing + url of the zip
  *   GET  /api/manufacturing/:file  → a zip from <project>/manufacturing/
- * Local-only like every route; changing routes need x-jumper-token. Errors: { error: "<what>. Why: … Fix: …" }.
+ * Local-only like every route; changing routes need x-fabwright-token. Errors: { error: "<what>. Why: … Fix: …" }.
  */
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-jumper-token"] === ctx.token) return true;
-  ctx.json(res, 403, err("Missing or wrong x-jumper-token", "changing the case needs the token from GET /api/connect, which only pages served by this Jumper server can read", "open the Jumper app from the jumper serve URL and try again"));
+  if (req.headers["x-fabwright-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "changing the case needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
   return false;
 }
 
@@ -74,7 +74,7 @@ function variantsOf(dir: string): { shape: string; size_mm: unknown; pocket: unk
   return out;
 }
 
-const noCase = (dir: string) => err("No case yet", `${join(dir, "jumper.json")} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
+const noCase = (dir: string) => err("No case yet", `${join(dir, "fabwright.json")} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
 
 export const caseRoutes: ApiRoute[] = [
   {

@@ -52,7 +52,7 @@ jobs:
         run: pnpm test
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @jumper/web exec playwright install --with-deps chromium
+        run: pnpm --filter @fabwright/web exec playwright install --with-deps chromium
 
       - name: Browser tests (desktop + mobile)
         run: pnpm test:e2e --reporter=github,html

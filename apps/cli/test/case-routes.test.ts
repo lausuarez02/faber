@@ -2,34 +2,34 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { startJumperServer, type JumperServer } from "../src/serve.ts";
+import { startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
 
-// Round 6, track case (decision 0004, R6): the Case view's routes on jumper serve.
+// Round 6, track case (decision 0004, R6): the Case view's routes on fabwright serve.
 const MUSE = readFileSync(new URL("../../../packages/enclosure/test/fixtures/pocket-muse.json", import.meta.url), "utf8");
 let root: string;
-let srv: JumperServer;
+let srv: FabwrightServer;
 let token: string;
-const oldHome = process.env.JUMPER_HOME;
+const oldHome = process.env.FABWRIGHT_HOME;
 
 beforeAll(async () => {
-  process.env.JUMPER_CASE_PDF = "0";
-  root = mkdtempSync(join(tmpdir(), "jumper-case-routes-"));
-  process.env.JUMPER_HOME = join(root, "home");
+  process.env.FABWRIGHT_CASE_PDF = "0";
+  root = mkdtempSync(join(tmpdir(), "fabwright-case-routes-"));
+  process.env.FABWRIGHT_HOME = join(root, "home");
   mkdirSync(join(root, "proj"));
-  writeFileSync(join(root, "proj", "jumper.json"), MUSE);
-  srv = await startJumperServer({ dir: join(root, "proj"), port: 0, web: "none" });
+  writeFileSync(join(root, "proj", "fabwright.json"), MUSE);
+  srv = await startFabwrightServer({ dir: join(root, "proj"), port: 0, web: "none" });
   token = (await (await fetch(`${srv.url}/api/connect`)).json()).token;
 }, 30_000);
 afterAll(async () => {
   await srv?.close();
-  if (oldHome === undefined) delete process.env.JUMPER_HOME;
-  else process.env.JUMPER_HOME = oldHome;
+  if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
+  else process.env.FABWRIGHT_HOME = oldHome;
   rmSync(root, { recursive: true, force: true });
 });
 
-const post = (path: string, body: unknown, t = token) => fetch(`${srv.url}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-jumper-token": t }, body: JSON.stringify(body) });
+const post = (path: string, body: unknown, t = token) => fetch(`${srv.url}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-fabwright-token": t }, body: JSON.stringify(body) });
 
-describe("jumper serve: case routes", () => {
+describe("fabwright serve: case routes", () => {
   it("before a case: GET says null, mesh says why and how to fix", async () => {
     expect(await (await fetch(`${srv.url}/api/case`)).json()).toEqual({ enclosure: null, stale: false, variants: [] });
     const m = await fetch(`${srv.url}/api/case/mesh`);
@@ -79,14 +79,14 @@ describe("jumper serve: case routes", () => {
       const stl = await fetch(`${srv.url}/api/case/file?path=stl/front.stl`);
       expect(stl.status).toBe(200);
       expect(stl.headers.get("content-disposition")).toMatch(/attachment; filename="front.stl"/);
-      expect((await fetch(`${srv.url}/api/case/file?path=../jumper.json`)).status).toBe(400);
+      expect((await fetch(`${srv.url}/api/case/file?path=../fabwright.json`)).status).toBe(400);
       expect((await fetch(`${srv.url}/api/case/file?path=stl/none.stl`)).status).toBe(404);
       const pack = await (await post("/api/manufacturing", {})).json();
       expect(pack.url).toMatch(/^\/api\/manufacturing\/pocket-muse-v\d+\.zip$/);
       const zip = await fetch(`${srv.url}${pack.url}`);
       expect(zip.status).toBe(200);
       expect(zip.headers.get("content-type")).toBe("application/zip");
-      expect((await fetch(`${srv.url}/api/manufacturing/..%2Fjumper.zip`)).status).toBe(404);
+      expect((await fetch(`${srv.url}/api/manufacturing/..%2Ffabwright.zip`)).status).toBe(404);
       // round 12: how to build it, with a picture per step the page can load
       expect((await post("/api/case/assembly", {}, "nope")).status).toBe(403);
       const a = await (await post("/api/case/assembly", {})).json();
@@ -118,10 +118,10 @@ describe("jumper serve: case routes", () => {
       expect(d.mesh.bodies.some((b: { body: string }) => b.body === "cap-pet")).toBe(true);
       // a part changes: the Device view still gets the case as built, marked stale, and case/ is untouched
       const before = readFileSync(join(root, "proj", "case", "manifest.json"), "utf8");
-      const p = JSON.parse(readFileSync(join(root, "proj", "jumper.json"), "utf8"));
+      const p = JSON.parse(readFileSync(join(root, "proj", "fabwright.json"), "utf8"));
       p.parts = p.parts.filter((x: { id: string }) => x.id !== "imu");
       p.wires = (p.wires ?? []).filter((w: { from: { part: string }; to: { part: string } }) => w.from.part !== "imu" && w.to.part !== "imu");
-      writeFileSync(join(root, "proj", "jumper.json"), JSON.stringify(p, null, 2));
+      writeFileSync(join(root, "proj", "fabwright.json"), JSON.stringify(p, null, 2));
       const s = (await (await fetch(`${srv.url}/api/device/case`)).json()).case;
       expect(s.stale).toBe(true);
       expect(s.stale_reason).toMatch(/changed since/);

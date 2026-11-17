@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Code2, Cpu, Download, Ellipsis, FilePlus2, FileText, FolderOpen, Hammer, History, LayoutGrid, ListChecks, Pencil, Upload } from "lucide-react";
 import { useKit } from "../kit/store.ts"; // round 12 kit
-import { useJumper } from "../lib/app.ts";
+import { useFabwright } from "../lib/app.ts";
 import { exampleNames } from "../lib/examples.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
@@ -13,7 +13,7 @@ import { useProjectsUi } from "../projects/store.ts";
 
 /** Top-left: mark, project name + "…" menu, and the muted subtitle. No container. */
 export function TitleBlock() {
-  const name = useJumper((s) => s.project.name);
+  const name = useFabwright((s) => s.project.name);
   const subtitle = useSubtitle();
   const nameRef = useRef<HTMLInputElement>(null);
   const close = () => useUi.getState().setPopover(null);
@@ -30,7 +30,7 @@ export function TitleBlock() {
           aria-label="Project name"
           defaultValue={name}
           key={name}
-          onBlur={(e) => useJumper.getState().rename(e.currentTarget.value)}
+          onBlur={(e) => useFabwright.getState().rename(e.currentTarget.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
             if (e.key === "Escape") {
@@ -87,10 +87,10 @@ export function TitleBlock() {
               </MenuItem>
               <div className="menu-sep" />
               <MenuItem icon={Download} onSelect={() => (exportProject(), close())} testId="export-project">
-                Export jumper.json
+                Export fabwright.json
               </MenuItem>
               <MenuItem icon={Upload} onSelect={() => (close(), pickFile(".json,application/json", (f) => void importProjectFile(f)))} testId="import-project">
-                Open jumper.json…
+                Open fabwright.json…
               </MenuItem>
               <MenuItem icon={Cpu} onSelect={() => (close(), pickFile(".hex,text/plain", (f) => void loadHexFile(f)))}>
                 Load firmware .hex…
@@ -141,7 +141,7 @@ export function TitleBlock() {
 function useSubtitle(): string {
   const mode = useLive((s) => s.mode);
   const dir = useLive((s) => s.dir);
-  const project = useJumper((s) => s.project);
+  const project = useFabwright((s) => s.project);
   const board = boardOf(project);
   const n = project.parts.length;
   const where = mode === "follow" ? `Following ${dir ? dir.split("/").slice(-2).join("/") : "agent session"}` : mode === "replay" ? "Replay" : "Local workspace";

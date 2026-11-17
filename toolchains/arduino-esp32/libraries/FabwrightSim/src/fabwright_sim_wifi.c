@@ -1,15 +1,15 @@
-// Jumper Wi-Fi shim (simulation builds only), Apache-2.0.
+// Fabwright Wi-Fi shim (simulation builds only), Apache-2.0.
 //
 // QEMU has no Wi-Fi radio. This file replaces the closed Wi-Fi driver at link time (each esp_wifi_*
 // below is a -Wl,--wrap target) with one that uses the emulated OpenCores Ethernet card:
 //   - The Wi-Fi station netif stays the one the sketch uses (WiFi.localIP(), events, DHCP); only its
 //     driver changes: esp_wifi_internal_tx sends the frame on the Ethernet card, and frames from the
 //     card go to the rx callback the netif registered.
-//   - Join / drop / RSSI / scan are asked of Jumper's sandbox network over EtherType 0x88B5
+//   - Join / drop / RSSI / scan are asked of Fabwright's sandbox network over EtherType 0x88B5
 //     ("JWIFI/1" text lines, see packages/device-net/src/netstack/wifi.ts), and posted as the usual
 //     WIFI_EVENT_* events, so Arduino's WiFi class, its auto-reconnect and the sketch's own event
 //     handlers behave as on a real board.
-//   - Without Jumper's netstack on the other end (QEMU user networking), a join succeeds after 3 s.
+//   - Without Fabwright's netstack on the other end (QEMU user networking), a join succeeds after 3 s.
 // Not emulated: the radio (signal, interference, roaming, power save), soft-AP clients, ESP-NOW,
 // promiscuous mode, WPS, enterprise auth, FTM, CSI.
 #include <string.h>
@@ -27,15 +27,15 @@
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_eth_driver.h"
-#include "jumper_eth.h"
-#include "JumperSim.h"
+#include "fabwright_eth.h"
+#include "FabwrightSim.h"
 
-#define TAG "jumper_wifi"
-#define ETH_JUMPER 0x88b5
+#define TAG "fabwright_wifi"
+#define ETH_FABWRIGHT 0x88b5
 #define MAX_APS 16
 #define MAGIC "JWIFI/1"
 
-void jumper_sim_set_ca(const uint8_t *der, size_t len);
+void fabwright_sim_set_ca(const uint8_t *der, size_t len);
 
 static esp_eth_handle_t s_eth;
 static SemaphoreHandle_t s_tx_lock;
@@ -44,7 +44,7 @@ static SemaphoreHandle_t s_scan_done;
 static wifi_rxcb_t s_rxcb[WIFI_IF_MAX];
 static wifi_mode_t s_mode = WIFI_MODE_NULL;
 static bool s_inited, s_started, s_eth_ok;
-static volatile bool s_joined, s_connecting, s_jumper_seen;
+static volatile bool s_joined, s_connecting, s_fabwright_seen;
 static volatile uint32_t s_connect_gen;
 static wifi_config_t s_sta_cfg, s_ap_cfg;
 static wifi_ap_record_t s_ap;
@@ -66,7 +66,7 @@ typedef struct {
   char text[];
 } ctrl_msg_t;
 
-int jumper_sim_wifi_joined(void) { return s_joined; }
+int fabwright_sim_wifi_joined(void) { return s_joined; }
 
 // ------------------------------------------------------------------ control channel
 
@@ -96,8 +96,8 @@ static void send_ctrl(const char *line) {
   if (!f) return;
   memset(f, 0xff, 6);
   read_mac(WIFI_IF_STA, f + 6);
-  f[12] = ETH_JUMPER >> 8;
-  f[13] = ETH_JUMPER & 0xff;
+  f[12] = ETH_FABWRIGHT >> 8;
+  f[13] = ETH_FABWRIGHT & 0xff;
   memcpy(f + 14, line, n);
   xSemaphoreTake(s_tx_lock, portMAX_DELAY);
   esp_eth_transmit(s_eth, f, len);
@@ -185,7 +185,7 @@ static void handle_line(const char *line) {
   char verb[16] = {0};
   if (strncmp(line, MAGIC " ", sizeof MAGIC) != 0) return;
   sscanf(line + sizeof MAGIC, "%15s", verb);
-  s_jumper_seen = true;
+  s_fabwright_seen = true;
   if (!strcmp(verb, "connected")) {
     if (s_connecting) on_connected(line);
   } else if (!strcmp(verb, "failed")) {
@@ -221,7 +221,7 @@ static void handle_line(const char *line) {
       char h[3] = {p[i], p[i + 1], 0};
       der[i / 2] = (uint8_t)strtol(h, NULL, 16);
     }
-    jumper_sim_set_ca(der, n / 2);
+    fabwright_sim_set_ca(der, n / 2);
     free(der);
   }
 }
@@ -238,7 +238,7 @@ static void ctrl_task(void *arg) {
 
 // Frames from the Ethernet card: control frames to the shim, the rest to the Wi-Fi station netif.
 static esp_err_t eth_input(esp_eth_handle_t h, uint8_t *buf, uint32_t len, void *priv) {
-  if (len >= 14 && buf[12] == (ETH_JUMPER >> 8) && buf[13] == (ETH_JUMPER & 0xff)) {
+  if (len >= 14 && buf[12] == (ETH_FABWRIGHT >> 8) && buf[13] == (ETH_FABWRIGHT & 0xff)) {
     ctrl_msg_t *m = malloc(sizeof(ctrl_msg_t) + len - 14 + 1);
     if (m) {
       m->len = len - 14;
@@ -260,7 +260,7 @@ static bool eth_up(void) {
   if (!s_ctrl) {
     s_ctrl = xQueueCreate(16, sizeof(ctrl_msg_t *));
     s_scan_done = xSemaphoreCreateBinary();
-    xTaskCreate(ctrl_task, "jumper_wifi", 4096, NULL, 19, NULL);
+    xTaskCreate(ctrl_task, "fabwright_wifi", 4096, NULL, 19, NULL);
   }
   uint8_t mac[6];
   static const uint8_t zero[6] = {0};
@@ -268,7 +268,7 @@ static bool eth_up(void) {
   // QEMU's eFuse has no MAC (all zero): use the one the emulator gave the network card instead,
   // so every board on the sandbox LAN has its own address.
   bool from_nic = memcmp(mac, zero, 6) == 0;
-  s_eth = jumper_eth_install(from_nic ? NULL : mac);
+  s_eth = fabwright_eth_install(from_nic ? NULL : mac);
   if (!s_eth) {
     ESP_LOGE(TAG, "this simulation has no network card: Wi-Fi cannot join (start the board with networking on)");
     return false;
@@ -289,11 +289,11 @@ static bool eth_up(void) {
   return true;
 }
 
-// Without Jumper's netstack (plain QEMU user networking) nobody answers: join after 3 s anyway.
+// Without Fabwright's netstack (plain QEMU user networking) nobody answers: join after 3 s anyway.
 static void fallback_task(void *arg) {
   uint32_t gen = (uint32_t)(uintptr_t)arg;
   vTaskDelay(pdMS_TO_TICKS(3000));
-  if (s_connecting && gen == s_connect_gen && !s_jumper_seen) {
+  if (s_connecting && gen == s_connect_gen && !s_fabwright_seen) {
     char line[160], ss[100];
     pct(ss, sizeof ss, s_sta_cfg.sta.ssid, sizeof s_sta_cfg.sta.ssid);
     snprintf(line, sizeof line, MAGIC " connected ssid=%s channel=1 rssi=-55 auth=3", ss);
@@ -378,7 +378,7 @@ esp_err_t __wrap_esp_wifi_connect(void) {
   pct(pw, sizeof pw, s_sta_cfg.sta.password, sizeof s_sta_cfg.sta.password);
   snprintf(line, sizeof line, MAGIC " connect ssid=%s pass=%s\n", ss, pw);
   send_ctrl(line);
-  xTaskCreate(fallback_task, "jumper_join", 2560, (void *)(uintptr_t)gen, 5, NULL);
+  xTaskCreate(fallback_task, "fabwright_join", 2560, (void *)(uintptr_t)gen, 5, NULL);
   return ESP_OK;
 }
 

@@ -1,10 +1,10 @@
 // A scripted stand-in for the patched QEMU, for unit tests of the bridge (no Docker needed).
 // It speaks the bridge protocol like the real GPIO block: says hello, parks at 0, and on every
 // "R <ns>" sends the scripted events up to that time (waiting for answers where QEMU would block),
-// then parks with "T <ns>". Every line Jumper sends is recorded with the virtual time it arrived at.
+// then parks with "T <ns>". Every line Fabwright sends is recorded with the virtual time it arrived at.
 //
 //   node fake-qemu.mjs <port> <script.json> <record.json>
-//   script: { hello: "H jumper-esp32-bridge 3 esp32c3.gpio sync=1 feat=...", events: [
+//   script: { hello: "H fabwright-esp32-bridge 3 esp32c3.gpio sync=1 feat=...", events: [
 //             { ns: 1000, line: "L 0 1 0 ..." },            // sent when the run reaches ns
 //             { ns: 2000, line: "IS 3c w 7d0", answer: true }, // waits for A / D / Q
 //             { ns: 3000, park: true } ] }                   // parks early ("T"), like a watched pin

@@ -1,12 +1,12 @@
 // Round 14: battery life from duty cycles, for any project. Each load (the board's CPU and Wi-Fi, a
 // camera, a screen, an audio amplifier, any part with a current figure) draws its active current part
-// of the time and its idle current the rest; the duty comes from jumper.json power.duty, or is guessed
+// of the time and its idle current the rest; the duty comes from fabwright.json power.duty, or is guessed
 // from the firmware (said in `assumptions`, so the person can correct it). Figures are datasheet
 // typicals with their source; nothing here is measured. check_design reports `battery-life` (a warning
 // under power.target_hours, with the cell size that would make it) and get_build_kit carries it.
-import { LIPO_CELLS } from "@jumper/enclosure";
-import type { Project } from "@jumper/project-format";
-import type { PartRegistry, PartSpec } from "@jumper/sim-core";
+import { LIPO_CELLS } from "@fabwright/enclosure";
+import type { Project } from "@fabwright/project-format";
+import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
 
 /** "always", "off", or on_s seconds every every_s seconds. */
 export type Duty = "always" | "off" | { on_s: number; every_s: number };
@@ -119,7 +119,7 @@ export function checkDuty(key: string, d: unknown): string | undefined {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
-/** The power budget of a project. `profile` overrides jumper.json power (estimate_power's what-if). */
+/** The power budget of a project. `profile` overrides fabwright.json power (estimate_power's what-if). */
 export function powerBudget(project: Project, registry: PartRegistry, firmwareSource = "", profile?: PowerProfile, opts: { suggest?: boolean; measured?: MeasuredSleep } = {}): PowerBudget {
   const saved = (project.power ?? {}) as PowerProfile & { usb?: boolean };
   const prof: PowerProfile = { ...saved, ...profile, duty: { ...(saved.duty ?? {}), ...(profile?.duty ?? {}) } };
@@ -258,7 +258,7 @@ export function powerBudget(project: Project, registry: PartRegistry, firmwareSo
   if (cap !== undefined && target !== undefined && hours !== undefined && hours < target) {
     const need = Math.ceil((target * avg) / USABLE);
     const cell = LIPO_CELLS.find((c) => c.mAh >= need);
-    suggestions.push(cell ? `a ${cell.mAh} mAh cell (${cell.code}, ${cell.w} x ${cell.h} x ${cell.d} mm) lasts about ${round1((cell.mAh * USABLE) / avg)} h: set_part_property ${lipo!.id} capacity ${cell.mAh}` : `about ${need} mAh would last ${target} h, more than the biggest pouch cell Jumper knows (1000 mAh, 523450): cut the average current instead`);
+    suggestions.push(cell ? `a ${cell.mAh} mAh cell (${cell.code}, ${cell.w} x ${cell.h} x ${cell.d} mm) lasts about ${round1((cell.mAh * USABLE) / avg)} h: set_part_property ${lipo!.id} capacity ${cell.mAh}` : `about ${need} mAh would last ${target} h, more than the biggest pouch cell Fabwright knows (1000 mAh, 523450): cut the average current instead`);
   }
   // round 17: a module's power LED that burns most of the budget (the ZS-042 DS3231's is 15x the clock)
   for (const l of opts.suggest === false || cap === undefined ? [] : out.slice(0, 3)) {

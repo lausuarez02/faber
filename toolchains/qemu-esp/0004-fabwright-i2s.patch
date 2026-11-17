@@ -3,42 +3,42 @@ index b73f166..05c4b3c 100644
 --- a/hw/gpio/esp32_gpio.c
 +++ b/hw/gpio/esp32_gpio.c
 @@ -48,7 +48,8 @@
-  *   SQ <host>                          the firmware reads the SPI buffer: Jumper answers "Q <hex miso>"
+  *   SQ <host>                          the firmware reads the SPI buffer: Fabwright answers "Q <hex miso>"
   *   RM <ch> <ns> <tick_ps> <idle> <hex symbols>  RMT symbols sent (32-bit little-endian words)
   *   AT <gpio> <atten> <bits> <raw> <ns>          ADC conversion (information only)
 - *   ST <port> <ns> <rate> <bits> <chans> <hex>   I2S frames sent (little-endian samples)
 + *   ST <port> <ns> <rate> <bits> <chans> <hex>   I2S frames sent (little-endian samples, 2 or 4 bytes);
 + *                                      "z<nbytes>" instead of the hex is that many bytes of silence (v6)
-  *   SR <port> <ns> <rate> <bits> <chans> <frames> I2S frames wanted: Jumper answers "Q <hex>"
+  *   SR <port> <ns> <rate> <bits> <chans> <frames> I2S frames wanted: Fabwright answers "Q <hex>"
   *   T <ns>                             lockstep only: reached the target, waiting for "R"
-  * Jumper -> QEMU
+  * Fabwright -> QEMU
 @@ -60,7 +61,7 @@
   *   R <ns>                             lockstep only: run until virtual time <ns> (needs -icount)
   *   A <0|1> / D <hex> / Q <hex>        answers, only while QEMU waits for them
   */
--#define JUMPER_BRIDGE_VERSION 5
-+#define JUMPER_BRIDGE_VERSION 6
+-#define FABWRIGHT_BRIDGE_VERSION 5
++#define FABWRIGHT_BRIDGE_VERSION 6
  
- static Esp32GpioState *jumper_bridge_gpio;
- static JumperChip jumper_chip;
+ static Esp32GpioState *fabwright_bridge_gpio;
+ static FabwrightChip fabwright_chip;
 @@ -814,7 +815,7 @@ static void esp32_gpio_realize(DeviceState *dev, Error **errp)
          qemu_chr_fe_set_handlers(&s->bridge, esp32_gpio_can_receive, esp32_gpio_receive,
                                   NULL, NULL, s, NULL, true);
-         jumper_pads_install(dev);
--        jumper_bridge_send("H jumper-esp32-bridge %d %s sync=%d feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,pads\n",
-+        jumper_bridge_send("H jumper-esp32-bridge %d %s sync=%d feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,pads,i2s\n",
-                            JUMPER_BRIDGE_VERSION, type, s->sync);
+         fabwright_pads_install(dev);
+-        fabwright_bridge_send("H fabwright-esp32-bridge %d %s sync=%d feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,pads\n",
++        fabwright_bridge_send("H fabwright-esp32-bridge %d %s sync=%d feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,pads,i2s\n",
+                            FABWRIGHT_BRIDGE_VERSION, type, s->sync);
          if (s->sync) {
-             s->sync_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, jumper_sync_cb, s);
-diff --git a/hw/misc/jumper_i2s.c b/hw/misc/jumper_i2s.c
+             s->sync_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, fabwright_sync_cb, s);
+diff --git a/hw/misc/fabwright_i2s.c b/hw/misc/fabwright_i2s.c
 new file mode 100644
 index 0000000..0444db7
 --- /dev/null
-+++ b/hw/misc/jumper_i2s.c
++++ b/hw/misc/fabwright_i2s.c
 @@ -0,0 +1,778 @@
 +/*
-+ * Jumper I2S: register-level model of the ESP32-family I2S controllers whose audio crosses the
-+ * Jumper bridge as time-stamped blocks of sample frames (hw/gpio/esp32_gpio.c documents the lines):
++ * Fabwright I2S: register-level model of the ESP32-family I2S controllers whose audio crosses the
++ * Fabwright bridge as time-stamped blocks of sample frames (hw/gpio/esp32_gpio.c documents the lines):
 + *
 + *   ST <port> <ns> <rate> <bits> <chans> <hex | z<nbytes>>   frames the DMA moved out (TX)
 + *   SR <port> <ns> <rate> <bits> <chans> <frames>             frames the DMA wants in (RX), answer "Q <hex>"
@@ -77,18 +77,18 @@ index 0000000..0444db7
 +#include "hw/qdev-properties.h"
 +#include "exec/address-spaces.h"
 +#include "hw/dma/esp_gdma.h"
-+#include "hw/misc/jumper_i2s.h"
++#include "hw/misc/fabwright_i2s.h"
 +
-+#define TYPE_JUMPER_I2S "jumper.i2s"
-+OBJECT_DECLARE_SIMPLE_TYPE(JumperI2sState, JUMPER_I2S)
++#define TYPE_FABWRIGHT_I2S "fabwright.i2s"
++OBJECT_DECLARE_SIMPLE_TYPE(FabwrightI2sState, FABWRIGHT_I2S)
 +
 +/* Bytes of normalized samples per ST line / SR query (a bridge line holds 16 KiB of hex). */
 +#define I2S_CHUNK 4096
 +/* A descriptor buffer holds at most 4095 bytes (12-bit length). */
 +#define I2S_DESC_MAX 4096
 +
-+typedef struct JumperI2sDir {
-+    struct JumperI2sState *s;
++typedef struct FabwrightI2sDir {
++    struct FabwrightI2sState *s;
 +    bool tx;
 +    bool running;
 +    uint32_t chan;        /* GDMA channel (S3 / C3) */
@@ -106,9 +106,9 @@ index 0000000..0444db7
 +    bool lsb24;           /* 24-bit data in a 4-byte container, low-aligned */
 +    uint32_t link_start;  /* ESP32: OUT_LINK / IN_LINK address given with START */
 +    bool link_armed;
-+} JumperI2sDir;
++} FabwrightI2sDir;
 +
-+struct JumperI2sState {
++struct FabwrightI2sState {
 +    SysBusDevice parent_obj;
 +    MemoryRegion iomem;
 +    qemu_irq irq;
@@ -116,13 +116,13 @@ index 0000000..0444db7
 +    uint32_t port;
 +    ESPGdmaState *gdma;
 +    uint32_t regs[0x100 / 4];
-+    JumperI2sDir tx, rx;
++    FabwrightI2sDir tx, rx;
 +    bool warned;
 +};
 +
-+static bool i2s_v1(JumperI2sState *s)
++static bool i2s_v1(FabwrightI2sState *s)
 +{
-+    return s->chip == JUMPER_CHIP_ESP32;
++    return s->chip == FABWRIGHT_CHIP_ESP32;
 +}
 +
 +static uint64_t now_ns(void)
@@ -172,7 +172,7 @@ index 0000000..0444db7
 +}
 +
 +/* The 20-bit link address a DMA start register holds, as a guest address in internal DRAM. */
-+static uint32_t link_to_addr(JumperI2sState *s, uint32_t link)
++static uint32_t link_to_addr(FabwrightI2sState *s, uint32_t link)
 +{
 +    uint32_t high = i2s_v1(s) ? 0x3ff00000 : ((ESP_GDMA_RAM_ADDR >> 20) << 20);
 +    return high | (link & 0xfffff);
@@ -186,10 +186,10 @@ index 0000000..0444db7
 +}
 +
 +/* MCLK from the source clock and the HW v2 fractional divider: N + b/a. */
-+static double mclk_v2(JumperI2sState *s, uint32_t clkm, uint32_t div)
++static double mclk_v2(FabwrightI2sState *s, uint32_t clkm, uint32_t div)
 +{
 +    int sel = (clkm >> 27) & 3;
-+    double sclk = sel == 0 ? 40e6 : sel == 1 ? (s->chip == JUMPER_CHIP_ESP32S3 ? 240e6 : 160e6) : sel == 2 ? 160e6 : 0;
++    double sclk = sel == 0 ? 40e6 : sel == 1 ? (s->chip == FABWRIGHT_CHIP_ESP32S3 ? 240e6 : 160e6) : sel == 2 ? 160e6 : 0;
 +    if (sclk == 0) {
 +        return 0;   /* external MCLK input: unknown */
 +    }
@@ -221,7 +221,7 @@ index 0000000..0444db7
 +}
 +
 +/* Latches rate / bits / bytes / chans of one direction from the registers. Returns false if unknown. */
-+static bool latch_format(JumperI2sState *s, JumperI2sDir *d)
++static bool latch_format(FabwrightI2sState *s, FabwrightI2sDir *d)
 +{
 +    uint32_t *r = s->regs;
 +    double bclk;
@@ -290,7 +290,7 @@ index 0000000..0444db7
 +    if (!(d->rate >= 100 && d->rate <= 2e6)) {
 +        if (!s->warned) {
 +            s->warned = true;
-+            warn_report("jumper.i2s%u: cannot work out the sample rate from the clock registers (%.0f Hz); using 16000 Hz",
++            warn_report("fabwright.i2s%u: cannot work out the sample rate from the clock registers (%.0f Hz); using 16000 Hz",
 +                        s->port, d->rate);
 +        }
 +        d->rate = 16000;
@@ -299,12 +299,12 @@ index 0000000..0444db7
 +}
 +
 +/* Bridge sample size of a direction: 2 bytes (<= 16 bit) or 4. */
-+static int norm_bytes(JumperI2sDir *d)
++static int norm_bytes(FabwrightI2sDir *d)
 +{
 +    return d->bytes <= 2 ? 2 : 4;
 +}
 +
-+static int norm_bits(JumperI2sDir *d)
++static int norm_bits(FabwrightI2sDir *d)
 +{
 +    if (d->bytes <= 2) {
 +        return 16;
@@ -313,7 +313,7 @@ index 0000000..0444db7
 +}
 +
 +/* DMA bytes -> bridge samples (little-endian). Returns the bridge byte count. */
-+static int to_bridge(JumperI2sDir *d, const uint8_t *src, int n, uint8_t *dst)
++static int to_bridge(FabwrightI2sDir *d, const uint8_t *src, int n, uint8_t *dst)
 +{
 +    int k = 0;
 +    switch (d->bytes) {
@@ -348,7 +348,7 @@ index 0000000..0444db7
 +}
 +
 +/* Bridge samples -> DMA bytes. Returns the DMA byte count. */
-+static int from_bridge(JumperI2sDir *d, const uint8_t *src, int n, uint8_t *dst)
++static int from_bridge(FabwrightI2sDir *d, const uint8_t *src, int n, uint8_t *dst)
 +{
 +    int k = 0;
 +    switch (d->bytes) {
@@ -374,7 +374,7 @@ index 0000000..0444db7
 +
 +/* --------------------------------------------------------------------------------- interrupts */
 +
-+static void i2s_update_irq(JumperI2sState *s)
++static void i2s_update_irq(FabwrightI2sState *s)
 +{
 +    if (s->irq) {
 +        qemu_set_irq(s->irq, (s->regs[0x0c / 4] & s->regs[0x14 / 4]) != 0);
@@ -394,7 +394,7 @@ index 0000000..0444db7
 +}
 +
 +/* The descriptor `addr` is done: report it as the EOF descriptor and interrupt. */
-+static void dir_eof(JumperI2sState *s, JumperI2sDir *d, uint32_t addr, bool last)
++static void dir_eof(FabwrightI2sState *s, FabwrightI2sDir *d, uint32_t addr, bool last)
 +{
 +    if (i2s_v1(s)) {
 +        if (d->tx) {
@@ -419,26 +419,26 @@ index 0000000..0444db7
 +
 +/* ------------------------------------------------------------------------------------ streams */
 +
-+static double frame_bytes(JumperI2sDir *d)
++static double frame_bytes(FabwrightI2sDir *d)
 +{
 +    return (double)d->bytes * d->chans;
 +}
 +
-+static uint64_t dur_ns(JumperI2sDir *d, uint32_t len)
++static uint64_t dur_ns(FabwrightI2sDir *d, uint32_t len)
 +{
 +    double frames = len / frame_bytes(d);
 +    uint64_t ns = (uint64_t)(frames * 1e9 / d->rate + 0.5);
 +    return ns ? ns : 1000;
 +}
 +
-+static void dir_stop(JumperI2sDir *d)
++static void dir_stop(FabwrightI2sDir *d)
 +{
 +    d->running = false;
 +    timer_del(d->timer);
 +}
 +
 +/* Reads the descriptor in flight: its length (TX) or size (RX) and its link. */
-+static bool desc_load(JumperI2sDir *d, I2sDesc *desc)
++static bool desc_load(FabwrightI2sDir *d, I2sDesc *desc)
 +{
 +    if (!desc_read(d->desc, desc)) {
 +        return false;
@@ -457,7 +457,7 @@ index 0000000..0444db7
 + * plays, so a firmware still filling it just ahead of the DMA (ESP-IDF hands out the next buffer to
 + * play when the ring has run dry) is heard in full, as on the chip.
 + */
-+static bool tx_send(JumperI2sState *s, JumperI2sDir *d)
++static bool tx_send(FabwrightI2sState *s, FabwrightI2sDir *d)
 +{
 +    I2sDesc desc;
 +    if (!desc_load(d, &desc)) {
@@ -486,17 +486,17 @@ index 0000000..0444db7
 +            zero = norm[off + i] == 0;
 +        }
 +        if (zero) {
-+            jumper_bridge_send("ST %x %" PRIx64 " %x %x %x z%x\n", s->port, t, rate, norm_bits(d), d->chans, n);
++            fabwright_bridge_send("ST %x %" PRIx64 " %x %x %x z%x\n", s->port, t, rate, norm_bits(d), d->chans, n);
 +        } else {
-+            jumper_hex_encode(line, sizeof(line), norm + off, n);
-+            jumper_bridge_send("ST %x %" PRIx64 " %x %x %x %s\n", s->port, t, rate, norm_bits(d), d->chans, line);
++            fabwright_hex_encode(line, sizeof(line), norm + off, n);
++            fabwright_bridge_send("ST %x %" PRIx64 " %x %x %x %s\n", s->port, t, rate, norm_bits(d), d->chans, line);
 +        }
 +    }
 +    return true;
 +}
 +
-+/* RX: fill the descriptor in flight with frames from Jumper (asked at the end of the block). */
-+static bool rx_fill(JumperI2sState *s, JumperI2sDir *d)
++/* RX: fill the descriptor in flight with frames from Fabwright (asked at the end of the block). */
++static bool rx_fill(FabwrightI2sState *s, FabwrightI2sDir *d)
 +{
 +    I2sDesc desc;
 +    if (!desc_load(d, &desc)) {
@@ -516,11 +516,11 @@ index 0000000..0444db7
 +    for (int f = 0; f < frames; f += per) {
 +        int nf = MIN(per, frames - f);
 +        uint64_t t = d->t0 + (uint64_t)(f * 1e9 / d->rate);
-+        int n = jumper_bridge_query(answer, sizeof(answer), "SR %x %" PRIx64 " %x %x %x %x\n", s->port, t, rate,
++        int n = fabwright_bridge_query(answer, sizeof(answer), "SR %x %" PRIx64 " %x %x %x %x\n", s->port, t, rate,
 +                                    norm_bits(d), d->chans, nf);
 +        memset(norm, 0, sizeof(norm));
 +        if (n > 0) {
-+            jumper_hex_decode(norm, nf * fb, answer);
++            fabwright_hex_decode(norm, nf * fb, answer);
 +        }
 +        got += from_bridge(d, norm, nf * fb, raw + got);
 +    }
@@ -535,8 +535,8 @@ index 0000000..0444db7
 +
 +static void dir_tick(void *opaque)
 +{
-+    JumperI2sDir *d = opaque;
-+    JumperI2sState *s = d->s;
++    FabwrightI2sDir *d = opaque;
++    FabwrightI2sState *s = d->s;
 +    if (!d->running) {
 +        return;
 +    }
@@ -563,7 +563,7 @@ index 0000000..0444db7
 +}
 +
 +/* The GDMA channel (S3 / C3) bound to this I2S port in the direction, from its PERI_SEL. */
-+static bool gdma_channel(JumperI2sState *s, JumperI2sDir *d, uint32_t *chan, uint32_t *link)
++static bool gdma_channel(FabwrightI2sState *s, FabwrightI2sDir *d, uint32_t *chan, uint32_t *link)
 +{
 +    if (!s->gdma) {
 +        return false;
@@ -581,18 +581,18 @@ index 0000000..0444db7
 +    return false;
 +}
 +
-+static void dir_start(JumperI2sState *s, JumperI2sDir *d)
++static void dir_start(FabwrightI2sState *s, FabwrightI2sDir *d)
 +{
 +    uint32_t link = 0;
 +    if (i2s_v1(s)) {
 +        if (!d->link_armed) {
-+            warn_report("jumper.i2s%u: %s started before its DMA link: nothing moves", s->port, d->tx ? "TX" : "RX");
++            warn_report("fabwright.i2s%u: %s started before its DMA link: nothing moves", s->port, d->tx ? "TX" : "RX");
 +            return;
 +        }
 +        d->desc = d->link_start;
 +    } else {
 +        if (!gdma_channel(s, d, &d->chan, &link)) {
-+            warn_report("jumper.i2s%u: %s started but no GDMA channel is connected to I2S%u: nothing moves",
++            warn_report("fabwright.i2s%u: %s started but no GDMA channel is connected to I2S%u: nothing moves",
 +                        s->port, d->tx ? "TX" : "RX", s->port);
 +            return;
 +        }
@@ -601,7 +601,7 @@ index 0000000..0444db7
 +    latch_format(s, d);
 +    I2sDesc desc;
 +    if (!desc_load(d, &desc)) {
-+        warn_report("jumper.i2s%u: %s descriptor at 0x%08x is not readable", s->port, d->tx ? "TX" : "RX", d->desc);
++        warn_report("fabwright.i2s%u: %s descriptor at 0x%08x is not readable", s->port, d->tx ? "TX" : "RX", d->desc);
 +        return;
 +    }
 +    d->running = true;
@@ -614,7 +614,7 @@ index 0000000..0444db7
 +
 +static uint64_t i2s_read(void *opaque, hwaddr addr, unsigned int size)
 +{
-+    JumperI2sState *s = opaque;
++    FabwrightI2sState *s = opaque;
 +    if (addr >= sizeof(s->regs)) {
 +        return 0;
 +    }
@@ -643,7 +643,7 @@ index 0000000..0444db7
 +
 +static void i2s_write(void *opaque, hwaddr addr, uint64_t value, unsigned int size)
 +{
-+    JumperI2sState *s = opaque;
++    FabwrightI2sState *s = opaque;
 +    uint32_t v = value;
 +    if (addr >= sizeof(s->regs)) {
 +        return;
@@ -681,7 +681,7 @@ index 0000000..0444db7
 +        }
 +        case 0x30:  /* OUT_LINK: addr 0-19, stop 28, start 29, restart 30 */
 +        case 0x34: {  /* IN_LINK */
-+            JumperI2sDir *d = addr == 0x30 ? &s->tx : &s->rx;
++            FabwrightI2sDir *d = addr == 0x30 ? &s->tx : &s->rx;
 +            if (v & (1u << 29)) {
 +                d->link_start = link_to_addr(s, v);
 +                d->link_armed = true;
@@ -700,7 +700,7 @@ index 0000000..0444db7
 +    switch (addr) {
 +    case 0x20:  /* RX_CONF: rx_start bit 2, rx_update bit 8 (self-clearing) */
 +    case 0x24: {  /* TX_CONF: tx_start bit 2, tx_update bit 8 */
-+        JumperI2sDir *d = addr == 0x24 ? &s->tx : &s->rx;
++        FabwrightI2sDir *d = addr == 0x24 ? &s->tx : &s->rx;
 +        s->regs[addr / 4] = v & ~(1u << 8);
 +        bool on = (v >> 2) & 1;
 +        if (on && !((old >> 2) & 1)) {
@@ -724,7 +724,7 @@ index 0000000..0444db7
 +
 +static void i2s_reset_hold(Object *obj, ResetType type)
 +{
-+    JumperI2sState *s = JUMPER_I2S(obj);
++    FabwrightI2sState *s = FABWRIGHT_I2S(obj);
 +    dir_stop(&s->tx);
 +    dir_stop(&s->rx);
 +    memset(s->regs, 0, sizeof(s->regs));
@@ -740,8 +740,8 @@ index 0000000..0444db7
 +
 +static void i2s_realize(DeviceState *dev, Error **errp)
 +{
-+    JumperI2sState *s = JUMPER_I2S(dev);
-+    memory_region_init_io(&s->iomem, OBJECT(dev), &i2s_ops, s, TYPE_JUMPER_I2S, 0x1000);
++    FabwrightI2sState *s = FABWRIGHT_I2S(dev);
++    memory_region_init_io(&s->iomem, OBJECT(dev), &i2s_ops, s, TYPE_FABWRIGHT_I2S, 0x1000);
 +    sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
 +    sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->irq);
 +    s->tx.s = s->rx.s = s;
@@ -752,8 +752,8 @@ index 0000000..0444db7
 +}
 +
 +static Property i2s_props[] = {
-+    DEFINE_PROP_UINT32("chip", JumperI2sState, chip, 0),
-+    DEFINE_PROP_UINT32("port", JumperI2sState, port, 0),
++    DEFINE_PROP_UINT32("chip", FabwrightI2sState, chip, 0),
++    DEFINE_PROP_UINT32("port", FabwrightI2sState, port, 0),
 +    DEFINE_PROP_END_OF_LIST(),
 +};
 +
@@ -766,28 +766,28 @@ index 0000000..0444db7
 +    device_class_set_props(dc, i2s_props);
 +}
 +
-+static const TypeInfo jumper_i2s_types[] = {
-+    { .name = TYPE_JUMPER_I2S, .parent = TYPE_SYS_BUS_DEVICE, .instance_size = sizeof(JumperI2sState), .class_init = i2s_class_init },
++static const TypeInfo fabwright_i2s_types[] = {
++    { .name = TYPE_FABWRIGHT_I2S, .parent = TYPE_SYS_BUS_DEVICE, .instance_size = sizeof(FabwrightI2sState), .class_init = i2s_class_init },
 +};
 +
-+DEFINE_TYPES(jumper_i2s_types)
++DEFINE_TYPES(fabwright_i2s_types)
 +
 +/* ------------------------------------------------------------------------------------- attach */
 +
-+static void i2s_create(JumperChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma,
++static void i2s_create(FabwrightChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma,
 +                       int port, hwaddr base, int irq_source)
 +{
-+    DeviceState *dev = qdev_new(TYPE_JUMPER_I2S);
++    DeviceState *dev = qdev_new(TYPE_FABWRIGHT_I2S);
 +    qdev_prop_set_uint32(dev, "chip", chip);
 +    qdev_prop_set_uint32(dev, "port", port);
-+    JUMPER_I2S(dev)->gdma = gdma ? ESP_GDMA(gdma) : NULL;
++    FABWRIGHT_I2S(dev)->gdma = gdma ? ESP_GDMA(gdma) : NULL;
 +    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
 +    MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0);
 +    memory_region_add_subregion_overlap(sys_mem, base, mr, 1);
-+    if (chip == JUMPER_CHIP_ESP32) {
++    if (chip == FABWRIGHT_CHIP_ESP32) {
 +        /* The same block at its APB alias (0x6000_xxxx). */
 +        MemoryRegion *alias = g_new(MemoryRegion, 1);
-+        char *name = g_strdup_printf("jumper-i2s%d-apb", port);
++        char *name = g_strdup_printf("fabwright-i2s%d-apb", port);
 +        memory_region_init_alias(alias, OBJECT(dev), name, mr, 0, memory_region_size(mr));
 +        memory_region_add_subregion_overlap(sys_mem, base - 0x3ff40000 + 0x60000000, alias, 1);
 +        g_free(name);
@@ -797,19 +797,19 @@ index 0000000..0444db7
 +    }
 +}
 +
-+void jumper_i2s_attach(JumperChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma)
++void fabwright_i2s_attach(FabwrightChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma)
 +{
 +    switch (chip) {
-+    case JUMPER_CHIP_ESP32:
++    case FABWRIGHT_CHIP_ESP32:
 +        i2s_create(chip, sys_mem, intmatrix, NULL, 0, 0x3ff4f000, 32);
 +        i2s_create(chip, sys_mem, intmatrix, NULL, 1, 0x3ff6d000, 33);
 +        break;
-+    case JUMPER_CHIP_ESP32S3:
++    case FABWRIGHT_CHIP_ESP32S3:
 +        /* The I2S interrupt itself is unused with GDMA (the driver listens to the GDMA channel). */
 +        i2s_create(chip, sys_mem, intmatrix, gdma, 0, 0x6000f000, -1);
 +        i2s_create(chip, sys_mem, intmatrix, gdma, 1, 0x6002d000, -1);
 +        break;
-+    case JUMPER_CHIP_ESP32C3:
++    case FABWRIGHT_CHIP_ESP32C3:
 +        i2s_create(chip, sys_mem, intmatrix, gdma, 0, 0x6002d000, -1);
 +        break;
 +    }
@@ -821,8 +821,8 @@ index 3e3202c..19715ae 100644
 @@ -137,6 +137,7 @@ system_ss.add(when: 'CONFIG_ASPEED_SOC', if_true: files(
  system_ss.add(when: 'CONFIG_MSF2', if_true: files('msf2-sysreg.c'))
  system_ss.add(when: 'CONFIG_NRF51_SOC', if_true: files('nrf51_rng.c'))
- system_ss.add(when: 'CONFIG_JUMPER_PERIPH', if_true: files('jumper_periph.c'))
-+system_ss.add(when: 'CONFIG_JUMPER_PERIPH', if_true: files('jumper_i2s.c'))
+ system_ss.add(when: 'CONFIG_FABWRIGHT_PERIPH', if_true: files('fabwright_periph.c'))
++system_ss.add(when: 'CONFIG_FABWRIGHT_PERIPH', if_true: files('fabwright_i2s.c'))
  system_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files(
    'esp32_crosscore_int.c',
    'esp32_dport.c',
@@ -833,17 +833,17 @@ index c7815af..57f2f2d 100644
 @@ -34,6 +34,7 @@
  #include "hw/char/esp32c3_uart.h"
  #include "hw/gpio/esp32c3_gpio.h"
- #include "hw/misc/jumper_bridge.h"
-+#include "hw/misc/jumper_i2s.h"
+ #include "hw/misc/fabwright_bridge.h"
++#include "hw/misc/fabwright_i2s.h"
  #include "hw/nvram/esp32c3_efuse.h"
  #include "hw/riscv/esp32c3_clk.h"
  #include "hw/riscv/esp32c3_intmatrix.h"
 @@ -664,6 +665,8 @@ static void esp32c3_machine_init(MachineState *machine)
-     JumperPeriphConfig jcfg = { .chip = JUMPER_CHIP_ESP32C3, .sys_mem = sys_mem,
+     FabwrightPeriphConfig jcfg = { .chip = FABWRIGHT_CHIP_ESP32C3, .sys_mem = sys_mem,
                                  .intmatrix = DEVICE(&ms->intmatrix), .dport_alias = false };
-     jumper_periph_attach(&jcfg);
-+    /* Jumper: I2S0 through the GDMA, frames over the bridge (hw/misc/jumper_i2s.c). */
-+    jumper_i2s_attach(JUMPER_CHIP_ESP32C3, sys_mem, DEVICE(&ms->intmatrix), &ms->gdma);
+     fabwright_periph_attach(&jcfg);
++    /* Fabwright: I2S0 through the GDMA, frames over the bridge (hw/misc/fabwright_i2s.c). */
++    fabwright_i2s_attach(FABWRIGHT_CHIP_ESP32C3, sys_mem, DEVICE(&ms->intmatrix), &ms->gdma);
  }
  
  
@@ -854,17 +854,17 @@ index d73cef4..36e137b 100644
 @@ -20,6 +20,7 @@
  #include "hw/i2c/esp32_i2c.h"
  #include "hw/gpio/esp32_gpio.h"
- #include "hw/misc/jumper_bridge.h"
-+#include "hw/misc/jumper_i2s.h"
+ #include "hw/misc/fabwright_bridge.h"
++#include "hw/misc/fabwright_i2s.h"
  #include "hw/xtensa/xtensa_memory.h"
  #include "hw/misc/unimp.h"
  #include "hw/irq.h"
 @@ -558,6 +559,8 @@ static void esp32_soc_realize(DeviceState *dev, Error **errp)
-     JumperPeriphConfig jcfg = { .chip = JUMPER_CHIP_ESP32, .sys_mem = sys_mem,
+     FabwrightPeriphConfig jcfg = { .chip = FABWRIGHT_CHIP_ESP32, .sys_mem = sys_mem,
                                  .intmatrix = intmatrix_dev, .dport_alias = true };
-     jumper_periph_attach(&jcfg);
-+    /* Jumper: I2S0 / I2S1 with their DMA, frames over the bridge (hw/misc/jumper_i2s.c). */
-+    jumper_i2s_attach(JUMPER_CHIP_ESP32, sys_mem, intmatrix_dev, NULL);
+     fabwright_periph_attach(&jcfg);
++    /* Fabwright: I2S0 / I2S1 with their DMA, frames over the bridge (hw/misc/fabwright_i2s.c). */
++    fabwright_i2s_attach(FABWRIGHT_CHIP_ESP32, sys_mem, intmatrix_dev, NULL);
  
      qemu_register_reset((QEMUResetHandler*) esp32_soc_reset, dev);
  }
@@ -875,39 +875,39 @@ index 00712dd..0d7bec2 100644
 @@ -62,6 +62,7 @@
  #include "hw/timer/esp32s3_systimer.h"
  #include "hw/gpio/esp32s3_gpio.h"
- #include "hw/misc/jumper_bridge.h"
-+#include "hw/misc/jumper_i2s.h"
+ #include "hw/misc/fabwright_bridge.h"
++#include "hw/misc/fabwright_i2s.h"
  #include "hw/misc/esp32s3_xts_aes.h"
  #include "hw/misc/esp32s3_pms.h"
  #include "hw/net/can/esp32s3_twai.h"
 @@ -880,6 +881,8 @@ static void esp32s3_machine_init(MachineState *machine)
-         JumperPeriphConfig jcfg = { .chip = JUMPER_CHIP_ESP32S3, .sys_mem = sys_mem,
+         FabwrightPeriphConfig jcfg = { .chip = FABWRIGHT_CHIP_ESP32S3, .sys_mem = sys_mem,
                                      .intmatrix = intmatrix_dev, .dport_alias = false };
-         jumper_periph_attach(&jcfg);
-+        /* Jumper: I2S0 / I2S1 through the GDMA, frames over the bridge (hw/misc/jumper_i2s.c). */
-+        jumper_i2s_attach(JUMPER_CHIP_ESP32S3, sys_mem, intmatrix_dev, &ss->gdma);
+         fabwright_periph_attach(&jcfg);
++        /* Fabwright: I2S0 / I2S1 through the GDMA, frames over the bridge (hw/misc/fabwright_i2s.c). */
++        fabwright_i2s_attach(FABWRIGHT_CHIP_ESP32S3, sys_mem, intmatrix_dev, &ss->gdma);
      }
  
      
-diff --git a/include/hw/misc/jumper_i2s.h b/include/hw/misc/jumper_i2s.h
+diff --git a/include/hw/misc/fabwright_i2s.h b/include/hw/misc/fabwright_i2s.h
 new file mode 100644
 index 0000000..10e193a
 --- /dev/null
-+++ b/include/hw/misc/jumper_i2s.h
++++ b/include/hw/misc/fabwright_i2s.h
 @@ -0,0 +1,16 @@
 +/*
-+ * Jumper I2S: the ESP32-family I2S controllers (ESP32: I2S0/I2S1 with their own DMA; ESP32-S3:
-+ * I2S0/I2S1 and ESP32-C3: I2S0, through GDMA), streaming sample frames over the Jumper bridge.
++ * Fabwright I2S: the ESP32-family I2S controllers (ESP32: I2S0/I2S1 with their own DMA; ESP32-S3:
++ * I2S0/I2S1 and ESP32-C3: I2S0, through GDMA), streaming sample frames over the Fabwright bridge.
 + *
 + * This program is free software; you can redistribute it and/or modify it under the terms of the
 + * GNU General Public License version 2 or (at your option) any later version.
 + */
 +#pragma once
 +
-+#include "hw/misc/jumper_bridge.h"
++#include "hw/misc/fabwright_bridge.h"
 +
 +/*
 + * Creates the chip's I2S controllers and maps them. `gdma` is the GDMA (an ESPGdmaState) on the
 + * S3 / C3 (NULL on the ESP32); `intmatrix` takes the ESP32's I2S interrupt sources.
 + */
-+void jumper_i2s_attach(JumperChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma);
++void fabwright_i2s_attach(FabwrightChip chip, MemoryRegion *sys_mem, DeviceState *intmatrix, void *gdma);

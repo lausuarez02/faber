@@ -1,19 +1,19 @@
 // Round 10: an ESP32-family board through the session, the path agents, the CLI and the canvas use:
 // place a Seeed XIAO ESP32-S3 + LED + resistor + button, write a sketch, build with the REAL
-// toolchain (jumper/arduino-esp32, the board's simulator FQBN), run it in Espressif's QEMU (Docker),
+// toolchain (fabwright/arduino-esp32, the board's simulator FQBN), run it in Espressif's QEMU (Docker),
 // see the LED toggle and Serial, press the button, run a scenario, export with esptool instructions.
-// Needs Docker with jumper/qemu-esp and jumper/arduino-esp32; skipped otherwise (the reason is printed).
+// Needs Docker with fabwright/qemu-esp and fabwright/arduino-esp32; skipped otherwise (the reason is printed).
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { canBuildArduino, ESP32_IMAGE } from "@jumper/runner";
-import { QEMU_ESP_IMAGE, qemuImageAvailable } from "@jumper/sim-backends/node";
+import { canBuildArduino, ESP32_IMAGE } from "@fabwright/runner";
+import { QEMU_ESP_IMAGE, qemuImageAvailable } from "@fabwright/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
-// Round 11: Docker with both images, or the native toolchain + native QEMU (jumper setup esp32).
+// Round 11: Docker with both images, or the native toolchain + native QEMU (fabwright setup esp32).
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
-if (!ready) console.warn(`skipping the ESP32 session test: neither Docker (${QEMU_ESP_IMAGE} / ${ESP32_IMAGE}) nor the native ESP32 toolchain and QEMU are ready (Fix: pnpm jumper setup esp32)`);
+if (!ready) console.warn(`skipping the ESP32 session test: neither Docker (${QEMU_ESP_IMAGE} / ${ESP32_IMAGE}) nor the native ESP32 toolchain and QEMU are ready (Fix: pnpm fabwright setup esp32)`);
 
 export const XIAO_BLINK_BUTTON = `// XIAO ESP32-S3: an LED on D0 blinks; a button on D1 (to GND) lights the user LED while pressed.
 const int LED = D0;
@@ -49,7 +49,7 @@ void loop() {
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 describe.skipIf(!ready)("ESP32 boards through the session (real build, real QEMU)", { timeout: 300_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-esp32-session-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-esp32-session-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();
@@ -112,7 +112,7 @@ describe.skipIf(!ready)("ESP32 boards through the session (real build, real QEMU
     const e = await call(s, "export", {});
     expect(e.files).toContain("firmware.bin");
     expect(e.flash).toMatch(/^esptool --chip esp32s3 --port <port> --baud 921600 write_flash 0x0 .*firmware\.bin$/);
-    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3 without Jumper's simulation shims \(JUMPER_SIM=0\); the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
+    expect(e.firmware_note).toMatch(/esp32:esp32:XIAO_ESP32S3 without Fabwright's simulation shims \(FABWRIGHT_SIM=0\); the simulator ran esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio/);
     const bin = readFileSync(join(e.dir, "firmware.bin"));
     expect(bin[0]).toBe(0xe9); // the ESP image magic of the bootloader at 0x0
   });

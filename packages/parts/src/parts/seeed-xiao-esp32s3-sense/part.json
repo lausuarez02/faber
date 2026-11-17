@@ -2,10 +2,10 @@
   "id": "seeed-xiao-esp32s3-sense",
   "name": "Seeed XIAO ESP32-S3 Sense",
   "category": "board",
-  "description": "XIAO ESP32-S3 with the Sense expansion board: a 2 MP camera (OV2640; newer batches ship the 3 MP OV3660) on the board-to-board connector, a digital PDM microphone and a microSD slot, plus everything the XIAO ESP32-S3 has (Wi-Fi / BLE not emulated, 8 MB flash, 8 MB octal PSRAM, 11 GPIOs D0 to D10, USB-C, built-in Li-ion charger with BAT pads). About 21 × 17.8 × 15 mm with the camera. The camera is wired inside: in code use esp_camera.h with the Sense's pins (XCLK 10, SIOD 40, SIOC 39, Y9..Y2 = 48, 11, 12, 14, 16, 18, 17, 15, VSYNC 38, HREF 47, PCLK 13; no PWDN / RESET). Mic: PDM CLK GPIO42, DATA GPIO41. microSD: CS GPIO21 (shared with the user LED) on the SPI pins D8 / D9 / D10. In Jumper's simulator the camera sees a test scene, an image, or your webcam (frames come from Jumper: QEMU does not model the camera interface). 3.3 V logic only.",
+  "description": "XIAO ESP32-S3 with the Sense expansion board: a 2 MP camera (OV2640; newer batches ship the 3 MP OV3660) on the board-to-board connector, a digital PDM microphone and a microSD slot, plus everything the XIAO ESP32-S3 has (Wi-Fi / BLE not emulated, 8 MB flash, 8 MB octal PSRAM, 11 GPIOs D0 to D10, USB-C, built-in Li-ion charger with BAT pads). About 21 × 17.8 × 15 mm with the camera. The camera is wired inside: in code use esp_camera.h with the Sense's pins (XCLK 10, SIOD 40, SIOC 39, Y9..Y2 = 48, 11, 12, 14, 16, 18, 17, 15, VSYNC 38, HREF 47, PCLK 13; no PWDN / RESET). Mic: PDM CLK GPIO42, DATA GPIO41. microSD: CS GPIO21 (shared with the user LED) on the SPI pins D8 / D9 / D10. In Fabwright's simulator the camera sees a test scene, an image, or your webcam (frames come from Fabwright: QEMU does not model the camera interface). 3.3 V logic only.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-12 on the native QEMU jb7 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3-sense: boot, GPIO out, GPIO in with the pull-up, Serial). The camera fixture (fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Jumper through the esp32-camera API (camera.integration.test.ts). The jumper/qemu-esp Docker image with the camera port is not built."
+    "reason": "Its fixture test passed on 2026-11-12 on the native QEMU jb7 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3-sense: boot, GPIO out, GPIO in with the pull-up, Serial). The camera fixture (fixtures/esp32/esp_camera, the Sense's camera pins) captures JPEG, RGB565 and grayscale frames from Fabwright through the esp32-camera API (camera.integration.test.ts). The fabwright/qemu-esp Docker image with the camera port is not built."
   },
   "pins": [
     {
@@ -108,7 +108,7 @@
         "min": 0,
         "max": 3.3
       },
-      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX (Serial1 on the real board; in Jumper's simulator build Serial goes here too).",
+      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX (Serial1 on the real board; in Fabwright's simulator build Serial goes here too).",
       "protocols": [
         "uart-tx"
       ]
@@ -119,7 +119,7 @@
       "x": 129,
       "y": 36,
       "type": "power",
-      "description": "VBUS: 5 V from the USB-C port when plugged in (jumper.json power.usb, default plugged). Without USB it is an input (4.5 to 5.5 V); on battery this pad stays at 0 V (the charger never back-feeds it).",
+      "description": "VBUS: 5 V from the USB-C port when plugged in (fabwright.json power.usb, default plugged). Without USB it is an input (4.5 to 5.5 V); on battery this pad stays at 0 V (the charger never back-feeds it).",
       "voltage": {
         "min": 4.5,
         "max": 5.5
@@ -139,7 +139,7 @@
       "x": 129,
       "y": 76,
       "type": "power",
-      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Keep loads modest (Jumper checks 500 mA). The ESP32-S3 runs down to about 3.0 V.",
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Keep loads modest (Fabwright checks 500 mA). The ESP32-S3 runs down to about 3.0 V.",
       "voltage": {
         "min": 3.2,
         "max": 3.4
@@ -436,9 +436,9 @@
       }
     ],
     "toolchain": {
-      "image": "jumper/arduino-esp32:3.3.12-r3",
+      "image": "fabwright/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio,PSRAM=opi",
-      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The 8 MB octal PSRAM is emulated (QEMU's SPI PSRAM model, psramFound() is true). The camera's esp32-camera calls are answered by Jumper (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
+      "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The 8 MB octal PSRAM is emulated (QEMU's SPI PSRAM model, psramFound() is true). The camera's esp32-camera calls are answered by Fabwright (frames from a scene, an image or the webcam). The factory pack builds the board's own settings: Serial on the USB-C port, OPI PSRAM, the real camera driver.",
       "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"
     },
     "verified": "packages/sim-backends/src/qemu-esp/boards.integration.test.ts (boot, GPIO, Serial with the PSRAM=opi simulator FQBN); camera: packages/sim-backends/src/qemu-esp/camera.integration.test.ts",

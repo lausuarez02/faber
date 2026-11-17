@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "tamagotchi",
   "parts": [
     { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },

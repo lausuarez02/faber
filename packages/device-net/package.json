@@ -1,5 +1,5 @@
 {
-  "name": "@jumper/device-net",
+  "name": "@fabwright/device-net",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -17,7 +17,7 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@jumper/sim-backends": "workspace:*",
+    "@fabwright/sim-backends": "workspace:*",
     "@types/ws": "^8.18.2"
   }
 }

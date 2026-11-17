@@ -1,12 +1,12 @@
 {
-  "name": "jumper",
-  "owner": { "name": "Jumper" },
-  "description": "Jumper's Claude Code plugin, from this repository.",
+  "name": "fabwright",
+  "owner": { "name": "Fabwright" },
+  "description": "Fabwright's Claude Code plugin, from this repository.",
   "plugins": [
     {
-      "name": "jumper",
-      "source": "./plugins/jumper",
-      "description": "The hardware-design skill and the jumper MCP server of a running Jumper app (http://localhost:7780/mcp)."
+      "name": "fabwright",
+      "source": "./plugins/fabwright",
+      "description": "The hardware-design skill and the fabwright MCP server of a running Fabwright app (http://localhost:7780/mcp)."
     }
   ]
 }

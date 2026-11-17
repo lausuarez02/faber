@@ -1,6 +1,6 @@
-import type { Enclosure } from "@jumper/project-format";
+import type { Enclosure } from "@fabwright/project-format";
 
-// The shapes of @jumper/enclosure's CaseReport / CaseMesh (types only: the browser never loads the CAD engine).
+// The shapes of @fabwright/enclosure's CaseReport / CaseMesh (types only: the browser never loads the CAD engine).
 export interface FitCheck {
   id: string;
   ok: boolean;
@@ -149,7 +149,7 @@ export interface CaseMesh {
 }
 import { NO_SERVER, serverConnection } from "../projects/api.ts";
 
-/** Round 6, case track: the Case view's calls to jumper serve (R6). */
+/** Round 6, case track: the Case view's calls to fabwright serve (R6). */
 export interface CaseState {
   enclosure: Enclosure | null;
   report?: CaseReport;
@@ -163,12 +163,12 @@ async function req<T>(method: "GET" | "POST", path: string, body?: unknown): Pro
   if (!conn) throw new Error(NO_SERVER);
   let r: Response;
   try {
-    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-jumper-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-fabwright-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   } catch (e) {
-    throw new Error(`Could not reach the Jumper server. Why: ${(e as Error).message}. Fix: check that jumper serve is still running, then try again.`);
+    throw new Error(`Could not reach the Fabwright server. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then try again.`);
   }
   const data = (await r.json().catch(() => undefined)) as (T & { error?: string }) | undefined;
-  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the jumper serve terminal.`);
+  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the fabwright serve terminal.`);
   return data as T;
 }
 

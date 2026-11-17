@@ -9,7 +9,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(MIRROR_PIN, OUTPUT);
   pinMode(IN_PIN, INPUT);
-  Serial.println("hello from jumper esp32");
+  Serial.println("hello from fabwright esp32");
 }
 void loop() {
   static uint32_t next = 0;

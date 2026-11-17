@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ProjectSession } from "../src/index.ts";
 
 // the Muse as Claude built it (with its slide switch and diode in the battery path)
-const MUSE = JSON.parse(readFileSync(new URL("../../../examples/agent-built/claude-pocket-muse/jumper.json", import.meta.url), "utf8")) as Record<string, unknown>;
+const MUSE = JSON.parse(readFileSync(new URL("../../../examples/agent-built/claude-pocket-muse/fabwright.json", import.meta.url), "utf8")) as Record<string, unknown>;
 const T = 300_000;
 
 let dir: string;
@@ -18,10 +18,10 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(() => {
-  process.env.JUMPER_CASE_PDF = "0";
-  process.env.JUMPER_COSTS_BUDGET_MS = "1000";
-  dir = mkdtempSync(join(tmpdir(), "jumper-assembly-"));
-  writeFileSync(join(dir, "jumper.json"), JSON.stringify({ ...MUSE, enclosure: undefined }));
+  process.env.FABWRIGHT_CASE_PDF = "0";
+  process.env.FABWRIGHT_COSTS_BUDGET_MS = "1000";
+  dir = mkdtempSync(join(tmpdir(), "fabwright-assembly-"));
+  writeFileSync(join(dir, "fabwright.json"), JSON.stringify({ ...MUSE, enclosure: undefined }));
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {

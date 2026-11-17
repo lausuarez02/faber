@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Jumper's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Jumper's parts through Jumper's bridge (every signal time-stamped to the instruction)."
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Fabwright's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Fabwright's parts through Fabwright's bridge (every signal time-stamped to the instruction)."
     },
     "timing": {
       "level": "approx",
@@ -23,16 +23,16 @@
     }
   },
   "emulates": [
-    "STM32F103C8 Cortex-M core and the peripherals Arduino sketches use, in Renode 1.17 (jumper/renode image)",
+    "STM32F103C8 Cortex-M core and the peripherals Arduino sketches use, in Renode 1.17 (fabwright/renode image)",
     "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
     "Serial (the board's console UART) with per-byte virtual time",
     "Wire (I2C master) to the I2C parts on the board's default pins",
     "SPI (master) to the SPI parts on the board's default pins",
-    "analogRead on ADC1 channels (Jumper's ADC model / Renode's STM32 ADC fed by Jumper)",
+    "analogRead on ADC1 channels (Fabwright's ADC model / Renode's STM32 ADC fed by Fabwright)",
     "analogWrite / Servo / tone through the timers' PWM outputs where Renode routes them to the pin",
     "DWT cycle counter (delayMicroseconds)",
-    "ADC1 through Jumper's STM32F1 ADC model (Renode has none for the F1)",
-    "Clock setup through Jumper's minimal RCC / FLASH models (Renode has no F1 RCC)"
+    "ADC1 through Fabwright's STM32F1 ADC model (Renode has none for the F1)",
+    "Clock setup through Fabwright's minimal RCC / FLASH models (Renode has no F1 RCC)"
   ],
   "doesNotEmulate": [
     "Other UARTs than the console (Serial2, Serial3) reaching parts",

@@ -1,7 +1,7 @@
 // Passive piezo sounder. Electrically a small capacitive load (about 0.5 mA average, modelled as
 // 10 kΩ). Its pitch is the frequency of the signal on it: every 1 ms tick reads the period the
 // simulator measures on the pin (cycle-exact edges of tone() / analogWrite) and records the notes.
-import type { Diagnostic, PartModel, PartModelFactory, PwmReading } from "@jumper/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory, PwmReading } from "@fabwright/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];

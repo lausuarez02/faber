@@ -1,7 +1,7 @@
 // Picks how the Device view presents a project: its own designed case (when the Case view built
 // one), a generic handheld (screen + buttons, no case yet), a robot in its arena, an arm on a
 // table, or the board on a desk. Pure, so it is unit-tested.
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { registry, tftTypeFor } from "../../lib/parts.ts";
 
 export type DeviceKind = "case" | "handheld" | "rover" | "arm" | "board";

@@ -1,9 +1,9 @@
 /**
- * Jumper's hardware know-how, written ONCE. Every face an agent sees is rendered from this file:
+ * Fabwright's hardware know-how, written ONCE. Every face an agent sees is rendered from this file:
  * the MCP server instructions (a short block appended to AGENT_LOOP), the MCP prompts and the
- * jumper://docs/hardware resource, the Claude Code skill a project gets
- * (<project>/.claude/skills/jumper-hardware/SKILL.md), the project's AGENTS.md (Codex and others)
- * and the plugin in plugins/jumper/. Nothing here is about one device: it is how to think about any
+ * fabwright://docs/hardware resource, the Claude Code skill a project gets
+ * (<project>/.claude/skills/fabwright-hardware/SKILL.md), the project's AGENTS.md (Codex and others)
+ * and the plugin in plugins/fabwright/. Nothing here is about one device: it is how to think about any
  * device a person wants to hold, buy parts for, print and put together.
  *
  * Tool names are written with tool("name") so a test can check each one exists. A step that needs a
@@ -60,7 +60,7 @@ export const RULES: Rule[] = [
   },
   {
     id: "no-pinning",
-    text: `Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot: Jumper's layout is usually smaller. Pinned parts show up in costs with what they add.`,
+    text: `Do not pin positions (placements x_mm / y_mm / layer / face) unless the person asked for that spot: Fabwright's layout is usually smaller. Pinned parts show up in costs with what they add.`,
     short: "Do not pin positions unless the person asked for that spot.",
     mustSay: [/do not pin/i],
     mustNotSay: [/always pin/i, /pin (?:every|each) part/i],
@@ -93,7 +93,7 @@ export const RULES: Rule[] = [
   },
   {
     id: "no-keys-in-firmware",
-    text: `Never put API keys, passwords or tokens in firmware or in jumper.json: ${tool("set_network")} takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service calls it at its real host through the relay (JumperRelay.h, jumperRelayUrl): the relay is generated from jumper.json and holds the keys, so there is no backend of your own to invent.`,
+    text: `Never put API keys, passwords or tokens in firmware or in fabwright.json: ${tool("set_network")} takes secrets by NAME and the values live in the project's .env. Firmware that talks to a service calls it at its real host through the relay (FabwrightRelay.h, fabwrightRelayUrl): the relay is generated from fabwright.json and holds the keys, so there is no backend of your own to invent.`,
     short: "Never put API keys in firmware: secrets by name (set_network), values in .env.",
     mustSay: [/[Nn]ever put API keys/],
     mustNotSay: [/(?:paste|put|hard-?code) (?:the|your) (?:API )?key (?:in|into) (?:the )?(?:firmware|sketch)/i],
@@ -217,7 +217,7 @@ export const BUILD_KIT_ANSWER: LoopStep = {
   needs: ["get_build_kit"],
   text: () => `Call ${tool("get_build_kit")} (after ${tool("design_case")}; it says what is missing when there is no case yet) and answer in four short parts, with totals:`,
   fallback: () =>
-    `There is no single build-kit tool in this Jumper yet. Make sure there is a case (${tool("get_case")}; if none, ${tool("check_fit")} → ${tool("propose_layout")} → ${tool("design_case")}), set ${tool("set_assembly")} "soldered" for a battery device, then ${tool("export_manufacturing")}. Its answer lists the files: ${tool("read_file")} the pack's BOM.md, enclosure/PRINT.md (or case/PRINT.md), assembly/ASSEMBLY.md and firmware/FLASHING.md (paths relative to the project, e.g. "manufacturing/<pack>/BOM.md"), and answer in four short parts, with totals:`,
+    `There is no single build-kit tool in this Fabwright yet. Make sure there is a case (${tool("get_case")}; if none, ${tool("check_fit")} → ${tool("propose_layout")} → ${tool("design_case")}), set ${tool("set_assembly")} "soldered" for a battery device, then ${tool("export_manufacturing")}. Its answer lists the files: ${tool("read_file")} the pack's BOM.md, enclosure/PRINT.md (or case/PRINT.md), assembly/ASSEMBLY.md and firmware/FLASHING.md (paths relative to the project, e.g. "manufacturing/<pack>/BOM.md"), and answer in four short parts, with totals:`,
 };
 
 export const BUILD_KIT_PARTS: { title: string; text: string }[] = [

@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "WebSocket stream (XIAO ESP32-C3)",
   "description": "A Seeed XIAO ESP32-C3 opens a secure WebSocket and receives a stream of binary chunks (any bytes: audio, sensor blocks, model output). The test streams 40 chunks of 1 KiB from a mock and checks every byte arrived.",
   "parts": [{ "id": "xiao", "type": "seeed-xiao-esp32c3", "x": 0, "y": 0, "rotation": 0 }],
@@ -24,5 +24,5 @@
       ]
     }
   ],
-  "network": { "mode": "mock", "wifi": { "ssid": "JumperNet" } }
+  "network": { "mode": "mock", "wifi": { "ssid": "FabwrightNet" } }
 }

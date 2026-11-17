@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { buildFirmware, canBuildArduino, imageFor, libraryForHeader, parseCompilerOutput, PICO_IMAGE, refineWithSources, resolveLibraries, RUNNER_IMAGE, startRunnerServer, SUPPORTED_FQBNS } from "../src/index.ts";
 import { sketchSetupFlags } from "../src/build.ts";
 
-// Round 11: Docker with the image, or Jumper's native toolchain (jumper setup avr / rp2040).
+// Round 11: Docker with the image, or Fabwright's native toolchain (fabwright setup avr / rp2040).
 const avrReady = canBuildArduino("arduino:avr:uno");
 
 describe("library resolution", () => {
@@ -98,9 +98,9 @@ describe.skipIf(!avrReady.ok)(`Arduino builds (${avrReady.runtime ?? "skipped: "
 
 // RP2040 builds use the arduino-pico image. It is ~1 GB, so these run only when it is already built
 // (ensureImage(log, PICO_IMAGE), or the docker build lines in packages/parts/fixtures/libs3/BUILD.md)
-// or JUMPER_TEST_PICO=1. CI builds it.
+// or FABWRIGHT_TEST_PICO=1. CI builds it.
 const picoReady = canBuildArduino("rp2040:rp2040:seeed_xiao_rp2040");
-const picoImage = process.env.JUMPER_TEST_PICO === "1" || picoReady.ok;
+const picoImage = process.env.FABWRIGHT_TEST_PICO === "1" || picoReady.ok;
 
 describe("RP2040 image selection", () => {
   it("builds rp2040:rp2040:* with the arduino-pico image and AVR boards with the runner image", () => {

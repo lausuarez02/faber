@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { ProjectSession } from "../src/index.ts";
 
 const KEY = "sk-kit-connect-test-value-0123456789";
@@ -19,7 +19,7 @@ afterAll(() => {
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 async function project(network?: Record<string, unknown>, template = "xiao-esp32s3"): Promise<ProjectSession> {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-kit-connect-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-kit-connect-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
   sessions.push(s);
@@ -41,9 +41,9 @@ describe("build kit: Connect", () => {
     const cmds = c.steps.flatMap((x: { commands?: { cmd: string }[] }) => (x.commands ?? []).map((k) => k.cmd)).join("\n");
     expect(cmds).toContain("npx wrangler secret put RELAY_DEVICE_TOKENS");
     expect(cmds).toContain("npx wrangler secret put API_KEY");
-    expect(cmds).toContain("jumper relay serve");
-    expect(cmds).toContain("jumper relay token add");
-    expect(cmds).toContain("jumper relay device-header");
+    expect(cmds).toContain("fabwright relay serve");
+    expect(cmds).toContain("fabwright relay token add");
+    expect(cmds).toContain("fabwright relay device-header");
     expect(cmds).toMatch(/arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32S3 --upload/);
     expect(c.cost.join(" ")).toContain("14,400 a day at worst"); // 10 a minute
     expect(c.notes.join(" ")).toContain("direct.example.com");
@@ -53,7 +53,7 @@ describe("build kit: Connect", () => {
     expect(md).toContain("## Connect");
     expect(html).toContain('id="connect"');
     expect(html).toContain('href="#connect"');
-    for (const f of ["relay/server.mjs", "relay/worker.js", "relay/wrangler.toml", "relay/README.md", "relay/firmware/JumperRelay.h"]) expect(existsSync(join(r.files.dir, f)), f).toBe(true);
+    for (const f of ["relay/server.mjs", "relay/worker.js", "relay/wrangler.toml", "relay/README.md", "relay/firmware/FabwrightRelay.h"]) expect(existsSync(join(r.files.dir, f)), f).toBe(true);
     expect(JSON.stringify(r)).not.toContain(KEY);
     expect(md).not.toContain(KEY);
     expect(html).not.toContain(KEY);

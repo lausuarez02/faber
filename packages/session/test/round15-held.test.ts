@@ -10,7 +10,7 @@ const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {})
 const TIN = { id: "tin", name: "round tin", shape: "cylinder", size_mm: { d: 66, h: 21 }, insert: "slide", from: "right", source: "measured with calipers", sensor: { part: "lid", max_mm: 12 } };
 
 describe("round 15: design_case with a held object", { timeout: 300_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-held-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-held-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();

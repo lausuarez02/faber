@@ -1,7 +1,7 @@
 # The build kit: everything to build it yourself
 
 Round 12. Ask an agent "what do I need to build it?" (or press **Build it yourself** in the Case
-view or the project menu) and Jumper answers with one kit, for any project:
+view or the project menu) and Fabwright answers with one kit, for any project:
 
 | Part | What is in it |
 | --- | --- |
@@ -10,14 +10,14 @@ view or the project menu) and Jumper answers with one kit, for any project:
 | **Print** | Each STL: material, colour (named from the case colour), the face on the bed, supports, layer height, infill, walls, grams and time; the 3MF build plate; what to tell a print service (JLC3DP, Craftcloud: which files, which material). |
 | **Assemble** | Numbered steps, each with its picture, the wires (from / to in words, colour, cut length, gauge), cautions and a check before going on: print and test-fit the shells, heat-set inserts (screwed cases), flash the bare board, cut and strip, power and ground first, one module at a time (resistors / diodes inline with the module they serve), parts into the case layer by layer (which wall each port, button or lever lines up with), the cell last, close it, final check. |
 | **Flash** | Per board: UF2 drag and drop (RP2040), esptool with the board's own command (ESP32), avrdude / arduino-cli (AVR), arduino-cli with the board's FQBN (nRF52, STM32 with an ST-Link or DFU note), mpremote (MicroPython); where the file is in the project and in the kit; the sound clips for a microSD card. |
-| **Connect** (round 13) | For a device on the network (jumper.json `network`): each API key by name (set or missing on this computer, never its value), the relay that holds them (on a computer: `jumper relay serve`; or Cloudflare Workers: the `wrangler secret put` and `deploy` commands), one revocable token per device, Wi-Fi and the relay address through `jumper relay device-header`, how to check it, and what calls cost in general (the provider's price per call, and the worst case per day the relay's rate limit allows). Says first when the board has no Wi-Fi. The download has `relay/` ([api-relay.md](api-relay.md)). |
-| **If it does not work** | Common problems by part category (computer does not see the board, dark screen, no sound, runs on USB but not the battery, the case does not close), what Jumper's design check and case checks said, and the "check on the real device" list from the simulation's fidelity data. |
+| **Connect** (round 13) | For a device on the network (fabwright.json `network`): each API key by name (set or missing on this computer, never its value), the relay that holds them (on a computer: `fabwright relay serve`; or Cloudflare Workers: the `wrangler secret put` and `deploy` commands), one revocable token per device, Wi-Fi and the relay address through `fabwright relay device-header`, how to check it, and what calls cost in general (the provider's price per call, and the worst case per day the relay's rate limit allows). Says first when the board has no Wi-Fi. The download has `relay/` ([api-relay.md](api-relay.md)). |
+| **If it does not work** | Common problems by part category (computer does not see the board, dark screen, no sound, runs on USB but not the battery, the case does not close), what Fabwright's design check and case checks said, and the "check on the real device" list from the simulation's fidelity data. |
 
 ## Use it
 
 ```sh
-jumper get_build_kit '{}' -p my-project                       # writes build-kit/<name>-kit/ + zip
-jumper get_build_kit '{"region": "eu", "prefer": "AliExpress", "write": false}' -p my-project
+fabwright get_build_kit '{}' -p my-project                       # writes build-kit/<name>-kit/ + zip
+fabwright get_build_kit '{"region": "eu", "prefer": "AliExpress", "write": false}' -p my-project
 ```
 
 - MCP / CLI: `get_build_kit {region?, prefer?, slicer?, write?, pdf?}` returns `{summary, kit, files, next}`.
@@ -57,10 +57,10 @@ solid (area x 1 mm, never more than the volume), the rest at the infill; grams =
 density (PLA 1.24, PETG 1.27) x 1.05 for the brim and purge; time = printed volume / 4 mm³ per
 second + 3 s per layer. A fast printer takes about half. Resin: solid volume x 1.1, 8 s per 0.05 mm
 layer. When **PrusaSlicer** is installed on this computer (`/Applications/PrusaSlicer.app`, or
-`prusa-slicer` on PATH, or `JUMPER_SLICER=<path>`), `get_build_kit` slices each STL with explicit
-settings and reads the G-code's own estimate (cached in `.jumper/kit-slicer.json`; the web panel
+`prusa-slicer` on PATH, or `FABWRIGHT_SLICER=<path>`), `get_build_kit` slices each STL with explicit
+settings and reads the G-code's own estimate (cached in `.fabwright/kit-slicer.json`; the web panel
 uses only cached slices, it never slices). OrcaSlicer is detected but not driven (its command line
-needs printer profiles). No slicer is bundled (PrusaSlicer is AGPL); `JUMPER_SLICER=none` turns it
+needs printer profiles). No slicer is bundled (PrusaSlicer is AGPL); `FABWRIGHT_SLICER=none` turns it
 off.
 
 ## The assembly plan

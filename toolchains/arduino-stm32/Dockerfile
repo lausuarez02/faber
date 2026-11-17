@@ -7,11 +7,11 @@
 # not install on arm64. On Apple silicon Docker runs it under emulation (Rosetta / QEMU): a Blue Pill
 # sketch builds in about 14 s cold, an SSD1306 sketch in about 40 s (measured round 10, M4 Max).
 #
-#   docker build --platform linux/amd64 -t jumper/arduino-stm32:2.11.0-libs3-r1 toolchains/arduino-stm32
+#   docker build --platform linux/amd64 -t fabwright/arduino-stm32:2.11.0-libs3-r1 toolchains/arduino-stm32
 #
 # Keep the tag in sync with STM32_IMAGE in services/runner/src/config.ts. Bump -rN on any change.
 # The runner keeps the ELF (<sketch>.ino.elf): Renode loads it (packages/sim-backends/src/renode).
-ARG LIBS_IMAGE=jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1
+ARG LIBS_IMAGE=fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1
 # The libraries are sources: take them from the runner image built for this machine.
 FROM --platform=$BUILDPLATFORM ${LIBS_IMAGE} AS libs
 

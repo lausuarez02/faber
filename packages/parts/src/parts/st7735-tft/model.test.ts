@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { colorFrameAverage } from "@jumper/sim-core";
+import { colorFrameAverage } from "@fabwright/sim-core";
 import { serialLines, unoBench } from "../../lib/firmwareBench.ts";
 import { CMD, MADCTL, MipiPanel } from "../../lib/mipiPanel.ts";
 import { ST7735_PANEL } from "./model.ts";

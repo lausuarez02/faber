@@ -1,6 +1,6 @@
 # Pocket Muse: a pocket buddy with eyes, built by Claude Code, re-wired to run from its battery
 
-Claude Code built this in the round-5 check (2026-11-10) from a one-line wish, using only Jumper's
+Claude Code built this in the round-5 check (2026-11-10) from a one-line wish, using only Fabwright's
 tools over HTTP MCP: a Seeed XIAO RP2040, a 1.28 in round GC9A01 screen with two animated eyes, an
 MPU-6050 that makes it scared when it falls and dizzy when you shake it, a pet button, a passive
 buzzer that chirps, a 500 mAh LiPo and a TP4056 charger. 90 turns, $2.64, 11 min 22 s; its 8
@@ -43,8 +43,8 @@ for replays and History, then `design_case` and `export_manufacturing`).
   `WIRE-CUTS.csv` (22 wires: length, colour, 24 AWG power / 26 AWG signal), `ASSEMBLY.md`
   (power path first, measured before any module is connected), `firmware.uf2`, `TEST-ON-HARDWARE.md`.
 
-Check it: `pnpm jumper check -p examples/agent-built/claude-pocket-muse`,
-`pnpm jumper test -p examples/agent-built/claude-pocket-muse` (11/11),
+Check it: `pnpm fabwright check -p examples/agent-built/claude-pocket-muse`,
+`pnpm fabwright test -p examples/agent-built/claude-pocket-muse` (11/11),
 `packages/session/test/power-muse.test.ts`.
 
 ## Its case (round 6, case track)
@@ -61,7 +61,7 @@ The STLs come in print orientation (each shell on its flat face) and `case.3mf` 
 build plate.
 
 Files: `stl/` (front, back, the button cap), `case.3mf`, `step/`, `renders/`, `drawing/` (A3, SVG
-and PDF), `PRINT.md`. `jumper export_manufacturing -p <a copy>` writes the factory pack (35 files,
+and PDF), `PRINT.md`. `fabwright export_manufacturing -p <a copy>` writes the factory pack (35 files,
 1.7 MB zip). In the app, open this example and press **Case**.
 
 <p align="center"><img src="case/renders/exploded.png" alt="Pebble case, exploded" width="480"></p>

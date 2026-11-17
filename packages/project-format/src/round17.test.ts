@@ -4,7 +4,7 @@ import { safeParseProject } from "./index.ts";
 // Round 17: a held object may be a socket the case rides on (engage_mm), with a fit and a magnet on
 // the object; the case outline may follow a held object. All optional: round 15 projects parse unchanged.
 describe("round 17 held sockets, fits, magnets and outlines that follow", () => {
-  const base = { format: "jumper/1", name: "Topper", parts: [{ id: "reed", type: "reed-switch", x: 0, y: 0 }] };
+  const base = { format: "fabwright/1", name: "Topper", parts: [{ id: "reed", type: "reed-switch", x: 0, y: 0 }] };
   const can = { id: "can", shape: "cylinder", size_mm: { d: 70, h: 20 }, from: "back" };
 
   it("a round 15 held object (insert required then) still parses; insert may now be left out", () => {

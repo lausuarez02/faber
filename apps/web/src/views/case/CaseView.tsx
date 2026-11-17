@@ -2,7 +2,7 @@
  * Round 6, case track: the Case view. A full-canvas overlay (like the Device view) that shows the
  * printable case around the parts in 3D, with a see-through and an explode slider, a shape picker,
  * the parameters, the fit checks, the overall size and the pocket verdict, and download buttons for
- * every file plus the factory pack. Geometry comes from jumper serve (GET /api/case/mesh): the
+ * every file plus the factory pack. Geometry comes from fabwright serve (GET /api/case/mesh): the
  * browser never loads the CAD engine. Esc closes.
  */
 import "./case.css";
@@ -11,7 +11,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { AlertTriangle, Box, CheckCircle2, Download, Hammer, Loader2, Package, X, XCircle } from "lucide-react";
-import type { Enclosure } from "@jumper/project-format";
+import type { Enclosure } from "@fabwright/project-format";
 import { caseApi, decodeF32, decodeU32, type AdviceNote, type CaseMesh, type CaseReport, type CaseState, type CostsResult, type FitResult, type LayoutProposal, type LayoutsResult } from "../../case/api.ts";
 import { fitTo, resampleClosed, startPoints, toOutline, type Pt } from "../../case/outline.ts";
 import { useCase } from "../../case/store.ts";
@@ -49,7 +49,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [fitBusy, setFitBusy] = useState(false);
   const [fitError, setFitError] = useState<string | undefined>();
   const fitSeq = useRef(0);
-  // round 8: the distributions Jumper proposes and the one picked ("auto" = its best)
+  // round 8: the distributions Fabwright proposes and the one picked ("auto" = its best)
   const [layout, setLayout] = useState<string>("auto");
   const [layouts, setLayouts] = useState<LayoutsResult | undefined>();
   const [layoutsBusy, setLayoutsBusy] = useState(false);
@@ -71,7 +71,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const [costsError, setCostsError] = useState<string | undefined>();
   const [costApplying, setCostApplying] = useState<string | undefined>();
   const [notice, setNotice] = useState<string | undefined>();
-  // the last part moved, and where it was before (put back when Jumper cannot fit the rest around it)
+  // the last part moved, and where it was before (put back when Fabwright cannot fit the rest around it)
   const lastPin = useRef<{ id: string; before: Pins[string] | undefined } | undefined>(undefined);
   const report = state?.report;
   const hashRef = useRef<string | undefined>(undefined);
@@ -210,7 +210,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
               else n[lp.id] = lp.before;
               return n;
             });
-            setNotice(`With ${lp.id} there, Jumper could not fit ${lost.filter((x) => x !== lp.id).join(", ") || "the other parts"} around it, so ${lp.id} went back. Try another spot.`);
+            setNotice(`With ${lp.id} there, Fabwright could not fit ${lost.filter((x) => x !== lp.id).join(", ") || "the other parts"} around it, so ${lp.id} went back. Try another spot.`);
             return;
           }
           setLayouts(r);
@@ -373,14 +373,14 @@ export function CaseView({ onClose }: { onClose(): void }) {
   const chosenId = layout === "auto" ? (layouts?.best ?? "balanced") : layout;
   const shown: LayoutProposal | undefined = layouts?.proposals.find((q) => q.id === (selected ?? chosenId)) ?? layouts?.proposals.find((q) => q.id === layouts.best);
   const preview = tab === "layout" && stageMode === "preview" && !!shown?.views;
-  // the built case is not what Jumper would now do: an old one (before round 8) or another size
+  // the built case is not what Fabwright would now do: an old one (before round 8) or another size
   const builtAs = report?.layout ? layouts?.proposals.find((q) => q.id === report.layout!.goal) : undefined;
   const staleMsg = !report || dirty || busy
     ? undefined
     : !report.layout
-      ? "This case was built before Jumper worked out where the parts go: they are stacked front to back. Let Jumper spread them out again."
+      ? "This case was built before Fabwright worked out where the parts go: they are stacked front to back. Let Fabwright spread them out again."
       : builtAs && (Math.abs(builtAs.size_mm.w - report.size_mm.w) > 0.6 || Math.abs(builtAs.size_mm.h - report.size_mm.h) > 0.6 || Math.abs(builtAs.size_mm.d - report.size_mm.d) > 0.6)
-        ? `Jumper now finds a different way to fit the parts (${builtAs.size_mm.w} × ${builtAs.size_mm.h} × ${builtAs.size_mm.d} mm; the case is ${report.size_mm.w} × ${report.size_mm.h} × ${report.size_mm.d} mm).`
+        ? `Fabwright now finds a different way to fit the parts (${builtAs.size_mm.w} × ${builtAs.size_mm.h} × ${builtAs.size_mm.d} mm; the case is ${report.size_mm.w} × ${report.size_mm.h} × ${report.size_mm.d} mm).`
         : undefined;
   const useLayout = (id: string) => {
     const v = id === layouts?.best ? "auto" : id;
@@ -414,7 +414,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
           <div className="cv-empty" data-testid="case-empty">
             <Box size={40} strokeWidth={1.2} aria-hidden />
             <div className="cv-empty-title">{error ? "The case could not load" : state && !state.enclosure ? "No case yet" : "Loading the case…"}</div>
-            <div className="cv-empty-sub">{error ?? (state && !state.enclosure ? "Pick a shape on the right and press Design case. Jumper packs the parts, cuts the window, the USB and button openings, and writes files for a 3D printer and a factory." : "")}</div>
+            <div className="cv-empty-sub">{error ?? (state && !state.enclosure ? "Pick a shape on the right and press Design case. Fabwright packs the parts, cuts the window, the USB and button openings, and writes files for a 3D printer and a factory." : "")}</div>
           </div>
         )}
         {tab === "layout" && shown?.views ? (
@@ -487,7 +487,7 @@ export function CaseView({ onClose }: { onClose(): void }) {
               setStageMode("preview");
             }}
           >
-            Layout {staleMsg ? <span className="cv-dot" aria-label="(Jumper has a better layout)" /> : null}
+            Layout {staleMsg ? <span className="cv-dot" aria-label="(Fabwright has a better layout)" /> : null}
           </button>
           <button type="button" role="tab" id="cv-tab-build" aria-selected={tab === "build"} aria-controls="cv-pane" className={tab === "build" ? "is-on" : ""} data-testid="case-tab-build" onClick={() => setTab("build")}>
             Build

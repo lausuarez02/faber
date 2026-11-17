@@ -1,17 +1,17 @@
 # AGENTS.md
 
-You are an agent in the Jumper repo. Jumper is a browser hardware sandbox: Arduino boards, parts and
+You are an agent in the Fabwright repo. Fabwright is a browser hardware sandbox: Arduino boards, parts and
 wires on a canvas, real compiled firmware, a deterministic simulator.
 
-## To build a device (not to change Jumper)
+## To build a device (not to change Fabwright)
 
-Use the MCP server or the CLI. You never need to read Jumper's source.
+Use the MCP server or the CLI. You never need to read Fabwright's source.
 
 ```sh
-node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project /path/to/my-device   # MCP server on stdio
-pnpm jumper mcp --project ../my-device          # same, from inside the repo
-pnpm jumper new ../my-device --template blink   # or drive it from the shell, same operations
-pnpm jumper test -p ../my-device
+node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project /path/to/my-device   # MCP server on stdio
+pnpm fabwright mcp --project ../my-device          # same, from inside the repo
+pnpm fabwright new ../my-device --template blink   # or drive it from the shell, same operations
+pnpm fabwright test -p ../my-device
 ```
 
 Plan first: `plan_device` and tell the person the plan in plain words (ask one question if the wish
@@ -22,7 +22,7 @@ The loop: `search_parts` → `get_part` → `place_part` → `connect` → `chec
 When the person wants a real device, finish with `design_case` (shape, renders, measured size,
 fit checks; any shape they name, an egg or a heart, is `"shape": "custom"` with an `outline` you
 draw and maybe `size_mm`: `check_fit` first says what fits and what smaller parts would;
-`propose_layout` shows how Jumper would distribute the parts inside, thinnest / smallest / balanced,
+`propose_layout` shows how Fabwright would distribute the parts inside, thinnest / smallest / balanced,
 with the reasons: tell the person which one and why, `layout: "<id>"` picks it; call it before
 `design_case`) → `get_assembly_plan` (what to buy, what to print, and how it goes together for that
 case: the order per shell, when each wire is soldered, the battery last, a test before closing, a
@@ -39,8 +39,8 @@ relaxes it): relax the costly ones. Pocket and hand-held devices: aim for 20 mm 
 Think how the person will put the stuff inside (what mounts where, insertion order, wire room,
 USB / button access, battery safety) and, when asked what is needed, say what to buy, print,
 assemble and flash with totals: [docs/hardware-guide.md](docs/hardware-guide.md) (also the MCP
-resource `jumper://docs/hardware`, the prompts `design-device` / `build-kit` / `design-for-assembly`,
-and the project skill `jumper skill install --project <dir>` writes).
+resource `fabwright://docs/hardware`, the prompts `design-device` / `build-kit` / `design-for-assembly`,
+and the project skill `fabwright skill install --project <dir>` writes).
 Behaviour over time (things that happen at random, a spoken countdown before a picture, an offline
 queue that posts later, battery life from duty cycles) is tested with scenarios too: each test seeds the
 board's random numbers, `preceded_by` checks order and timing, `expect_capture` pictures, `request`
@@ -59,7 +59,7 @@ wakes on its timer or a pin with RTC memory and the clock kept); `set_clock` als
 Full guide with a worked example: [docs/agents.md](docs/agents.md). Tool reference:
 [docs/mcp-tools.md](docs/mcp-tools.md). Every error says what failed, why, and the fix: do what it says.
 
-## To change Jumper itself
+## To change Fabwright itself
 
 - Read `STATUS.md`, then `docs/contracts.md` (APIs) and `docs/part-spec.md` (parts).
 - pnpm workspaces, Node 24, TypeScript sources exported directly (no build step between packages).

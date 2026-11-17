@@ -1,14 +1,14 @@
-// Jumper deep-sleep shim (simulation builds only), MIT.
+// Fabwright deep-sleep shim (simulation builds only), MIT.
 //
 // QEMU does not model the ESP32's RTC sleep controller, so esp_deep_sleep_start() cannot sleep and
-// wake in the emulator. In a simulation build of a sketch that deep-sleeps, Jumper wraps the sleep
+// wake in the emulator. In a simulation build of a sketch that deep-sleeps, Fabwright wraps the sleep
 // API at link time (each __wrap_ below is a -Wl,--wrap target):
 //
 //  - the wake-up sources the sketch arms (timer, ext0, ext1, the C3 / C6 GPIO wake-up) are noted;
 //  - esp_deep_sleep_start() saves what the chip keeps through deep sleep (RTC memory: every
 //    RTC_DATA_ATTR / RTC_NOINIT_ATTR variable, and the system time) in a record in the last 8 KB of
-//    flash, prints one line on the console ("[jumper:sleep] {...}") and stops;
-//  - Jumper stops running the firmware (virtual time then passes as fast as the circuit allows),
+//    flash, prints one line on the console ("[fabwright:sleep] {...}") and stops;
+//  - Fabwright stops running the firmware (virtual time then passes as fast as the circuit allows),
 //    wakes it on the timer or when a wake pin reaches its level, writes the wake cause and how long
 //    it slept into that record, and reboots the board with its flash kept;
 //  - at boot (a constructor, before setup()) the record is read back: RTC memory is restored, the
@@ -38,16 +38,16 @@
 #define JSLP_ASLEEP 1u
 #define JSLP_WOKEN 2u
 
-// The record's header: Jumper (packages/sim-backends/src/qemu-esp/sleep-record.ts) patches state,
+// The record's header: Fabwright (packages/sim-backends/src/qemu-esp/sleep-record.ts) patches state,
 // cause, wake_gpio and slept_us at these offsets. Keep the two in step.
 typedef struct {
   uint32_t magic;      // 0
   uint32_t version;    // 4
-  uint32_t state;      // 8  JSLP_ASLEEP (written here) / JSLP_WOKEN (written by Jumper)
-  uint32_t cause;      // 12 esp_sleep_source_t of the wake (Jumper)
-  int32_t wake_gpio;   // 16 the GPIO that woke it, or -1 (Jumper)
+  uint32_t state;      // 8  JSLP_ASLEEP (written here) / JSLP_WOKEN (written by Fabwright)
+  uint32_t cause;      // 12 esp_sleep_source_t of the wake (Fabwright)
+  int32_t wake_gpio;   // 16 the GPIO that woke it, or -1 (Fabwright)
   uint32_t pad;        // 20
-  uint64_t slept_us;   // 24 how long it slept (Jumper)
+  uint64_t slept_us;   // 24 how long it slept (Fabwright)
   int64_t tv_sec;      // 32 system time when it went to sleep
   int32_t tv_usec;     // 40
   uint32_t n_regions;  // 44
@@ -206,36 +206,36 @@ static void save_record(void) {
   }
 }
 
-static void __attribute__((noreturn)) jumper_sleep(void) {
+static void __attribute__((noreturn)) fabwright_sleep(void) {
   save_record();
   char pins[512];
   const char *src;
   int any;
   pins_json(pins, sizeof pins, &src, &any);
-  // one line Jumper reads (packages/sim-core/src/sleep.ts parseSleepMarker)
+  // one line Fabwright reads (packages/sim-core/src/sleep.ts parseSleepMarker)
   if (s_timer_us)
-    esp_rom_printf("\n[jumper:sleep] {\"mode\":\"deep\",\"us\":%llu,\"pins\":%s,\"any\":%s,\"src\":\"%s\"}\n", (unsigned long long)s_timer_us, pins, any ? "true" : "false", src);
+    esp_rom_printf("\n[fabwright:sleep] {\"mode\":\"deep\",\"us\":%llu,\"pins\":%s,\"any\":%s,\"src\":\"%s\"}\n", (unsigned long long)s_timer_us, pins, any ? "true" : "false", src);
   else
-    esp_rom_printf("\n[jumper:sleep] {\"mode\":\"deep\",\"pins\":%s,\"any\":%s,\"src\":\"%s\"}\n", pins, any ? "true" : "false", src);
+    esp_rom_printf("\n[fabwright:sleep] {\"mode\":\"deep\",\"pins\":%s,\"any\":%s,\"src\":\"%s\"}\n", pins, any ? "true" : "false", src);
   esp_rom_delay_us(2000);
   for (;;) vTaskDelay(1000);
 }
 
 void __real_esp_deep_sleep_start(void);
-void __wrap_esp_deep_sleep_start(void) { jumper_sleep(); }
+void __wrap_esp_deep_sleep_start(void) { fabwright_sleep(); }
 
 esp_err_t __real_esp_deep_sleep_try_to_start(void);
-esp_err_t __wrap_esp_deep_sleep_try_to_start(void) { jumper_sleep(); }
+esp_err_t __wrap_esp_deep_sleep_try_to_start(void) { fabwright_sleep(); }
 
 void __real_esp_deep_sleep(uint64_t time_in_us);
 void __wrap_esp_deep_sleep(uint64_t time_in_us) {
   __wrap_esp_sleep_enable_timer_wakeup(time_in_us);
-  jumper_sleep();
+  fabwright_sleep();
 }
 
 // ---------------------------------------------------------------- waking up
 
-static void __attribute__((constructor)) jumper_sleep_boot(void) {
+static void __attribute__((constructor)) fabwright_sleep_boot(void) {
   uint32_t addr = record_addr();
   if (!addr) return;
   jslp_header_t h;

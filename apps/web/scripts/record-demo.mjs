@@ -14,7 +14,7 @@ const outDir = join(repo, "docs/media");
 const gif = join(outDir, "m0-blink.gif");
 const still = join(outDir, "m0-blink.png");
 const size = { width: 1200, height: 720 };
-const tmp = mkdtempSync(join(tmpdir(), "jumper-demo-"));
+const tmp = mkdtempSync(join(tmpdir(), "fabwright-demo-"));
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: size, colorScheme: "dark", recordVideo: { dir: tmp, size } });

@@ -1,8 +1,8 @@
 // The fidelity card is what people read to decide whether to trust the simulator. For every
 // board that runs on the AVR backend, check its fidelity.json and pin descriptions against what
-// @jumper/sim-backends actually does (AVR_BACKEND_FACTS and the pin map), so they cannot drift.
+// @fabwright/sim-backends actually does (AVR_BACKEND_FACTS and the pin map), so they cannot drift.
 import { describe, expect, it } from "vitest";
-import { AVR_BACKEND_FACTS, boardPinMap, boardTypeOf } from "@jumper/sim-backends";
+import { AVR_BACKEND_FACTS, boardPinMap, boardTypeOf } from "@fabwright/sim-backends";
 import { partDefinitions } from "./index.ts";
 
 const PERIPHERAL_NAMES: Record<keyof typeof AVR_BACKEND_FACTS.peripherals, RegExp> = {

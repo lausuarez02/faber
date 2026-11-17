@@ -1,10 +1,10 @@
-Jumper
-Copyright 2026 The Jumper Authors
+Fabwright
+Copyright 2026 The Fabwright Authors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
 All artwork in brand/ and all part visuals in packages/parts are original work
-of the Jumper Authors, released under the same license.
+of the Fabwright Authors, released under the same license.
 
 This product depends on, and its web build bundles, third-party software
 distributed under their own licenses, including:
@@ -61,7 +61,7 @@ pinned versions in toolchains/arduino/LIBRARIES.md:
   Adafruit ST7735 and ST7789 1.12.0  MIT License, Copyright (c) Adafruit Industries
 
 The toolchain image also ships toolchains/arduino/libraries/LiquidCrystal_I2C,
-an original implementation by the Jumper Authors (Apache-2.0).
+an original implementation by the Fabwright Authors (Apache-2.0).
 
 The web app's character-LCD renderer (apps/web/src/renderers/displays/font5x7.ts)
 contains the 5x7 glyphs of glcdfont.c from the Adafruit GFX Library,
@@ -70,7 +70,7 @@ Copyright (c) 2012 Adafruit Industries, BSD License (see the notice in that file
 Firmware built by the agent tools
 ---------------------------------
 
-`jumper build` / the MCP `build` tool (services/runner) compile the user's own
+`fabwright build` / the MCP `build` tool (services/runner) compile the user's own
 sketch with the same pinned toolchain plus the libraries the project declares
 in firmware.libraries. Those firmware images belong to the user and carry the
 licenses of what they link: the Arduino AVR core (LGPL-2.1), avr-libc
@@ -95,7 +95,7 @@ The RP2040 simulator backend (packages/sim-backends/src/rp2040) uses:
                                    parts or assets are used)
 
 It does not include Raspberry Pi's RP2040 boot ROM. packages/sim-backends/src/
-rp2040/rom.ts is an original implementation by the Jumper Authors of the ROM's
+rp2040/rom.ts is an original implementation by the Fabwright Authors of the ROM's
 public function tables (as documented in the RP2040 datasheet and the pico-sdk
 headers), so no ROM code is distributed.
 
@@ -133,16 +133,16 @@ The OpenCascade WebAssembly module is used unmodified as a separate file
 time; it can be replaced by any compatible build. Its sources are available
 from https://github.com/Open-Cascade-SAS/OCCT and
 https://github.com/sgenoud/replicad (packages/replicad-opencascadejs).
-The STL, 3MF, STEP, PNG and SVG files Jumper writes for a person's case are
+The STL, 3MF, STEP, PNG and SVG files Fabwright writes for a person's case are
 their own work output and carry no licence from these libraries.
 
 Firmware libraries, set libs3 (round 6, frames track)
 -----------------------------------------------------
 
-The build images jumper/arduino-cli:1.5.1-avr1.8.8-libs3, jumper/arduino-runner:
-1.5.1-avr1.8.8-libs3-r1 and jumper/arduino-pico:6.3.1-libs3-r1 (built by Docker
+The build images fabwright/arduino-cli:1.5.1-avr1.8.8-libs3, fabwright/arduino-runner:
+1.5.1-avr1.8.8-libs3-r1 and fabwright/arduino-pico:6.3.1-libs3-r1 (built by Docker
 from toolchains/arduino/Dockerfile, services/runner/docker/Dockerfile and
-toolchains/arduino-pico/Dockerfile; Jumper's repository and packages contain
+toolchains/arduino-pico/Dockerfile; Fabwright's repository and packages contain
 none of these libraries) also preinstall:
 
   Adafruit GC9A01A 1.2.0           BSD License, Copyright (c) Adafruit Industries
@@ -162,21 +162,21 @@ library, tft_espi_xiao.hex TFT_eSPI. Adafruit NeoPixel is LGPL-3.0: a firmware
 binary that links it and is given to someone else carries LGPL-3.0 duties
 (offer the library's source and let the recipient relink the firmware with a
 modified library, e.g. by providing the sketch's object files or source). So
-Jumper commits no binary that links it: the neopixel_* sketches are built and
-run only by the test, inside the build image, and Jumper never ships the
+Fabwright commits no binary that links it: the neopixel_* sketches are built and
+run only by the test, inside the build image, and Fabwright never ships the
 library itself.
 
 The web app decodes colour screen frames with fflate 0.8.3 (MIT License,
 Copyright (c) Arjun Barrett), the same package listed above for cases.
 
-Talking devices (round 7, voice). Jumper ships no text-to-speech engine and no
+Talking devices (round 7, voice). Fabwright ships no text-to-speech engine and no
 DFPlayer library. The DFPlayer Mini part implements the module's serial frames
 from its public manual; examples and hints use a ten-line frame helper written
-for Jumper. The common DFRobotDFPlayerMini Arduino library states "GNU Lesser
-General Public License" in its header: Jumper neither ships nor requires it.
+for Fabwright. The common DFRobotDFPlayerMini Arduino library states "GNU Lesser
+General Public License" in its header: Fabwright neither ships nor requires it.
 In the browser the words of a clip are read aloud by the browser's own Web
 Speech API voice. The factory pack's sd-card/make-clips.sh calls tools the
-person installs themselves; they are not distributed with Jumper:
+person installs themselves; they are not distributed with Fabwright:
   piper       MIT License for https://github.com/rhasspy/piper (its newer
               continuation piper1-gpl is GPL-3.0); each voice model has its
               own licence
@@ -189,10 +189,10 @@ ESP32-family boards (round 9 spike, round 10 emulator)
 
 ESP32 / ESP32-S3 / ESP32-C3 firmware runs in Espressif's fork of QEMU
 (https://github.com/espressif/qemu, tag esp-develop-9.2.2-20260417), GNU General
-Public License 2.0. Jumper does not link QEMU: it runs as a separate program in
+Public License 2.0. Fabwright does not link QEMU: it runs as a separate program in
 the Docker image built by toolchains/qemu-esp/Dockerfile, which compiles that
-tag with Jumper's patches toolchains/qemu-esp/0001-jumper-bridge.patch,
-0002-jumper-peripherals.patch and 0003-jumper-pads.patch (GPL-2.0, like the files
+tag with Fabwright's patches toolchains/qemu-esp/0001-fabwright-bridge.patch,
+0002-fabwright-peripherals.patch and 0003-fabwright-pads.patch (GPL-2.0, like the files
 they modify; they add the GPIO/UART/I2C bridge, the peripheral models LEDC, SPI,
 RMT, ADC, UART1/2, I2C on the S3/C3 and GPIO interrupts, and pad pull tracking).
 Anyone receiving the image can rebuild it from the Dockerfile, the public tag and
@@ -210,17 +210,17 @@ anything built with toolchains/arduino-esp32) is built with:
                                    the core's tools/esp32*-libs)
   esptool 5.3.1 (build tool only)  GNU General Public License 2.0, run as a program
 
-The JumperEth Arduino library (toolchains/arduino-esp32/libraries/JumperEth)
+The FabwrightEth Arduino library (toolchains/arduino-esp32/libraries/FabwrightEth)
 contains ESP-IDF v5.5.5 components/esp_eth/src/openeth (esp_eth_mac_openeth.c,
 openeth.h, esp_openeth.h), Apache-2.0, Copyright (c) 2019-2024 Espressif Systems
 (Shanghai) CO LTD, built into the sketch because the precompiled core leaves
-CONFIG_ETH_USE_OPENETH off; the rest of the library is by the Jumper Authors.
+CONFIG_ETH_USE_OPENETH off; the rest of the library is by the Fabwright Authors.
 
-Device network (round 10): the simulation build image jumper/arduino-esp32:3.3.12-r3
-(toolchains/arduino-esp32/Dockerfile.sim) adds the JumperSim library (Wi-Fi and TLS
-shims for simulation builds only; by the Jumper Authors, Apache-2.0) and installs
+Device network (round 10): the simulation build image fabwright/arduino-esp32:3.3.12-r3
+(toolchains/arduino-esp32/Dockerfile.sim) adds the FabwrightSim library (Wi-Fi and TLS
+shims for simulation builds only; by the Fabwright Authors, Apache-2.0) and installs
 these Arduino libraries so the same sketch builds for the simulator and the device.
-They are build inputs of the person's firmware, not part of Jumper:
+They are build inputs of the person's firmware, not part of Fabwright:
 
   PubSubClient 2.8.0 (knolleary)   MIT License
   MQTT 2.5.3 (256dpi arduino-mqtt) MIT License
@@ -230,7 +230,7 @@ They are build inputs of the person's firmware, not part of Jumper:
                                    to someone else carries LGPL-2.1 duties)
 
 The device network itself (packages/device-net: gateway, netstack, DHCP, TCP, the
-Wi-Fi control channel) is Jumper's own code. examples/esp32-api-demo replays a
+Wi-Fi control channel) is Fabwright's own code. examples/esp32-api-demo replays a
 response recorded from the Open-Meteo API (https://open-meteo.com, weather data
 CC BY 4.0) in network/cassettes/open-meteo.json.
 
@@ -248,7 +248,7 @@ process, the Docker image built from toolchains/renode/Dockerfile:
 
 packages/sim-backends/src/renode/external-control.ts speaks Renode's
 ExternalControl protocol, written from the MIT-licensed client in Renode's
-tools/external_control_client. No Renode code is linked into Jumper.
+tools/external_control_client. No Renode code is linked into Fabwright.
 
 Firmware fixtures (packages/sim-backends/fixtures/renode/*.elf) are built with
 toolchains/arduino-stm32 (STM32duino core 2.11.0: LGPL-2.1 core, ST HAL / CMSIS
@@ -257,13 +257,13 @@ BSD-3-Clause / Apache-2.0) and toolchains/arduino-mbed-nano (arduino:mbed_nano
 
 STM32 and nRF52 boards in Renode (round 10)
 -------------------------------------------
-packages/sim-backends/src/renode/platforms holds Jumper's Renode additions, MIT
+packages/sim-backends/src/renode/platforms holds Fabwright's Renode additions, MIT
 like Renode, compiled into the Renode process at start (never linked into
-Jumper): the bridge (JumperBridge.cs), a DWT cycle counter, an STM32F1 ADC, an
+Fabwright): the bridge (FabwrightBridge.cs), a DWT cycle counter, an STM32F1 ADC, an
 STM32F4 SYSCFG EXTI mux, nRF52840 SAADC / PWM / TWIM / SPIM / UICR models.
 stm32f4x1.repl and xiao-nrf52840.repl contain copies of Renode 1.17's
 platforms/cpus/stm32f4.repl and platforms/cpus/nrf52840.repl (MIT, Antmicro),
-changed as their headers say. A native Renode 1.17 (JUMPER_RENODE_RUNTIME=native)
+changed as their headers say. A native Renode 1.17 (FABWRIGHT_RENODE_RUNTIME=native)
 is the user's own install, run as a separate process.
 
 Build images (separate processes; the cores are the person's build inputs):
@@ -281,7 +281,7 @@ as the real board carries them. They are Nordic Semiconductor's binaries under
 Nordic's own license (the "5-Clause Nordic License": redistribution in binary
 form for use with Nordic devices); the Seeed core ships them without a separate
 license file, so check Nordic's terms before shipping a product. The other
-fixtures (*.hex) are STM32duino / Mbed builds of Jumper's own sketches.
+fixtures (*.hex) are STM32duino / Mbed builds of Fabwright's own sketches.
 
 Firmware languages (round 10)
 -----------------------------
@@ -311,7 +311,7 @@ Espressif Systems; components and submodules under their own licences, e.g.
 mbedTLS Apache-2.0, lwIP BSD-3-Clause, FreeRTOS MIT) and its Python tools to the
 arduino-esp32 image above (same cross compilers, GPL-3.0 with the GCC runtime
 exception, run as programs). The source is a shallow clone of the public v5.5.5
-tag; nothing from it is linked into Jumper.
+tag; nothing from it is linked into Fabwright.
 
 PlatformIO (firmware.language "platformio"): the Docker image built by
 toolchains/platformio/Dockerfile contains PlatformIO Core 6.2.0 (Apache-2.0,
@@ -324,8 +324,8 @@ like the arduino-cli builds above). The base image is python:3.12.12-slim-bookwo
 API relay
 ---------
 
-The relay Jumper generates for a project (packages/device-net/src/relay/: relay-core.mjs,
-node-server.mjs, worker.mjs, firmware/JumperRelay.h; written to relay/ in a project, the
+The relay Fabwright generates for a project (packages/device-net/src/relay/: relay-core.mjs,
+node-server.mjs, worker.mjs, firmware/FabwrightRelay.h; written to relay/ in a project, the
 factory pack and the build kit) is released under the MIT License so people can deploy
-and change it freely. JumperRelay.h embeds public root CA certificates (ISRG Root X1 / X2,
+and change it freely. FabwrightRelay.h embeds public root CA certificates (ISRG Root X1 / X2,
 GTS Root R1 / R4, GlobalSign Root CA) for HTTPS trust.

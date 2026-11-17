@@ -9,8 +9,8 @@ import { hubPort, shot } from "./helpers.ts";
 // Round 6, switch track (decision 0004, R8): someone new lands on the Projects page; opening another
 // project resets everything the old one left (sim, firmware, code card, toasts, captions); the
 // person's own edits are never agent steps; History starts at the example as it came and counts
-// file lines after a restore. Against a real `jumper serve` on a temp projects folder, no Docker.
-const CLI = fileURLToPath(new URL("../../cli/bin/jumper.mjs", import.meta.url));
+// file lines after a restore. Against a real `fabwright serve` on a temp projects folder, no Docker.
+const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 
 interface Served {
   url: string;
@@ -20,16 +20,16 @@ interface Served {
 }
 
 async function serve(info: TestInfo): Promise<Served> {
-  const root = mkdtempSync(join(tmpdir(), "jumper-e2e-switch-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-switch-"));
   mkdirSync(join(root, "projects", "playground"), { recursive: true });
   const port = hubPort(info, 8);
   const proc = spawn(process.execPath, [CLI, "serve", "--project", join(root, "projects", "playground"), "--port", String(port), "--strict-port", "--no-open"], {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, JUMPER_HOME: join(root, "home"), JUMPER_AI_GATEWAY_PORT: "0" },
+    env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_AI_GATEWAY_PORT: "0" },
   });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`jumper serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -39,7 +39,7 @@ async function serve(info: TestInfo): Promise<Served> {
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`jumper serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,

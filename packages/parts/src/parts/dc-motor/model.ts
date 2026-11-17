@@ -1,4 +1,4 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory, PwmReading } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory, PwmReading } from "@fabwright/sim-core";
 import { num, round } from "../../lib/props.ts";
 
 /** Brushed DC motor constants derived from the datasheet-style props (SI units, output shaft). */

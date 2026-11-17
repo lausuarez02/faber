@@ -130,7 +130,7 @@ export class SyncBridgeLink {
   async nextAsync(timeoutMs: number): Promise<string[]> {
     const deadline = Date.now() + timeoutMs;
     // Atomics.waitAsync does not keep Node's event loop alive, and the worker and the emulator
-    // process are unref'd: in a short-lived process (the CLI's `jumper test` booting the next
+    // process are unref'd: in a short-lived process (the CLI's `fabwright test` booting the next
     // scenario's emulator) the loop could empty while QEMU was still booting, and Node exited with
     // "unsettled top-level await" (exit 13) and no output. A ref'd timer holds the loop while we wait.
     const hold = setInterval(() => {}, 1000);

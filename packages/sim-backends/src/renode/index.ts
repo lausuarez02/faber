@@ -1,6 +1,6 @@
-// Renode backend (round 10): STM32 and nRF52840 boards run in Renode (MIT) inside the jumper/renode
-// Docker image, bridged to Jumper's parts by platforms/JumperBridge.cs. Node-only (sockets, worker
-// threads, docker): import it from "@jumper/sim-backends/renode", never from the browser bundle.
+// Renode backend (round 10): STM32 and nRF52840 boards run in Renode (MIT) inside the fabwright/renode
+// Docker image, bridged to Fabwright's parts by platforms/FabwrightBridge.cs. Node-only (sockets, worker
+// threads, docker): import it from "@fabwright/sim-backends/renode", never from the browser bundle.
 export { RENODE_BOARDS, renodeBoardOf, renodeBusPins } from "./boards.ts";
 export type { RenodeBoard, RenodeBoardType, RenodePin } from "./boards.ts";
 export { bundleCSharp, createRenodeBackend, RENODE_CAPABILITIES, RenodeBackend } from "./backend.ts";

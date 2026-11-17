@@ -1,5 +1,5 @@
 /**
- * Round 12: the Case view's Build tab. How to build the device for this case, as Jumper worked it
+ * Round 12: the Case view's Build tab. How to build the device for this case, as Fabwright worked it
  * out at design time: what to buy, what to print, the consumables and tools, then the steps one at
  * a time with a picture each (the part going in highlighted, the case open like a book for the
  * wires between the shells), and the assembly checks in plain words. Data: POST /api/case/assembly.

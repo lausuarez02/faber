@@ -22,10 +22,10 @@ from the track reports):
 
 | Chip / board | Emulator (image) | Boots | Serial | GPIO out | GPIO in | I2C | Network | Speed |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ESP32 (Xtensa LX6) | Espressif QEMU 9.2.2 + Jumper bridge patch (`jumper/qemu-esp:9.2.2-20260417-jb2`) | yes, re-run | yes (`hello`, ticks) | yes (GPIO2, test) | yes (GPIO4, test) | yes, I2C0 to a TS device (test) | open_eth + NAT, track run only | free-running icount: 34 s virtual in 6.2 s wall (Blink, idle-heavy); lockstep 1 ms steps 0.7x real time |
+| ESP32 (Xtensa LX6) | Espressif QEMU 9.2.2 + Fabwright bridge patch (`fabwright/qemu-esp:9.2.2-20260417-jb2`) | yes, re-run | yes (`hello`, ticks) | yes (GPIO2, test) | yes (GPIO4, test) | yes, I2C0 to a TS device (test) | open_eth + NAT, track run only | free-running icount: 34 s virtual in 6.2 s wall (Blink, idle-heavy); lockstep 1 ms steps 0.7x real time |
 | ESP32-S3 | same image, `qemu-system-xtensa -machine esp32s3` | yes, re-run | yes | track run only | track run only | no model in QEMU | open_eth, track run only | 50 s virtual in 6.2 s wall; lockstep 1 ms 1.9x |
 | ESP32-C3 (RISC-V) | same image, `qemu-system-riscv32 -machine esp32c3` | yes, re-run | yes | yes (GPIO8, test) | yes (test) | no model in QEMU | open_eth, track run only | 93 s virtual in 6.2 s wall; lockstep 1 ms 1.8 to 2.7x, 10 ms 5x |
-| STM32F103 (Blue Pill) | Renode 1.17.0 (`jumper/renode:1.17.0-r1`) + 3 overlays (RCC, FLASH_ACR, bit-band) | yes, re-run | yes (USART1) | yes (test) | yes (test) | yes, C# sensor peripheral (test) | not tried | about 1.2x real time (10 s virtual in 8.5 s; busy-wait `delay()`); container start to running 3.1 s for 2 s virtual |
+| STM32F103 (Blue Pill) | Renode 1.17.0 (`fabwright/renode:1.17.0-r1`) + 3 overlays (RCC, FLASH_ACR, bit-band) | yes, re-run | yes (USART1) | yes (test) | yes (test) | yes, C# sensor peripheral (test) | not tried | about 1.2x real time (10 s virtual in 8.5 s; busy-wait `delay()`); container start to running 3.1 s for 2 s virtual |
 | nRF52840 (Nano 33 BLE) | Renode 1.17.0, upstream board file | yes, re-run | yes (Serial1 = `uart0`) | yes (D13, test) | track run only | not tried | not tried (no BLE between boards tried) | 5 s virtual in 2.1 s wall including container start; about 9x real time (Mbed sleeps) |
 | ATmega328P (Uno / Nano) | avr8js in browser and Node (main) | yes | yes | yes | yes | yes | ESP-01 AT part | ≥1x in the browser (main) |
 | RP2040 (Pico, XIAO RP2040, RP2040-Zero) | rp2040js (main) | yes | yes | yes | yes | yes | no | main |
@@ -38,14 +38,14 @@ The commands the architect ran:
 
 ```
 # ESP32 / S3 / C3: the Blink merged image padded to 4 MB, 6 s of wall time each
-docker run --rm -v $PWD:/fw:ro jumper/qemu-esp:9.2.2-20260417-jb2 timeout 6 \
+docker run --rm -v $PWD:/fw:ro fabwright/qemu-esp:9.2.2-20260417-jb2 timeout 6 \
   qemu-system-xtensa -machine esp32 -nographic -monitor none -serial file:/dev/stdout \
   -icount shift=3,align=off,sleep=off -drive file=/fw/esp32.bin,if=mtd,format=raw -snapshot
-#  -> "hello from jumper esp32", "tick 34 on t=34297"   (S3: tick 50 t=50625, C3: tick 93 t=93260)
+#  -> "hello from fabwright esp32", "tick 34 on t=34297"   (S3: tick 50 t=50625, C3: tick 93 t=93260)
 
 # Renode: Nano 33 BLE for 5 s virtual, Blue Pill for 2 s virtual
 docker run --rm --network none -v .../scripts:/s:ro -v .../fw/out:/fw:ro -v $OUT:/out \
-  jumper/renode:1.17.0-r1 --disable-gui --console --plain run_nano5.resc
+  fabwright/renode:1.17.0-r1 --disable-gui --console --plain run_nano5.resc
 #  -> "hello from nano33ble", "tick 49 ms=4909 btn=1", exit 0, 2.1 s wall
 #  -> Blue Pill: "hello from stm32", "tick 0 ms=0", exit 0, 3.1 s wall
 ```
@@ -66,7 +66,7 @@ Not working (verified by the tracks): Wi-Fi and Bluetooth on every ESP chip
 4. **Chosen: one `McuBackend` contract, two kinds of backends.** In-process JS backends (avr8js,
    rp2040js) run in the browser and in Node. Out-of-process backends (Espressif QEMU, Renode,
    later QEMU-Linux) run as separate local processes, in pinned Docker images by default, driven in
-   lockstep by Jumper's clock over a socket. A local runner owns them. Boards are data.
+   lockstep by Fabwright's clock over a socket. A local runner owns them. Boards are data.
 
 ## The backend contract
 
@@ -97,13 +97,13 @@ Where each kind runs:
 | | In-process (avr8js, rp2040js) | Local process (qemu-esp, renode) |
 | --- | --- | --- |
 | Browser canvas | runs in the page (today) | the page follows the runner's simulation over `ws://…/live` (the follow mode that exists today for agent runs), and sends inputs (button presses, sensor values) back |
-| `jumper serve`, MCP, CLI, CI | runs in Node (`SimHost`) | `SimHost` in Node, backend spawns the emulator process |
+| `fabwright serve`, MCP, CLI, CI | runs in Node (`SimHost`) | `SimHost` in Node, backend spawns the emulator process |
 | Determinism | exact | exact in lockstep (QEMU icount + `-rtc clock=vm`, Renode paused between `RunFor`); network traffic is the exception |
 
 The **local runner** is `services/runner` grown up: today it builds firmware in Docker; it also
 owns emulator processes (start, reuse a warm one per board type, kill on dispose, reap orphans at
 start), checks Docker and the image and says why and how to fix it when either is missing ("Docker
-is not running. Fix: open Docker Desktop, then press Run again"), and exposes both to `jumper
+is not running. Fix: open Docker Desktop, then press Run again"), and exposes both to `fabwright
 serve`. Never port 7780 by accident: every emulator port is picked free at launch.
 
 **Docker by default, native optional.** Both tracks measured native macOS arm64 releases: Renode's
@@ -121,7 +121,7 @@ the Simulation applies it at the right virtual time and runs stay reproducible.
 | --- | --- | --- | --- |
 | GPIO out / in | `G` / `I` lines (patched GPIO block, both banks) | ExternalControl GPIO callbacks / set | done, tested |
 | UART | `U` / `W` lines, per byte with virtual ns | separate socket, stamped at the end of the step | done; Renode per-byte time needs the C# bridge |
-| I2C | `IS/IW/IR/IP` out, `A/D` answers, ESP32 I2C0 | one C# "Jumper bridge" peripheral that forwards transactions (prototype: a fixed sensor) | ESP32 done; Renode generic bridge next; S3/C3 need a QEMU I2C controller model |
+| I2C | `IS/IW/IR/IP` out, `A/D` answers, ESP32 I2C0 | one C# "Fabwright bridge" peripheral that forwards transactions (prototype: a fixed sensor) | ESP32 done; Renode generic bridge next; S3/C3 need a QEMU I2C controller model |
 | SPI | not yet (pin-matrix routing first) | `ExternalControlSPIPeripheral`, per byte | Renode done |
 | PWM | LEDC duty as an event, not edges | Renode PWM peripherals per platform | next |
 | ADC | input voltage as an event | only on platforms that model it (G0, RA4M1) | next |
@@ -164,7 +164,7 @@ needs. Nothing about a board lives in backend code except the chip model:
   "pinMap": { "D0": "GPIO1", "D1": "GPIO2" },   // part pin id -> backend pin id
   "pullUps": ["GPIO5", "GPIO6"],
   "busPins": { "i2c": { "sda": "GPIO5", "scl": "GPIO6" } },
-  "toolchain": { "image": "jumper/arduino-esp32:3.3.12-r2", "fqbn": "esp32:esp32:XIAO_ESP32S3:FlashMode=dio" },
+  "toolchain": { "image": "fabwright/arduino-esp32:3.3.12-r2", "fqbn": "esp32:esp32:XIAO_ESP32S3:FlashMode=dio" },
   "verified": "packages/sim-backends/fixtures/xiao-esp32s3"  // the fixture test that proves it
 }
 ```
@@ -175,9 +175,9 @@ grows the optional fields; existing boards keep working unchanged. A board witho
 fixture shows as "unverified" in the fidelity report.
 
 Toolchain images are picked from the FQBN prefix as today (`services/runner/src/config.ts`
-`PLATFORMS`): add `esp32:esp32:` → `jumper/arduino-esp32`, `STMicroelectronics:stm32:` →
-`jumper/arduino-stm32` (amd64-only image: STM32Tools has no aarch64 build, so it runs emulated, 14 s
-per sketch), `arduino:mbed_nano:` → `jumper/arduino-mbed-nano`. Firmware formats: AVR / RP2040 Intel
+`PLATFORMS`): add `esp32:esp32:` → `fabwright/arduino-esp32`, `STMicroelectronics:stm32:` →
+`fabwright/arduino-stm32` (amd64-only image: STM32Tools has no aarch64 build, so it runs emulated, 14 s
+per sketch), `arduino:mbed_nano:` → `fabwright/arduino-mbed-nano`. Firmware formats: AVR / RP2040 Intel
 HEX (today), ESP merged flash image (padded to the flash size), Renode ELF (not fully stripped:
 Renode finds the vector table from symbols; use `--strip-debug`).
 
@@ -186,7 +186,7 @@ Renode finds the vector table from symbols; use `--strip-debug`).
 | Language / framework | What it needs | When |
 | --- | --- | --- |
 | Arduino (arduino-cli) | done for AVR, RP2040; spike images for ESP32 family, STM32duino, Mbed Nano | now (M-A, M-C) |
-| ESP-IDF (C) | an image with the IDF + `idf.py build`, merged image via `esptool merge_bin`; same QEMU backend. Gets OpenETH by `sdkconfig` instead of the JumperEth library | M-D |
+| ESP-IDF (C) | an image with the IDF + `idf.py build`, merged image via `esptool merge_bin`; same QEMU backend. Gets OpenETH by `sdkconfig` instead of the FabwrightEth library | M-D |
 | PlatformIO | one image, `pio run -e <env>`; reads `platformio.ini`; maps to the same backends by `board =`. Big downloads per platform: cache them in the image per platform family | M-D |
 | Zephyr | `west build -b <board>`; Zephyr has QEMU and Renode targets upstream, so the board file names the Zephyr board too | M-D |
 | Rust (esp-hal, embassy) | `cargo` + `espflash save-image --merge`; for Cortex-M a plain ELF for Renode | M-D |
@@ -211,7 +211,7 @@ Prototype: `packages/device-net` (round9/network; full design in its draft, renu
   passed through; HTTP, WebSocket, MQTT and raw TCP recognised from the first bytes; answers from
   mocks, then cassettes, then the real host.
 - **Secrets are added by the proxy, never compiled into firmware.** A project declares a secret by
-  name (value from the environment or `.env`, never in `jumper.json`); an allow entry says which
+  name (value from the environment or `.env`, never in `fabwright.json`); an allow entry says which
   host gets it (`Authorization: Bearer {{secret:NAME}}`). Redacted in the device's view, logs,
   `read_network`, cassettes and the factory pack. Literal keys in config are refused with why and fix.
 - **Mock APIs and cassettes**: HTTP routes (status, body, streamed chunks, delays), scripted
@@ -221,7 +221,7 @@ Prototype: `packages/device-net` (round9/network; full design in its draft, renu
   `{"request": …}`.
 - **Adapter to the emulators** (not built): a small Go sidecar using gVisor netstack (Apache-2.0)
   that takes QEMU's raw frames (`-netdev stream`) and hands each DNS query and TCP flow to the
-  gateway over `JUMPER-FLOW/1`. Until then, QEMU's own NAT works but bypasses the policy.
+  gateway over `FABWRIGHT-FLOW/1`. Until then, QEMU's own NAT works but bypasses the policy.
 - The existing pet AI network (`services/ai-gateway`, ESP-01 AT part) becomes an ordinary mock +
   internet mode on the same gateway.
 
@@ -239,8 +239,8 @@ recorded frames or a cassette.
   patch (GPL-2.0, published in `toolchains/qemu-esp/`). Anyone can rebuild it. Disclosed in NOTICE.
 - Renode (MIT) runs as a separate process; the ExternalControl client is reimplemented in TS from
   its MIT client.
-- Firmware cores are the person's build inputs, not Jumper code: arduino-esp32 / STM32duino /
-  Mbed cores LGPL-2.1, ESP-IDF Apache-2.0, the JumperEth library contains Apache-2.0 ESP-IDF files.
+- Firmware cores are the person's build inputs, not Fabwright code: arduino-esp32 / STM32duino /
+  Mbed cores LGPL-2.1, ESP-IDF Apache-2.0, the FabwrightEth library contains Apache-2.0 ESP-IDF files.
   Firmware library hints steer away from GPL-3.0 libraries (e.g. gilmaimon ArduinoWebsockets).
 - esptool (GPL-2.0) is a build tool run as a program.
 
@@ -267,7 +267,7 @@ recorded frames or a cassette.
 - Merge `device-net`; `network` in the project schema; session tool routing; Network panel in the
   web app; scenario `request` step (3 d).
 - Gateway delays and faults on the virtual clock (1 d).
-- Go netstack sidecar between QEMU `-netdev stream` and `JUMPER-FLOW/1`; sandbox CA trusted by the
+- Go netstack sidecar between QEMU `-netdev stream` and `FABWRIGHT-FLOW/1`; sandbox CA trusted by the
   sim build's mbedTLS (3 to 5 d; mbedTLS trust is untested).
 - Wi-Fi shim so unmodified `WiFi.begin()` sketches connect (2 d).
 - Example project: an ESP32-S3 that fetches a real public API (weather or similar) over HTTPS with
@@ -278,7 +278,7 @@ recorded frames or a cassette.
 **M-C. Renode: nRF52840 and STM32. 8 to 12 days.**
 - Wire `renode` into `backendFactory` (async prepare, `stopAt` at step granularity, firmware swap
   without a new container) (2 d).
-- Generic C# Jumper bridge peripheral: I2C transactions and per-byte UART time (3 d).
+- Generic C# Fabwright bridge peripheral: I2C transactions and per-byte UART time (3 d).
 - Board parts with verified pin maps: Nano 33 BLE (only D13 / D2 checked so far), Blue Pill,
   Nucleo / Black Pill F4, with ADC where the platform has it (G0, RA4M1 Uno R4) and the gap stated
   where it does not (3 to 4 d).

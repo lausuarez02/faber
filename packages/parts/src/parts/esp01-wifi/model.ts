@@ -4,7 +4,7 @@
 // network the host passes in (ctx.services.network, see services/ai-gateway). No RF, no lwIP:
 // what the firmware sees on its RX pin is what a real module prints. Deterministic as long as
 // the network is (the mock AI is; a live AI call is not, and the network log says so).
-import type { Diagnostic, PartModel, PartModelFactory, SandboxNetwork, SandboxSocket } from "@jumper/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory, SandboxNetwork, SandboxSocket } from "@fabwright/sim-core";
 import { UartReceiver, UartTransmitter } from "../../lib/softUart.ts";
 import { num } from "../../lib/props.ts";
 
@@ -48,8 +48,8 @@ interface Link {
 
 /** A network with Wi-Fi but no hosts, used when the host attached none: joins work, every host is "DNS Fail". */
 const NO_INTERNET: SandboxNetwork = {
-  accessPoints: () => [{ ssid: "JumperNet", rssi: -52, secured: false, channel: 6 }],
-  join: (ssid) => (ssid === "JumperNet" ? 0 : 3),
+  accessPoints: () => [{ ssid: "FabwrightNet", rssi: -52, secured: false, channel: 6 }],
+  join: (ssid) => (ssid === "FabwrightNet" ? 0 : 3),
   linkUp: () => true,
   resolve: () => undefined,
   open: () => ({ error: "unreachable" }),
@@ -270,7 +270,7 @@ export const create: PartModelFactory = (ctx): PartModel => {
         });
         return;
       case "GMR":
-        return ok(ESP_TIMING.simpleMs, "AT version:1.7.4.0(Jumper sandbox emulation)\r\nSDK version:3.0.4\r\ncompile time:Jumper\r\n");
+        return ok(ESP_TIMING.simpleMs, "AT version:1.7.4.0(Fabwright sandbox emulation)\r\nSDK version:3.0.4\r\ncompile time:Fabwright\r\n");
       case "UART":
       case "UART_CUR":
       case "UART_DEF":
@@ -538,7 +538,7 @@ export const create: PartModelFactory = (ctx): PartModel => {
         out.push({ severity: "warning", code: "esp-rx-5v", pin: "RX", message: `ESP-01 RX (or EN/RST) sees ${maxIo.toFixed(1)} V from a 5 V pin. The ESP8266 is specified for 3.6 V max on IO; many modules survive, some die. Put a 1 kΩ / 2 kΩ divider between the Uno TX pin and ESP RX (1 kΩ from the Uno pin, 2 kΩ to GND, ESP RX in the middle).` });
       }
       if (powered && !hasNetwork) {
-        out.push({ severity: "info", code: "esp-no-network", message: "No sandbox network is attached to this simulation, so the ESP-01 can join JumperNet but every host answers DNS Fail. The session and the web app attach it (services/ai-gateway); in a bare Simulation pass services: { network }." });
+        out.push({ severity: "info", code: "esp-no-network", message: "No sandbox network is attached to this simulation, so the ESP-01 can join FabwrightNet but every host answers DNS Fail. The session and the web app attach it (services/ai-gateway); in a bare Simulation pass services: { network }." });
       }
       if (powered && rx.framingErrors > 4 && commands === 0) {
         out.push({ severity: "warning", code: "esp-baud-mismatch", pin: "RX", message: `ESP-01 is receiving garbage (${rx.framingErrors} framing errors, no valid command): the sketch and the module use different baud rates. The module is at ${baud} baud; use esp.begin(${baud}), or send AT+UART_DEF=9600,8,1,0,0 at ${baud} once and switch to 9600.` });

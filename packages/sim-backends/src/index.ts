@@ -1,4 +1,4 @@
-import type { BackendFactory, McuBackend } from "@jumper/sim-core";
+import type { BackendFactory, McuBackend } from "@fabwright/sim-core";
 import { createAvrBackend } from "./avr.ts";
 import { boardTypeOf, type BoardType } from "./pins.ts";
 import { createRp2040Backend, rp2040BoardOf } from "./rp2040/index.ts";
@@ -21,7 +21,7 @@ export function createBackend(boardType: BoardType | string): McuBackend {
 /**
  * Picks an in-process backend from the board's part.json `mcu.backend` ("avr8js" → createAvrBackend,
  * "rp2040js" → createRp2040Backend). Safe in the browser. Process backends (qemu-esp, renode) need the
- * Jumper server: use `nodeBackendFactory` from "@jumper/sim-backends/node" there.
+ * Fabwright server: use `nodeBackendFactory` from "@fabwright/sim-backends/node" there.
  */
 export const backendFactory: BackendFactory = (board) => withPinMap(inProcessBackend(board), board.mcu.pinMap);
 
@@ -45,7 +45,7 @@ function inProcessBackend(board: Parameters<BackendFactory>[0]): McuBackend {
     return createRp2040Backend({ board: rp.type, clockHz: board.mcu.clockHz, vcc: board.mcu.vcc });
   }
   if (board.mcu.backend === "qemu-esp" || board.mcu.backend === "renode") {
-    throw new Error(`board '${board.partId}' (${board.type}, ${board.mcu.chip}) runs in a local emulator (${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"}) on your computer, not in the browser. Fix: open the project from \`jumper serve\` (pnpm start) and press Run there (this page then shows that run), or ask your agent to run it.`);
+    throw new Error(`board '${board.partId}' (${board.type}, ${board.mcu.chip}) runs in a local emulator (${board.mcu.backend === "qemu-esp" ? "Espressif QEMU" : "Renode"}) on your computer, not in the browser. Fix: open the project from \`fabwright serve\` (pnpm start) and press Run there (this page then shows that run), or ask your agent to run it.`);
   }
   throw new Error(`no simulator backend '${board.mcu.backend}' for board '${board.partId}' (${board.type})`);
 }

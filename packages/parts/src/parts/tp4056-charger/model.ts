@@ -4,8 +4,8 @@
 // tapering current. Ends when the cell takes less than 10 % of the set current; restarts below
 // 4.05 V. Protection: OUT is connected to BAT through a switch that opens below 2.4 V and closes
 // again above 3.0 V or while charging.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { clamp, num, round, truthy } from "../../lib/props.ts";
 
 export const V_CHARGE = 4.2;

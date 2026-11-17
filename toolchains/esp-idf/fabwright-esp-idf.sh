@@ -1,6 +1,6 @@
 #!/bin/bash
-# jumper-esp-idf <target> <flash MB>   build /work/project, write /work/out/merged.bin
-# jumper-esp-idf --version
+# fabwright-esp-idf <target> <flash MB>   build /work/project, write /work/out/merged.bin
+# fabwright-esp-idf --version
 set -o pipefail
 export HOME=/tmp
 PYENV=$(ls -d "$IDF_TOOLS_PATH"/python_env/idf5.5_py*_env | head -1)
@@ -17,9 +17,9 @@ mkdir -p /work/out
 cp -r /work/project /tmp/project
 cd /tmp/project || exit 2
 # QEMU boots DIO flash; the person's sdkconfig.defaults can override anything else.
-printf 'CONFIG_ESPTOOLPY_FLASHMODE_DIO=y\nCONFIG_ESPTOOLPY_FLASHSIZE_%sMB=y\n' "$FLASH_MB" > /tmp/sdkconfig.jumper
-DEFAULTS="/tmp/sdkconfig.jumper"
-[ -f sdkconfig.defaults ] && DEFAULTS="sdkconfig.defaults;/tmp/sdkconfig.jumper"
+printf 'CONFIG_ESPTOOLPY_FLASHMODE_DIO=y\nCONFIG_ESPTOOLPY_FLASHSIZE_%sMB=y\n' "$FLASH_MB" > /tmp/sdkconfig.fabwright
+DEFAULTS="/tmp/sdkconfig.fabwright"
+[ -f sdkconfig.defaults ] && DEFAULTS="sdkconfig.defaults;/tmp/sdkconfig.fabwright"
 python "$IDF_PATH/tools/idf.py" -B /tmp/build -DIDF_TARGET="$TARGET" -DSDKCONFIG=/tmp/build/sdkconfig "-DSDKCONFIG_DEFAULTS=$DEFAULTS" build 2>&1
 RC=$?
 if [ $RC -ne 0 ]; then exit $RC; fi

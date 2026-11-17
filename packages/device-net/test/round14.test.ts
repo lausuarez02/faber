@@ -70,7 +70,7 @@ function multipartBody(boundary: string, parts: Array<{ name: string; filename?:
 }
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "jumper-r14-net-"));
+  dir = mkdtempSync(join(tmpdir(), "fabwright-r14-net-"));
   ca = await SandboxCA.open(join(dir, "ca"));
   writeFileSync(join(dir, "social.yaml"), `openapi: 3.0.3\ninfo: {title: t, version: "1"}\npaths:\n  /ping:\n    get:\n      responses:\n        "200":\n          description: ok\n          content:\n            application/json:\n              example: {pong: true}\n`);
   // "A service the person runs on this computer" (a dev server for the social network).

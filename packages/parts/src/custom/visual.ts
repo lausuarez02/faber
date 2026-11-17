@@ -2,7 +2,7 @@
 // outline, name, a dashed "AGENT-MADE" tag, header pins with their labels, a status light or a
 // value readout bound to the model's state). Displays get a glass rect marked data-screen so the
 // canvas and screenshots draw live pixels on it. Pure string code (browser + Node).
-import type { PinSpec } from "@jumper/sim-core";
+import type { PinSpec } from "@fabwright/sim-core";
 import type { CustomPart } from "./schema.ts";
 
 export const PIN_PITCH = 20;

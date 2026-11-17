@@ -1,6 +1,6 @@
-// Jumper reference firmware: a tamagotchi-style pixel pet.
+// Fabwright reference firmware: a tamagotchi-style pixel pet.
 //
-// Hardware (see ../../jumper.json): Arduino Uno, SSD1306 128x64 OLED on I2C (0x3C, SDA = A4,
+// Hardware (see ../../fabwright.json): Arduino Uno, SSD1306 128x64 OLED on I2C (0x3C, SDA = A4,
 // SCL = A5), three push buttons to GND on D2 (feed), D3 (play), D4 (sleep) using INPUT_PULLUP,
 // and an active buzzer on D8.
 //

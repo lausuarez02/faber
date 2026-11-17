@@ -1,5 +1,5 @@
 {
-  "format": "jumper/1",
+  "format": "fabwright/1",
   "name": "Two-joint robot arm",
   "description": "Two SG90 servos form a planar arm (shoulder on D9, elbow on D10). Two potentiometers on A0/A1 set the joint angles; the world view shows the arm move.",
   "parts": [

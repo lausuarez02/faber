@@ -1,7 +1,7 @@
 // STM32F1 ADC (RM0008 section 11) for Renode, which has no F1 ADC model. Enough for STM32duino's
 // analogRead (HAL): power on, reset calibration and calibration finish at once, a regular
 // conversion of the first channel in SQR3 starts on SWSTART (or on a second ADON write) and is done
-// at once: DR = the voltage Jumper last set on that channel (JumperBridge "A" line), 12-bit against
+// at once: DR = the voltage Fabwright last set on that channel (FabwrightBridge "A" line), 12-bit against
 // a 3.3 V reference, EOC set until DR is read. Internal channels: 16 = temperature (25 C, 1.43 V),
 // 17 = VREFINT (1.20 V). Not modelled: scan / continuous / injected groups, DMA, the analog
 // watchdog, sampling time, conversion time and noise.
@@ -10,9 +10,9 @@ using Antmicro.Renode.Peripherals.Bus;
 
 namespace Antmicro.Renode.Peripherals.Miscellaneous
 {
-    public class JumperStm32F1Adc : IDoubleWordPeripheral, IKnownSize
+    public class FabwrightStm32F1Adc : IDoubleWordPeripheral, IKnownSize
     {
-        public JumperStm32F1Adc(IMachine machine, string name = "adc1")
+        public FabwrightStm32F1Adc(IMachine machine, string name = "adc1")
         {
             this.name = name;
             Reset();
@@ -66,7 +66,7 @@ namespace Antmicro.Renode.Peripherals.Miscellaneous
             int mv;
             if(channel == 16) mv = 1430;
             else if(channel == 17) mv = 1200;
-            else mv = JumperBridge.Instance?.AnalogMv(name, channel) ?? 0;
+            else mv = FabwrightBridge.Instance?.AnalogMv(name, channel) ?? 0;
             var code = (uint)System.Math.Max(0, System.Math.Min(4095, System.Math.Round(mv * 4095.0 / 3300.0)));
             if((regs[CR2 / 4] & ALIGN) != 0) code <<= 4;
             regs[DR / 4] = code;

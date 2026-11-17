@@ -1,9 +1,9 @@
 // The Renode backend's side of the bridge protocol, against a scripted fake bridge (a child Node
-// process that dials the bridge port like platforms/JumperBridge.cs does). No Docker needed.
+// process that dials the bridge port like platforms/FabwrightBridge.cs does). No Docker needed.
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { I2cBus, SpiBus } from "@jumper/sim-core";
+import { I2cBus, SpiBus } from "@fabwright/sim-core";
 import { describe, expect, it } from "vitest";
 import { bundleCSharp, createRenodeBackend } from "./backend.ts";
 import { RENODE_BOARDS } from "./boards.ts";
@@ -11,7 +11,7 @@ import type { RenodeProcess } from "./launcher.ts";
 
 /**
  * A fake bridge. `script` maps the n-th "R" command (0-based) to the lines it answers before "T".
- * Lines Jumper sends are echoed to a log the test reads back (as JSON on the child's stdout).
+ * Lines Fabwright sends are echoed to a log the test reads back (as JSON on the child's stdout).
  */
 function fakeBridge(script: Record<number, string[]>, opts: { ask?: Record<number, string> } = {}) {
   const sent: string[] = [];
@@ -21,7 +21,7 @@ function fakeBridge(script: Record<number, string[]>, opts: { ask?: Record<numbe
       const script = ${JSON.stringify(script)};
       const fs = require("node:fs");
       let ns = 0n, runs = 0, buf = "";
-      const s = net.connect(${port}, "127.0.0.1", () => s.write("H jumper-renode-bridge 1\\n"));
+      const s = net.connect(${port}, "127.0.0.1", () => s.write("H fabwright-renode-bridge 1\\n"));
       s.on("data", (d) => {
         buf += d;
         let i;
@@ -75,14 +75,14 @@ describe("Renode backend protocol (fake bridge)", () => {
     be.step(100_000);
     const repl = readFileSync(join(runDir, "extra.repl"), "utf8");
     const resc = readFileSync(join(runDir, "start.resc"), "utf8");
-    expect(repl).toContain("jumperI2c3c: Miscellaneous.JumperI2cTarget @ i2c1 0x3c");
-    expect(repl).toContain("jumperI2c76: Miscellaneous.JumperI2cTarget @ i2c1 0x76");
-    expect(repl).toMatch(/jumperSpi: Miscellaneous.JumperSpiTarget @ spi1\n {4}bus: "spi1"\n {4}sync: false/);
-    expect(repl).toContain("dwt: Miscellaneous.JumperDwt @ sysbus 0xE0001000");
-    expect(resc).toContain("sysbus LoadHEX @/jumper/run/firmware.hex");
+    expect(repl).toContain("fabwrightI2c3c: Miscellaneous.FabwrightI2cTarget @ i2c1 0x3c");
+    expect(repl).toContain("fabwrightI2c76: Miscellaneous.FabwrightI2cTarget @ i2c1 0x76");
+    expect(repl).toMatch(/fabwrightSpi: Miscellaneous.FabwrightSpiTarget @ spi1\n {4}bus: "spi1"\n {4}sync: false/);
+    expect(repl).toContain("dwt: Miscellaneous.FabwrightDwt @ sysbus 0xE0001000");
+    expect(resc).toContain("sysbus LoadHEX @/fabwright/run/firmware.hex");
     expect(resc).toContain("sysbus.cpu VectorTableOffset 0x8000000");
     expect(resc).toContain("sysbus.cpu PerformanceInMips 100");
-    expect(resc).toContain("machine LoadPlatformDescription @/jumper/platforms/blackpill-f411.repl");
+    expect(resc).toContain("machine LoadPlatformDescription @/fabwright/platforms/blackpill-f411.repl");
     be.dispose();
     await new Promise((r) => setTimeout(r, 50));
     expect(fb.sent.filter((l) => l.startsWith("W ")).length).toBe(Object.keys(RENODE_BOARDS["stm32-blackpill-f411"].pins).length);
@@ -176,10 +176,10 @@ describe("Renode backend protocol (fake bridge)", () => {
   });
 
   it("bundles the bridge and the board's models into one C# file with the usings first", () => {
-    const cs = bundleCSharp(["JumperBridge.cs", "JumperNrf52.cs"]);
+    const cs = bundleCSharp(["FabwrightBridge.cs", "FabwrightNrf52.cs"]);
     const firstCode = cs.split("\n").findIndex((l) => l.trim() && !l.startsWith("using "));
     expect(cs.split("\n").slice(firstCode).some((l) => /^using [\w.]+;$/.test(l))).toBe(false);
-    expect(cs).toContain("public class JumperBridge");
-    expect(cs).toContain("public class JumperNrf52Saadc");
+    expect(cs).toContain("public class FabwrightBridge");
+    expect(cs).toContain("public class FabwrightNrf52Saadc");
   });
 });

@@ -1,8 +1,8 @@
 # Device network firmware fixtures
 
-Real ESP32-family sketches written for the real device (no Jumper code in them), built with the
+Real ESP32-family sketches written for the real device (no Fabwright code in them), built with the
 simulation image so the Wi-Fi and TLS shims are linked in. The merged flash images are committed
-gzipped and run by `test/firmware.integration.test.ts` (Docker + `jumper/qemu-esp`).
+gzipped and run by `test/firmware.integration.test.ts` (Docker + `fabwright/qemu-esp`).
 
 | Sketch | Image | What it does |
 | --- | --- | --- |
@@ -13,16 +13,16 @@ gzipped and run by `test/firmware.integration.test.ts` (Docker + `jumper/qemu-es
 Build (Docker; the r3 image is `toolchains/arduino-esp32/Dockerfile.sim` on top of r2):
 
 ```sh
-docker build -t jumper/arduino-esp32:3.3.12-r3 -f toolchains/arduino-esp32/Dockerfile.sim toolchains/arduino-esp32
+docker build -t fabwright/arduino-esp32:3.3.12-r3 -f toolchains/arduino-esp32/Dockerfile.sim toolchains/arduino-esp32
 mkdir -p /tmp/np && docker run --rm \
   -v "$PWD/packages/device-net/fixtures/net-probe:/work/sketch/net-probe:ro" -v /tmp/np:/work/out \
-  jumper/arduino-esp32:3.3.12-r3 compile --fqbn esp32:esp32:esp32s3:FlashMode=dio --output-dir /work/out /work/sketch/net-probe
+  fabwright/arduino-esp32:3.3.12-r3 compile --fqbn esp32:esp32:esp32s3:FlashMode=dio --output-dir /work/out /work/sketch/net-probe
 gzip -9 -c /tmp/np/net-probe.ino.merged.bin > packages/device-net/fixtures/net-probe.esp32s3.merged.bin.gz
 ```
 
 Toolchain: arduino-cli 1.5.1, esp32:esp32 3.3.12 (ESP-IDF 5.5.5), PubSubClient 2.8.0. The output
-says `jumper: simulation build, Wi-Fi shim on`. `JUMPER_SIM=0` builds the same sketch for a real
+says `fabwright: simulation build, Wi-Fi shim on`. `FABWRIGHT_SIM=0` builds the same sketch for a real
 board without the shims.
 
 `audio-stream` (round 13) is built the same way (`node_modules/.bin/tsx packages/device-net/fixtures/build.ts audio-stream`,
-natively with `jumper setup esp32` when Docker is down); it uses only the core's WiFi, HTTPClient and ESP_I2S.
+natively with `fabwright setup esp32` when Docker is down); it uses only the core's WiFi, HTTPClient and ESP_I2S.

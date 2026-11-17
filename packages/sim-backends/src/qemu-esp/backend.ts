@@ -1,8 +1,8 @@
 // ESP32-family McuBackend on Espressif's QEMU fork (decision 0006, round 10).
 //
-// QEMU runs in its own process (Docker image jumper/qemu-esp by default) with Jumper's bridge
+// QEMU runs in its own process (Docker image fabwright/qemu-esp by default) with Fabwright's bridge
 // patch, in lockstep: -icount makes guest time a pure function of executed instructions, and the
-// patched GPIO block stops at every target time Jumper sends ("R <ns>") until told to go on. So
+// patched GPIO block stops at every target time Fabwright sends ("R <ns>") until told to go on. So
 // step(cycles) is synchronous and deterministic like the AVR / RP2040 backends:
 //   cycles  = virtual ns × cpuHz / 1e9 (a time base at the chip's nominal clock, as in rp2040)
 //   pins    = "GPIO<n>": GPIO registers, or the peripheral the GPIO matrix routes to the pin;
@@ -16,7 +16,7 @@
 //   ADC     = the pad voltage the circuit solved, converted by QEMU's ADC model
 //   I2S     = frames out to the attached I2sBus, frames in from it
 //   camera  = round 13: the firmware's esp32-camera calls (wrapped in simulation builds) reach the
-//             attached CameraBus through QEMU's Jumper camera port (patch 0004): init with the
+//             attached CameraBus through QEMU's Fabwright camera port (patch 0004): init with the
 //             pins, whole frames on capture. The DVP bus, XCLK and SCCB traffic are not emulated.
 // Not emulated: Wi-Fi / Bluetooth radios (networking runs over an emulated Ethernet MAC), touch
 // sensing, deep sleep, RMT receive, pulse counter, MCPWM. See docs/esp32-peripherals.md.
@@ -25,7 +25,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CAMERA_FRAME_SIZES, CAMERA_PIXFORMATS, CAMERA_SENSORS as SENSOR_INFO, DEFAULT_CAMERA_SETTINGS, type CameraBus, type CameraPinRole, type I2cBus, type I2sBus, type McuBackend, type McuBusPins, type McuCapability, type PinState, type SpiBus, type Unsubscribe, type WakeInfo } from "@jumper/sim-core";
+import { CAMERA_FRAME_SIZES, CAMERA_PIXFORMATS, CAMERA_SENSORS as SENSOR_INFO, DEFAULT_CAMERA_SETTINGS, type CameraBus, type CameraPinRole, type I2cBus, type I2sBus, type McuBackend, type McuBusPins, type McuCapability, type PinState, type SpiBus, type Unsubscribe, type WakeInfo } from "@fabwright/sim-core";
 import { ESP_CHIPS, espGpioOf, espOutputSource, espPinId, type EspChip, type EspChipInfo, type EspOutputSource } from "./chips.ts";
 import { launchQemu, QEMU_ESP_IMAGE, type QemuLaunchOptions, type QemuProcess } from "./launcher.ts";
 import {
@@ -54,7 +54,7 @@ export interface QemuEspBackendOptions {
   runtime?: QemuLaunchOptions["runtime"];
   image?: string;
   icountShift?: number;
-  /** See QemuLaunchOptions.network: true (QEMU NAT), { framePort } (Jumper's device network), false. */
+  /** See QemuLaunchOptions.network: true (QEMU NAT), { framePort } (Fabwright's device network), false. */
   network?: QemuLaunchOptions["network"];
   /** Flash size the image is padded to (MB). Default: the smallest of 2 / 4 / 8 / 16 that holds it. */
   flashSizeMB?: number;
@@ -92,7 +92,7 @@ const VIH_RATIO = 0.75;
 /** Pad voltage changes below this (mV) are not sent to the ADC model. */
 const ADC_STEP_MV = 1;
 const FLASH_SIZES_MB = [2, 4, 8, 16];
-/** First bridge version whose QEMU waits for Jumper's "A 0" after a pull change ("P"). */
+/** First bridge version whose QEMU waits for Fabwright's "A 0" after a pull change ("P"). */
 const PADS_HANDSHAKE_VERSION = 4;
 
 export type EmulatorErrorCode = "docker-missing" | "docker-not-running" | "image-missing" | "emulator-exited" | "emulator-timeout" | "bad-firmware";
@@ -111,10 +111,10 @@ export class EmulatorError extends Error {
 export function explainEmulatorLog(log: string, image: string, chip: string): EmulatorError {
   const tail = log.trim().split("\n").slice(-6).join(" | ").slice(-600);
   if (/Cannot connect to the Docker daemon|docker daemon is not running|error during connect/i.test(log)) {
-    return new EmulatorError("docker-not-running", `The ${chip} emulator did not start: Docker is not running. Why: Jumper runs ESP32 boards in Espressif's QEMU inside a Docker container on your computer. Fix: start Docker Desktop (macOS: open -a Docker), wait until it says running, then press Run again.`);
+    return new EmulatorError("docker-not-running", `The ${chip} emulator did not start: Docker is not running. Why: Fabwright runs ESP32 boards in Espressif's QEMU inside a Docker container on your computer. Fix: start Docker Desktop (macOS: open -a Docker), wait until it says running, then press Run again.`);
   }
   if (/Unable to find image|pull access denied|No such image|repository does not exist/i.test(log)) {
-    return new EmulatorError("image-missing", `The ${chip} emulator did not start: the Docker image ${image} is not on this computer. Fix: run \`pnpm jumper setup esp32\` (builds it from toolchains/qemu-esp, a few minutes), then press Run again.`);
+    return new EmulatorError("image-missing", `The ${chip} emulator did not start: the Docker image ${image} is not on this computer. Fix: run \`pnpm fabwright setup esp32\` (builds it from toolchains/qemu-esp, a few minutes), then press Run again.`);
   }
   if (/mtd|drive/i.test(log) && /error|invalid|size/i.test(log)) {
     return new EmulatorError("bad-firmware", `The ${chip} emulator refused the flash image: ${tail}. Fix: rebuild the firmware (build), which writes a merged flash image.`);
@@ -194,7 +194,7 @@ export class QemuEspBackend implements McuBackend {
   private _features: string[] = [];
   /** Counts of bridged events since load, for tests and the fidelity report. */
   readonly stats = { gpio: 0, ledc: 0, spi: 0, rmt: 0, adc: 0, uart: 0, i2c: 0, i2sOut: 0, i2sIn: 0, parks: 0, cameraFrames: 0 };
-  /** The handshake line QEMU sent ("H jumper-esp32-bridge 5 esp32c3.gpio sync=1 feat=..."). */
+  /** The handshake line QEMU sent ("H fabwright-esp32-bridge 5 esp32c3.gpio sync=1 feat=..."). */
   hello = "";
   /** Wall ms from launch to parked at t = 0 (the last boot). */
   bootMs = 0;
@@ -233,7 +233,7 @@ export class QemuEspBackend implements McuBackend {
   }
 
   get image(): string {
-    return this.opts.image ?? process.env.JUMPER_QEMU_ESP_IMAGE ?? QEMU_ESP_IMAGE;
+    return this.opts.image ?? process.env.FABWRIGHT_QEMU_ESP_IMAGE ?? QEMU_ESP_IMAGE;
   }
 
   /** What this backend carries to the circuit with the running image (before load: what a current image does). */
@@ -306,7 +306,7 @@ export class QemuEspBackend implements McuBackend {
     this.start();
   }
 
-  /** Round 15: the next reboot is a wake from deep sleep: the JumperSleep shim's flash record gets the cause. */
+  /** Round 15: the next reboot is a wake from deep sleep: the FabwrightSleep shim's flash record gets the cause. */
   setWakeInfo(info: WakeInfo): void {
     this.pendingWake = info;
   }
@@ -389,7 +389,7 @@ export class QemuEspBackend implements McuBackend {
     else if (volts >= VIH_RATIO * this.vcc) level = true;
     if (level === was) return;
     this.inputs = level ? this.inputs | bit : this.inputs & ~bit;
-    // QEMU is blocked (parked or waiting for an answer) while Jumper runs, so the level applies at
+    // QEMU is blocked (parked or waiting for an answer) while Fabwright runs, so the level applies at
     // exactly the current virtual time.
     this.link?.send(encodeInput(g, level ? 1 : 0));
     this.rxEdge(g, level ? 1 : 0);
@@ -504,7 +504,7 @@ export class QemuEspBackend implements McuBackend {
 
   private afterBoot(link: SyncBridgeLink): void {
     if (!this.hello) {
-      const err = new EmulatorError("emulator-exited", `The ESP32 emulator connected but did not identify itself. Why: the Docker image is older than this Jumper. Fix: run \`pnpm jumper setup esp32\` to build ${QEMU_ESP_IMAGE}.`);
+      const err = new EmulatorError("emulator-exited", `The ESP32 emulator connected but did not identify itself. Why: the Docker image is older than this Fabwright. Fix: run \`pnpm fabwright setup esp32\` to build ${QEMU_ESP_IMAGE}.`);
       this.close();
       throw err;
     }
@@ -541,11 +541,11 @@ export class QemuEspBackend implements McuBackend {
     this.i2cOpen.clear();
     this.deadlines = [];
     for (const k of Object.keys(this.stats) as (keyof typeof this.stats)[]) this.stats[k] = 0;
-    this.workDir = mkdtempSync(join(tmpdir(), "jumper-qemu-esp-"));
+    this.workDir = mkdtempSync(join(tmpdir(), "fabwright-qemu-esp-"));
     // Round 14: the flash file lives in its own folder that a reboot keeps, so what the firmware wrote
     // (LittleFS, NVS) is there after reset(); a new image (load) or persistFlash false starts over.
     const persist = this.opts.persistFlash !== false;
-    if (!this.flashDir) this.flashDir = mkdtempSync(join(tmpdir(), "jumper-qemu-flash-"));
+    if (!this.flashDir) this.flashDir = mkdtempSync(join(tmpdir(), "fabwright-qemu-flash-"));
     const flashImage = join(this.flashDir, "flash.bin");
     if (!persist || this.flashStale || !existsSync(flashImage)) writeFileSync(flashImage, this.flash!);
     this.flashStale = false;
@@ -916,7 +916,7 @@ export class QemuEspBackend implements McuBackend {
   }
 
   /**
-   * The camera shim's commands (toolchains/arduino-esp32/libraries/JumperCamera/src/jumper_sim_camera.c).
+   * The camera shim's commands (toolchains/arduino-esp32/libraries/FabwrightCamera/src/fabwright_sim_camera.c).
    * Answer words: init → [status, pid, mid, ver, max frame size, sccb address, init µs];
    * capture → [status, length, width, height, pixformat, capture µs, sequence]. Status 0 = ok,
    * 1 = no camera answers, 2 = not supported, 3 = frame size too large.

@@ -1,9 +1,9 @@
 // Runs a part with real compiled firmware on a simulated Uno: the bench for bus parts, whose
 // behaviour only shows up when a real library (Wire, Adafruit_*, U8g2, RTClib…) talks to them.
 import { readFileSync } from "node:fs";
-import { parseProject, type ProjectInput } from "@jumper/project-format";
-import { Simulation, decodeMonoFrame, monoToAscii, type MonoFrame } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject, type ProjectInput } from "@fabwright/project-format";
+import { Simulation, decodeMonoFrame, monoToAscii, type MonoFrame } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "../registry.gen.ts";
 
 export interface UnoBenchOptions {
@@ -29,7 +29,7 @@ export function i2cWires(id: string, pins = { gnd: "GND", vcc: "VCC", sda: "SDA"
 export function unoBench(opts: UnoBenchOptions): Simulation {
   const hex = readFileSync(new URL(opts.hex, opts.base), "utf8");
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "bench",
     parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }, ...opts.parts],
     wires: opts.wires.map(([a, b], i) => {

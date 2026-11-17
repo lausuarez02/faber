@@ -1,5 +1,5 @@
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
-import type { PropValue } from "@jumper/project-format";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PropValue } from "@fabwright/project-format";
 import { num, truthy } from "../../lib/props.ts";
 
 const toPos = (v: PropValue | undefined, fallback: 0 | 1): 0 | 1 =>

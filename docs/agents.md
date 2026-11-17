@@ -1,15 +1,15 @@
-# Jumper for agents
+# Fabwright for agents
 
-Jumper lets an AI agent (Claude Code, Codex, any MCP client, or a shell script) go from a one-line
+Fabwright lets an AI agent (Claude Code, Codex, any MCP client, or a shell script) go from a one-line
 goal ("a tamagotchi on an OLED with three buttons") to a wired, programmed and **tested** device,
-using only Jumper's tools. The same operations are exposed three ways with identical rules:
+using only Fabwright's tools. The same operations are exposed three ways with identical rules:
 
 | Face | Start it | Best for |
 | --- | --- | --- |
-| **Live server** (canvas + MCP over HTTP) | `pnpm start` in the repo (= `jumper serve`), then `claude mcp add --transport http jumper http://localhost:7780/mcp` | a person watching the agent build, live, on the canvas |
-| MCP server (stdio) | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <dir>` | Claude Code, Codex, Cursor, any MCP client |
-| CLI | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs <command>` (or `pnpm jumper <command>` inside the repo) | shells, CI, scripts (`--json` for machine output) |
-| Browser | `node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs serve --project <dir>` | a human watching the agent work live, accepting / rejecting its steps |
+| **Live server** (canvas + MCP over HTTP) | `pnpm start` in the repo (= `fabwright serve`), then `claude mcp add --transport http fabwright http://localhost:7780/mcp` | a person watching the agent build, live, on the canvas |
+| MCP server (stdio) | `node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project <dir>` | Claude Code, Codex, Cursor, any MCP client |
+| CLI | `node /path/to/fabwright/apps/cli/bin/fabwright.mjs <command>` (or `pnpm fabwright <command>` inside the repo) | shells, CI, scripts (`--json` for machine output) |
+| Browser | `node /path/to/fabwright/apps/cli/bin/fabwright.mjs serve --project <dir>` | a human watching the agent work live, accepting / rejecting its steps |
 
 Proof it works: Claude Code built a tamagotchi pet (8/8 tests) and a record-and-playback servo arm
 (6/6), and Codex an obstacle-avoiding rover (2/2, 0 failed calls), each from a one-line goal with
@@ -18,8 +18,8 @@ only these tools. The projects, prompts, numbers and videos are in
 to) is in [media/agent-runs](media/agent-runs/README.md).
 
 The paths below are absolute paths on the maintainer's machine, so they work from any directory.
-On another machine replace `/Users/lautaritos/Projects/hardware/jumper` with where you cloned
-Jumper. Every tool is documented in [mcp-tools.md](mcp-tools.md) (generated from the tool
+On another machine replace `/path/to/fabwright` with where you cloned
+Fabwright. Every tool is documented in [mcp-tools.md](mcp-tools.md) (generated from the tool
 definitions).
 
 ## Setup
@@ -27,11 +27,11 @@ definitions).
 ### The one-step way: a live server
 
 ```sh
-pnpm start                                   # in the Jumper repo; or: jumper serve --project /path/to/my-device
-claude mcp add --transport http jumper http://localhost:7780/mcp
+pnpm start                                   # in the Fabwright repo; or: fabwright serve --project /path/to/my-device
+claude mcp add --transport http fabwright http://localhost:7780/mcp
 ```
 
-`jumper serve` is one local server (default port 7780; the next free port when taken, printed at
+`fabwright serve` is one local server (default port 7780; the next free port when taken, printed at
 start) for everything:
 
 | Path | What |
@@ -51,17 +51,17 @@ continues the agent's simulation, and calls never interleave. Each action-log li
 must come from this machine (`Host` localhost / 127.0.0.1 / ::1, and a localhost `Origin` when a
 browser sends one).
 
-Connect any agent (each verified 2026-11-09 against a running `jumper serve`, without touching the
+Connect any agent (each verified 2026-11-09 against a running `fabwright serve`, without touching the
 real configs: Claude Code with `CLAUDE_CONFIG_DIR=<temp>`, then a real `claude -p` call; Codex with
-`CODEX_HOME=<temp>`, then a real `codex exec -c mcp_servers.jumper.url=…` call):
+`CODEX_HOME=<temp>`, then a real `codex exec -c mcp_servers.fabwright.url=…` call):
 
 | Agent | Setup |
 | --- | --- |
-| Claude Code | `claude mcp add --transport http jumper http://localhost:7780/mcp`; `claude mcp list` shows `jumper: http://localhost:7780/mcp (HTTP) - ✔ Connected`. One-off: `claude --mcp-config jumper.json` with `{"mcpServers": {"jumper": {"type": "http", "url": "http://localhost:7780/mcp"}}}` |
-| Codex | `codex mcp add jumper --url http://localhost:7780/mcp`, i.e. `[mcp_servers.jumper]` + `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml` |
-| Cursor | `~/.cursor/mcp.json`: `{"mcpServers": {"jumper": {"url": "http://localhost:7780/mcp"}}}` (not verified here: Cursor is not installed on the build machine) |
-| Claude Desktop | `claude_desktop_config.json`: `{"mcpServers": {"jumper": {"command": "/absolute/path/to/node", "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` (the Install MCP menu fills in your node path; not verified in the app itself, the same stdio bridge is tested with the MCP SDK) |
-| Any stdio-only client | `jumper mcp --attach http://localhost:7780`: a stdio server that forwards to the running serve, so its calls also drive the live canvas |
+| Claude Code | `claude mcp add --transport http fabwright http://localhost:7780/mcp`; `claude mcp list` shows `fabwright: http://localhost:7780/mcp (HTTP) - ✔ Connected`. One-off: `claude --mcp-config fabwright.json` with `{"mcpServers": {"fabwright": {"type": "http", "url": "http://localhost:7780/mcp"}}}` |
+| Codex | `codex mcp add fabwright --url http://localhost:7780/mcp`, i.e. `[mcp_servers.fabwright]` + `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml` |
+| Cursor | `~/.cursor/mcp.json`: `{"mcpServers": {"fabwright": {"url": "http://localhost:7780/mcp"}}}` (not verified here: Cursor is not installed on the build machine) |
+| Claude Desktop | `claude_desktop_config.json`: `{"mcpServers": {"fabwright": {"command": "/absolute/path/to/node", "args": ["/path/to/fabwright/apps/cli/bin/fabwright.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` (the Install MCP menu fills in your node path; not verified in the app itself, the same stdio bridge is tested with the MCP SDK) |
+| Any stdio-only client | `fabwright mcp --attach http://localhost:7780`: a stdio server that forwards to the running serve, so its calls also drive the live canvas |
 
 In the web app, **Install MCP** shows the same snippets with Copy buttons and who is connected;
 **Open in Agent** copies a starter prompt (what the project has, that a person is watching, the
@@ -82,7 +82,7 @@ can be anywhere; it is created if missing.
 One command (run it in the folder you work in; `-s user` makes it available everywhere):
 
 ```sh
-claude mcp add jumper -- node /Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project /path/to/my-device
+claude mcp add fabwright -- node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project /path/to/my-device
 ```
 
 or a `.mcp.json` next to your work (Claude Code picks it up; also works with `claude --mcp-config .mcp.json`):
@@ -90,9 +90,9 @@ or a `.mcp.json` next to your work (Claude Code picks it up; also works with `cl
 ```json
 {
   "mcpServers": {
-    "jumper": {
+    "fabwright": {
       "command": "node",
-      "args": ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--project", "/path/to/my-device"],
+      "args": ["/path/to/fabwright/apps/cli/bin/fabwright.mjs", "mcp", "--project", "/path/to/my-device"],
       "env": { "MCP_TOOL_TIMEOUT": "600000" }
     }
   }
@@ -102,11 +102,11 @@ or a `.mcp.json` next to your work (Claude Code picks it up; also works with `cl
 Headless, for scripts and CI (verified 2026-11-09 with Claude Code 2.1.319 from a folder outside the repo):
 
 ```sh
-claude -p "Build a tamagotchi on an OLED with three buttons using the jumper tools, with passing tests" \
-  --mcp-config .mcp.json --strict-mcp-config --allowedTools "mcp__jumper"
+claude -p "Build a tamagotchi on an OLED with three buttons using the fabwright tools, with passing tests" \
+  --mcp-config .mcp.json --strict-mcp-config --allowedTools "mcp__fabwright"
 ```
 
-`--allowedTools` only pre-approves the Jumper tools; to prove an agent used nothing else (an
+`--allowedTools` only pre-approves the Fabwright tools; to prove an agent used nothing else (an
 evaluation), also pass `--disallowedTools "Bash Edit Write Read"`.
 
 ### Codex
@@ -114,9 +114,9 @@ evaluation), also pass `--disallowedTools "Bash Edit Write Read"`.
 Add to `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.jumper]
+[mcp_servers.fabwright]
 command = "node"
-args = ["/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs", "mcp", "--project", "/path/to/my-device"]
+args = ["/path/to/fabwright/apps/cli/bin/fabwright.mjs", "mcp", "--project", "/path/to/my-device"]
 startup_timeout_sec = 30
 tool_timeout_sec = 600
 default_tools_approval_mode = "approve"   # without it, `codex exec` rejects every tool that edits
@@ -125,11 +125,11 @@ default_tools_approval_mode = "approve"   # without it, `codex exec` rejects eve
 Then `codex` (interactive) or headless (verified 2026-11-09 with codex-cli 0.163.0):
 
 ```sh
-codex exec --skip-git-repo-check "Build an obstacle-avoiding rover using the jumper tools, with passing tests"
+codex exec --skip-git-repo-check "Build an obstacle-avoiding rover using the fabwright tools, with passing tests"
 ```
 
-For an evaluation where Codex may use nothing but Jumper, give it its own `CODEX_HOME` whose
-`config.toml` has only the `jumper` server and turns off the other tools:
+For an evaluation where Codex may use nothing but Fabwright, give it its own `CODEX_HOME` whose
+`config.toml` has only the `fabwright` server and turns off the other tools:
 
 ```toml
 [features]
@@ -147,16 +147,16 @@ fails with "code-mode host is disabled".
 ### Any other MCP client
 
 Command `node`, arguments
-`/Users/lautaritos/Projects/hardware/jumper/apps/cli/bin/jumper.mjs mcp --project <dir>` (or set
-`JUMPER_PROJECT=<dir>` and drop `--project`), transport stdio. The server sends the recommended loop
-as its instructions and offers three resources: `jumper://docs/agents` (this guide),
-`jumper://parts` (the catalog) and `jumper://project` (the current `jumper.json`). Screenshots come
+`/path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project <dir>` (or set
+`FABWRIGHT_PROJECT=<dir>` and drop `--project`), transport stdio. The server sends the recommended loop
+as its instructions and offers three resources: `fabwright://docs/agents` (this guide),
+`fabwright://parts` (the catalog) and `fabwright://project` (the current `fabwright.json`). Screenshots come
 back as an image too, so a model with vision can look at the circuit, the OLED and the robot's world.
-`packages/mcp/bin/jumper-mcp.mjs --project <dir>` is the same server without the CLI wrapper.
+`packages/mcp/bin/fabwright-mcp.mjs --project <dir>` is the same server without the CLI wrapper.
 
 ### The hardware skill (any agent)
 
-Jumper's hardware know-how (the design loop, the rules of thumb, how the parts go inside, and how to
+Fabwright's hardware know-how (the design loop, the rules of thumb, how the parts go inside, and how to
 answer "what do I need to buy, print and assemble") is written once in `packages/agent-skill` and
 reaches every agent without touching your global config:
 
@@ -164,19 +164,19 @@ Design notes: [agent-skill.md](agent-skill.md).
 
 - **Every MCP client**: the server instructions end with a short "Design for assembly" block; the
   prompts `design-device` (argument `goal`), `build-kit` and `design-for-assembly`; the resource
-  `jumper://docs/hardware` with the whole guide ([hardware-guide.md](hardware-guide.md)).
-- **Claude Code in a project folder**: `<project>/.claude/skills/jumper-hardware/SKILL.md`, which
-  Claude Code loads by itself. `new_project`, `jumper new`, Open in Agent → Launch and
-  `jumper skill install --project <dir>` write it, `<project>/AGENTS.md` for Codex and others, and
+  `fabwright://docs/hardware` with the whole guide ([hardware-guide.md](hardware-guide.md)).
+- **Claude Code in a project folder**: `<project>/.claude/skills/fabwright-hardware/SKILL.md`, which
+  Claude Code loads by itself. `new_project`, `fabwright new`, Open in Agent → Launch and
+  `fabwright skill install --project <dir>` write it, `<project>/AGENTS.md` for Codex and others, and
   `<project>/CLAUDE.md`, which imports AGENTS.md so Claude Code always has the guide in context (a
   skill is only loaded when the model picks it).
-  A file you wrote yourself is kept unless `--force`; `JUMPER_AGENT_FILES=0` turns it off.
-  `jumper skill print [--target skill|agents|guide|instructions]` prints it.
-- **Claude Code anywhere**: the plugin in [plugins/jumper](../plugins/jumper/README.md) (the skill
-  plus the MCP server of a running Jumper). You install it yourself, e.g.
-  `claude --plugin-dir /path/to/jumper/plugins/jumper` for one session.
+  A file you wrote yourself is kept unless `--force`; `FABWRIGHT_AGENT_FILES=0` turns it off.
+  `fabwright skill print [--target skill|agents|guide|instructions]` prints it.
+- **Claude Code anywhere**: the plugin in [plugins/fabwright](../plugins/fabwright/README.md) (the skill
+  plus the MCP server of a running Fabwright). You install it yourself, e.g.
+  `claude --plugin-dir /path/to/fabwright/plugins/fabwright` for one session.
 
-A test (`packages/session/test/agent-skill-sync.test.ts`) fails when the skill names a tool Jumper
+A test (`packages/session/test/agent-skill-sync.test.ts`) fails when the skill names a tool Fabwright
 does not have, or when one of its rules contradicts the server instructions or a tool description.
 
 ## Talk to the person first
@@ -198,7 +198,7 @@ The people asking for a device are often beginners. The server instructions say 
   e.g. "should it only tell you the plant is thirsty, or also water it?"), then wait.
 - **No jargon** unless the person uses it: "the screen", "a resistor that protects the light".
 - **One project per idea:** `new_project {"folder": true, "name": "Plant waterer"}` makes a new
-  folder, registers it in the Projects gallery and (on `jumper serve`) switches to it. Never
+  folder, registers it in the Projects gallery and (on `fabwright serve`) switches to it. Never
   overwrite the playground or another project.
 - **Real parts first.** If the catalog lacks a part, make it with `create_part` (agent-made,
   behavioral) when that tool exists, rather than a stand-in. If you do use a stand-in, call
@@ -212,7 +212,7 @@ The people asking for a device are often beginners. The server instructions say 
 1. `plan_device`, then `get_project` (or `new_project {"folder": true}`) to see where you are.
 2. `search_parts` for each thing the device needs, then `get_part` for its pins, wiring hint,
    libraries and a minimal Arduino example.
-3. `place_part` (leave out x/y: Jumper lays parts out tidily) and `connect` pins written as
+3. `place_part` (leave out x/y: Fabwright lays parts out tidily) and `connect` pins written as
    `"part.pin"`. Pass a short `why` with your edits: the human sees it in the step list.
 4. `check_design` and fix every error (LED resistors, power, voltage levels, I2C pins, shorts…).
 5. `write_file` the sketch (`firmware/main.ino`). Print what happens with `Serial.begin(115200)`:
@@ -240,7 +240,7 @@ The people asking for a device are often beginners. The server instructions say 
     `size_mm` if they gave one; there is no preset per object. Test it first with `check_fit` (no CAD,
     under a second): when the parts do not fit the size it lists each miss in mm and tried
     suggestions (a smaller screen, speaker or LiPo cell, a board on its edge, less rounded rims, or
-    "make it N mm bigger"); tell the person the trade-off and let them pick. Round 8: Jumper works
+    "make it N mm bigger"); tell the person the trade-off and let them pick. Round 8: Fabwright works
     out how the parts go inside by itself (flat first, then layers) and `propose_layout` shows the
     three best ways (`thinnest`, `smallest`, `balanced`, with sizes, layers and reasons); tell the
     person the choice in plain words ("one flat layer: 17.5 mm thick but 131 mm tall; or the cell
@@ -287,7 +287,7 @@ The people asking for a device are often beginners. The server instructions say 
 - **Time** is virtual and deterministic: the same project and inputs give the same result, and a
   5 s run takes about 1 s.
 - **Steps**: edits with the same `why` form one step; `undo`, `redo`, `reject_step` (any step, not
-  only the last), `accept_step`. Everything is logged to `<project>/.jumper/actions.jsonl`.
+  only the last), `accept_step`. Everything is logged to `<project>/.fabwright/actions.jsonl`.
 - **Errors** always say what failed, why, and the fix (with "did you mean" suggestions). Act on the
   fix literally.
 - **Results are compact** to save tokens: `get_project` lists parts as one line each, `run` drops
@@ -413,7 +413,7 @@ When the rover hits something, `run` reports `world.first_collision`: `{t_ms, x,
 ## Wi-Fi and the pet AI
 
 An `esp01-wifi` module (Espressif AT firmware, on SoftwareSerial) joins a sandbox Wi-Fi called
-`JumperNet` and can reach one host: `http://ai.jumper/v1/pet?a=talk&f=68&j=68&e=79&n=Pip`, which
+`FabwrightNet` and can reach one host: `http://ai.fabwright/v1/pet?a=talk&f=68&j=68&e=79&n=Pip`, which
 answers `mood|text` (60 characters max). `examples/ai-pet` is the reference: an Uno draws a pet on an
 ILI9341 colour TFT and shows the reply in a speech bubble.
 
@@ -424,8 +424,8 @@ ILI9341 colour TFT and shows the reply in a speech bubble.
 | `set_ai_mode {"mode": "live"}` | A real model (claude-haiku-5-5 through `ANTHROPIC_API_KEY`, else the logged-in `claude` CLI) answers. Fails with the reason when neither exists. |
 | `run_live {"ms": 8000}` | Runs at real time so the live answer arrives while the firmware waits. Not deterministic. `run` and `run_tests` always use the deterministic mock. |
 
-`jumper serve` starts the gateway for the web app's Live mode itself (port `JUMPER_AI_GATEWAY_PORT`,
-default 8787, the next free port when taken; `JUMPER_AI_GATEWAY=off` skips it; the page finds it at
+`fabwright serve` starts the gateway for the web app's Live mode itself (port `FABWRIGHT_AI_GATEWAY_PORT`,
+default 8787, the next free port when taken; `FABWRIGHT_AI_GATEWAY=off` skips it; the page finds it at
 `GET /api/ai-gateway`).
 
 Screenshots draw colour TFT screens with their real pixels. `screenshot {"view": "device", "ms": 6000}`
@@ -481,19 +481,19 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
 
 ## Watching an agent work
 
-- `pnpm start` / `pnpm jumper serve --project <dir>` (add `--no-web` for the live link and MCP without the web app, `--built` to serve `apps/web/dist`) opens the canvas following the folder live: parts pop in,
+- `pnpm start` / `pnpm fabwright serve --project <dir>` (add `--no-web` for the live link and MCP without the web app, `--built` to serve `apps/web/dist`) opens the canvas following the folder live: parts pop in,
   wires draw themselves, an agent cursor points at what is being edited, the step list shows each
   `why` with Accept / Reject, and runs stream LEDs, displays and serial. Any process editing the
   folder (MCP server, CLI, another agent) shows up.
-- `pnpm jumper replay <dir>/.jumper/actions.jsonl --speed 2` plays a session back in the browser.
+- `pnpm fabwright replay <dir>/.fabwright/actions.jsonl --speed 2` plays a session back in the browser.
   `--actor mcp` keeps only the agent's calls (a person's CLI checks in the same folder are left
   out), `--client claude` one client, `--session <sid>` one server process; a mixed log prints the
   counts per actor.
-- `pnpm jumper record <dir>/.jumper/actions.jsonl out.mp4 --speed 2` renders that replay to a video
+- `pnpm fabwright record <dir>/.fabwright/actions.jsonl out.mp4 --speed 2` renders that replay to a video
   (Playwright Chromium + ffmpeg). It keeps only the agent's calls when the log is mixed
   (`--actor all` for everything). Agents call the `record` tool instead: the MP4 lands in
-  `<project>/.jumper/media/`, served at `http://localhost:7780/api/media/<file>`.
-- `viewer_url` / `GET /v/<project id>` on `jumper serve`: the shareable local link that opens the
+  `<project>/.fabwright/media/`, served at `http://localhost:7780/api/media/<file>`.
+- `viewer_url` / `GET /v/<project id>` on `fabwright serve`: the shareable local link that opens the
   project live and starts it running (`?follow=…&autorun=1`).
 
 ## Troubleshooting
@@ -503,27 +503,27 @@ input passes at 0 ms and tests nothing, and `run_tests` warns about it. Part sta
 | `Docker is installed but not running` | Start Docker Desktop (`open -a Docker`), wait for "running", build again. |
 | `the 'docker' command was not found` | Install Docker Desktop. Everything except `build` works without it. |
 | `Could not install the Arduino library '…'` | Check the exact Library Manager name (case-sensitive); the first install needs network. |
-| `jumper.json … is invalid` | The file was edited by hand; the message lists each bad field. |
+| `fabwright.json … is invalid` | The file was edited by hand; the message lists each bad field. |
 | A test fails with `it is 0` right after boot | Add `within_ms`: the firmware may not have drawn / switched yet. |
 | `run_tests` passes with a warning `already held 0 ms after step N` | The check did not wait for the change; compare toward the new value. |
-| `No Jumper server at http://localhost:7780` (`--attach`) | Start it: `pnpm start` in the Jumper repo. |
-| `MCP session '…' is not known to this Jumper server` | The server restarted: reconnect the client (Claude Code: `/mcp`, reconnect). |
+| `No Fabwright server at http://localhost:7780` (`--attach`) | Start it: `pnpm start` in the Fabwright repo. |
+| `MCP session '…' is not known to this Fabwright server` | The server restarted: reconnect the client (Claude Code: `/mcp`, reconnect). |
 | `Port 7780 is in use` (with `--strict-port`) | Another serve runs; use it, or pass `--port`. Without `--strict-port` the next free port is used and printed. |
 | A test fails right after `{"press": …, "hold_ms": N}` and says the hold hid a reaction | Press without `hold_ms`, check with `within_ms`, then release. |
 | `timed out: … Fix: raise the scenario's "timeout_ms"` | Raise it in `write_scenario`, or shorten the waits. |
 | `run_tests` failed and you want to see the screen | `run_tests {"images": true}` attaches the screen at each scenario's first failing check; every result also has `visual`, one line per check with what the device looked like then. |
 | `read_network_log` is empty | The ESP-01 never joined: TX → the board's RX pin, RX ← the board's TX pin through a divider, CH_PD high, and run at least 3 s. |
-| `record: cannot record a video here … playwright install chromium` | Run the command it names once (`pnpm --filter @jumper/web exec playwright install chromium`); meanwhile use `screenshot`. |
-| `viewer_url: no Jumper server is running` | The agent is on a stdio server: start `pnpm start` and connect to `http://localhost:7780/mcp`. |
+| `record: cannot record a video here … playwright install chromium` | Run the command it names once (`pnpm --filter @fabwright/web exec playwright install chromium`); meanwhile use `screenshot`. |
+| `viewer_url: no Fabwright server is running` | The agent is on a stdio server: start `pnpm start` and connect to `http://localhost:7780/mcp`. |
 | `new_project: … already has N parts` | Pass `folder: true` for a new idea; `overwrite: true` only to throw the project away. |
-| A picture of a test's key moment | `screenshot {"path": "shots/x.png", "scenario": "<id>", "at_step": N}` (CLI: `jumper screenshot x.png --scenario <id> --at-step N`). |
+| A picture of a test's key moment | `screenshot {"path": "shots/x.png", "scenario": "<id>", "at_step": N}` (CLI: `fabwright screenshot x.png --scenario <id> --at-step N`). |
 
 ## Limits (honest)
 
-- AVR boards only (Uno, Nano). Wi-Fi only through an ESP-01 on the sandbox network (one host, `ai.jumper`); no ESP32 yet.
+- AVR boards only (Uno, Nano). Wi-Fi only through an ESP-01 on the sandbox network (one host, `ai.fabwright`); no ESP32 yet.
 - Headless `run` ignores `speed` (it always runs as fast as possible, about 5× real time).
 - The CLI is one process per command: simulation state (time, pressed buttons) does not carry over
-  between `jumper run` calls; use the MCP server, `jumper display --ms`, or scenarios for multi-step
+  between `fabwright run` calls; use the MCP server, `fabwright display --ms`, or scenarios for multi-step
   interaction.
 - `fidelity_report` lists what the simulation does not model; always include its
   `testOnRealDevice` list in your final answer.

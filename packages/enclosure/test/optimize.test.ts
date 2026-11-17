@@ -4,7 +4,7 @@
 // with round 7's front-to-back stacker) comes out at most 22 mm thick.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { describe, expect, it } from "vitest";
 import { layoutInput } from "../src/engine.ts";
 import { contains } from "../src/plan.ts";

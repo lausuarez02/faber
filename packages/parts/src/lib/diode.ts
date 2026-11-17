@@ -1,5 +1,5 @@
 // Round 6 (power): shared model for the plain diodes (schottky-diode, generic-diode).
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { round } from "./props.ts";
 
 export interface DiodeModelOptions {

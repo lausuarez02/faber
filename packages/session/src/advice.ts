@@ -6,8 +6,8 @@
  * why (with the mm it saves) and the fix. The same rules feed plan_device's reasoning
  * (`savingFor`, `smallerBoardFor`).
  */
-import { buildNets, type PinRef, type Project } from "@jumper/project-format";
-import type { PartRegistry, PartSpec, PinSpec } from "@jumper/sim-core";
+import { buildNets, type PinRef, type Project } from "@fabwright/project-format";
+import type { PartRegistry, PartSpec, PinSpec } from "@fabwright/sim-core";
 import type { DesignIssue } from "./drc.ts";
 
 /** A 1S LiPo after the power switch: about 3.3 V under load near empty, 4.2 V full. */

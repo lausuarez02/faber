@@ -3,7 +3,7 @@
 // part body runs into a shell, and the plan and a picture per step are among the case's files.
 // Slow (OpenCascade wasm).
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { generateCase } from "../src/engine.ts";
 import { checkMesh, readStl } from "../src/mesh.ts";
 import { muse, specOf } from "./helpers.ts";

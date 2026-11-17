@@ -1,7 +1,7 @@
 # The hardware skill: how Claude (and any agent) learns to build the real thing
 
 A person asks an agent for a device, then asks "what do I need to build it, what do I print, how do I
-put it all inside". Jumper answers that with tools (`get_assembly_plan`, `get_build_kit`) and with
+put it all inside". Fabwright answers that with tools (`get_assembly_plan`, `get_build_kit`) and with
 know-how injected into the agent so it thinks about assembly from the first answer, not after the
 case is printed. The know-how is written once and rendered into every place an agent reads.
 
@@ -29,15 +29,15 @@ renderer picks from the live tool list, so the text never names a tool the serve
 | --- | --- | --- |
 | MCP server instructions | The loop (AGENT_LOOP) ends with a short "Design for assembly" block | `renderInstructionsBlock` |
 | MCP prompts | `design-device` (argument `goal`), `build-kit`, `design-for-assembly` | `renderPrompt` |
-| MCP resource | `jumper://docs/hardware`, the whole guide ([hardware-guide.md](hardware-guide.md)) | `renderGuide` |
-| Claude Code, in a project | `<project>/.claude/skills/jumper-hardware/SKILL.md` and `<project>/CLAUDE.md` importing `AGENTS.md` (Claude Code always loads CLAUDE.md; in the round-12 runs it never picked the skill by itself) | `jumper skill install`, `new_project`, `jumper new`, Open in Agent → Launch |
+| MCP resource | `fabwright://docs/hardware`, the whole guide ([hardware-guide.md](hardware-guide.md)) | `renderGuide` |
+| Claude Code, in a project | `<project>/.claude/skills/fabwright-hardware/SKILL.md` and `<project>/CLAUDE.md` importing `AGENTS.md` (Claude Code always loads CLAUDE.md; in the round-12 runs it never picked the skill by itself) | `fabwright skill install`, `new_project`, `fabwright new`, Open in Agent → Launch |
 | Codex and others | `<project>/AGENTS.md` | same |
-| Claude Code, anywhere | The plugin in [plugins/jumper](../plugins/jumper/README.md): the skill and the MCP server of a running Jumper (`http://localhost:7780/mcp`) | `pnpm gen` |
+| Claude Code, anywhere | The plugin in [plugins/fabwright](../plugins/fabwright/README.md): the skill and the MCP server of a running Fabwright (`http://localhost:7780/mcp`) | `pnpm gen` |
 
-Project files someone wrote by hand are kept unless `--force`; `JUMPER_AGENT_FILES=0` turns writing
-them off. `jumper skill print [--target skill|agents|guide|instructions]` prints any face. Nothing is
+Project files someone wrote by hand are kept unless `--force`; `FABWRIGHT_AGENT_FILES=0` turns writing
+them off. `fabwright skill print [--target skill|agents|guide|instructions]` prints any face. Nothing is
 written to `~/.claude`; the plugin is installed by the person (`claude --plugin-dir
-/path/to/jumper/plugins/jumper` for one session, or `/plugin install`).
+/path/to/fabwright/plugins/fabwright` for one session, or `/plugin install`).
 
 ## What the tools give the agent
 
@@ -52,7 +52,7 @@ written to `~/.claude`; the plugin is installed by the person (`claude --plugin-
 
 ## Keeping it true
 
-`pnpm gen` regenerates `plugins/jumper/skills/jumper-hardware/SKILL.md` and `docs/hardware-guide.md`.
+`pnpm gen` regenerates `plugins/fabwright/skills/fabwright-hardware/SKILL.md` and `docs/hardware-guide.md`.
 `packages/session/test/agent-skill-sync.test.ts` fails when a face names a tool that does not exist
 (or an operation that is neither a tool nor a schema field), when an optional tool is named while
 missing, when a rule's must-say is absent from the instructions, the skill or AGENTS.md, when a

@@ -4,8 +4,8 @@
 // cell (low-battery cut-off) and, as on the real chip, after 32 s with less than 45 mA drawn
 // (light-load auto-off); a KEY press or plugging USB turns it back on. Deterministic: time is
 // the simulation's virtual time.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { clamp, num, round, truthy } from "../../lib/props.ts";
 import { V_CHARGE, V_RECHARGE, V_TRICKLE, V_UVLO } from "../tp4056-charger/model.ts";
 

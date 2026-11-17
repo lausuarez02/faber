@@ -2,7 +2,7 @@
 // seconds' 9 to 11 s before the camera took the picture"). Generic: utterances (a talking part's
 // clips, or text the device sent to a speech API), serial text, camera pictures and requests, each
 // with its virtual time.
-import type { NetEvent, NetView } from "@jumper/device-net";
+import type { NetEvent, NetView } from "@fabwright/device-net";
 import type { SimHost } from "./sim.ts";
 
 export interface Spoken {

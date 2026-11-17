@@ -1,19 +1,19 @@
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
-import { safeParseProject } from "@jumper/project-format";
+import { safeParseProject } from "@fabwright/project-format";
 import { join } from "node:path";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { applyToProject, projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
 import type { ActionEntry } from "./session.ts";
-import type { VisualState } from "@jumper/sim-core";
+import type { VisualState } from "@fabwright/sim-core";
 import type { ColorFrameImage } from "./sim.ts";
 
 /**
  * Round 5, projects track (decision 0003, C3): a project's versions, rebuilt from its append-only
- * action log (.jumper/actions.jsonl). Version N is the N-th ok log line that changed the project or
+ * action log (.fabwright/actions.jsonl). Version N is the N-th ok log line that changed the project or
  * a file. Every such line already holds the whole project after the change, so version N's circuit
  * is exact. Files are rebuilt from the log's file entries plus the undo history (history.json) for
- * writes the log does not carry (template files, undo / reject of a write); a file Jumper never
- * changed is taken as it is on disk now. Built firmware is kept by hash in .jumper/builds/.
+ * writes the log does not carry (template files, undo / reject of a write); a file Fabwright never
+ * changed is taken as it is on disk now. Built firmware is kept by hash in .fabwright/builds/.
  */
 
 export interface VersionChanges {
@@ -61,7 +61,7 @@ export interface VersionDetail {
   version: number;
   summary: VersionSummary;
   project: Project;
-  /** path → content at this version (only files Jumper knows about). */
+  /** path → content at this version (only files Fabwright knows about). */
   files: Record<string, string>;
   /** Paths whose content at this version is not known exactly (truncated in the log). */
   approxFiles: string[];
@@ -83,7 +83,7 @@ const cache = new Map<string, ParsedLog>();
 const LOG_FILE_CAP = 50_000;
 
 function readLog(dir: string): ParsedLog {
-  const file = join(dir, ".jumper", "actions.jsonl");
+  const file = join(dir, ".fabwright", "actions.jsonl");
   if (!existsSync(file)) return { key: "", entries: [], versionIdx: [] };
   const st = statSync(file);
   const key = `${st.size}:${st.mtimeMs}`;
@@ -109,7 +109,7 @@ function readLog(dir: string): ParsedLog {
 }
 
 function readHistory(dir: string): HistoryState | undefined {
-  const f = join(dir, ".jumper", "history.json");
+  const f = join(dir, ".fabwright", "history.json");
   if (!existsSync(f)) return undefined;
   try {
     return JSON.parse(readFileSync(f, "utf8")) as HistoryState;
@@ -206,7 +206,7 @@ function fileEffects(e: ActionEntry, stepOfSeq: Map<number, Step>, steps: Step[]
 
 /**
  * The project before version 1, when the folder had one before its log started (an example copied
- * into a project, a jumper.json written by hand): the first step's "before" values applied back.
+ * into a project, a fabwright.json written by hand): the first step's "before" values applied back.
  * Undefined for a project the log starts from scratch (new_project), so everything shows as added.
  */
 function firstBaseline(dir: string, log: ParsedLog): Project | undefined {
@@ -252,7 +252,7 @@ export function versionCount(dir: string): number {
 /** Every version of the project in `dir`, oldest first. */
 export function listVersions(dir: string): VersionSummary[] {
   const log = readLog(dir);
-  const hf = join(dir, ".jumper", "history.json");
+  const hf = join(dir, ".fabwright", "history.json");
   const key = `${log.key}|${existsSync(hf) ? statSync(hf).mtimeMs : 0}`;
   const hit = listCache.get(dir);
   if (hit && hit.key === key) return hit.versions;
@@ -392,12 +392,12 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
   const summary = listVersions(dir)[n - 1]!;
   const r = replay(dir, log, n);
   // A version line always follows a project line in practice; if the first one is file-only, use the current project file's shape.
-  const project = r.project ?? (JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as Project);
+  const project = r.project ?? (JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as Project);
   const files: Record<string, string> = {};
   for (const [path, content] of r.files) {
     if (content !== null) files[path] = content;
   }
-  // Firmware files Jumper never touched: as they are on disk (they did not change through Jumper).
+  // Firmware files Fabwright never touched: as they are on disk (they did not change through Fabwright).
   for (const path of diskFirmwareFiles(dir)) {
     if (!r.files.has(path) && !(path in files)) files[path] = readFileSync(join(dir, path), "utf8");
   }
@@ -411,7 +411,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
     }
   }
   const hash = summary.firmwareHash;
-  const hexFile = hash ? join(dir, ".jumper", "builds", `${hash}.hex`) : undefined;
+  const hexFile = hash ? join(dir, ".fabwright", "builds", `${hash}.hex`) : undefined;
   const frame = frameFor(log, n);
   return {
     version: n,
@@ -425,7 +425,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
   };
 }
 
-/** Files at version n as path → content | null (null = did not exist then); only paths Jumper knows. */
+/** Files at version n as path → content | null (null = did not exist then); only paths Fabwright knows. */
 export function versionFiles(dir: string, n: number): Map<string, string | null> {
   return replay(dir, readLog(dir), n).files;
 }
@@ -506,10 +506,10 @@ function testsLine(line: string): { passed: number; total: number; at?: string }
  * Round 6 (switch): a version for the project exactly as it is on disk now, written straight to the
  * action log (not an undoable step: nothing changed). Opening an example calls it on the fresh copy,
  * so "the example as it came" is a version the person can always restore. Returns the version
- * number, or undefined when jumper.json is missing or invalid.
+ * number, or undefined when fabwright.json is missing or invalid.
  */
 export function recordSnapshot(dir: string, opts: { op: string; why: string; summary: string; actor?: string; args?: Record<string, unknown> }): number | undefined {
-  const file = join(dir, "jumper.json");
+  const file = join(dir, "fabwright.json");
   if (!existsSync(file)) return undefined;
   const parsed = safeParseProject(readFileSync(file, "utf8"));
   if (!parsed.ok) return undefined;
@@ -525,7 +525,7 @@ export function recordSnapshot(dir: string, opts: { op: string; why: string; sum
     summary: opts.summary,
     project: parsed.project,
   };
-  mkdirSync(join(dir, ".jumper"), { recursive: true });
-  appendFileSync(join(dir, ".jumper", "actions.jsonl"), JSON.stringify(entry) + "\n");
+  mkdirSync(join(dir, ".fabwright"), { recursive: true });
+  appendFileSync(join(dir, ".fabwright", "actions.jsonl"), JSON.stringify(entry) + "\n");
   return versionCount(dir);
 }

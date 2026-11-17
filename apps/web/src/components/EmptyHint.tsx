@@ -1,5 +1,5 @@
 import { LayoutGrid, Plug, Plus, Sparkles } from "lucide-react";
-import { useJumper } from "../lib/app.ts";
+import { useFabwright } from "../lib/app.ts";
 import { exampleInfos } from "../lib/examples.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
@@ -16,8 +16,8 @@ import { useProjectsUi } from "../projects/store.ts";
  * "Start here" card under it.
  */
 export function EmptyHint() {
-  const parts = useJumper((s) => s.project.parts.length);
-  const wires = useJumper((s) => s.project.wires.length);
+  const parts = useFabwright((s) => s.project.parts.length);
+  const wires = useFabwright((s) => s.project.wires.length);
   const popover = useUi((s) => s.popover);
   const overlay = useProjectsUi((s) => s.home || s.history);
   if (overlay) return null;

@@ -290,7 +290,7 @@
         "min": 4.75,
         "max": 5.25
       },
-      "description": "USB 5 V (VBUS), straight from the USB connector when a cable is plugged in (jumper.json power.usb, the default). Use it for 5 V parts, never on a GPIO. It reaches VSYS through the on-board Schottky diode, so a battery on VSYS never back-feeds USB."
+      "description": "USB 5 V (VBUS), straight from the USB connector when a cable is plugged in (fabwright.json power.usb, the default). Use it for 5 V parts, never on a GPIO. It reaches VSYS through the on-board Schottky diode, so a battery on VSYS never back-feeds USB."
     },
     {
       "id": "VSYS",
@@ -334,7 +334,7 @@
         "min": 3.2,
         "max": 3.4
       },
-      "description": "3.3 V output of the on-board buck-boost regulator (it regulates from VSYS 1.8 to 5.5 V). Keep the load modest (Jumper checks against 300 mA)."
+      "description": "3.3 V output of the on-board buck-boost regulator (it regulates from VSYS 1.8 to 5.5 V). Keep the load modest (Fabwright checks against 300 mA)."
     },
     {
       "id": "ADC_VREF",

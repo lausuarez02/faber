@@ -3,7 +3,7 @@ import { safeParseProject } from "./index.ts";
 
 // Decision 0004 (R2, R3): the round-6 project fields are optional and validated.
 describe("round 6 project fields", () => {
-  const base = { format: "jumper/1", name: "Muse", parts: [{ id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0 }] };
+  const base = { format: "fabwright/1", name: "Muse", parts: [{ id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0 }] };
 
   it("old projects parse unchanged", () => {
     const r = safeParseProject(base);

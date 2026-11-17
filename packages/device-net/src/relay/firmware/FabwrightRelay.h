@@ -1,52 +1,52 @@
 // SPDX-License-Identifier: MIT
-// JumperRelay.h: reach any API through your own relay, with no API key in the firmware.
-// Copyright (c) Jumper Authors. MIT License.
+// FabwrightRelay.h: reach any API through your own relay, with no API key in the firmware.
+// Copyright (c) Fabwright Authors. MIT License.
 //
-//   #include "JumperRelay.h"
-//   client.setCACert(JUMPER_RELAY_ROOT_CA);            // an https:// relay (NetworkClientSecure)
-//   http.begin(client, jumperRelayUrl("api.example.com", "/v1/forecast?lat=1"));
-//   http.addHeader(JUMPER_TOKEN_HEADER, JUMPER_DEVICE_TOKEN);
+//   #include "FabwrightRelay.h"
+//   client.setCACert(FABWRIGHT_RELAY_ROOT_CA);            // an https:// relay (NetworkClientSecure)
+//   http.begin(client, fabwrightRelayUrl("api.example.com", "/v1/forecast?lat=1"));
+//   http.addHeader(FABWRIGHT_TOKEN_HEADER, FABWRIGHT_DEVICE_TOKEN);
 //   // the relay adds the API key (relay.config.mjs) and streams the answer back
 //
-// The values come from jumper_device.h:
-//   - in Jumper's simulator, the build adds one with the sandbox relay (the simulator plays the relay
+// The values come from fabwright_device.h:
+//   - in Fabwright's simulator, the build adds one with the sandbox relay (the simulator plays the relay
 //     with the same rules: allow list, token, limits) and a simulation token;
-//   - for your own device, `jumper relay device-header` writes it into the sketch folder from your
-//     .env (RELAY_URL, DEVICE_TOKEN, WIFI_SSID, WIFI_PASSWORD). It is git-ignored, and Jumper's own
+//   - for your own device, `fabwright relay device-header` writes it into the sketch folder from your
+//     .env (RELAY_URL, DEVICE_TOKEN, WIFI_SSID, WIFI_PASSWORD). It is git-ignored, and Fabwright's own
 //     builds (simulator, factory pack, build kit) never compile it, so a shared firmware file never
 //     carries your token or Wi-Fi password.
-// Without jumper_device.h, jumperRelayReady() is false: print why instead of calling out.
+// Without fabwright_device.h, fabwrightRelayReady() is false: print why instead of calling out.
 #pragma once
 #include <Arduino.h>
 
-#if __has_include("jumper_device.h")
-#include "jumper_device.h"
+#if __has_include("fabwright_device.h")
+#include "fabwright_device.h"
 #endif
 
-#ifndef JUMPER_RELAY_URL
-#define JUMPER_RELAY_URL ""
+#ifndef FABWRIGHT_RELAY_URL
+#define FABWRIGHT_RELAY_URL ""
 #endif
-#ifndef JUMPER_DEVICE_TOKEN
-#define JUMPER_DEVICE_TOKEN ""
+#ifndef FABWRIGHT_DEVICE_TOKEN
+#define FABWRIGHT_DEVICE_TOKEN ""
 #endif
-#ifndef JUMPER_WIFI_SSID
-#define JUMPER_WIFI_SSID ""
+#ifndef FABWRIGHT_WIFI_SSID
+#define FABWRIGHT_WIFI_SSID ""
 #endif
-#ifndef JUMPER_WIFI_PASSWORD
-#define JUMPER_WIFI_PASSWORD ""
+#ifndef FABWRIGHT_WIFI_PASSWORD
+#define FABWRIGHT_WIFI_PASSWORD ""
 #endif
-// JUMPER_RELAY_ROOT_CA: the root CA(s) (PEM) for client.setCACert(JUMPER_RELAY_ROOT_CA) with an HTTPS relay.
+// FABWRIGHT_RELAY_ROOT_CA: the root CA(s) (PEM) for client.setCACert(FABWRIGHT_RELAY_ROOT_CA) with an HTTPS relay.
 // The simulator also trusts its own sandbox CA (the Wi-Fi/TLS shim), so the same call works there.
 // Default trust for an HTTPS relay: public roots that sign Cloudflare (workers.dev: Google Trust Services
 // WE1 -> GTS Root R4, checked 2026-11-12) and Let's Encrypt certificates. Pass your own with
-// `jumper relay device-header --ca <file.pem>` when your relay's certificate comes from another CA.
+// `fabwright relay device-header --ca <file.pem>` when your relay's certificate comes from another CA.
 //   /C=US/O=Internet Security Research Group/CN=ISRG Root X1  SHA-256 96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6
 //   /C=US/O=Internet Security Research Group/CN=ISRG Root X2  SHA-256 69:72:9B:8E:15:A8:6E:FC:17:7A:57:AF:B7:17:1D:FC:64:AD:D2:8C:2F:CA:8C:F1:50:7E:34:45:3C:CB:14:70
 //   /C=US/O=Google Trust Services LLC/CN=GTS Root R1  SHA-256 D9:47:43:2A:BD:E7:B7:FA:90:FC:2E:6B:59:10:1B:12:80:E0:E1:C7:E4:E4:0F:A3:C6:88:7F:FF:57:A7:F4:CF
 //   /C=US/O=Google Trust Services LLC/CN=GTS Root R4  SHA-256 34:9D:FA:40:58:C5:E2:63:12:3B:39:8A:E7:95:57:3C:4E:13:13:C8:3F:E6:8F:93:55:6C:D5:E8:03:1B:3C:7D
 //   /C=BE/O=GlobalSign nv-sa/OU=Root CA/CN=GlobalSign Root CA  SHA-256 EB:D4:10:40:E4:BB:3E:C7:42:C9:E3:81:D3:1E:F2:A4:1A:48:B6:68:5C:96:E7:CE:F3:C1:DF:6C:D4:33:1C:99
-#ifndef JUMPER_RELAY_ROOT_CA
-#define JUMPER_RELAY_ROOT_CA \
+#ifndef FABWRIGHT_RELAY_ROOT_CA
+#define FABWRIGHT_RELAY_ROOT_CA \
   "-----BEGIN CERTIFICATE-----\n" \
   "MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\n" \
   "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n" \
@@ -159,21 +159,21 @@
   "-----END CERTIFICATE-----\n"
 #endif
 
-#define JUMPER_TOKEN_HEADER "X-Device-Token"
+#define FABWRIGHT_TOKEN_HEADER "X-Device-Token"
 
-/** True when the build has a relay and a device token (jumper_device.h). */
-inline bool jumperRelayReady() { return sizeof(JUMPER_RELAY_URL) > 1 && sizeof(JUMPER_DEVICE_TOKEN) > 1; }
+/** True when the build has a relay and a device token (fabwright_device.h). */
+inline bool fabwrightRelayReady() { return sizeof(FABWRIGHT_RELAY_URL) > 1 && sizeof(FABWRIGHT_DEVICE_TOKEN) > 1; }
 
-/** Why jumperRelayReady() is false, in words to print on Serial. */
-inline const char* jumperRelayWhy() {
-  if (jumperRelayReady()) return "relay configured";
-  return "no relay in this build: run `jumper relay device-header` in the project (it writes jumper_device.h "
+/** Why fabwrightRelayReady() is false, in words to print on Serial. */
+inline const char* fabwrightRelayWhy() {
+  if (fabwrightRelayReady()) return "relay configured";
+  return "no relay in this build: run `fabwright relay device-header` in the project (it writes fabwright_device.h "
          "from your .env), then build and flash from the sketch folder";
 }
 
 /** <RELAY_URL>/<host><path>: the relay calls https://<host><path> with the keys added. */
-inline String jumperRelayUrl(const char* host, const char* path) {
-  String u = JUMPER_RELAY_URL;
+inline String fabwrightRelayUrl(const char* host, const char* path) {
+  String u = FABWRIGHT_RELAY_URL;
   while (u.endsWith("/")) u.remove(u.length() - 1);
   u += '/';
   u += host;
@@ -183,7 +183,7 @@ inline String jumperRelayUrl(const char* host, const char* path) {
 }
 
 /** The relay split up, for clients that take host, port and path apart (WebSocket, MQTT over WS). */
-struct JumperRelayEndpoint {
+struct FabwrightRelayEndpoint {
   String host;
   uint16_t port;
   bool tls;
@@ -191,9 +191,9 @@ struct JumperRelayEndpoint {
   String path;
 };
 
-inline JumperRelayEndpoint jumperRelayEndpoint(const char* host, const char* path) {
-  JumperRelayEndpoint e;
-  String u = JUMPER_RELAY_URL;
+inline FabwrightRelayEndpoint fabwrightRelayEndpoint(const char* host, const char* path) {
+  FabwrightRelayEndpoint e;
+  String u = FABWRIGHT_RELAY_URL;
   e.tls = u.startsWith("https://");
   int start = u.indexOf("://");
   start = start < 0 ? 0 : start + 3;

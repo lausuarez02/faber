@@ -1,8 +1,8 @@
-// JumperEth example: networking through QEMU's OpenCores Ethernet + slirp, HTTP GET to the host and the internet.
+// FabwrightEth example: networking through QEMU's OpenCores Ethernet + slirp, HTTP GET to the host and the internet.
 #include <Network.h>
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
-#include <jumper_eth.h>
+#include <fabwright_eth.h>
 #ifndef HOST_URL
 #define HOST_URL "http://host.docker.internal:8765/hello"
 #endif
@@ -18,7 +18,7 @@ static void get(const char *url, bool tls) {
 void setup() {
   Serial.begin(115200);
   Network.begin();
-  esp_netif_t *n = jumper_eth_begin();
+  esp_netif_t *n = fabwright_eth_begin();
   Serial.printf("eth netif %p\n", n);
   esp_netif_ip_info_t ip = {};
   uint32_t t = millis();

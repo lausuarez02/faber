@@ -4,7 +4,7 @@
 // 74 x 96 mm outline) made it thick, and nothing said what they cost.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { describe, expect, it } from "vitest";
 import { choiceCosts, choicesOf, mergeChanges } from "../src/costs.ts";
 import { layoutInput } from "../src/engine.ts";

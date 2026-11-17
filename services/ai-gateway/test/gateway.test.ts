@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createSandboxNetwork, formatReply, mockReply, parseHttpRequest, parsePetQuery, PetAi, sanitizeReply, type LiveProvider } from "../src/index.ts";
 import { chooseProvider, startGatewayServer } from "../src/node/index.ts";
 
-const GET = (q: string) => `GET /v1/pet?${q} HTTP/1.0\r\nHost: ai.jumper\r\n\r\n`;
+const GET = (q: string) => `GET /v1/pet?${q} HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n`;
 
 describe("pet protocol", () => {
   it("parses the query with defaults and clamps stats", () => {
@@ -47,11 +47,11 @@ describe("pet protocol", () => {
 describe("sandbox network", () => {
   it("joins, resolves, answers /v1/pet with the mock after a virtual latency, and logs it", () => {
     const net = createSandboxNetwork();
-    expect(net.join("JumperNet", "", 100, "esp")).toBe(0);
+    expect(net.join("FabwrightNet", "", 100, "esp")).toBe(0);
     expect(net.join("HomeWifi", "x", 100, "esp")).toBe(3);
-    expect(net.resolve("ai.jumper")).toBe("10.0.0.2");
+    expect(net.resolve("ai.fabwright")).toBe("10.0.0.2");
     expect(net.resolve("example.com")).toBeUndefined();
-    const s = net.open({ host: "ai.jumper", ip: "10.0.0.2", port: 80, tls: false, tMs: 200, partId: "esp" });
+    const s = net.open({ host: "ai.fabwright", ip: "10.0.0.2", port: 80, tls: false, tMs: 200, partId: "esp" });
     if ("error" in s) throw new Error("refused");
     s.write(GET("a=talk&f=50&j=50&e=50").slice(0, 20), 300);
     s.write(GET("a=talk&f=50&j=50&e=50").slice(20), 301);
@@ -69,13 +69,13 @@ describe("sandbox network", () => {
 
   it("refuses wrong ports and reports wifi_drop", () => {
     const net = createSandboxNetwork();
-    expect(net.open({ host: "ai.jumper", ip: "10.0.0.2", port: 8080, tls: false, tMs: 0, partId: "esp" })).toEqual({ error: "refused" });
+    expect(net.open({ host: "ai.fabwright", ip: "10.0.0.2", port: 8080, tls: false, tMs: 0, partId: "esp" })).toEqual({ error: "refused" });
     net.setWifiDrop(true, 50);
     expect(net.linkUp()).toBe(false);
     expect(net.accessPoints()).toEqual([]);
-    expect(net.join("JumperNet", "", 60, "esp")).toBe(3);
+    expect(net.join("FabwrightNet", "", 60, "esp")).toBe(3);
     net.setWifiDrop(false, 70);
-    expect(net.join("JumperNet", "", 80, "esp")).toBe(0);
+    expect(net.join("FabwrightNet", "", 80, "esp")).toBe(0);
   });
 
   it("live mode: the answer arrives when the provider resolves; mock while live is not allowed", async () => {
@@ -84,7 +84,7 @@ describe("sandbox network", () => {
     let allowed = false;
     const net = createSandboxNetwork({ ai: new PetAi({ mode: "live", live, minIntervalMs: 0 }), liveAllowed: () => allowed });
     const open = () => {
-      const s = net.open({ host: "ai.jumper", ip: "10.0.0.2", port: 80, tls: false, tMs: 0, partId: "esp" });
+      const s = net.open({ host: "ai.fabwright", ip: "10.0.0.2", port: 80, tls: false, tMs: 0, partId: "esp" });
       if ("error" in s) throw new Error("refused");
       return s;
     };
@@ -138,7 +138,7 @@ describe("gateway HTTP server (for real boards)", () => {
     try {
       const ok = await fetch(`${url}/v1/pet?a=talk&f=40&j=70&e=80`);
       expect(ok.status).toBe(200);
-      expect(ok.headers.get("x-jumper-provider")).toBe("mock");
+      expect(ok.headers.get("x-fabwright-provider")).toBe("mock");
       expect(await ok.text()).toMatch(/^(happy|hungry|sleepy|sad|excited)\|[ -~]{1,60}$/);
       const bad = await fetch(`${url}/v1/pet?a=dance`);
       expect(bad.status).toBe(400);
@@ -149,7 +149,7 @@ describe("gateway HTTP server (for real boards)", () => {
   });
 });
 
-describe.runIf(process.env.JUMPER_LIVE_AI === "1")("live provider (JUMPER_LIVE_AI=1)", () => {
+describe.runIf(process.env.FABWRIGHT_LIVE_AI === "1")("live provider (FABWRIGHT_LIVE_AI=1)", () => {
   it("the chosen provider answers in the pet format", async () => {
     const c = chooseProvider({ env: { ...process.env, VITEST: "" } });
     expect(c.provider, c.reason).toBeDefined();

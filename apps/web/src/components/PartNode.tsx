@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import type { PartDefinition } from "@jumper/sim-core";
-import type { Rotation } from "@jumper/project-format";
+import type { PartDefinition } from "@fabwright/sim-core";
+import type { Rotation } from "@fabwright/project-format";
 import { pinSide, rotatedPin, rotatedSize, type Side } from "../lib/parts.ts";
 import { engine } from "../lib/app.ts";
 import { categoryIcon } from "../shell/icons.ts";

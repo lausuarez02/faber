@@ -17,7 +17,7 @@ export interface InstallResult {
   files: { path: string; action: "written" | "updated" | "unchanged" | "kept"; why?: string }[];
 }
 
-/** The files a project gets so any agent opened in it knows Jumper's hardware loop. */
+/** The files a project gets so any agent opened in it knows Fabwright's hardware loop. */
 export function projectAgentFiles(o: RenderOptions & { projectName?: string }): AgentFile[] {
   return [
     { path: SKILL_PATH, content: renderSkillMd(o) },
@@ -29,7 +29,7 @@ export function projectAgentFiles(o: RenderOptions & { projectName?: string }): 
 
 /**
  * Write the project-level agent files (never anything outside `dir`, never the person's global
- * config). A file Jumper wrote (it carries MARKER) is rewritten when the guide changed; a file
+ * config). A file Fabwright wrote (it carries MARKER) is rewritten when the guide changed; a file
  * someone else wrote is kept unless force (and the result says why and how to get ours).
  */
 export function installProjectFiles(dir: string, o: RenderOptions & { projectName?: string; force?: boolean }): InstallResult {
@@ -43,7 +43,7 @@ export function installProjectFiles(dir: string, o: RenderOptions & { projectNam
         continue;
       }
       if (!old.includes(MARKER) && !o.force) {
-        files.push({ path: f.path, action: "kept", why: `${f.path} was not written by Jumper, so it was left as it is. Fix: add a line pointing to ${SKILL_PATH}, or run jumper skill install --project ${dir} --force to replace it.` });
+        files.push({ path: f.path, action: "kept", why: `${f.path} was not written by Fabwright, so it was left as it is. Fix: add a line pointing to ${SKILL_PATH}, or run fabwright skill install --project ${dir} --force to replace it.` });
         continue;
       }
       writeFileSync(abs, f.content);

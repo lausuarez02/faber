@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { firmwareText } from "../firmware-text.ts";
 import { join } from "node:path";
-import type { CaseReport } from "@jumper/enclosure";
+import type { CaseReport } from "@fabwright/enclosure";
 import { assemblyStyle, colorName, wireCuts, type WireCut } from "../assembly.ts";
 import { fidelityReport } from "../fidelity.ts";
 import { pinPositions } from "../manufacturing.ts";
@@ -40,9 +40,9 @@ interface LayoutCache {
   bosses: number;
 }
 
-/** Pin positions from the case layout (the factory pack's wire lengths), cached per case hash in .jumper/kit-layout.json. */
+/** Pin positions from the case layout (the factory pack's wire lengths), cached per case hash in .fabwright/kit-layout.json. */
 async function casePositions(s: ProjectSession, report: CaseReport): Promise<LayoutCache | undefined> {
-  const file = join(s.dir, ".jumper", "kit-layout.json");
+  const file = join(s.dir, ".fabwright", "kit-layout.json");
   if (existsSync(file)) {
     try {
       const c = JSON.parse(readFileSync(file, "utf8")) as LayoutCache;
@@ -53,11 +53,11 @@ async function casePositions(s: ProjectSession, report: CaseReport): Promise<Lay
   }
   if (!s.project.enclosure) return undefined;
   const reg = s.registry;
-  const { layoutCase } = await import("@jumper/enclosure");
+  const { layoutCase } = await import("@fabwright/enclosure");
   const L = layoutCase({ parts: s.project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: s.project.enclosure });
   const c: LayoutCache = { hash: report.hash, positions: pinPositions(L.placed, (t) => reg.get(t)?.spec), bosses: L.bosses.length };
   try {
-    mkdirSync(join(s.dir, ".jumper"), { recursive: true });
+    mkdirSync(join(s.dir, ".fabwright"), { recursive: true });
     writeFileSync(file, JSON.stringify(c));
   } catch {
     // a read-only project still gets its kit
@@ -110,8 +110,8 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   const screws = screwsOn ? { count: layout?.bosses || 4, size: "M2 x 6 mm pan head (length: enclosure PRINT.md)", inserts: "M2 x 3 mm brass heat-set insert" } : undefined;
 
   const has = (rel: string) => existsSync(join(caseDir, rel));
-  const print = await printPlan({ caseDir, report, ...(stale ? { stale } : {}), slicer: o.slicer ?? "auto", cacheFile: join(s.dir, ".jumper", "kit-slicer.json") });
-  const { specWithProps } = await import("@jumper/enclosure");
+  const print = await printPlan({ caseDir, report, ...(stale ? { stale } : {}), slicer: o.slicer ?? "auto", cacheFile: join(s.dir, ".fabwright", "kit-slicer.json") });
+  const { specWithProps } = await import("@fabwright/enclosure");
   const sizeOf = (type: string, props: Record<string, unknown> | undefined) => {
     const spec = reg.get(type)?.spec;
     if (!spec) return undefined;
@@ -143,7 +143,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   const check_first = drc
     .map((line) => /^(error|warning)\s+\[([^\]]+)\]\s+(.*)$/s.exec(line))
     .filter((m): m is RegExpExecArray => !!m && !/^(assembly|case)-/.test(m[2]!))
-    .map((m) => ({ severity: m[1] as "error" | "warning", code: m[2]!, problem: m[2]!.replace(/-/g, " "), why: kitWords(m[3]!.replace(/\s*Fix:.*$/s, ""), { ref: refWords(project, reg) }), fix: kitWords(/Fix:\s*(.*)$/s.exec(m[3]!)?.[1] ?? "see the design check in Jumper", { ref: refWords(project, reg) }) }));
+    .map((m) => ({ severity: m[1] as "error" | "warning", code: m[2]!, problem: m[2]!.replace(/-/g, " "), why: kitWords(m[3]!.replace(/\s*Fix:.*$/s, ""), { ref: refWords(project, reg) }), fix: kitWords(/Fix:\s*(.*)$/s.exec(m[3]!)?.[1] ?? "see the design check in Fabwright", { ref: refWords(project, reg) }) }));
   for (const st of steps) {
     st.do = st.do.map((d) => peopleWords(d, toolNames));
     st.cautions = st.cautions.map((c) => peopleWords(c, toolNames));

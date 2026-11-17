@@ -26,7 +26,7 @@
       "x": 50.0,
       "y": 14,
       "type": "power",
-      "description": "3.3 V out of the on-board MPM3610 buck regulator (Jumper checks against 300 mA)."
+      "description": "3.3 V out of the on-board MPM3610 buck regulator (Fabwright checks against 300 mA)."
     },
     {
       "id": "AREF",
@@ -172,7 +172,7 @@
       "x": 250.0,
       "y": 14,
       "type": "power",
-      "description": "VUSB: the USB 5 V. On the real board this pin is connected only when the VUSB jumper on the back is soldered closed; Jumper models it closed."
+      "description": "VUSB: the USB 5 V. On the real board this pin is connected only when the VUSB jumper on the back is soldered closed; Fabwright models it closed."
     },
     {
       "id": "RST.1",
@@ -569,6 +569,6 @@
   },
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Jumper's parts). Run with Renode 1.17.0's native build; the jumper/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Fabwright's parts). Run with Renode 1.17.0's native build; the fabwright/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
   }
 }

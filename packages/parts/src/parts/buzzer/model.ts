@@ -1,4 +1,4 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { clamp, round } from "../../lib/props.ts";
 
 /** Equivalent DC load of a 5 V active buzzer (≈ 25 mA at 5 V including the blocking diode). */

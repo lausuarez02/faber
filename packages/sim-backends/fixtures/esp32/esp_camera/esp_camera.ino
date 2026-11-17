@@ -1,6 +1,6 @@
 // Round 13 camera fixture: Espressif's esp32-camera API exactly as a sketch for a XIAO ESP32-S3
-// Sense (its camera pins) or an AI-Thinker ESP32-CAM (on the ESP32) uses it. In Jumper's simulation build the API is wrapped and the
-// frames come from Jumper (a test image); on the board the same source runs the real driver.
+// Sense (its camera pins) or an AI-Thinker ESP32-CAM (on the ESP32) uses it. In Fabwright's simulation build the API is wrapped and the
+// frames come from Fabwright (a test image); on the board the same source runs the real driver.
 // Prints what it captured so a test can check sizes and bytes.
 #include "esp_camera.h"
 

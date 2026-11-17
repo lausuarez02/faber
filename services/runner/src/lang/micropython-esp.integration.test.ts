@@ -1,11 +1,11 @@
-// MicroPython on the ESP32 family in Jumper's QEMU: the official firmware + a littlefs image with
-// main.py, booted through the bridge. Needs jumper/qemu-esp (Docker) or a native build; skipped otherwise.
+// MicroPython on the ESP32 family in Fabwright's QEMU: the official firmware + a littlefs image with
+// main.py, booted through the bridge. Needs fabwright/qemu-esp (Docker) or a native build; skipped otherwise.
 import { afterAll, describe, expect, it } from "vitest";
-import { I2cBus } from "@jumper/sim-core";
-import { QemuEspBackend, qemuImageAvailable } from "@jumper/sim-backends/qemu-esp";
+import { I2cBus } from "@fabwright/sim-core";
+import { QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
 import { composeMicroPython } from "./micropython.ts";
 
-// The current QEMU image (Docker), or a native build with JUMPER_QEMU_ESP_RUNTIME=native.
+// The current QEMU image (Docker), or a native build with FABWRIGHT_QEMU_ESP_RUNTIME=native.
 const available = qemuImageAvailable();
 
 function run(be: QemuEspBackend, ms: number) {
@@ -38,7 +38,7 @@ describe.skipIf(!available)("MicroPython in QEMU (ESP32 family)", { timeout: 180
       run(be, 4000);
       expect(serial).toContain("blink 3");
       expect(serial).toContain("done");
-      expect(serial).not.toContain("Performing initial setup"); // the filesystem Jumper wrote mounted as is
+      expect(serial).not.toContain("Performing initial setup"); // the filesystem Fabwright wrote mounted as is
       expect(edges.filter((v, i) => i === 0 || v !== edges[i - 1]).length).toBeGreaterThanOrEqual(4);
       expect(serial).toContain("scan [60]");
       expect(writes).toEqual([0x80, 0xaf]);

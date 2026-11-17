@@ -4,14 +4,14 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
+import { parseProject } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
 import { registry } from "./registry.gen.ts";
 
 const hex = readFileSync(fileURLToPath(new URL("../../../examples/rover/firmware/rover.hex", import.meta.url)), "utf8");
 const project = parseProject({
-  format: "jumper/1",
+  format: "fabwright/1",
   name: "sonar",
   parts: [
     { id: "uno", type: "arduino-uno", x: 0, y: 0 },

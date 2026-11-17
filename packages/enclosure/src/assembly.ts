@@ -1,5 +1,5 @@
 /**
- * Round 12: the assembly plan. Jumper works out HOW the parts go inside, at design time, for any
+ * Round 12: the assembly plan. Fabwright works out HOW the parts go inside, at design time, for any
  * case shape, and checks it (design for assembly):
  *
  * - which shell each part goes into and in what order (a part covered by another goes in first;
@@ -16,9 +16,9 @@
  *
  * Pure (no CAD): the layout carries the mounts (mounts.ts); the engine renders a picture per step.
  */
-import type { Project } from "@jumper/project-format";
-import type { PartSpec } from "@jumper/sim-core";
-import { buildNets } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
+import type { PartSpec } from "@fabwright/sim-core";
+import { buildNets } from "@fabwright/project-format";
 import type { Layout, Placed } from "./layout.ts";
 import type { Mount } from "./mounts.ts";
 import { isHeldMech } from "./held.ts";
@@ -189,7 +189,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
     for (const b of L.placed) {
       if (a === b || shellOf(a.mech.id) !== "front" || shellOf(b.mech.id) !== "back") continue;
       if (!xyOverlap(env(a), env(b), -0.05) || a.max[2] > b.min[2] + 0.05) continue;
-      checks.push({ id: "assembly-close", ok: false, severity: "error", message: `The case cannot close: ${a.mech.id} goes into the front shell but sits behind ${b.mech.id} of the back shell (they overlap ${r1(Math.min(a.max[0], b.max[0]) - Math.max(a.min[0], b.min[0]))} x ${r1(Math.min(a.max[1], b.max[1]) - Math.max(a.min[1], b.min[1]))} mm seen from the front). Why: the front shell comes straight down onto the back one, so ${a.mech.id} would pass through ${b.mech.id}. Fix: put ${a.mech.id} on another face, or let Jumper place both (remove their placements).`, parts: [a.mech.id, b.mech.id], facts: { front_part_back_z: r1(a.min[2]), back_part_front_z: r1(b.max[2]) } });
+      checks.push({ id: "assembly-close", ok: false, severity: "error", message: `The case cannot close: ${a.mech.id} goes into the front shell but sits behind ${b.mech.id} of the back shell (they overlap ${r1(Math.min(a.max[0], b.max[0]) - Math.max(a.min[0], b.min[0]))} x ${r1(Math.min(a.max[1], b.max[1]) - Math.max(a.min[1], b.min[1]))} mm seen from the front). Why: the front shell comes straight down onto the back one, so ${a.mech.id} would pass through ${b.mech.id}. Fix: put ${a.mech.id} on another face, or let Fabwright place both (remove their placements).`, parts: [a.mech.id, b.mech.id], facts: { front_part_back_z: r1(a.min[2]), back_part_front_z: r1(b.max[2]) } });
     }
 
   // ---------------------------------------------------------------- 2. insertion order per shell
@@ -258,7 +258,7 @@ export function assemblyPlan(input: AssemblyInput): AssemblyPlan {
     }
     order[shell] = seq;
   }
-  if (conflicts.length) checks.push({ id: "assembly-insert", ok: false, severity: "error", message: `No order puts every part in: ${conflicts.join("; ")}. Why: each one blocks the other's way in. Fix: put one of them on another face or layer with placements, or let Jumper place them (remove their placements).`, parts: [...new Set(conflicts.flatMap((c) => c.split(" ").filter((w) => byId.has(w))))] });
+  if (conflicts.length) checks.push({ id: "assembly-insert", ok: false, severity: "error", message: `No order puts every part in: ${conflicts.join("; ")}. Why: each one blocks the other's way in. Fix: put one of them on another face or layer with placements, or let Fabwright place them (remove their placements).`, parts: [...new Set(conflicts.flatMap((c) => c.split(" ").filter((w) => byId.has(w))))] });
 
   // a cell nothing goes over: placed last (with the battery step); one under other parts goes in in order, connected last
   const deferred = new Set<string>();

@@ -1,7 +1,7 @@
 import { WebcamIndicator } from "./interact/CameraPanel.tsx";
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
-import { engine, loadInitialFirmware, useJumper } from "./lib/app.ts";
+import { engine, loadInitialFirmware, useFabwright } from "./lib/app.ts";
 import { partDefinitions } from "./lib/parts.ts";
 import { useIsPhone, useUi } from "./lib/ui.ts";
 import { Canvas } from "./components/Canvas.tsx";
@@ -24,7 +24,7 @@ function useKeyboard() {
       const t = e.target as HTMLElement | null;
       if (t && t.closest("input, textarea, select, [contenteditable=true]") !== null) return;
       const mod = e.metaKey || e.ctrlKey;
-      const s = useJumper.getState();
+      const s = useFabwright.getState();
       const ui = useUi.getState();
       const key = e.key.toLowerCase();
       if (mod && key === "z") {
@@ -46,7 +46,7 @@ function useKeyboard() {
       } else if (key === "r") {
         s.rotateSelected();
       } else if (key === "c" && s.selectedWires.length) {
-        for (const w of s.selectedWires) useJumper.getState().cycleWireColor(w);
+        for (const w of s.selectedWires) useFabwright.getState().cycleWireColor(w);
       } else if (key === " " && t?.tagName !== "BUTTON") {
         e.preventDefault();
         if (s.run === "running") engine.pause();
@@ -71,7 +71,7 @@ function useKeyboard() {
 }
 
 function useTheme() {
-  const theme = useJumper((s) => s.theme);
+  const theme = useFabwright((s) => s.theme);
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "system") root.removeAttribute("data-theme");
@@ -122,7 +122,7 @@ export function App() {
   useTheme();
   const phone = useIsPhone();
   useAutoInspector(phone);
-  const firmware = useJumper((s) => s.firmware.status);
+  const firmware = useFabwright((s) => s.firmware.status);
   const tool = useUi((s) => s.tool);
   const panelCount = useUi((s) => s.panels.length);
   const device = useUi((s) => s.device);

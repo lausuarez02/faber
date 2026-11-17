@@ -1,5 +1,5 @@
-// Round 10 (network): the Network panel for boards on Jumper's device network (ESP32 family in the
-// emulator). Polls jumper serve once a second while open: every request (method, host, path,
+// Round 10 (network): the Network panel for boards on Fabwright's device network (ESP32 family in the
+// emulator). Polls fabwright serve once a second while open: every request (method, host, path,
 // status, who answered, time, bytes), WebSocket and MQTT sessions summarized (frame counts, bytes,
 // a few samples), Wi-Fi joins / drops / DHCP / DNS, blocked attempts with why and fix. Secrets only
 // ever appear as names ([secret:NAME]); the server redacts before anything reaches the page.

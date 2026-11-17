@@ -1,4 +1,4 @@
-// Writes docs/mcp-tools.md from the tool definitions. Run: pnpm --filter @jumper/mcp gen:docs
+// Writes docs/mcp-tools.md from the tool definitions. Run: pnpm --filter @fabwright/mcp gen:docs
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -3,7 +3,7 @@ import { createSandboxNetwork, eventPrompt, mockReply, parsePetQuery, petQuery, 
 import { startGatewayServer } from "../src/node/index.ts";
 
 // Round 5 (decision 0003, C5): the person's message m= reaches the model.
-const GET = (q: string) => `GET /v1/pet?${q} HTTP/1.0\r\nHost: ai.jumper\r\n\r\n`;
+const GET = (q: string) => `GET /v1/pet?${q} HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n`;
 
 describe("pet protocol: m= (what the person said)", () => {
   it("parses, cleans and caps the message at 60 characters", () => {
@@ -46,9 +46,9 @@ describe("pet protocol: m= (what the person said)", () => {
     const net = createSandboxNetwork();
     expect(net.say("  what is   your name?  ")).toBe("what is your name?");
     expect(net.waitingMessage).toBe("what is your name?");
-    net.join("JumperNet", "", 100, "esp");
+    net.join("FabwrightNet", "", 100, "esp");
     const ask = (t: number) => {
-      const s = net.open({ host: "ai.jumper", ip: "10.0.0.2", port: 80, tls: false, tMs: t, partId: "esp" });
+      const s = net.open({ host: "ai.fabwright", ip: "10.0.0.2", port: 80, tls: false, tMs: t, partId: "esp" });
       if ("error" in s) throw new Error("refused");
       s.write(GET("a=talk&f=50&j=50&e=50"), t);
       const http = [...net.log].reverse().find((e) => e.kind === "http")!;

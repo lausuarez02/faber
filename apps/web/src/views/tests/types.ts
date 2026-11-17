@@ -1,7 +1,7 @@
 // The visual test report as the web app reads it (written by packages/session/src/visual-capture.ts;
-// format "jumper-visual-report/1"). Kept as plain types here because the web app does not depend
+// format "fabwright-visual-report/1"). Kept as plain types here because the web app does not depend
 // on the Node session package.
-import type { VisualState } from "@jumper/sim-core";
+import type { VisualState } from "@fabwright/sim-core";
 
 export interface VisualInput {
   /** Exact virtual ms. */
@@ -49,7 +49,7 @@ export interface VisualScenario {
 }
 
 export interface VisualReport {
-  format: "jumper-visual-report/1";
+  format: "fabwright-visual-report/1";
   project: string;
   passed: number;
   failed: number;
@@ -57,5 +57,5 @@ export interface VisualReport {
 }
 
 export function isVisualReport(x: unknown): x is VisualReport {
-  return typeof x === "object" && x !== null && (x as VisualReport).format === "jumper-visual-report/1" && Array.isArray((x as VisualReport).scenarios);
+  return typeof x === "object" && x !== null && (x as VisualReport).format === "fabwright-visual-report/1" && Array.isArray((x as VisualReport).scenarios);
 }

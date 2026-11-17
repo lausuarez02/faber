@@ -1,11 +1,11 @@
-# 0005 — Round 8: Jumper distributes the parts inside the case by itself, and shows how
+# 0005 — Round 8: Fabwright distributes the parts inside the case by itself, and shows how
 
 Status: accepted · 2026-11-11
 
 The person saw the talking egg a real Claude built in round 7 (`jumper-evals/round7/egg/talking-egg-2/`):
 78.2 x 102 x 34.3 mm, "bulky", while its parts are only about 23 cm³ and would cover about
 67 x 67 mm laid flat. Round 7's packer stacked the parts front to back and gave up on thin layouts.
-They asked for Jumper itself to work out the best way to distribute the parts, to propose or show
+They asked for Fabwright itself to work out the best way to distribute the parts, to propose or show
 it, automatically, for any custom outline at any size (never a preset per object).
 
 ## Options considered
@@ -52,7 +52,7 @@ it, automatically, for any custom outline at any size (never a preset per object
 
 - It is a heuristic, not an optimum. Pins an agent set early can cost a lot: the advised egg
   (boost removed, 20 mm speaker) lays flat at 111 x 145 x 21.5 mm with the agent's two `y_mm`
-  pins, and at 84.7 x 110.4 x 21.5 mm without them. Jumper does not yet say what a pin costs.
+  pins, and at 84.7 x 110.4 x 21.5 mm without them. Fabwright does not yet say what a pin costs.
 - Presets at auto size keep round 6's full stacker search, 2 to 5 s.
 - The proposal `volume_cm3` is the outline-box estimate; the built report's volume is the real
   shell (the egg: 223.9 vs 204.4 cm³).

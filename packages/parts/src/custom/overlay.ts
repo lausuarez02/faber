@@ -1,7 +1,7 @@
 // A registry that is the built-in catalog plus one project's agent-made parts (decision 0003, C4).
 // The session and the web app keep one of these and swap the project parts when parts/ changes,
 // so everything that holds the registry (simulation, DRC, screenshots) sees the new parts.
-import type { PartDefinition, PartRegistry } from "@jumper/sim-core";
+import type { PartDefinition, PartRegistry } from "@fabwright/sim-core";
 
 export interface ProjectPartRegistry extends PartRegistry {
   readonly base: PartRegistry;

@@ -1,12 +1,12 @@
 {
-  "name": "@jumper/project-format",
+  "name": "@fabwright/project-format",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./jumper.schema.json": "./jumper.schema.json"
+    "./fabwright.schema.json": "./fabwright.schema.json"
   },
   "scripts": {
     "gen:schema": "tsx scripts/gen-schema.ts",

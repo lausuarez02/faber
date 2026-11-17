@@ -18,7 +18,7 @@ export function initPhysics(): Promise<typeof RAPIER> {
 /** The loaded engine, or a clear error telling the caller to await initPhysics() first. */
 export function rapier(): typeof RAPIER {
   if (!loaded) {
-    throw new Error("physics engine not loaded: call `await initPhysics()` (from @jumper/physics) once before creating a world. It loads Rapier's WebAssembly.");
+    throw new Error("physics engine not loaded: call `await initPhysics()` (from @fabwright/physics) once before creating a world. It loads Rapier's WebAssembly.");
   }
   return loaded;
 }

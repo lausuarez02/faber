@@ -7,9 +7,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { registry } from "@jumper/parts";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import { parseProject } from "@fabwright/project-format";
+import { registry } from "@fabwright/parts";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { checkDesign, ProjectSession } from "../src/index.ts";
 import { planDevice } from "../src/planner.ts";
 import { sdCardFiles, tracksInSketch } from "../src/voice.ts";
@@ -26,9 +26,9 @@ afterEach(() => {
 });
 
 function open(): { s: ProjectSession; dir: string } {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-voice-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-voice-"));
   dirs.push(dir);
-  cpSync(EXAMPLE, dir, { recursive: true, preserveTimestamps: true, filter: (p) => !p.includes(".jumper") });
+  cpSync(EXAMPLE, dir, { recursive: true, preserveTimestamps: true, filter: (p) => !p.includes(".fabwright") });
   const later = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware/main.hex"), later, later);
   const s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
@@ -36,7 +36,7 @@ function open(): { s: ProjectSession; dir: string } {
   return { s, dir };
 }
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
-const project = () => parseProject(JSON.parse(readFileSync(join(EXAMPLE, "jumper.json"), "utf8")));
+const project = () => parseProject(JSON.parse(readFileSync(join(EXAMPLE, "fabwright.json"), "utf8")));
 
 describe("talking egg (AVR, SoftwareSerial)", () => {
   it("run_tests passes and the said steps saw the words", async () => {
@@ -96,7 +96,7 @@ describe("talking egg (AVR, SoftwareSerial)", () => {
     const sh = readFileSync(join(r.dir, "sd-card/make-clips.sh"), "utf8");
     expect(sh).toMatch(/espeak-ng/);
     expect(sh).toMatch(/piper/);
-    expect(sh).toMatch(/NOT shipped with Jumper/);
+    expect(sh).toMatch(/NOT shipped with Fabwright/);
     const bom = readFileSync(join(r.dir, "BOM.csv"), "utf8");
     expect(bom).toMatch(/microSD card/);
     expect(bom).not.toMatch(/clips=/);

@@ -1,6 +1,6 @@
 // 3.3 V LDO (MCP1700-3.3 / AP2112K-3.3) on sim-core's regulator element: regulating, dropout
 // (VOUT follows VIN − dropout) and off; the input current is the output current + quiescent.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@jumper/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@fabwright/sim-core";
 import { round, str } from "../../lib/props.ts";
 
 export interface LdoVariant {

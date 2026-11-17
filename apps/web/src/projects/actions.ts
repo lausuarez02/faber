@@ -1,5 +1,5 @@
-import { serializeProject } from "@jumper/project-format";
-import { initialExample, useJumper } from "../lib/app.ts";
+import { serializeProject } from "@fabwright/project-format";
+import { initialExample, useFabwright } from "../lib/app.ts";
 import { useLive } from "../live/liveStore.ts";
 import { newProject as newLocalProject } from "../shell/actions.ts";
 import { ApiError, api, serverConnection, type ProjectCard } from "./api.ts";
@@ -13,7 +13,7 @@ import { markOpened } from "./firstRun.ts";
  */
 
 function toastError(title: string, e: unknown): void {
-  useJumper.getState().toast({ kind: "error", title, detail: (e as Error).message });
+  useFabwright.getState().toast({ kind: "error", title, detail: (e as Error).message });
 }
 
 /** The canvas follows the server: after a switch its hello reloads the canvas. Elsewhere, go to the server's root (it redirects to follow). */
@@ -41,7 +41,7 @@ export async function openCard(card: ProjectCard, newCopy = false): Promise<void
 
 /** True when the local canvas has work that loading another project would replace. */
 export function hasLocalWork(): boolean {
-  const p = useJumper.getState().project;
+  const p = useFabwright.getState().project;
   if (!p.parts.length && !p.wires.length) return false;
   if (useLive.getState().mode !== "off") return false;
   const lone = p.parts.length === 1 && !p.wires.length && p.name === "Untitled";
@@ -58,7 +58,7 @@ export function openLocalExample(example: string): void {
   const url = `${location.pathname}?example=${encodeURIComponent(example)}`;
   if (hasLocalWork()) {
     window.open(url, "_blank", "noopener");
-    useJumper.getState().toast({ kind: "info", title: "Opened in a new tab", detail: "Your circuit stays here. Export it from the project menu to keep it." });
+    useFabwright.getState().toast({ kind: "info", title: "Opened in a new tab", detail: "Your circuit stays here. Export it from the project menu to keep it." });
     return;
   }
   location.href = url;
@@ -77,7 +77,7 @@ export async function newProjectAnywhere(name = "Untitled device"): Promise<void
   }
   if (hasLocalWork()) {
     window.open(`${location.pathname}?new=1`, "_blank", "noopener");
-    useJumper.getState().toast({ kind: "info", title: "New project opened in a new tab", detail: "Your circuit stays here." });
+    useFabwright.getState().toast({ kind: "info", title: "New project opened in a new tab", detail: "Your circuit stays here." });
     return;
   }
   useProjectsUi.setState({ home: false });

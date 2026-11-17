@@ -1,6 +1,6 @@
 # PWM, pulses and time in the simulation
 
-How `@jumper/sim-core` handles `analogWrite()`, servo pulses and other fast signals, what parts
+How `@fabwright/sim-core` handles `analogWrite()`, servo pulses and other fast signals, what parts
 can rely on, and what it does not model.
 
 ## Measuring: `PwmMeter`

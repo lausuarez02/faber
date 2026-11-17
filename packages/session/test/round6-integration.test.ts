@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { registry } from "@jumper/parts";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import { registry } from "@fabwright/parts";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { AGENT_LOOP } from "../src/catalog.ts";
 import { ProjectSession, planDevice } from "../src/index.ts";
 
@@ -26,7 +26,7 @@ const call = (op: string, args: Record<string, unknown> = {}) => s!.call(op, arg
 
 describe("round 6 integration", () => {
   it("the Muse example: battery-powered, 0 DRC errors, colour frames in its log, pebble case + puck variant", () => {
-    const p = JSON.parse(readFileSync(join(MUSE, "jumper.json"), "utf8"));
+    const p = JSON.parse(readFileSync(join(MUSE, "fabwright.json"), "utf8"));
     expect(p.power).toEqual({ usb: false });
     expect(p.enclosure?.shape).toBe("pebble");
     const log = readFileSync(join(MUSE, "agent-actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
@@ -42,7 +42,7 @@ describe("round 6 integration", () => {
   });
 
   it("the Muse's check_design has 0 errors and its case is current (no regeneration needed)", async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-r6-"));
+    dir = mkdtempSync(join(tmpdir(), "fabwright-r6-"));
     cpSync(MUSE, dir, { recursive: true });
     const later = new Date(Date.now() + 60_000);
     utimesSync(join(dir, "firmware/main.hex"), later, later);
@@ -55,7 +55,7 @@ describe("round 6 integration", () => {
   }, 60_000);
 
   it("get_part gives the wiring for the project's own board", async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-r6-"));
+    dir = mkdtempSync(join(tmpdir(), "fabwright-r6-"));
     s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
     await call("new_project", { template: "blank" });
     await call("place_part", { type: "seeed-xiao-rp2040", id: "xiao" });
@@ -76,7 +76,7 @@ describe("round 6 integration", () => {
 
 describe("round 6 integration: errors", () => {
   it("move_part with 'part' instead of 'id' says which argument to pass (no internal error)", async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-r6-"));
+    dir = mkdtempSync(join(tmpdir(), "fabwright-r6-"));
     s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
     await call("new_project", { template: "blink" });
     await expect(call("move_part", { part: "led1", x: 10, y: 10 })).rejects.toThrow(/No part id was given/);

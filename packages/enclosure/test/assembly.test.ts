@@ -3,7 +3,7 @@
 // design-for-assembly checks fire on crafted bad layouts with the sizes behind them. No CAD here
 // (the layout only); the mounting features' CAD is in assembly-cad.test.ts.
 import { describe, expect, it } from "vitest";
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import { assemblyPlan, type AssemblyPlan } from "../src/assembly.ts";
 import { layoutInput } from "../src/engine.ts";
 import type { Layout } from "../src/layout.ts";

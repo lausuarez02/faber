@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { allOpNames, bindSvgString, composeSvg, JumperError, ProjectSession, TOOLS, TOOL_MODULES } from "../src/index.ts";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { allOpNames, bindSvgString, composeSvg, FabwrightError, ProjectSession, TOOLS, TOOL_MODULES } from "../src/index.ts";
 
 const GOLDEN = readFileSync(fileURLToPath(new URL("../../../examples/blink/firmware/blink.hex", import.meta.url)), "utf8");
 
@@ -36,7 +36,7 @@ async function wiredBlink() {
 }
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "jumper-session-"));
+  dir = mkdtempSync(join(tmpdir(), "fabwright-session-"));
   s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
 });
 afterEach(() => {
@@ -84,7 +84,7 @@ describe("editing", () => {
     ] as const;
     for (const [args, re, op] of bad) {
       const err = await call(op, args as Record<string, unknown>).catch((e: unknown) => e);
-      expect(err).toBeInstanceOf(JumperError);
+      expect(err).toBeInstanceOf(FabwrightError);
       expect((err as Error).message).toMatch(re);
     }
   });
@@ -111,7 +111,7 @@ describe("editing", () => {
     const w = await call("write_file", { path: "main.ino", content: BLINK, why: "firmware" });
     expect(w.path).toBe("firmware/main.ino");
     expect(w.notes[0]).toMatch(/runs on uno/);
-    expect(JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")).firmware).toMatchObject({ board: "uno", sketch: "main.ino", artifact: "firmware/main.hex", build: { fqbn: "arduino:avr:uno" } });
+    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).firmware).toMatchObject({ board: "uno", sketch: "main.ino", artifact: "firmware/main.hex", build: { fqbn: "arduino:avr:uno" } });
     await expect(call("write_file", { path: "../evil.ino", content: "" })).rejects.toThrow(/leaves the firmware folder/);
     await call("set_libraries", { libraries: ["Adafruit SSD1306"] });
     expect((await call("get_project")).firmware.libraries).toEqual(["Adafruit SSD1306"]);
@@ -122,7 +122,7 @@ describe("editing", () => {
   it("logs every op with sequence numbers, timestamps and the project after edits", async () => {
     await wiredBlink();
     await call("place_part", { type: "nope" }).catch(() => {});
-    const lines = readFileSync(join(dir, ".jumper/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const lines = readFileSync(join(dir, ".fabwright/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
     expect(lines.map((l) => l.seq)).toEqual(lines.map((_, i) => i + 1));
     expect(lines[1]).toMatchObject({ op: "place_part", ok: true, actor: "test", step: { why: "board" }, target: { part: "uno" } });
     expect(lines[1].project.parts).toHaveLength(1);
@@ -136,7 +136,7 @@ describe("editing", () => {
     await other.call("place_part", { type: "buzzer" });
     other.dispose();
     expect((await call("get_project")).parts).toHaveLength(4);
-    const lines = readFileSync(join(dir, ".jumper/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const lines = readFileSync(join(dir, ".fabwright/actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
     expect(new Set(lines.map((l) => l.seq)).size).toBe(lines.length);
   });
 });
@@ -201,7 +201,7 @@ describe("firmware and simulation", () => {
 
   it("noisy sensors are deterministic", async () => {
     const values = async () => {
-      const d = mkdtempSync(join(tmpdir(), "jumper-noise-"));
+      const d = mkdtempSync(join(tmpdir(), "fabwright-noise-"));
       const ss = new ProjectSession({ dir: d, builder: fakeBuilder });
       await ss.call("new_project", {});
       await ss.call("place_part", { type: "potentiometer" });

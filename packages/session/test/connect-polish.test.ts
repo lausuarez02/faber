@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { actorCounts, filterActionLog, ProjectSession } from "../src/index.ts";
 
 // The round-2 agent-run leftovers (STATUS.md "Open from the round-2 agent runs"), each with the
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 function fresh(actor = "test"): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-polish-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-polish-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, builder: fakeBuilder, actor });
   sessions.push(s);
@@ -39,10 +39,10 @@ function fresh(actor = "test"): ProjectSession {
 }
 
 function example(path: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "jumper-polish-ex-"));
+  const dir = mkdtempSync(join(tmpdir(), "fabwright-polish-ex-"));
   dirs.push(dir);
   cpSync(join(EXAMPLES, path), dir, { recursive: true, preserveTimestamps: true });
-  const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { firmware?: { artifact: string } };
+  const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { firmware?: { artifact: string } };
   if (p.firmware) {
     const later = new Date(Date.now() + 60_000);
     utimesSync(join(dir, p.firmware.artifact), later, later);
@@ -101,7 +101,7 @@ describe("scenario messages", () => {
 describe("robot runs", () => {
   it("run reports when, where and what the rover first hit", async () => {
     const s = example("rover");
-    const p = JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")) as { world: { obstacles: unknown[]; robot: { start: unknown } } };
+    const p = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")) as { world: { obstacles: unknown[]; robot: { start: unknown } } };
     // A thin post beside the sonar's cone: the rover drives into it.
     p.world.obstacles = [{ id: "post", shape: "circle", x: 58, y: 45, r: 1.5 }];
     p.world.robot.start = { x: 40, y: 40, heading: 0 };

@@ -2,7 +2,7 @@
  * Every error an agent can see says what failed, why, and how to fix it. Agents read errors
  * literally, so the fix is a concrete next call or edit, not advice.
  */
-export class JumperError extends Error {
+export class FabwrightError extends Error {
   readonly code: string;
   readonly what: string;
   readonly why: string;
@@ -11,7 +11,7 @@ export class JumperError extends Error {
 
   constructor(code: string, what: string, why: string, fix: string, details?: Record<string, unknown>) {
     super(`${what}: ${why}. Fix: ${fix}`);
-    this.name = "JumperError";
+    this.name = "FabwrightError";
     this.code = code;
     this.what = what;
     this.why = why;
@@ -25,21 +25,21 @@ export class JumperError extends Error {
 }
 
 export function fail(code: string, what: string, why: string, fix: string, details?: Record<string, unknown>): never {
-  throw new JumperError(code, what, why, fix, details);
+  throw new FabwrightError(code, what, why, fix, details);
 }
 
-/** Wrap any thrown value as a JumperError (keeps JumperErrors as they are). */
-export function asJumperError(err: unknown, what = "Operation failed"): JumperError {
-  if (err instanceof JumperError) return err;
+/** Wrap any thrown value as a FabwrightError (keeps FabwrightErrors as they are). */
+export function asFabwrightError(err: unknown, what = "Operation failed"): FabwrightError {
+  if (err instanceof FabwrightError) return err;
   const e = err as { code?: string; message?: string };
   const msg = e?.message ?? String(err);
   if (e && typeof e.code === "string" && /Fix:/.test(msg)) {
     // RunnerError and friends already carry a fix.
-    const j = new JumperError(e.code, what, msg, "see above");
+    const j = new FabwrightError(e.code, what, msg, "see above");
     Object.defineProperty(j, "message", { value: msg });
     return j;
   }
-  return new JumperError("internal", what, msg, "this looks like a Jumper bug; report it with the action log (.jumper/actions.jsonl) attached");
+  return new FabwrightError("internal", what, msg, "this looks like a Fabwright bug; report it with the action log (.fabwright/actions.jsonl) attached");
 }
 
 /** "did you mean" helper: closest strings by edit distance (case-insensitive). */

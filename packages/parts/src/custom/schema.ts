@@ -4,9 +4,9 @@
 // PartDefinition. Stored in the project as parts/<id>/part.json (+ optional visual.svg).
 // JSON Schema: packages/parts/custom-part.schema.json (written by `pnpm gen`).
 import { z } from "zod";
-import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@jumper/sim-core";
+import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@fabwright/sim-core";
 
-export const CUSTOM_PART_FORMAT = "jumper-part/1";
+export const CUSTOM_PART_FORMAT = "fabwright-part/1";
 
 /** Display controllers an agent-made display can reuse. gc9a01 needs the built-in GC9A01 part (parts track). */
 export const DISPLAY_CONTROLLERS = ["ssd1306", "st7735", "ili9341", "gc9a01"] as const;
@@ -295,5 +295,5 @@ export type CustomPartInput = z.input<typeof CustomPartSchema>;
 /** JSON Schema (draft 2020-12) of part.json, input side (what an agent writes). */
 export function customPartJsonSchema(): Record<string, unknown> {
   const schema = z.toJSONSchema(CustomPartSchema, { io: "input", target: "draft-2020-12" }) as Record<string, unknown>;
-  return { $id: "urn:jumper:custom-part:1", title: "Jumper agent-made part (parts/<id>/part.json)", ...schema };
+  return { $id: "urn:fabwright:custom-part:1", title: "Fabwright agent-made part (parts/<id>/part.json)", ...schema };
 }

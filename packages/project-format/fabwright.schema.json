@@ -1,12 +1,12 @@
 {
-  "$id": "urn:jumper:project-format:1",
-  "title": "Jumper project (jumper.json)",
+  "$id": "urn:fabwright:project-format:1",
+  "title": "Fabwright project (fabwright.json)",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "format": {
       "type": "string",
-      "const": "jumper/1"
+      "const": "fabwright/1"
     },
     "name": {
       "type": "string",
@@ -76,7 +76,7 @@
             }
           },
           "standIn": {
-            "description": "Set when this part stands in for a real part Jumper does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note.",
+            "description": "Set when this part stands in for a real part Fabwright does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note.",
             "type": "string",
             "minLength": 1
           }
@@ -190,7 +190,7 @@
         },
         "dir": {
           "default": "firmware",
-          "description": "Firmware folder, relative to jumper.json.",
+          "description": "Firmware folder, relative to fabwright.json.",
           "type": "string",
           "const": "firmware"
         },
@@ -201,7 +201,7 @@
         "artifact": {
           "type": "string",
           "minLength": 1,
-          "description": "Built binary (.hex or .bin), relative to jumper.json."
+          "description": "Built binary (.hex or .bin), relative to fabwright.json."
         },
         "build": {
           "type": "object",
@@ -244,7 +244,7 @@
           ]
         },
         "libraries": {
-          "description": "Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Jumper's pinned version.",
+          "description": "Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Fabwright's pinned version.",
           "type": "array",
           "items": {
             "type": "string",
@@ -1299,7 +1299,7 @@
       }
     },
     "world": {
-      "description": "Physical world for robots (arena, obstacles, robot / arm binding). Validated by @jumper/physics parseWorld; kept as-is here.",
+      "description": "Physical world for robots (arena, obstacles, robot / arm binding). Validated by @fabwright/physics parseWorld; kept as-is here.",
       "type": "object",
       "propertyNames": {
         "type": "string"
@@ -1603,7 +1603,7 @@
           }
         },
         "outline": {
-          "description": "Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Jumper fits the parts inside it.",
+          "description": "Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Fabwright fits the parts inside it.",
           "anyOf": [
             {
               "type": "string",
@@ -1670,7 +1670,7 @@
           }
         },
         "layout": {
-          "description": "Round 8: how the parts are distributed inside. Jumper proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it.",
+          "description": "Round 8: how the parts are distributed inside. Fabwright proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it.",
           "type": "string",
           "enum": [
             "auto",
@@ -1826,7 +1826,7 @@
                     "type": "number",
                     "minimum": -250,
                     "maximum": 250,
-                    "description": "Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out, e.g. 3 = on the can body 3 mm below the socket edge, just under the lid line), negative = inside the socket."
+                    "description": "Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out), negative = inside the socket. A disc glued on the object's side stands t_mm proud of it, so keep its edge clear of the case and of anything that moves with the case: at least d_mm / 2 + 0.5, plus (a lid's skirt length - engage_mm) when the case rides on a lid, e.g. 4.5 for a 6 mm magnet under a 7 mm skirt with engage_mm 6."
                   },
                   "angle_deg": {
                     "description": "Where round the object, degrees, as you look at the case's front: 0 = right, 90 = top, 180 = left, 270 = bottom. Default: facing the sensor.",
@@ -1925,7 +1925,7 @@
                 }
               },
               "tls": {
-                "description": "inspect (default): Jumper terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate.",
+                "description": "inspect (default): Fabwright terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate.",
                 "type": "string",
                 "enum": [
                   "inspect",
@@ -1965,7 +1965,7 @@
           }
         },
         "secrets": {
-          "description": "Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from jumper.json.",
+          "description": "Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from fabwright.json.",
           "type": "array",
           "items": {
             "type": "string",
@@ -1973,7 +1973,7 @@
           }
         },
         "mocks": {
-          "description": "Mock APIs file, relative to jumper.json (default network/mocks.json).",
+          "description": "Mock APIs file, relative to fabwright.json (default network/mocks.json).",
           "type": "string"
         },
         "cassette": {
@@ -2011,7 +2011,7 @@
           "additionalProperties": false
         },
         "relay": {
-          "description": "Round 13: limits of the API relay (jumper relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md.",
+          "description": "Round 13: limits of the API relay (fabwright relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md.",
           "type": "object",
           "properties": {
             "requests_per_minute": {

@@ -1,23 +1,23 @@
-// Round 11: native emulators managed by Jumper, for a machine without (working) Docker.
+// Round 11: native emulators managed by Fabwright, for a machine without (working) Docker.
 //
-//   ~/.jumper/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Jumper's patches 0001-0006 (bridge v6 + camera port),
-//                                        built on this machine from source (Jumper does not ship QEMU
+//   ~/.fabwright/emulators/qemu-esp/<tag>   Espressif QEMU 9.2.2 + Fabwright's patches 0001-0006 (bridge v6 + camera port),
+//                                        built on this machine from source (Fabwright does not ship QEMU
 //                                        binaries; GPL-2.0, its own process). Same configure flags as
 //                                        toolchains/qemu-esp/Dockerfile, macOS UI parts off.
-//   ~/.jumper/emulators/renode/1.17.0    Renode 1.17.0 portable (MIT), the release archive, SHA-256 checked.
+//   ~/.fabwright/emulators/renode/1.17.0    Renode 1.17.0 portable (MIT), the release archive, SHA-256 checked.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { arch, cpus, platform, tmpdir } from "node:os";
 import { join } from "node:path";
-import { jumperHome, jumperRenodeBinary, NATIVE_QEMU_TAG, nativeQemuDir, nativeQemuInstalled, nativeRenodeDir, RENODE_VERSION } from "@jumper/sim-backends/node";
+import { fabwrightHome, fabwrightRenodeBinary, NATIVE_QEMU_TAG, nativeQemuDir, nativeQemuInstalled, nativeRenodeDir, RENODE_VERSION } from "@fabwright/sim-backends/node";
 import { REPO_ROOT } from "../config.ts";
 import { RunnerError } from "../docker.ts";
 import { download, run } from "./arduino.ts";
 
 /** Espressif's QEMU release tag the patches apply to (toolchains/qemu-esp/Dockerfile QEMU_TAG). */
 export const QEMU_UPSTREAM_TAG = "esp-develop-9.2.2-20260417";
-export const QEMU_PATCHES = ["0001-jumper-bridge.patch", "0002-jumper-peripherals.patch", "0003-jumper-pads.patch", "0004-jumper-i2s.patch", "0005-jumper-eth-rx.patch", "0006-jumper-camera.patch"];
-/** The branch of a JUMPER_QEMU_SRC checkout that equals the patch series applied to the tag. */
+export const QEMU_PATCHES = ["0001-fabwright-bridge.patch", "0002-fabwright-peripherals.patch", "0003-fabwright-pads.patch", "0004-fabwright-i2s.patch", "0005-fabwright-eth-rx.patch", "0006-fabwright-camera.patch"];
+/** The branch of a FABWRIGHT_QEMU_SRC checkout that equals the patch series applied to the tag. */
 export const QEMU_SRC_BRANCH = "jumper-jb7";
 /** toolchains/qemu-esp/Dockerfile's configure line, plus what a Mac build leaves out (Cocoa UI, GnuTLS). */
 export const QEMU_CONFIGURE = [
@@ -59,20 +59,20 @@ export function qemuBuildPrereqs(): string[] {
  * older than 3.11 (macOS ships 3.9). Pinned, from PyPI, once. Returns its bin folder.
  */
 async function ensureBuildTools(log: (l: string) => void): Promise<string> {
-  const venv = join(jumperHome(), "emulators", "qemu-esp", ".tools");
+  const venv = join(fabwrightHome(), "emulators", "qemu-esp", ".tools");
   const bin = join(venv, "bin");
   const ok = () => spawnSync(join(bin, "ninja"), ["--version"], { stdio: "ignore" }).status === 0 && spawnSync(join(bin, "python3"), ["-c", "import tomli"], { stdio: "ignore" }).status === 0;
   if (ok()) return bin;
   log(`installing QEMU's build tools (${BUILD_TOOLS.join(", ")}) into ${venv}…`);
   let r = await run("python3", ["-m", "venv", venv]);
   if (r.code === 0) r = await run(join(bin, "pip"), ["install", "--disable-pip-version-check", "--quiet", ...BUILD_TOOLS]);
-  if (r.code !== 0 || !ok()) throw new RunnerError("qemu-build-failed", `Could not install QEMU's build tools (${BUILD_TOOLS.join(", ")}): ${tail(r.stderr || r.stdout)}. Why: pip could not reach PyPI, or python3 has no venv module. Fix: check your connection (or brew install ninja), then run \`jumper setup esp32\` again.`);
+  if (r.code !== 0 || !ok()) throw new RunnerError("qemu-build-failed", `Could not install QEMU's build tools (${BUILD_TOOLS.join(", ")}): ${tail(r.stderr || r.stdout)}. Why: pip could not reach PyPI, or python3 has no venv module. Fix: check your connection (or brew install ninja), then run \`fabwright setup esp32\` again.`);
   return bin;
 }
 
 /**
- * Builds Jumper's patched QEMU into ~/.jumper/emulators/qemu-esp/<tag> (once; a few minutes).
- * Source: JUMPER_QEMU_SRC (a git checkout with branch QEMU_SRC_BRANCH, e.g. the spike repo) or Espressif's
+ * Builds Fabwright's patched QEMU into ~/.fabwright/emulators/qemu-esp/<tag> (once; a few minutes).
+ * Source: FABWRIGHT_QEMU_SRC (a git checkout with branch QEMU_SRC_BRANCH, e.g. the spike repo) or Espressif's
  * tag cloned from GitHub with toolchains/qemu-esp's patches applied.
  */
 export async function installNativeQemu(log: (l: string) => void = () => {}, opts: { force?: boolean } = {}): Promise<{ dir: string; built: boolean }> {
@@ -80,33 +80,33 @@ export async function installNativeQemu(log: (l: string) => void = () => {}, opt
   if (nativeQemuInstalled() && !opts.force) return { dir: dest, built: false };
   const missing = qemuBuildPrereqs();
   if (missing.length) {
-    throw new RunnerError("qemu-prereqs", `Can't build the ESP32 emulator on this computer yet. Why: Jumper builds its patched QEMU from source here, and these are missing: ${missing.join("; ")}. Fix: install them, then run \`jumper setup esp32\` again (or use Docker: JUMPER_RUNTIME=docker).`);
+    throw new RunnerError("qemu-prereqs", `Can't build the ESP32 emulator on this computer yet. Why: Fabwright builds its patched QEMU from source here, and these are missing: ${missing.join("; ")}. Fix: install them, then run \`fabwright setup esp32\` again (or use Docker: FABWRIGHT_RUNTIME=docker).`);
   }
   const toolsBin = await ensureBuildTools(log);
   const env = { ...process.env, PATH: `${toolsBin}:${process.env.PATH ?? ""}` };
-  const work = mkdtempSync(join(tmpdir(), "jumper-qemu-"));
+  const work = mkdtempSync(join(tmpdir(), "fabwright-qemu-"));
   const src = join(work, "src");
   try {
-    const spike = process.env.JUMPER_QEMU_SRC;
+    const spike = process.env.FABWRIGHT_QEMU_SRC;
     if (spike) {
       log(`QEMU source: ${spike} (branch ${QEMU_SRC_BRANCH})…`);
       mkdirSync(src, { recursive: true });
       const r = await run("sh", ["-c", `git -C "$1" archive "$3" | tar -x -C "$2"`, "sh", spike, src, QEMU_SRC_BRANCH]);
-      if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Could not export branch ${QEMU_SRC_BRANCH} from ${spike}: ${tail(r.stderr)}. Fix: point JUMPER_QEMU_SRC at a QEMU checkout that has the ${QEMU_SRC_BRANCH} branch, or unset it to clone Espressif's QEMU.`);
+      if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Could not export branch ${QEMU_SRC_BRANCH} from ${spike}: ${tail(r.stderr)}. Fix: point FABWRIGHT_QEMU_SRC at a QEMU checkout that has the ${QEMU_SRC_BRANCH} branch, or unset it to clone Espressif's QEMU.`);
     } else {
       log(`cloning Espressif's QEMU ${QEMU_UPSTREAM_TAG} from GitHub (about 200 MB)…`);
       let r = await run("git", ["clone", "--depth", "1", "--branch", QEMU_UPSTREAM_TAG, "https://github.com/espressif/qemu", src], { onLine: (l) => log(`  ${l}`) });
-      if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Could not clone Espressif's QEMU: ${tail(r.stderr)}. Fix: check your connection, then run \`jumper setup esp32\` again.`);
+      if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Could not clone Espressif's QEMU: ${tail(r.stderr)}. Fix: check your connection, then run \`fabwright setup esp32\` again.`);
       for (const p of QEMU_PATCHES) {
         r = await run("git", ["-C", src, "apply", join(REPO_ROOT, "toolchains/qemu-esp", p)]);
-        if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Jumper's QEMU patch ${p} did not apply to ${QEMU_UPSTREAM_TAG}: ${tail(r.stderr)}. Why: the patch and the pinned tag are out of step. Fix: report it; meanwhile use Docker (JUMPER_RUNTIME=docker).`);
+        if (r.code !== 0) throw new RunnerError("qemu-build-failed", `Fabwright's QEMU patch ${p} did not apply to ${QEMU_UPSTREAM_TAG}: ${tail(r.stderr)}. Why: the patch and the pinned tag are out of step. Fix: report it; meanwhile use Docker (FABWRIGHT_RUNTIME=docker).`);
       }
     }
     const build = join(src, "build");
     mkdirSync(build, { recursive: true });
     log("configuring QEMU (xtensa + riscv32, the Docker image's options)…");
     let r = await run(join(src, "configure"), [`--prefix=${dest}`, `--python=${join(toolsBin, "python3")}`, ...QEMU_CONFIGURE, ...(platform() === "darwin" ? ["--disable-cocoa"] : [])], { cwd: build, env, onLine: () => {} });
-    if (r.code !== 0) throw new RunnerError("qemu-build-failed", `QEMU's configure failed: ${tail(r.stdout + r.stderr)}. Fix: install what it names (macOS: brew install glib pixman libgcrypt libslirp pkgconf), then run \`jumper setup esp32\` again.`);
+    if (r.code !== 0) throw new RunnerError("qemu-build-failed", `QEMU's configure failed: ${tail(r.stdout + r.stderr)}. Fix: install what it names (macOS: brew install glib pixman libgcrypt libslirp pkgconf), then run \`fabwright setup esp32\` again.`);
     const jobs = String(Math.max(2, cpus().length));
     log(`compiling QEMU with ${jobs} jobs (2 to 5 minutes)…`);
     let lastPct = -10;
@@ -123,55 +123,55 @@ export async function installNativeQemu(log: (l: string) => void = () => {}, opt
       },
     });
     if (r.code !== 0) {
-      const logFile = join(jumperHome(), "emulators", "qemu-esp", "build-failed.log");
-      mkdirSync(join(jumperHome(), "emulators", "qemu-esp"), { recursive: true });
+      const logFile = join(fabwrightHome(), "emulators", "qemu-esp", "build-failed.log");
+      mkdirSync(join(fabwrightHome(), "emulators", "qemu-esp"), { recursive: true });
       writeFileSync(logFile, r.stdout + r.stderr);
       const errors = (r.stdout + r.stderr).split("\n").filter((l) => /error:|^FAILED:/.test(l)).slice(0, 4).join(" | ");
-      throw new RunnerError("qemu-build-failed", `Compiling QEMU failed: ${errors || tail(r.stdout + r.stderr)}. Fix: run \`jumper setup esp32\` again; if it fails the same way, report ${logFile} (meanwhile JUMPER_RUNTIME=docker).`);
+      throw new RunnerError("qemu-build-failed", `Compiling QEMU failed: ${errors || tail(r.stdout + r.stderr)}. Fix: run \`fabwright setup esp32\` again; if it fails the same way, report ${logFile} (meanwhile FABWRIGHT_RUNTIME=docker).`);
     }
-    // Keep only what Jumper runs (the install also copies firmware blobs for other boards).
+    // Keep only what Fabwright runs (the install also copies firmware blobs for other boards).
     for (const sub of ["share/applications", "share/icons", "share/doc"]) rmSync(join(dest, sub), { recursive: true, force: true });
-    writeFileSync(join(dest, "JUMPER-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Jumper patches ${QEMU_PATCHES.join(", ")} (bridge v6 + camera port)\nsource: ${spike ? `${spike} branch ${QEMU_SRC_BRANCH}` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
-    if (!nativeQemuInstalled()) throw new RunnerError("qemu-build-failed", `QEMU built but ${dest}/bin has no qemu-system-xtensa / qemu-system-riscv32. Fix: run \`jumper setup esp32\` again.`);
+    writeFileSync(join(dest, "FABWRIGHT-BUILD.txt"), `Espressif QEMU ${QEMU_UPSTREAM_TAG} + Fabwright patches ${QEMU_PATCHES.join(", ")} (bridge v6 + camera port)\nsource: ${spike ? `${spike} branch ${QEMU_SRC_BRANCH}` : "github.com/espressif/qemu"}\nconfigure: ${QEMU_CONFIGURE.join(" ")}\nhost: ${platform()}-${arch()}\nbuilt: ${new Date().toISOString()}\n`);
+    if (!nativeQemuInstalled()) throw new RunnerError("qemu-build-failed", `QEMU built but ${dest}/bin has no qemu-system-xtensa / qemu-system-riscv32. Fix: run \`fabwright setup esp32\` again.`);
     return { dir: dest, built: true };
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
 }
 
-/** Downloads Renode 1.17.0 (SHA-256 checked) into ~/.jumper/emulators/renode/1.17.0 (once). */
+/** Downloads Renode 1.17.0 (SHA-256 checked) into ~/.fabwright/emulators/renode/1.17.0 (once). */
 export async function installNativeRenode(log: (l: string) => void = () => {}): Promise<{ dir: string; installed: boolean }> {
   const dir = nativeRenodeDir();
-  if (existsSync(jumperRenodeBinary())) return { dir, installed: false };
+  if (existsSync(fabwrightRenodeBinary())) return { dir, installed: false };
   const key = `${platform()}-${arch()}`;
   const asset = RENODE_ASSETS[key];
   if (!asset) {
-    throw new RunnerError("native-unsupported", `Jumper has no native Renode for ${key}. Why: the pinned native Renode builds are macOS arm64 and Linux arm64. Fix: use Docker (jumper/renode image), or install Renode ${RENODE_VERSION} yourself and set JUMPER_RENODE_BIN to its executable.`);
+    throw new RunnerError("native-unsupported", `Fabwright has no native Renode for ${key}. Why: the pinned native Renode builds are macOS arm64 and Linux arm64. Fix: use Docker (fabwright/renode image), or install Renode ${RENODE_VERSION} yourself and set FABWRIGHT_RENODE_BIN to its executable.`);
   }
-  const dl = join(jumperHome(), "downloads", asset.file);
+  const dl = join(fabwrightHome(), "downloads", asset.file);
   log(`downloading Renode ${RENODE_VERSION} (${asset.file}, about 75 MB, SHA-256 checked)…`);
   await download(`https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/${asset.file}`, dl, asset.sha256, log, `Renode ${RENODE_VERSION}`);
   mkdirSync(dir, { recursive: true });
   if (asset.kind === "dmg") {
-    const mnt = mkdtempSync(join(tmpdir(), "jumper-renode-"));
+    const mnt = mkdtempSync(join(tmpdir(), "fabwright-renode-"));
     let r = await run("hdiutil", ["attach", "-nobrowse", "-readonly", "-noautoopen", "-mountpoint", mnt, dl]);
-    if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not open ${asset.file}: ${tail(r.stderr)}. Fix: run \`jumper setup renode\` again.`);
+    if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not open ${asset.file}: ${tail(r.stderr)}. Fix: run \`fabwright setup renode\` again.`);
     try {
       const app = readdirSync(mnt).find((n) => n.endsWith(".app"));
-      if (!app) throw new RunnerError("unpack-failed", `${asset.file} has no .app inside. Fix: run \`jumper setup renode\` again.`);
+      if (!app) throw new RunnerError("unpack-failed", `${asset.file} has no .app inside. Fix: run \`fabwright setup renode\` again.`);
       r = await run("ditto", [join(mnt, app), join(dir, "Renode.app")]);
-      if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not copy Renode.app: ${tail(r.stderr)}. Fix: free disk space, then run \`jumper setup renode\` again.`);
+      if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not copy Renode.app: ${tail(r.stderr)}. Fix: free disk space, then run \`fabwright setup renode\` again.`);
     } finally {
       await run("hdiutil", ["detach", "-quiet", mnt]);
       rmSync(mnt, { recursive: true, force: true });
     }
   } else {
     const r = await run("tar", ["-xzf", dl, "-C", dir, "--strip-components=1"]);
-    if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not unpack ${asset.file}: ${tail(r.stderr)}. Fix: run \`jumper setup renode\` again.`);
+    if (r.code !== 0) throw new RunnerError("unpack-failed", `Could not unpack ${asset.file}: ${tail(r.stderr)}. Fix: run \`fabwright setup renode\` again.`);
   }
   rmSync(dl, { force: true });
-  const v = await run(jumperRenodeBinary(), ["--version"]).catch((e: Error) => ({ code: 1, stdout: "", stderr: e.message }));
-  if (v.code !== 0) throw new RunnerError("renode-broken", `Renode was installed but does not start (${tail(v.stderr || v.stdout)}). Why: ${platform() === "darwin" ? "macOS may block the unsigned app" : "a library it needs is missing (libicu)"}. Fix: ${platform() === "darwin" ? `run \`xattr -dr com.apple.quarantine ${join(dir, "Renode.app")}\`` : "install libicu"}, then \`jumper setup renode\` again.`);
+  const v = await run(fabwrightRenodeBinary(), ["--version"]).catch((e: Error) => ({ code: 1, stdout: "", stderr: e.message }));
+  if (v.code !== 0) throw new RunnerError("renode-broken", `Renode was installed but does not start (${tail(v.stderr || v.stdout)}). Why: ${platform() === "darwin" ? "macOS may block the unsigned app" : "a library it needs is missing (libicu)"}. Fix: ${platform() === "darwin" ? `run \`xattr -dr com.apple.quarantine ${join(dir, "Renode.app")}\`` : "install libicu"}, then \`fabwright setup renode\` again.`);
   log(`warming Renode's platform cache (the SVD files some boards fetch)…`);
   await warmRenode(log);
   return { dir, installed: true };
@@ -180,12 +180,12 @@ export async function installNativeRenode(log: (l: string) => void = () => {}): 
 /** Same platforms toolchains/renode/Dockerfile warms, so later runs need no network. Best effort. */
 async function warmRenode(log: (l: string) => void): Promise<void> {
   const plats = ["cpus/stm32f103", "cpus/stm32f4", "cpus/nrf52840", "boards/arduino_nano_33_ble"];
-  const tmp = mkdtempSync(join(tmpdir(), "jumper-renode-warm-"));
+  const tmp = mkdtempSync(join(tmpdir(), "fabwright-renode-warm-"));
   try {
     for (const p of plats) {
       const f = join(tmp, "w.resc");
       writeFileSync(f, `mach create\nmachine LoadPlatformDescription @platforms/${p}.repl\nquit\n`);
-      const r = await run(jumperRenodeBinary(), ["--disable-gui", "--console", "--plain", f], { timeoutMs: 120_000 });
+      const r = await run(fabwrightRenodeBinary(), ["--disable-gui", "--console", "--plain", f], { timeoutMs: 120_000 });
       if (r.code !== 0) log(`  (warming ${p} did not finish; Renode fetches it on first use instead)`);
     }
   } finally {
@@ -193,7 +193,7 @@ async function warmRenode(log: (l: string) => void): Promise<void> {
   }
 }
 
-/** Removes a native install (used by `jumper setup --reinstall`). */
+/** Removes a native install (used by `fabwright setup --reinstall`). */
 export function removeNative(what: "qemu" | "renode"): void {
   rmSync(what === "qemu" ? nativeQemuDir() : nativeRenodeDir(), { recursive: true, force: true });
 }

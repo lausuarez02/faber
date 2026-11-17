@@ -2,8 +2,8 @@
 
 A pet with a language model inside, on a colour screen. An Arduino Uno draws it on a 2.8in
 ILI9341 TFT and asks the pet AI what to say through an ESP-01 Wi-Fi module; the reply appears in a
-speech bubble with a matching face. In the simulator the Wi-Fi is the sandbox network "JumperNet"
-and the AI is `http://ai.jumper/v1/pet` (services/ai-gateway): a deterministic mock in tests, or
+speech bubble with a matching face. In the simulator the Wi-Fi is the sandbox network "FabwrightNet"
+and the AI is `http://ai.fabwright/v1/pet` (services/ai-gateway): a deterministic mock in tests, or
 Claude (claude-haiku-5-5) through your logged-in `claude` CLI or `ANTHROPIC_API_KEY` when you
 switch to Live.
 
@@ -34,7 +34,7 @@ switch to Live.
   module reconnects by itself; if it has not after 15 s, the sketch rejoins.
 - The sketch moves a factory-fresh ESP-01 from 115200 to 9600 baud (`AT+UART_DEF`), because
   SoftwareSerial cannot receive 115200 reliably on an Uno. It waits for complete `OK\r\n` lines
-  before sending, because SoftwareSerial cannot receive while it transmits: Jumper's UART is
+  before sending, because SoftwareSerial cannot receive while it transmits: Fabwright's UART is
   bit-exact, so that mistake garbles replies here exactly as on a bench.
 - Serial at 115200: `Pet hatched`, `wifi: ...`, `icon: ...`, `ask a=talk f=.. j=.. e=..`,
   `reply 200 happy|...`, `bubble: ...`, `face: ...`, and `t=12 food=64 joy=58 energy=70 mood=happy wifi=1`
@@ -45,8 +45,8 @@ Flash 25.1 KB (77 %), globals 841 bytes (41 %) on the Uno.
 ## Try it
 
 ```sh
-pnpm jumper test -p examples/ai-pet          # 5 scenarios, mock AI, deterministic
-pnpm jumper mcp --project examples/ai-pet     # for Claude Code / Codex
+pnpm fabwright test -p examples/ai-pet          # 5 scenarios, mock AI, deterministic
+pnpm fabwright mcp --project examples/ai-pet     # for Claude Code / Codex
 node services/ai-gateway/bin/ai-gateway.mjs --ask talk   # one live reply from your claude CLI
 ```
 
@@ -62,7 +62,7 @@ Mock / Live switch; Live needs the gateway running (`node services/ai-gateway/bi
 
 | Id | Checks |
 | --- | --- |
-| `boots-and-joins` | Screen on and filled (`tft.lit > 70000`), joins JumperNet within 8 s, online icon, no errors |
+| `boots-and-joins` | Screen on and filled (`tft.lit > 70000`), joins FabwrightNet within 8 s, online icon, no errors |
 | `talk-shows-reply-bubble` | TALK → `ask a=talk` within 300 ms, `reply 200 <mood>|<text>` within 2.5 s, a white bubble (`tft.bright > 10000`) |
 | `feed-raises-food` | FEED → food >= 85 at once, the AI's `happy|` reaction within 2.5 s |
 | `wifi-drop-offline-and-retry` | `inject_fault esp wifi_drop` → offline icon, TALK waits, `clear` → back online, the same question is asked and answered |
@@ -78,7 +78,7 @@ Mock / Live switch; Live needs the gateway running (`node services/ai-gateway/bi
    it in the firewall). It answers with Claude when `claude` is logged in or `ANTHROPIC_API_KEY` is
    set, else with the mock, and prints one line per request.
 5. Bare red ILI9341 modules have 3.3 V logic: add a 74HC4050 on CS, DC, RESET, MOSI, SCK (set the
-   part's `logic` prop to `3v3-only` to get the warning in Jumper).
+   part's `logic` prop to `3v3-only` to get the warning in Fabwright).
 
 What the simulation does not tell you (from the parts' fidelity): radio range and packet loss,
 TLS cost, ESP current peaks, panel gamma and viewing angle. See docs/decisions/0002-ai-pet.md.

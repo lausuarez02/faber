@@ -1,10 +1,10 @@
-// Round 11: runtime selection (JUMPER_RUNTIME) with a fake `docker` on PATH and a fake native install
-// in a temporary JUMPER_HOME. No real Docker or toolchain needed.
+// Round 11: runtime selection (FABWRIGHT_RUNTIME) with a fake `docker` on PATH and a fake native install
+// in a temporary FABWRIGHT_HOME. No real Docker or toolchain needed.
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { pickRuntime, probeDocker, qemuPreflight, renodeUnavailable, resetDockerProbe } from "@jumper/sim-backends/node";
+import { pickRuntime, probeDocker, qemuPreflight, renodeUnavailable, resetDockerProbe } from "@fabwright/sim-backends/node";
 import { arduinoRuntimeFor, canBuildArduino, nativeFamilyOf, NATIVE_CORES, setupNameFor } from "../src/index.ts";
 import { nativeToolchainId } from "../src/native/arduino.ts";
 import { setupTargetOf } from "../src/native/setup.ts";
@@ -31,7 +31,7 @@ exit 1
   resetDockerProbe();
 }
 
-/** Marks a native core as installed in the temporary JUMPER_HOME. */
+/** Marks a native core as installed in the temporary FABWRIGHT_HOME. */
 function fakeNative(family: keyof typeof NATIVE_CORES): void {
   const root = join(dir, "home", "toolchains", "arduino", "1.5.1");
   mkdirSync(join(root, "bin"), { recursive: true });
@@ -41,13 +41,13 @@ function fakeNative(family: keyof typeof NATIVE_CORES): void {
 }
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "jumper-rt-"));
-  process.env.JUMPER_NATIVE_HOME = join(dir, "home");
-  delete process.env.JUMPER_RUNTIME;
-  delete process.env.JUMPER_QEMU_ESP_RUNTIME;
-  delete process.env.JUMPER_RENODE_RUNTIME;
-  delete process.env.JUMPER_RENODE_BIN;
-  delete process.env.JUMPER_QEMU_ESP_DIR;
+  dir = mkdtempSync(join(tmpdir(), "fabwright-rt-"));
+  process.env.FABWRIGHT_NATIVE_HOME = join(dir, "home");
+  delete process.env.FABWRIGHT_RUNTIME;
+  delete process.env.FABWRIGHT_QEMU_ESP_RUNTIME;
+  delete process.env.FABWRIGHT_RENODE_RUNTIME;
+  delete process.env.FABWRIGHT_RENODE_BIN;
+  delete process.env.FABWRIGHT_QEMU_ESP_DIR;
 });
 
 afterEach(() => {
@@ -56,15 +56,15 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe("JUMPER_RUNTIME selection", () => {
+describe("FABWRIGHT_RUNTIME selection", () => {
   it("forced values win; auto takes Docker when it answers, native otherwise", () => {
     fakeDocker("up");
     expect(pickRuntime({ nativeInstalled: () => true })).toBe("docker");
-    process.env.JUMPER_RUNTIME = "native";
+    process.env.FABWRIGHT_RUNTIME = "native";
     expect(pickRuntime({ nativeInstalled: () => false })).toBe("native");
-    process.env.JUMPER_RUNTIME = "docker";
+    process.env.FABWRIGHT_RUNTIME = "docker";
     expect(pickRuntime({ nativeInstalled: () => true })).toBe("docker");
-    delete process.env.JUMPER_RUNTIME;
+    delete process.env.FABWRIGHT_RUNTIME;
     expect(pickRuntime({ override: "native", nativeInstalled: () => false })).toBe("native");
     fakeDocker("down");
     expect(pickRuntime({ nativeInstalled: () => true })).toBe("native");
@@ -81,7 +81,7 @@ describe("JUMPER_RUNTIME selection", () => {
 
   it("a hung Docker costs one short probe, then native", () => {
     fakeDocker("hang");
-    process.env.JUMPER_DOCKER_PROBE_MS = "400";
+    process.env.FABWRIGHT_DOCKER_PROBE_MS = "400";
     const t0 = Date.now();
     const p = probeDocker(true);
     expect(p.ok).toBe(false);
@@ -108,18 +108,18 @@ describe("Arduino builds pick a runtime per board family", () => {
 
   it("Docker down + native installed: native; nothing installed: what failed, why, and the fix", async () => {
     fakeDocker("down");
-    await expect(arduinoRuntimeFor("arduino:avr:uno")).rejects.toThrow(/nothing on this computer can compile for arduino:avr:uno\. Why: Docker is not running .*Fix: run `jumper setup avr`/);
+    await expect(arduinoRuntimeFor("arduino:avr:uno")).rejects.toThrow(/nothing on this computer can compile for arduino:avr:uno\. Why: Docker is not running .*Fix: run `fabwright setup avr`/);
     expect(canBuildArduino("arduino:avr:uno")).toMatchObject({ ok: false });
     fakeNative("avr");
     await expect(arduinoRuntimeFor("arduino:avr:uno")).resolves.toBe("native");
     expect(canBuildArduino("arduino:avr:uno")).toEqual({ ok: true, runtime: "native" });
     // Another family is still missing.
-    await expect(arduinoRuntimeFor("esp32:esp32:esp32")).rejects.toThrow(/jumper setup esp32/);
+    await expect(arduinoRuntimeFor("esp32:esp32:esp32")).rejects.toThrow(/fabwright setup esp32/);
   });
 
   it("Docker up: its image when present, the native toolchain when the image is missing", async () => {
     fakeNative("avr");
-    fakeDocker("up", ["jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1"]);
+    fakeDocker("up", ["fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1"]);
     await expect(arduinoRuntimeFor("arduino:avr:uno")).resolves.toBe("docker");
     fakeDocker("up", []);
     await expect(arduinoRuntimeFor("arduino:avr:uno")).resolves.toBe("native");
@@ -127,20 +127,20 @@ describe("Arduino builds pick a runtime per board family", () => {
     await expect(arduinoRuntimeFor("rp2040:rp2040:rpipico")).resolves.toBe("docker");
   });
 
-  it("JUMPER_RUNTIME=native without the toolchain says which setup to run", async () => {
+  it("FABWRIGHT_RUNTIME=native without the toolchain says which setup to run", async () => {
     fakeDocker("up");
-    process.env.JUMPER_RUNTIME = "native";
-    await expect(arduinoRuntimeFor("STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8")).rejects.toThrow(/JUMPER_RUNTIME is native.*Fix: run `jumper setup stm32`/);
+    process.env.FABWRIGHT_RUNTIME = "native";
+    await expect(arduinoRuntimeFor("STMicroelectronics:stm32:GenF1:pnum=BLUEPILL_F103C8")).rejects.toThrow(/FABWRIGHT_RUNTIME is native.*Fix: run `fabwright setup stm32`/);
   });
 });
 
 describe("emulators say why and how to fix it when neither runtime is there", () => {
-  it("QEMU and Renode name jumper setup and Docker", () => {
+  it("QEMU and Renode name fabwright setup and Docker", () => {
     fakeDocker("down");
-    process.env.JUMPER_QEMU_ESP_DIR = join(dir, "no-qemu");
+    process.env.FABWRIGHT_QEMU_ESP_DIR = join(dir, "no-qemu");
     process.env.PATH = `${join(dir, "bin")}:/usr/bin:/bin`;
-    expect(qemuPreflight()).toMatch(/Docker is not running.*native QEMU is not installed either\. Fix: run `jumper setup esp32`.*or start Docker Desktop/);
-    expect(qemuPreflight({ runtime: "native" })).toMatch(/native ESP32 emulator is not installed.*Docker cannot run it instead: Docker is not running.*Fix: run `jumper setup esp32`/);
-    expect(renodeUnavailable()).toMatch(/Renode is not installed natively.*Fix: run `jumper setup renode`/);
+    expect(qemuPreflight()).toMatch(/Docker is not running.*native QEMU is not installed either\. Fix: run `fabwright setup esp32`.*or start Docker Desktop/);
+    expect(qemuPreflight({ runtime: "native" })).toMatch(/native ESP32 emulator is not installed.*Docker cannot run it instead: Docker is not running.*Fix: run `fabwright setup esp32`/);
+    expect(renodeUnavailable()).toMatch(/Renode is not installed natively.*Fix: run `fabwright setup renode`/);
   });
 });

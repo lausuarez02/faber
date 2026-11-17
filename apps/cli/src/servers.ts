@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { actorCounts, loadPlaywright, startLiveHub, type LiveHub } from "@jumper/session";
+import { actorCounts, loadPlaywright, startLiveHub, type LiveHub } from "@fabwright/session";
 
 const WEB_DIR = fileURLToPath(new URL("../../web/", import.meta.url));
 
@@ -59,10 +59,10 @@ function waitForever(cleanup: () => Promise<void>): Promise<number> {
   });
 }
 
-/** Folder that owns an action log: <project>/.jumper/actions.jsonl → <project>. */
+/** Folder that owns an action log: <project>/.fabwright/actions.jsonl → <project>. */
 function projectOfLog(log: string): string {
   const d = dirname(log);
-  return d.endsWith(".jumper") ? dirname(d) : d;
+  return d.endsWith(".fabwright") ? dirname(d) : d;
 }
 
 /** --actor mcp / --client claude / --session <sid> as a query string for the hub's /replay. */
@@ -70,7 +70,7 @@ function logFilter(log: string, opts: Opts, agentByDefault = false): string {
   const q = new URLSearchParams();
   if (opts.actor && opts.actor !== "all") q.set("actor", String(opts.actor));
   if (!opts.actor && agentByDefault) {
-    // jumper record: the agent's build only, unless asked (persona report: CLI checks leaked into videos).
+    // fabwright record: the agent's build only, unless asked (persona report: CLI checks leaked into videos).
     const counts = actorCounts(readFileSync(log, "utf8"));
     if (counts.mcp && Object.keys(counts).length > 1) {
       q.set("actor", "mcp");
@@ -90,7 +90,7 @@ function logFilter(log: string, opts: Opts, agentByDefault = false): string {
 }
 
 async function startReplay(log: string, opts: Opts, agentByDefault = false): Promise<{ hub: LiveHub; web: ViteHandle; url: string }> {
-  if (!existsSync(log)) throw new Error(`No action log at ${log}. Fix: pass a project's .jumper/actions.jsonl (every MCP/CLI session writes one).`);
+  if (!existsSync(log)) throw new Error(`No action log at ${log}. Fix: pass a project's .fabwright/actions.jsonl (every MCP/CLI session writes one).`);
   const filter = logFilter(log, opts, agentByDefault);
   const hub = await startLiveHub({ dir: projectOfLog(log), port: Number(opts["live-port"] ?? 0), replayFiles: [log] });
   const web = await startWeb(Number(opts.port ?? 5173));
@@ -103,37 +103,37 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
   try {
     switch (cmd) {
       case "mcp": {
-        const { startStdioServer } = await import("@jumper/mcp");
+        const { startStdioServer } = await import("@fabwright/mcp");
         await startStdioServer(["--project", projectDir, ...(opts.attach ? ["--attach", String(opts.attach)] : [])]);
         return await new Promise<number>(() => {}); // runs until stdin closes
       }
       case "runner": {
-        const { startRunnerServer, RUNNER_IMAGE } = await import("@jumper/runner");
+        const { startRunnerServer, RUNNER_IMAGE } = await import("@fabwright/runner");
         const port = Number(opts.port ?? 7781);
         await startRunnerServer(port);
-        process.stderr.write(`jumper runner on http://127.0.0.1:${port} (image ${RUNNER_IMAGE}). POST /build { fqbn, sketchDir | files }.\n`);
+        process.stderr.write(`fabwright runner on http://127.0.0.1:${port} (image ${RUNNER_IMAGE}). POST /build { fqbn, sketchDir | files }.\n`);
         return await waitForever(async () => {});
       }
       case "serve": {
-        const { startJumperServer, DEFAULT_PORT } = await import("./serve.ts");
-        const port = Number(opts.port ?? opts["live-port"] ?? process.env.JUMPER_PORT ?? DEFAULT_PORT);
+        const { startFabwrightServer, DEFAULT_PORT } = await import("./serve.ts");
+        const port = Number(opts.port ?? opts["live-port"] ?? process.env.FABWRIGHT_PORT ?? DEFAULT_PORT);
         const web = opts["no-web"] ? "none" : opts.built ? "built" : "dev";
-        const srv = await startJumperServer({ dir: projectDir, port, web, ...(opts["strict-port"] ? { strictPort: true } : {}) });
-        const lines = [`Jumper is running for ${srv.dir}`];
+        const srv = await startFabwrightServer({ dir: projectDir, port, web, ...(opts["strict-port"] ? { strictPort: true } : {}) });
+        const lines = [`Fabwright is running for ${srv.dir}`];
         if (srv.port !== port && port !== 0) lines.push(`  (port ${port} was taken, so this is ${srv.port})`);
         if (srv.web !== "none") lines.push(`  open:  ${srv.url}/   (the canvas follows this project live)`);
-        lines.push(`  ws:    ${srv.wsUrl}${srv.web === "none" ? `   (web app off; any Jumper app can follow it with ?follow=${encodeURIComponent(srv.wsUrl)})` : ""}`);
+        lines.push(`  ws:    ${srv.wsUrl}${srv.web === "none" ? `   (web app off; any Fabwright app can follow it with ?follow=${encodeURIComponent(srv.wsUrl)})` : ""}`);
         lines.push(`  MCP:   ${srv.mcpUrl}`, "", "Connect an agent (one step):");
-        lines.push(`  Claude Code:  claude mcp add --transport http jumper ${srv.mcpUrl}`);
-        lines.push(`  Codex:        codex mcp add jumper --url ${srv.mcpUrl}`);
-        lines.push(`  stdio only:   jumper mcp --attach ${srv.url}`);
+        lines.push(`  Claude Code:  claude mcp add --transport http fabwright ${srv.mcpUrl}`);
+        lines.push(`  Codex:        codex mcp add fabwright --url ${srv.mcpUrl}`);
+        lines.push(`  stdio only:   fabwright mcp --attach ${srv.url}`);
         lines.push("More (Claude Desktop, Cursor): the Connect menu in the app, or docs/agents.md. Ctrl+C to stop.", "");
         process.stdout.write(lines.join("\n"));
         if (!opts["no-open"] && srv.web !== "none") openBrowser(`${srv.url}/`);
         return await waitForever(() => srv.close());
       }
       case "replay": {
-        const log = resolve(base, pos[0] ?? join(projectDir, ".jumper/actions.jsonl"));
+        const log = resolve(base, pos[0] ?? join(projectDir, ".fabwright/actions.jsonl"));
         const { hub, web, url } = await startReplay(log, opts);
         process.stdout.write(`Replaying ${log}\n  open: ${url}\nCtrl+C to stop.\n`);
         if (!opts["no-open"]) openBrowser(url);
@@ -143,13 +143,13 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
         });
       }
       case "record": {
-        const log = resolve(base, pos[0] ?? join(projectDir, ".jumper/actions.jsonl"));
-        const out = resolve(base, pos[1] ?? "jumper-replay.mp4");
+        const log = resolve(base, pos[0] ?? join(projectDir, ".fabwright/actions.jsonl"));
+        const out = resolve(base, pos[1] ?? "fabwright-replay.mp4");
         return await record(log, out, opts);
       }
     }
   } catch (err) {
-    process.stderr.write(`jumper ${cmd}: ${(err as Error).message}\n`);
+    process.stderr.write(`fabwright ${cmd}: ${(err as Error).message}\n`);
     return 1;
   }
   return 2;
@@ -168,17 +168,17 @@ async function record(log: string, out: string, opts: Opts): Promise<number> {
       }>;
     };
   };
-  if (!pw) throw new Error("Recording needs Playwright with Chromium. Fix: pnpm --filter @jumper/web exec playwright install chromium");
+  if (!pw) throw new Error("Recording needs Playwright with Chromium. Fix: pnpm --filter @fabwright/web exec playwright install chromium");
   const [w, h] = String(opts.size ?? "1600x900").split("x").map(Number) as [number, number];
   const { hub, web, url } = await startReplay(log, { chrome: "min", ...opts }, true);
-  const videoDir = mkdtempSync(join(tmpdir(), "jumper-video-"));
+  const videoDir = mkdtempSync(join(tmpdir(), "fabwright-video-"));
   const browser = await pw.chromium.launch();
   try {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, recordVideo: { dir: videoDir, size: { width: w, height: h } }, colorScheme: "dark" });
     const page = await ctx.newPage();
     process.stderr.write(`recording ${log} at ${w}x${h}…\n`);
     await page.goto(url);
-    await page.waitForFunction("globalThis.__jumperReplay && globalThis.__jumperReplay.done === true", undefined, { timeout: 15 * 60_000, polling: 500 });
+    await page.waitForFunction("globalThis.__fabwrightReplay && globalThis.__fabwrightReplay.done === true", undefined, { timeout: 15 * 60_000, polling: 500 });
     await page.waitForTimeout(1800); // hold the last frame
     const video = page.video();
     await ctx.close();

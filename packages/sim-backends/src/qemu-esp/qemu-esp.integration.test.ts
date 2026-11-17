@@ -1,11 +1,11 @@
 // Boots real ESP32-C3 firmware (fixtures/esp32_blink_io, arduino-esp32 3.3.12) in Espressif's QEMU
-// through the Jumper bridge. Needs Docker with the jumper/qemu-esp image (toolchains/qemu-esp);
+// through the Fabwright bridge. Needs Docker with the fabwright/qemu-esp image (toolchains/qemu-esp);
 // skipped otherwise.
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import { I2cBus } from "@jumper/sim-core";
+import { I2cBus } from "@fabwright/sim-core";
 import { QemuEspBackend } from "./backend.ts";
 import { qemuImageAvailable } from "./launcher.ts";
 
@@ -39,10 +39,10 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
   it("boots Blink: serial text and the LED pin toggling every 500 ms of virtual time", () => {
     const t0 = Date.now();
     const s = boot();
-    expect(s.be.hello).toMatch(/jumper-esp32-bridge 6 esp32c3.gpio sync=1 feat=.*\bpads\b/);
+    expect(s.be.hello).toMatch(/fabwright-esp32-bridge 6 esp32c3.gpio sync=1 feat=.*\bpads\b/);
     run(s.be, 2600);
     const wallMs = Date.now() - t0;
-    expect(s.serial).toContain("hello from jumper esp32");
+    expect(s.serial).toContain("hello from fabwright esp32");
     const led = s.edges.filter((e) => e.pin === "GPIO8");
     expect(led.length).toBeGreaterThanOrEqual(5);
     // The first toggle lands on the first loop() pass (millis() ≈ boot time), then every 500 ms.
@@ -52,7 +52,7 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
     console.log(`qemu-esp: 2.6 s virtual in ${wallMs} ms wall (boot included); LED edges at ms ${led.map((e) => e.ms.toFixed(3)).join(", ")}`);
   }, 60_000);
 
-  it("reads an input driven from Jumper at an exact virtual time, and is deterministic", () => {
+  it("reads an input driven from Fabwright at an exact virtual time, and is deterministic", () => {
     const traces: string[] = [];
     for (let r = 0; r < 2; r++) {
       const s = boot();
@@ -71,7 +71,7 @@ describe.skipIf(!available)("qemu-esp backend (Espressif QEMU in Docker)", () =>
     expect(traces[0]).toBe(traces[1]);
   }, 60_000);
 
-  it("ESP32: I2C0 transactions reach a part on Jumper's I2C bus", () => {
+  it("ESP32: I2C0 transactions reach a part on Fabwright's I2C bus", () => {
     const be = new QemuEspBackend({ chip: "esp32", network: false });
     backends.push(be);
     const bus = new I2cBus("i2c0", () => be.cycles);

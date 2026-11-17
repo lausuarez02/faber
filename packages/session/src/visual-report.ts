@@ -1,16 +1,16 @@
 // Visual test report for a project folder: runs every scenario with runScenarioVisual and returns
-// (or writes) a jumper-visual-report/1 JSON that the web app's Tests panel shows as filmstrips.
+// (or writes) a fabwright-visual-report/1 JSON that the web app's Tests panel shows as filmstrips.
 //
 //   node --import tsx packages/session/src/visual-report.ts <project dir> [out.json] [--scenario id]
 //
 // The web app reads apps/web/public/reports/<example>.json (written by this for the examples) or a
-// report handed to it by the jumper server (GET /api/visual-report, the session's latest run_tests).
+// report handed to it by the fabwright server (GET /api/visual-report, the session's latest run_tests).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseProject, type Project } from "@jumper/project-format";
-import { registry as defaultRegistry } from "@jumper/parts";
-import type { PartRegistry } from "@jumper/sim-core";
+import { parseProject, type Project } from "@fabwright/project-format";
+import { registry as defaultRegistry } from "@fabwright/parts";
+import type { PartRegistry } from "@fabwright/sim-core";
 import { SimHost } from "./sim.ts";
 import { loadSnapshot } from "./snapshots.ts";
 import { runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
@@ -24,13 +24,13 @@ export interface VisualReportOptions {
 }
 
 export function loadProjectDir(dir: string): { project: Project; hex: string | undefined } {
-  const file = join(dir, "jumper.json");
-  if (!existsSync(file)) throw new Error(`No jumper.json in ${dir}. Pass a project folder (one with jumper.json), e.g. examples/tamagotchi.`);
+  const file = join(dir, "fabwright.json");
+  if (!existsSync(file)) throw new Error(`No fabwright.json in ${dir}. Pass a project folder (one with fabwright.json), e.g. examples/tamagotchi.`);
   const project = parseProject(readFileSync(file, "utf8"));
   const art = project.firmware?.artifact;
   const hexPath = art ? join(dir, art) : undefined;
   const hex = hexPath && existsSync(hexPath) ? readFileSync(hexPath, "utf8") : undefined;
-  if (project.firmware && !hex) throw new Error(`Firmware not built: ${hexPath} is missing. Build it first (jumper build -p ${dir}), then make the report again.`);
+  if (project.firmware && !hex) throw new Error(`Firmware not built: ${hexPath} is missing. Build it first (fabwright build -p ${dir}), then make the report again.`);
   return { project, hex };
 }
 
@@ -55,7 +55,7 @@ export async function buildVisualReport(dir: string, opts: VisualReportOptions =
     }
   }
   const passed = scenarios.filter((s) => s.passed).length;
-  return { format: "jumper-visual-report/1", project: project.name, passed, failed: scenarios.length - passed, scenarios };
+  return { format: "fabwright-visual-report/1", project: project.name, passed, failed: scenarios.length - passed, scenarios };
 }
 
 // CLI

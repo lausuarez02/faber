@@ -3,11 +3,11 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Jumper's patches (jb7), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
+      "note": "Runs the real compiled arduino-esp32 3.3.12 firmware (ESP-IDF 5.5) in Espressif's QEMU 9.2.2 (ESP32-C3 machine) with Fabwright's patches (jb7), in Docker or a native build, in lockstep with the circuit. Verified on real firmware: GPIO outputs and inputs with the chip's pull-ups / pull-downs, UART0 (Serial) and UART1, I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt) and the ADC (analogRead). SPI does not work yet (transfers do not come through), RMT (NeoPixel) is untested, Touch is not emulated. I2S is (jb6: ESP_I2S out and in, verified on real firmware on the ESP32, S3 and C3). docs/boards.md has the per-peripheral status with the test behind each cell."
     },
     "timing": {
       "level": "approx",
-      "note": "QEMU runs in lockstep with Jumper's virtual clock (-icount, one instruction = 8 ns, -rtc clock=vm), so millis(), delay() and the order of pin events are deterministic and repeat exactly. Instruction timing is not cycle-accurate: code runs at about 125 M instructions per virtual second whatever the real 160 MHz pipeline, caches and flash wait states would do, so tight loops and bit-banged protocols run at a different speed than on the chip."
+      "note": "QEMU runs in lockstep with Fabwright's virtual clock (-icount, one instruction = 8 ns, -rtc clock=vm), so millis(), delay() and the order of pin events are deterministic and repeat exactly. Instruction timing is not cycle-accurate: code runs at about 125 M instructions per virtual second whatever the real 160 MHz pipeline, caches and flash wait states would do, so tight loops and bit-banged protocols run at a different speed than on the chip."
     },
     "analog": {
       "level": "approx",
@@ -19,7 +19,7 @@
     },
     "radio": {
       "level": "none",
-      "note": "The radio is not emulated (QEMU has no radio model): no RF, signal, range or roaming, and no Bluetooth / BLE. Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal); partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it). Test range, real access points and everything Bluetooth on the real board."
+      "note": "The radio is not emulated (QEMU has no radio model): no RF, signal, range or roaming, and no Bluetooth / BLE. Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Fabwright's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Fabwright's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal); partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it). Test range, real access points and everything Bluetooth on the real board."
     }
   },
   "emulates": [
@@ -29,11 +29,11 @@
     "I2C0 (Wire) to the I2C parts, PWM (LEDC / analogWrite), GPIO interrupts (attachInterrupt), UART1 and the ADC (analogRead), verified on real firmware",
     "Per-pin over-current check (40 mA)",
     "On-board Li-ion charger (ETA4054S2F, 380 mA) and the battery power path",
-    "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Jumper's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Jumper's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))",
-    "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Jumper's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
+    "Wi-Fi sketches (WiFi.h, HTTPClient, WebSockets, MQTT) run unchanged in Fabwright's simulation build: a Wi-Fi shim carries them over an emulated Ethernet card into Fabwright's sandbox network (mocks, cassettes, faults such as wifi_drop and weak_signal) (partial on the ESP32-C3 (a WiFi.h + HTTPS sketch ran through it))",
+    "I2S audio out and in (ESP_I2S / ESP-IDF i2s_std, i2s_pdm): the DMA paced at the configured sample rate, frames to Fabwright's I2S bus (a MAX98357A plays them; a microphone part answers reads); not the BCK / WS pin edges"
   ],
   "doesNotEmulate": [
-    "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Jumper's sandbox network instead (docs/network.md); BLE does not work",
+    "The radio itself (Wi-Fi RF and Bluetooth / BLE): Wi-Fi sketches run through Fabwright's sandbox network instead (docs/network.md); BLE does not work",
     "Touch pads",
     "The SPI peripheral (SPI transfers do not come through yet); RMT (NeoPixel / WS2812) is untested",
     "Deep sleep, light sleep and their currents",

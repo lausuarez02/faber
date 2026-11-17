@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Activity, ChevronRight, Plug, CircleHelp, GraduationCap, Moon, Sun, SunMoon } from "lucide-react";
-import { engine, useJumper } from "../lib/app.ts";
+import { engine, useFabwright } from "../lib/app.ts";
 import { useUi } from "../lib/ui.ts";
 import { useAgentSteps, useLive } from "../live/liveStore.ts";
 import { AgentPresence } from "../connect/AgentPresence.tsx";
@@ -10,7 +10,7 @@ import { cycleTheme } from "./actions.ts";
 
 /** Bottom-left: round buttons (theme, shortcuts, learn) and the simulation status pill. The minimap sits above (Canvas). */
 export function BottomLeft({ phone }: { phone: boolean }) {
-  const theme = useJumper((s) => s.theme);
+  const theme = useFabwright((s) => s.theme);
   const ui = useUi.getState;
   return (
     <div className="bottom-left">
@@ -22,7 +22,7 @@ export function BottomLeft({ phone }: { phone: boolean }) {
           <button type="button" className="round-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => ui().togglePanel("help")} data-testid="help-button">
             <CircleHelp size={18} strokeWidth={STROKE} aria-hidden />
           </button>
-          <button type="button" className="round-btn" aria-label="Learn Jumper" title="Learn Jumper" onClick={() => ui().togglePanel("learn")} data-testid="learn-button">
+          <button type="button" className="round-btn" aria-label="Learn Fabwright" title="Learn Fabwright" onClick={() => ui().togglePanel("learn")} data-testid="learn-button">
             <GraduationCap size={18} strokeWidth={STROKE} aria-hidden />
           </button>
         </>
@@ -34,8 +34,8 @@ export function BottomLeft({ phone }: { phone: boolean }) {
 
 /** "● 00:13.500 | 1.00× rt": green while running, gray when stopped. Virtual time, not wall clock. */
 function StatusPill() {
-  const run = useJumper((s) => s.run);
-  const factor = useJumper((s) => s.factor);
+  const run = useFabwright((s) => s.run);
+  const factor = useFabwright((s) => s.factor);
   const live = useLive((s) => s.mode !== "off");
   const replay = useLive((s) => s.replay);
   // The engine writes the clock straight into this span every frame; React stays out of the frame loop.

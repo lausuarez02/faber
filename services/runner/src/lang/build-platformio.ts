@@ -1,4 +1,4 @@
-// firmware.language "platformio": `pio run` in jumper/platformio with the project's platformio.ini.
+// firmware.language "platformio": `pio run` in fabwright/platformio with the project's platformio.ini.
 // The image carries the atmelavr platform; a platformio.ini that names another platform is refused
 // up front with the reason (docs/firmware-languages.md), instead of downloading gigabytes mid-build.
 // lib_deps are downloaded on first use (network on), into a cache shared by builds.
@@ -23,7 +23,7 @@ export interface PioEnv {
   framework?: string;
 }
 
-/** The [env:…] sections of a platformio.ini (enough of INI for what Jumper checks). */
+/** The [env:…] sections of a platformio.ini (enough of INI for what Fabwright checks). */
 export function parsePlatformioIni(text: string): PioEnv[] {
   const envs: PioEnv[] = [];
   const common: Record<string, string> = {};
@@ -69,7 +69,7 @@ export async function buildPlatformIO(req: BuildRequest, t0: number): Promise<Bu
   const platform = (env.platform ?? "").split("@")[0]!.trim();
   const known = PIO_PLATFORMS[platform];
   if (!known) {
-    throw new RunnerError("platformio-platform", `Build failed: [env:${env.name}] uses platform '${env.platform ?? "(none)"}', and Jumper's PlatformIO image only has atmelavr. Why: each platform is a large download (espressif32 alone is about 1.5 GB), so they are added one at a time (docs/firmware-languages.md lists which are planned). Fix: use platform = atmelavr for an Uno / Nano, or the Arduino or ESP-IDF language for other boards.`);
+    throw new RunnerError("platformio-platform", `Build failed: [env:${env.name}] uses platform '${env.platform ?? "(none)"}', and Fabwright's PlatformIO image only has atmelavr. Why: each platform is a large download (espressif32 alone is about 1.5 GB), so they are added one at a time (docs/firmware-languages.md lists which are planned). Fix: use platform = atmelavr for an Uno / Nano, or the Arduino or ESP-IDF language for other boards.`);
   }
   if (req.chip && !known.chips.includes(req.chip)) {
     throw new RunnerError("platformio-board", `Build failed: [env:${env.name}] builds for ${known.chips.join(", ")}, but the board in the project is ${req.chip}. Fix: change the board part, or the env's platform / board.`);

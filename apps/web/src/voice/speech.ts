@@ -6,11 +6,11 @@
 // Web Speech API, unless the person muted it (remembered in this browser), the tab is hidden, or a
 // test drives the page (navigator.webdriver). The words are the clip's text; the voice is the
 // browser's, not the MP3 that will be on the real card.
-import { buildNets, type Project } from "@jumper/project-format";
-import type { VisualState } from "@jumper/sim-core";
+import { buildNets, type Project } from "@fabwright/project-format";
+import type { VisualState } from "@fabwright/sim-core";
 import "./voice.css";
 
-const MUTE_KEY = "jumper.speech.muted";
+const MUTE_KEY = "fabwright.speech.muted";
 const listeners = new Set<() => void>();
 
 export function speechMuted(): boolean {

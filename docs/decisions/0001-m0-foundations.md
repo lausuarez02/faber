@@ -6,7 +6,7 @@ M0 has to prove the whole loop on the smallest possible slice: a project file â†
 
 ## Name and brand
 
-**Jumper.** The jumper wire is the one part every hardware project uses, it is short, it works as a CLI verb (`jumper run`, `jumper test`), and it is not a template word like "lab" or "studio". Brand details live in `brand/README.md`.
+**Fabwright.** The jumper wire is the one part every hardware project uses, it is short, it works as a CLI verb (`fabwright run`, `fabwright test`), and it is not a template word like "lab" or "studio". Brand details live in `brand/README.md`.
 
 ## Monorepo
 
@@ -43,7 +43,7 @@ The brief puts containerized arduino-cli builds in M1. For M0 we already add `to
 
 ## Project format
 
-One `jumper.json` per project plus a `firmware/` folder, validated with a zod schema that we also export as JSON Schema. The file is written with a stable key order and one part/wire per line, so moving a part is a one-line diff. Details: `docs/project-format.md`.
+One `fabwright.json` per project plus a `firmware/` folder, validated with a zod schema that we also export as JSON Schema. The file is written with a stable key order and one part/wire per line, so moving a part is a one-line diff. Details: `docs/project-format.md`.
 
 ## Part spec
 

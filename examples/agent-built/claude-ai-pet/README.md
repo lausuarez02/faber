@@ -1,7 +1,7 @@
 # AI pet on a colour screen, built live by Claude Code
 
-Claude Code built this from a one-line goal, using only Jumper's tools over **HTTP MCP**
-(`jumper serve`). The canvas was open in a browser and recorded the whole time. This folder is the
+Claude Code built this from a one-line goal, using only Fabwright's tools over **HTTP MCP**
+(`fabwright serve`). The canvas was open in a browser and recorded the whole time. This folder is the
 agent's final project, unedited: wiring, firmware, five scenario tests, its own screenshots and its
 export. Two pictures from the recording were added afterwards (`device-live.png`, `tests-panel.png`).
 
@@ -20,28 +20,28 @@ It has four parts:
 > has three buttons (talk, feed, play) and a buzzer. When I press talk it asks its AI brain
 > something and shows the answer in a speech bubble, its face changes with its mood, it gets hungry
 > and sad over time and beeps for attention, and if the WiFi drops it shows it is offline and
-> retries. Prove it with scenario tests, then show it running in the device view. Use the jumper
+> retries. Prove it with scenario tests, then show it running in the device view. Use the fabwright
 > tools; the owner is watching the canvas live, so explain each step in its why.
 
 ## The agent and how it ran
 
 - **Agent:** Claude Code 2.1.319 (`claude-opus-5-5`, the default model), headless, 2026-11-09.
-- **Server:** `jumper serve --project <empty folder> --port 7790`, and in Chromium at 1440x900 the canvas following it (`http://localhost:7790/`).
+- **Server:** `fabwright serve --project <empty folder> --port 7790`, and in Chromium at 1440x900 the canvas following it (`http://localhost:7790/`).
 - **Command,** run from the empty folder:
 
   ```
-  claude -p "<prompt>" --mcp-config '{"mcpServers":{"jumper":{"type":"http","url":"http://localhost:7790/mcp"}}}' --strict-mcp-config --allowedTools mcp__jumper --output-format stream-json --verbose --max-turns 250
+  claude -p "<prompt>" --mcp-config '{"mcpServers":{"fabwright":{"type":"http","url":"http://localhost:7790/mcp"}}}' --strict-mcp-config --allowedTools mcp__fabwright --output-format stream-json --verbose --max-turns 250
   ```
 
-  The mcp-config was passed as a file. Built-in tools were still listed, but only `mcp__jumper__*` was allowed.
+  The mcp-config was passed as a file. Built-in tools were still listed, but only `mcp__fabwright__*` was allowed.
 
 | What | Number |
 | --- | --- |
 | Wall time | 576 s (9.6 min) |
 | Cost | $2.69 |
 | Turns | 99 |
-| Tool calls | 98 in total. 92 were Jumper tools; the other 6 were 3 `ToolSearch`, 1 read of the `jumper://docs/agents` resource, 1 `Read` and 1 `Edit`. |
-| Failed calls | 4. One was a built-in `Edit` on `main.ino`, refused by the permission setup; the agent switched to `write_file`. The other three were `write_scenario` calls using `expect_display` on the TFT, which Jumper rejected as "has no screen" (a Jumper bug, fixed below). |
+| Tool calls | 98 in total. 92 were Fabwright tools; the other 6 were 3 `ToolSearch`, 1 read of the `fabwright://docs/agents` resource, 1 `Read` and 1 `Edit`. |
+| Failed calls | 4. One was a built-in `Edit` on `main.ino`, refused by the permission setup; the agent switched to `write_file`. The other three were `write_scenario` calls using `expect_display` on the TFT, which Fabwright rejected as "has no screen" (a Fabwright bug, fixed below). |
 | Firmware | 2 versions, 456 and 457 lines. No compile errors. Flash 21930 / 32256 B, RAM 788 / 2048 B. |
 | Test runs | 3/5, 4/5, 4/5, then 5/5. The failures were the agent's own timing assumptions. |
 | Live AI | `set_ai_mode live` and `run_live` (13 s at real time): claude-haiku-5-5 answered "Hi you! Food is pretty good, I feel bouncy!" in 2.9 s. |
@@ -60,7 +60,7 @@ and `export`.
 - **Level shifting:** a 1k/2k divider on the ESP's RX line. A 1k series resistor on its TX line was
   added after `check_design` flagged 5 V reaching the ESP's TX pin through D2's pull-up.
 - **Firmware** (`firmware/main.ino`, Adafruit ILI9341 + GFX):
-  - **AI brain:** asks `GET http://ai.jumper/v1/pet?a=talk&f=…&j=…&e=…&n=Pip` over AT commands and
+  - **AI brain:** asks `GET http://ai.fabwright/v1/pet?a=talk&f=…&j=…&e=…&n=Pip` over AT commands and
     draws the `mood|text` reply word-wrapped in a speech bubble.
   - **Faces:** five, one per mood: happy, ok, hungry, sad (with a tear) and sleepy.
   - **Status bar:** FOOD and JOY bars and a WiFi / OFFLINE badge.
@@ -83,10 +83,10 @@ All four checks below ran on a copy of the folder.
 
 | Check | Result |
 | --- | --- |
-| `jumper check` | 0 errors, 0 warnings |
-| `jumper build --force` | OK. Byte-identical to the agent's `main.hex`. Libraries: Adafruit ILI9341 1.7.0, GFX 1.13.0, BusIO 1.17.4 |
-| `jumper test` | 5 passed, 0 failed |
-| `jumper fidelity` | 3 parts simulated exactly, 7 by behaviour. Logic is exact; timing, analog, power and radio are approximate. 20 items to check on real hardware |
+| `fabwright check` | 0 errors, 0 warnings |
+| `fabwright build --force` | OK. Byte-identical to the agent's `main.hex`. Libraries: Adafruit ILI9341 1.7.0, GFX 1.13.0, BusIO 1.17.4 |
+| `fabwright test` | 5 passed, 0 failed |
+| `fabwright fidelity` | 3 parts simulated exactly, 7 by behaviour. Logic is exact; timing, analog, power and radio are approximate. 20 items to check on real hardware |
 
 In the browser (recorded), with the server's **Live** AI using the logged-in `claude` CLI and claude-haiku-5-5:
 - I pressed TALK, FEED and PLAY on the 3D handheld.
@@ -117,21 +117,21 @@ retries.
 2. **The built pet could not run in the browser that followed the agent.**
    - Effect: the canvas TFT stayed black, Run did nothing, and the Device view clock stayed at
      00:00.000. The only explanation was a toast hidden behind the Device view.
-   - Fixed: `GET /api/project` on `jumper serve`, and `http://localhost:<port>/?local` opens the
+   - Fixed: `GET /api/project` on `fabwright serve`, and `http://localhost:<port>/?local` opens the
      agent's project with its built hex, so it runs in the browser (screen, buttons, Device view,
      Network panel). The follow-mode Run toast now names that URL. Test in `apps/cli/test/serve.test.ts`.
 3. **The Tests panel's empty state pointed to a dev-only script** (`node --import tsx
    packages/session/src/visual-report.ts …`), and the panel has no Run button.
-   - Fixed: the hint now says `pnpm jumper test --visual -p <project dir>`.
+   - Fixed: the hint now says `pnpm fabwright test --visual -p <project dir>`.
    - Still open: a report from the agent's `run_tests` is held only in the server's memory and is
      lost when the server restarts.
 4. **Live AI answered "happy|..." once,** a reply with no words, which was then cached for 15 s.
    - The cause wasn't confirmed.
    - The reply cleaner now uses the next line when the model puts its words after a line break, with
      a test in `services/ai-gateway/test/gateway.test.ts`.
-5. **Not Jumper:** the agent tried the built-in `Edit` once (refused by `--allowedTools`), then used
+5. **Not Fabwright:** the agent tried the built-in `Edit` once (refused by `--allowedTools`), then used
    `write_file`. In its words: "Direct file edits aren't permitted here, which is fine — going
-   through Jumper's `write_file` also puts the change on the canvas with its reason."
+   through Fabwright's `write_file` also puts the change on the canvas with its reason."
 6. **Still open:**
    - **Agent pill:** it read "connected" before any agent had connected, and still read "building ·
      27 steps" after the agent finished.
@@ -143,7 +143,7 @@ retries.
 
 ## Replay
 
-`pnpm jumper replay examples/agent-built/claude-ai-pet/agent-actions.jsonl` (the agent's 92 calls).
+`pnpm fabwright replay examples/agent-built/claude-ai-pet/agent-actions.jsonl` (the agent's 92 calls).
 To run it yourself: `pnpm start --project examples/agent-built/claude-ai-pet`. Then open
 `http://localhost:7780/?local`, press Run, then the Device view button.
 - **Talk to it:** press 1, 2 and 3 (TALK, FEED, PLAY).

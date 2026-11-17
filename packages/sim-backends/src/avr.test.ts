@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { hashString, type McuBackend, type PinState } from "@jumper/sim-core";
+import { hashString, type McuBackend, type PinState } from "@fabwright/sim-core";
 import { backendFactory, boardPinMap, createAvrBackend, createBackend } from "./index.ts";
 
 /** Golden firmware built by scripts/build-firmware.sh (see examples/blink/firmware/BUILD.md). */

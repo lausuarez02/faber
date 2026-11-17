@@ -1,10 +1,10 @@
 {
-  "name": "@jumper/agent-skill",
+  "name": "@fabwright/agent-skill",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Jumper's hardware know-how, written once: the design loop, the rules of thumb, how the parts go inside, and how to answer 'what do I need to build it'. Rendered as MCP instructions, prompts and a resource, a Claude Code skill, AGENTS.md and a plugin.",
+  "description": "Fabwright's hardware know-how, written once: the design loop, the rules of thumb, how the parts go inside, and how to answer 'what do I need to build it'. Rendered as MCP instructions, prompts and a resource, a Claude Code skill, AGENTS.md and a plugin.",
   "exports": {
     ".": "./src/index.ts"
   },

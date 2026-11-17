@@ -1,15 +1,15 @@
 // IR obstacle sensors and bump switches on a robot: the world finds them by type, reads their
 // mount side, and feeds raycast distances / contact into the parts every physics step.
 import { beforeAll, describe, expect, it } from "vitest";
-import { parseProject } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { backendFactory } from "@jumper/sim-backends";
-import { registry } from "@jumper/parts";
+import { parseProject } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { backendFactory } from "@fabwright/sim-backends";
+import { registry } from "@fabwright/parts";
 import { attachPhysics, initPhysics, mountAngle, parseWorld, WorldSpecError } from "./index.ts";
 
 const robot = (extra: { id: string; type: string; props?: Record<string, string | number> }[], world: Record<string, unknown>) => {
   const project = parseProject({
-    format: "jumper/1",
+    format: "fabwright/1",
     name: "sensors",
     parts: [
       { id: "uno", type: "arduino-uno", x: 0, y: 0 },

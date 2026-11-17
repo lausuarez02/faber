@@ -3,8 +3,8 @@ import { CAMERA_STARTER_INO } from "./templates.ts";
 
 /**
  * Round 13 (camera): get_part usage for the camera parts. Cameras are a general capability:
- * Espressif's esp32-camera driver (esp_camera.h) on an ESP32 / ESP32-S3; in Jumper's simulation
- * build its API is answered by Jumper (frames from a scene, an image or the webcam).
+ * Espressif's esp32-camera driver (esp_camera.h) on an ESP32 / ESP32-S3; in Fabwright's simulation
+ * build its API is answered by Fabwright (frames from a scene, an image or the webcam).
  */
 const SHOW = 'What it sees in the simulator: set_camera_frame {"scene": "face"} or {"image": "tests/cat.jpg"} (live, not saved), in tests {"camera_frame": "face"}; the person can drop a picture or use the webcam in the Inspector. State: camera_frames, camera_size ("320×240 JPEG"), camera_on, camera_preview (the last picture, drawn in the lens). Check with {"expect_part": "<id>.camera_frames", "op": ">=", "value": 1, "within_ms": 2000}.';
 

@@ -1,13 +1,13 @@
-import type { Project } from "@jumper/project-format";
-import type { VisualState } from "@jumper/sim-core";
+import type { Project } from "@fabwright/project-format";
+import type { VisualState } from "@fabwright/sim-core";
 import { nextCursorN, noteStepActors, useLive, type FidelityView, type LiveStep, type TestResultView } from "./liveStore.ts";
 import { setColorFrames, type ColorFrameImage } from "../lib/colorFrames.ts"; // round 6 frames
 import { playRunAudio, type RunAudioRef } from "./runAudio.ts"; // round 13 audio
 
 /**
  * Applies action-log entries (from the live hub or a replay file) to the canvas, and paces a replay.
- * The log format is ActionEntry from @jumper/session (one JSON object per line of
- * <project>/.jumper/actions.jsonl).
+ * The log format is ActionEntry from @fabwright/session (one JSON object per line of
+ * <project>/.fabwright/actions.jsonl).
  */
 
 export interface LogFrame {
@@ -259,7 +259,7 @@ export class ReplayPlayer {
     const e = this.entries[this.i];
     if (!e) {
       this.setReplay({ playing: false, done: true });
-      (globalThis as { __jumperReplay?: unknown }).__jumperReplay = { done: true, entries: this.entries.length };
+      (globalThis as { __fabwrightReplay?: unknown }).__fabwrightReplay = { done: true, entries: this.entries.length };
       return;
     }
     this.i++;

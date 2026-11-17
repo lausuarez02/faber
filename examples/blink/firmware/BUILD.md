@@ -14,14 +14,14 @@ cp examples/blink/firmware/build/blink.ino.hex examples/blink/firmware/blink.hex
 ```
 
 The script builds the toolchain image from `toolchains/arduino/Dockerfile` on first use (native
-arch: arm64 on Apple Silicon, amd64 elsewhere; `JUMPER_DOCKER_PLATFORM=linux/amd64` forces one).
+arch: arm64 on Apple Silicon, amd64 elsewhere; `FABWRIGHT_DOCKER_PLATFORM=linux/amd64` forces one).
 
 ## Artifacts
 
 | File | Committed | Notes |
 | --- | --- | --- |
 | `build/blink.ino.hex` | yes (see note) | flash image without bootloader, 1992 bytes of code |
-| `blink.hex` | yes | same bytes; the path `jumper.json` `firmware.artifact` points at |
+| `blink.hex` | yes | same bytes; the path `fabwright.json` `firmware.artifact` points at |
 | `build/*.elf`, `*.eep`, `*.with_bootloader.*` | no | ignored by `build/.gitignore` |
 
 Note: the root `.gitignore` ignores every `build/` directory, so `build/blink.ino.hex` needs an
@@ -40,7 +40,7 @@ sha256 of the golden hex:
 | avr-gcc | 7.3.0-atmel3.6.1-arduino7 (GCC 7.3.0) |
 | avrdude (unused) | 8.0.0-arduino1 |
 | FQBN | `arduino:avr:uno` |
-| Image tag | `jumper/arduino-cli:1.5.1-avr1.8.8` |
+| Image tag | `fabwright/arduino-cli:1.5.1-avr1.8.8` |
 
 Reproducibility: built on linux/arm64 (Apple Silicon, native) and linux/amd64 (emulated); both
 produced the byte-identical hex above.

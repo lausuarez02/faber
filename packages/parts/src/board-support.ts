@@ -1,4 +1,4 @@
-// What Jumper emulates on each board, per peripheral, and how we know (round 10, integration).
+// What Fabwright emulates on each board, per peripheral, and how we know (round 10, integration).
 // One table: docs/boards.md is generated from it (pnpm gen), the parts library shows a board's row,
 // and board-support.test.ts keeps it honest (every board part has a row, every "verified" cell names
 // a test file that exists, planned boards say so).
@@ -7,7 +7,7 @@
 //   verified   a committed fixture test ran real firmware on this board (or its chip) and checked it
 //   partial    works with a stated gap, or real firmware ran but not as a committed passing test
 //   untested   code for it exists in the backend / emulator, but no real firmware has exercised it
-//   no         not emulated: the firmware cannot use it in Jumper (test it on the real board)
+//   no         not emulated: the firmware cannot use it in Fabwright (test it on the real board)
 //   n/a        the chip has no such peripheral
 
 export type SupportStatus = "verified" | "partial" | "untested" | "no" | "n/a";
@@ -91,7 +91,7 @@ const avr = (board: string): BoardSupport => ({
     gpio: v(T.avrBlink),
     pwm: v(T.avrPwm),
     adc: v(T.avrAdc, "A0..A5 fed from the solved pin voltage (AVCC = vcc)"),
-    irq: untested("avr8js models INT0 / INT1 and pin-change interrupts; no Jumper fixture uses attachInterrupt yet"),
+    irq: untested("avr8js models INT0 / INT1 and pin-change interrupts; no Fabwright fixture uses attachInterrupt yet"),
     uart: v(T.avrBlink, "the hardware USART; on D0 / D1 bit by bit when a part listens"),
     i2c: v(T.avrTwi, "TWI master against real compiled firmware"),
     spi: v(T.avrTwi),
@@ -103,7 +103,7 @@ const avr = (board: string): BoardSupport => ({
   },
   languages: [
     { id: "arduino", status: "verified" },
-    { id: "platformio", status: "untested", note: "image jumper/platformio:6.2.0-avr5.3.0-r1 built; Jumper's build path never ran (Docker failed in round 10)" },
+    { id: "platformio", status: "untested", note: "image fabwright/platformio:6.2.0-avr5.3.0-r1 built; Fabwright's build path never ran (Docker failed in round 10)" },
   ],
 });
 
@@ -118,7 +118,7 @@ const rp = (board: string, boots: string): BoardSupport => ({
     gpio: v(T.rp),
     pwm: v(T.rp, "analogWrite at arduino-pico's 1 kHz; tone()"),
     adc: v(T.rp, "12-bit ADC (10-bit analogRead)"),
-    irq: untested("rp2040js models GPIO interrupts; no Jumper fixture uses attachInterrupt yet"),
+    irq: untested("rp2040js models GPIO interrupts; no Fabwright fixture uses attachInterrupt yet"),
     uart: v(T.rp, "Serial1 through the wires; USB serial for Serial"),
     i2c: v(T.rp),
     spi: v(T.rp),
@@ -136,7 +136,7 @@ const rp = (board: string, boots: string): BoardSupport => ({
 
 // ------------------------------------------------------------------------------------------ ESP32 family
 
-const NATIVE = "on Jumper's native QEMU (the jb7 sources built on this machine by `jumper setup esp32`; the jb7 Docker image has not been built yet)";
+const NATIVE = "on Fabwright's native QEMU (the jb7 sources built on this machine by `fabwright setup esp32`; the jb7 Docker image has not been built yet)";
 
 const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport => {
   const s3 = chip === "esp32s3";
@@ -144,7 +144,7 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
   return {
     board,
     backend: "qemu-esp",
-    runs: "Espressif QEMU on this computer (Docker image jumper/qemu-esp, or a native build), started by jumper serve",
+    runs: "Espressif QEMU on this computer (Docker image fabwright/qemu-esp, or a native build), started by fabwright serve",
     areas: {
       boots: v(T.espBoards, `real arduino-esp32 firmware ${NATIVE}`),
       gpio: v(T.espBoards, "output, input with the internal pull-up"),
@@ -156,7 +156,7 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
       spi: { status: "partial", test: T.espArduino, note: `Arduino's SPI class (polled): 9F 00 00 with the MISO answer, then a 100-byte write; ${s3 ? "MicroPython does not run on the S3" : `MicroPython's SPI (DMA) still fails (${chip === "esp32c3" ? "MOSI arrives as 00 00" : "the transfer never returns"}), asserted as a known gap in ${T.espPeriph}`}` },
       i2s: v(
         T.espAudio,
-        `ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, ${chip === "esp32" ? "I2S0 / I2S1 with their own DMA" : chip === "esp32s3" ? "I2S0 / I2S1 through GDMA" : "I2S0 through GDMA"}): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (${s3 ? "PDM, the XIAO Sense's mic pins" : "standard I2S"})${s3 ? "; an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network" : ""}. Frames, not BCLK / WS edges, cross to Jumper; no slave mode, A-law / u-law or bit-order swaps`,
+        `ESP_I2S from real Arduino firmware through QEMU's I2S device (jb6, ${chip === "esp32" ? "I2S0 / I2S1 with their own DMA" : chip === "esp32s3" ? "I2S0 / I2S1 through GDMA" : "I2S0 through GDMA"}): tones at 8, 16, 22.05, 44.1 and 48 kHz with the right frequency, length and level, 16-bit mono and 32-bit stereo, a WAV from flash, write() paced by the DMA, and a microphone read (${s3 ? "PDM, the XIAO Sense's mic pins" : "standard I2S"})${s3 ? "; an MP3 decoded on the device, and PCM / WAV streamed from an API through the device network" : ""}. Frames, not BCLK / WS edges, cross to Fabwright; no slave mode, A-law / u-law or bit-order swaps`,
       ),
       rmt: v(T.espArduino, "Adafruit NeoPixel through the RMT: two frames of 8 GRB pixels decoded from the pin"),
       net: s3
@@ -168,14 +168,14 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
       camera:
         chip === "esp32c3"
           ? na("the ESP32-C3 has no camera interface (esp32-camera does not support it)")
-          : v(T.espCamera, `esp32-camera from real Arduino firmware (${chip === "esp32" ? "ESP32-CAM pins" : "XIAO ESP32-S3 Sense pins"}): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Jumper (QEMU patch 0006); the ${chip === "esp32" ? "I2S camera mode" : "LCD_CAM"} hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs)`),
+          : v(T.espCamera, `esp32-camera from real Arduino firmware (${chip === "esp32" ? "ESP32-CAM pins" : "XIAO ESP32-S3 Sense pins"}): esp_camera_init finds the camera on its pins, JPEG / RGB565 / grayscale frames, FB-OVF, capture time. The driver's API is wrapped in the simulation build and the frames come from Fabwright (QEMU patch 0006); the ${chip === "esp32" ? "I2S camera mode" : "LCD_CAM"} hardware is not modelled. Needs a camera part (built in on the Sense, or an OV2640 module wired to GPIOs)`),
     },
     languages: [
-      { id: "arduino", status: "verified", note: "simulation build: jumper/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (jumper setup esp32); device build JUMPER_SIM=0" },
+      { id: "arduino", status: "verified", note: "simulation build: fabwright/arduino-esp32:3.3.12-r3 in Docker, or the same core and libraries natively (fabwright setup esp32); device build FABWRIGHT_SIM=0" },
       s3
         ? { id: "micropython", status: "no", note: "the official S3 build stops at 'Failed to set QIE bit' (REPL on USB-OTG); needs a UART-REPL build" }
-        : { id: "micropython", status: "verified", note: "official 1.29.0 build + Jumper's littlefs image with main.py" },
-      { id: "esp-idf", status: "untested", note: "image jumper/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)" },
+        : { id: "micropython", status: "verified", note: "official 1.29.0 build + Fabwright's littlefs image with main.py" },
+      { id: "esp-idf", status: "untested", note: "image fabwright/esp-idf:5.5.5-r1 built; no project build ran (Docker failed)" },
     ],
   };
 };
@@ -185,7 +185,7 @@ const esp = (board: string, chip: "esp32" | "esp32s3" | "esp32c3"): BoardSupport
 const renode = (board: string, o: { irq?: SupportCell; uart?: SupportCell; ble?: SupportCell } = {}): BoardSupport => ({
   board,
   backend: "renode",
-  runs: "Renode 1.17 on this computer (Docker image jumper/renode, or a native Renode), started by jumper serve",
+  runs: "Renode 1.17 on this computer (Docker image fabwright/renode, or a native Renode), started by fabwright serve",
   areas: {
     boots: v(T.renode, "native Renode 1.17.0 (Docker path not re-run since Docker failed)"),
     gpio: v(T.renode, "every listed pin as output and input"),
@@ -250,14 +250,14 @@ export function boardSupportSummary(b: BoardSupport): string {
 export function boardSupportMarkdown(names: Record<string, { name: string; availability?: { status: string; reason: string } }>): string {
   const out: string[] = [];
   out.push("<!-- Generated by `pnpm gen` from packages/parts/src/board-support.ts. Edit that file, not this one. -->");
-  out.push("# Boards: what Jumper emulates");
+  out.push("# Boards: what Fabwright emulates");
   out.push("");
   out.push("Every board, every peripheral, and how we know. Statuses:");
   out.push("");
   out.push("- **✅ verified**: a committed fixture test ran real firmware on this board (or its chip) and checked it (linked).");
   out.push("- **🟡 partial**: works with a stated gap, or real firmware ran but not as a committed passing test.");
-  out.push("- **⚪ untested**: the code exists in the emulator and Jumper's backend, but no real firmware has exercised it yet. Treat it as not emulated until it is verified.");
-  out.push("- **❌ no**: not emulated. The firmware cannot use it in Jumper; test it on the real board.");
+  out.push("- **⚪ untested**: the code exists in the emulator and Fabwright's backend, but no real firmware has exercised it yet. Treat it as not emulated until it is verified.");
+  out.push("- **❌ no**: not emulated. The firmware cannot use it in Fabwright; test it on the real board.");
   out.push("- **n/a**: the chip has no such peripheral.");
   out.push("");
   out.push("A board is placeable in the parts library only when its fixture test proves it boots real firmware and its listed buses work (part.json `availability`); the others are listed as planned with the reason.");
@@ -294,9 +294,9 @@ export function boardSupportMarkdown(names: Record<string, { name: string; avail
   out.push("");
   out.push("## Gaps across boards");
   out.push("");
-  out.push("- **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Jumper's sandbox network (docs/network.md); signal, range and roaming are not modelled.");
-  out.push("- **The ESP32 emulator image jumper/qemu-esp:9.2.2-20260417-jb7 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Jumper's native QEMU built from the same sources (`jumper setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
-  out.push("- **Process-backend boards (QEMU, Renode) run only through `jumper serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.");
+  out.push("- **Wi-Fi radio and BLE are not emulated anywhere.** ESP32 Wi-Fi sketches run unchanged through an emulated Ethernet card and Fabwright's sandbox network (docs/network.md); signal, range and roaming are not modelled.");
+  out.push("- **The ESP32 emulator image fabwright/qemu-esp:9.2.2-20260417-jb7 has not been built in Docker** (Docker Desktop on the integration machine is broken). Every ESP check above ran on Fabwright's native QEMU built from the same sources (`fabwright setup esp32`); with Docker up and no native install, ESP boards say \"image missing\" with the fix.");
+  out.push("- **Process-backend boards (QEMU, Renode) run only through `fabwright serve`** (the page follows that run); the page itself runs AVR and RP2040 boards.");
   out.push("- **Renode starts on the first step and blocks the server thread for about 2.4 s** at start and on reset.");
   out.push("");
   return out.join("\n");

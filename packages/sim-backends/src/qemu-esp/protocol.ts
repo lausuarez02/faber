@@ -1,11 +1,11 @@
-// The Jumper bridge line protocol spoken by the patched QEMU GPIO block (toolchains/qemu-esp,
+// The Fabwright bridge line protocol spoken by the patched QEMU GPIO block (toolchains/qemu-esp,
 // hw/gpio/esp32_gpio.c). One event per line, hex numbers without 0x (except "I": decimal).
-// Version 5 (jumper/qemu-esp:9.2.2-20260417-jb5) adds everything after the I2C lines plus "P"; version 6
+// Version 5 (fabwright/qemu-esp:9.2.2-20260417-jb5) adds everything after the I2C lines plus "P"; version 6
 // (jb6, round 13) adds the I2S device behind ST / SR and "z<nbytes>" silence in ST. Version 2
 // images send a subset and keep working with this parser. Reference: docs/esp32-emulator.md.
 //
-//   QEMU → Jumper                                      Jumper → QEMU
-//   H jumper-esp32-bridge <v> <type> sync= feat=       I <pin> <0|1>     drive an input (decimal)
+//   QEMU → Fabwright                                      Fabwright → QEMU
+//   H fabwright-esp32-bridge <v> <type> sync= feat=       I <pin> <0|1>     drive an input (decimal)
 //   G <out0> <out1> <en0> <en1> <ns>   GPIO regs       E <gpio> <mV>     pad voltage (ADC input)
 //   M <gpio> <out_sel> <oen_sel> <ns>  output routing  W <hex>           UART0 RX
 //   N <signal> <gpio> <matrix> <ns>    input routing   X <uart> <hex>    UART1/2 RX
@@ -27,10 +27,10 @@
 //   SR <port> <ns> <rate> <bits> <chans> <frames>              I2S frames wanted (answer Q)
 //   P <pu0> <pu1> <pd0> <pd1> <ns>                             pad pull-up / pull-down masks (IO_MUX / RTC_IO);
 //                                                              in lockstep QEMU waits for "A 0" after it
-//   CC <ns> <cmd> <a0> … <a7>                                  camera port command (patch 0006, hw/misc/jumper_camera.c;
+//   CC <ns> <cmd> <a0> … <a7>                                  camera port command (patch 0006, hw/misc/fabwright_camera.c;
 //                                                              answer Q: up to 8 little-endian words). cmd 1 init,
 //                                                              2 capture, 3 deinit; argument and answer layout:
-//                                                              toolchains/arduino-esp32/libraries/JumperCamera
+//                                                              toolchains/arduino-esp32/libraries/FabwrightCamera
 //   CD <offset> <n>                                            camera frame bytes [offset, offset + n) (answer Q <hex>)
 
 export type BridgeEvent =
@@ -155,7 +155,7 @@ export function encodeSerialN(uart: number, bytes: Iterable<number>): string {
   return `X ${uart.toString(16)} ${bytesHex(bytes)}\n`;
 }
 
-/** Lines QEMU blocks on until Jumper answers (or the lockstep target "T"). Keep in sync with sync-link.ts. */
+/** Lines QEMU blocks on until Fabwright answers (or the lockstep target "T"). Keep in sync with sync-link.ts. */
 export const BLOCKING_PREFIXES = ["T ", "IS ", "IR ", "SQ ", "SR ", "P ", "CC ", "CD "] as const;
 /** Words an answer to "CC" carries (encodeWords). */
 export const encodeWords = (words: readonly number[]) => {

@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Jumper's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
+      "note": "Runs the real compiled arduino-pico firmware on an RP2040 emulator (rp2040js, core 0): GPIO, PWM, ADC, UART, I2C, SPI, PIO, DMA, timers, interrupts and USB serial behave like the chip. Wire and SPI talk to the I2C and SPI parts wired to the board's default bus pins; Serial1/Serial2 bytes travel bit by bit on their TX/RX pins. The boot ROM is Fabwright's own implementation of the ROM function table (float and double maths, memory copy, flash erase and program), not Raspberry Pi's ROM code."
     },
     "timing": {
       "level": "approx",
@@ -37,7 +37,7 @@
   ],
   "doesNotEmulate": [
     "Second core (core 1): setup1()/loop1() never run",
-    "Raspberry Pi's own boot ROM code (Jumper implements the same function table natively; transcendental maths may differ in the last bit)",
+    "Raspberry Pi's own boot ROM code (Fabwright implements the same function table natively; transcendental maths may differ in the last bit)",
     "BOOTSEL button, UF2 drag-and-drop upload and the RUN pin",
     "Flash contents across a reset: EEPROM and LittleFS writes are lost on reset",
     "Target (slave) mode of the two-wire bus controller, Wire.begin(address): the board can only be the bus master",

@@ -1,4 +1,4 @@
-import type { Project } from "@jumper/project-format";
+import type { Project } from "@fabwright/project-format";
 import type { ToolDef } from "../catalog.ts";
 import type { Step } from "../history.ts";
 import type { ProjectSession } from "../session.ts";

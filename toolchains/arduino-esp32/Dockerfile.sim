@@ -1,28 +1,28 @@
 # syntax=docker/dockerfile:1
-# Jumper build image for ESP32-family boards, with simulation networking (round 10).
-# = jumper/arduino-esp32:3.3.12-r2 (Dockerfile in this folder: arduino-cli + the pinned esp32 core
-# + JumperEth) plus:
-#   - JumperSim: the Wi-Fi shim and the TLS trust shim, linked into simulation builds only
-#     (JUMPER_SIM=1, the default; JUMPER_SIM=0 builds for the real device, without it).
-#   - JumperEth with jumper_eth_install() (used by the shim).
-#   - JumperCamera (round 13): the esp32-camera shim, linked into simulation builds of sketches that
-#     include esp_camera.h (frames from Jumper's camera port, QEMU patch 0004).
-#   - JumperSleep (round 15): the deep-sleep shim, linked into simulation builds of sketches that call
-#     esp_deep_sleep / esp_deep_sleep_start (Jumper wakes the board; RTC memory and the clock survive).
+# Fabwright build image for ESP32-family boards, with simulation networking (round 10).
+# = fabwright/arduino-esp32:3.3.12-r2 (Dockerfile in this folder: arduino-cli + the pinned esp32 core
+# + FabwrightEth) plus:
+#   - FabwrightSim: the Wi-Fi shim and the TLS trust shim, linked into simulation builds only
+#     (FABWRIGHT_SIM=1, the default; FABWRIGHT_SIM=0 builds for the real device, without it).
+#   - FabwrightEth with fabwright_eth_install() (used by the shim).
+#   - FabwrightCamera (round 13): the esp32-camera shim, linked into simulation builds of sketches that
+#     include esp_camera.h (frames from Fabwright's camera port, QEMU patch 0004).
+#   - FabwrightSleep (round 15): the deep-sleep shim, linked into simulation builds of sketches that call
+#     esp_deep_sleep / esp_deep_sleep_start (Fabwright wakes the board; RTC memory and the clock survive).
 #   - Pinned network libraries sketches commonly use, so the same source builds for the
 #     simulation and the device: PubSubClient (MIT), arduino-mqtt "MQTT" (MIT), ArduinoJson (MIT),
 #     arduinoWebSockets "WebSockets" (LGPL-2.1, a build input of the person's firmware; see NOTICE).
 #
-#   docker build -t jumper/arduino-esp32:3.3.12-r3 -f toolchains/arduino-esp32/Dockerfile.sim toolchains/arduino-esp32
-ARG BASE_IMAGE=jumper/arduino-esp32:3.3.12-r2
+#   docker build -t fabwright/arduino-esp32:3.3.12-r3 -f toolchains/arduino-esp32/Dockerfile.sim toolchains/arduino-esp32
+ARG BASE_IMAGE=fabwright/arduino-esp32:3.3.12-r2
 FROM ${BASE_IMAGE}
 RUN arduino-cli lib update-index \
  && arduino-cli lib install "PubSubClient@2.8.0" "MQTT@2.5.3" "ArduinoJson@7.4.3" "WebSockets@2.7.2" \
  && rm -rf /opt/arduino/staging /opt/arduino/downloads \
  && chmod -R a+rX /opt/arduino/user/libraries
-COPY libraries/JumperEth /opt/arduino/user/libraries/JumperEth
-COPY libraries/JumperSim /opt/arduino/user/libraries/JumperSim
-COPY libraries/JumperCamera /opt/arduino/user/libraries/JumperCamera
-COPY libraries/JumperSleep /opt/arduino/user/libraries/JumperSleep
-COPY jumper-arduino-esp32.sh /usr/local/bin/jumper-arduino-esp32
-RUN chmod a+rx /usr/local/bin/jumper-arduino-esp32 && chmod -R a+rX /opt/arduino/user/libraries
+COPY libraries/FabwrightEth /opt/arduino/user/libraries/FabwrightEth
+COPY libraries/FabwrightSim /opt/arduino/user/libraries/FabwrightSim
+COPY libraries/FabwrightCamera /opt/arduino/user/libraries/FabwrightCamera
+COPY libraries/FabwrightSleep /opt/arduino/user/libraries/FabwrightSleep
+COPY fabwright-arduino-esp32.sh /usr/local/bin/fabwright-arduino-esp32
+RUN chmod a+rx /usr/local/bin/fabwright-arduino-esp32 && chmod -R a+rX /opt/arduino/user/libraries

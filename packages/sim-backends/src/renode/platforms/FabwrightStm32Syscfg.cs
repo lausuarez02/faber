@@ -7,9 +7,9 @@ using Antmicro.Renode.Peripherals.Bus;
 
 namespace Antmicro.Renode.Peripherals.Miscellaneous
 {
-    public class JumperStm32Syscfg : IDoubleWordPeripheral, IKnownSize, IGPIOReceiver
+    public class FabwrightStm32Syscfg : IDoubleWordPeripheral, IKnownSize, IGPIOReceiver
     {
-        public JumperStm32Syscfg(IMachine machine, IGPIOReceiver exti)
+        public FabwrightStm32Syscfg(IMachine machine, IGPIOReceiver exti)
         {
             this.exti = exti;
             Reset();

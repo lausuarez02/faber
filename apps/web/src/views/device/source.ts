@@ -1,9 +1,9 @@
 // What the Device view reads and drives. The view never owns the simulation: the canvas engine
 // (or a scrubbed replay, or the standalone harness) steps it, and the view samples it on every
 // animation frame. Keeping this tiny interface means one 3D view serves all three.
-import type { Project } from "@jumper/project-format";
-import type { ColorFrame, Simulation, VisualState } from "@jumper/sim-core";
-import type { PhysicsBinding } from "@jumper/physics";
+import type { Project } from "@fabwright/project-format";
+import type { ColorFrame, Simulation, VisualState } from "@fabwright/sim-core";
+import type { PhysicsBinding } from "@fabwright/physics";
 
 export type RunState = "idle" | "running" | "paused";
 
@@ -30,7 +30,7 @@ export interface DeviceSource {
   /** Push / let go of a button (or any part with a press interaction). */
   press(partId: string): void;
   release(partId: string): void;
-  /** The project's built case (Device view shows it). Default: GET /api/device/case on jumper serve. */
+  /** The project's built case (Device view shows it). Default: GET /api/device/case on fabwright serve. */
   loadCase?(): Promise<import("./classify.ts").CaseModel | null>;
   /** Subscribe to changes that need a React render (project, run state); returns unsubscribe. */
   subscribe(fn: () => void): () => void;
@@ -57,7 +57,7 @@ export interface StoreLike {
 }
 
 /**
- * Adapter for the web app: `<DeviceView source={engineSource(engine, useJumper)} />`.
+ * Adapter for the web app: `<DeviceView source={engineSource(engine, useFabwright)} />`.
  * The engine keeps stepping the simulation on its own animation frame; this only reads.
  */
 export function engineSource(engine: EngineLike, store: StoreLike): DeviceSource {

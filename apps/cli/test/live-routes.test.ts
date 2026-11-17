@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
-import { startJumperServer, type JumperServer } from "../src/serve.ts";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
 
 // Round 5, live track (decision 0003, C3/C6): the followed page runs the device itself. The server
 // tells it the agent's state, hands it the built hex, and says when to reload / auto-run.
@@ -48,23 +48,23 @@ function follow(url: string): Promise<{ msgs: Msg[]; waitFor(pred: (m: Msg) => b
   });
 }
 
-describe("jumper serve: live track endpoints and events", () => {
+describe("fabwright serve: live track endpoints and events", () => {
   let dir: string;
   let home: string;
-  let srv: JumperServer;
-  const prevHome = process.env.JUMPER_HOME;
+  let srv: FabwrightServer;
+  const prevHome = process.env.FABWRIGHT_HOME;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "jumper-live-"));
-    home = mkdtempSync(join(tmpdir(), "jumper-home-"));
-    process.env.JUMPER_HOME = home;
-    srv = await startJumperServer({ dir, port: 0, web: "none", builder: fakeBuilder, launcher: async () => {} });
+    dir = mkdtempSync(join(tmpdir(), "fabwright-live-"));
+    home = mkdtempSync(join(tmpdir(), "fabwright-home-"));
+    process.env.FABWRIGHT_HOME = home;
+    srv = await startFabwrightServer({ dir, port: 0, web: "none", builder: fakeBuilder, launcher: async () => {} });
   }, 30_000);
 
   afterAll(async () => {
     await srv?.close();
-    if (prevHome === undefined) delete process.env.JUMPER_HOME;
-    else process.env.JUMPER_HOME = prevHome;
+    if (prevHome === undefined) delete process.env.FABWRIGHT_HOME;
+    else process.env.FABWRIGHT_HOME = prevHome;
     rmSync(dir, { recursive: true, force: true });
     rmSync(home, { recursive: true, force: true });
   });

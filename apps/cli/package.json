@@ -1,12 +1,12 @@
 {
-  "name": "@jumper/cli",
+  "name": "@fabwright/cli",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "The jumper command: every Jumper operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
+  "description": "The fabwright command: every Fabwright operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
   "bin": {
-    "jumper": "./bin/jumper.mjs"
+    "fabwright": "./bin/fabwright.mjs"
   },
   "exports": {
     ".": "./src/index.ts"
@@ -15,10 +15,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@jumper/agent-skill": "workspace:*",
-    "@jumper/mcp": "workspace:*",
-    "@jumper/runner": "workspace:*",
-    "@jumper/session": "workspace:*",
+    "@fabwright/agent-skill": "workspace:*",
+    "@fabwright/mcp": "workspace:*",
+    "@fabwright/runner": "workspace:*",
+    "@fabwright/session": "workspace:*",
     "tsx": "4.23.15",
     "yaml": "^2.9.1"
   }

@@ -2,7 +2,7 @@
 
 When `search_parts` finds nothing that fits (a soil sensor, a relay board, a pump, a GPS module),
 an agent can make the part itself with `create_part`. The part is **data, not code**: pins,
-physical facts and one behaviour template with numbers. Jumper builds the simulation model from
+physical facts and one behaviour template with numbers. Fabwright builds the simulation model from
 the template, so nothing an agent writes is ever executed, in the CLI, the server or a person's
 browser. Decision record: [decisions/0003](decisions/0003-round5-see-it-work.md) (agentparts, C4).
 
@@ -16,17 +16,17 @@ against the seller's page before wiring the real thing.
 
 ```
 my-device/
-  jumper.json
+  fabwright.json
   parts/
     soil-moisture-sensor/
-      part.json      # format "jumper-part/1", written by create_part / update_part
+      part.json      # format "fabwright-part/1", written by create_part / update_part
       visual.svg     # only when the agent gave a drawing (sanitized)
 ```
 
 The files are written only through the tools, so each change is an undoable step in the history
 and the action log. The project's registry is the built-in catalog plus these parts, reloaded
 when `parts/` changes (another process, `undo`); a changed part restarts the simulation at 0 ms.
-Ids must not be built-in types: `create_part` refuses and names the built-in. If a later Jumper
+Ids must not be built-in types: `create_part` refuses and names the built-in. If a later Fabwright
 ships a built-in with the same id, the project keeps using its own part and says so in
 `list_project_parts`.
 
@@ -37,11 +37,11 @@ JSON Schema: [`packages/parts/custom-part.schema.json`](../packages/parts/custom
 
 | Tool | CLI | What it does |
 | --- | --- | --- |
-| `create_part {part, svg?, why?}` | `jumper create-part part.json [--svg visual.svg]` | Validate, compile and save a new part; returns its pins, state fields and warnings |
-| `update_part {id, part?, svg?, why?}` | `jumper update-part <id> [part.json] [--svg F \| --no-svg]` | Replace the definition and / or the drawing (`svg: null` = generated drawing). Refuses to drop pins that wires use |
-| `list_project_parts {}` | `jumper project-parts` | The project's agent-made parts and any file that failed to load |
+| `create_part {part, svg?, why?}` | `fabwright create-part part.json [--svg visual.svg]` | Validate, compile and save a new part; returns its pins, state fields and warnings |
+| `update_part {id, part?, svg?, why?}` | `fabwright update-part <id> [part.json] [--svg F \| --no-svg]` | Replace the definition and / or the drawing (`svg: null` = generated drawing). Refuses to drop pins that wires use |
+| `list_project_parts {}` | `fabwright project-parts` | The project's agent-made parts and any file that failed to load |
 
-`GET /api/project-parts` on `jumper serve` gives the parts with their SVG to the web canvas, which
+`GET /api/project-parts` on `fabwright serve` gives the parts with their SVG to the web canvas, which
 compiles them again in the browser (and sanitizes the SVG again).
 
 ## Common fields
@@ -167,7 +167,7 @@ sketch in the browser.
 
 ## Drawings
 
-Without `svg`, Jumper draws a labelled module: the name, one header row with the pin labels, a
+Without `svg`, Fabwright draws a labelled module: the name, one header row with the pin labels, a
 status light or value readout bound to the state, and the AGENT-MADE tag. Displays get a glass
 area where the live pixels appear.
 

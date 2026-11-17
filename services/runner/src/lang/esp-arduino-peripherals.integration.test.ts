@@ -2,13 +2,13 @@
 // last (natively, no Docker: fixtures/esp32/build.ts) and run on every ESP chip in QEMU jb5. Arduino
 // sketches written for the real board: LEDC (analogWrite, a 50 Hz servo, tone, ledcFade), a pin
 // interrupt, the ADC, I2C on both controllers, SPI, UART1 / UART2 and WS2812 through the RMT.
-// Needs the QEMU image (Docker) or the native QEMU (jumper setup esp32); skipped otherwise.
+// Needs the QEMU image (Docker) or the native QEMU (fabwright setup esp32); skipped otherwise.
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { afterAll, describe, expect, it } from "vitest";
-import { I2cBus, SpiBus } from "@jumper/sim-core";
-import { QemuEspBackend, qemuImageAvailable } from "@jumper/sim-backends/qemu-esp";
+import { I2cBus, SpiBus } from "@fabwright/sim-core";
+import { QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
 import { buildFirmware, flashImageOf } from "../build.ts";
 import { canBuildArduino } from "../runtime.ts";
 
@@ -192,14 +192,14 @@ describe.skipIf(!available)("ESP32 Arduino peripheral fixtures on QEMU jb5 (esp_
   }
 
   // Adafruit NeoPixel is LGPL-3.0, so no binary linking it is committed (NOTICE): built here when a
-  // toolchain is ready (Docker image or `jumper setup esp32`), then run.
+  // toolchain is ready (Docker image or `fabwright setup esp32`), then run.
   const neoBuild = canBuildArduino("esp32:esp32:esp32");
   for (const chip of CHIPS) {
     it.skipIf(!neoBuild.ok)(`${chip}: esp_neopixel: Adafruit NeoPixel through the RMT sends the right colours`, async () => {
       const { cpSync, mkdtempSync, rmSync } = await import("node:fs");
       const { tmpdir } = await import("node:os");
       const { join } = await import("node:path");
-      const work = mkdtempSync(join(tmpdir(), "jumper-neo-"));
+      const work = mkdtempSync(join(tmpdir(), "fabwright-neo-"));
       cpSync(`${FIX}esp_neopixel`, join(work, "esp_neopixel"), { recursive: true });
       cpSync(`${FIX}esp_pins.h`, join(work, "esp_neopixel", "esp_pins.h"));
       const r = await buildFirmware({ sketchDir: join(work, "esp_neopixel"), fqbn: `esp32:esp32:${chip}:FlashMode=dio`, libraries: ["Adafruit NeoPixel"] });

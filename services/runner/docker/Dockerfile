@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
-# Jumper build runner image: the pinned toolchain (toolchains/arduino, which already carries the display
+# Fabwright build runner image: the pinned toolchain (toolchains/arduino, which already carries the display
 # and sensor libraries in toolchains/arduino/LIBRARIES.md) plus the robot libraries below. Firmware built with these libraries is user-side code
 # (see NOTICE): each library keeps its own license.
 #
-#   docker build -t jumper/arduino-runner:1.5.1-avr1.8.8-libs3-r1 services/runner/docker
+#   docker build -t fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1 services/runner/docker
 #
 # Bump the tags in services/runner/src/config.ts together with any change here.
-ARG BASE_IMAGE=jumper/arduino-cli:1.5.1-avr1.8.8-libs3
+ARG BASE_IMAGE=fabwright/arduino-cli:1.5.1-avr1.8.8-libs3
 FROM ${BASE_IMAGE}
 
 # Pinned. License (checked 2026-11-09): Servo 1.3.0 LGPL-2.1 (same as the Arduino AVR core).

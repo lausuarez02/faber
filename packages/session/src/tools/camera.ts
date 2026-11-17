@@ -1,4 +1,4 @@
-import { CAMERA_SCENES } from "@jumper/sim-core";
+import { CAMERA_SCENES } from "@fabwright/sim-core";
 import { cameraParts, cameraProps, cameraSourceSpec, pickCamera } from "../camera.ts";
 import { fail } from "../errors.ts";
 import type { ToolModule } from "./types.ts";
@@ -6,7 +6,7 @@ import type { ToolModule } from "./types.ts";
 /**
  * Round 13 (camera): cameras are a general capability. Any part with a camera (a board such as the
  * XIAO ESP32-S3 Sense, an OV2640 module on an ESP32) sees what this sets: a test scene or an image.
- * The firmware gets it through Espressif's esp32-camera API (simulation build: frames from Jumper).
+ * The firmware gets it through Espressif's esp32-camera API (simulation build: frames from Fabwright).
  */
 export const cameraTools: ToolModule = {
   name: "camera",
@@ -14,7 +14,7 @@ export const cameraTools: ToolModule = {
     {
       name: "set_camera_frame",
       title: "Show the camera something",
-      description: `What the camera sees in the simulator, from now on (the running device and the next runs, until set again; never saved in jumper.json): a test scene ${CAMERA_SCENES.map((s) => `"${s}"`).join(", ")} with {"scene": "face"}, or a still image in the project (PNG or baseline JPEG) with {"image": "tests/cat.jpg"}. {"part": "cam1"} picks the camera when there are several. The firmware reads frames with esp_camera_fb_get() at its own frame size and format; the canvas shows the last picture in the lens. In tests use the scenario step {"camera_frame": "face"} or {"camera_frame": {"image": "tests/cat.jpg"}} instead (each test starts from the test card). The person can also drop an image on the camera or use their webcam in the canvas.`,
+      description: `What the camera sees in the simulator, from now on (the running device and the next runs, until set again; never saved in fabwright.json): a test scene ${CAMERA_SCENES.map((s) => `"${s}"`).join(", ")} with {"scene": "face"}, or a still image in the project (PNG or baseline JPEG) with {"image": "tests/cat.jpg"}. {"part": "cam1"} picks the camera when there are several. The firmware reads frames with esp_camera_fb_get() at its own frame size and format; the canvas shows the last picture in the lens. In tests use the scenario step {"camera_frame": "face"} or {"camera_frame": {"image": "tests/cat.jpg"}} instead (each test starts from the test card). The person can also drop an image on the camera or use their webcam in the canvas.`,
       inputSchema: {
         type: "object",
         properties: {

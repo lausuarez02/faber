@@ -1,13 +1,13 @@
 // Deterministic scrubbing: rebuild the simulation from t = 0 and re-apply a scenario's recorded
 // inputs (exact virtual times) up to any moment. Moving forward continues the same simulation;
 // moving back rebuilds it. Same inputs at the same cycle → the same device state as in the test.
-import type { Project, PropValue } from "@jumper/project-format";
-import { Simulation } from "@jumper/sim-core";
-import { createSandboxNetwork } from "@jumper/ai-gateway";
+import type { Project, PropValue } from "@fabwright/project-format";
+import { Simulation } from "@fabwright/sim-core";
+import { createSandboxNetwork } from "@fabwright/ai-gateway";
 import { hasWifiPart } from "../network/webNetwork.ts";
-import { backendFactory } from "@jumper/sim-backends";
-import { registry } from "@jumper/parts";
-import { attachPhysics, initPhysics, type PhysicsBinding } from "@jumper/physics";
+import { backendFactory } from "@fabwright/sim-backends";
+import { registry } from "@fabwright/parts";
+import { attachPhysics, initPhysics, type PhysicsBinding } from "@fabwright/physics";
 import { ownedSimSource, type OwnedSimSource } from "../device/source.ts";
 import type { VisualInput } from "./types.ts";
 

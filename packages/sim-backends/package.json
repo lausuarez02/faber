@@ -1,5 +1,5 @@
 {
-  "name": "@jumper/sim-backends",
+  "name": "@fabwright/sim-backends",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@jumper/sim-core": "workspace:*",
+    "@fabwright/sim-core": "workspace:*",
     "avr8js": "0.21.1",
     "intel-hex": "0.2.0",
     "rp2040js": "1.4.1"

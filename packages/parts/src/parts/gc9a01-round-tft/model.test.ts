@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { colorFrameAverage } from "@jumper/sim-core";
+import { colorFrameAverage } from "@fabwright/sim-core";
 import { exampleSim } from "../../lib/exampleSim.ts";
 import { serialLines } from "../../lib/firmwareBench.ts";
 import { CMD, MipiPanel } from "../../lib/mipiPanel.ts";

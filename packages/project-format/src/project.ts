@@ -10,7 +10,7 @@ export class ProjectParseError extends Error {
   readonly issues: ProjectIssue[];
   constructor(issues: ProjectIssue[]) {
     super(
-      `Invalid jumper.json (${issues.length} problem${issues.length === 1 ? "" : "s"}):\n` +
+      `Invalid fabwright.json (${issues.length} problem${issues.length === 1 ? "" : "s"}):\n` +
         issues.map((i) => `  - ${i.path || "(root)"}: ${i.message}`).join("\n"),
     );
     this.name = "ProjectParseError";
@@ -47,7 +47,7 @@ export function safeParseProject(input: string | unknown): ParseResult {
   };
 }
 
-/** Parse and validate a jumper.json (string or object). Throws ProjectParseError with readable issues. */
+/** Parse and validate a fabwright.json (string or object). Throws ProjectParseError with readable issues. */
 export function parseProject(input: string | unknown): Project {
   const res = safeParseProject(input);
   if (!res.ok) throw new ProjectParseError(res.issues);

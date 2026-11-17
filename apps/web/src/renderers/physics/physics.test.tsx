@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WorldSnapshot } from "@jumper/physics";
+import type { WorldSnapshot } from "@fabwright/physics";
 import { drawArm, drawWorld, fitArena, type Ctx2D } from "./paint.ts";
 import { PHYSICS_VIEWS, registerPhysicsViews } from "./index.ts";
 
@@ -84,7 +84,7 @@ describe("physics painters", () => {
   it("registers a World and an Arm view and detects worlds in projects", () => {
     const p = registerPhysicsViews();
     expect(PHYSICS_VIEWS.map((v) => v.id)).toEqual(["world", "arm"]);
-    expect(p.hasWorld({ format: "jumper/1", world: { arena: { width: 100, height: 100 } } })).toBe(true);
-    expect(p.hasWorld('{"format":"jumper/1"}')).toBe(false);
+    expect(p.hasWorld({ format: "fabwright/1", world: { arena: { width: 100, height: 100 } } })).toBe(true);
+    expect(p.hasWorld('{"format":"fabwright/1"}')).toBe(false);
   });
 });

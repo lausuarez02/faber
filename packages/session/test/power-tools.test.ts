@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@jumper/runner";
+import type { BuildRequest, BuildResult } from "@fabwright/runner";
 import { ProjectSession, wireCuts, assemblyStyle } from "../src/index.ts";
-import { registry } from "@jumper/parts";
-import { parseProject } from "@jumper/project-format";
+import { registry } from "@fabwright/parts";
+import { parseProject } from "@fabwright/project-format";
 
 const EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
 const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
@@ -17,14 +17,14 @@ const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
 
 const dirs: string[] = [];
 const sessions: ProjectSession[] = [];
-const oldHome = process.env.JUMPER_HOME;
+const oldHome = process.env.FABWRIGHT_HOME;
 beforeAll(() => {
-  process.env.JUMPER_HOME = mkdtempSync(join(tmpdir(), "jumper-home-"));
+  process.env.FABWRIGHT_HOME = mkdtempSync(join(tmpdir(), "fabwright-home-"));
 });
 afterAll(() => {
-  rmSync(process.env.JUMPER_HOME!, { recursive: true, force: true });
-  if (oldHome === undefined) delete process.env.JUMPER_HOME;
-  else process.env.JUMPER_HOME = oldHome;
+  rmSync(process.env.FABWRIGHT_HOME!, { recursive: true, force: true });
+  if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
+  else process.env.FABWRIGHT_HOME = oldHome;
 });
 afterEach(() => {
   for (const s of sessions.splice(0)) s.dispose();
@@ -32,10 +32,10 @@ afterEach(() => {
 });
 
 function open(name: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), `jumper-power-${name.replace(/\//g, "-")}-`));
+  const dir = mkdtempSync(join(tmpdir(), `fabwright-power-${name.replace(/\//g, "-")}-`));
   dirs.push(dir);
   cpSync(join(EXAMPLES, name), dir, { recursive: true, preserveTimestamps: true });
-  const p = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { firmware?: { artifact: string } };
+  const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { firmware?: { artifact: string } };
   if (p.firmware) {
     const later = new Date(Date.now() + 60_000);
     utimesSync(join(dir, p.firmware.artifact), later, later);
@@ -46,7 +46,7 @@ function open(name: string): ProjectSession {
   return s;
 }
 function blank(): ProjectSession {
-  const root = mkdtempSync(join(tmpdir(), "jumper-power-blank-"));
+  const root = mkdtempSync(join(tmpdir(), "fabwright-power-blank-"));
   dirs.push(root);
   const dir = join(root, "playground");
   mkdirSync(dir);
@@ -80,7 +80,7 @@ describe("set_power", () => {
     const back = await call(s, "set_power", { usb: true });
     expect(back.board_powered).toBe(true);
     expect(back.supply.from[0]).toMatch(/USB cable on xiao\.VBUS/);
-    expect(JSON.parse(readFileSync(join(s.dir, "jumper.json"), "utf8")).power).toEqual({ usb: true });
+    expect(JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).power).toEqual({ usb: true });
   });
 
   it("unplugging while it runs is a power cut: the firmware stops, plugging in boots it again", async () => {
@@ -105,9 +105,9 @@ describe("set_power", () => {
 
 describe("assembly and soldered exports", () => {
   it("a pocket board defaults to soldered, an Uno to breadboard; set_assembly overrides", async () => {
-    const muse = parseProject(JSON.parse(readFileSync(join(EXAMPLES, MUSE, "jumper.json"), "utf8")));
+    const muse = parseProject(JSON.parse(readFileSync(join(EXAMPLES, MUSE, "fabwright.json"), "utf8")));
     expect(assemblyStyle({ ...muse, assembly: undefined }, registry)).toBe("soldered");
-    const arm = parseProject(JSON.parse(readFileSync(join(EXAMPLES, "agent-built/claude-robot-arm/jumper.json"), "utf8")));
+    const arm = parseProject(JSON.parse(readFileSync(join(EXAMPLES, "agent-built/claude-robot-arm/fabwright.json"), "utf8")));
     expect(assemblyStyle(arm, registry)).toBe("breadboard");
     const s = open("agent-built/claude-robot-arm");
     const r = await call(s, "set_assembly", { style: "soldered", why: "in a box" });
@@ -149,7 +149,7 @@ describe("assembly and soldered exports", () => {
   });
 
   it("wireCuts: lengths from case positions when given, gauge 24 on power nets", () => {
-    const p = parseProject(JSON.parse(readFileSync(join(EXAMPLES, MUSE, "jumper.json"), "utf8")));
+    const p = parseProject(JSON.parse(readFileSync(join(EXAMPLES, MUSE, "fabwright.json"), "utf8")));
     const cuts = wireCuts(p, registry, { "eye.SCK": [0, 0, 0], "xiao.GP2": [30, 40, 0] });
     const sck = cuts.find((c) => c.wire === "w3")!;
     // 50 mm straight × 1.3 + 10 strip + 15 slack = 90
@@ -193,7 +193,7 @@ describe("planning calls are logged into the project they create", () => {
     await call(s, "search_parts", { query: "round" });
     await expect(call(s, "get_part", { type: "nope-nope" })).rejects.toThrow();
     const r = await call(s, "new_project", { folder: true, name: "Pocket buddy", template: "blank" });
-    const log = (d: string) => (existsSync(join(d, ".jumper", "actions.jsonl")) ? readFileSync(join(d, ".jumper", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)) : []);
+    const log = (d: string) => (existsSync(join(d, ".fabwright", "actions.jsonl")) ? readFileSync(join(d, ".fabwright", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)) : []);
     const mine = log(s.dir).map((e) => e.op);
     expect(mine).not.toContain("plan_device");
     expect(mine).not.toContain("search_parts");
@@ -212,7 +212,7 @@ describe("planning calls are logged into the project they create", () => {
     await call(s, "new_project", { template: "blank", name: "t" });
     await call(s, "search_parts", { query: "button" });
     await call(s, "place_part", { type: "led" });
-    const ops = readFileSync(join(s.dir, ".jumper", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l).op);
+    const ops = readFileSync(join(s.dir, ".fabwright", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l).op);
     expect(ops).toEqual(["new_project", "search_parts", "place_part"]);
   });
 });

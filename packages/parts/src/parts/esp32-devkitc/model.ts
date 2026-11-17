@@ -1,6 +1,6 @@
 // ESP32 DevKitC (WROOM-32): ESP32-family board model (round 10, decision 0006). The pads, LEDs and supply chain
 // are data for the shared ESP board model (packages/parts/src/lib/espBoard.ts).
-import type { PartModel, PartModelFactory } from "@jumper/sim-core";
+import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
 import { createEspBoardModel, limit } from "../../lib/espBoard.ts";
 
 export const create: PartModelFactory = (ctx): PartModel =>

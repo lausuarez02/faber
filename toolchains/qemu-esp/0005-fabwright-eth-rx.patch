@@ -8,8 +8,8 @@ index 574dff8..9afd736 100644
  
 -    return GET_REGBIT(s, MODER, RXEN) && (s->regs[TX_BD_NUM] < 0x80);
 +    /*
-+     * Jumper: also wait for a free (empty) RX descriptor. Upstream drops a frame that finds the ring
-+     * full (BUSY), as the chip would; under Jumper the network delivers frames while the CPU is
++     * Fabwright: also wait for a free (empty) RX descriptor. Upstream drops a frame that finds the ring
++     * full (BUSY), as the chip would; under Fabwright the network delivers frames while the CPU is
 +     * parked, so a burst of TCP segments overflowed the driver's few RX buffers and every overflow
 +     * cost the sender a retransmission timeout. Holding the frame in QEMU's queue until the driver
 +     * hands a buffer back is what a Wi-Fi access point's buffering looks like to the device.
@@ -23,7 +23,7 @@ index 574dff8..9afd736 100644
      trace_open_eth_desc_write((uint32_t)addr, (uint32_t)val);
      memcpy((uint8_t *)s->desc + addr, &val, size);
      open_eth_check_start_xmit(s);
-+    /* Jumper: an RX buffer handed back may let a queued frame in (see open_eth_can_receive). */
++    /* Fabwright: an RX buffer handed back may let a queued frame in (see open_eth_can_receive). */
 +    if (open_eth_can_receive(qemu_get_queue(s->nic))) {
 +        qemu_flush_queued_packets(qemu_get_queue(s->nic));
 +    }

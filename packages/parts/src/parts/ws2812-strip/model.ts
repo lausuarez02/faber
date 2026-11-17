@@ -6,8 +6,8 @@
 // µs, T1H 0.58–1.0 µs: the union of the WS2812B datasheet, 0.4 / 0.8 µs ± 150 ns, and the
 // WS2812B-V5 one, T0H 220–380 ns, T1H 580 ns–1 µs, which the RP2040 PIO drivers of FastLED and
 // Adafruit NeoPixel aim for) are still decoded but reported.
-import type { Diagnostic, PartModel, PartModelFactory } from "@jumper/sim-core";
-import { GROUND } from "@jumper/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import { GROUND } from "@fabwright/sim-core";
 import { clamp, num, round, str } from "../../lib/props.ts";
 
 export const MAX_LEDS = 16;

@@ -1,6 +1,6 @@
 # Cases and the factory pack
 
-Round 6 (decision [0004](decisions/0004-round6-real-device.md)): a Jumper project can be finished
+Round 6 (decision [0004](decisions/0004-round6-real-device.md)): a Fabwright project can be finished
 as a real object. `design_case` packs its parts into a two-part printable case and writes every file
 a 3D printer or a factory needs; `export_manufacturing` adds the electronics, the firmware, the
 assembly steps and the test plan into one pack a supplier can follow.
@@ -12,17 +12,17 @@ assembly steps and the test plan into one pack a supplier can follow.
 From an agent (MCP) or the shell (same names):
 
 ```sh
-jumper design_case '{"shape": "pebble"}' -p examples/agent-built/claude-pocket-muse
-jumper design_case '{"shape": "puck", "save": false}' -p …      # compare a shape, jumper.json untouched
-jumper update_case '{"params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}' -p …
-jumper get_case -p …                                            # the report; regenerates stale files
-jumper export_manufacturing -p …                                # manufacturing/<name>-v<version>/ + .zip
+fabwright design_case '{"shape": "pebble"}' -p examples/agent-built/claude-pocket-muse
+fabwright design_case '{"shape": "puck", "save": false}' -p …      # compare a shape, fabwright.json untouched
+fabwright update_case '{"params": {"closure": "screws", "color": "#2B3038"}, "placements": {"pet": {"face": "left"}}}' -p …
+fabwright get_case -p …                                            # the report; regenerates stale files
+fabwright export_manufacturing -p …                                # manufacturing/<name>-v<version>/ + .zip
 ```
 
 In the web app: the **Case** button (box icon, top right; on phones in the ⋯ menu) opens the Case
 view: the case in 3D with the parts inside, a **See-through** and an **Explode** slider, the shape
 picker and settings, **Design case / Update case**, the fit checks, the size and the pocket verdict,
-downloads (STL, 3MF, STEP, drawing, print notes) and **Factory pack (zip)**. It needs `jumper serve`
+downloads (STL, 3MF, STEP, drawing, print notes) and **Factory pack (zip)**. It needs `fabwright serve`
 (the CAD runs on the server; the browser only gets meshes).
 
 ## Any shape, any size (round 7)
@@ -33,9 +33,9 @@ There is no preset per object: an egg, a heart, a bean or a guitar pick is a cus
 
 ```sh
 # an egg 56 x 73 mm drawn as an SVG path (y DOWN, like any SVG): narrow top, wide bottom
-jumper check_fit '{"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"}' -p …
+fabwright check_fit '{"shape": "custom", "outline": "M 0 -40 C 17 -40 28 -16 28 5 C 28 23 16 33 0 33 C -16 33 -28 23 -28 5 C -28 -16 -17 -40 0 -40 Z"}' -p …
 # the same kind of egg as points (y UP) through which a smooth closed curve runs, at a fixed size
-jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[24,16],[28,-4],[24,-22],[13,-32],[0,-34],[-13,-32],[-24,-22],[-28,-4],[-24,16],[-14,33]], "smooth": true}, "size_mm": {"w": 64, "h": 84}, "params": {"dome_mm": 2}}' -p …
+fabwright design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[24,16],[28,-4],[24,-22],[13,-32],[0,-34],[-13,-32],[-24,-22],[-28,-4],[-24,16],[-14,33]], "smooth": true}, "size_mm": {"w": 64, "h": 84}, "params": {"dome_mm": 2}}' -p …
 ```
 
 - **`outline`** is the front view in mm: an SVG path string (`M L H V C S Q T A Z`, absolute or
@@ -84,12 +84,12 @@ jumper design_case '{"shape": "custom", "outline": {"points": [[0,40],[14,33],[2
 
 ## How the parts are distributed (round 8)
 
-Jumper decides where every part goes by itself, for any outline at any size, and proposes the best
+Fabwright decides where every part goes by itself, for any outline at any size, and proposes the best
 ways to do it:
 
 ```bash
-jumper propose_layout '{}' -p my-egg            # the saved case; or any design_case arguments
-jumper update_case '{"layout": "thinnest"}' -p my-egg
+fabwright propose_layout '{}' -p my-egg            # the saved case; or any design_case arguments
+fabwright update_case '{"layout": "thinnest"}' -p my-egg
 ```
 
 - **The model**: each part is a box (its size, keep-outs and the 10 % a cell may swell) that turns
@@ -133,7 +133,7 @@ jumper update_case '{"layout": "thinnest"}' -p my-egg
   (or moved with the arrow keys) to keep it there: the rest is re-arranged within a second or two
   and the new size shows. A drop on a part that stays put is refused, and a spot the other parts
   cannot fit around sends it back, each with the reason. **Re-distribute** shows when the built
-  case is older than the optimizer or Jumper now finds another way.
+  case is older than the optimizer or Fabwright now finds another way.
 - **Parts you may not need** (the same tab): the parts advice (`check_design`'s
   `boost-not-needed`, `smaller-speaker`, ...) in plain words with the room it would save. A swap or a
   removal has an Apply button, which runs the agent's own operations (`remove`, `place_part`,
@@ -168,18 +168,18 @@ the speaker pinned on the front and a fixed 74 x 96 mm size. So every `check_fit
 - **Dome**: a dome over 3 mm a face is a `dome` warning in the report with the thickness it adds
   over the default bulge (about 1 mm).
 - **In the Case view**: the Layout tab's **What's making it bigger** lists the saved case's costly
-  choices in plain words, each with an Apply button, plus "Let Jumper decide all of these" and, for a
+  choices in plain words, each with an Apply button, plus "Let Fabwright decide all of these" and, for a
   fixed size that fails, the sizes that work (`POST /api/case/costs`).
 
 ## How it goes together (round 12)
 
-Jumper plans how the parts go inside at design time, for any case shape, and checks it. Every
+Fabwright plans how the parts go inside at design time, for any case shape, and checks it. Every
 `design_case` / `update_case` writes `case/assembly/plan.json` and a picture per step
 (`case/assembly/step-NN.png`); `get_assembly_plan` (and `POST /api/case/assembly`, the Case view's
 **Build** tab) returns it with what to buy and what to print:
 
 ```sh
-jumper get_assembly_plan -p my-egg        # {buy, print, consumables, tools, steps, mounts, checks, problems}
+fabwright get_assembly_plan -p my-egg        # {buy, print, consumables, tools, steps, mounts, checks, problems}
 ```
 
 - **Mounting is designed, not assumed** (`packages/enclosure/src/mounts.ts`): each part gets a shell
@@ -313,7 +313,7 @@ and the actual route of each wire (`gap_mm` is a budget).
 ## Files
 
 ```
-case/                    (outputs: regenerated from jumper.json + the parts' data, never undone)
+case/                    (outputs: regenerated from fabwright.json + the parts' data, never undone)
   stl/front.stl, back.stl, cap-<part>.stl, light-pipe-<part>.stl, belt-clip.stl
   case.3mf               build plate: every printable body in print orientation, named and coloured
   step/assembly.step     shells + plungers + the parts as named solids (AP214), front.step, back.step
@@ -325,7 +325,7 @@ case/                    (outputs: regenerated from jumper.json + the parts' dat
   variants/<shape>/…     design_case {save: false}
 manufacturing/<name>-v<version>/ (+ .zip)
   README.md, README.zh-CN.md, NOTES.md, BOM.csv, BOM.md
-  electronics/WIRING.md, netlist.csv, jumper.net (KiCad legacy netlist), WIRE-CUTS.csv
+  electronics/WIRING.md, netlist.csv, fabwright.net (KiCad legacy netlist), WIRE-CUTS.csv
   firmware/firmware.hex, firmware.uf2 (RP2040), FLASHING.md, source/
   enclosure/ (the case files), assembly/ASSEMBLY.md, test/TEST-PLAN.md, TEST-ON-HARDWARE.md
   build-kit/             round 12: the person-facing build kit (kit.html, KIT.md, SHOPPING.csv, PRINT-LIST.md)
@@ -333,14 +333,14 @@ manufacturing/<name>-v<version>/ (+ .zip)
 build-kit/<name>-kit/ (+ .zip)   get_build_kit / Build it: what to buy, print, assemble, flash (docs/build-kit.md)
 ```
 
-The web view's meshes are cached in `.jumper/case-mesh.json`.
+The web view's meshes are cached in `.fabwright/case-mesh.json`.
 
 ## Engine and licences
 
 CAD: [replicad](https://github.com/sgenoud/replicad) 1.1.0 (MIT) on the OpenCascade WebAssembly
 build `replicad-opencascadejs` 1.1.0 (LGPL-2.1, loaded unmodified at run time, see NOTICE), in
-Node only (`packages/enclosure`, loaded lazily). STL / 3MF are written by Jumper (3MF zipped with
-fflate, MIT), renders by Jumper's own rasteriser (no browser), the drawing as SVG (PDF printed by
+Node only (`packages/enclosure`, loaded lazily). STL / 3MF are written by Fabwright (3MF zipped with
+fflate, MIT), renders by Fabwright's own rasteriser (no browser), the drawing as SVG (PDF printed by
 Playwright's Chromium when present). This OpenCascade build has no IGES writer: the pack ships
 STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
 
@@ -383,7 +383,7 @@ STEP AP214, which factories accept (convert to IGES in FreeCAD if one insists).
 - Wire cuts (`wireCuts` in `packages/session/src/assembly.ts`, shared with `export`) take the pin
   distance in the case layout × 1.3 for routing plus 10 mm strip and 15 mm slack, rounded up to 5 mm;
   without a case they are estimates from the part sizes (the CSV says which). Not routed paths.
-- No PCB layout: the pack is for a hand-wired / perfboard build; `jumper.net` is where a PCB starts.
+- No PCB layout: the pack is for a hand-wired / perfboard build; `fabwright.net` is where a PCB starts.
 - Sourcing has MPNs and plain descriptions; LCSC / JLC numbers are left empty until checked.
 
 ## Things the case holds (round 15)
@@ -392,7 +392,7 @@ A case can hold something that is not electronics: a tin of pouches or mints, a 
 a card deck. Declare it on the case (never as a fake part):
 
 ```sh
-jumper design_case '{"shape": "rounded-box", "held": [{"id": "tin", "name": "round tin", "shape": "cylinder", "size_mm": {"d": 66, "h": 21}, "clearance_mm": 0.5, "insert": "slide", "from": "right", "source": "measured with calipers", "sensor": {"part": "lid"}}]}' -p my-holder
+fabwright design_case '{"shape": "rounded-box", "held": [{"id": "tin", "name": "round tin", "shape": "cylinder", "size_mm": {"d": 66, "h": 21}, "clearance_mm": 0.5, "insert": "slide", "from": "right", "source": "measured with calipers", "sensor": {"part": "lid"}}]}' -p my-holder
 ```
 
 - **shape**: `cylinder` (`size_mm` `d` diameter, `h` height; `orientation` `flat` = round face to the
@@ -445,7 +445,7 @@ a rounded box, a back pocket in a pebble with a flat back: closed solids, nothin
   prints standing on the plate (no bridge over the socket).
 
 ```sh
-jumper design_case '{"shape": "puck", "params": {"edge_radius_front_mm": 2.5, "edge_radius_back_mm": 1, "dome_mm": 0, "dome_back_mm": 0}, "follow": {"held": "can", "margin_mm": 2.5}, "placements": {"reed": {"x_mm": 0, "y_mm": -33.5, "layer": 1}}, "held": [{"id": "can", "name": "pouch can (lid on)", "shape": "cylinder", "size_mm": {"d": 70, "h": 20}, "from": "back", "engage_mm": 6, "fit": "slip", "clearance_mm": 0.3, "magnet": {"beyond_mm": 2.5, "d_mm": 6, "t_mm": 2}, "sensor": {"part": "reed", "max_mm": 10, "lift_mm": 8}}]}' -p lid-topper
+fabwright design_case '{"shape": "puck", "params": {"edge_radius_front_mm": 2.5, "edge_radius_back_mm": 1, "dome_mm": 0, "dome_back_mm": 0}, "follow": {"held": "can", "margin_mm": 2.5}, "placements": {"reed": {"x_mm": 0, "y_mm": -33.5, "layer": 1}}, "held": [{"id": "can", "name": "pouch can (lid on)", "shape": "cylinder", "size_mm": {"d": 70, "h": 20}, "from": "back", "engage_mm": 6, "fit": "slip", "clearance_mm": 0.3, "magnet": {"beyond_mm": 2.5, "d_mm": 6, "t_mm": 2}, "sensor": {"part": "reed", "max_mm": 10, "lift_mm": 8}}]}' -p lid-topper
 ```
 
 The fixture `packages/enclosure/test/fixtures/lid-topper.json` (XIAO ESP32-C3, 1.54" e-paper, DS3231

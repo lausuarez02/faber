@@ -5,9 +5,9 @@
 > 1440x900 videos in `docs/media/agent-*.mp4`.
 
 Three real, unedited runs (2026-11-09). Each agent was started fresh in an empty folder with only
-the Jumper MCP server (no shell, no file tools, no access to Jumper's source) and a one-paragraph goal.
-Each `.actions.jsonl` is the session's own action log; the `.mp4` is `jumper record` of that log
-(`pnpm jumper replay <file>` plays it in the browser).
+the Fabwright MCP server (no shell, no file tools, no access to Fabwright's source) and a one-paragraph goal.
+Each `.actions.jsonl` is the session's own action log; the `.mp4` is `fabwright record` of that log
+(`pnpm fabwright replay <file>` plays it in the browser).
 
 | Run | Agent | Goal | Wall time | Tool calls | Failed calls | Result |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -32,11 +32,11 @@ Prompts used:
 
 - Claude, pet: "Build a tamagotchi-style pet on an Arduino Uno: an SSD1306 OLED shows its face and
   stats, three buttons (feed, play, show stats) and a buzzer that chirps. Hunger and happiness drop
-  over time. Use only the jumper tools. Make sure it really works: write scenario tests for each
+  over time. Use only the fabwright tools. Make sure it really works: write scenario tests for each
   behaviour and get them all passing, then tell me what still needs testing on real hardware."
 - Codex, rover: "Build a 2-wheel obstacle-avoiding robot rover: Arduino Uno, L298N motor driver, two
   DC motors, an HC-SR04 ultrasonic sensor, battery pack, robot chassis, driving in an arena with a few
-  obstacles. Use only the jumper MCP tools … write scenario tests (it moves, it never collides) and get
+  obstacles. Use only the fabwright MCP tools … write scenario tests (it moves, it never collides) and get
   them passing, then tell me what still needs testing on real hardware."
 - Claude, arm: "Build a small 2-joint servo robot arm on an Arduino Uno: two SG90 servos (shoulder and
   elbow) each controlled by its own potentiometer … write scenario tests (knob to angle mapping, both
