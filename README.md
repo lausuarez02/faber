@@ -4,6 +4,8 @@
 
 <p align="center"><strong>Figma for hardware, with a real simulator underneath.</strong></p>
 
+<p align="center"><sub>Formerly <strong>Jumper</strong>. Old projects, scripts and firmware keep working: see <a href="docs/migrating-from-jumper.md">migrating from Jumper</a>.</sub></p>
+
 Fabwright is an open-source browser sandbox for electronics. You place parts on a canvas, wire their pins together, and run the real compiled firmware on an emulated microcontroller. The LED on the canvas lights up because the emulated ATmega328P set its pin high and a small circuit solver pushed current through the resistor and the LED. It is not a drawing of what should happen. Anything a person can do on the canvas, an AI agent will be able to do through the same tools.
 
 **The promise, stated honestly.** If firmware crashes on real hardware, it should also crash in Fabwright. If it runs in Fabwright, it should run on the board, as far as the simulation can tell. Every part says what it simulates exactly, what it only approximates and what it does not simulate at all (see [fidelity](docs/fidelity.md)). Fabwright does not hide those gaps.

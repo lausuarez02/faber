@@ -1,4 +1,4 @@
-/** Fabwright mark: a jumper wire bent into a "J", a dupont pin at each tip. `mono` draws it in the text color only. */
+/** Fabwright mark: a jumper wire bent into a hook, a dupont pin at each tip. `mono` draws it in the text color only. */
 export function LogoMark({ size = 28, mono = false }: { size?: number; mono?: boolean }) {
   const wire = mono ? "var(--fg)" : "var(--wire)";
   return (

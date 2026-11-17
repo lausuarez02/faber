@@ -4,13 +4,13 @@
 
 ## The name
 
-**Fabwright** is named after the jumper wire, the one part every hardware project uses. It is the thing you grab to try an idea, and the thing you move when you change your mind. That is the job Fabwright wants to do: connect things quickly and cheaply, so you can try them before committing.
+**Fabwright**: "fab" for fabrication, "wright" for a maker, as in shipwright or wheelwright. Fabwright is where you design a device, run its real firmware in a simulator, and then make it: the case, the kit, the factory files. It was called Jumper until 2026-11-17 ([decision 0008](../docs/decisions/0008-rename-to-fabwright.md)).
 
-The name also works as a verb in a CLI (`fabwright run`, `fabwright test`). It is short, and it avoids the usual "lab", "studio" and "hub" names.
+The CLI is `fabwright` (`fabwright run`, `fabwright test`). The name avoids the usual "lab", "studio" and "hub" names.
 
 ## Logo
 
-The mark is a jumper wire bent into a **J**. Each end has a dupont connector: a housing, a latch window, and a metal pin. The red wire is the brand's main accent.
+The mark is a jumper wire, the one part every hardware project uses, bent into a hook. Each end has a dupont connector: a housing, a latch window, and a metal pin. The red wire is the brand's main accent. (The hook is the J of the project's first name, Jumper; a mark for Fabwright is open.)
 
 | File | Use |
 | --- | --- |
@@ -25,7 +25,7 @@ The mark is a jumper wire bent into a **J**. Each end has a dupont connector: a 
 - Leave clear space around the mark equal to the width of one connector housing (about a quarter of the mark's width).
 - The smallest size for `logo.svg` is 16 px. Below 24 px, prefer `favicon.svg`.
 - Keep the wire red (`--wire`). The housings use the text color of the theme: light housings on dark backgrounds, dark housings on light ones, like real dupont connectors. The pins use `--muted`.
-- Don't rotate, outline, add shadows, gradients or glows, or redraw the J in a typeface.
+- Don't rotate, outline, add shadows, gradients or glows, or redraw the hook in a typeface.
 - The wordmark is always lower case: "fabwright". In running text, write **Fabwright**.
 - `wordmark.svg` sets the word as live text in Bricolage Grotesque, with IBM Plex Sans and system fonts as fallbacks. If you export it for print or for use outside the web, convert the text to outlines first.
 

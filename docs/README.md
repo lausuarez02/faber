@@ -6,6 +6,7 @@
 - [Architecture](architecture.md): the packages, and how data moves from the canvas to the simulator and back.
 - [Fidelity](fidelity.md): what the simulator can promise. Exact, Behavioral and Stub.
 - [Native runtime](native-runtime.md): build and run firmware without Docker (`fabwright setup`), and how Fabwright picks Docker or native.
+- [Migrating from Jumper](migrating-from-jumper.md): Fabwright was called Jumper until 2026-11-17; what still reads the old names, and how to move.
 
 ## For agents
 

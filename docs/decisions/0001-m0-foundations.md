@@ -6,7 +6,7 @@ M0 has to prove the whole loop on the smallest possible slice: a project file â†
 
 ## Name and brand
 
-**Fabwright.** The jumper wire is the one part every hardware project uses, it is short, it works as a CLI verb (`fabwright run`, `fabwright test`), and it is not a template word like "lab" or "studio". Brand details live in `brand/README.md`.
+**Jumper.** The jumper wire is the one part every hardware project uses, it is short, it works as a CLI verb (`jumper run`, `jumper test`), and it is not a template word like "lab" or "studio". (Renamed **Fabwright** on 2026-11-17: [0008](0008-rename-to-fabwright.md).) Brand details live in `brand/README.md`.
 
 ## Monorepo
 
