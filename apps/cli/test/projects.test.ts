@@ -6,10 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
-import { composeSvg, listRegisteredProjects, ProjectSession, projectId, registryForProjectDir } from "@fabwright/session";
+import type { BuildRequest, BuildResult } from "@faber/runner";
+import { composeSvg, listRegisteredProjects, ProjectSession, projectId, registryForProjectDir } from "@faber/session";
 import { parseDiag } from "../src/routes/projects.ts";
-import { startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
+import { startFaberServer, type FaberServer } from "../src/serve.ts";
 
 // Round 5, projects track (decision 0003, C3): the Projects gallery, versions, the code editor's
 // file and build endpoints, and switching the active project behind one MCP endpoint and hub.
@@ -26,37 +26,37 @@ const builder = async (_req: BuildRequest): Promise<BuildResult> =>
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-describe("fabwright serve: projects, history, files, build", () => {
+describe("faber serve: projects, history, files, build", () => {
   let tmp: string;
-  let srv: FabwrightServer;
+  let srv: FaberServer;
   let token: string;
-  const oldHome = process.env.FABWRIGHT_HOME;
+  const oldHome = process.env.FABER_HOME;
 
   const get = async (path: string): Promise<{ status: number; body: Json }> => {
     const r = await fetch(`${srv.url}${path}`);
     return { status: r.status, body: (await r.json()) as Json };
   };
   const send = async (method: string, path: string, body: unknown = {}, withToken = true): Promise<{ status: number; body: Json }> => {
-    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", ...(withToken ? { "x-fabwright-token": token } : {}) }, body: JSON.stringify(body) });
+    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", ...(withToken ? { "x-faber-token": token } : {}) }, body: JSON.stringify(body) });
     return { status: r.status, body: (await r.json()) as Json };
   };
   const call = (op: string, args: Record<string, unknown>) => srv.session.call(op, args, { actor: "mcp", client: "claude-code 9.9.9" });
 
   beforeAll(async () => {
-    tmp = mkdtempSync(join(tmpdir(), "fabwright-projects-"));
-    process.env.FABWRIGHT_HOME = join(tmp, "home");
+    tmp = mkdtempSync(join(tmpdir(), "faber-projects-"));
+    process.env.FABER_HOME = join(tmp, "home");
     const examples = join(tmp, "examples");
     cpSync(join(REPO_EXAMPLES, "blink"), join(examples, "blink"), { recursive: true });
     mkdirSync(join(examples, "agent-built"), { recursive: true });
     cpSync(join(REPO_EXAMPLES, "agent-built/codex-rover"), join(examples, "agent-built/codex-rover"), { recursive: true });
-    srv = await startFabwrightServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
+    srv = await startFaberServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
     token = ((await (await fetch(`${srv.url}/api/connect`)).json()) as { token: string }).token;
   }, 30_000);
 
   afterAll(async () => {
     await srv?.close();
-    if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
-    else process.env.FABWRIGHT_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.FABER_HOME;
+    else process.env.FABER_HOME = oldHome;
     rmSync(tmp, { recursive: true, force: true });
   });
 
@@ -137,7 +137,7 @@ describe("fabwright serve: projects, history, files, build", () => {
     expect(files.files).toEqual([{ path: "firmware/main.ino", size: BLINK.length }]);
     expect(files.main).toBe("firmware/main.ino");
     expect((await get("/api/file?path=firmware/main.ino")).body.content).toBe(BLINK);
-    expect((await get("/api/file?path=../fabwright.json")).status).toBe(400);
+    expect((await get("/api/file?path=../faber.json")).status).toBe(400);
     const nope = await get("/api/file?path=firmware/nope.ino");
     expect(nope.status).toBe(404);
     expect(nope.body.error).toMatch(/firmware\/main\.ino/);
@@ -188,7 +188,7 @@ describe("fabwright serve: projects, history, files, build", () => {
     const type = thumb.headers.get("content-type") ?? "";
     expect(type).toMatch(/image\/(png|svg\+xml)/);
     if (type === "image/png") {
-      expect(existsSync(join(process.env.FABWRIGHT_HOME!, "thumbs"))).toBe(true);
+      expect(existsSync(join(process.env.FABER_HOME!, "thumbs"))).toBe(true);
       // Second request comes from the cache.
       expect((await fetch(`${srv.url}${examples[0]!.thumbnail}`)).status).toBe(200);
     }
@@ -210,7 +210,7 @@ describe("fabwright serve: projects, history, files, build", () => {
     const card = (body.projects as Json[]).find((c) => c.dir === dir)!;
     expect(card).toMatchObject({ name: "Pocket sensor", board: "seeed-xiao-rp2040", boardName: "Seeed XIAO RP2040", agentMade: 1, readOnly: false });
     // The thumbnail draws with that folder's own parts, not the active project's registry.
-    const project = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
+    const project = JSON.parse(readFileSync(join(dir, "faber.json"), "utf8"));
     const svg = composeSvg(project, registryForProjectDir(dir), {});
     expect(svg).toMatch(/AGENT-MADE/);
     expect(composeSvg(project, srv.session.registry, {})).not.toMatch(/AGENT-MADE/);
@@ -242,11 +242,11 @@ describe("fabwright serve: projects, history, files, build", () => {
     expect(made.status).toBe(200);
     expect(made.body.dir).toBe(join(tmp, "projects", "my-blink"));
     expect(srv.dir).toBe(made.body.dir);
-    expect(JSON.parse(readFileSync(join(made.body.dir, "fabwright.json"), "utf8")).name).toBe("My blink");
+    expect(JSON.parse(readFileSync(join(made.body.dir, "faber.json"), "utf8")).name).toBe("My blink");
     expect(existsSync(join(made.body.dir, "firmware/blink/blink.ino"))).toBe(true);
     // The repo example is untouched, and the old project still has its circuit.
-    expect(JSON.parse(readFileSync(join(blink.dir, "fabwright.json"), "utf8")).name).toBe("Blink");
-    expect(JSON.parse(readFileSync(join(before, "fabwright.json"), "utf8")).parts).toHaveLength(3);
+    expect(JSON.parse(readFileSync(join(blink.dir, "faber.json"), "utf8")).name).toBe("Blink");
+    expect(JSON.parse(readFileSync(join(before, "faber.json"), "utf8")).parts).toHaveLength(3);
 
     const switched = await waitFor((m) => m.type === "project");
     expect(switched).toMatchObject({ dir: made.body.dir, id: made.body.id });
@@ -256,7 +256,7 @@ describe("fabwright serve: projects, history, files, build", () => {
 
     // Changes now go to the new project, and its history starts there.
     await call("set_part_property", { id: "led1", prop: "color", value: "green", why: "green is calmer" });
-    expect(JSON.parse(readFileSync(join(made.body.dir, "fabwright.json"), "utf8")).parts.find((p: Json) => p.id === "led1").props.color).toBe("green");
+    expect(JSON.parse(readFileSync(join(made.body.dir, "faber.json"), "utf8")).parts.find((p: Json) => p.id === "led1").props.color).toBe("green");
     const ver = await waitFor((m) => m.type === "version");
     // Version 1 is the example as it came (round 6), so the first change is version 2.
     expect(ver).toMatchObject({ version: 2, actor: "mcp", why: "green is calmer" });
@@ -279,7 +279,7 @@ describe("fabwright serve: projects, history, files, build", () => {
       const r2 = (await client.callTool({ name: "get_project", arguments: {} })) as { content: { text: string }[] };
       expect(JSON.parse(r2.content[0]!.text)).toMatchObject({ dir: made.body.dir, name: "My blink" });
       // Resources read the active project too.
-      const res = await client.readResource({ uri: "fabwright://project" });
+      const res = await client.readResource({ uri: "faber://project" });
       expect(JSON.stringify(res)).toContain("My blink");
       await srv.openProject(before);
     } finally {

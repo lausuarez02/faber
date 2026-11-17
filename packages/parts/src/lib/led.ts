@@ -1,4 +1,4 @@
-import type { DiodeParams } from "@fabwright/sim-core";
+import type { DiodeParams } from "@faber/sim-core";
 import { clamp, round } from "./props.ts";
 
 /**

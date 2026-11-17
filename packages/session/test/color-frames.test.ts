@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 import { afterAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { ProjectSession, composeSvg, deviceStill, lastLoggedStill, registryForProjectDir, stillKey, versionDetail } from "../src/index.ts";
 import { limitColorFrames } from "../src/color-frames.ts";
 import { downsampleFrames } from "../src/session.ts";
@@ -17,7 +17,7 @@ const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
   throw new Error(`unexpected build of ${req.sketchDir}: the example hex should be fresh`);
 };
 
-const dir = mkdtempSync(join(tmpdir(), "fabwright-color-frames-"));
+const dir = mkdtempSync(join(tmpdir(), "faber-color-frames-"));
 mkdirSync(join(dir, "firmware"), { recursive: true });
 copyFileSync(join(PART, "example.ino"), join(dir, "firmware", "main.ino"));
 copyFileSync(join(PART, "example.hex"), join(dir, "firmware", "main.hex"));
@@ -25,9 +25,9 @@ const later = new Date(Date.now() + 60_000);
 utimesSync(join(dir, "firmware", "main.hex"), later, later);
 const wire = (id: string, from: string, to: string) => ({ id, from: { part: "eye", pin: from }, to: { part: "uno", pin: to }, color: "#FFB23F" });
 writeFileSync(
-  join(dir, "fabwright.json"),
+  join(dir, "faber.json"),
   JSON.stringify({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "Round eye",
     parts: [
       { id: "uno", type: "arduino-uno", x: 0, y: 0, rotation: 0 },
@@ -70,7 +70,7 @@ function litPixels(b64: string): { w: number; h: number; lit: number } {
 }
 
 function lastLogEntry(op: string): { frames?: Frame[] } {
-  const lines = readFileSync(join(dir, ".fabwright", "actions.jsonl"), "utf8").trim().split("\n");
+  const lines = readFileSync(join(dir, ".faber", "actions.jsonl"), "utf8").trim().split("\n");
   return JSON.parse(lines.reverse().find((l) => l.includes(`"op":"${op}"`))!) as { frames?: Frame[] };
 }
 
@@ -132,7 +132,7 @@ describe("colour frames (round 6)", () => {
 describe("device stills for thumbnails (round 6)", () => {
   it("an example with built firmware and no log: the firmware runs 2 s and the colour screen is in the still", async () => {
     const ex = fileURLToPath(new URL("../../../examples/ai-pet/", import.meta.url));
-    const project = JSON.parse(readFileSync(join(ex, "fabwright.json"), "utf8"));
+    const project = JSON.parse(readFileSync(join(ex, "faber.json"), "utf8"));
     const t0 = Date.now();
     const still = await deviceStill(ex, project, registryForProjectDir(ex));
     expect(Date.now() - t0).toBeLessThan(15_000);

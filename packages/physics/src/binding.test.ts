@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { PartInteraction, SimEvent, VisualState } from "@fabwright/sim-core";
+import type { PartInteraction, SimEvent, VisualState } from "@faber/sim-core";
 import { attachPhysics, type SimHost } from "./binding.ts";
 import { initPhysics } from "./rapier.ts";
 

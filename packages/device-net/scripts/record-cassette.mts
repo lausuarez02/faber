@@ -13,7 +13,7 @@ if (!file || !urls.length) {
   process.exit(2);
 }
 const hosts = [...new Set(urls.map((u) => new URL(u).hostname))];
-const ca = await SandboxCA.open(join(mkdtempSync(join(tmpdir(), "fabwright-rec-")), "ca"));
+const ca = await SandboxCA.open(join(mkdtempSync(join(tmpdir(), "faber-rec-")), "ca"));
 const dn = new DeviceNet({ config: parseNetworkConfig({ mode: "internet", record: true, allow: hosts.map((host) => ({ host })) }), ca, cassetteFile: file });
 for (const url of urls) {
   const r = await probeRequest(dn, { url });

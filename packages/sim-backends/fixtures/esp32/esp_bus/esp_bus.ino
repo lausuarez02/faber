@@ -1,4 +1,4 @@
-// Fabwright golden fixture (ESP32 family): I2C (Wire, and Wire1 where the chip has two controllers),
+// Faber golden fixture (ESP32 family): I2C (Wire, and Wire1 where the chip has two controllers),
 // SPI (the default bus, CS by GPIO), and UART1 / UART2 on GPIO-matrix pins.
 #include <Wire.h>
 #include <SPI.h>

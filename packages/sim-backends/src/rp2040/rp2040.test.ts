@@ -1,9 +1,9 @@
-// Unit tests for the rp2040js backend: Fabwright's ROM, the HEX/UF2 loaders, determinism, buses.
+// Unit tests for the rp2040js backend: Faber's ROM, the HEX/UF2 loaders, determinism, buses.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { RP2040 } from "rp2040js";
-import { I2cBus, SpiBus, type I2cDevice } from "@fabwright/sim-core";
+import { I2cBus, SpiBus, type I2cDevice } from "@faber/sim-core";
 import { createRp2040Backend } from "./backend.ts";
 import { buildRomImage, installRom, ROM_BYTES } from "./rom.ts";
 import { FirmwareImageError, parseRp2040Hex } from "./hex.ts";
@@ -41,7 +41,7 @@ const fromF32 = (u: number) => new Float32Array(new Uint32Array([u]).buffer)[0]!
 const sf = (off: number) => u32(lookup(u16(0x16), "SF") + off);
 const sd = (off: number) => u32(lookup(u16(0x16), "SD") + off);
 
-describe("Fabwright's RP2040 ROM (no Raspberry Pi ROM code)", () => {
+describe("Faber's RP2040 ROM (no Raspberry Pi ROM code)", () => {
   it("has the layout the pico-sdk reads: magic, version 3, tables, lookup function", () => {
     expect(buildRomImage().length * 4).toBe(ROM_BYTES);
     expect([0x10, 0x11, 0x12].map((a) => view.getUint8(a))).toEqual([0x4d, 0x75, 0x01]);

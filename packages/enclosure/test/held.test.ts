@@ -2,7 +2,7 @@
 // its room with clearance, the electronics kept out, the opening it goes in through, a sleeve, the
 // walls round it, a sensor next to it, and a removable object that is not part of the assembly.
 import { describe, expect, it } from "vitest";
-import type { Enclosure, HeldObject } from "@fabwright/project-format";
+import type { Enclosure, HeldObject } from "@faber/project-format";
 import { heldProblems, heldSize, heldSpec } from "../src/held.ts";
 import { followSize } from "../src/held-layout.ts";
 import { layoutCase } from "../src/proposals.ts";
@@ -69,7 +69,7 @@ describe("held objects (round 15)", () => {
     const captive = lay([{ ...TIN, removable: false }]);
     expect(captive.openings.some((x) => x.part === "tin")).toBe(false);
     const L = lay([TIN]);
-    const project = { format: "fabwright/1", name: "t", parts: electronics.map((p) => ({ id: p.id, type: p.type, x: 0, y: 0 })), wires: [], scenarios: [] } as never;
+    const project = { format: "faber/1", name: "t", parts: electronics.map((p) => ({ id: p.id, type: p.type, x: 0, y: 0 })), wires: [], scenarios: [] } as never;
     const plan = assemblyPlan({ project, layout: L, specOf });
     expect(plan.steps.some((s) => s.parts.includes("tin"))).toBe(false);
     const put = plan.steps.find((s) => s.title === "Put round tin in")!;

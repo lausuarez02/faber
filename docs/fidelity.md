@@ -1,6 +1,6 @@
 # Fidelity: what the simulator can promise
 
-Fabwright's promise is **"if it doesn't crash here, it won't crash there"**. That promise only holds for things the simulator actually models. So the most important rule of the project is:
+Faber's promise is **"if it doesn't crash here, it won't crash there"**. That promise only holds for things the simulator actually models. So the most important rule of the project is:
 
 > **Never pretend.** If something is not simulated, say so, in the part, in the report and in the UI. A clear "not simulated" is better than a convincing fake.
 
@@ -61,11 +61,11 @@ Every area also gets a `note` in plain language. It should be one sentence that 
 - **`doesNotEmulate`** lists known gaps. Be specific. "Accuracy" is not a gap; "no ±0.5 °C sensor noise" is.
 - **`testOnRealDevice`** holds the checks the confidence report tells users to do on the real board.
 
-The schema is `FidelitySchema` in `@fabwright/sim-core`. The registry generator rejects a part whose `fidelity.json` does not validate.
+The schema is `FidelitySchema` in `@faber/sim-core`. The registry generator rejects a part whose `fidelity.json` does not validate.
 
 ## The simulator core has a fidelity too
 
-Fabwright's own engine is rated the same way:
+Faber's own engine is rated the same way:
 
 | Piece | Level | Notes |
 | --- | --- | --- |

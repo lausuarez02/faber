@@ -1,4 +1,4 @@
-import type { PartModelFactory } from "@fabwright/sim-core";
+import type { PartModelFactory } from "@faber/sim-core";
 import { createDiodeModel } from "../../lib/diode.ts";
 
 /** 1N4148 signal diode, piecewise linear: 0.6 V knee + 4 Ω → about 0.64 V at 10 mA, 1.0 V at 100 mA. */

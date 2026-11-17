@@ -23,7 +23,7 @@ export async function buildMicroPython(req: BuildRequest, t0: number): Promise<B
     if (statSync(abs).isDirectory()) {
       if (name === "build" || name.startsWith(".")) continue;
       const nested = readdirSync(abs).filter((f) => DEVICE_FILE.test(f));
-      if (nested.length) diagnostics.push({ severity: "warning", file: prefix + relative(req.sketchDir, abs), message: `folder ${name}/ is not copied to the device (${nested.length} file${nested.length === 1 ? "" : "s"})`, hint: "Fabwright writes MicroPython files at the root of the device filesystem; folders are not supported yet. Move the modules next to main.py and import them by name." });
+      if (nested.length) diagnostics.push({ severity: "warning", file: prefix + relative(req.sketchDir, abs), message: `folder ${name}/ is not copied to the device (${nested.length} file${nested.length === 1 ? "" : "s"})`, hint: "Faber writes MicroPython files at the root of the device filesystem; folders are not supported yet. Move the modules next to main.py and import them by name." });
       continue;
     }
     if (!DEVICE_FILE.test(name)) continue;
@@ -59,7 +59,7 @@ export async function buildMicroPython(req: BuildRequest, t0: number): Promise<B
     ...(out.hex !== undefined ? { hex: out.hex } : {}),
     ...(out.binary ? { binary: out.binary } : {}),
     durationMs: Date.now() - t0,
-    summary: `MicroPython ${out.firmware.version} (${out.firmware.id}) + ${files.size} file${files.size === 1 ? "" : "s"} (${out.fsBytesUsed} B of a ${Math.round(out.fsBytes / 1024)} KB littlefs)${out.files.includes(USB_MAIN_FILE) ? `; main.py runs through Fabwright's USB launcher (waits 40 ms for the computer to open the port)` : ""}`,
+    summary: `MicroPython ${out.firmware.version} (${out.firmware.id}) + ${files.size} file${files.size === 1 ? "" : "s"} (${out.fsBytesUsed} B of a ${Math.round(out.fsBytes / 1024)} KB littlefs)${out.files.includes(USB_MAIN_FILE) ? `; main.py runs through Faber's USB launcher (waits 40 ms for the computer to open the port)` : ""}`,
     logTail: `MicroPython ${out.firmware.version} ${out.firmware.id} + littlefs with ${out.files.join(", ")}`,
   };
 }

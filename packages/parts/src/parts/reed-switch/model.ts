@@ -1,7 +1,7 @@
 // Reed switch (normally open): closes when the magnet's field at the switch exceeds pull-in, opens
 // below drop-out (hysteresis). The magnet is the part's magnet_* props; press / release (or
 // set {key: "magnet", value: "near" | "away" | mm}) moves it, as a lid with a magnet does.
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
 import { MAGNET_GRADES, distanceForField, magnetInteraction, magnetOf } from "../../lib/magnet.ts";
 import { num, round } from "../../lib/props.ts";
 

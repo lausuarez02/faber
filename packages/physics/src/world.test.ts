@@ -51,8 +51,8 @@ describe("world spec", () => {
     expect(new WorldSpecError(["a: b"]).message).toBe("world is not valid:\n  - a: b");
   });
 
-  it("reads the world block from raw fabwright.json text", () => {
-    expect(worldOf('{"format":"fabwright/1","world":{"arena":{"width":100,"height":100}}}')).toEqual({ arena: { width: 100, height: 100 } });
+  it("reads the world block from raw faber.json text", () => {
+    expect(worldOf('{"format":"faber/1","world":{"arena":{"width":100,"height":100}}}')).toEqual({ arena: { width: 100, height: 100 } });
     expect(worldOf("{}")).toBeUndefined();
   });
 });

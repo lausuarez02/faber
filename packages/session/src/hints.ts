@@ -1,8 +1,8 @@
-import { customUsageOf } from "@fabwright/parts";
+import { customUsageOf } from "@faber/parts";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import type { PartSpec } from "@fabwright/sim-core";
+import type { PartSpec } from "@faber/sim-core";
 import { BOARDS_R5_HINTS } from "./hints-boards.ts";
 import { PARTS_R5_HINTS } from "./hints-parts.ts";
 import { CAMERA_HINTS } from "./hints-camera.ts"; // round 13 camera

@@ -1,6 +1,6 @@
 // MT3608 boost module on sim-core's regulator element (switching): VOUT = vout while VIN is between
 // 2 V and vout; the input current is vout × Iout / (efficiency × VIN) + no-load current.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory, RegulatorState } from "@faber/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 export const create: PartModelFactory = (ctx): PartModel => {

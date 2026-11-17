@@ -5,8 +5,8 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createRp2040Backend, rp2040BoardOf } from "@fabwright/sim-backends";
-import { I2cBus } from "@fabwright/sim-core";
+import { createRp2040Backend, rp2040BoardOf } from "@faber/sim-backends";
+import { I2cBus } from "@faber/sim-core";
 import { buildFirmware } from "../build.ts";
 import { REPO_ROOT } from "../config.ts";
 import { parsePlatformioIni } from "./build-platformio.ts";
@@ -94,7 +94,7 @@ describe("MicroPython build pieces", () => {
   });
 
   it("PlatformIO refuses a platform its image does not carry before touching Docker, saying why and what to use", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "fabwright-pio-"));
+    const dir = mkdtempSync(join(tmpdir(), "faber-pio-"));
     writeFileSync(join(dir, "platformio.ini"), "[env:esp]\nplatform = espressif32\nboard = esp32dev\nframework = arduino\n");
     await expect(buildFirmware({ sketchDir: dir, language: "platformio" })).rejects.toThrow(/only has atmelavr.*Fix:/s);
     rmSync(dir, { recursive: true, force: true });

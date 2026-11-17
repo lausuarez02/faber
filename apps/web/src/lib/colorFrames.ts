@@ -6,10 +6,10 @@
 //
 // Cached frames belong to the open project: a project switch clears them (R8).
 import { unzlibSync } from "fflate";
-import type { ColorFrame } from "@fabwright/sim-core";
+import type { ColorFrame } from "@faber/sim-core";
 import { onProjectSwitch } from "./projectSwitch.ts";
 
-/** A logged colour screen: native size, PNG as base64 without a data: prefix (ColorFrameImage in @fabwright/session). */
+/** A logged colour screen: native size, PNG as base64 without a data: prefix (ColorFrameImage in @faber/session). */
 export interface ColorFrameImage {
   w: number;
   h: number;

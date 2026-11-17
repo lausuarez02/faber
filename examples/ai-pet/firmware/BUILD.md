@@ -1,8 +1,8 @@
 # AI pet firmware: how the golden .hex is built
 
 ```sh
-export FABWRIGHT_ARDUINO_IMAGE=fabwright/arduino-cli:1.5.1-avr1.8.8-libs2
-docker image inspect "$FABWRIGHT_ARDUINO_IMAGE" >/dev/null || docker build -t "$FABWRIGHT_ARDUINO_IMAGE" toolchains/arduino
+export FABER_ARDUINO_IMAGE=faber/arduino-cli:1.5.1-avr1.8.8-libs2
+docker image inspect "$FABER_ARDUINO_IMAGE" >/dev/null || docker build -t "$FABER_ARDUINO_IMAGE" toolchains/arduino
 scripts/build-firmware.sh examples/ai-pet/firmware/ai-pet arduino:avr:uno examples/ai-pet/firmware/build
 cp examples/ai-pet/firmware/build/ai-pet.ino.hex examples/ai-pet/firmware/ai-pet.hex
 rm -rf examples/ai-pet/firmware/build

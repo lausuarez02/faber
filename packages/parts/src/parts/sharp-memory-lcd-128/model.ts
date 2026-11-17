@@ -8,7 +8,7 @@
 // The common electrode must be toggled about once a second (M1 or the EXTCOMIN pin), or the
 // liquid crystal takes a DC bias and the image degrades over hours. DISP HIGH shows the image.
 // A firmware that sends the same bytes MSB first (bit-reversed constants) is understood too.
-import { GROUND, type ColorFrame, type Diagnostic, type PartModel, type PartModelFactory, type SpiDevice } from "@fabwright/sim-core";
+import { GROUND, type ColorFrame, type Diagnostic, type PartModel, type PartModelFactory, type SpiDevice } from "@faber/sim-core";
 
 const W = 128;
 const H = 128;

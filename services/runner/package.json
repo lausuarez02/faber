@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/runner",
+  "name": "@faber/runner",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -9,21 +9,21 @@
     ".": "./src/index.ts"
   },
   "bin": {
-    "fabwright-runner": "./bin/fabwright-runner.mjs"
+    "faber-runner": "./bin/faber-runner.mjs"
   },
   "scripts": {
-    "start": "node bin/fabwright-runner.mjs",
+    "start": "node bin/faber-runner.mjs",
     "test": "vitest run"
   },
   "devDependencies": {
-    "@fabwright/sim-backends": "workspace:*",
-    "@fabwright/sim-core": "workspace:*",
+    "@faber/sim-backends": "workspace:*",
+    "@faber/sim-core": "workspace:*",
     "tsx": "4.23.15"
   },
   "dependencies": {
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/sim-backends": "workspace:*",
-    "@fabwright/sim-core": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/sim-backends": "workspace:*",
+    "@faber/sim-core": "workspace:*",
     "@pybricks/mpy-cross-v6": "2.0.0",
     "littlefs": "0.1.0"
   }

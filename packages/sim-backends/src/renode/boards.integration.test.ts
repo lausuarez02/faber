@@ -1,9 +1,9 @@
-// Renode boards against real firmware (Docker + the fabwright/renode image). Skipped, with the reason,
+// Renode boards against real firmware (Docker + the faber/renode image). Skipped, with the reason,
 // when Docker or the image is missing, or a board's fixture is not built yet
 // (scripts/build-renode-fixtures.ts). A board part is "available" only when its tests here pass.
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { I2cBus, SpiBus } from "@fabwright/sim-core";
+import { I2cBus, SpiBus } from "@faber/sim-core";
 import { describe, expect, it } from "vitest";
 import { createRenodeBackend, type RenodeBackend } from "./backend.ts";
 import { RENODE_BOARDS } from "./boards.ts";
@@ -111,7 +111,7 @@ for (const board of Object.keys(RENODE_BOARDS)) {
       }
     });
 
-    it("Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Fabwright", { timeout: 240_000 }, () => {
+    it("Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Faber", { timeout: 240_000 }, () => {
       const be = createRenodeBackend({ board });
       try {
         const p = BUS_PINS[board]!;
@@ -144,7 +144,7 @@ for (const board of Object.keys(RENODE_BOARDS)) {
         const text = serial.text();
         expect(text).toContain("i2c 0x48");
         expect(text).toContain("bus up");
-        if (process.env.FABWRIGHT_DEBUG) console.log(`${board}: ${text.split("\n").filter((l) => l.includes("presses")).at(-1)} ${text.includes("rx hello") ? "rx ok" : "no rx"}`);
+        if (process.env.FABER_DEBUG) console.log(`${board}: ${text.split("\n").filter((l) => l.includes("presses")).at(-1)} ${text.includes("rx hello") ? "rx ok" : "no rx"}`);
         expect(text).toMatch(/i2c_err=0 got=2 raw=0xC80 spi=A5,5A/);
         const last = text.split("\n").filter((l) => l.includes("adc=")).at(-1) ?? "";
         const adc = Number(/adc=(\d+)/.exec(last)?.[1]);

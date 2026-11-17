@@ -1,5 +1,5 @@
-import type { PartInstance, PinRef, Project } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec, PinSpec } from "@fabwright/sim-core";
+import type { PartInstance, PinRef, Project } from "@faber/project-format";
+import type { PartRegistry, PartSpec, PinSpec } from "@faber/sim-core";
 import { didYouMean, fail } from "./errors.ts";
 
 /** Split "uno.D13" / "uno:D13" into part and pin. The part id never contains a dot; the pin may ("uno.GND.1"). */

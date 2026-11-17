@@ -7,9 +7,9 @@ returns is a project built from these, Wi-Fi + HTTP + I2S + an amplifier (see
 
 ## Which boards
 
-| Board family | I2S in Fabwright | How |
+| Board family | I2S in Faber | How |
 | --- | --- | --- |
-| ESP32, ESP32-S3, ESP32-C3 | **emulated**, verified on real firmware | QEMU's I2S device (patch `0004-fabwright-i2s.patch`): the controllers, their DMA (ESP32's own, S3 / C3 GDMA), the sample rate from the clock registers, the EOF interrupts that pace `write()`. Details: [esp32-peripherals.md](esp32-peripherals.md#i2s-round-13-track-audio-emulated-verified-on-real-firmware). |
+| ESP32, ESP32-S3, ESP32-C3 | **emulated**, verified on real firmware | QEMU's I2S device (patch `0004-faber-i2s.patch`): the controllers, their DMA (ESP32's own, S3 / C3 GDMA), the sample rate from the clock registers, the EOF interrupts that pace `write()`. Details: [esp32-peripherals.md](esp32-peripherals.md#i2s-round-13-track-audio-emulated-verified-on-real-firmware). |
 | RP2040 (Pico, XIAO RP2040, RP2040-Zero) | **no** | RP2040 I2S runs on PIO, which is not turned into audio. Use an ESP32-family board for I2S audio. |
 | STM32, nRF52 | **no** | Not modelled. |
 | AVR (Uno, Nano) | – | No I2S on the chip. Use a DFPlayer-style module for sound. |
@@ -29,7 +29,7 @@ The canvas draws a level bar under any part that reports `playing` and `level`.
 
 ## The page plays what the board played
 
-Each `run` that played I2S audio writes a WAV of it to `.fabwright/audio/run-<seq>.wav` (the last 20 are
+Each `run` that played I2S audio writes a WAV of it to `.faber/audio/run-<seq>.wav` (the last 20 are
 kept). The run's `audio` field and the log entry name it, and it is served at `GET /api/audio/<file>`.
 The followed page plays it with WebAudio, in step with the frames. It never plays under a test driver,
 in a hidden tab or when the page is muted. The recording is mono 16 kHz of the I2S stream, without the
@@ -62,11 +62,11 @@ Decoders and their licences:
 | Raw PCM / WAV over HTTP or WebSocket | none needed | the simplest; most TTS APIs can return PCM (the WebSockets library is LGPL-2.1) |
 | ESP_I2S `playMP3()` (libhelix, in arduino-esp32) | RPSL / RCSL | verified on the S3; keep its notices if you ship it |
 | minimp3 | CC0 | fine to bundle |
-| ESP32-audioI2S, ESP8266Audio, arduino-audio-tools | GPL-3.0 | not shipped by Fabwright |
+| ESP32-audioI2S, ESP8266Audio, arduino-audio-tools | GPL-3.0 | not shipped by Faber |
 
 ## Limits
 
-- Frames cross to Fabwright, not BCLK / WS edges. No slave mode, A-law / u-law or bit-order swaps.
+- Frames cross to Faber, not BCLK / WS edges. No slave mode, A-law / u-law or bit-order swaps.
 - The emulated CPU runs at 125 MIPS, slower than a 240 MHz chip: computing every sample in a loop can
   run dry in the emulator where the chip might not. Use a table or stream from the network.
 - Network timing is wall-clock: on a loaded machine a stream can pause in virtual time.

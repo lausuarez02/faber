@@ -1,6 +1,6 @@
-# Contributing to Fabwright
+# Contributing to Faber
 
-Thanks for helping. Fabwright gets better mostly through **parts**: one new, well-tested part is worth more than a big refactor. This guide covers setup, the commands you will use, how we write commits, and how to add a part.
+Thanks for helping. Faber gets better mostly through **parts**: one new, well-tested part is worth more than a big refactor. This guide covers setup, the commands you will use, how we write commits, and how to add a part.
 
 By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -14,9 +14,9 @@ You need:
 
 ```sh
 git clone <your fork>
-cd fabwright
+cd faber
 pnpm i
-pnpm --filter @fabwright/web exec playwright install chromium   # once, for the browser tests
+pnpm --filter @faber/web exec playwright install chromium   # once, for the browser tests
 pnpm dev                                # http://localhost:5173
 ```
 
@@ -30,7 +30,7 @@ pnpm dev                                # http://localhost:5173
 | `pnpm test:watch` | While writing a model or a solver change. |
 | `pnpm test:e2e` | After any UI change. Playwright runs desktop Chrome and a Pixel 7 viewport. |
 | `pnpm gen` | After adding or changing anything in `packages/parts/src/parts/` or the project schema. Commit the generated files. |
-| `pnpm --filter @fabwright/<pkg> test` | To test a single package. |
+| `pnpm --filter @faber/<pkg> test` | To test a single package. |
 
 CI runs the same steps (see `.github/workflows/ci.yml`). CI also fails if `pnpm gen` produces a diff, so always commit the regenerated files.
 

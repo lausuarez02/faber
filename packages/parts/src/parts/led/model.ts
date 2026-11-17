@@ -1,4 +1,4 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
 import { LED_ABS_MAX_mA, LED_COLORS, LED_RATED_mA, ledBrightness, ledColor, type LedColor } from "../../lib/led.ts";
 import { round, str } from "../../lib/props.ts";
 

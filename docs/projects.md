@@ -1,7 +1,7 @@
 # Projects, history and code
 
 Round 5, projects track ([decision 0003](decisions/0003-round5-see-it-work.md), C3). This needs the
-local server: `pnpm start` (or `fabwright serve --project <folder>`) and the page it opens. Without
+local server: `pnpm start` (or `faber serve --project <folder>`) and the page it opens. Without
 the server (`pnpm dev`, a static build) the app shows the bundled examples and the examples' code
 read-only, and says what needs the server.
 
@@ -10,8 +10,8 @@ read-only, and says what needs the server.
 Click the logo (top left) or **All projects** on an empty canvas. The page lists:
 
 - **Your projects**: the folders in the projects folder (`projects/` for `pnpm start`, otherwise the
-  parent of `--project`), plus every folder in `$FABWRIGHT_HOME/projects.json` (`~/.fabwright` by default).
-  Folders get into that file when `fabwright serve` or `fabwright mcp` is started with `--project` (not
+  parent of `--project`), plus every folder in `$FABER_HOME/projects.json` (`~/.faber` by default).
+  Folders get into that file when `faber serve` or `faber mcp` is started with `--project` (not
   for folders under the OS temp dir), when the web app creates or opens a project, and when an
   agent makes a new project folder (`new_project {folder}`, agent track).
 - **Examples** and **Built by agents**: `examples/` and `examples/agent-built/`. They are read-only.
@@ -24,11 +24,11 @@ Click the logo (top left) or **All projects** on an empty canvas. The page lists
 Each card shows a render of the canvas with the device as it last ran: the last run or test in the
 action log (lit LEDs, OLED and colour screens), or, for a project with built firmware and no such
 run (the examples, a log from before colour screens were logged), the firmware run headless for 2 s.
-It is cached as a PNG by the sha256 of `fabwright.json` and the log's size, in
-`<project>/.fabwright/thumbs/` or `$FABWRIGHT_HOME/thumbs/` for examples (rendered again when either
+It is cached as a PNG by the sha256 of `faber.json` and the log's size, in
+`<project>/.faber/thumbs/` or `$FABER_HOME/thumbs/` for examples (rendered again when either
 changes; an SVG is served when Playwright's Chromium is not installed), next to the board, the part
 count, the last `run_tests` result and when it last changed. The server draws missing thumbnails in the
-background shortly after it starts (one at a time, about 1 s each; `FABWRIGHT_WARM_THUMBS=0` turns
+background shortly after it starts (one at a time, about 1 s each; `FABER_WARM_THUMBS=0` turns
 that off), and a tile still waiting says "Drawing the circuit…".
 
 **First screen (round 6).** The server's root lands on the Projects page when the active project
@@ -48,7 +48,7 @@ to add a part".
 ## History
 
 The clock next to the project name (or **History** in the project menu). Every change is a
-version: version N is the N-th line of `.fabwright/actions.jsonl` that changed the circuit or a file,
+version: version N is the N-th line of `.faber/actions.jsonl` that changed the circuit or a file,
 whoever made it (an agent, you on the canvas, the CLI). For each version the scrubber shows:
 
 - the canvas at that version, with the device state of the run or test that followed it (lit LEDs,
@@ -59,7 +59,7 @@ whoever made it (an agent, you on the canvas, the CLI). For each version the scr
   them (restore, undo, reject);
 - the firmware hash that matches that version: built while it was current, or built earlier with
   no code change since. A sketch edit that was never built says "not built at this version" (the
-  hex is kept in `.fabwright/builds/<hash>.hex`; logs from before round 5 recorded a build without
+  hex is kept in `.faber/builds/<hash>.hex`; logs from before round 5 recorded a build without
   its hash);
 - **Code at this version** (read-only) and **Restore this version**.
 
@@ -69,7 +69,7 @@ available to agents as the `restore_version` tool.
 How files are rebuilt: the log keeps the content of every `write_file` (up to 50 000 characters;
 a longer file makes that version "approximate" and restore refuses with the reason). Files written
 without a log entry (template files of `new_project`, undo / reject / restore of a write) come from
-the undo history (`.fabwright/history.json`). A firmware file Fabwright never changed is shown as it is on
+the undo history (`.faber/history.json`). A firmware file Faber never changed is shown as it is on
 disk now.
 
 ## Code editor
@@ -86,7 +86,7 @@ you have unsaved edits in them.
 
 ## HTTP endpoints
 
-All local-only; changes need `x-fabwright-token` from `GET /api/connect`. Errors are
+All local-only; changes need `x-faber-token` from `GET /api/connect`. Errors are
 `{ error: "<what failed>. Why: … Fix: …" }`.
 
 | Method, path | Answer |

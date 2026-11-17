@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 function fresh(): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-lang-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-lang-"));
   dirs.push(dir);
   const s = new ProjectSession({ dir, actor: "test" });
   sessions.push(s);
@@ -81,7 +81,7 @@ describe("MicroPython on the Raspberry Pi Pico", { timeout: 120_000 }, () => {
     const r = await call(s, "set_firmware", { language: "micropython" });
     expect(r.main).toBe("firmware/main.py");
     expect(r.languages_on_this_board).toContain("micropython");
-    const project = JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8"));
+    const project = JSON.parse(readFileSync(join(s.dir, "faber.json"), "utf8"));
     expect(project.firmware).toMatchObject({ language: "micropython", sketch: "main.py", build: { tool: "micropython" } });
     const uno = fresh();
     await call(uno, "new_project", { template: "uno" });

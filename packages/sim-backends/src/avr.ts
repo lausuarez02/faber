@@ -36,7 +36,7 @@ import {
   type PinState,
   type SpiBus,
   type Unsubscribe,
-} from "@fabwright/sim-core";
+} from "@faber/sim-core";
 import { boardPinMap, type BoardPin, type BoardType } from "./pins.ts";
 
 export interface AvrBackendOptions {

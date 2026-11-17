@@ -1,7 +1,7 @@
 // OV2640 camera module (round 13): a general camera part. esp32-camera's init finds it on the GPIOs
 // its pins are wired to; frames come from what it is set to see (lib/cameraPart.ts).
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { createCameraPart } from "../../lib/cameraPart.ts";
 
 const ACTIVE_A = 0.04;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bytesToBase64 } from "@fabwright/sim-core";
-import { getPart } from "@fabwright/parts";
+import { bytesToBase64 } from "@faber/sim-core";
+import { getPart } from "@faber/parts";
 import { DISPLAY_PART_TYPES, mountDisplay, paintLcd, paintOled, registerDisplayRenderers } from "./index.ts";
 import { glyphRows } from "./font5x7.ts";
 

@@ -20,9 +20,9 @@
       "default": "low",
       "options": [
         { "value": "low", "label": "Active low (LOW = on), most optocoupled modules" },
-        { "value": "high", "label": "Active high (HIGH = on), transistor modules / H fabwright" }
+        { "value": "high", "label": "Active high (HIGH = on), transistor modules / H faber" }
       ],
-      "description": "Which IN level turns the relay on. Check the module's silkscreen or the H/L fabwright."
+      "description": "Which IN level turns the relay on. Check the module's silkscreen or the H/L faber."
     }
   ],
   "limits": { "maxVoltage": 5.5, "minVoltage": 4.5, "pullInVoltage": 3.75, "coilmA": 71, "contactMaxmA": 10000, "contactMaxDcVoltage": 30, "operateMs": 10, "releaseMs": 5 },

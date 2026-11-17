@@ -1,6 +1,6 @@
 // Round 10 (network): the project's device network for a session. One DeviceNetHost (gateway +
 // netstack in a worker thread, packages/device-net) per session, started on first use from
-// fabwright.json "network", the mocks file (network/mocks.json) and the secrets named there (values
+// faber.json "network", the mocks file (network/mocks.json) and the secrets named there (values
 // from the environment or the project's git-ignored .env). Emulators plug their network card into
 // framePort (QEMU: QemuEspBackend {network: {framePort, mac}}); the tools in tools/network.ts and
 // the scenario steps read it.
@@ -16,24 +16,24 @@ import {
   resolveMocks,
   type Mock,
   type NetworkConfig,
-} from "@fabwright/device-net";
-import type { Project } from "@fabwright/project-format";
+} from "@faber/device-net";
+import type { Project } from "@faber/project-format";
 import { fail } from "./errors.ts";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
 export const DEFAULT_MOCKS_FILE = "network/mocks.json";
 
-/** The per-machine sandbox CA folder (never in a project or an export). FABWRIGHT_SANDBOX_CA_DIR overrides. */
+/** The per-machine sandbox CA folder (never in a project or an export). FABER_SANDBOX_CA_DIR overrides. */
 export function sandboxCaDir(): string {
-  return process.env.FABWRIGHT_SANDBOX_CA_DIR ?? join(userHomeDir(homedir()), "sandbox-ca");
+  return process.env.FABER_SANDBOX_CA_DIR ?? join(userHomeDir(homedir()), "sandbox-ca");
 }
 
-/** fabwright.json "network" as the gateway's config, with field / why / fix on a bad value. */
+/** faber.json "network" as the gateway's config, with field / why / fix on a bad value. */
 export function networkConfigOf(project: Project): NetworkConfig {
   try {
     return parseNetworkConfig(project.network ?? {});
   } catch (e) {
-    if (e instanceof ConfigError) fail("bad-network", `fabwright.json ${e.field ?? "network"}: ${e.message}`, e.why, e.fix, { field: e.field });
+    if (e instanceof ConfigError) fail("bad-network", `faber.json ${e.field ?? "network"}: ${e.message}`, e.why, e.fix, { field: e.field });
     throw e;
   }
 }
@@ -110,7 +110,7 @@ export class SessionDeviceNet {
       ...(cfg.cassette ? { cassetteFile: join(this.dir(), "network", "cassettes", `${cfg.cassette}.json`) } : {}),
     })
       .then((h) => (this.host = h))
-      .catch((e: Error) => fail("network-start", "the device network could not start", e.message, "run pnpm install in the Fabwright repo (the network runs on tsx in a worker thread), then try again"))
+      .catch((e: Error) => fail("network-start", "the device network could not start", e.message, "run pnpm install in the Faber repo (the network runs on tsx in a worker thread), then try again"))
       .finally(() => (this.starting = undefined));
     return this.starting;
   }

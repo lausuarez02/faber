@@ -1,12 +1,12 @@
 // Streaming over a WebSocket, generically: a Seeed XIAO ESP32-C3 opens wss://, asks for a stream
 // and receives binary chunks as they come (audio, sensor blocks, model output: the bytes do not
 // matter). It counts chunks and bytes and keeps a running checksum. Written for the real board
-// (arduinoWebSockets, real root CA); in Fabwright the mock in network/mocks.json streams 40 chunks of
+// (arduinoWebSockets, real root CA); in Faber the mock in network/mocks.json streams 40 chunks of
 // 1 KiB, 25 ms apart. Point STREAM_HOST / STREAM_PATH at your own server for the real thing.
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 
-#define WIFI_SSID "FabwrightNet"
+#define WIFI_SSID "FaberNet"
 #define WIFI_PASS "change-me-123"
 static const char *STREAM_HOST = "stream.example.com";
 static const char *STREAM_PATH = "/v1/stream";

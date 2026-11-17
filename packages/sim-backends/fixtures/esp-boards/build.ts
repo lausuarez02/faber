@@ -1,4 +1,4 @@
-// Rebuilds the ESP board fixtures through Fabwright's own build pipeline (services/runner), with each
+// Rebuilds the ESP board fixtures through Faber's own build pipeline (services/runner), with each
 // board's simulator FQBN and build properties from its part.json. Golden builds: run on purpose only.
 //   node_modules/.bin/tsx packages/sim-backends/fixtures/esp-boards/build.ts [board ...]   (default: all)
 import { readFileSync, writeFileSync } from "node:fs";

@@ -21,5 +21,5 @@ export type { NativeFamily, NativeCore } from "./native/arduino.ts";
 export { installNativeQemu, installNativeRenode, qemuBuildPrereqs } from "./native/emulators.ts";
 export { SETUP_TARGETS, setupTargetOf, setupNative, nativeStatus, runtimeSummary } from "./native/setup.ts";
 export type { SetupStep, NativeComponentStatus } from "./native/setup.ts";
-export { runtimeSetting, probeDocker, fabwrightHome } from "@fabwright/sim-backends/node";
+export { runtimeSetting, probeDocker, faberHome } from "@faber/sim-backends/node";
 export { arduinoRuntimeFor, canBuildArduino, setupNameFor } from "./runtime.ts";

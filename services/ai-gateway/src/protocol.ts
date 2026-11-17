@@ -1,7 +1,7 @@
 // The pet protocol: what a 2 KB-RAM board sends and gets back. Designed so a sketch can build the
 // request with a few Serial.print calls and parse the reply with strchr():
 //
-//   GET /v1/pet?a=talk&f=40&j=70&e=80&n=Pip&m=what%20do%20you%20eat HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n
+//   GET /v1/pet?a=talk&f=40&j=70&e=80&n=Pip&m=what%20do%20you%20eat HTTP/1.0\r\nHost: ai.faber\r\n\r\n
 //   HTTP/1.0 200 OK\r\nContent-Length: 28\r\nConnection: close\r\n\r\nhappy|Yum! That hit the spot
 //
 // Query: a = action (talk | feed | play | sleep | lonely | hello), f = food, j = joy, e = energy

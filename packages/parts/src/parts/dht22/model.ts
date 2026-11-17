@@ -7,8 +7,8 @@
 // answer is a chain of ctx.schedule events that pull DATA low or let the pull-up raise it.
 // The sensor returns the measurement taken at the PREVIOUS read (datasheet note): a new value
 // shows on the second read after it changed.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 export const START_LOW_MIN_MS = 0.8;

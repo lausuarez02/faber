@@ -2,8 +2,8 @@
 // soil's permittivity loads it and an RC detector turns that into a voltage that falls as the soil
 // gets wetter. Behavioural: AOUT is linear between a dry (air) and wet (water) voltage, scaled by
 // the on-board 3.3 V regulator's output, behind ~10 kΩ.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 /** Fractions of the regulated 3.3 V seen in dry air and in water (≈ 2.9 V and ≈ 1.25 V). */

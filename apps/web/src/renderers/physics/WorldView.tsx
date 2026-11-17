@@ -1,4 +1,4 @@
-import type { PhysicsBinding } from "@fabwright/physics";
+import type { PhysicsBinding } from "@faber/physics";
 import { useCallback } from "react";
 import { drawArm, drawWorld } from "./paint.ts";
 import { PhysicsCanvas } from "./PhysicsCanvas.tsx";

@@ -1,7 +1,7 @@
 // Node-only lookups for the pre-rename names (see ./legacy.ts). One rule everywhere: use the new
 // name when it is there, else the old name when that is there, else the new name. So a project
 // made before the rename keeps reading and writing its jumper.json and .jumper/ (no surprise
-// second file, nothing moved behind the person's back), and every new project gets fabwright.json.
+// second file, nothing moved behind the person's back), and every new project gets faber.json.
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ function pick(dir: string, current: string, legacy: string): string {
   return existsSync(old) ? old : now;
 }
 
-/** The project file of `dir`: fabwright.json, or jumper.json in a project made before the rename. */
+/** The project file of `dir`: faber.json, or jumper.json in a project made before the rename. */
 export function projectFilePath(dir: string): string {
   return pick(dir, PROJECT_FILE, LEGACY_PROJECT_FILE);
 }
@@ -24,12 +24,12 @@ export function hasProjectFile(dir: string): boolean {
   return existsSync(join(dir, PROJECT_FILE)) || existsSync(join(dir, LEGACY_PROJECT_FILE));
 }
 
-/** The project's state folder: .fabwright, or .jumper in a project made before the rename. */
+/** The project's state folder: .faber, or .jumper in a project made before the rename. */
 export function stateDirPath(dir: string): string {
   return pick(dir, STATE_DIR, LEGACY_STATE_DIR);
 }
 
-/** ~/.fabwright, or ~/.jumper when only that exists (its installed toolchains keep working). */
+/** ~/.faber, or ~/.jumper when only that exists (its installed toolchains keep working). */
 export function userHomeDir(home: string = homedir()): string {
   return pick(home, HOME_DIR, LEGACY_HOME_DIR);
 }

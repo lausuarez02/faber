@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { runAudioFile } from "@fabwright/session";
+import { runAudioFile } from "@faber/session";
 import type { ApiRoute } from "./types.ts";
 
 /**
  * Round 13 (audio): GET /api/audio/<file>: the WAV a `run` recorded from the board's I2S output
- * (.fabwright/audio/run-<seq>.wav, named in the run's log entry). The page plays it with the run's
+ * (.faber/audio/run-<seq>.wav, named in the run's log entry). The page plays it with the run's
  * frames. Only run-<n>.wav names are served, from the active project's folder.
  */
 export const audioRoutes: ApiRoute[] = [
@@ -23,7 +23,7 @@ export const audioRoutes: ApiRoute[] = [
         res.writeHead(200, { "content-type": "audio/wav", "content-length": String(body.length), "cache-control": "no-store", ...cors });
         res.end(body);
       } catch {
-        ctx.json(res, 404, { error: `${params.file} is gone. Why: Fabwright keeps the last 20 run recordings, or the project changed. Fix: run again.` }, cors);
+        ctx.json(res, 404, { error: `${params.file} is gone. Why: Faber keeps the last 20 run recordings, or the project changed. Fix: run again.` }, cors);
       }
     },
   },

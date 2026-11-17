@@ -2,7 +2,7 @@
 // Like bench.ts, but with a virtual clock (1 µs resolution), ideal voltage sources the test sets
 // per node, a PWM table the test fills, and advance(ms) that runs scheduled events and 1 ms ticks
 // exactly the way the Simulation does.
-import type { PropValue } from "@fabwright/project-format";
+import type { PropValue } from "@faber/project-format";
 import {
   Circuit,
   Clock,
@@ -16,7 +16,7 @@ import {
   type PartModel,
   type PwmReading,
   type SolveResult,
-} from "@fabwright/sim-core";
+} from "@faber/sim-core";
 
 export interface TimedBench {
   ctx: PartContext;

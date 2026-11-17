@@ -1,4 +1,4 @@
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 
 /**
  * Undo / steps, at the level of entities: "part:<id>", "wire:<id>", "firmware", "scenario:<id>",

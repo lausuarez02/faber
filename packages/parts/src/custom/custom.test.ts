@@ -1,5 +1,5 @@
-import { parseProject } from "@fabwright/project-format";
-import { Simulation, createRegistry } from "@fabwright/sim-core";
+import { parseProject } from "@faber/project-format";
+import { Simulation, createRegistry } from "@faber/sim-core";
 import { describe, expect, it } from "vitest";
 import { registry } from "../registry.gen.ts";
 import { compileCustomPart, CustomPartError } from "./compile.ts";
@@ -82,7 +82,7 @@ function bench(defs: ReturnType<typeof compileCustomPart>["def"][], parts: { id:
   const reg = withProjectParts(registry);
   reg.setProjectParts(defs);
   const project = parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "t",
     parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }, ...parts.map((p) => ({ ...p, x: 0, y: 0 }))],
     wires: wires.map(([a, b], i) => ({ id: `w${i}`, from: { part: a.split(".")[0]!, pin: a.split(".")[1]! }, to: { part: b.split(".")[0]!, pin: b.split(".").slice(1).join(".") } })),

@@ -5,7 +5,7 @@
 // decoder watches the levels the MCU drives on the board's SDA/SCL pins, turns them into
 // START / address / data / STOP on the I2cBus, and pulls SDA low where a device would (ACK, read
 // bits). Deterministic: it reacts only to pin changes.
-import type { I2cBus } from "@fabwright/sim-core";
+import type { I2cBus } from "@faber/sim-core";
 
 type State = "idle" | "addr" | "write" | "slave-ack" | "read" | "master-ack" | "ignore";
 

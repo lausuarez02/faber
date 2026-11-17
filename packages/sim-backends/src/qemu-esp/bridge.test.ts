@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { I2cBus, I2sBus, SpiBus } from "@fabwright/sim-core";
+import { I2cBus, I2sBus, SpiBus } from "@faber/sim-core";
 import { QemuEspBackend } from "./backend.ts";
 import { ESP_CHIPS, espOutputSource } from "./chips.ts";
 import type { QemuLaunchOptions, QemuProcess } from "./launcher.ts";
@@ -24,11 +24,11 @@ interface Ev {
 }
 
 function fake(events: Ev[], chip: "esp32" | "esp32s3" | "esp32c3" = "esp32c3") {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-fake-qemu-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-fake-qemu-"));
   const recordPath = join(dir, "record.json");
   const launch = (o: QemuLaunchOptions): QemuProcess => {
     const scriptPath = join(dir, "script.json");
-    writeFileSync(scriptPath, JSON.stringify({ hello: `H fabwright-esp32-bridge 3 ${chip}.gpio sync=1 feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,i2s`, events }));
+    writeFileSync(scriptPath, JSON.stringify({ hello: `H faber-esp32-bridge 3 ${chip}.gpio sync=1 feat=gpio,matrix,irq,uart,i2c,ledc,spi,rmt,adc,i2s`, events }));
     const child = spawn(process.execPath, [FAKE, String(o.bridgePort), scriptPath, recordPath], { stdio: "ignore" });
     return { child, argv: [], stop: () => child.kill("SIGTERM") };
   };

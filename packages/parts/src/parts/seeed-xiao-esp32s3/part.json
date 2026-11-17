@@ -5,7 +5,7 @@
   "description": "Thumb-sized ESP32-S3 board (21 × 17.8 mm, USB-C) with Wi-Fi / BLE (not emulated), 8 MB flash, 11 GPIOs on the headers (D0 to D10), I2C, SPI and UART, an orange user LED (GPIO21, active low) and a built-in Li-ion charger (SGM40567, 50 mA) with BAT pads underneath. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are the GPIO numbers (GPIO1 = D0 …, GPIO43 = D6); in code use D0…D10 or the GPIO number. 3.3 V logic only.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Fabwright's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Fabwright's parts. Run on the merged jb5 emulator sources (a native QEMU build; the fabwright/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board seeed-xiao-esp32s3): real arduino-esp32 3.3.12 firmware built by Faber's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Faber's parts. Run on the merged jb5 emulator sources (a native QEMU build; the faber/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
   },
   "pins": [
     {
@@ -108,7 +108,7 @@
         "min": 0,
         "max": 3.3
       },
-      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX (Serial1 on the real board; in Fabwright's simulator build Serial goes here too).",
+      "description": "ESP32-S3 GPIO43; McuBackend pin \"GPIO43\" (pinMode(43, …) in arduino-esp32). 3.3 V logic, NOT 5 V tolerant. Silkscreen D6 / TX: UART0 TX (Serial1 on the real board; in Faber's simulator build Serial goes here too).",
       "protocols": [
         "uart-tx"
       ]
@@ -119,7 +119,7 @@
       "x": 129,
       "y": 36,
       "type": "power",
-      "description": "VBUS: 5 V from the USB-C port when plugged in (fabwright.json power.usb, default plugged). Without USB it is an input (4.5 to 5.5 V); on battery this pad stays at 0 V (the charger never back-feeds it).",
+      "description": "VBUS: 5 V from the USB-C port when plugged in (faber.json power.usb, default plugged). Without USB it is an input (4.5 to 5.5 V); on battery this pad stays at 0 V (the charger never back-feeds it).",
       "voltage": {
         "min": 4.5,
         "max": 5.5
@@ -139,7 +139,7 @@
       "x": 129,
       "y": 76,
       "type": "power",
-      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Keep loads modest (Fabwright checks 500 mA). The ESP32-S3 runs down to about 3.0 V.",
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout). Keep loads modest (Faber checks 500 mA). The ESP32-S3 runs down to about 3.0 V.",
       "voltage": {
         "min": 3.2,
         "max": 3.4
@@ -336,7 +336,7 @@
       }
     ],
     "toolchain": {
-      "image": "fabwright/arduino-esp32:3.3.12-r3",
+      "image": "faber/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:XIAO_ESP32S3:CDCOnBoot=cdc,FlashMode=dio",
       "simNote": "The simulator build sends Serial to UART0 (USB CDC On Boot: Disabled) and uses DIO flash, because the emulator has no USB serial and no QIO flash. The factory pack builds the board's own settings: Serial on the USB-C port.",
       "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"

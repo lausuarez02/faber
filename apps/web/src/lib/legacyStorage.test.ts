@@ -15,17 +15,17 @@ function memory(init: Record<string, string>) {
 }
 
 describe("pre-rename browser settings", () => {
-  it("copies jumper.* and jumper:* keys to their fabwright names", () => {
+  it("copies jumper.* and jumper:* keys to their faber names", () => {
     const s = memory({ "jumper.theme": "light", "jumper:kit:region": "eu", other: "x" });
-    expect(migrateLegacyStorage(s).sort()).toEqual(["fabwright.theme", "fabwright:kit:region"]);
-    expect(s.getItem("fabwright.theme")).toBe("light");
-    expect(s.getItem("fabwright:kit:region")).toBe("eu");
+    expect(migrateLegacyStorage(s).sort()).toEqual(["faber.theme", "faber:kit:region"]);
+    expect(s.getItem("faber.theme")).toBe("light");
+    expect(s.getItem("faber:kit:region")).toBe("eu");
     expect(s.getItem("jumper.theme")).toBe("light"); // left in place (an older build may still read it)
   });
 
   it("never overwrites a setting made under the new name", () => {
-    const s = memory({ "jumper.theme": "light", "fabwright.theme": "dark" });
+    const s = memory({ "jumper.theme": "light", "faber.theme": "dark" });
     expect(migrateLegacyStorage(s)).toEqual([]);
-    expect(s.getItem("fabwright.theme")).toBe("dark");
+    expect(s.getItem("faber.theme")).toBe("dark");
   });
 });

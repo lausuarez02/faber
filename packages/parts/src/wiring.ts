@@ -1,4 +1,4 @@
-import type { PartSpec, PinSpec } from "@fabwright/sim-core";
+import type { PartSpec, PinSpec } from "@faber/sim-core";
 
 /**
  * Round 6 (canvas track): how a module's supply and bus pins go to a given board, from the board's

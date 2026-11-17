@@ -6,7 +6,7 @@
 //     collision stats into the robot-chassis-2wd part (so `expect_part chassis.collisions == 0`
 //     works in scenarios), body motion into an IMU part if one is named;
 //   - servos → arm: reads each servo's `angle` and runs forward kinematics.
-import type { PartInteraction, Simulation, Unsubscribe, VisualState } from "@fabwright/sim-core";
+import type { PartInteraction, Simulation, Unsubscribe, VisualState } from "@faber/sim-core";
 import { armPose, type ArmPose } from "./arm.ts";
 import { BUMP_HALF_ANGLE_DEG, BUMP_REACH_CM, IR_HALF_ANGLE_DEG, IR_MAX_CM, IR_RAYS, PHYSICS_DT, RoverWorld, type Pose, type RobotBody, type SonarReading } from "./rover.ts";
 import { parseWorld, type ArmSpec, type WorldSpec } from "./world.ts";
@@ -86,7 +86,7 @@ export function robotBodyFromState(s: VisualState | undefined): RobotBody {
 }
 
 /**
- * Attach a world to a simulation. `world` is the raw `world` block from fabwright.json (validated
+ * Attach a world to a simulation. `world` is the raw `world` block from faber.json (validated
  * here, errors list every bad field) or an already parsed WorldSpec. Requires `await initPhysics()`
  * first when the world has a robot.
  */

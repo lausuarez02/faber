@@ -1,8 +1,8 @@
 import { NO_SERVER, serverConnection } from "../projects/api.ts";
 
 /**
- * Round 12, track kit: the Build it panel's calls to fabwright serve. The types are a structural copy
- * of packages/session/src/kit/types.ts (the browser never loads @fabwright/session).
+ * Round 12, track kit: the Build it panel's calls to faber serve. The types are a structural copy
+ * of packages/session/src/kit/types.ts (the browser never loads @faber/session).
  */
 export interface KitLink {
   store: string;
@@ -123,12 +123,12 @@ async function req<T>(method: "GET" | "POST", path: string, body?: unknown): Pro
   if (!conn) throw new Error(NO_SERVER);
   let r: Response;
   try {
-    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-fabwright-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-faber-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   } catch (e) {
-    throw new Error(`Could not reach the Fabwright server. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then try again.`);
+    throw new Error(`Could not reach the Faber server. Why: ${(e as Error).message}. Fix: check that faber serve is still running, then try again.`);
   }
   const data = (await r.json().catch(() => undefined)) as (T & { error?: string }) | undefined;
-  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the fabwright serve terminal.`);
+  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the faber serve terminal.`);
   return data as T;
 }
 
@@ -142,7 +142,7 @@ export const kitApi = {
 /** The person's ticks for one project, kept in this browser only (wrapped: storage can be blocked). */
 export function loadTicks(project: string): Record<string, boolean> {
   try {
-    const raw = window.localStorage.getItem(`fabwright:kit:${project}`);
+    const raw = window.localStorage.getItem(`faber:kit:${project}`);
     const v = raw ? (JSON.parse(raw) as unknown) : {};
     return v && typeof v === "object" ? (v as Record<string, boolean>) : {};
   } catch {
@@ -151,21 +151,21 @@ export function loadTicks(project: string): Record<string, boolean> {
 }
 export function saveTicks(project: string, ticks: Record<string, boolean>): void {
   try {
-    window.localStorage.setItem(`fabwright:kit:${project}`, JSON.stringify(ticks));
+    window.localStorage.setItem(`faber:kit:${project}`, JSON.stringify(ticks));
   } catch {
     // private mode / blocked storage: the ticks last until the page closes
   }
 }
 export function loadRegion(): string {
   try {
-    return window.localStorage.getItem("fabwright:kit:region") ?? "global";
+    return window.localStorage.getItem("faber:kit:region") ?? "global";
   } catch {
     return "global";
   }
 }
 export function saveRegion(r: string): void {
   try {
-    window.localStorage.setItem("fabwright:kit:region", r);
+    window.localStorage.setItem("faber:kit:region", r);
   } catch {
     // not remembered
   }

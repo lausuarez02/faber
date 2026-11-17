@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CAMERA_SETTINGS } from "@fabwright/sim-core";
+import { DEFAULT_CAMERA_SETTINGS } from "@faber/sim-core";
 import { describeEspBoard } from "../../lib/espBoardSuite.ts";
 import { mount, need } from "../../lib/bench.ts";
 import { registry } from "../../registry.gen.ts";

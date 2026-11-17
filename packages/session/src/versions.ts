@@ -1,20 +1,20 @@
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, statSync } from "node:fs";
-import { safeParseProject } from "@fabwright/project-format";
+import { safeParseProject } from "@faber/project-format";
 import { join } from "node:path";
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 import { applyToProject, projectEntities, same, type EntityMap, type HistoryState, type Step } from "./history.ts";
 import type { ActionEntry } from "./session.ts";
-import type { VisualState } from "@fabwright/sim-core";
+import type { VisualState } from "@faber/sim-core";
 import type { ColorFrameImage } from "./sim.ts";
-import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
+import { projectFilePath, stateDirPath } from "@faber/project-format/node";
 
 /**
  * Round 5, projects track (decision 0003, C3): a project's versions, rebuilt from its append-only
- * action log (.fabwright/actions.jsonl). Version N is the N-th ok log line that changed the project or
+ * action log (.faber/actions.jsonl). Version N is the N-th ok log line that changed the project or
  * a file. Every such line already holds the whole project after the change, so version N's circuit
  * is exact. Files are rebuilt from the log's file entries plus the undo history (history.json) for
- * writes the log does not carry (template files, undo / reject of a write); a file Fabwright never
- * changed is taken as it is on disk now. Built firmware is kept by hash in .fabwright/builds/.
+ * writes the log does not carry (template files, undo / reject of a write); a file Faber never
+ * changed is taken as it is on disk now. Built firmware is kept by hash in .faber/builds/.
  */
 
 export interface VersionChanges {
@@ -62,7 +62,7 @@ export interface VersionDetail {
   version: number;
   summary: VersionSummary;
   project: Project;
-  /** path → content at this version (only files Fabwright knows about). */
+  /** path → content at this version (only files Faber knows about). */
   files: Record<string, string>;
   /** Paths whose content at this version is not known exactly (truncated in the log). */
   approxFiles: string[];
@@ -207,7 +207,7 @@ function fileEffects(e: ActionEntry, stepOfSeq: Map<number, Step>, steps: Step[]
 
 /**
  * The project before version 1, when the folder had one before its log started (an example copied
- * into a project, a fabwright.json written by hand): the first step's "before" values applied back.
+ * into a project, a faber.json written by hand): the first step's "before" values applied back.
  * Undefined for a project the log starts from scratch (new_project), so everything shows as added.
  */
 function firstBaseline(dir: string, log: ParsedLog): Project | undefined {
@@ -398,7 +398,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
   for (const [path, content] of r.files) {
     if (content !== null) files[path] = content;
   }
-  // Firmware files Fabwright never touched: as they are on disk (they did not change through Fabwright).
+  // Firmware files Faber never touched: as they are on disk (they did not change through Faber).
   for (const path of diskFirmwareFiles(dir)) {
     if (!r.files.has(path) && !(path in files)) files[path] = readFileSync(join(dir, path), "utf8");
   }
@@ -426,7 +426,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
   };
 }
 
-/** Files at version n as path → content | null (null = did not exist then); only paths Fabwright knows. */
+/** Files at version n as path → content | null (null = did not exist then); only paths Faber knows. */
 export function versionFiles(dir: string, n: number): Map<string, string | null> {
   return replay(dir, readLog(dir), n).files;
 }
@@ -507,7 +507,7 @@ function testsLine(line: string): { passed: number; total: number; at?: string }
  * Round 6 (switch): a version for the project exactly as it is on disk now, written straight to the
  * action log (not an undoable step: nothing changed). Opening an example calls it on the fresh copy,
  * so "the example as it came" is a version the person can always restore. Returns the version
- * number, or undefined when fabwright.json is missing or invalid.
+ * number, or undefined when faber.json is missing or invalid.
  */
 export function recordSnapshot(dir: string, opts: { op: string; why: string; summary: string; actor?: string; args?: Record<string, unknown> }): number | undefined {
   const file = projectFilePath(dir);

@@ -5,26 +5,26 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
 // Round 10 (track renode): a Black Pill F411 runs real STM32duino firmware in Renode next to
-// `fabwright serve`, and the followed page shows its SSD1306 drawing. The agent places and wires the
-// parts over MCP; the person presses Run on the page. Needs Renode: Docker with fabwright/renode, or a
-// native Renode 1.17 (FABWRIGHT_RENODE_RUNTIME=native, FABWRIGHT_RENODE_BIN); skipped otherwise, saying why.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+// `faber serve`, and the followed page shows its SSD1306 drawing. The agent places and wires the
+// parts over MCP; the person presses Run on the page. Needs Renode: Docker with faber/renode, or a
+// native Renode 1.17 (FABER_RENODE_RUNTIME=native, FABER_RENODE_BIN); skipped otherwise, saying why.
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/renode/", import.meta.url));
-const RENODE_IMAGE = "fabwright/renode:1.17.0-r1";
+const RENODE_IMAGE = "faber/renode:1.17.0-r1";
 
-/** Round 11: Fabwright's own Renode (fabwright setup renode), which `fabwright serve` uses when Docker is not up. */
-const FABWRIGHT_RENODE = join(process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir()), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
+/** Round 11: Faber's own Renode (faber setup renode), which `faber serve` uses when Docker is not up. */
+const FABER_RENODE = join(process.env.FABER_NATIVE_HOME || userHomeDir(homedir()), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
 
 function renodeMissing(): string | undefined {
-  if (process.env.FABWRIGHT_RENODE_RUNTIME === "native") {
-    const r = spawnSync(process.env.FABWRIGHT_RENODE_BIN || "renode", ["--version"], { timeout: 30_000 });
-    return r.status === 0 ? undefined : "native Renode (FABWRIGHT_RENODE_BIN) does not run";
+  if (process.env.FABER_RENODE_RUNTIME === "native") {
+    const r = spawnSync(process.env.FABER_RENODE_BIN || "renode", ["--version"], { timeout: 30_000 });
+    return r.status === 0 ? undefined : "native Renode (FABER_RENODE_BIN) does not run";
   }
   const info = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { timeout: 15_000 });
-  if (info.status !== 0) return existsSync(FABWRIGHT_RENODE) ? undefined : "Docker is not running or not answering, and Renode is not installed natively (fabwright setup renode)";
+  if (info.status !== 0) return existsSync(FABER_RENODE) ? undefined : "Docker is not running or not answering, and Renode is not installed natively (faber setup renode)";
   const img = spawnSync("docker", ["image", "inspect", RENODE_IMAGE], { stdio: "ignore", timeout: 15_000 });
   return img.status === 0 ? undefined : `the ${RENODE_IMAGE} image is missing`;
 }
@@ -55,8 +55,8 @@ const why = renodeMissing();
 test("a Black Pill F411 runs in Renode and its SSD1306 draws on the followed page", async ({ page }, info) => {
   test.skip(!!why, `Renode is not available here: ${why}`);
   test.setTimeout(180_000);
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-renode-e2e-"));
-  const home = mkdtempSync(join(tmpdir(), "fabwright-home-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-renode-e2e-"));
+  const home = mkdtempSync(join(tmpdir(), "faber-home-"));
   // The sketch and its build (the fixture: STM32duino 2.11.0 + Adafruit SSD1306), newer than the
   // sketch so nothing rebuilds (the runner's STM32 image is not needed here).
   mkdirSync(join(dir, "firmware", "oled"), { recursive: true });
@@ -64,16 +64,16 @@ test("a Black Pill F411 runs in Renode and its SSD1306 draws on the followed pag
   copyFileSync(join(FIXTURES, "oled_blackpill-stm32-blackpill-f411.hex"), join(dir, "firmware", "oled.hex"));
   const later = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware", "oled.hex"), later, later);
-  writeFileSync(join(dir, "fabwright.json"), JSON.stringify({ format: "fabwright/1", name: "black-pill-oled", parts: [], wires: [] }, null, 2));
+  writeFileSync(join(dir, "faber.json"), JSON.stringify({ format: "faber/1", name: "black-pill-oled", parts: [], wires: [] }, null, 2));
   const port = hubPort(info);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: home } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: home } });
   let err = "";
   proc.stderr!.on("data", (d: Buffer) => (err += d.toString()));
   try {
     await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 25 s: ${err}`)), 25_000);
+      const t = setTimeout(() => reject(new Error(`faber serve did not start in 25 s: ${err}`)), 25_000);
       proc.stdout!.on("data", (d: Buffer) => d.toString().includes("ws:") && (clearTimeout(t), resolve()));
-      proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}: ${err}`)));
+      proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}: ${err}`)));
     });
     await page.goto(`/?follow=${encodeURIComponent(`ws://127.0.0.1:${port}/live`)}`);
     const agent = await mcp(`http://127.0.0.1:${port}`);

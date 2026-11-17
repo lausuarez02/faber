@@ -186,12 +186,12 @@ export function factoryNetworkNotes(config: NetworkConfig): string {
   if (config.secrets.length) {
     lines.push(
       "",
-      `Secrets (${config.secrets.join(", ")}): the simulation added them at the Fabwright sandbox, so the firmware never contained them. On the real device, choose one:`,
-      "1. The API relay in relay/ (generated from this project: a Node server or a Cloudflare Worker) holds the keys and adds them; the device calls it with its own revocable token (fabwright relay token add, fabwright relay device-header). Recommended; relay/README.md has the steps.",
+      `Secrets (${config.secrets.join(", ")}): the simulation added them at the Faber sandbox, so the firmware never contained them. On the real device, choose one:`,
+      "1. The API relay in relay/ (generated from this project: a Node server or a Cloudflare Worker) holds the keys and adds them; the device calls it with its own revocable token (faber relay token add, faber relay device-header). Recommended; relay/README.md has the steps.",
       "2. Short-lived tokens: the relay (or the provider, where it offers ephemeral client tokens) hands the device a token that expires in minutes.",
       "3. The key compiled into the firmware. Anyone with the device can read it out of flash; only for a private prototype, and rotate the key afterwards.",
     );
   }
-  lines.push("", "TLS: the simulation trusted the Fabwright sandbox CA; the real firmware must use the real root CAs (the ESP32 certificate bundle, or the provider's root CA).");
+  lines.push("", "TLS: the simulation trusted the Faber sandbox CA; the real firmware must use the real root CAs (the ESP32 certificate bundle, or the provider's root CA).");
   return lines.join("\n");
 }

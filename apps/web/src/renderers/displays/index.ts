@@ -12,7 +12,7 @@
 //   displays.attach(partId, partType, svgRoot);           // when a part's SVG is inlined
 //   displays.paint(partId, state);                        // after applyVisualState(svg, state)
 //   displays.detach(partId);                              // when the part is removed
-import type { VisualState } from "@fabwright/sim-core";
+import type { VisualState } from "@faber/sim-core";
 import { newImage, painterFor, lcdSize, type RgbaImage } from "./paint.ts";
 
 export { paintLcd, paintOled, painterFor, lcdSize } from "./paint.ts";

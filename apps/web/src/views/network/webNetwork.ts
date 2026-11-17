@@ -4,10 +4,10 @@
 //
 // The canvas engine (lib/engine.ts) creates one per simulation for projects with a Wi-Fi part and
 // the panel column shows <NetworkPanel> while it exists.
-import { createSandboxNetwork, remoteProvider, type SandboxNet } from "@fabwright/ai-gateway";
+import { createSandboxNetwork, remoteProvider, type SandboxNet } from "@faber/ai-gateway";
 
 export const DEFAULT_GATEWAY = "http://127.0.0.1:8787";
-export const GATEWAY_COMMAND = "pnpm start (fabwright serve starts it), or node services/ai-gateway/bin/ai-gateway.mjs";
+export const GATEWAY_COMMAND = "pnpm start (faber serve starts it), or node services/ai-gateway/bin/ai-gateway.mjs";
 
 export interface WebNetworkOptions {
   gatewayUrl?: string;
@@ -22,7 +22,7 @@ export function createWebNetwork(opts: WebNetworkOptions = {}): SandboxNet {
 }
 
 /**
- * Where the AI gateway runs: `fabwright serve` starts one and says where at GET /api/ai-gateway (same
+ * Where the AI gateway runs: `faber serve` starts one and says where at GET /api/ai-gateway (same
  * origin); otherwise the default port. Never throws.
  */
 export async function discoverGateway(fallback = DEFAULT_GATEWAY, fetchImpl: typeof fetch = fetch): Promise<string> {

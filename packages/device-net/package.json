@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/device-net",
+  "name": "@faber/device-net",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -12,13 +12,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fabwright/project-format": "workspace:*",
+    "@faber/project-format": "workspace:*",
     "@peculiar/x509": "1.14.3",
     "ws": "8.22.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@fabwright/sim-backends": "workspace:*",
+    "@faber/sim-backends": "workspace:*",
     "@types/ws": "^8.18.2"
   }
 }

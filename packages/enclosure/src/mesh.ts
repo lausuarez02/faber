@@ -168,7 +168,7 @@ export function stlBinary(m: Mesh, name: string, frame = "print orientation, fac
   const n = m.indices.length / 3;
   const buf = new ArrayBuffer(84 + 50 * n);
   const dv = new DataView(buf);
-  const head = new TextEncoder().encode(`Fabwright case: ${name} (mm, ${frame})`.slice(0, 79));
+  const head = new TextEncoder().encode(`Faber case: ${name} (mm, ${frame})`.slice(0, 79));
   new Uint8Array(buf, 0, 80).set(head);
   dv.setUint32(80, n, true);
   const P = m.positions;
@@ -230,7 +230,7 @@ export function threeMf(objects: { name: string; color: string; mesh: Mesh; at?:
     .join("");
   // build items carry the plate position (3MF transform: 3 x 3 rotation then translation)
   const items = objects.map((o, i) => `<item objectid="${i + 2}"${o.at ? ` transform="1 0 0 0 1 0 0 0 1 ${o.at.x.toFixed(3)} ${o.at.y.toFixed(3)} 0"` : ""}/>`).join("");
-  const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Title">${esc(title)}</metadata><metadata name="Application">Fabwright</metadata><resources><basematerials id="1">${mats}</basematerials>${objs}</resources><build>${items}</build></model>`;
+  const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Title">${esc(title)}</metadata><metadata name="Application">Faber</metadata><resources><basematerials id="1">${mats}</basematerials>${objs}</resources><build>${items}</build></model>`;
   const ct = `<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`;
   const rels = `<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;
   // fixed mtime so the file is byte-identical for the same case (zip stores a DOS date)

@@ -2,7 +2,7 @@
 // spec test, so `pnpm gen` refuses to write a registry that `pnpm test` would reject.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BOARD_BACKENDS, FidelitySchema, PartSpecSchema, parseBindings, type Fidelity, type PartSpec } from "@fabwright/sim-core";
+import { BOARD_BACKENDS, FidelitySchema, PartSpecSchema, parseBindings, type Fidelity, type PartSpec } from "@faber/sim-core";
 import { parseSvg, parseViewBox, type ParsedSvg } from "./svg.ts";
 
 export const REQUIRED_FILES = ["part.json", "fidelity.json", "visual.svg", "model.ts", "model.test.ts"] as const;

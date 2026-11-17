@@ -1,5 +1,5 @@
 // Round 6, frames track (decision 0004, R7): the libs3 library set. Each sketch in
-// packages/parts/fixtures/libs3/ (built with the pinned fabwright/arduino-runner / arduino-pico libs3
+// packages/parts/fixtures/libs3/ (built with the pinned faber/arduino-runner / arduino-pico libs3
 // images, see BUILD.md there) runs on the simulator with the part it drives, so an agent that
 // reaches for Adafruit_GC9A01A, TFT_eSPI, the DHT library, FastLED or Adafruit NeoPixel gets the
 // same pixels, readings and LED colours the real hardware would show.
@@ -10,10 +10,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject, type ProjectInput } from "@fabwright/project-format";
-import { colorFrameStats, colorFrameAverage, Simulation } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
-import { buildFirmware, canBuildArduino } from "@fabwright/runner";
+import { parseProject, type ProjectInput } from "@faber/project-format";
+import { colorFrameStats, colorFrameAverage, Simulation } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
+import { buildFirmware, canBuildArduino } from "@faber/runner";
 import { registry } from "./registry.gen.ts";
 import { serialLines } from "./lib/firmwareBench.ts";
 
@@ -28,7 +28,7 @@ const BOARD: Record<Board, { type: string; fqbn: string }> = {
 
 function bench(board: Board, parts: NonNullable<ProjectInput["parts"]>, wires: [string, string][], hex: string): Simulation {
   const project = parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "libs3",
     parts: [{ id: board, type: BOARD[board].type, x: 0, y: 0 }, ...parts],
     wires: wires.map(([a, b], i) => {
@@ -114,9 +114,9 @@ describe("libs3 sketches on the simulator", { timeout: 120_000 }, () => {
 });
 
 // Rebuilding needs Docker and the libs3 images (CI builds them; locally `ensureImage` builds them
-// on first use, a few minutes). FABWRIGHT_TEST_LIBS3=1 forces it on.
-// Round 11: or Fabwright's native toolchain (fabwright setup avr rp2040), same pinned cores and libraries.
-const imagesReady = process.env.FABWRIGHT_TEST_LIBS3 === "1" || (canBuildArduino("arduino:avr:uno").ok && canBuildArduino("rp2040:rp2040:seeed_xiao_rp2040").ok);
+// on first use, a few minutes). FABER_TEST_LIBS3=1 forces it on.
+// Round 11: or Faber's native toolchain (faber setup avr rp2040), same pinned cores and libraries.
+const imagesReady = process.env.FABER_TEST_LIBS3 === "1" || (canBuildArduino("arduino:avr:uno").ok && canBuildArduino("rp2040:rp2040:seeed_xiao_rp2040").ok);
 
 const SKETCHES: [string, Board, string[]][] = [
   ["gc9a01a_uno", "uno", ["Adafruit GC9A01A"]],

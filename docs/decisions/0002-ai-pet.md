@@ -33,7 +33,7 @@ pin drives the net (directly or through resistors), and SPI chip-select uses it 
 | Option | For | Against |
 | --- | --- | --- |
 | **ESP-01 (ESP8266, Espressif AT firmware) on a UART** | The classic "Uno + Wi-Fi" combo, a few dollars, any sketch that works with it here works on the bench | 3.3 V part, 115200-baud default, half-duplex SoftwareSerial pitfalls |
-| An ESP32 / ESP8266 as the main board | Wi-Fi built in, plenty of RAM | A new CPU backend (Xtensa) Fabwright does not have |
+| An ESP32 / ESP8266 as the main board | Wi-Fi built in, plenty of RAM | A new CPU backend (Xtensa) Faber does not have |
 | A "magic" AI part with a pin protocol | Easy to simulate | Does not exist; firmware would be useless on hardware |
 | Arduino Uno R4 WiFi / Nano 33 IoT | Real boards with Wi-Fi | ARM backends missing; their Wi-Fi coprocessors use their own protocols |
 
@@ -48,8 +48,8 @@ factory 115200 baud is garbage to a 9600 receiver, the boot ROM prints at 74880,
 garbles a reply that arrives while the sketch is still transmitting. The reference sketch handles all
 three, as it must on a bench.
 
-The sandbox network (`services/ai-gateway`) has one open access point, **FabwrightNet**, a DNS table and
-HTTP hosts. `ai.fabwright` serves the pet:
+The sandbox network (`services/ai-gateway`) has one open access point, **FaberNet**, a DNS table and
+HTTP hosts. `ai.faber` serves the pet:
 
 ```
 GET /v1/pet?a=talk&f=40&j=70&e=80&n=Pip HTTP/1.0      (a = talk|feed|play|sleep|lonely|hello)
@@ -92,7 +92,7 @@ uses 25.1 KB of flash (77 %) and 841 bytes of globals (41 %) on the Uno: Adafrui
 framebuffer, the reply buffer is 64 bytes and the request is built on the stack. The Uno also matches
 what most kits contain. The Mega stays on the list for sketches that need more (an LLM reply with
 history, JSON), together with a hardware-UART path for the ESP part (today it needs GPIO edges, so
-it does not work on the Uno's D0/D1, which Fabwright reserves for the USB console anyway).
+it does not work on the Uno's D0/D1, which Faber reserves for the USB console anyway).
 
 ## What is emulated and what is not
 
@@ -125,6 +125,6 @@ The persona test (`jumper-evals/personas/REPORT.md`, b1, u3) showed the pet coul
 person: the protocol had no message field and Live needed a terminal. Now `m=` (URL-encoded, 60
 characters max) carries what the person said to the model, the web app's Network panel has a
 "Say something to the pet" box that attaches it to the pet's next request (no firmware change), and
-`fabwright serve` starts the gateway itself. The mock stays deterministic: it quotes the message in a
+`faber serve` starts the gateway itself. The mock stays deterministic: it quotes the message in a
 canned line, so tests can see the words arrived without a model.
 

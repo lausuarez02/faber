@@ -1,4 +1,4 @@
-// Two-joint robot arm for Fabwright (examples/robot-arm).
+// Two-joint robot arm for Faber (examples/robot-arm).
 //
 // Parts: Arduino Uno, two SG90 servos (shoulder on D9, elbow on D10), two 10 k potentiometers
 // (shoulder on A0, elbow on A1). Turning a pot moves its joint: the servo angle follows the

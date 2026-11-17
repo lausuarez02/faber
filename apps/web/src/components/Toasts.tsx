@@ -1,8 +1,8 @@
 import { CircleAlert, Info, X } from "lucide-react";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 
 export function Toasts() {
-  const toasts = useFabwright((s) => s.toasts);
+  const toasts = useFaber((s) => s.toasts);
   return (
     <div className="toasts" aria-live="polite">
       {toasts.map((t) => (
@@ -12,7 +12,7 @@ export function Toasts() {
             <strong>{t.title}</strong>
             {t.detail && <pre>{t.detail}</pre>}
           </div>
-          <button type="button" className="icon-btn icon-btn-sm" aria-label="Dismiss" onClick={() => useFabwright.getState().dismissToast(t.id)}>
+          <button type="button" className="icon-btn icon-btn-sm" aria-label="Dismiss" onClick={() => useFaber.getState().dismissToast(t.id)}>
             <X size={14} strokeWidth={1.6} aria-hidden />
           </button>
         </div>

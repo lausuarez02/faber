@@ -1,5 +1,5 @@
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 export const MIN_TRIGGER_US = 10;

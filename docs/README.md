@@ -1,22 +1,22 @@
-# Fabwright docs
+# Faber docs
 
 ## Start here
 
 - [Quickstart](quickstart.md): install, run the app, run Blink.
 - [Architecture](architecture.md): the packages, and how data moves from the canvas to the simulator and back.
 - [Fidelity](fidelity.md): what the simulator can promise. Exact, Behavioral and Stub.
-- [Native runtime](native-runtime.md): build and run firmware without Docker (`fabwright setup`), and how Fabwright picks Docker or native.
-- [Migrating from Jumper](migrating-from-jumper.md): Fabwright was called Jumper until 2026-11-17; what still reads the old names, and how to move.
+- [Native runtime](native-runtime.md): build and run firmware without Docker (`faber setup`), and how Faber picks Docker or native.
+- [Migrating from Jumper](migrating-from-jumper.md): Faber was called Jumper until 2026-11-17; what still reads the old names, and how to move.
 
 ## For agents
 
-- [Fabwright for agents](agents.md): MCP setup for Claude Code and Codex, the loop, scenario steps, robots, faults.
+- [Faber for agents](agents.md): MCP setup for Claude Code and Codex, the loop, scenario steps, robots, faults.
 - [MCP tools](mcp-tools.md): every tool, generated from the definitions.
 - [Agent runs](media/agent-runs/README.md): Claude Code and Codex building a tamagotchi, a rover and a robot arm, with videos.
 
 ## Reference
 
-- [Project format](project-format.md): `fabwright.json`, an annotated example, and the diff-friendliness rules.
+- [Project format](project-format.md): `faber.json`, an annotated example, and the diff-friendliness rules.
 - [Part spec](part-spec.md): `part.json`, `fidelity.json`, SVG bindings, and the model contract.
 - [Contracts](contracts.md): the APIs of every package.
 - [Buses](buses.md): I2C and SPI in the simulator, bus parts, wiring errors and faults.
@@ -27,7 +27,7 @@
 - [The build kit](build-kit.md): what to buy, print, assemble and flash to build it yourself (`get_build_kit`, Build it).
 - [Behaviour over time](behaviour-tests.md): random moments made repeatable (seeds), the NTP clock, pictures and speech in order (`expect_capture`, `preceded_by`), request bodies, offline queues on flash (`reset_board`), OpenAPI mocks, real services on this computer (`local` / `to`).
 - Round 14 elsewhere: battery life from duty cycles ([power.md](power.md#battery-life-from-duty-cycles-round-14)), the `camera-indicator` check ([cameras.md](cameras.md)), flash that survives a reboot and the seeded RNG ([esp32-peripherals.md](esp32-peripherals.md#flash-that-survives-a-reboot-and-a-seeded-rng-round-14)).
-- [The device network](network.md) and [the API relay](api-relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `fabwright relay`).
+- [The device network](network.md) and [the API relay](api-relay.md): APIs from the simulator (mocks, cassettes, secrets at the edge) and from the real device (a relay that holds the keys; `faber relay`).
 - [The hardware skill](agent-skill.md): how the design-for-assembly know-how reaches Claude and other agents (server instructions, prompts, project skill, CLAUDE.md, plugin).
 - [Physics](../packages/physics/README.md): the robot `world` block, determinism, fidelity.
 - [PWM](../packages/sim-core/PWM.md): cycle-timed PWM measurement and the part hooks it adds.
@@ -47,4 +47,4 @@ Each milestone starts with a short note: the options, the choice, and why.
 ## Other
 
 - [Brand](../brand/README.md): logo, colors, type, voice.
-- [Original brief](brief.md): the product brief Fabwright started from.
+- [Original brief](brief.md): the product brief Faber started from.

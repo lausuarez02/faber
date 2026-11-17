@@ -6,14 +6,14 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createLiveHub, ProjectSession, projectId, TOOLS, type AgentPresence, type CallMeta, type LiveHubCore } from "@fabwright/session";
-import { installProjectFiles } from "@fabwright/agent-skill";
-import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@fabwright/mcp";
+import { createLiveHub, ProjectSession, projectId, TOOLS, type AgentPresence, type CallMeta, type LiveHubCore } from "@faber/session";
+import { installProjectFiles } from "@faber/agent-skill";
+import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@faber/mcp";
 import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts";
-import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
+import { projectFilePath, stateDirPath } from "@faber/project-format/node";
 
 /**
- * `fabwright serve` (and `pnpm start`): one local server for everything.
+ * `faber serve` (and `pnpm start`): one local server for everything.
  *
  *   http://localhost:7780/            the web app, following this project live
  *   ws://localhost:7780/live          live events (hello / action / presence / result)
@@ -21,7 +21,7 @@ import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
  *   GET  /api/info                    server URLs, install commands, agents (any local page may read it)
  *   GET  /api/connect                 the same plus a CSRF token (same-origin pages only)
  *   GET  /api/visual-report           the latest run_tests as filmstrips (the web Tests panel)
- *   POST /api/launch/claude-code      open Terminal running `claude` here with Fabwright connected (token)
+ *   POST /api/launch/claude-code      open Terminal running `claude` here with Faber connected (token)
  *   GET  /health, /log, /replay       the live hub's endpoints
  *
  * Every agent call and every canvas command goes through one queue on one ProjectSession, so the
@@ -31,11 +31,11 @@ import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
 export const DEFAULT_PORT = 7780;
 const WEB_DIR = fileURLToPath(new URL("../../web/", import.meta.url));
 const REPO_EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
-const CLI_BIN = fileURLToPath(new URL("../bin/fabwright.mjs", import.meta.url));
+const CLI_BIN = fileURLToPath(new URL("../bin/faber.mjs", import.meta.url));
 
 export type WebMode = "dev" | "built" | "none";
 
-export interface FabwrightServerOptions {
+export interface FaberServerOptions {
   dir: string;
   /** Preferred port; the next free one is used when it is taken (default 7780). */
   port?: number;
@@ -53,7 +53,7 @@ export interface FabwrightServerOptions {
   examplesRoot?: string;
 }
 
-export interface FabwrightServer {
+export interface FaberServer {
   port: number;
   /** http://localhost:<port> */
   url: string;
@@ -84,7 +84,7 @@ export interface InstallSnippet {
 }
 
 export interface ServerInfo {
-  name: "fabwright";
+  name: "faber";
   url: string;
   mcpUrl: string;
   wsUrl: string;
@@ -112,17 +112,17 @@ export function installSnippets(port: number, nodePath = process.execPath, cliBi
   const http = `http://localhost:${port}/mcp`;
   const attachArgs = [cliBin, "mcp", "--attach", `http://localhost:${port}`];
   return [
-    { id: "claude-code", label: "Claude Code", where: "terminal", kind: "command", text: `claude mcp add --transport http fabwright ${http}`, note: "Then run `claude` in any folder; /mcp shows fabwright connected." },
-    { id: "codex", label: "Codex", where: "~/.codex/config.toml", kind: "toml", text: `[mcp_servers.fabwright]\nurl = "${http}"`, note: `Or from a terminal: codex mcp add fabwright --url ${http}` },
+    { id: "claude-code", label: "Claude Code", where: "terminal", kind: "command", text: `claude mcp add --transport http faber ${http}`, note: "Then run `claude` in any folder; /mcp shows faber connected." },
+    { id: "codex", label: "Codex", where: "~/.codex/config.toml", kind: "toml", text: `[mcp_servers.faber]\nurl = "${http}"`, note: `Or from a terminal: codex mcp add faber --url ${http}` },
     {
       id: "claude-desktop",
       label: "Claude Desktop",
       where: "~/Library/Application Support/Claude/claude_desktop_config.json",
       kind: "json",
-      text: JSON.stringify({ mcpServers: { fabwright: { command: nodePath, args: attachArgs } } }, null, 2),
-      note: "Claude Desktop starts stdio servers; this one forwards to the running Fabwright, so the canvas still shows every step. Restart Claude Desktop after editing.",
+      text: JSON.stringify({ mcpServers: { faber: { command: nodePath, args: attachArgs } } }, null, 2),
+      note: "Claude Desktop starts stdio servers; this one forwards to the running Faber, so the canvas still shows every step. Restart Claude Desktop after editing.",
     },
-    { id: "cursor", label: "Cursor", where: "~/.cursor/mcp.json", kind: "json", text: JSON.stringify({ mcpServers: { fabwright: { url: http } } }, null, 2) },
+    { id: "cursor", label: "Cursor", where: "~/.cursor/mcp.json", kind: "json", text: JSON.stringify({ mcpServers: { faber: { url: http } } }, null, 2) },
     { id: "stdio", label: "Any stdio client", where: "terminal", kind: "command", text: `${nodePath} ${attachArgs.map((a) => (/\s/.test(a) ? sq(a) : a)).join(" ")}`, note: "For clients without HTTP support: a stdio server attached to this canvas." },
   ];
 }
@@ -131,11 +131,11 @@ export function starterPrompt(url: string, dir: string, session: ProjectSession)
   const p = session.project;
   const parts = p.parts.map((x) => `${x.id} (${x.type})`).join(", ");
   return [
-    `You are connected to Fabwright, a hardware sandbox with a real simulator, through the "fabwright" MCP server.`,
+    `You are connected to Faber, a hardware sandbox with a real simulator, through the "faber" MCP server.`,
     `The person is watching the live canvas at ${url}; every part you place, wire you connect, sketch you write and test you run appears there as you do it, with your "why" as the caption, so always pass a short "why".`,
     `Project folder: ${dir}. ${p.parts.length ? `It has ${p.parts.length} parts (${parts}) and ${p.wires.length} wires; call get_project first.` : "It is empty: start with search_parts."}`,
     `Loop: plan_device → search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report. Every error says what failed, why, and the fix: do what it says.`,
-    `A device to hold: think how the parts go inside (mounting, insertion order, wire room, USB and button access, battery safety): check_fit → propose_layout before design_case, and when asked what is needed, say what to buy, print, assemble and flash, with totals. The full guide is the fabwright-hardware skill in this folder (.claude/skills/fabwright-hardware/SKILL.md) and the MCP resource fabwright://docs/hardware.`,
+    `A device to hold: think how the parts go inside (mounting, insertion order, wire room, USB and button access, battery safety): check_fit → propose_layout before design_case, and when asked what is needed, say what to buy, print, assemble and flash, with totals. The full guide is the faber-hardware skill in this folder (.claude/skills/faber-hardware/SKILL.md) and the MCP resource faber://docs/hardware.`,
     `Goal: <describe the device, e.g. "a tamagotchi on an OLED with feed / play buttons" or "a rover that avoids obstacles">.`,
   ].join("\n");
 }
@@ -196,7 +196,7 @@ function listen(server: Server, port: number, host: string): Promise<number> {
   });
 }
 
-export async function startFabwrightServer(opts: FabwrightServerOptions): Promise<FabwrightServer> {
+export async function startFaberServer(opts: FaberServerOptions): Promise<FaberServer> {
   // Round 5 (decision 0003, C3): the active project can change (Projects gallery, new_project
   // {folder}). One MCP endpoint and one hub stay; the session behind them is swapped.
   let dir = resolve(opts.dir);
@@ -239,10 +239,10 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     session: sessionView,
     call,
     onPresence: (agents) => hub.setPresence(agents),
-    instructionsExtra: "A person is watching this project live on the Fabwright canvas: every call you make appears there as you make it, with your \"why\" as the caption. Pass a short \"why\" on every change.",
+    instructionsExtra: "A person is watching this project live on the Faber canvas: every call you make appears there as you make it, with your \"why\" as the caption. Pass a short \"why\" on every change.",
   });
 
-  const mcpConfigFile = join(tmpdir(), `fabwright-mcp-${process.pid}.json`);
+  const mcpConfigFile = join(tmpdir(), `faber-mcp-${process.pid}.json`);
   const launchCommand = () => `cd ${sq(dir)} && claude --mcp-config ${sq(mcpConfigFile)}`;
   const info = (): ServerInfo => {
     try {
@@ -251,7 +251,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
       // invalid project on disk: info still answers
     }
     return {
-      name: "fabwright",
+      name: "faber",
       url: base(),
       mcpUrl: `${base()}/mcp`,
       wsUrl: `ws://localhost:${port}/live`,
@@ -276,7 +276,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     if (problem) return json(res, 403, { ok: false, error: problem });
     const remote = req.socket.remoteAddress ?? "";
     if (!/^(127\.|::1$|::ffff:127\.)/.test(remote)) return json(res, 403, { ok: false, error: `Launch is only allowed from this machine (request came from ${remote}).` });
-    if (req.headers["x-fabwright-token"] !== token) return json(res, 403, { ok: false, error: "Missing or wrong x-fabwright-token. Why: launching a terminal needs the token from GET /api/connect, which only pages served by this Fabwright server can read. Fix: click Launch in the Fabwright app opened from the fabwright serve URL, or run the command yourself." });
+    if (req.headers["x-faber-token"] !== token) return json(res, 403, { ok: false, error: "Missing or wrong x-faber-token. Why: launching a terminal needs the token from GET /api/connect, which only pages served by this Faber server can read. Fix: click Launch in the Faber app opened from the faber serve URL, or run the command yourself." });
     let body: { dryRun?: boolean; withPrompt?: boolean } = {};
     try {
       let raw = "";
@@ -285,13 +285,13 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     } catch {
       return json(res, 400, { ok: false, error: "The body must be JSON like {\"withPrompt\": true}." });
     }
-    writeFileSync(mcpConfigFile, JSON.stringify({ mcpServers: { fabwright: { type: "http", url: `${base()}/mcp` } } }, null, 2));
+    writeFileSync(mcpConfigFile, JSON.stringify({ mcpServers: { faber: { type: "http", url: `${base()}/mcp` } } }, null, 2));
     // Round 12 skill: Claude Code starts in the project folder, so the project's skill (and AGENTS.md) load there.
     let agentFiles: string[] = [];
     try {
       agentFiles = installProjectFiles(dir, { tools: TOOLS.map((t) => t.name), projectName: session.project.name }).files.filter((f) => f.action === "written" || f.action === "updated").map((f) => f.path);
     } catch {
-      agentFiles = []; // the launch still works without the skill; fabwright skill install --project <dir> retries it
+      agentFiles = []; // the launch still works without the skill; faber skill install --project <dir> retries it
     }
     const command = body.withPrompt ? `${launchCommand()} ${sq(starterPrompt(base(), dir, session))}` : launchCommand();
     const script = command.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -352,7 +352,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     if (p === "/api/connect") {
       const problem = localRequestProblem(req);
       const site = req.headers["sec-fetch-site"];
-      if (problem || (site && site !== "same-origin" && site !== "none")) return json(res, 403, { error: problem ?? "Only pages served by this Fabwright server may read /api/connect. Fix: use /api/info (no token) from other pages." });
+      if (problem || (site && site !== "same-origin" && site !== "none")) return json(res, 403, { error: problem ?? "Only pages served by this Faber server may read /api/connect. Fix: use /api/info (no token) from other pages." });
       return json(res, 200, { ...info(), token });
     }
     if (p === "/api/launch/claude-code" && req.method === "POST") return launch(req, res);
@@ -361,7 +361,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
       if (problem) return json(res, 403, { error: problem });
       const saved = join(stateDirPath(dir), "visual-report.json");
       const report = session.lastVisualReport ?? (existsSync(saved) ? (JSON.parse(readFileSync(saved, "utf8")) as unknown) : undefined);
-      if (!report) return json(res, 404, { error: "No test report yet. Why: run_tests has not run on this server's project. Fix: ask your agent to call run_tests (or run `fabwright test --visual -p <project>`), then reopen the Tests panel." });
+      if (!report) return json(res, 404, { error: "No test report yet. Why: run_tests has not run on this server's project. Fix: ask your agent to call run_tests (or run `faber test --visual -p <project>`), then reopen the Tests panel." });
       return json(res, 200, report);
     }
     if (p === "/api/project") {
@@ -369,12 +369,12 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
       const problem = localRequestProblem(req);
       if (problem) return json(res, 403, { error: problem });
       const file = projectFilePath(dir);
-      if (!existsSync(file)) return json(res, 404, { error: `No fabwright.json in ${dir}. Why: the agent has not created the project yet. Fix: wait for its first step (new_project / place_part), then reload.` });
+      if (!existsSync(file)) return json(res, 404, { error: `No faber.json in ${dir}. Why: the agent has not created the project yet. Fix: wait for its first step (new_project / place_part), then reload.` });
       let project: { firmware?: { artifact?: string; sketch?: string } };
       try {
         project = JSON.parse(readFileSync(file, "utf8")) as typeof project;
       } catch (err) {
-        return json(res, 500, { error: `Could not read ${file}: ${(err as Error).message}. Fix: run \`fabwright check -p ${dir}\` to see what is wrong with it.` });
+        return json(res, 500, { error: `Could not read ${file}: ${(err as Error).message}. Fix: run \`faber check -p ${dir}\` to see what is wrong with it.` });
       }
       const artifact = project.firmware?.artifact ? join(dir, project.firmware.artifact) : undefined;
       const hex = artifact && existsSync(artifact) ? readFileSync(artifact, "utf8") : undefined;
@@ -382,7 +382,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
         project,
         hex,
         dir,
-        ...(hex ? {} : { warning: `No built firmware${artifact ? ` at ${artifact}` : ""}. Why: the sketch has not been built yet. Fix: ask the agent to call run (it builds first), or run \`fabwright build -p ${dir}\`.` }),
+        ...(hex ? {} : { warning: `No built firmware${artifact ? ` at ${artifact}` : ""}. Why: the sketch has not been built yet. Fix: ask the agent to call run (it builds first), or run \`faber build -p ${dir}\`.` }),
       });
     }
     const hit = matchRoute(req.method ?? "GET", p);
@@ -400,7 +400,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     if (hub.handleRequest(req, res)) return;
     if (web === "none") {
       res.writeHead(200, { "content-type": "text/plain" });
-      res.end(`Fabwright server for ${dir}\n  MCP: ${base()}/mcp\n  live: ws://localhost:${port}/live\n(started without the web app)\n`);
+      res.end(`Faber server for ${dir}\n  MCP: ${base()}/mcp\n  live: ws://localhost:${port}/live\n(started without the web app)\n`);
       return;
     }
     // Opening the server's root follows this project live; ?local, ?example, ?replay open the app as usual.
@@ -414,7 +414,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     if (!vite) {
       // The API answers while the dev server still starts; a page request then must not crash the server.
       res.writeHead(503, { "content-type": "text/plain", "retry-after": "1" });
-      res.end("Fabwright's web app is still starting. Why: the dev server (Vite) is not ready yet. Fix: reload in a second.\n");
+      res.end("Faber's web app is still starting. Why: the dev server (Vite) is not ready yet. Fix: reload in a second.\n");
       return;
     }
     vite.middlewares(req, res, () => {
@@ -447,7 +447,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
         await hub.close();
         await mcp.close();
         session.dispose();
-        throw e.code === "EADDRINUSE" ? new Error(`Port ${tryPort} is in use${opts.strictPort ? "" : ` (tried ${want}..${tryPort})`}. Why: another program (maybe another fabwright serve) has it. Fix: stop it, or pass --port <n>.`) : e;
+        throw e.code === "EADDRINUSE" ? new Error(`Port ${tryPort} is in use${opts.strictPort ? "" : ` (tried ${want}..${tryPort})`}. Why: another program (maybe another faber serve) has it. Fix: stop it, or pass --port <n>.`) : e;
       }
     }
   }
@@ -464,7 +464,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
       vite = await mountVite(primary);
     } catch (err) {
       if (existsSync(join(distDir, "index.html"))) {
-        process.stderr.write(`fabwright serve: ${(err as Error).message} Serving the last build (apps/web/dist) instead.\n`);
+        process.stderr.write(`faber serve: ${(err as Error).message} Serving the last build (apps/web/dist) instead.\n`);
         web = "built";
       } else throw err;
     }

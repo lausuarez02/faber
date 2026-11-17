@@ -1,7 +1,7 @@
 // Integration: sim-core's Simulation driving the real avr8js backend with the golden Blink firmware.
-// The parts here are minimal in-test stand-ins (same pin ids/props as the real @fabwright/parts
+// The parts here are minimal in-test stand-ins (same pin ids/props as the real @faber/parts
 // arduino-uno / resistor / led). The same scenario against the real registry and the real
-// examples/blink/fabwright.json is packages/parts/src/blink.integration.test.ts.
+// examples/blink/faber.json is packages/parts/src/blink.integration.test.ts.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -13,7 +13,7 @@ import {
   type Fidelity,
   type PartDefinition,
   type PartSpec,
-} from "@fabwright/sim-core";
+} from "@faber/sim-core";
 import { backendFactory } from "./index.ts";
 
 type Project = ConstructorParameters<typeof Simulation>[0]["project"];
@@ -110,7 +110,7 @@ const led: PartDefinition = {
 const registry = createRegistry([uno, resistor, led]);
 
 const project: Project = {
-  format: "fabwright/1",
+  format: "faber/1",
   name: "Blink",
   parts: [
     { id: "uno", type: "arduino-uno", x: 0, y: 0, rotation: 0 },

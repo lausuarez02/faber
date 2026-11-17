@@ -3,11 +3,11 @@
  * (speaker wired, words for every clip the sketch plays), the microSD card's files for the factory
  * pack, and the BOM line for the card. The clips are text; turning them into MP3s happens on the
  * person's computer with an external text-to-speech tool they install (piper or espeak-ng, plus
- * ffmpeg), never shipped with Fabwright.
+ * ffmpeg), never shipped with Faber.
  */
-import { buildNets, type PartInstance, type Project } from "@fabwright/project-format";
-import { formatClips, parseClips } from "@fabwright/parts";
-import type { PartRegistry } from "@fabwright/sim-core";
+import { buildNets, type PartInstance, type Project } from "@faber/project-format";
+import { formatClips, parseClips } from "@faber/parts";
+import type { PartRegistry } from "@faber/sim-core";
 import type { DesignIssue } from "./drc.ts";
 
 /** The speaker parts: "speaker" (28 mm) and the smaller "speaker-20mm" / "speaker-15mm" (round 8). */
@@ -133,7 +133,7 @@ export function sdCardFiles(project: Project, registry: PartRegistry): Record<st
     out[`${base}CLIPS.md`] = [
       `# microSD card for ${df.id} (${project.name})`,
       "",
-      "What the DFPlayer Mini says, track by track. In Fabwright these are text; on the real device each one is an MP3 on the card.",
+      "What the DFPlayer Mini says, track by track. In Faber these are text; on the real device each one is an MP3 on the card.",
       "",
       "| Track | File on the card | Command that plays it | Words |",
       "| --- | --- | --- | --- |",
@@ -161,7 +161,7 @@ export function sdCardFiles(project: Project, registry: PartRegistry): Record<st
 function makeClipsScript(files: string[]): string {
   return `#!/bin/sh
 # Turn the clip texts (*.txt) into the MP3s the DFPlayer plays, next to them.
-# External tools, NOT shipped with Fabwright; install one text-to-speech engine yourself:
+# External tools, NOT shipped with Faber; install one text-to-speech engine yourself:
 #   piper    https://github.com/rhasspy/piper   (MIT; voices have their own licences)  + a voice .onnx file in PIPER_VOICE
 #   espeak-ng https://github.com/espeak-ng/espeak-ng (GPL-3.0; run as a separate program)
 # and ffmpeg (https://ffmpeg.org, LGPL/GPL builds) to encode MP3.

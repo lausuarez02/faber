@@ -1,6 +1,6 @@
-import type { Project } from "@fabwright/project-format";
-import { AGENT_MADE_LABEL } from "@fabwright/parts";
-import type { FidelityArea, PartRegistry } from "@fabwright/sim-core";
+import type { Project } from "@faber/project-format";
+import { AGENT_MADE_LABEL } from "@faber/parts";
+import type { FidelityArea, PartRegistry } from "@faber/sim-core";
 
 const AREAS = ["logic", "timing", "analog", "power", "radio"] as const;
 type Area = (typeof AREAS)[number];
@@ -54,9 +54,9 @@ export function fidelityReport(project: Project, registry: PartRegistry, faultsT
   // Round 10 (network): what the device network checks and what it cannot.
   if (project.network) {
     global.push(
-      "Network: sockets, DHCP, DNS, TCP, TLS (mbedTLS in the firmware), HTTP, WebSocket and MQTT run for real through Fabwright's sandbox; the Wi-Fi radio is not emulated (the simulation build's Wi-Fi shim joins over an emulated Ethernet card): signal, range, interference, roaming, power save and association timing are not modelled, and RSSI is a value Fabwright sets. Mocked and recorded APIs answer what they were told; the real API may answer differently.",
+      "Network: sockets, DHCP, DNS, TCP, TLS (mbedTLS in the firmware), HTTP, WebSocket and MQTT run for real through Faber's sandbox; the Wi-Fi radio is not emulated (the simulation build's Wi-Fi shim joins over an emulated Ethernet card): signal, range, interference, roaming, power save and association timing are not modelled, and RSSI is a value Faber sets. Mocked and recorded APIs answer what they were told; the real API may answer differently.",
     );
-    toTest.push("Join your real Wi-Fi (2.4 GHz) and call the real API with the device build (FABWRIGHT_SIM=0, real root CA): check signal at the place it will live, reconnects after a router restart, and the real API's answers and rate limits.");
+    toTest.push("Join your real Wi-Fi (2.4 GHz) and call the real API with the device build (FABER_SIM=0, real root CA): check signal at the place it will live, reconnects after a router restart, and the real API's answers and rate limits.");
   }
   if (!faultsTested.length) toTest.push("Unplug each module while running to see how the firmware copes (or rehearse with inject_fault disconnect / i2c_nack).");
   const agentMade = parts.filter((p) => p.level === AGENT_MADE_LABEL);

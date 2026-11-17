@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
+import { parseProject } from "@faber/project-format";
 import { createMcuBoardModel, createRegistry, parseSleepMarker, Simulation, sleepText, type Fidelity, type McuBackend, type PartDefinition, type PinState, type WakeInfo } from "./index.ts";
 
 /**
@@ -17,7 +17,7 @@ class SleepyMcu implements McuBackend {
   private pins = new Map<string, PinState>([["D2", { mode: "input", value: 0 }]]);
   private pinCbs = new Set<(p: string, s: PinState, c: number) => void>();
   private serialCbs = new Set<(b: number, c: number) => void>();
-  constructor(private readonly line = '[fabwright:sleep] {"mode":"deep","us":3600000000,"pins":[{"gpio":2,"level":0}],"any":true,"src":"ext0"}') {}
+  constructor(private readonly line = '[faber:sleep] {"mode":"deep","us":3600000000,"pins":[{"gpio":2,"level":0}],"any":true,"src":"ext0"}') {}
   load() {
     this.reset();
   }
@@ -104,7 +104,7 @@ const registry = createRegistry([
   },
 ]);
 const project = parseProject({
-  format: "fabwright/1",
+  format: "faber/1",
   name: "sleepy",
   parts: [
     { id: "b", type: "fake-board", x: 0, y: 0 },
@@ -121,12 +121,12 @@ const make = (mcu = new SleepyMcu()) => ({ mcu, sim: new Simulation({ project, r
 
 describe("deep sleep (round 15)", () => {
   it("parses the shim's line and says what is wrong with a bad one", () => {
-    const r = parseSleepMarker('boot\r[fabwright:sleep] {"us":60000000,"pins":[{"gpio":4,"level":1}],"any":false,"src":"ext1"}');
+    const r = parseSleepMarker('boot\r[faber:sleep] {"us":60000000,"pins":[{"gpio":4,"level":1}],"any":false,"src":"ext1"}');
     expect(r).toEqual({ mode: "deep", wakeAfterMs: 60000, wakePins: [{ pin: "GPIO4", level: 1 }], any: false, pinSource: "ext1" });
     expect(sleepText(r as never)).toBe("deep sleep, wakes after 1 min or when GPIO4 goes high");
     expect(parseSleepMarker("hello")).toBeUndefined();
-    expect((parseSleepMarker("[fabwright:sleep] {oops") as { error: string }).error).toMatch(/not JSON.*Fix: rebuild/);
-    expect((parseSleepMarker('[fabwright:sleep] {"pins":[{"gpio":"x"}]}') as { error: string }).error).toMatch(/gpio/);
+    expect((parseSleepMarker("[faber:sleep] {oops") as { error: string }).error).toMatch(/not JSON.*Fix: rebuild/);
+    expect((parseSleepMarker('[faber:sleep] {"pins":[{"gpio":"x"}]}') as { error: string }).error).toMatch(/gpio/);
   });
 
   it("sleeps on the marker, jumps an hour of virtual time fast, and wakes on the timer with a reboot", () => {

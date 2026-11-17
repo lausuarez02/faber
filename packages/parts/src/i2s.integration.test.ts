@@ -2,8 +2,8 @@
 // when their BCLK / WS pins are wired to board GPIOs, and the amp drives a speaker part. The MCU
 // is a scripted stand-in for a backend with attachI2s (the ESP32 family through qemu-esp).
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation, type I2sBus } from "@fabwright/sim-core";
+import { parseProject } from "@faber/project-format";
+import { Simulation, type I2sBus } from "@faber/sim-core";
 import { registry } from "./registry.gen.ts";
 import { ScriptedMcu } from "./lib/bench.ts";
 
@@ -23,7 +23,7 @@ const w = (id: string, a: string, b: string) => {
 function rig(wired = true) {
   const mcu = new I2sMcu();
   const project = parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "i2s bench",
     parts: [
       { id: "uno", type: "arduino-uno", x: 0, y: 0 },

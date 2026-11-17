@@ -1,7 +1,7 @@
 // Small 8 Ω speaker (round 7, voice). The coil is a resistor between + and -; amplifiers such as
 // the DFPlayer Mini drive it with an RMS level, so the solved current is the RMS current and the
 // power is I² · R. Deterministic: no time dependence.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
 import { num, round } from "../../lib/props.ts";
 
 export const create: PartModelFactory = (ctx): PartModel => {

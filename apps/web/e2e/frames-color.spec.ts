@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { shot } from "./helpers.ts";
 
-// Round 6, frames track (decision 0004, R7): a replay (what `fabwright record` films) paints the colour
+// Round 6, frames track (decision 0004, R7): a replay (what `faber record` films) paints the colour
 // screen from the logged PNGs (Frame.color) instead of a dark glass. The fixture is a real CLI session:
 // Uno + GC9A01 round TFT running the part's example (Adafruit_GFX drawing), 2.5 s run.
 const LOG = fileURLToPath(new URL("./fixtures/gc9a01-session.jsonl", import.meta.url));

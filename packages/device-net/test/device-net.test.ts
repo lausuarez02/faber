@@ -34,7 +34,7 @@ const MOCKS: Mock[] = parseMocks({
 });
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-net-"));
+  dir = mkdtempSync(join(tmpdir(), "faber-net-"));
   ca = await SandboxCA.open(join(dir, "ca"));
   publicCa = await SandboxCA.open(join(dir, "public-ca"));
   upstream = https.createServer({ SNICallback: (name, cb) => publicCa.contextFor(name).then((c) => cb(null, c), cb) }, (req, res) => {

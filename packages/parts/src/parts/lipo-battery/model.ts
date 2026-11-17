@@ -1,8 +1,8 @@
 // 1S LiPo cell: open-circuit voltage from a state-of-charge table, internal resistance that grows
 // as the cell empties, coulomb counting every 1 ms tick (discharge and charge), and the DW01-style
 // protection board that cuts the cell off below 2.5 V and reconnects when a charger lifts it.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, round, truthy } from "../../lib/props.ts";
 
 /** Resting voltage vs state of charge for a LiPo / Li-ion polymer cell at 25 °C (typical curve). */

@@ -1,10 +1,10 @@
-// Fabwright was called Jumper until November 2026, and kept its per-browser settings (theme, mute,
+// Faber was called Jumper until November 2026, and kept its per-browser settings (theme, mute,
 // autorun, kit ticks…) under "jumper." / "jumper:" keys. Copy each to its new key once, before the app
 // reads them, so the rename does not reset anyone's settings. Imported first by main.tsx.
 
 const PREFIXES: ReadonlyArray<readonly [string, string]> = [
-  ["jumper.", "fabwright."],
-  ["jumper:", "fabwright:"],
+  ["jumper.", "faber."],
+  ["jumper:", "faber:"],
 ];
 
 /** Copies every pre-rename key whose new key is not set yet. Returns the new keys it wrote. */

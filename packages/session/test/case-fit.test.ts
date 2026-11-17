@@ -15,9 +15,9 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(() => {
-  process.env.FABWRIGHT_CASE_PDF = "0";
-  dir = mkdtempSync(join(tmpdir(), "fabwright-fit-"));
-  writeFileSync(join(dir, "fabwright.json"), JSON.stringify(MUSE));
+  process.env.FABER_CASE_PDF = "0";
+  dir = mkdtempSync(join(tmpdir(), "faber-fit-"));
+  writeFileSync(join(dir, "faber.json"), JSON.stringify(MUSE));
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {
@@ -46,7 +46,7 @@ describe("check_fit and custom outlines", () => {
     expect(r.next).toMatch(/It fits .* design_case/);
     expect(r.preview).toBeUndefined();
     expect(existsSync(join(dir, "case"))).toBe(false);
-    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "faber.json"), "utf8")).enclosure).toBeUndefined();
     const withPreview = await call("check_fit", { outline: { points: [[0, 40], [24, 16], [28, -4], [13, -32], [-13, -32], [-28, -4], [-24, 16]], smooth: true }, preview: true });
     expect(withPreview.shape).toBe("custom"); // an outline alone means shape "custom"
     expect(withPreview.preview.outline.length).toBeGreaterThan(50);
@@ -66,7 +66,7 @@ describe("check_fit and custom outlines", () => {
     expect(d.saved).toBe(false);
     expect(d.fits).toBe(false);
     expect(d.next).toMatch(/Nothing was saved: the parts do not fit 44 x 57 x auto mm/);
-    expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(dir, "faber.json"), "utf8")).enclosure).toBeUndefined();
     expect(existsSync(join(dir, "case", "report.json"))).toBe(false);
   }, 120_000);
 

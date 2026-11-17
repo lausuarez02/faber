@@ -1,5 +1,5 @@
-import type { PartInstance, Project, Rotation } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
+import type { PartInstance, Project, Rotation } from "@faber/project-format";
+import type { PartRegistry, PartSpec } from "@faber/sim-core";
 
 const GRID = 20;
 const MARGIN = 40;

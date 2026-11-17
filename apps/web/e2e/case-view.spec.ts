@@ -6,21 +6,21 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
-// Round 6, case track (decision 0004, R6): the Case view against a real `fabwright serve` (the page is
+// Round 6, case track (decision 0004, R6): the Case view against a real `faber serve` (the page is
 // served by it, so it has the token) on a temp copy of the Muse. Real CAD runs on the server.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const MUSE = readFileSync(fileURLToPath(new URL("../../../packages/enclosure/test/fixtures/pocket-muse.json", import.meta.url)), "utf8");
 
 async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-case-"));
+  const root = mkdtempSync(join(tmpdir(), "faber-e2e-case-"));
   const dir = join(root, "muse");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "fabwright.json"), MUSE);
+  writeFileSync(join(dir, "faber.json"), MUSE);
   const port = hubPort(info, 1);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: join(root, "home"), FABER_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`faber serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -30,7 +30,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -90,7 +90,7 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     await expect(page.getByTestId("case-checks")).toContainText("watertight");
     await expect(page.getByTestId("case-checks")).toContainText("no-intersection");
     await expect(page.getByTestId("case-update")).toHaveText("Case is up to date");
-    // Round 8: Fabwright proposes how the parts go inside, three layouts drawn from the front and the side
+    // Round 8: Faber proposes how the parts go inside, three layouts drawn from the front and the side
     await expect(page.getByTestId("case-open-layout")).toContainText(/Parts inside: .*mm thick/, { timeout: 60_000 });
     await page.getByTestId("case-tab-layout").click();
     const lay = page.getByTestId("case-layouts");
@@ -110,8 +110,8 @@ test("Case view: design a case, see it in 3D, read the checks, download the file
     await page.waitForTimeout(500);
     await expect(page.getByTestId("live-steps").filter({ hasText: "pending" })).toHaveCount(0);
     await expect(page.getByText("design_case")).toHaveCount(0);
-    // fabwright.json now holds the case
-    expect(JSON.parse(readFileSync(join(s.dir, "fabwright.json"), "utf8")).enclosure.shape).toBe("rounded-box");
+    // faber.json now holds the case
+    expect(JSON.parse(readFileSync(join(s.dir, "faber.json"), "utf8")).enclosure.shape).toBe("rounded-box");
     await page.getByTestId("case-explode").fill("0.8");
     await shot(page, info, "case-view");
     // downloads

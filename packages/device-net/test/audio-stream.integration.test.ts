@@ -5,14 +5,14 @@
 // API's (600 Hz then 800 Hz, the right length and level), at the WAV's 16 kHz, gap-free once
 // started. The device network is the generic one (mocks, cassettes, the internet behind an allow
 // list); nothing here is audio-specific except the test data.
-// Needs the QEMU image (Docker) or Fabwright's native QEMU (fabwright setup esp32) and the fixture.
+// Needs the QEMU image (Docker) or Faber's native QEMU (faber setup esp32) and the fixture.
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { boardMac, QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
+import { boardMac, QemuEspBackend, qemuImageAvailable } from "@faber/sim-backends/qemu-esp";
 import { parseMocks, parseNetworkConfig } from "../src/config.ts";
 import { DeviceNetHost } from "../src/host.ts";
 import { readNetwork } from "../src/tools.ts";
@@ -112,11 +112,11 @@ describe.skipIf(!available)("an ESP32-S3 plays audio an API returns (HTTP -> I2S
   const blocks: I2sBlock[] = [];
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-audio-net-"));
+    dir = mkdtempSync(join(tmpdir(), "faber-audio-net-"));
     const say = pcm(600, 500);
     const said = wav(pcm(800, 300, 8000));
     host = await DeviceNetHost.start({
-      config: parseNetworkConfig({ mode: "mock", wifi: { ssid: "FabwrightNet", password: "hunter22-wifi" } }),
+      config: parseNetworkConfig({ mode: "mock", wifi: { ssid: "FaberNet", password: "hunter22-wifi" } }),
       mocks: parseMocks({
         mocks: [
           { host: "audio.api.test", path: "/v1/say.pcm", response: { body_b64: say.toString("base64"), headers: { "content-type": "audio/L16; rate=16000; channels=1" } } },

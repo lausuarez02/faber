@@ -7,25 +7,25 @@ import { adoptPreRenameLibraries, BASE_LIBRARIES, ESP32_NETWORK_LIBRARIES, nativ
 
 let saved: string | undefined;
 beforeEach(() => {
-  saved = process.env.FABWRIGHT_NATIVE_HOME;
-  process.env.FABWRIGHT_NATIVE_HOME = mkdtempSync(join(tmpdir(), "fabwright-native-"));
+  saved = process.env.FABER_NATIVE_HOME;
+  process.env.FABER_NATIVE_HOME = mkdtempSync(join(tmpdir(), "faber-native-"));
 });
 afterEach(() => {
-  if (saved === undefined) delete process.env.FABWRIGHT_NATIVE_HOME;
-  else process.env.FABWRIGHT_NATIVE_HOME = saved;
+  if (saved === undefined) delete process.env.FABER_NATIVE_HOME;
+  else process.env.FABER_NATIVE_HOME = saved;
 });
 
 describe("native Arduino libraries installed before the rename", () => {
-  it("get the Fabwright shim libraries copied in and a new stamp, with no download; the old ones stay", () => {
+  it("get the Faber shim libraries copied in and a new stamp, with no download; the old ones stay", () => {
     const user = join(nativeArduinoDir(), "user", "esp32");
     mkdirSync(join(user, "libraries", "JumperSim"), { recursive: true });
     writeFileSync(join(user, ".jumper-libs.json"), JSON.stringify({ base: BASE_LIBRARIES, net: ESP32_NETWORK_LIBRARIES, rev: 1 }));
     expect(adoptPreRenameLibraries("esp32")).toBe(true);
-    expect(existsSync(join(user, "libraries", "FabwrightSim", "src", "FabwrightSim.h"))).toBe(true);
-    expect(existsSync(join(user, "libraries", "FabwrightSim", "src", "JumperSim.h"))).toBe(true);
-    expect(existsSync(join(user, "libraries", "FabwrightEth", "src", "fabwright_eth.h"))).toBe(true);
+    expect(existsSync(join(user, "libraries", "FaberSim", "src", "FaberSim.h"))).toBe(true);
+    expect(existsSync(join(user, "libraries", "FaberSim", "src", "JumperSim.h"))).toBe(true);
+    expect(existsSync(join(user, "libraries", "FaberEth", "src", "faber_eth.h"))).toBe(true);
     expect(existsSync(join(user, "libraries", "JumperSim"))).toBe(true);
-    expect(JSON.parse(readFileSync(join(user, ".fabwright-libs.json"), "utf8")).rev).toBe(1);
+    expect(JSON.parse(readFileSync(join(user, ".faber-libs.json"), "utf8")).rev).toBe(1);
   });
 
   it("an older or different library set is not adopted (the setup installs it)", () => {

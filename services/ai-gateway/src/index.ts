@@ -1,5 +1,5 @@
 // Browser-safe entry: the sandbox network, the pet protocol and the deterministic mock.
-// Node-only providers (claude CLI, Anthropic API) and the HTTP server: "@fabwright/ai-gateway/node".
+// Node-only providers (claude CLI, Anthropic API) and the HTTP server: "@faber/ai-gateway/node".
 export { createSandboxNetwork, SandboxNet } from "./network.ts";
 export type { AccessPoint, NetLogEntry, HostHandler, HostResult, HostContext, SandboxNetworkOptions } from "./network.ts";
 export { PetAi, PROVIDER_LABELS } from "./petAi.ts";

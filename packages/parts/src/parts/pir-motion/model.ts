@@ -1,8 +1,8 @@
 // HC-SR501 PIR module (BISS0001). OUT: 3.3 V push-pull. Motion is an input the person or a
 // scenario sets. Repeat mode (H): OUT stays HIGH until delay_s after the last motion; single mode
 // (L): one delay_s pulse. After OUT falls, motion is ignored for the 2.5 s block time.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, str, truthy } from "../../lib/props.ts";
 
 export const BLOCK_MS = 2500;

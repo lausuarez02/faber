@@ -1,7 +1,7 @@
 // 1.54 in 200 x 200 black / white e-paper module on the SSD1681 controller (Good Display GDEY0154D67,
 // the Waveshare 1.54 in V2 and their clones). The controller is lib/ssd168x.ts; this file adds the
 // module: supply, BUSY output, RST, the D/C pin, the power model and what goes wrong.
-import { GROUND, type ColorFrame, type Diagnostic, type PartModel, type PartModelFactory, type SpiDevice } from "@fabwright/sim-core";
+import { GROUND, type ColorFrame, type Diagnostic, type PartModel, type PartModelFactory, type SpiDevice } from "@faber/sim-core";
 import { SSD1681_200, Ssd168x, type Ssd168xEvent } from "../../lib/ssd168x.ts";
 
 const MIN_VCC = 2.2;

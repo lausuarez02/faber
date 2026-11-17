@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
-# Fabwright's Renode image: Renode 1.17.0 portable (MIT, Antmicro, https://renode.io), linux arm64,
+# Faber's Renode image: Renode 1.17.0 portable (MIT, Antmicro, https://renode.io), linux arm64,
 # runs offline. The Renode backend (packages/sim-backends/src/renode) starts one container per
 # simulated board and talks to it over the monitor, ExternalControl and UART sockets.
 #
-#   docker build -t fabwright/renode:1.17.0-r1 toolchains/renode
+#   docker build -t faber/renode:1.17.0-r1 toolchains/renode
 #
 # Keep the tag in sync with RENODE_IMAGE in packages/sim-backends/src/renode/machine.ts. Bump -rN on any change.
 # On an x86_64 host use the linux-portable-dotnet build instead (same version, its own SHA-256).

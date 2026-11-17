@@ -1,15 +1,15 @@
-# Fabwright
+# Faber
 
-> Fabwright is an open-source (Apache-2.0) browser hardware sandbox: Arduino boards, parts and wires on a canvas, real firmware compiled with arduino-cli, and a deterministic simulator (avr8js CPU, DC circuit solver, I2C/SPI buses, 2D robot physics). Agents drive it through an MCP server or a CLI with the same operations: place parts, wire them, write and build firmware, simulate, write scenario tests, inject faults, and get an honest fidelity report.
+> Faber is an open-source (Apache-2.0) browser hardware sandbox: Arduino boards, parts and wires on a canvas, real firmware compiled with arduino-cli, and a deterministic simulator (avr8js CPU, DC circuit solver, I2C/SPI buses, 2D robot physics). Agents drive it through an MCP server or a CLI with the same operations: place parts, wire them, write and build firmware, simulate, write scenario tests, inject faults, and get an honest fidelity report.
 
-Agents never need Fabwright's source. Start the MCP server with `node /path/to/fabwright/apps/cli/bin/fabwright.mjs mcp --project <dir>` (on another machine, your clone's path), or use `pnpm fabwright <command>` (add `--json`). The loop: search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report. Pins are written "part.pin" (e.g. "uno.D13"). Every error says what failed, why, and how to fix it.
+Agents never need Faber's source. Start the MCP server with `node /path/to/faber/apps/cli/bin/faber.mjs mcp --project <dir>` (on another machine, your clone's path), or use `pnpm faber <command>` (add `--json`). The loop: search_parts → get_part → place_part → connect → check_design → write_file → run → write_scenario → run_tests → fix → fidelity_report. Pins are written "part.pin" (e.g. "uno.D13"). Every error says what failed, why, and how to fix it.
 
 ## Docs
 
 - [Agent guide](docs/agents.md): setup for Claude Code and Codex, the loop, conventions, a worked tamagotchi example, robots, scenario steps, faults, live view and video replay
 - [MCP tool reference](docs/mcp-tools.md): every tool with its arguments (generated from the definitions)
 - [AGENTS.md](AGENTS.md): short orientation for agents opening the repository
-- [Project format](docs/project-format.md): fabwright.json (parts, wires, firmware, scenarios, world)
+- [Project format](docs/project-format.md): faber.json (parts, wires, firmware, scenarios, world)
 - [Part spec](docs/part-spec.md): how a part is defined (pins, model, visual, fidelity)
 - [Fidelity](docs/fidelity.md): what the simulator does and does not model
 

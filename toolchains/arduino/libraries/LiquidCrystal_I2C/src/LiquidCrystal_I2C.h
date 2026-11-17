@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 The Fabwright Authors
+// Copyright 2026 The Faber Authors
 //
 // HD44780 character LCD on a PCF8574 I2C backpack, with the API of the widely used
 // LiquidCrystal_I2C library. Written from the HD44780U and PCF8574 datasheets.
-#ifndef FABWRIGHT_LIQUIDCRYSTAL_I2C_H
-#define FABWRIGHT_LIQUIDCRYSTAL_I2C_H
+#ifndef FABER_LIQUIDCRYSTAL_I2C_H
+#define FABER_LIQUIDCRYSTAL_I2C_H
 
 #include <Arduino.h>
 #include <Print.h>

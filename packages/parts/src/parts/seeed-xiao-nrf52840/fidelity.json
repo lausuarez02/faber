@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Fabwright's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Fabwright's parts through Fabwright's bridge (every signal time-stamped to the instruction). Serial is USB CDC (TinyUSB) on the real board, which is not emulated: Fabwright's simulator build prints Serial on Serial1 (UARTE0, D6 / D7). Nordic's MBR and S140 SoftDevice 7.3.0 run from the core's own image; the UF2 bootloader does not."
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Faber's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Faber's parts through Faber's bridge (every signal time-stamped to the instruction). Serial is USB CDC (TinyUSB) on the real board, which is not emulated: Faber's simulator build prints Serial on Serial1 (UARTE0, D6 / D7). Nordic's MBR and S140 SoftDevice 7.3.0 run from the core's own image; the UF2 bootloader does not."
     },
     "timing": {
       "level": "approx",
@@ -11,7 +11,7 @@
     },
     "analog": {
       "level": "approx",
-      "note": "Pins are ideal sources (standard drive, a few hundred \u03a9) with 13 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead goes through Fabwright's SAADC model: the solved voltage on the AIN pin, with the gain, reference and resolution the core sets; no noise, offset or acquisition time."
+      "note": "Pins are ideal sources (standard drive, a few hundred \u03a9) with 13 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead goes through Faber's SAADC model: the solved voltage on the AIN pin, with the gain, reference and resolution the core sets; no noise, offset or acquisition time."
     },
     "power": {
       "level": "approx",
@@ -19,17 +19,17 @@
     },
     "radio": {
       "level": "none",
-      "note": "Bluetooth LE is not emulated. Renode 1.17 has an nRF52840 RADIO model, but Fabwright does not connect it to anything: advertising, scanning and connections do nothing (BLE.begin() / Bluefruit.begin() may fail or hang). Test radio code on the real board."
+      "note": "Bluetooth LE is not emulated. Renode 1.17 has an nRF52840 RADIO model, but Faber does not connect it to anything: advertising, scanning and connections do nothing (BLE.begin() / Bluefruit.begin() may fail or hang). Test radio code on the real board."
     }
   },
   "emulates": [
-    "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (fabwright/renode image)",
+    "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (faber/renode image)",
     "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
     "Serial1 (UARTE0) with per-byte virtual time",
-    "Wire (TWIM0, Fabwright's model: real address ACK / NACK) to the I2C parts on the board's default pins",
-    "SPI (SPIM3, Fabwright's model) to the SPI parts on the board's default pins",
-    "analogRead through Fabwright's SAADC model",
-    "analogWrite / Servo / tone through Fabwright's PWM0..3 model (period and duty drawn as exact edges)",
+    "Wire (TWIM0, Faber's model: real address ACK / NACK) to the I2C parts on the board's default pins",
+    "SPI (SPIM3, Faber's model) to the SPI parts on the board's default pins",
+    "analogRead through Faber's SAADC model",
+    "analogWrite / Servo / tone through Faber's PWM0..3 model (period and duty drawn as exact edges)",
     "The BQ25101 LiPo charger: CC at 50 mA (100 mA with P0.13 LOW) then CV at 4.2 V, ~CHG on P0.17, the charge LED; the battery runs the board without USB",
     "VBAT on P0.31 through the 1M / 510k divider while P0.14 is LOW",
     "Nordic's MBR + S140 SoftDevice boot, FreeRTOS tickless idle (interrupts wake WFE as on the chip): about 5x real time on an idle sketch"

@@ -1,11 +1,11 @@
-// Round 10: a Renode board with real parts, through sim-core's Simulation (what fabwright serve runs).
-// Needs Renode (Docker + fabwright/renode, or FABWRIGHT_RENODE_RUNTIME=native); skipped otherwise, saying why.
+// Round 10: a Renode board with real parts, through sim-core's Simulation (what faber serve runs).
+// Needs Renode (Docker + faber/renode, or FABER_RENODE_RUNTIME=native); skipped otherwise, saying why.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
-import { nodeBackendFactory } from "@fabwright/sim-backends/node";
-import { renodeUnavailable } from "@fabwright/sim-backends/renode";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
+import { nodeBackendFactory } from "@faber/sim-backends/node";
+import { renodeUnavailable } from "@faber/sim-backends/renode";
 import { describe, expect, it } from "vitest";
 import { registry } from "./registry.gen.ts";
 
@@ -15,7 +15,7 @@ const hex = readFileSync(fileURLToPath(new URL("../../sim-backends/fixtures/reno
 describe.skipIf(!!why)(`Black Pill F411 + SSD1306 on Renode${why ? ` [skipped: ${why}]` : ""}`, () => {
   it("runs Adafruit_SSD1306 on Wire and the display draws; the LED on PC13 blinks; Serial prints", { timeout: 180_000 }, () => {
     const project = parseProject({
-      format: "fabwright/1",
+      format: "faber/1",
       name: "black-pill-oled",
       parts: [
         { id: "board", type: "stm32-blackpill-f411", x: 0, y: 0 },

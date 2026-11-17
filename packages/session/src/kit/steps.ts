@@ -5,9 +5,9 @@
  * facing which wall), the wire cuts and the tests. Flashing, tools, skill, time and troubleshooting
  * are rules over the part data, the same for every project.
  */
-import { buildNets, firmwareLanguage, type Project } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
-import type { AssemblyStep, CaseReport } from "@fabwright/enclosure";
+import { buildNets, firmwareLanguage, type Project } from "@faber/project-format";
+import type { PartRegistry, PartSpec } from "@faber/sim-core";
+import type { AssemblyStep, CaseReport } from "@faber/enclosure";
 import { colorName, type WireCut } from "../assembly.ts";
 import type { FlashPlan, KitStep, KitTool, KitWire, TroubleRow } from "./types.ts";
 
@@ -92,7 +92,7 @@ export function planSteps(steps: AssemblyStep[], ctx: PlanWords): KitStep[] {
     const cautions = st.cautions.map(words);
     const doLines = [words(st.say)];
     // the tests this step points at, by name (the kit has no test folder)
-    if (/TEST-PLAN\.md/.test(st.say) && ctx.tests?.length) doLines.push(`The tests (they passed in Fabwright's simulator): ${ctx.tests.join("; ")}.`);
+    if (/TEST-PLAN\.md/.test(st.say) && ctx.tests?.length) doLines.push(`The tests (they passed in Faber's simulator): ${ctx.tests.join("; ")}.`);
     // a soldering step (not the bench cut-list step) that joins a crowded pin
     // (not the bench steps that cut the wires or put the small parts in line: the pads are soldered later)
     if (st.wires.length && st.shell !== "bench") {
@@ -355,11 +355,11 @@ export function derivedSteps(inp: StepInput): KitStep[] {
   const names = project.scenarios.map((sc) => sc.name ?? sc.id);
   steps.push({
     title: "Final check",
-    do: [names.length ? `Run through every test (they passed in Fabwright's simulator): ${names.join("; ")}.` : "Try every function by hand.", "Then the list under \"Check on the real device\" in the troubleshooting section: those were not simulated exactly."],
+    do: [names.length ? `Run through every test (they passed in Faber's simulator): ${names.join("; ")}.` : "Try every function by hand.", "Then the list under \"Check on the real device\" in the troubleshooting section: those were not simulated exactly."],
     parts: [],
     wires: [],
     cautions: [],
-    check: "It behaves like it did in Fabwright.",
+    check: "It behaves like it did in Faber.",
     minutes: 10 + names.length * 2,
   });
   return steps.map((st, i) => ({ n: i + 1, ...st }));
@@ -403,7 +403,7 @@ export function flashPlan(project: Project, registry: PartRegistry, built: Flash
   const language = firmwareLanguage(fw);
   const fqbn = fw.build?.fqbn ?? mcu.fqbn ?? "";
   const artifact = fw.artifact;
-  const why_missing = built === "fresh" ? undefined : built === "stale" ? "The sketch changed since the last build: press Run (or Build) in Fabwright, then download the kit again" : "The firmware was never built: press Run (or Build) in Fabwright, then download the kit again";
+  const why_missing = built === "fresh" ? undefined : built === "stale" ? "The sketch changed since the last build: press Run (or Build) in Faber, then download the kit again" : "The firmware was never built: press Run (or Build) in Faber, then download the kit again";
   const port = "<port>";
   const portHelp = "<port> is the board's serial port: macOS /dev/cu.usbmodem… (or /dev/cu.usbserial…), Linux /dev/ttyACM0 or /dev/ttyUSB0, Windows COM3 (Arduino IDE: Tools > Port shows it).";
   const out: FlashPlan = { ...base, language, method: "arduino-cli", file: artifact, built, steps: [], commands: [], needs: [], ...(why_missing ? { why_missing } : {}) };
@@ -504,7 +504,7 @@ export function toolsFor(project: Project, registry: PartRegistry, o: { soldered
     o.soldered ? `${project.wires.length} soldered connections` : `${project.wires.length} plug-in connections on a breadboard, no soldering`,
     ...(castellated ? ["small pads on the edge of the board"] : []),
     ...(o.cell ? ["a LiPo cell (handle with care)"] : []),
-    ...(odd ? ["a part Fabwright only approximated: check its datasheet"] : []),
+    ...(odd ? ["a part Faber only approximated: check its datasheet"] : []),
   ].join(", ");
   const buildMin = o.steps.filter((s) => !/print the case/i.test(s.title)).reduce((a, s) => a + (s.minutes ?? 5), 0) + (wires ? 0 : 0);
   const print_h = Math.round((o.printMinutes / 60) * 10) / 10;
@@ -526,18 +526,18 @@ const TOOL_WORDS: Record<string, string> = {
   get_case: "the Case view",
   check_fit: "the Case view",
   get_build_kit: "this kit",
-  check_design: "Fabwright's design check",
-  set_part_property: "the part's settings in Fabwright",
-  inject_fault: "a fault test in Fabwright",
-  run_tests: "the tests in Fabwright",
-  place_part: "adding the part in Fabwright",
-  remove: "removing it in Fabwright",
+  check_design: "Faber's design check",
+  set_part_property: "the part's settings in Faber",
+  inject_fault: "a fault test in Faber",
+  run_tests: "the tests in Faber",
+  place_part: "adding the part in Faber",
+  remove: "removing it in Faber",
 };
 
 /** Agent-facing words (tool names, their JSON arguments) turned into a person's words. */
 export function peopleWords(text: string, tools: ReadonlySet<string> = new Set(Object.keys(TOOL_WORDS))): string {
-  let t = text.replace(/\b([a-z]+(?:_[a-z0-9]+)+)\b(\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})?/g, (m, name: string) => (TOOL_WORDS[name] ?? (tools.has(name) ? "Fabwright" : m)));
-  t = t.replace(/\(\s*(the factory pack|the Case view|Fabwright)\s*\)/g, "(in $1)");
+  let t = text.replace(/\b([a-z]+(?:_[a-z0-9]+)+)\b(\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})?/g, (m, name: string) => (TOOL_WORDS[name] ?? (tools.has(name) ? "Faber" : m)));
+  t = t.replace(/\(\s*(the factory pack|the Case view|Faber)\s*\)/g, "(in $1)");
   return t;
 }
 
@@ -564,7 +564,7 @@ export function troubleshooting(project: Project, registry: PartRegistry, o: { r
     const [, , code, msg] = m;
     const fix = /Fix:\s*(.*)$/s.exec(msg!)?.[1];
     const why = msg!.replace(/\s*Fix:.*$/s, "");
-    rows.push({ problem: `Design check: ${code!.replace(/-/g, " ")}`, why, fix: fix ?? "see the design check in Fabwright", source: "check_design" });
+    rows.push({ problem: `Design check: ${code!.replace(/-/g, " ")}`, why, fix: fix ?? "see the design check in Faber", source: "check_design" });
   }
   for (const c of o.report?.checks ?? []) {
     if (c.ok && c.severity !== "warning") continue;
@@ -573,7 +573,7 @@ export function troubleshooting(project: Project, registry: PartRegistry, o: { r
   }
   for (const t of o.fidelity) {
     const m = /^([\w-]+) \(([^)]+)\): (.*)$/.exec(t);
-    rows.push({ problem: m ? `Check on the real device (${m[1]}): ${m[3]}` : `Check on the real device: ${t}`, why: "Fabwright's simulation models this only approximately or not at all", fix: "Test it on the real device in the final check; if it differs, the sketch may need a small change.", source: "fidelity" });
+    rows.push({ problem: m ? `Check on the real device (${m[1]}): ${m[3]}` : `Check on the real device: ${t}`, why: "Faber's simulation models this only approximately or not at all", fix: "Test it on the real device in the final check; if it differs, the sketch may need a small change.", source: "fidelity" });
   }
   return rows.map((r) => ({ ...r, problem: peopleWords(r.problem, o.tools), why: peopleWords(r.why, o.tools), fix: peopleWords(r.fix, o.tools) }));
 }

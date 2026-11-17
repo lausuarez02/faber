@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from "react";
 import { Camera, ImageUp, Video, VideoOff } from "lucide-react";
-import { CAMERA_SCENES } from "@fabwright/sim-core";
+import { CAMERA_SCENES } from "@faber/sim-core";
 import { useLive } from "../live/liveStore.ts";
 import { imageFileToJpeg, showCamera, startWebcam, stopWebcam, useCameraUi } from "./camera.ts";
 import "./interact.css";
@@ -89,7 +89,7 @@ export function CameraPanel({ part, sensor }: { part: string; sensor: string }) 
           <span className="rec-dot" aria-hidden /> Webcam on: {sent} frame{sent === 1 ? "" : "s"} sent to the simulator on this computer (nowhere else). It turns off after 3 minutes or when you leave the page.
         </p>
       ) : null}
-      {!connected ? <p className="small muted">Connect to fabwright serve to show the camera something: its board runs in the ESP32 emulator there.</p> : null}
+      {!connected ? <p className="small muted">Connect to faber serve to show the camera something: its board runs in the ESP32 emulator there.</p> : null}
       {error ? (
         <p className="small insp-error" role="alert" data-testid="camera-error">
           {error}

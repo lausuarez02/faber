@@ -1,10 +1,10 @@
-// Round 13 (audio): a board that plays sound, on the page that follows `fabwright serve`. A XIAO
+// Round 13 (audio): a board that plays sound, on the page that follows `faber serve`. A XIAO
 // ESP32-S3 + MAX98357A + 20 mm speaker playing a steady 1 kHz tone (ESP_I2S): Run builds the sketch
 // with the real toolchain and runs it in Espressif's QEMU next to the server (the I2S device of
 // patch 0004); the amplifier on the canvas shows it playing with a level bar, the speaker sounds,
 // and the run's recording is served for the page's WebAudio player, which stays silent under a
 // test driver (it counts the request and says why it did not play).
-// Needs the native ESP32 toolchain and QEMU (pnpm fabwright setup esp32) or Docker; skipped otherwise.
+// Needs the native ESP32 toolchain and QEMU (pnpm faber setup esp32) or Docker; skipped otherwise.
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -12,26 +12,26 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("./fixtures/esp32-audio/", import.meta.url));
-/** The ESP32 toolchain and QEMU Fabwright installs natively (fabwright setup esp32). */
-const NATIVE = join(process.env.FABWRIGHT_NATIVE_HOME ?? userHomeDir(homedir()));
+/** The ESP32 toolchain and QEMU Faber installs natively (faber setup esp32). */
+const NATIVE = join(process.env.FABER_NATIVE_HOME ?? userHomeDir(homedir()));
 const ready = existsSync(join(NATIVE, "emulators", "qemu-esp", "9.2.2-20260417-jb7", "bin", "qemu-system-xtensa")) && existsSync(join(NATIVE, "toolchains", "arduino"));
 
-test.describe("an ESP32-S3 that plays sound, followed from fabwright serve", () => {
-  test.skip(!ready, "needs the native ESP32 toolchain and QEMU jb6 (pnpm fabwright setup esp32)");
+test.describe("an ESP32-S3 that plays sound, followed from faber serve", () => {
+  test.skip(!ready, "needs the native ESP32 toolchain and QEMU jb6 (pnpm faber setup esp32)");
   let dir = "";
   let home = "";
   let hub: ChildProcess | undefined;
   let port = 0;
 
   test.beforeEach(async ({ page }, info) => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-e2e-audio-"));
-    home = mkdtempSync(join(tmpdir(), "fabwright-e2e-home-"));
+    dir = mkdtempSync(join(tmpdir(), "faber-e2e-audio-"));
+    home = mkdtempSync(join(tmpdir(), "faber-e2e-home-"));
     cpSync(FIXTURE, dir, { recursive: true });
-    const env = { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_AI_GATEWAY_PORT: "0" };
+    const env = { ...process.env, FABER_HOME: home, FABER_AI_GATEWAY_PORT: "0" };
     expect(spawnSync(process.execPath, [CLI, "status", "-p", dir], { encoding: "utf8", timeout: 60_000, env }).status).toBe(0);
     port = hubPort(info, 18);
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env });
@@ -39,7 +39,7 @@ test.describe("an ESP32-S3 that plays sound, followed from fabwright serve", () 
     hub.stdout?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.stderr?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.once("exit", (code) => {
-      if (code) console.log(`fabwright serve exited ${code}:\n${out.slice(-2000)}`);
+      if (code) console.log(`faber serve exited ${code}:\n${out.slice(-2000)}`);
     });
     await expect.poll(async () => (await fetch(`http://127.0.0.1:${port}/api/agent-state`).catch(() => undefined))?.status ?? 0, { timeout: 60_000 }).toBe(200);
     // Count what the page asks WebAudio to do: under a test driver it must never create a context.
@@ -92,8 +92,8 @@ test.describe("an ESP32-S3 that plays sound, followed from fabwright serve", () 
     await expect(page.getByTestId("part-spk")).toHaveAttribute("data-state-sounding", "true");
     await shot(page, info, "esp32-audio-playing");
     // The run's recording: asked for, not played (a test drives the page), and served as a WAV.
-    await expect.poll(async () => page.evaluate(() => (window as unknown as { __fabwrightAudio?: { requested: number } }).__fabwrightAudio?.requested ?? 0), { timeout: 20_000 }).toBeGreaterThan(0);
-    const stats = await page.evaluate(() => (window as unknown as { __fabwrightAudio: { requested: number; played: number; last?: { file: string; parts: string[]; reason?: string } } }).__fabwrightAudio);
+    await expect.poll(async () => page.evaluate(() => (window as unknown as { __faberAudio?: { requested: number } }).__faberAudio?.requested ?? 0), { timeout: 20_000 }).toBeGreaterThan(0);
+    const stats = await page.evaluate(() => (window as unknown as { __faberAudio: { requested: number; played: number; last?: { file: string; parts: string[]; reason?: string } } }).__faberAudio);
     expect(stats.played).toBe(0);
     expect(stats.last?.reason).toBe("a test drives this page");
     expect(stats.last?.parts).toEqual(["amp"]);
@@ -104,6 +104,6 @@ test.describe("an ESP32-S3 that plays sound, followed from fabwright serve", () 
     const body = await wav.body();
     expect(body.toString("ascii", 0, 4)).toBe("RIFF");
     expect(body.length).toBeGreaterThan(44 + 16000); // more than half a second of 16 kHz mono
-    expect((await page.request.get(`http://127.0.0.1:${port}/api/audio/..%2Ffabwright.json`)).status()).toBe(400);
+    expect((await page.request.get(`http://127.0.0.1:${port}/api/audio/..%2Ffaber.json`)).status()).toBe(400);
   });
 });

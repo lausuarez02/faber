@@ -1,6 +1,6 @@
-# @fabwright/physics
+# @faber/physics
 
-Deterministic physics for Fabwright robots. A project that has a `"world"` block in its `fabwright.json`
+Deterministic physics for Faber robots. A project that has a `"world"` block in its `faber.json`
 gets a body: a 2WD rover drives around a top-down arena (Rapier 2D) with the speed of its
 simulated motors, its HC-SR04 sees the walls through a raycast, and a servo arm moves its links
 with its simulated servos. Everything is stepped by the simulation clock, so runs are
@@ -41,16 +41,16 @@ heading 0 = facing +x, 90 = facing +y. Errors name the field, say what is wrong 
 | `arm.targets[]` | – | `{ id, x, y, r }` points the gripper should reach (`reached` lists them). |
 
 `parseProject()` keeps the block as-is in `project.world`; `parseWorld(project.world, project)` (or
-`attachPhysics`) validates it. `worldOf(fabwrightJsonText)` reads it straight from the file.
+`attachPhysics`) validates it. `worldOf(faberJsonText)` reads it straight from the file.
 
 ## Wiring it to a simulation
 
 ```ts
-import { attachPhysics, initPhysics, worldOf } from "@fabwright/physics";
+import { attachPhysics, initPhysics, worldOf } from "@faber/physics";
 
 await initPhysics();                                  // loads Rapier's WebAssembly, once
 const sim = new Simulation({ project, registry, backendFactory, firmware });
-const phys = attachPhysics(sim, project.world);          // or worldOf(rawFabwrightJson)
+const phys = attachPhysics(sim, project.world);          // or worldOf(rawFaberJson)
 sim.runFor(30_000);                                   // physics steps every 4 ms of virtual time
 phys.stats();      // { timeS, collisions, minClearanceCm, travelledCm, pose }
 phys.snapshot();   // everything the World / Arm views draw

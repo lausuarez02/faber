@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { monoPixel, type MonoFrame } from "@fabwright/sim-core";
+import { monoPixel, type MonoFrame } from "@faber/sim-core";
 import { fail } from "./errors.ts";
 
 /**

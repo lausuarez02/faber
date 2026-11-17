@@ -1,7 +1,7 @@
 // ILI9341 2.8in 240x320 colour TFT on SPI. The controller is MipiPanel (lib/mipiPanel.ts); this
 // file adds the module: supply and backlight, the D/C and RESET pins, the 10 kΩ pull-ups on RESET
 // and LED, and the 3.3 V logic check for bare modules.
-import { colorFrameStats, type ColorFrame, type Diagnostic, type PartContext, type PartModel, type PartModelFactory, type SpiDevice } from "@fabwright/sim-core";
+import { colorFrameStats, type ColorFrame, type Diagnostic, type PartContext, type PartModel, type PartModelFactory, type SpiDevice } from "@faber/sim-core";
 import { MipiPanel, type PanelOptions } from "../../lib/mipiPanel.ts";
 import { round, str } from "../../lib/props.ts";
 

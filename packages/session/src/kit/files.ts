@@ -6,14 +6,14 @@
  */
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { hexToUf2 } from "@fabwright/sim-backends";
+import { hexToUf2 } from "@faber/sim-backends";
 import { fail } from "../errors.ts";
 import { clearDir, writeText, zipFolder } from "../manufacturing.ts";
 import { projectSlug } from "../projects-registry.ts";
 import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
 import { sdCardFiles } from "../voice.ts";
-import { relayPack } from "@fabwright/device-net";
+import { relayPack } from "@faber/device-net";
 import { networkConfigOf } from "../device-network.ts";
 import { kitHtml, kitMarkdown, printListMd, shoppingMd } from "./render.ts";
 import { shoppingCsv } from "./shopping.ts";
@@ -37,7 +37,7 @@ export function kitImages(projectDir: string, kit: BuildKit): Record<string, str
 let pdfBroken: string | undefined;
 /** The page printed to PDF with Playwright's Chromium, when it is installed. */
 export async function htmlToPdf(html: string): Promise<{ pdf?: Uint8Array; why?: string }> {
-  if (process.env.FABWRIGHT_CASE_PDF === "0") return { why: "PDF output is turned off (FABWRIGHT_CASE_PDF=0)" };
+  if (process.env.FABER_CASE_PDF === "0") return { why: "PDF output is turned off (FABER_CASE_PDF=0)" };
   if (pdfBroken) return { why: pdfBroken };
   const pw = loadPlaywright();
   if (!pw) return { why: "Playwright is not installed" };
@@ -137,7 +137,7 @@ export async function writeKitFiles(s: ProjectSession, kit: BuildKit, o: { into?
     if (r.pdf) {
       put("kit.pdf", r.pdf);
       pdf = join(root, "kit.pdf");
-    } else missing.push({ item: "kit.pdf", why: r.why ?? "no PDF printer", fix: "pnpm --filter @fabwright/web exec playwright install chromium, then make the kit again (kit.html prints to PDF from any browser)", say: "open kit.html and print it to PDF from the browser" });
+    } else missing.push({ item: "kit.pdf", why: r.why ?? "no PDF printer", fix: "pnpm --filter @faber/web exec playwright install chromium, then make the kit again (kit.html prints to PDF from any browser)", say: "open kit.html and print it to PDF from the browser" });
   }
   let zip: string | undefined;
   if (o.zip !== false && !o.into) {

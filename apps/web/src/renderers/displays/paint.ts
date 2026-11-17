@@ -1,6 +1,6 @@
 // Pure pixel painters for display parts: turn a part's visualState into RGBA pixels.
 // No DOM here, so they are unit-tested in jsdom and reused for screenshots.
-import { base64ToBytes, decodeMonoFrame, monoPixel, type VisualState } from "@fabwright/sim-core";
+import { base64ToBytes, decodeMonoFrame, monoPixel, type VisualState } from "@faber/sim-core";
 import { glyphRows } from "./font5x7.ts";
 
 export type Rgb = readonly [number, number, number];

@@ -1,4 +1,4 @@
-import type { Project, PropValue } from "@fabwright/project-format";
+import type { Project, PropValue } from "@faber/project-format";
 import {
   Simulation,
   decodeMonoFrame,
@@ -9,11 +9,11 @@ import {
   type PartModel,
   type PartRegistry,
   type VisualState,
-} from "@fabwright/sim-core";
-import { isProcessBackend, type BackendFactory, type McuBackend } from "@fabwright/sim-core";
-import { createNodeBackendFactory, EmulatorError, type QemuNetwork } from "@fabwright/sim-backends/node";
-import { checkEmulator, emulatorLabels, reapEmulators, trackEmulator, untrackEmulator, type ProcessBackendId } from "@fabwright/runner";
-import { attachPhysics, initPhysics, type PhysicsBinding } from "@fabwright/physics";
+} from "@faber/sim-core";
+import { isProcessBackend, type BackendFactory, type McuBackend } from "@faber/sim-core";
+import { createNodeBackendFactory, EmulatorError, type QemuNetwork } from "@faber/sim-backends/node";
+import { checkEmulator, emulatorLabels, reapEmulators, trackEmulator, untrackEmulator, type ProcessBackendId } from "@faber/runner";
+import { attachPhysics, initPhysics, type PhysicsBinding } from "@faber/physics";
 import { fail } from "./errors.ts";
 import { createSessionNetwork, setWifiDrop, type SessionNetwork } from "./network.ts";
 import { COLOR_EVERY_MS, colorFrameImage, colorSig } from "./color-frames.ts";
@@ -108,7 +108,7 @@ function round(v: number): number {
   return Math.round(v * 1000) / 1000;
 }
 
-/** Every backend the Fabwright server can run: in-process ones, and local emulators it owns (decision 0006). */
+/** Every backend the Faber server can run: in-process ones, and local emulators it owns (decision 0006). */
 const serverFactory: BackendFactory = createNodeBackendFactory({ labels: emulatorLabels(), onProcess: trackEmulator });
 
 /** Docker / image checks are ~100 ms each: a good answer is trusted for this long. */
@@ -161,7 +161,7 @@ function splitWhy(msg: string): [string, { why: string; fix: string }] {
   return [what, { why, fix }];
 }
 
-/** An emulator failure (crash, timeout, bad image) as a FabwrightError with what / why / fix. */
+/** An emulator failure (crash, timeout, bad image) as a FaberError with what / why / fix. */
 export function emulatorFailure(err: unknown): never {
   if (err instanceof EmulatorError) {
     const [what, rest] = splitWhy(err.message);
@@ -552,7 +552,7 @@ export class SimHost {
     const sim = this.sim as Simulation & { setBusFault?: (id: string, f: string | null) => void };
     const isI2c = !!def.spec.bus?.i2c || def.spec.pins.some((p) => p.protocols?.includes("i2c-sda"));
     const busFault = (f: string | null) => {
-      if (!sim.setBusFault) fail("not-supported", `inject_fault ${kind} on '${partId}'`, "this build of the simulator has no I2C/SPI bus faults", "update Fabwright (sim-core with I2cBus) or use kind 'disconnect'");
+      if (!sim.setBusFault) fail("not-supported", `inject_fault ${kind} on '${partId}'`, "this build of the simulator has no I2C/SPI bus faults", "update Faber (sim-core with I2cBus) or use kind 'disconnect'");
       sim.setBusFault(partId, f);
       if (f) this.busFaults.set(partId, f);
       else this.busFaults.delete(partId);

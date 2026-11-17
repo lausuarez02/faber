@@ -1,4 +1,4 @@
-import type { Ctx2D } from "@fabwright/physics";
+import type { Ctx2D } from "@faber/physics";
 
 /**
  * A tiny CanvasRenderingContext2D look-alike that records drawing as SVG markup, so the physics

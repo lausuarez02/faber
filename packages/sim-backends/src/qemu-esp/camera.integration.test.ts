@@ -1,21 +1,21 @@
 // Round 13: cameras on real firmware. The esp_camera fixture (fixtures/esp32/esp_camera: Espressif's
 // esp32-camera API as a XIAO ESP32-S3 Sense or an ESP32-CAM sketch uses it) runs in QEMU with the
-// camera port (patch 0006); Fabwright's CameraBus answers esp_camera_init with the pins and renders the
+// camera port (patch 0006); Faber's CameraBus answers esp_camera_init with the pins and renders the
 // frames. Checks: detection, JPEG bytes (decoded back to the test image), RGB565 and grayscale sizes
 // and pixels, vflip, FB-OVF when a frame outgrows its buffer, capture time on the virtual clock, and
-// a pin mismatch failing like a real probe. Needs the native QEMU jb7 (fabwright setup esp32) or its
+// a pin mismatch failing like a real probe. Needs the native QEMU jb7 (faber setup esp32) or its
 // Docker image; skipped otherwise.
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { afterAll, describe, expect, it } from "vitest";
-import { CameraBus, decodeJpeg, DEFAULT_CAMERA_SETTINGS, renderCameraFrame, renderScene, type CameraPinRole } from "@fabwright/sim-core";
+import { CameraBus, decodeJpeg, DEFAULT_CAMERA_SETTINGS, renderCameraFrame, renderScene, type CameraPinRole } from "@faber/sim-core";
 import { QemuEspBackend } from "./backend.ts";
 import { qemuImageAvailable } from "./launcher.ts";
 
 const FIX = fileURLToPath(new URL("../../fixtures/esp32/", import.meta.url));
 const available = qemuImageAvailable() && existsSync(`${FIX}esp_camera.esp32s3.bin.gz`);
-if (!available) console.warn("skipping the camera fixture: the ESP32 emulator with the camera port is not installed (Fix: fabwright setup esp32)");
+if (!available) console.warn("skipping the camera fixture: the ESP32 emulator with the camera port is not installed (Fix: faber setup esp32)");
 
 const SENSE: Partial<Record<CameraPinRole, string>> = { xclk: "GPIO10", sda: "GPIO40", scl: "GPIO39", vsync: "GPIO38", href: "GPIO47", pclk: "GPIO13", d0: "GPIO15", d1: "GPIO17", d2: "GPIO18", d3: "GPIO16", d4: "GPIO14", d5: "GPIO12", d6: "GPIO11", d7: "GPIO48" };
 const ESP32_CAM: Partial<Record<CameraPinRole, string>> = { pwdn: "GPIO32", xclk: "GPIO0", sda: "GPIO26", scl: "GPIO27", vsync: "GPIO25", href: "GPIO23", pclk: "GPIO22", d0: "GPIO5", d1: "GPIO18", d2: "GPIO19", d3: "GPIO21", d4: "GPIO36", d5: "GPIO39", d6: "GPIO34", d7: "GPIO35" };
@@ -51,7 +51,7 @@ describe.skipIf(!available)("cameras on real esp32-camera firmware (QEMU camera 
       expect(serial).toContain("cam init 0 pid=26");
       const jpeg = line(serial, "jpeg")!;
       expect(jpeg).toMatchObject({ w: 320, h: 240, fmt: 4, head: "ffd8", tail: "ffd9" });
-      // the bytes the firmware got are exactly what Fabwright rendered for that request
+      // the bytes the firmware got are exactly what Faber rendered for that request
       const want = renderCameraFrame("test-card", { width: 320, height: 240, format: "jpeg", quality: 12, settings: DEFAULT_CAMERA_SETTINGS, xclkHz: 20e6 });
       expect(jpeg.len).toBe(want.data.length);
       expect(bus.stats.last).toMatchObject({ width: 160, height: 120, format: "grayscale" });
@@ -82,7 +82,7 @@ describe.skipIf(!available)("cameras on real esp32-camera firmware (QEMU camera 
     expect(err / (src.length / 4)).toBeLessThan(6);
   });
 
-  it("pins that do not match the camera's: esp_camera_init fails like a probe on the board, and Fabwright says which pin", () => {
+  it("pins that do not match the camera's: esp_camera_init fails like a probe on the board, and Faber says which pin", () => {
     const { be, bus, serial } = run("esp32s3", { ...SENSE, xclk: "GPIO1" });
     all.push(be);
     expect(serial).toMatch(/cam init 261 /); // 0x105 ESP_ERR_NOT_FOUND

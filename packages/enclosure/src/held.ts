@@ -1,6 +1,6 @@
 /**
  * Round 15: cases that hold a thing that is not electronics: a tin of mints or pouches, a lip balm,
- * a lighter, a card deck, a key. The person declares it in fabwright.json enclosure.held (shape,
+ * a lighter, a card deck, a key. The person declares it in faber.json enclosure.held (shape,
  * size, clearance, how it goes in) and the case engine treats it like a part with no pins: the
  * packer keeps every part out of its room, its side faces the wall it goes in through, the shell
  * gets an opening the size of the object (slide-in slot, drop-in pocket, snap pocket with a lip)
@@ -10,8 +10,8 @@
  * The object is a "part" whose type starts with HELD_PREFIX: the BOM, the wiring and the
  * firmware never see it (it is not in project.parts).
  */
-import type { CaseFace, HeldObject } from "@fabwright/project-format";
-import type { MechFeature, PartSpec } from "@fabwright/sim-core";
+import type { CaseFace, HeldObject } from "@faber/project-format";
+import type { MechFeature, PartSpec } from "@faber/sim-core";
 import type { PartMech } from "./mech.ts";
 import type { Vec3 } from "./types.ts";
 
@@ -180,7 +180,7 @@ export function heldSpec(h: HeldObject, ctx: HeldCtx = CTX0): PartSpec {
     mechanical: {
       outline: sz.round ? "round" : "rect",
       ...(captive ? {} : { features: [accessFeature(h, sz)] }),
-      source: h.source ?? "declared in fabwright.json enclosure.held (measure your own with calipers)",
+      source: h.source ?? "declared in faber.json enclosure.held (measure your own with calipers)",
     },
   };
 }

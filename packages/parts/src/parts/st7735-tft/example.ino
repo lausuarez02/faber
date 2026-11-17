@@ -17,7 +17,7 @@ void setup() {
   tft.setTextColor(ST77XX_WHITE);
   tft.setTextSize(2);
   tft.setCursor(4, 40);
-  tft.print(F("Fabwright"));
+  tft.print(F("Faber"));
   Serial.println(F("ST7735 drawn"));
 }
 

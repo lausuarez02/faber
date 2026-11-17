@@ -12,12 +12,12 @@ import {
   type NodeChange,
   type Viewport,
 } from "@xyflow/react";
-import type { PartInstance, Wire } from "@fabwright/project-format";
-import { useFabwright } from "../lib/app.ts";
+import type { PartInstance, Wire } from "@faber/project-format";
+import { useFaber } from "../lib/app.ts";
 import { getDef, rotatedSize } from "../lib/parts.ts";
 import { PartNode, type PartFlowNode } from "./PartNode.tsx";
 import { RouteObstacles, WireEdge, type WireFlowEdge } from "./WireEdge.tsx";
-import type { RouteBox } from "@fabwright/sim-core";
+import type { RouteBox } from "@faber/sim-core";
 import { useIsPhone, useUi } from "../lib/ui.ts";
 import { chromePadding, fitNow, keepView, setFlow } from "../shell/actions.ts";
 
@@ -29,7 +29,7 @@ const edgeTypes = { wire: WireEdge };
 const SNAP = 10;
 /** Height of the "icon id · type" label that floats above every part. */
 const LABEL_ROOM = 24;
-export const PART_MIME = "application/x-fabwright-part";
+export const PART_MIME = "application/x-faber-part";
 
 const snap = (v: number) => Math.round(v / SNAP) * SNAP;
 
@@ -91,7 +91,7 @@ function useFlowEdges(wires: readonly Wire[], selected: readonly string[]): Wire
 function applySelect(changes: readonly (NodeChange | EdgeChange)[], kind: "parts" | "wires"): void {
   const sel = changes.filter((c): c is Extract<NodeChange | EdgeChange, { type: "select" }> => c.type === "select");
   if (!sel.length) return;
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   const cur = new Set(kind === "parts" ? s.selectedParts : s.selectedWires);
   for (const c of sel) {
     if (c.selected) cur.add(c.id);
@@ -103,9 +103,9 @@ function applySelect(changes: readonly (NodeChange | EdgeChange)[], kind: "parts
 }
 
 export function Canvas() {
-  const project = useFabwright((s) => s.project);
-  const selectedParts = useFabwright((s) => s.selectedParts);
-  const selectedWires = useFabwright((s) => s.selectedWires);
+  const project = useFaber((s) => s.project);
+  const selectedParts = useFaber((s) => s.selectedParts);
+  const selectedWires = useFaber((s) => s.selectedWires);
   const nodes = useFlowNodes(project.parts, selectedParts);
   const edges = useFlowEdges(project.wires, selectedWires);
   const obstacles = useMemo<RouteBox[]>(() => {
@@ -129,7 +129,7 @@ export function Canvas() {
     }
     applySelect(changes, "parts");
     if (moves.size) {
-      useFabwright.getState().setLive((p) => {
+      useFaber.getState().setLive((p) => {
         let changed = false;
         const parts = p.parts.map((part) => {
           const m = moves.get(part.id);
@@ -148,17 +148,17 @@ export function Canvas() {
 
   const onConnect = useCallback((c: Connection) => {
     if (!c.sourceHandle || !c.targetHandle) return;
-    useFabwright.getState().connect({ part: c.source, pin: c.sourceHandle }, { part: c.target, pin: c.targetHandle });
+    useFaber.getState().connect({ part: c.source, pin: c.sourceHandle }, { part: c.target, pin: c.targetHandle });
   }, []);
 
   const onDelete = useCallback(({ nodes, edges }: { nodes: PartFlowNode[]; edges: WireFlowEdge[] }) => {
-    useFabwright.getState().removeItems(
+    useFaber.getState().removeItems(
       nodes.map((n) => n.id),
       edges.map((e) => e.id),
     );
   }, []);
 
-  const onNodeDragStart = useCallback(() => useFabwright.getState().checkpoint(), []);
+  const onNodeDragStart = useCallback(() => useFaber.getState().checkpoint(), []);
   // A pointer-down on the empty canvas starts a "move" too: only a real change of the view counts.
   const moveFrom = useRef<Viewport | undefined>(undefined);
   const onMoveStart = useCallback((_e: MouseEvent | TouchEvent | null, vp: Viewport) => {
@@ -185,7 +185,7 @@ export function Canvas() {
       const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
       const w = def?.spec.size.w ?? 0;
       const h = def?.spec.size.h ?? 0;
-      useFabwright.getState().addPart(type, snap(pos.x - w / 2), snap(pos.y - h / 2));
+      useFaber.getState().addPart(type, snap(pos.x - w / 2), snap(pos.y - h / 2));
     },
     [screenToFlowPosition],
   );

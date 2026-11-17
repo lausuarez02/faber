@@ -1,7 +1,7 @@
 // A standalone, enlarged view of a TFT part's screen (for a device panel or the network view's
 // preview), redrawn on animation frames from the live frame, only where it changed.
 import { useEffect, useRef } from "react";
-import type { ColorFrame } from "@fabwright/sim-core";
+import type { ColorFrame } from "@faber/sim-core";
 import { TftPainter } from "./index.ts";
 
 export interface TftScreenProps {

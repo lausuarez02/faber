@@ -8,10 +8,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { hubPort, shot, waitForSimTime } from "./helpers.ts";
 
 // Round 5, live track (decision 0003): the page that follows an agent runs the device itself.
-// Each test starts its own `fabwright serve --no-web` on a temp copy of an example and opens the Vite
-// page with ?follow=ws://…/live, like `fabwright serve` does for a person. The tests run one after
+// Each test starts its own `faber serve --no-web` on a temp copy of an example and opens the Vite
+// page with ?follow=ws://…/live, like `faber serve` does for a person. The tests run one after
 // another on one port per viewport (hubPort slot 0), so a worktree needs only two ports.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
 
 interface Served {
@@ -23,22 +23,22 @@ interface Served {
 }
 
 async function serve(example: string | undefined, port: number, edit?: (dir: string) => void): Promise<Served> {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-live-run-"));
-  const home = mkdtempSync(join(tmpdir(), "fabwright-home-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-live-run-"));
+  const home = mkdtempSync(join(tmpdir(), "faber-home-"));
   if (example) cpSync(join(EXAMPLES, example), dir, { recursive: true });
   edit?.(dir);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: home } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: home } });
   let err = "";
   proc.stderr!.on("data", (d: Buffer) => (err += d.toString()));
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 25 s: ${err}`)), 25_000);
+    const t = setTimeout(() => reject(new Error(`faber serve did not start in 25 s: ${err}`)), 25_000);
     proc.stdout!.on("data", (d: Buffer) => {
       if (d.toString().includes("ws:")) {
         clearTimeout(t);
         resolve();
       }
     });
-    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}: ${err}`)));
+    proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}: ${err}`)));
   });
   return {
     dir,
@@ -87,16 +87,16 @@ async function mcpClient(base: string, name = "claude-code") {
 
 const engineState = (page: Page) =>
   page.evaluate(() => {
-    const j = (window as unknown as { fabwright: { engine: { isLocalRun: boolean; simulation?: { timeMs: number } }; store: { getState(): { run: string } } } }).fabwright;
+    const j = (window as unknown as { faber: { engine: { isLocalRun: boolean; simulation?: { timeMs: number } }; store: { getState(): { run: string } } } }).faber;
     return { local: j.engine.isLocalRun, run: j.store.getState().run, t: j.engine.simulation?.timeMs ?? 0 };
   });
 
 const partState = (page: Page, id: string) =>
-  page.evaluate((id) => (window as unknown as { fabwright: { engine: { simulation?: { partState(id: string): Record<string, unknown> | undefined } } } }).fabwright.engine.simulation?.partState(id) ?? {}, id);
+  page.evaluate((id) => (window as unknown as { faber: { engine: { simulation?: { partState(id: string): Record<string, unknown> | undefined } } } }).faber.engine.simulation?.partState(id) ?? {}, id);
 
 const partXY = (page: Page, id: string) =>
   page.evaluate((id) => {
-    const p = (window as unknown as { fabwright: { store: { getState(): { project: { parts: { id: string; x: number; y: number }[] } } } } }).fabwright.store.getState().project.parts.find((x) => x.id === id);
+    const p = (window as unknown as { faber: { store: { getState(): { project: { parts: { id: string; x: number; y: number }[] } } } } }).faber.store.getState().project.parts.find((x) => x.id === id);
     return p ? [p.x, p.y] : undefined;
   }, id);
 
@@ -112,9 +112,9 @@ test("follow page: Run runs the project here; buttons press, knobs turn, IMU til
   test.skip(info.project.name === "mobile", "pointer drags on the canvas are covered on desktop; phones share the same handlers");
   const srv = await serve("tamagotchi", hubPort(info), (dir) => {
     // Extra unwired parts for the knob, IMU and sensor controls.
-    const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { parts: object[] };
+    const p = JSON.parse(readFileSync(join(dir, "faber.json"), "utf8")) as { parts: object[] };
     p.parts.push({ id: "pot1", type: "potentiometer", x: -260, y: 260, rotation: 0 }, { id: "imu1", type: "mpu6050", x: -330, y: 420, rotation: 0 }, { id: "ldr1", type: "photoresistor", x: -150, y: 440, rotation: 0 });
-    writeFileSync(join(dir, "fabwright.json"), JSON.stringify(p, null, 2));
+    writeFileSync(join(dir, "faber.json"), JSON.stringify(p, null, 2));
   });
   try {
     await page.goto(`/?follow=${encodeURIComponent(srv.ws)}`);
@@ -173,7 +173,7 @@ test("follow page: Run runs the project here; buttons press, knobs turn, IMU til
     await shot(page, info, "live-run-interact");
 
     // Pause, stop by Run state: the person's run is theirs; the project file never changed.
-    const disk = JSON.parse(readFileSync(join(srv.dir, "fabwright.json"), "utf8")) as { parts: { id: string; props?: Record<string, unknown> }[] };
+    const disk = JSON.parse(readFileSync(join(srv.dir, "faber.json"), "utf8")) as { parts: { id: string; props?: Record<string, unknown> }[] };
     expect(disk.parts.find((p) => p.id === "pot1")?.props?.position).toBeUndefined();
   } finally {
     await srv.stop();
@@ -225,9 +225,9 @@ test("agent pill: No agent until a tool is called, building while calls arrive, 
     const hash = createHash("sha256").update(other).digest("hex");
     const t1 = (await engineState(page)).t;
     expect(t1).toBeGreaterThan(0);
-    mkdirSync(join(srv.dir, ".fabwright"), { recursive: true });
-    appendFileSync(join(srv.dir, ".fabwright/actions.jsonl"), JSON.stringify({ seq: 999, t: new Date().toISOString(), actor: "mcp", sid: "stdio1", client: "codex-mcp-client 0.1", op: "build", args: {}, ok: true, firmware: { artifact: "firmware/blink.hex", hash }, result: { ok: true } }) + "\n");
-    await expect.poll(() => page.evaluate(() => (window as unknown as { fabwright: { store: { getState(): { firmware: { hex?: string } } } } }).fabwright.store.getState().firmware.hex?.length ?? 0), { timeout: 10_000 }).toBe(other.length);
+    mkdirSync(join(srv.dir, ".faber"), { recursive: true });
+    appendFileSync(join(srv.dir, ".faber/actions.jsonl"), JSON.stringify({ seq: 999, t: new Date().toISOString(), actor: "mcp", sid: "stdio1", client: "codex-mcp-client 0.1", op: "build", args: {}, ok: true, firmware: { artifact: "firmware/blink.hex", hash }, result: { ok: true } }) + "\n");
+    await expect.poll(() => page.evaluate(() => (window as unknown as { faber: { store: { getState(): { firmware: { hex?: string } } } } }).faber.store.getState().firmware.hex?.length ?? 0), { timeout: 10_000 }).toBe(other.length);
     await expect.poll(async () => (await engineState(page)).run).toBe("running");
     await expect(page.getByTestId("live-actions")).toContainText("2 agent actions");
 

@@ -11,7 +11,7 @@ import type { ToolModule } from "./types.ts";
  *
  * A version is an ok action-log line that changed the project or a file (src/versions.ts).
  * Restoring one is itself a new, undoable edit: the circuit, scenarios and firmware block go back to
- * that version, and the source files Fabwright knows about get that version's content (files that did
+ * that version, and the source files Faber knows about get that version's content (files that did
  * not exist then are deleted). Nothing in the history is thrown away.
  */
 export const projectsTools: ToolModule = {
@@ -39,7 +39,7 @@ export const projectsTools: ToolModule = {
       const n = Number(args.version);
       const count = listVersions(s.dir).length;
       if (!Number.isInteger(n) || n < 1) fail("bad-arg", `restore_version: version ${String(args.version)} is not valid`, "versions are whole numbers starting at 1", count ? `pass a number from 1 to ${count}` : "make a change first; every change becomes a version");
-      if (n > count) fail("unknown-version", `There is no version ${n}`, count ? `this project has ${count} version${count === 1 ? "" : "s"}` : "this project has no recorded changes yet (.fabwright/actions.jsonl is empty)", count ? `pass a number from 1 to ${count} (GET /api/history lists them)` : "make a change first; every change becomes a version");
+      if (n > count) fail("unknown-version", `There is no version ${n}`, count ? `this project has ${count} version${count === 1 ? "" : "s"}` : "this project has no recorded changes yet (.faber/actions.jsonl is empty)", count ? `pass a number from 1 to ${count} (GET /api/history lists them)` : "make a change first; every change becomes a version");
       const detail = versionDetail(s.dir, n)!;
       if (detail.approxFiles.length) {
         fail("version-incomplete", `Version ${n} cannot be restored exactly`, `${detail.approxFiles.join(", ")} ${detail.approxFiles.length > 1 ? "were" : "was"} longer than the 50000 characters the action log keeps`, "restore a later version, or rewrite the file with write_file");

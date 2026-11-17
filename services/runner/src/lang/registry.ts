@@ -2,9 +2,9 @@
 // toolchain, and which image format it hands the emulator. The support matrix in
 // docs/firmware-languages.md is this table; tests keep the two honest (a "verified" entry names
 // the test that proves it).
-import type { FirmwareLanguage } from "@fabwright/project-format";
+import type { FirmwareLanguage } from "@faber/project-format";
 
-/** Chip families Fabwright's backends know (part.json mcu.chip). */
+/** Chip families Faber's backends know (part.json mcu.chip). */
 export const CHIPS = ["atmega328p", "rp2040", "esp32", "esp32s3", "esp32c3", "stm32f103", "stm32f4", "nrf52840"] as const;
 export type Chip = (typeof CHIPS)[number];
 
@@ -18,7 +18,7 @@ export const CHIP_IMAGE: Record<Chip, { backend: string; format: ImageFormat }> 
   esp32: { backend: "qemu-esp", format: "esp-flash" },
   esp32s3: { backend: "qemu-esp", format: "esp-flash" },
   esp32c3: { backend: "qemu-esp", format: "esp-flash" },
-  // Renode loads Intel HEX or an ELF; Fabwright's Arduino builds keep Intel HEX (round 10 renode).
+  // Renode loads Intel HEX or an ELF; Faber's Arduino builds keep Intel HEX (round 10 renode).
   stm32f103: { backend: "renode", format: "ihex" },
   stm32f4: { backend: "renode", format: "ihex" },
   nrf52840: { backend: "renode", format: "ihex" },
@@ -26,7 +26,7 @@ export const CHIP_IMAGE: Record<Chip, { backend: string; format: ImageFormat }> 
 
 /**
  * The chip family a part.json mcu.chip belongs to ("stm32f103c8" → "stm32f103", "stm32f411ce" →
- * "stm32f4"), or undefined when Fabwright has no backend for it.
+ * "stm32f4"), or undefined when Faber has no backend for it.
  */
 export function chipFamily(chip: string | undefined): Chip | undefined {
   if (!chip) return undefined;
@@ -73,15 +73,15 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "cpp",
     tool: "arduino-cli",
     chips: {
-      atmega328p: { status: "verified", test: "packages/parts/src/blink.integration.test.ts", toolchain: "fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1" },
-      rp2040: { status: "verified", test: "packages/parts/src/rp2040.integration.test.ts", toolchain: "fabwright/arduino-pico:6.3.1-libs3-r1" },
-      esp32: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "fabwright/arduino-esp32:3.3.12-r3" },
-      esp32s3: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "fabwright/arduino-esp32:3.3.12-r3" },
-      esp32c3: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "fabwright/arduino-esp32:3.3.12-r3" },
-      stm32f103: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "fabwright/arduino-stm32:2.11.0-libs3-r1" },
+      atmega328p: { status: "verified", test: "packages/parts/src/blink.integration.test.ts", toolchain: "faber/arduino-runner:1.5.1-avr1.8.8-libs3-r1" },
+      rp2040: { status: "verified", test: "packages/parts/src/rp2040.integration.test.ts", toolchain: "faber/arduino-pico:6.3.1-libs3-r1" },
+      esp32: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "faber/arduino-esp32:3.3.12-r3" },
+      esp32s3: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "faber/arduino-esp32:3.3.12-r3" },
+      esp32c3: { status: "verified", test: "packages/sim-backends/src/qemu-esp/boards.integration.test.ts", toolchain: "faber/arduino-esp32:3.3.12-r3" },
+      stm32f103: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "faber/arduino-stm32:2.11.0-libs3-r1" },
       // STM32F4: the Black Pill F411; the Nucleo-F401RE stays planned (attachInterrupt never fires in Renode).
-      stm32f4: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "fabwright/arduino-stm32:2.11.0-libs3-r1" },
-      nrf52840: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "fabwright/arduino-mbed-nano:4.4.1-libs3-r1 (Nano 33 BLE), fabwright/arduino-nrf52:1.1.13-libs3-r2 (XIAO nRF52840)" },
+      stm32f4: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "faber/arduino-stm32:2.11.0-libs3-r1" },
+      nrf52840: { status: "verified", test: "packages/sim-backends/src/renode/boards.integration.test.ts", toolchain: "faber/arduino-mbed-nano:4.4.1-libs3-r1 (Nano 33 BLE), faber/arduino-nrf52:1.1.13-libs3-r2 (XIAO nRF52840)" },
     },
   },
   micropython: {
@@ -93,8 +93,8 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     tool: "micropython",
     chips: {
       rp2040: { status: "verified", test: "services/runner/src/lang/lang.test.ts", toolchain: "in-process (official MicroPython UF2 + littlefs image)" },
-      esp32: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image (official ESP32_GENERIC + littlefs after its partitions), runs in fabwright/qemu-esp" },
-      esp32c3: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image (official ESP32_GENERIC_C3 + littlefs after its partitions), runs in fabwright/qemu-esp" },
+      esp32: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image (official ESP32_GENERIC + littlefs after its partitions), runs in faber/qemu-esp" },
+      esp32c3: { status: "verified", test: "services/runner/src/lang/micropython-esp.integration.test.ts", toolchain: "in-process image (official ESP32_GENERIC_C3 + littlefs after its partitions), runs in faber/qemu-esp" },
       esp32s3: { status: "planned", why: "the official ESP32_GENERIC_S3 build stops after 'Failed to set QIE bit' in QEMU (its REPL is on USB-OTG, which QEMU does not model); needs a UART-REPL build" },
       stm32f4: { status: "planned", why: "the official STM32F4DISC build boots in Renode but its REPL is USB-only (no UART output); needs a UART-REPL build, and " + RENODE_SERIAL_IN },
       nrf52840: { status: "planned", why: "the official ARDUINO_NANO_33_BLE_SENSE build is linked after the Arduino bootloader and SoftDevice (loads at 0x26000) and prints nothing in Renode; needs a bare build, and " + RENODE_SERIAL_IN },
@@ -110,9 +110,9 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "cpp",
     tool: "esp-idf",
     chips: {
-      esp32: { status: "planned", why: "the fabwright/esp-idf:5.5.5-r1 image built (IDF v5.5.5 on the arduino-esp32 compilers), but no project build ran: Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run (services/runner/src/lang/espidf.integration.test.ts is written)", toolchain: "fabwright/esp-idf:5.5.5-r1" },
-      esp32c3: { status: "planned", why: "same as ESP32: image built, project build untested because Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "fabwright/esp-idf:5.5.5-r1" },
-      esp32s3: { status: "planned", why: "builds; no I2C controller model in QEMU for the S3 yet, and no board part", toolchain: "fabwright/esp-idf:5.5.5-r1" },
+      esp32: { status: "planned", why: "the faber/esp-idf:5.5.5-r1 image built (IDF v5.5.5 on the arduino-esp32 compilers), but no project build ran: Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run (services/runner/src/lang/espidf.integration.test.ts is written)", toolchain: "faber/esp-idf:5.5.5-r1" },
+      esp32c3: { status: "planned", why: "same as ESP32: image built, project build untested because Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "faber/esp-idf:5.5.5-r1" },
+      esp32s3: { status: "planned", why: "builds; no I2C controller model in QEMU for the S3 yet, and no board part", toolchain: "faber/esp-idf:5.5.5-r1" },
     },
   },
   platformio: {
@@ -123,7 +123,7 @@ export const LANGUAGES: Record<FirmwareLanguage, LanguageInfo> = {
     editor: "cpp",
     tool: "platformio",
     chips: {
-      atmega328p: { status: "planned", why: "the fabwright/platformio:6.2.0-avr5.3.0-r1 image built and compiled an Uno blink inside its own build; Fabwright's build path and the run on avr8js (services/runner/src/lang/platformio.integration.test.ts) are written, but Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "fabwright/platformio:6.2.0-avr5.3.0-r1" },
+      atmega328p: { status: "planned", why: "the faber/platformio:6.2.0-avr5.3.0-r1 image built and compiled an Uno blink inside its own build; Faber's build path and the run on avr8js (services/runner/src/lang/platformio.integration.test.ts) are written, but Docker Desktop's disk failed during round 10 (input/output errors after the host disk filled), so the test could not run", toolchain: "faber/platformio:6.2.0-avr5.3.0-r1" },
       rp2040: { status: "planned", why: "the official raspberrypi platform builds with Arduino-Mbed, whose USB serial and boot differ from arduino-pico; the arduino-pico platform is a third-party fork. Use Arduino (arduino-pico) or MicroPython on RP2040 for now" },
       esp32: { status: "planned", why: "platform espressif32 adds about 1.5 GB per image; Arduino and ESP-IDF already cover the ESP32 with the same core" },
       stm32f103: { status: "planned", why: "platform ststm32 is amd64-only for some toolchains; Arduino (STM32duino) covers the Blue Pill" },
@@ -167,7 +167,7 @@ export function isChip(s: string | undefined): s is Chip {
 export function supportOf(lang: FirmwareLanguage, chip: string): LanguageSupport {
   const fam = chipFamily(chip);
   const s = fam ? LANGUAGES[lang].chips[fam] : undefined;
-  return s ?? { status: "planned", why: `${LANGUAGES[lang].label} on ${chip} has not been tried in Fabwright yet` };
+  return s ?? { status: "planned", why: `${LANGUAGES[lang].label} on ${chip} has not been tried in Faber yet` };
 }
 
 /** Languages verified on a chip, Arduino first: what plan_device and the editor offer. */

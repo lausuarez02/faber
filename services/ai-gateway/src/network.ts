@@ -1,14 +1,14 @@
-// The sandbox network simulated radios join: one Wi-Fi access point ("FabwrightNet", open by
-// default), a DNS table and hosts that answer HTTP. ai.fabwright serves the pet AI. Everything is
+// The sandbox network simulated radios join: one Wi-Fi access point ("FaberNet", open by
+// default), a DNS table and hosts that answer HTTP. ai.faber serves the pet AI. Everything is
 // in virtual time; in mock mode the whole exchange is deterministic. Every event is logged for
 // the network view and for agents (read_network_log).
 //
-// Structurally implements SandboxNetwork from @fabwright/sim-core (no import, so this package has
+// Structurally implements SandboxNetwork from @faber/sim-core (no import, so this package has
 // no workspace dependency and runs in the browser too).
 import { parseHttpRequest, httpResponse, type HttpRequest } from "./http.ts";
 import { cleanMessage, PetRequestError, parsePetQuery } from "./protocol.ts";
 import { PetAi, PROVIDER_LABELS, type PetAnswer, type ProviderId } from "./petAi.ts";
-import { currentSandboxHost, SANDBOX_SSID, ssidMatches } from "@fabwright/project-format/legacy";
+import { currentSandboxHost, SANDBOX_SSID, ssidMatches } from "@faber/project-format/legacy";
 
 export interface AccessPoint {
   ssid: string;
@@ -60,10 +60,10 @@ export type HostResult = { status: number; body: string; latencyMs: number; prov
 export type HostHandler = (req: HttpRequest, ctx: HostContext) => HostResult;
 
 export interface SandboxNetworkOptions {
-  /** Default: one open network "FabwrightNet". */
+  /** Default: one open network "FaberNet". */
   accessPoints?: AccessPoint[];
   ai?: PetAi;
-  /** Extra hosts besides ai.fabwright (name → IP and handler). */
+  /** Extra hosts besides ai.faber (name → IP and handler). */
   hosts?: Record<string, { ip: string; handler: HostHandler }>;
   /**
    * Live AI only while this returns true (the host passes "the sim runs at <= 1x real time and
@@ -107,7 +107,7 @@ export class SandboxNet {
     this.aps = opts.accessPoints ?? [{ ssid: SANDBOX_SSID, password: "", rssi: -52, channel: 6 }];
     this.liveAllowed = opts.liveAllowed ?? (() => true);
     this.logLimit = opts.logLimit ?? 500;
-    this.hosts.set("ai.fabwright", { ip: "10.0.0.2", handler: (req, ctx) => this.petHandler(req, ctx) });
+    this.hosts.set("ai.faber", { ip: "10.0.0.2", handler: (req, ctx) => this.petHandler(req, ctx) });
     for (const [name, h] of Object.entries(opts.hosts ?? {})) this.hosts.set(name.toLowerCase(), h);
   }
 
@@ -378,7 +378,7 @@ export class SandboxNet {
     };
   }
 
-  // ------------------------------------------------------------------ ai.fabwright
+  // ------------------------------------------------------------------ ai.faber
 
   /**
    * The person talks to the running pet (the canvas text box): the next request to /v1/pet that has
@@ -397,7 +397,7 @@ export class SandboxNet {
   }
 
   private petHandler(req: HttpRequest, ctx: HostContext): HostResult {
-    if (req.path === "/" || req.path === "/health") return { status: 200, body: "ok|ai.fabwright pet gateway", latencyMs: 15 };
+    if (req.path === "/" || req.path === "/health") return { status: 200, body: "ok|ai.faber pet gateway", latencyMs: 15 };
     if (req.path !== "/v1/pet") return { status: 404, body: `error|no ${req.path}; use GET /v1/pet?a=talk&f=50&j=50&e=50`, latencyMs: 15 };
     if (req.method !== "GET" && req.method !== "POST") return { status: 405, body: "error|use GET /v1/pet?a=talk&f=50&j=50&e=50", latencyMs: 15 };
     let pet;

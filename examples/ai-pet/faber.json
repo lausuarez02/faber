@@ -1,0 +1,64 @@
+{
+  "format": "faber/1",
+  "name": "AI pet",
+  "description": "A pet with an AI inside, on a colour screen: an Uno draws it on a 2.8in ILI9341 TFT and asks the pet AI (http://ai.faber/v1/pet, a language model behind the sandbox Wi-Fi) what to say through an ESP-01 Wi-Fi module. Talk, feed and play buttons, a buzzer, offline icon and retry when the Wi-Fi drops.",
+  "parts": [
+    { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "tft", "type": "ili9341-tft", "x": 640, "y": -20, "rotation": 0 },
+    { "id": "esp", "type": "esp01-wifi", "x": 40, "y": 500, "rotation": 0 },
+    { "id": "rDiv1", "type": "resistor", "x": 300, "y": 520, "rotation": 0, "props": { "resistance": 1000 } },
+    { "id": "rDiv2", "type": "resistor", "x": 300, "y": 600, "rotation": 0, "props": { "resistance": 2000 } },
+    { "id": "btnTalk", "type": "pushbutton", "x": 640, "y": 440, "rotation": 0 },
+    { "id": "btnFeed", "type": "pushbutton", "x": 760, "y": 440, "rotation": 0 },
+    { "id": "btnPlay", "type": "pushbutton", "x": 880, "y": 440, "rotation": 0 },
+    { "id": "buzzer", "type": "buzzer", "x": 1020, "y": 440, "rotation": 0 }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "tft", "pin": "VCC" }, "to": { "part": "uno", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "tft", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#4A515C" },
+    { "id": "w3", "from": { "part": "tft", "pin": "CS" }, "to": { "part": "uno", "pin": "D10" }, "color": "#B07CFF" },
+    { "id": "w4", "from": { "part": "tft", "pin": "RST" }, "to": { "part": "uno", "pin": "D8" }, "color": "#B07CFF" },
+    { "id": "w5", "from": { "part": "tft", "pin": "DC" }, "to": { "part": "uno", "pin": "D9" }, "color": "#B07CFF" },
+    { "id": "w6", "from": { "part": "tft", "pin": "MOSI" }, "to": { "part": "uno", "pin": "D11" }, "color": "#3FA9F5" },
+    { "id": "w7", "from": { "part": "tft", "pin": "SCK" }, "to": { "part": "uno", "pin": "D13" }, "color": "#F5C542" },
+    { "id": "w8", "from": { "part": "tft", "pin": "LED" }, "to": { "part": "uno", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w9", "from": { "part": "tft", "pin": "MISO" }, "to": { "part": "uno", "pin": "D12" }, "color": "#5CF2A1" },
+    { "id": "w10", "from": { "part": "esp", "pin": "VCC" }, "to": { "part": "uno", "pin": "3V3" }, "color": "#FF9F43" },
+    { "id": "w11", "from": { "part": "esp", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#4A515C" },
+    { "id": "w12", "from": { "part": "esp", "pin": "TX" }, "to": { "part": "uno", "pin": "D2" }, "color": "#5CF2A1" },
+    { "id": "w13", "from": { "part": "uno", "pin": "D3" }, "to": { "part": "rDiv1", "pin": "1" }, "color": "#3FA9F5" },
+    { "id": "w14", "from": { "part": "rDiv1", "pin": "2" }, "to": { "part": "esp", "pin": "RX" }, "color": "#3FA9F5" },
+    { "id": "w15", "from": { "part": "esp", "pin": "RX" }, "to": { "part": "rDiv2", "pin": "1" }, "color": "#3FA9F5" },
+    { "id": "w16", "from": { "part": "rDiv2", "pin": "2" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#4A515C" },
+    { "id": "w17", "from": { "part": "uno", "pin": "D4" }, "to": { "part": "btnTalk", "pin": "1a" }, "color": "#B07CFF" },
+    { "id": "w18", "from": { "part": "btnTalk", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#4A515C" },
+    { "id": "w19", "from": { "part": "uno", "pin": "D5" }, "to": { "part": "btnFeed", "pin": "1a" }, "color": "#B07CFF" },
+    { "id": "w20", "from": { "part": "btnFeed", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#4A515C" },
+    { "id": "w21", "from": { "part": "uno", "pin": "D6" }, "to": { "part": "btnPlay", "pin": "1a" }, "color": "#B07CFF" },
+    { "id": "w22", "from": { "part": "btnPlay", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#4A515C" },
+    { "id": "w23", "from": { "part": "uno", "pin": "D7" }, "to": { "part": "buzzer", "pin": "POS" }, "color": "#B07CFF" },
+    { "id": "w24", "from": { "part": "buzzer", "pin": "NEG" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#4A515C" }
+  ],
+  "firmware": {
+    "board": "uno",
+    "dir": "firmware",
+    "sketch": "ai-pet/ai-pet.ino",
+    "artifact": "firmware/ai-pet.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "arduino:avr:uno"
+    },
+    "libraries": [
+      "Adafruit ILI9341@1.7.0",
+      "Adafruit GFX Library@1.13.0",
+      "Adafruit BusIO@1.17.4"
+    ]
+  },
+  "scenarios": [
+    { "id": "boots-and-joins", "name": "Draws the pet in colour, joins FaberNet and shows the online icon", "steps": [{ "expect_serial": "Pet hatched", "within_ms": 3000 }, { "expect_part": "tft.on", "op": "==", "value": true }, { "expect_part": "tft.lit", "op": ">", "value": 70000 }, { "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "icon: online", "within_ms": 500 }, { "expect_part": "esp.online", "op": "==", "value": true }, { "expect_no_errors": true }] },
+    { "id": "talk-shows-reply-bubble", "name": "TALK asks the AI and shows its reply in a speech bubble", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "hold_ms": 80, "press": "btnTalk" }, { "expect_serial": "ask a=talk", "within_ms": 300 }, { "expect_serial": { "regex": "reply 200 (happy|hungry|sleepy|sad|excited)\\|[ -~]{1,60}\\r\\n" }, "within_ms": 2500 }, { "expect_serial": "bubble: ", "within_ms": 300 }, { "expect_part": "tft.bright", "op": ">", "value": 10000, "within_ms": 500 }] },
+    { "id": "feed-raises-food", "name": "FEED adds 25 food and the AI reacts", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "hold_ms": 80, "press": "btnFeed" }, { "expect_serial": { "regex": "feed food=9\\d" }, "within_ms": 300 }, { "expect_serial_value": "food", "op": ">=", "value": 85, "within_ms": 100 }, { "expect_serial": "ask a=feed", "within_ms": 300 }, { "expect_serial": "reply 200 happy|", "within_ms": 2500 }] },
+    { "id": "wifi-drop-offline-and-retry", "name": "Wi-Fi drops: offline icon, the question waits, the pet reconnects and asks again", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "run_ms": 500 }, { "inject_fault": "esp", "kind": "wifi_drop" }, { "expect_serial": "wifi: offline", "within_ms": 1000 }, { "expect_serial": "icon: offline", "within_ms": 300 }, { "expect_part": "esp.online", "op": "==", "value": false }, { "hold_ms": 80, "press": "btnTalk" }, { "expect_serial": "will retry when online", "within_ms": 500 }, { "inject_fault": "esp", "kind": "clear" }, { "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "icon: online", "within_ms": 500 }, { "expect_serial": "ask a=talk", "within_ms": 10000 }, { "expect_serial": "reply 200", "within_ms": 3000 }] },
+    { "id": "lonely-asks-by-itself", "name": "Left alone for 30 s it asks the AI by itself", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "ask a=lonely", "within_ms": 35000 }, { "expect_serial": "reply 200", "within_ms": 3000 }, { "expect_part": "tft.bright", "op": ">", "value": 10000, "within_ms": 500 }] }
+  ]
+}

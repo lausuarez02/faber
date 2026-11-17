@@ -2,11 +2,11 @@
 // Hall / reed switch senses, so the agent had to add it by hand. Any part with a magnet_d_mm prop
 // now brings its magnet, with the size and grade the design was checked with.
 import { describe, expect, it } from "vitest";
-import type { Project } from "@fabwright/project-format";
-import { registry } from "@fabwright/parts";
+import type { Project } from "@faber/project-format";
+import { registry } from "@faber/parts";
 import { shoppingList } from "../src/kit/shopping.ts";
 
-const project = (parts: Project["parts"]): Project => ({ format: "fabwright/1", name: "lid", parts, wires: [], scenarios: [] }) as unknown as Project;
+const project = (parts: Project["parts"]): Project => ({ format: "faber/1", name: "lid", parts, wires: [], scenarios: [] }) as unknown as Project;
 const shop = (p: Project) => shoppingList({ project: p, registry, soldered: true, cuts: [], region: "eu" });
 
 describe("shopping list: magnets for magnet sensors (round 15)", () => {

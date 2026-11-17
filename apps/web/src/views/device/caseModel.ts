@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 import { decodeF32, decodeU32 } from "../../case/api.ts";
 import { serverConnection } from "../../projects/api.ts";
 import type { CaseModel } from "./classify.ts";
@@ -21,15 +21,15 @@ export type CaseLoader = () => Promise<CaseModel | null>;
 
 export async function fetchDeviceCase(): Promise<CaseModel | null> {
   const conn = await serverConnection();
-  if (!conn) return null; // no fabwright serve (static build, harness): no case to show
+  if (!conn) return null; // no faber serve (static build, harness): no case to show
   let r: Response;
   try {
     r = await fetch("/api/device/case", { headers: { accept: "application/json" } });
   } catch (e) {
-    throw new Error(`Could not reach the Fabwright server. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then reopen the Device view.`);
+    throw new Error(`Could not reach the Faber server. Why: ${(e as Error).message}. Fix: check that faber serve is still running, then reopen the Device view.`);
   }
   const data = (await r.json().catch(() => undefined)) as { case?: CaseModel | null; error?: string } | undefined;
-  if (!r.ok) throw new Error(data?.error ?? `GET /api/device/case failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the fabwright serve terminal.`);
+  if (!r.ok) throw new Error(data?.error ?? `GET /api/device/case failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the faber serve terminal.`);
   return data?.case ?? null;
 }
 

@@ -1,15 +1,15 @@
-// Projects, firmware and agent files made before the rename from Jumper to Fabwright keep working
+// Projects, firmware and agent files made before the rename from Jumper to Faber keep working
 // (docs/migrating-from-jumper.md).
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { installProjectFiles, LEGACY_MARKER, LEGACY_SKILL_PATH, SKILL_PATH } from "@fabwright/agent-skill";
-import { SandboxNet } from "@fabwright/ai-gateway";
-import { CustomPartSchema } from "@fabwright/parts";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
-import { parseSleepMarker } from "@fabwright/sim-core";
+import { installProjectFiles, LEGACY_MARKER, LEGACY_SKILL_PATH, SKILL_PATH } from "@faber/agent-skill";
+import { SandboxNet } from "@faber/ai-gateway";
+import { CustomPartSchema } from "@faber/parts";
+import type { BuildRequest, BuildResult } from "@faber/runner";
+import { parseSleepMarker } from "@faber/sim-core";
 import { ProjectSession } from "../src/index.ts";
 import { relayBuildSources } from "../src/relay-build.ts";
 
@@ -17,7 +17,7 @@ const GOLDEN = readFileSync(fileURLToPath(new URL("../../../examples/blink/firmw
 async function fakeBuilder(_req: BuildRequest): Promise<BuildResult> {
   return { ok: true, hex: GOLDEN, cached: false, durationMs: 1, hash: "y", diagnostics: [], errors: 0, warnings: 0, libraries: [], logTail: "" };
 }
-const tmp = () => mkdtempSync(join(tmpdir(), "fabwright-legacy-"));
+const tmp = () => mkdtempSync(join(tmpdir(), "faber-legacy-"));
 const lines = (f: string) => readFileSync(f, "utf8").trim().split("\n").length;
 
 describe("a project folder from before the rename (jumper.json, .jumper/)", () => {
@@ -35,42 +35,42 @@ describe("a project folder from before the rename (jumper.json, .jumper/)", () =
     await s.call("place_part", { type: "led", why: "a status light" });
     const saved = JSON.parse(readFileSync(join(dir, "jumper.json"), "utf8")) as { format: string; parts: { id: string }[] };
     expect(saved.parts.map((p) => p.id)).toEqual(["uno", "led1"]);
-    expect(saved.format).toBe("fabwright/1");
-    expect(existsSync(join(dir, "fabwright.json"))).toBe(false);
-    expect(existsSync(join(dir, ".fabwright"))).toBe(false);
+    expect(saved.format).toBe("faber/1");
+    expect(existsSync(join(dir, "faber.json"))).toBe(false);
+    expect(existsSync(join(dir, ".faber"))).toBe(false);
     expect(lines(join(dir, ".jumper", "actions.jsonl"))).toBeGreaterThan(1);
 
     // the agent reads the project file under either name
-    expect(((await s.call("read_file", { path: "fabwright.json" })) as { path: string }).path).toBe("jumper.json");
+    expect(((await s.call("read_file", { path: "faber.json" })) as { path: string }).path).toBe("jumper.json");
     // and cannot delete it, or the state folder, under its old names
     await expect(s.call("delete_file", { path: "jumper.json" })).rejects.toThrow(/refusing to delete jumper\.json/);
     await expect(s.call("delete_file", { path: ".jumper/actions.jsonl" })).rejects.toThrow(/refusing to delete/);
   });
 
-  it("a new project gets fabwright.json and .fabwright/", async () => {
+  it("a new project gets faber.json and .faber/", async () => {
     const dir = tmp();
     const s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
     await s.call("new_project", { template: "blank", name: "new" });
-    expect(existsSync(join(dir, "fabwright.json"))).toBe(true);
+    expect(existsSync(join(dir, "faber.json"))).toBe(true);
     expect(existsSync(join(dir, "jumper.json"))).toBe(false);
-    expect(existsSync(join(dir, ".fabwright", "actions.jsonl"))).toBe(true);
+    expect(existsSync(join(dir, ".faber", "actions.jsonl"))).toBe(true);
   });
 });
 
 describe("firmware written before the rename", () => {
-  const project = { format: "fabwright/1" as const, name: "relay", parts: [], wires: [], scenarios: [] };
+  const project = { format: "faber/1" as const, name: "relay", parts: [], wires: [], scenarios: [] };
 
   it("a sketch that includes JumperRelay.h gets the forwarding header, and jumper_device.h in a simulation build", () => {
     const sketch = tmp();
     writeFileSync(join(sketch, "main.ino"), '#include "JumperRelay.h"\nvoid setup() { Serial.println(jumperRelayUrl("api.example.com", "/x")); }\nvoid loop() {}\n');
     const extra = relayBuildSources(project, sketch, "simulator").extraSources ?? {};
-    expect(Object.keys(extra).sort()).toEqual(["FabwrightRelay.h", "JumperRelay.h", "fabwright_device.h", "jumper_device.h"]);
-    expect(extra["JumperRelay.h"]).toContain('#include "FabwrightRelay.h"');
+    expect(Object.keys(extra).sort()).toEqual(["FaberRelay.h", "JumperRelay.h", "faber_device.h", "jumper_device.h"]);
+    expect(extra["JumperRelay.h"]).toContain('#include "FaberRelay.h"');
     expect(extra["JumperRelay.h"]).toContain("jumperRelayUrl");
     expect(extra["jumper_device.h"]).toContain("#define JUMPER_RELAY_URL");
-    expect(extra["FabwrightRelay.h"]).toContain('__has_include("jumper_device.h")');
+    expect(extra["FaberRelay.h"]).toContain('__has_include("jumper_device.h")');
     // a device build never gets a device header (the person's own one is never compiled)
-    expect(Object.keys(relayBuildSources(project, sketch, "device").extraSources ?? {}).sort()).toEqual(["FabwrightRelay.h", "JumperRelay.h"]);
+    expect(Object.keys(relayBuildSources(project, sketch, "device").extraSources ?? {}).sort()).toEqual(["FaberRelay.h", "JumperRelay.h"]);
   });
 
   it("a sketch that keeps its own old JumperRelay.h copy is left with it", () => {
@@ -85,7 +85,7 @@ describe("firmware written before the rename", () => {
   it("joins JumperNet and reaches ai.jumper on the sandbox network", () => {
     const net = new SandboxNet();
     expect(net.join("JumperNet", "", 0, "esp")).toBe(0);
-    expect(net.resolve("ai.jumper")).toBe(net.resolve("ai.fabwright"));
+    expect(net.resolve("ai.jumper")).toBe(net.resolve("ai.faber"));
     expect(net.resolve("ai.jumper")).toBeDefined();
     expect(net.join("SomeoneElsesNet", "", 0, "esp")).toBe(3);
   });

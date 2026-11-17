@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ArrowDown, CornerDownLeft, Search, X } from "lucide-react";
-import { engine, useFabwright } from "../lib/app.ts";
+import { engine, useFaber } from "../lib/app.ts";
 import { onProjectSwitch } from "../lib/projectSwitch.ts";
 import "./canvas.css";
 
@@ -22,7 +22,7 @@ export function SerialConsole() {
   // Round 10: a line typed here goes to the board (the MicroPython REPL, or Serial.read() in a sketch).
   const [line, setLine] = useState("");
   const [sendNote, setSendNote] = useState<string | undefined>();
-  const micropython = useFabwright((s) => s.project.firmware?.language === "micropython" || !!s.project.firmware?.sketch?.endsWith(".py"));
+  const micropython = useFaber((s) => s.project.firmware?.language === "micropython" || !!s.project.firmware?.sketch?.endsWith(".py"));
   const send = (text: string) => {
     if (engine.sendSerial(text)) setSendNote(undefined);
     else setSendNote("Not sent: nothing is running on this page. Press Run first (while following an agent, Run here starts the device in this page).");

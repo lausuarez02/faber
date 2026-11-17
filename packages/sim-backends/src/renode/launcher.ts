@@ -1,7 +1,7 @@
-// Starts one Renode process (Docker image fabwright/renode by default) for one board with one ELF.
-// Renode runs a generated start script: compile the Fabwright bridge (C#, MIT), create the machine,
+// Starts one Renode process (Docker image faber/renode by default) for one board with one ELF.
+// Renode runs a generated start script: compile the Faber bridge (C#, MIT), create the machine,
 // load the board's platform plus the per-run additions (I2C targets, SPI target), load the ELF, and
-// dial back to Fabwright's bridge port. Everything after that goes over the bridge socket.
+// dial back to Faber's bridge port. Everything after that goes over the bridge socket.
 import { execFile, spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { closeSync, existsSync, openSync } from "node:fs";
@@ -9,23 +9,23 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { EMULATOR_LABEL, OWNER_LABEL } from "../qemu-esp/launcher.ts";
-import { fabwrightRenodeBinary, nativeRenodeBinary, nativeRenodeInstalled, pickRuntime, probeDocker } from "../runtime.ts";
+import { faberRenodeBinary, nativeRenodeBinary, nativeRenodeInstalled, pickRuntime, probeDocker } from "../runtime.ts";
 
 const exec = promisify(execFile);
 
 /** Keep in sync with toolchains/renode/Dockerfile. */
-export const RENODE_IMAGE = "fabwright/renode:1.17.0-r1";
+export const RENODE_IMAGE = "faber/renode:1.17.0-r1";
 /** This folder's platforms/ (board .repl files, Python and C# models, the bridge). */
 export const PLATFORMS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "platforms");
 
 export interface RenodeLaunch {
-  /** Host folder mounted read-only at /fabwright/run (start.resc, the ELF, extra.repl). */
+  /** Host folder mounted read-only at /faber/run (start.resc, the ELF, extra.repl). */
   runDir: string;
   image?: string;
   runtime?: "docker" | "native";
   /** Renode's own log goes here (a file path). Default: discarded. */
   logFile?: string;
-  /** Extra Docker labels; fabwright.emulator=1 and fabwright.owner-pid=<pid> are always set (the runner's reaper). */
+  /** Extra Docker labels; faber.emulator=1 and faber.owner-pid=<pid> are always set (the runner's reaper). */
   labels?: Record<string, string>;
 }
 
@@ -41,16 +41,16 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
   let argv: string[];
   let name: string | undefined;
   if ((o.runtime ?? renodeRuntime()) === "docker") {
-    name = `fabwright-renode-${process.pid}-${randomBytes(3).toString("hex")}`;
+    name = `faber-renode-${process.pid}-${randomBytes(3).toString("hex")}`;
     argv = [
-      "docker", "run", "--rm", "-i", "--name", name, "--label", "fabwright.renode=1",
-      "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "fabwright.backend=renode",
+      "docker", "run", "--rm", "-i", "--name", name, "--label", "faber.renode=1",
+      "--label", `${EMULATOR_LABEL}=1`, "--label", `${OWNER_LABEL}=${process.pid}`, "--label", "faber.backend=renode",
       ...Object.entries(o.labels ?? {}).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
       "--add-host=host.docker.internal:host-gateway",
-      "-v", `${PLATFORMS_DIR}:/fabwright/platforms:ro`,
-      "-v", `${o.runDir}:/fabwright/run:ro`,
+      "-v", `${PLATFORMS_DIR}:/faber/platforms:ro`,
+      "-v", `${o.runDir}:/faber/run:ro`,
       o.image ?? RENODE_IMAGE,
-      "--disable-gui", "--console", "--plain", "/fabwright/run/start.resc",
+      "--disable-gui", "--console", "--plain", "/faber/run/start.resc",
     ];
   } else {
     argv = [renodeBinary(), "--disable-gui", "--console", "--plain", `${o.runDir}/start.resc`];
@@ -67,14 +67,14 @@ export function launchRenode(o: RenodeLaunch): RenodeProcess {
 }
 
 /**
- * Docker or a native Renode 1.17 on this machine (round 11: ~/.fabwright/emulators/renode/1.17.0, installed
- * by `fabwright setup renode`; or FABWRIGHT_RENODE_BIN; or \`renode\` on PATH). FABWRIGHT_RENODE_RUNTIME=docker|native
- * forces one; otherwise FABWRIGHT_RUNTIME (auto: Docker when it answers and has the image, else native when
+ * Docker or a native Renode 1.17 on this machine (round 11: ~/.faber/emulators/renode/1.17.0, installed
+ * by `faber setup renode`; or FABER_RENODE_BIN; or \`renode\` on PATH). FABER_RENODE_RUNTIME=docker|native
+ * forces one; otherwise FABER_RUNTIME (auto: Docker when it answers and has the image, else native when
  * installed). Native starts faster; the macOS build is not notarised.
  */
 export function renodeRuntime(): "docker" | "native" {
   return pickRuntime({
-    override: process.env.FABWRIGHT_RENODE_RUNTIME,
+    override: process.env.FABER_RENODE_RUNTIME,
     nativeInstalled: nativeRenodeInstalled,
     dockerReady: () => spawnSync("docker", ["image", "inspect", RENODE_IMAGE], { stdio: "ignore", timeout: 10_000 }).status === 0,
   });
@@ -84,9 +84,9 @@ export function renodeBinary(): string {
   return nativeRenodeBinary();
 }
 
-/** Remove Renode containers a crashed Fabwright process left behind. */
+/** Remove Renode containers a crashed Faber process left behind. */
 export async function reapRenodeContainers(): Promise<number> {
-  const { stdout } = await exec("docker", ["ps", "-aq", "--filter", "label=fabwright.renode=1"]);
+  const { stdout } = await exec("docker", ["ps", "-aq", "--filter", "label=faber.renode=1"]);
   const ids = stdout.split("\n").filter(Boolean);
   if (ids.length) await exec("docker", ["rm", "-f", ...ids]);
   return ids.length;
@@ -98,23 +98,23 @@ export function renodeUnavailable(image = RENODE_IMAGE, runtime = renodeRuntime(
     const bin = renodeBinary();
     const absent = bin === "renode" ? (spawnSync("renode", ["--version"], { stdio: "ignore", timeout: 30_000 }).error as NodeJS.ErrnoException | undefined)?.code === "ENOENT" : !existsSync(bin);
     if (absent) {
-      return `Renode is not installed natively (no ${bin})${probeDocker().ok ? "" : `, and Docker cannot run it instead: ${probeDocker().why}`}. Fix: run \`fabwright setup renode\` (downloads Renode 1.17.0, about 75 MB, checksum-checked), then run again.`;
+      return `Renode is not installed natively (no ${bin})${probeDocker().ok ? "" : `, and Docker cannot run it instead: ${probeDocker().why}`}. Fix: run \`faber setup renode\` (downloads Renode 1.17.0, about 75 MB, checksum-checked), then run again.`;
     }
     const v = spawnSync(bin, ["--version"], { encoding: "utf8", timeout: 30_000 });
     if (v.error || v.status !== 0) {
-      return `Renode did not run as '${bin}' (${v.error?.message ?? (v.stderr || "").trim()}). Why: ${bin === "renode" ? "Fabwright's Renode is not installed and none is on PATH" : "the install is damaged or macOS blocked it"}. Fix: run \`fabwright setup renode\` (installs Renode 1.17.0 in ${fabwrightRenodeBinary().split("/Renode.app")[0]}), or set FABWRIGHT_RENODE_BIN to Renode 1.17's executable.`;
+      return `Renode did not run as '${bin}' (${v.error?.message ?? (v.stderr || "").trim()}). Why: ${bin === "renode" ? "Faber's Renode is not installed and none is on PATH" : "the install is damaged or macOS blocked it"}. Fix: run \`faber setup renode\` (installs Renode 1.17.0 in ${faberRenodeBinary().split("/Renode.app")[0]}), or set FABER_RENODE_BIN to Renode 1.17's executable.`;
     }
     return undefined;
   }
   const info = probeDocker();
   if (!info.ok) {
     return nativeRenodeInstalled()
-      ? `This board runs in Renode, the runtime is forced to Docker, and ${info.why}. Fix: unset FABWRIGHT_RUNTIME / FABWRIGHT_RENODE_RUNTIME (Fabwright's native Renode is installed), or start Docker Desktop, then run again.`
-      : `This board runs in Renode, and neither runtime is ready: ${info.why}, and Renode is not installed natively. Fix: run \`fabwright setup renode\` (native Renode 1.17.0, no Docker needed), or start Docker Desktop (restart it if it hangs; free disk space if it is full), then run again.`;
+      ? `This board runs in Renode, the runtime is forced to Docker, and ${info.why}. Fix: unset FABER_RUNTIME / FABER_RENODE_RUNTIME (Faber's native Renode is installed), or start Docker Desktop, then run again.`
+      : `This board runs in Renode, and neither runtime is ready: ${info.why}, and Renode is not installed natively. Fix: run \`faber setup renode\` (native Renode 1.17.0, no Docker needed), or start Docker Desktop (restart it if it hangs; free disk space if it is full), then run again.`;
   }
   const img = spawnSync("docker", ["image", "inspect", image], { stdio: "ignore", timeout: 15_000 });
   if (img.status !== 0) {
-    return `The Renode emulator image ${image} is not on this machine (or Docker cannot read it). Fix: build it once from the Fabwright repo with \`docker build -t ${image} toolchains/renode\` (about 1 minute, 650 MB), then run again.`;
+    return `The Renode emulator image ${image} is not on this machine (or Docker cannot read it). Fix: build it once from the Faber repo with \`docker build -t ${image} toolchains/renode\` (about 1 minute, 650 MB), then run again.`;
   }
   return undefined;
 }

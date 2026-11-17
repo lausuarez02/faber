@@ -1,26 +1,26 @@
-# Project format: `fabwright.json`
+# Project format: `faber.json`
 
-A Fabwright project is a folder:
+A Faber project is a folder:
 
 ```
 my-project/
-  fabwright.json          parts, positions, wires, firmware, scenarios
+  faber.json          parts, positions, wires, firmware, scenarios
   firmware/            sketch sources and the built binary
     blink/blink.ino    arduino-cli wants the sketch in a folder of the same name
-    blink.hex          the built image that fabwright.json points at
+    blink.hex          the built image that faber.json points at
 ```
 
-`fabwright.json` is plain JSON. A person, the app, an AI agent or a script can write it, and it is designed to be reviewed in a pull request. The format is defined by a zod schema in [`@fabwright/project-format`](../packages/project-format/src/schema.ts). The same schema is exported as JSON Schema (draft 2020-12) at [`packages/project-format/fabwright.schema.json`](../packages/project-format/fabwright.schema.json), so editors can autocomplete and validate it.
+`faber.json` is plain JSON. A person, the app, an AI agent or a script can write it, and it is designed to be reviewed in a pull request. The format is defined by a zod schema in [`@faber/project-format`](../packages/project-format/src/schema.ts). The same schema is exported as JSON Schema (draft 2020-12) at [`packages/project-format/faber.schema.json`](../packages/project-format/faber.schema.json), so editors can autocomplete and validate it.
 
-The current version is **`fabwright/1`**.
+The current version is **`faber/1`**.
 
 ## Annotated example
 
-This is [`examples/blink/fabwright.json`](../examples/blink/fabwright.json). JSON has no comments, so the notes are below the file.
+This is [`examples/blink/faber.json`](../examples/blink/faber.json). JSON has no comments, so the notes are below the file.
 
 ```jsonc
 {
-  "format": "fabwright/1",                                   // (1)
+  "format": "faber/1",                                   // (1)
   "name": "Blink",
   "description": "The Arduino Blink sketch: pin D13 drives a red LED through a 220 ohm resistor, on for 1 s, off for 1 s.",
   "parts": [                                              // (2)
@@ -47,7 +47,7 @@ This is [`examples/blink/fabwright.json`](../examples/blink/fabwright.json). JSO
 }
 ```
 
-1. **`format`** is required and must be exactly `"fabwright/1"`. A future breaking change gets a new version and a migration.
+1. **`format`** is required and must be exactly `"faber/1"`. A future breaking change gets a new version and a migration.
 2. **`parts`**: one entry per part placed on the canvas.
    - `id` is your name for this instance. It starts with a letter and may contain letters, digits, `_` and `-`. It must be unique within the project.
    - `type` is a part id from the parts registry (`packages/parts/src/parts/<type>/`).
@@ -57,7 +57,7 @@ This is [`examples/blink/fabwright.json`](../examples/blink/fabwright.json). JSO
 3. **`wires`** connect two pins. A pin is referenced as `{ part, pin }`, where `pin` is a pin id from that part's `part.json` (for example `D13`, `GND.1`, `A` for an LED anode, `C` for its cathode). `color` is any CSS color. `waypoints` is an optional list of `{x, y}` bend points. Wires carry no direction: `from` and `to` are interchangeable.
 4. **`firmware`** is optional, so a blank canvas has none.
    - `board` is the part id of the microcontroller board that runs the firmware.
-   - `artifact` is the built binary (Intel HEX for AVR), relative to `fabwright.json`.
+   - `artifact` is the built binary (Intel HEX for AVR), relative to `faber.json`.
    - `sketch` and `build` say how to rebuild it. M0 supports `arduino-cli` with an FQBN.
    - `language` (round 10, optional, default `"arduino"`): `"micropython"` (main file `main.py`,
      `build.tool` `"micropython"`), `"esp-idf"` (`main/main.c`, `build.target`), `"platformio"`
@@ -77,7 +77,7 @@ This is [`examples/blink/fabwright.json`](../examples/blink/fabwright.json). JSO
 Errors come back with a readable path, for example:
 
 ```
-Invalid fabwright.json (1 problem):
+Invalid faber.json (1 problem):
   - wires[0].to.part: wire 'w1' points at part 'r9', which is not in parts
 ```
 
@@ -85,7 +85,7 @@ The file format does **not** check pin ids against the parts registry, because t
 
 ## Diff-friendliness rules
 
-`serializeProject` is the only way Fabwright writes `fabwright.json`. For the same project it always produces exactly the same bytes, so git diffs show only real changes:
+`serializeProject` is the only way Faber writes `faber.json`. For the same project it always produces exactly the same bytes, so git diffs show only real changes:
 
 | Rule | Why |
 | --- | --- |
@@ -96,7 +96,7 @@ The file format does **not** check pin ids against the parts registry, because t
 | **Defaults are written out** (`"rotation": 0`). | A line doesn't change shape when you rotate a part later. |
 | **2-space indent, `\n` line endings, trailing newline.** | Matches `.editorconfig`, and avoids "no newline at end of file" noise. |
 
-If you hand-edit `fabwright.json`, any formatting is accepted. The next save from Fabwright normalizes it.
+If you hand-edit `faber.json`, any formatting is accepted. The next save from Faber normalizes it.
 
 ## Nets
 
@@ -105,16 +105,16 @@ The simulator never stores nets. It derives them from wires with `buildNets`, a 
 ## Using it from code
 
 ```ts
-import { parseProject, serializeProject, buildNets } from "@fabwright/project-format";
+import { parseProject, serializeProject, buildNets } from "@faber/project-format";
 
-const project = parseProject(await readFile("fabwright.json", "utf8")); // throws ProjectParseError
+const project = parseProject(await readFile("faber.json", "utf8")); // throws ProjectParseError
 project.parts.push({ id: "led2", type: "led", x: 600, y: 40, rotation: 0 });
-await writeFile("fabwright.json", serializeProject(project));
+await writeFile("faber.json", serializeProject(project));
 ```
 
-The full API is in [contracts.md](contracts.md#fabwrightproject-format).
+The full API is in [contracts.md](contracts.md#faberproject-format).
 
 ## Versioning
 
-- Adding an optional field is not a breaking change. The format stays `fabwright/1`.
-- Renaming or removing a field, or changing what a value means, bumps the version to `fabwright/2`. That version ships with a migration from `fabwright/1`.
+- Adding an optional field is not a breaking change. The format stays `faber/1`.
+- Renaming or removing a field, or changing what a value means, bumps the version to `faber/2`. That version ships with a migration from `faber/1`.

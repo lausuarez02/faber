@@ -2,7 +2,7 @@
 // F411, Nucleo-F401RE, Arduino Nano 33 BLE, Seeed XIAO nRF52840). The pins are the generic MCU board
 // model's (outputs as sources, pull-ups, inputs fed back to the emulator after every solve); the
 // board adds its on-board LEDs and, where it has one, its power path.
-import { createMcuBoardModel, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@fabwright/sim-core";
+import { createMcuBoardModel, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@faber/sim-core";
 
 export interface RenodeBoardModelOptions {
   rails: Record<string, number>;

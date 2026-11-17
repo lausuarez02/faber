@@ -1,4 +1,4 @@
-import type { PartModelFactory } from "@fabwright/sim-core";
+import type { PartModelFactory } from "@faber/sim-core";
 import { createBjtModel } from "../../lib/bjt.ts";
 
 /** Typical hFE (datasheet: 2N2907A 100-300, BC557B 200-450) and ratings. */

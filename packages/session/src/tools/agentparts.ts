@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { AGENT_MADE_LABEL, compileCustomPart, registry as builtinRegistry, withProjectParts, customPartJsonSchema, CustomPartError, type CompiledCustomPart, type CustomPart, type ProjectPartRegistry } from "@fabwright/parts";
-import { projectPartsStamp, readProjectParts } from "@fabwright/parts/node";
-import type { PartDefinition, PartRegistry } from "@fabwright/sim-core";
+import { AGENT_MADE_LABEL, compileCustomPart, registry as builtinRegistry, withProjectParts, customPartJsonSchema, CustomPartError, type CompiledCustomPart, type CustomPart, type ProjectPartRegistry } from "@faber/parts";
+import { projectPartsStamp, readProjectParts } from "@faber/parts/node";
+import type { PartDefinition, PartRegistry } from "@faber/sim-core";
 import { didYouMean, fail } from "../errors.ts";
 import type { ProjectSession } from "../session.ts";
 import type { ExtOpContext, ToolModule } from "./types.ts";
@@ -217,7 +217,7 @@ const partSchema = (() => {
   delete s.$schema;
   delete s.$id;
   delete s.title;
-  return { ...s, description: "The part, format fabwright-part/1: pins, physical data and one behavior template. docs/custom-parts.md has an example per behavior kind." };
+  return { ...s, description: "The part, format faber-part/1: pins, physical data and one behavior template. docs/custom-parts.md has an example per behavior kind." };
 })();
 
 export const agentPartsTools: ToolModule = {
@@ -248,7 +248,7 @@ export const agentPartsTools: ToolModule = {
         type: "object",
         properties: {
           id: { type: "string", description: "The part type id given to create_part." },
-          part: { type: "object", description: "The whole new definition (fabwright-part/1, same schema as create_part), same id.", additionalProperties: true },
+          part: { type: "object", description: "The whole new definition (faber-part/1, same schema as create_part), same id.", additionalProperties: true },
           svg: { type: ["string", "null"], description: "New SVG, or null to use the generated drawing." },
           why,
         },

@@ -1,5 +1,5 @@
 /*
- * Fabwright design tokens (UI v2, see docs/design/ui-v2.md). Dark-first.
+ * Faber design tokens (UI v2, see docs/design/ui-v2.md). Dark-first.
  * Default (no data-theme) follows the OS: dark unless the OS prefers light.
  * Force a theme with <html data-theme="dark"> or <html data-theme="light">.
  *

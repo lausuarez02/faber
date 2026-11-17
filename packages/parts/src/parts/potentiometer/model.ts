@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
 import { clamp, num, round } from "../../lib/props.ts";
 
 /** Wiper contact resistance (Ω); also keeps the ends finite at position 0 / 1. */

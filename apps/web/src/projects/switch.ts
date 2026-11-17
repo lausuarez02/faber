@@ -1,5 +1,5 @@
-import type { Project } from "@fabwright/project-format";
-import { engine, useFabwright } from "../lib/app.ts";
+import type { Project } from "@faber/project-format";
+import { engine, useFaber } from "../lib/app.ts";
 import { emitProjectSwitch, onProjectSwitch, type ProjectSwitch } from "../lib/projectSwitch.ts";
 import { forgetFirmware } from "../live/followRun.ts";
 import { useLive } from "../live/liveStore.ts";
@@ -36,7 +36,7 @@ export function switchProject(project: Project, dir: string, load: (p: Project) 
   if (reason === "open") {
     engine.stop();
     forgetFirmware();
-    const s = useFabwright.getState();
+    const s = useFaber.getState();
     s.setFirmware({ status: project.firmware ? "loading" : "none" });
     s.setSimError(undefined);
   }
@@ -44,7 +44,7 @@ export function switchProject(project: Project, dir: string, load: (p: Project) 
   emitProjectSwitch({ id: shownId, reason });
   // Someone new starts on the Projects page (pitch + cards), not on a canvas they did not ask for.
   if (first && landOnProjects(project, dir)) useProjectsUi.getState().setHome(true);
-  if (reason === "open" && !first) useFabwright.getState().toast({ kind: "info", title: `Opened ${project.name}` });
+  if (reason === "open" && !first) useFaber.getState().toast({ kind: "info", title: `Opened ${project.name}` });
   return reason;
 }
 
@@ -102,7 +102,7 @@ export async function refreshCodeCard(): Promise<void> {
 onProjectSwitch(({ reason }) => {
   if (reason !== "open") return;
   // Messages about the old project: toasts, the live caption, test results, the code card.
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   for (const t of s.toasts) s.dismissToast(t.id);
   useLive.getState().set({
     code: undefined,

@@ -2,14 +2,14 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { fabwrightHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, registerProject, unregisterProject } from "../src/index.ts";
+import { faberHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, registerProject, unregisterProject } from "../src/index.ts";
 
-const tmp = mkdtempSync(join(tmpdir(), "fabwright-home-"));
+const tmp = mkdtempSync(join(tmpdir(), "faber-home-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 describe("projects registry", () => {
-  it("follows FABWRIGHT_HOME, adds, touches and removes entries", () => {
-    expect(fabwrightHome({ FABWRIGHT_HOME: tmp })).toBe(tmp);
+  it("follows FABER_HOME, adds, touches and removes entries", () => {
+    expect(faberHome({ FABER_HOME: tmp })).toBe(tmp);
     const file = join(tmp, "projects.json");
     expect(listRegisteredProjects(file)).toEqual([]);
     registerProject("/x/a", { name: "A", source: "agent" }, file, "2026-01-01T00:00:00.000Z");

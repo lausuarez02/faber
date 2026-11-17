@@ -1,16 +1,16 @@
 // The tamagotchi reference project (examples/tamagotchi) end to end: real compiled firmware
 // (Adafruit_SSD1306 over Wire) on the simulated Uno, the OLED, three buttons and the buzzer.
-// The scenario tests in its fabwright.json cover the same behaviour through the scenario runner.
+// The scenario tests in its faber.json cover the same behaviour through the scenario runner.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation, monoPixel } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
+import { parseProject } from "@faber/project-format";
+import { Simulation, monoPixel } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
 import { registry } from "./registry.gen.ts";
 import { frameOf, serialLines } from "./lib/firmwareBench.ts";
 
 const base = new URL("../../../examples/tamagotchi/", import.meta.url);
-const project = parseProject(readFileSync(new URL("fabwright.json", base), "utf8"));
+const project = parseProject(readFileSync(new URL("faber.json", base), "utf8"));
 const hex = readFileSync(new URL("firmware/tamagotchi.hex", base), "utf8");
 const boot = () => new Simulation({ project, registry, backendFactory, firmware: hex });
 

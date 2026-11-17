@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Fabwright's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Fabwright's parts through Fabwright's bridge (every signal time-stamped to the instruction). Serial is USB CDC on the real board, which is not emulated: Fabwright's simulator build prints Serial on Serial1 (UARTE0, D0 / D1) instead."
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Faber's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Faber's parts through Faber's bridge (every signal time-stamped to the instruction). Serial is USB CDC on the real board, which is not emulated: Faber's simulator build prints Serial on Serial1 (UARTE0, D0 / D1) instead."
     },
     "timing": {
       "level": "approx",
@@ -11,7 +11,7 @@
     },
     "analog": {
       "level": "approx",
-      "note": "Pins are ideal sources (standard drive, a few hundred \u03a9) with 13 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead goes through Fabwright's SAADC model: the solved voltage on the AIN pin, with the gain, reference and resolution the core sets; no noise, offset or acquisition time."
+      "note": "Pins are ideal sources (standard drive, a few hundred \u03a9) with 13 k\u03a9 pull-ups; inputs switch at 0.3 / 0.7 x 3.3 V. analogRead goes through Faber's SAADC model: the solved voltage on the AIN pin, with the gain, reference and resolution the core sets; no noise, offset or acquisition time."
     },
     "power": {
       "level": "approx",
@@ -19,17 +19,17 @@
     },
     "radio": {
       "level": "none",
-      "note": "Bluetooth LE is not emulated. Renode 1.17 has an nRF52840 RADIO model, but Fabwright does not connect it to anything: advertising, scanning and connections do nothing (BLE.begin() / Bluefruit.begin() may fail or hang). Test radio code on the real board."
+      "note": "Bluetooth LE is not emulated. Renode 1.17 has an nRF52840 RADIO model, but Faber does not connect it to anything: advertising, scanning and connections do nothing (BLE.begin() / Bluefruit.begin() may fail or hang). Test radio code on the real board."
     }
   },
   "emulates": [
-    "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (fabwright/renode image)",
+    "nRF52840 Cortex-M4F and the peripherals Arduino sketches use, in Renode 1.17 (faber/renode image)",
     "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
     "Serial1 (UARTE0) with per-byte virtual time",
     "Wire (TWIM0) to the I2C parts on the board's default pins",
     "SPI (SPIM2) to the SPI parts on the board's default pins",
-    "analogRead through Fabwright's SAADC model",
-    "analogWrite / Servo / tone through Fabwright's PWM0..3 model (period and duty drawn as exact edges)"
+    "analogRead through Faber's SAADC model",
+    "analogWrite / Servo / tone through Faber's PWM0..3 model (period and duty drawn as exact edges)"
   ],
   "doesNotEmulate": [
     "Bluetooth LE and the 2.4 GHz radio",

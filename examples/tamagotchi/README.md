@@ -1,6 +1,6 @@
 # Tamagotchi pet
 
-Fabwright's reference "small device with a pixel pet": an Arduino Uno, a 128x64 SSD1306 OLED on
+Faber's reference "small device with a pixel pet": an Arduino Uno, a 128x64 SSD1306 OLED on
 I2C, three buttons and an active buzzer. The pet has food, happiness and energy; you feed it,
 play with it and put it to sleep, and it beeps when it needs you.
 
@@ -41,7 +41,7 @@ module.
 
 ## Tests
 
-`fabwright.json` has six scenarios (run them with `fabwright test` or the `run_tests` tool):
+`faber.json` has six scenarios (run them with `faber test` or the `run_tests` tool):
 `boots-and-draws`, `feed-fills-food`, `play-beeps`, `sleep-and-wake`, `neglect-makes-it-sad`,
 `runs-headless-without-display` (injects an I2C NACK on the OLED). They are deterministic: the
 same numbers every run. `packages/parts/src/tamagotchi.integration.test.ts` checks the same

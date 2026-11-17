@@ -257,7 +257,7 @@ export async function buildCase(L: Layout): Promise<Built> {
   const notes: string[] = [];
   const zOutF = L.zFront + t;
   const zOutB = L.zBack - t;
-  const prof = process.env.FABWRIGHT_CASE_PROFILE ? (() => { let t0 = Date.now(); return (what: string) => { console.log(`[case] ${what} ${Date.now() - t0} ms`); t0 = Date.now(); }; })() : () => {};
+  const prof = process.env.FABER_CASE_PROFILE ? (() => { let t0 = Date.now(); return (what: string) => { console.log(`[case] ${what} ${Date.now() - t0} ms`); t0 = Date.now(); }; })() : () => {};
   // Round 17: a flat-faced case is built with sharp rims (every boolean on a plain extrusion is fast
   // and sound) and rounded at the end by one intersection per shell with the rounded outer body; a
   // domed one is rounded from the start (its rim is where the dome meets the side).

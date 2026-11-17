@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import type { PropSpec } from "@fabwright/sim-core";
-import type { PropValue } from "@fabwright/project-format";
-import { engine, useFabwright } from "../lib/app.ts";
+import type { PropSpec } from "@faber/sim-core";
+import type { PropValue } from "@faber/project-format";
+import { engine, useFaber } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { WIRE_COLORS } from "../lib/store.ts";
 import { RotateCw, Trash2 } from "lucide-react";
-import { boardWiring, descriptionForBoard } from "@fabwright/parts";
+import { boardWiring, descriptionForBoard } from "@faber/parts";
 import { pressPart, releasePart } from "../interact/press.ts";
 import { CameraPanel } from "../interact/CameraPanel.tsx";
 
@@ -19,10 +19,10 @@ const NAMED_COLORS: Record<string, string> = {
 };
 
 export function Inspector() {
-  const selectedParts = useFabwright((s) => s.selectedParts);
-  const selectedWires = useFabwright((s) => s.selectedWires);
-  const project = useFabwright((s) => s.project);
-  const simError = useFabwright((s) => s.simError);
+  const selectedParts = useFaber((s) => s.selectedParts);
+  const selectedWires = useFaber((s) => s.selectedWires);
+  const project = useFaber((s) => s.project);
+  const simError = useFaber((s) => s.simError);
 
   const partId = selectedParts.length === 1 ? selectedParts[0] : undefined;
   const part = partId ? project.parts.find((p) => p.id === partId) : undefined;
@@ -42,8 +42,8 @@ export function Inspector() {
 }
 
 function Overview() {
-  const project = useFabwright((s) => s.project);
-  const n = useFabwright((s) => s.selectedParts.length + s.selectedWires.length);
+  const project = useFaber((s) => s.project);
+  const n = useFaber((s) => s.selectedParts.length + s.selectedWires.length);
   return (
     <div className="insp-body">
       {n > 1 ? (
@@ -83,8 +83,8 @@ function boardSpecOf(project: { parts: { id: string; type: string }[]; firmware?
 }
 
 function PartInspector({ partId }: { partId: string }) {
-  const part = useFabwright((s) => s.project.parts.find((p) => p.id === partId));
-  const project = useFabwright((s) => s.project);
+  const part = useFaber((s) => s.project.parts.find((p) => p.id === partId));
+  const project = useFaber((s) => s.project);
   if (!part) return null;
   const def = getDef(part.type);
   if (!def) return <div className="insp-body muted">Unknown part type “{part.type}”.</div>;
@@ -150,15 +150,15 @@ function PartInspector({ partId }: { partId: string }) {
           key={prop.id}
           prop={prop}
           value={part.props?.[prop.id] ?? prop.default}
-          onChange={(v) => useFabwright.getState().setPartProp(part.id, prop.id, v)}
+          onChange={(v) => useFaber.getState().setPartProp(part.id, prop.id, v)}
         />
       ))}
 
       <div className="insp-row">
-        <button className="btn" onClick={() => useFabwright.getState().rotateSelected()}>
+        <button className="btn" onClick={() => useFaber.getState().rotateSelected()}>
           <RotateCw size={15} strokeWidth={1.6} aria-hidden /> Rotate
         </button>
-        <button className="btn btn-danger" onClick={() => useFabwright.getState().removeItems([part.id], [])}>
+        <button className="btn btn-danger" onClick={() => useFaber.getState().removeItems([part.id], [])}>
           <Trash2 size={15} strokeWidth={1.6} aria-hidden /> Delete
         </button>
       </div>
@@ -313,7 +313,7 @@ function fmtNum(n: number): string {
 }
 
 function WireInspector({ wireId }: { wireId: string }) {
-  const wire = useFabwright((s) => s.project.wires.find((w) => w.id === wireId));
+  const wire = useFaber((s) => s.project.wires.find((w) => w.id === wireId));
   if (!wire) return null;
   return (
     <div className="insp-body" data-testid="wire-inspector">
@@ -335,7 +335,7 @@ function WireInspector({ wireId }: { wireId: string }) {
               aria-checked={c.toLowerCase() === (wire.color ?? "").toLowerCase()}
               className="swatch"
               style={{ background: c }}
-              onClick={() => useFabwright.getState().setWireColor(wire.id, c)}
+              onClick={() => useFaber.getState().setWireColor(wire.id, c)}
             />
           ))}
         </div>
@@ -344,7 +344,7 @@ function WireInspector({ wireId }: { wireId: string }) {
         </p>
       </div>
       <div className="insp-row">
-        <button className="btn btn-danger" onClick={() => useFabwright.getState().removeItems([], [wire.id])}>
+        <button className="btn btn-danger" onClick={() => useFaber.getState().removeItems([], [wire.id])}>
           <Trash2 size={15} strokeWidth={1.6} aria-hidden /> Delete wire
         </button>
       </div>

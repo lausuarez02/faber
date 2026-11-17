@@ -31,7 +31,7 @@ const MOCKS = parseMocks({
 });
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-netstack-"));
+  dir = mkdtempSync(join(tmpdir(), "faber-netstack-"));
   ca = await SandboxCA.open(join(dir, "ca"));
 });
 afterAll(() => rmSync(dir, { recursive: true, force: true }));

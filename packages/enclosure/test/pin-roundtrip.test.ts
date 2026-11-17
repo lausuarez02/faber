@@ -3,7 +3,7 @@
 // keep it there (the rest arranged around it), whatever the face its opening goes through.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 import { describe, expect, it } from "vitest";
 import { layoutInput } from "../src/engine.ts";
 import { layoutCase, proposeLayouts } from "../src/proposals.ts";

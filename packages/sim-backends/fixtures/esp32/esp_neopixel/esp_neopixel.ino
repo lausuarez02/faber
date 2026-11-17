@@ -1,4 +1,4 @@
-// Fabwright golden fixture (ESP32 family): 8 WS2812 LEDs through the RMT (Adafruit NeoPixel).
+// Faber golden fixture (ESP32 family): 8 WS2812 LEDs through the RMT (Adafruit NeoPixel).
 #include <Adafruit_NeoPixel.h>
 #include "esp_pins.h"
 

@@ -1,8 +1,8 @@
 // Coin ERM vibration motor on a driver board: IN → 1 kΩ → NPN base, motor from VCC to the
 // collector, flyback diode across it. The motor is the dc-motor model (lib/innerMotor.ts) with the
 // constants of a 3 V 1027 coin motor (12 000 rpm, 75 mA running).
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { innerMotor } from "../../lib/innerMotor.ts";
 import { clamp, round } from "../../lib/props.ts";
 

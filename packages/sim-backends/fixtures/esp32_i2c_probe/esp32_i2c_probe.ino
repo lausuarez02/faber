@@ -1,5 +1,5 @@
 // Fixture for the qemu-esp backend I2C test (ESP32 only: the S3/C3 machines model no I2C controller).
-// Scans, reads the QEMU-internal tmp105 at 0x48, then writes and reads a part living in Fabwright at 0x3c.
+// Scans, reads the QEMU-internal tmp105 at 0x48, then writes and reads a part living in Faber at 0x3c.
 #include <Wire.h>
 void setup() {
   Serial.begin(115200);

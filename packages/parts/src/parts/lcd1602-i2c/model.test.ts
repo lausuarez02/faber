@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GROUND, base64ToBytes } from "@fabwright/sim-core";
+import { GROUND, base64ToBytes } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 import { i2cWires, serialLines, unoBench } from "../../lib/firmwareBench.ts";
@@ -80,7 +80,7 @@ describe("lcd1602-i2c: real firmware (LiquidCrystal_PCF8574)", { timeout: 120_00
     sim.runFor(2600);
     expect(serialLines(sim)[0]).toBe("LCD ready");
     const s = sim.partState("lcd")!;
-    expect(s.line0).toBe("Hi, Fabwright ▯ ");
+    expect(s.line0).toBe("Hi, Faber ▯     ");
     expect(s.line1).toBe("t=2s            ");
     expect(s.backlight).toBe(true);
     expect([...base64ToBytes(String(s.cgram)).slice(0, 8)]).toEqual([0, 10, 31, 31, 14, 4, 0, 0]);
@@ -93,10 +93,10 @@ describe("lcd1602-i2c: real firmware (LiquidCrystal_PCF8574)", { timeout: 120_00
     expect(serialLines(sim)[0]).toBe("LCD not found at 0x27: check wiring and address");
   });
 
-  it("works with the LiquidCrystal_I2C API (Fabwright's Apache-2.0 implementation)", () => {
+  it("works with the LiquidCrystal_I2C API (Faber's Apache-2.0 implementation)", () => {
     const sim = unoBench({ parts: [{ id: "lcd", type: "lcd1602-i2c", x: 0, y: 0 }], wires: i2cWires("lcd"), hex: "./example-liquidcrystal-i2c.hex", base: import.meta.url });
     sim.runFor(1400);
     expect(serialLines(sim)[0]).toBe("LCD ready");
-    expect(sim.partState("lcd")).toMatchObject({ line0: "Hello, world!   ", line1: "   Fabwright LCD", backlight: true, on: true });
+    expect(sim.partState("lcd")).toMatchObject({ line0: "Hello, world!   ", line1: "   Faber LCD    ", backlight: true, on: true });
   });
 });

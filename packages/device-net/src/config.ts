@@ -1,4 +1,4 @@
-// The project's network section (fabwright.json "network") and its mock file (network/mocks.json).
+// The project's network section (faber.json "network") and its mock file (network/mocks.json).
 // Plain data, git-friendly, no secret values anywhere: secrets are referenced by name only.
 import { parseLocalTarget, type LocalTarget } from "./local.ts";
 import type { OpenApiMock } from "./openapi.ts";
@@ -17,7 +17,7 @@ export interface AllowEntry {
   /** Default [443, 80]. */
   ports?: number[];
   /**
-   * inspect (default): Fabwright terminates TLS with the sandbox CA, so it can log paths, inject
+   * inspect (default): Faber terminates TLS with the sandbox CA, so it can log paths, inject
    * secrets, record cassettes. passthrough: the bytes go end to end; only host, port, bytes and
    * timing are logged, no secret injection.
    */
@@ -56,7 +56,7 @@ export interface NetworkConfig {
   relay?: RelayOptions;
 }
 
-/** The API relay's limits, per device (fabwright.json network.relay). Defaults in relay-core.mjs DEFAULT_LIMITS. */
+/** The API relay's limits, per device (faber.json network.relay). Defaults in relay-core.mjs DEFAULT_LIMITS. */
 export interface RelayOptions {
   requests_per_minute?: number;
   max_request_kb?: number;
@@ -135,7 +135,7 @@ export class ConfigError extends Error {
 const NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
 const HOST_RE = /^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
 
-/** Validate fabwright.json "network". Throws ConfigError with why / fix / field. */
+/** Validate faber.json "network". Throws ConfigError with why / fix / field. */
 export function parseNetworkConfig(raw: unknown): NetworkConfig {
   const r = (raw ?? {}) as Record<string, unknown>;
   const mode = (r.mode ?? "mock") as NetMode;
@@ -145,7 +145,7 @@ export function parseNetworkConfig(raw: unknown): NetworkConfig {
   const secrets = (r.secrets ?? []) as string[];
   for (const s of secrets) {
     if (typeof s !== "string" || !NAME_RE.test(s)) {
-      throw new ConfigError(`network.secrets: '${String(s)}' is not a secret name`, "secret names are UPPER_SNAKE_CASE (like OPENAI_API_KEY); fabwright.json holds names only, never values", 'list the name only, e.g. "secrets": ["OPENAI_API_KEY"], and put the value in .env', "network.secrets");
+      throw new ConfigError(`network.secrets: '${String(s)}' is not a secret name`, "secret names are UPPER_SNAKE_CASE (like OPENAI_API_KEY); faber.json holds names only, never values", 'list the name only, e.g. "secrets": ["OPENAI_API_KEY"], and put the value in .env', "network.secrets");
     }
   }
   const allow = ((r.allow ?? []) as AllowEntry[]).map((a, i) => {
@@ -163,11 +163,11 @@ export function parseNetworkConfig(raw: unknown): NetworkConfig {
         }
       }
       if (!/\{\{\s*secret:/.test(v) && /(sk-|Bearer\s+[A-Za-z0-9_-]{16,})/.test(v)) {
-        throw new ConfigError(`${field}.headers.${h} looks like a literal API key`, "fabwright.json is committed and exported; a key in it leaks", `use a template: "Bearer {{secret:NAME}}" and put NAME=... in .env`, `${field}.headers.${h}`);
+        throw new ConfigError(`${field}.headers.${h} looks like a literal API key`, "faber.json is committed and exported; a key in it leaks", `use a template: "Bearer {{secret:NAME}}" and put NAME=... in .env`, `${field}.headers.${h}`);
       }
     }
     if (a.tls === "passthrough" && (a.headers || a.secrets?.length)) {
-      throw new ConfigError(`${field}: ${a.host} is passthrough but asks for headers / secrets`, "with tls passthrough the request is encrypted end to end, so Fabwright cannot add a header", 'use "tls": "inspect" (the default) for hosts that need a secret', `${field}.tls`);
+      throw new ConfigError(`${field}: ${a.host} is passthrough but asks for headers / secrets`, "with tls passthrough the request is encrypted end to end, so Faber cannot add a header", 'use "tls": "inspect" (the default) for hosts that need a secret', `${field}.tls`);
     }
     if (a.local !== undefined && typeof a.local !== "boolean") throw new ConfigError(`${field}.local must be true or false`, "it opts one host in to reaching this computer or the local network", '"local": true', `${field}.local`);
     if ((a.local || a.to !== undefined) && a.host.startsWith("*.")) {
@@ -229,7 +229,7 @@ function parseRelayOptions(raw: unknown): RelayOptions {
 function parseWifi(raw: unknown): { ssid: string; password?: string; rssi?: number } {
   const w = raw as { ssid?: unknown; password?: unknown; rssi?: unknown };
   if (typeof w?.ssid !== "string" || !w.ssid || w.ssid.length > 32) {
-    throw new ConfigError("network.wifi.ssid is missing or longer than 32 characters", "the sandbox plays one Wi-Fi network, named by ssid (what the sketch passes to WiFi.begin)", '"wifi": {"ssid": "FabwrightNet"}, or remove network.wifi to accept any SSID', "network.wifi.ssid");
+    throw new ConfigError("network.wifi.ssid is missing or longer than 32 characters", "the sandbox plays one Wi-Fi network, named by ssid (what the sketch passes to WiFi.begin)", '"wifi": {"ssid": "FaberNet"}, or remove network.wifi to accept any SSID', "network.wifi.ssid");
   }
   if (w.password !== undefined && (typeof w.password !== "string" || w.password.length > 64)) {
     throw new ConfigError("network.wifi.password must be a string of at most 64 characters", "it is only compared with what the sketch sends, to rehearse a wrong password", "remove it to accept any password", "network.wifi.password");

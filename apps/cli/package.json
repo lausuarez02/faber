@@ -1,12 +1,12 @@
 {
-  "name": "@fabwright/cli",
+  "name": "@faber/cli",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "The fabwright command: every Fabwright operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
+  "description": "The faber command: every Faber operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
   "bin": {
-    "fabwright": "./bin/fabwright.mjs",
+    "faber": "./bin/faber.mjs",
     "jumper": "./bin/jumper.mjs"
   },
   "exports": {
@@ -16,11 +16,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fabwright/agent-skill": "workspace:*",
-    "@fabwright/mcp": "workspace:*",
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/runner": "workspace:*",
-    "@fabwright/session": "workspace:*",
+    "@faber/agent-skill": "workspace:*",
+    "@faber/mcp": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/runner": "workspace:*",
+    "@faber/session": "workspace:*",
     "tsx": "4.23.15",
     "yaml": "^2.9.1"
   }

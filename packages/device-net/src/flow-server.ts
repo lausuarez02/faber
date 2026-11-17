@@ -2,8 +2,8 @@
 // processes (QEMU in a container, a netstack sidecar, Renode). Each flow is one local socket that
 // starts with a header line, then carries raw bytes both ways:
 //
-//   FABWRIGHT-FLOW/1 tcp <dst-ip> <dst-port>\n           then the TCP payload, both directions
-//   FABWRIGHT-FLOW/1 udp <dst-ip> <dst-port> <len>\n<payload>  answered with  <len>\n<payload> (len 0: none)
+//   FABER-FLOW/1 tcp <dst-ip> <dst-port>\n           then the TCP payload, both directions
+//   FABER-FLOW/1 udp <dst-ip> <dst-port> <len>\n<payload>  answered with  <len>\n<payload> (len 0: none)
 //
 // The device's own addresses never matter: the gateway identifies hosts by the sandbox DNS answer
 // (fake IPs), so the adapter only has to say where the device was trying to go. Listens on
@@ -12,7 +12,7 @@ import net from "node:net";
 import type { DeviceNet } from "./gateway.ts";
 
 // JUMPER-FLOW/1: the same header from a client written before the rename.
-const HEADER = /^(?:FABWRIGHT|JUMPER)-FLOW\/1 (tcp|udp) (\d+\.\d+\.\d+\.\d+) (\d+)(?: (\d+))?$/;
+const HEADER = /^(?:FABER|JUMPER)-FLOW\/1 (tcp|udp) (\d+\.\d+\.\d+\.\d+) (\d+)(?: (\d+))?$/;
 
 export function serveFlows(dn: DeviceNet, listen: { port?: number; path?: string }): Promise<net.Server> {
   const server = net.createServer((sock) => {
@@ -26,7 +26,7 @@ export function serveFlows(dn: DeviceNet, listen: { port?: number; path?: string
       }
       const m = HEADER.exec(buf.subarray(0, nl).toString("latin1"));
       if (!m) {
-        sock.end("ERR expected: FABWRIGHT-FLOW/1 tcp|udp <ip> <port>\n");
+        sock.end("ERR expected: FABER-FLOW/1 tcp|udp <ip> <port>\n");
         return;
       }
       const rest = buf.subarray(nl + 1);

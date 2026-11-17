@@ -1,4 +1,4 @@
-// Renode board fixture: the buses and peripherals a sketch uses, through Fabwright's bridge.
+// Renode board fixture: the buses and peripherals a sketch uses, through Faber's bridge.
 //   Wire     scan 0x46..0x49 (prints "i2c 0x<addr>"), then each loop writes register 0x00 to 0x48 and reads 2 bytes
 //   SPI      CS on the board's SS pin LOW, transfer 0x9F 0x00, CS HIGH; prints the two MISO bytes
 //   ADC      analogRead on the board's first analog pin (12-bit where the core allows)

@@ -3,18 +3,18 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
-import { FabwrightError, ProjectSession, registerProject, TOOLS } from "@fabwright/session";
-import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
+import { FaberError, ProjectSession, registerProject, TOOLS } from "@faber/session";
+import { projectFilePath, stateDirPath } from "@faber/project-format/node";
 
 /**
- * `fabwright`: the same operations as the MCP tools, as subcommands. Human output is YAML; --json prints
+ * `faber`: the same operations as the MCP tools, as subcommands. Human output is YAML; --json prints
  * the exact tool result as one JSON line. Exit code 0 = ok, 1 = the operation failed (or tests failed /
  * design errors), 2 = bad command line.
  */
 
-const HELP = `fabwright: hardware sandbox CLI (same operations as the MCP server)
+const HELP = `faber: hardware sandbox CLI (same operations as the MCP server)
 
-Usage: fabwright <command> [args] [--project <dir>] [--json]
+Usage: faber <command> [args] [--project <dir>] [--json]
 
 Project
   new <dir> [--template blank|uno|nano|blink|pico-micropython|...] [--name N] [--overwrite]
@@ -24,7 +24,7 @@ Project
   place <type> [--id I] [--x X --y Y] [--rotation R] [--prop k=v]... [--why W]
   move <id> [--x X] [--y Y] [--rotation R]
   remove <id>                             part, wire or test scenario
-  connect <from> <to> [--color C]         e.g. fabwright connect uno.D13 r1.1
+  connect <from> <to> [--color C]         e.g. faber connect uno.D13 r1.1
   disconnect <wire> | --from P [--to P]
   set <id> <prop> <value>                 set_part_property
   libs <name>...                          set_libraries
@@ -38,15 +38,15 @@ Firmware and simulation
   firmware <language> [--firmware ID@v] [--target T] [--env E]   set_firmware: arduino | micropython | esp-idf | platformio
   setup [family|language|list]           install natively (no Docker needed): all families, or one of
                                           avr, rp2040, esp32, stm32, nrf52, renode (toolchain + emulator);
-                                          FABWRIGHT_RUNTIME=docker builds the Docker images instead
+                                          FABER_RUNTIME=docker builds the Docker images instead
                                           (micropython: firmware downloads; esp-idf / platformio: Docker images)
   build [--force]
   run --ms 5000 [--reset]                 simulate; prints serial, pins, part states
   display <part> [--ms N] [--scale S]     run N ms, then show the screen as ASCII
      [--region x,y,w,h] [--save-as NAME]  crop (exact pixels) / save a golden frame for expect_display
   test [scenario] [--visual] [--out F]    run scenarios (exit 1 when any fails); --visual writes the
-                                          filmstrip report (default .fabwright/visual-report.json) and
-                                          PNGs of the screen at key checks (.fabwright/test-frames/)
+                                          filmstrip report (default .faber/visual-report.json) and
+                                          PNGs of the screen at key checks (.faber/test-frames/)
   check                                   design rule check (exit 1 on errors)
   fidelity                                what to trust, what to test on hardware
   screenshot [out.png] [--ms N]           run N ms first, then render the canvas
@@ -59,28 +59,28 @@ Firmware and simulation
 History
   steps | undo | redo | accept [step] | reject <step>
 Agents
-  skill print [--target skill|agents|guide|instructions]   print Fabwright's hardware guide for agents
-  skill install [--project D] [--force]   write <project>/.claude/skills/fabwright-hardware/SKILL.md (Claude
+  skill print [--target skill|agents|guide|instructions]   print Faber's hardware guide for agents
+  skill install [--project D] [--force]   write <project>/.claude/skills/faber-hardware/SKILL.md (Claude
                                           Code loads it in that folder), <project>/AGENTS.md (Codex and
                                           others) and <project>/CLAUDE.md (imports AGENTS.md); files you
                                           wrote yourself are kept unless --force
 Real device: API access without keys in the firmware (docs/api-relay.md)
   relay init [--out D]                    write relay/ (Node server, Cloudflare Worker + wrangler.toml, README,
-                                          FabwrightRelay.h) from fabwright.json network; no secret values in it
+                                          FaberRelay.h) from faber.json network; no secret values in it
   relay serve [--port 8787] [--host H]    run the relay on this computer (reads the project's .env)
   relay token add <device> | revoke <device> | list
                                           one token per device: the raw one goes to .env DEVICE_TOKEN (for
                                           flashing), only its hash to RELAY_DEVICE_TOKENS (for the relay)
-  relay device-header [--ca root.pem]     write fabwright_device.h (git-ignored) next to the sketch from .env:
+  relay device-header [--ca root.pem]     write faber_device.h (git-ignored) next to the sketch from .env:
                                           RELAY_URL, DEVICE_TOKEN, WIFI_SSID, WIFI_PASSWORD
 Any tool
-  call <tool> [json-args]                 e.g. fabwright call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
+  call <tool> [json-args]                 e.g. faber call inject_fault '{"part":"oled1","kind":"i2c_nack"}'
   tools                                   list tools
 Servers
   serve [--project D] [--port 7780] [--built] [--no-web] [--no-open] [--strict-port]
                                           one local server: the canvas (following the project live),
                                           ws /live, and MCP over HTTP at /mcp on the same session.
-                                          pnpm start = fabwright serve (project: projects/playground)
+                                          pnpm start = faber serve (project: projects/playground)
   mcp [--project D]                       MCP server on stdio (for Claude Code, Codex…)
   mcp --attach http://localhost:7780      stdio MCP that drives a running serve (live canvas)
   replay <actions.jsonl> [--speed 2] [--actor mcp] [--client claude] [--session SID]
@@ -88,7 +88,7 @@ Servers
   record <actions.jsonl> <out.mp4> [--speed 2] [--size 1280x720] [--actor all]   record a replay to video (the agent's calls only unless --actor all)
   runner [--port 7781]                    local firmware build service (HTTP)
 
---project defaults to $FABWRIGHT_PROJECT, then the current folder.`;
+--project defaults to $FABER_PROJECT, then the current folder.`;
 
 const BASE = process.env.INIT_CWD ?? process.cwd();
 
@@ -171,25 +171,25 @@ function num(v: unknown, name: string): number | undefined {
 }
 
 function need(v: string | undefined, what: string): string {
-  if (!v) throw new UsageError(`missing ${what}. Run 'fabwright help' for usage.`);
+  if (!v) throw new UsageError(`missing ${what}. Run 'faber help' for usage.`);
   return v;
 }
 
 function projectDir(opts: Parsed["opts"]): string {
-  return resolve(BASE, (opts.project as string | undefined) ?? process.env.FABWRIGHT_PROJECT ?? ".");
+  return resolve(BASE, (opts.project as string | undefined) ?? process.env.FABER_PROJECT ?? ".");
 }
 
-/** `pnpm start` in the Fabwright repo itself: use projects/playground, not the repo root, as the project. */
+/** `pnpm start` in the Faber repo itself: use projects/playground, not the repo root, as the project. */
 function serveDir(opts: Parsed["opts"]): string {
-  if (opts.project || process.env.FABWRIGHT_PROJECT) return projectDir(opts);
+  if (opts.project || process.env.FABER_PROJECT) return projectDir(opts);
   const repo = resolve(BASE);
-  if (existsSync(resolve(repo, "pnpm-workspace.yaml")) && existsSync(resolve(repo, "apps/cli/bin/fabwright.mjs"))) return resolve(repo, "projects/playground");
+  if (existsSync(resolve(repo, "pnpm-workspace.yaml")) && existsSync(resolve(repo, "apps/cli/bin/faber.mjs"))) return resolve(repo, "projects/playground");
   return projectDir(opts);
 }
 
 /**
  * Round 5 (decision 0003, C3): a folder served or opened over MCP with --project joins the Projects
- * gallery ($FABWRIGHT_HOME/projects.json). Scratch folders under the OS temp dir (tests) are left out.
+ * gallery ($FABER_HOME/projects.json). Scratch folders under the OS temp dir (tests) are left out.
  */
 function rememberProject(dir: string, source: "serve" | "cli"): void {
   const rel = relative(resolve(tmpdir()), dir);
@@ -227,7 +227,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
   const ms = num(o.ms, "ms");
   switch (p.cmd) {
     case "new":
-      return { op: "new_project", dir: resolve(BASE, need(p.pos[0], "the project folder (fabwright new <dir>)")), args: { template: o.template ?? "blank", ...(o.name ? { name: o.name } : {}), ...(o.overwrite ? { overwrite: true } : {}) } };
+      return { op: "new_project", dir: resolve(BASE, need(p.pos[0], "the project folder (faber new <dir>)")), args: { template: o.template ?? "blank", ...(o.name ? { name: o.name } : {}), ...(o.overwrite ? { overwrite: true } : {}) } };
     case "status":
     case "project":
       return { op: "get_project", args: {} };
@@ -235,7 +235,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       if (p.pos[0] === "search") p.pos.shift();
       return { op: "search_parts", args: { query: p.pos.join(" "), ...(o.category ? { category: o.category } : {}) } };
     case "part":
-      return { op: "get_part", args: { type: need(p.pos[0], "the part type (fabwright part led)") } };
+      return { op: "get_part", args: { type: need(p.pos[0], "the part type (faber part led)") } };
     case "place":
       return { op: "place_part", args: { type: need(p.pos[0], "the part type"), ...(o.id ? { id: o.id } : {}), ...(o.x !== undefined ? { x: num(o.x, "x") } : {}), ...(o.y !== undefined ? { y: num(o.y, "y") } : {}), ...(o.rotation !== undefined ? { rotation: num(o.rotation, "rotation") } : {}), ...(props(o.prop) ? { props: props(o.prop) } : {}), ...why } };
     case "move":
@@ -320,7 +320,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
       return { op, args };
     }
     default: {
-      // round 6 case: any tool by name, `fabwright design_case '{"shape":"pebble"}'` (same as fabwright call)
+      // round 6 case: any tool by name, `faber design_case '{"shape":"pebble"}'` (same as faber call)
       const op = p.cmd.replace(/-/g, "_");
       if (!TOOLS.some((t) => t.name === op)) return undefined;
       let args: Record<string, unknown> = {};
@@ -328,7 +328,7 @@ async function toOp(p: Parsed): Promise<{ op: string; args: Record<string, unkno
         try {
           args = JSON.parse(p.pos[0]);
         } catch (err) {
-          throw new UsageError(`the arguments must be JSON, e.g. fabwright ${op} '{"shape":"pebble"}' (${(err as Error).message})`);
+          throw new UsageError(`the arguments must be JSON, e.g. faber ${op} '{"shape":"pebble"}' (${(err as Error).message})`);
         }
       }
       return { op, args };
@@ -357,7 +357,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   try {
     p = parse(argv);
   } catch (err) {
-    process.stderr.write(`fabwright: ${(err as Error).message}\n`);
+    process.stderr.write(`faber: ${(err as Error).message}\n`);
     return 2;
   }
   const json = !!p.opts.json;
@@ -372,7 +372,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
   if (["mcp", "serve", "replay", "record", "runner"].includes(p.cmd)) {
     const servers = await import("./servers.ts");
-    if ((p.cmd === "serve" || p.cmd === "mcp") && (p.opts.project || process.env.FABWRIGHT_PROJECT)) rememberProject(projectDir(p.opts), p.cmd === "serve" ? "serve" : "cli");
+    if ((p.cmd === "serve" || p.cmd === "mcp") && (p.opts.project || process.env.FABER_PROJECT)) rememberProject(projectDir(p.opts), p.cmd === "serve" ? "serve" : "cli");
     return servers.runServerCommand(p.cmd, p.pos, p.opts, p.cmd === "serve" ? serveDir(p.opts) : projectDir(p.opts), BASE);
   }
   if (p.cmd === "render-device") return renderDeviceCommand(p);
@@ -383,11 +383,11 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   try {
     mapped = await toOp(p);
   } catch (err) {
-    process.stderr.write(`fabwright: ${(err as Error).message}\n`);
+    process.stderr.write(`faber: ${(err as Error).message}\n`);
     return 2;
   }
   if (!mapped) {
-    process.stderr.write(`fabwright: unknown command '${p.cmd}'. Run 'fabwright help' (or 'fabwright call <tool> <json>' for any tool).\n`);
+    process.stderr.write(`faber: unknown command '${p.cmd}'. Run 'faber help' (or 'faber call <tool> <json>' for any tool).\n`);
     return 2;
   }
   const session = new ProjectSession({ dir: mapped.dir ?? projectDir(p.opts), actor: "cli" });
@@ -400,16 +400,16 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       const out = resolve(BASE, typeof p.opts.out === "string" ? p.opts.out : join(stateDirPath(session.dir), "visual-report.json"));
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, JSON.stringify(session.lastVisualReport));
-      process.stderr.write(`visual report: ${out} (open the Tests panel in the web app, or serve it with fabwright serve)\n`);
+      process.stderr.write(`visual report: ${out} (open the Tests panel in the web app, or serve it with faber serve)\n`);
     }
     if (mapped.op === "run_tests" && Number(r.failed) > 0) return 1;
     if (mapped.op === "check_design" && Number(r.errors) > 0) return 1;
     if (mapped.op === "build" && r.ok === false) return 1;
     return 0;
   } catch (err) {
-    const msg = err instanceof FabwrightError ? err.message : (err as Error).message;
-    if (json) process.stdout.write(JSON.stringify({ error: err instanceof FabwrightError ? err.toJSON() : { code: "internal", message: msg } }) + "\n");
-    else process.stderr.write(`fabwright ${p.cmd}: ${msg}\n`);
+    const msg = err instanceof FaberError ? err.message : (err as Error).message;
+    if (json) process.stdout.write(JSON.stringify({ error: err instanceof FaberError ? err.toJSON() : { code: "internal", message: msg } }) + "\n");
+    else process.stderr.write(`faber ${p.cmd}: ${msg}\n`);
     return 1;
   } finally {
     session.dispose();
@@ -423,11 +423,11 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
   const every = Number(o.every ?? 0);
   const until = Number(o.until ?? 0);
   if (!msList.length && !(every > 0 && until > 0)) {
-    process.stderr.write("fabwright render-device: say when to render. Pass --ms 2500,6000 (virtual ms) or --every 100 --until 8000 for a video's frames.\n");
+    process.stderr.write("faber render-device: say when to render. Pass --ms 2500,6000 (virtual ms) or --every 100 --until 8000 for a video's frames.\n");
     return 2;
   }
   if (msList.some((n) => !Number.isFinite(n) || n < 0)) {
-    process.stderr.write(`fabwright render-device: --ms ${o.ms} has a value that is not a number of milliseconds. Pass e.g. --ms 2500,6000.\n`);
+    process.stderr.write(`faber render-device: --ms ${o.ms} has a value that is not a number of milliseconds. Pass e.g. --ms 2500,6000.\n`);
     return 2;
   }
   const shots = msList.length ? msList : Array.from({ length: Math.floor(until / every) + 1 }, (_, i) => i * every);
@@ -435,7 +435,7 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
   const [w, h] = (typeof o.size === "string" ? o.size : "1280x800").split("x").map(Number);
   const outDir = resolve(BASE, typeof o.out === "string" ? o.out : "device-shots");
   mkdirSync(outDir, { recursive: true });
-  const { renderDevice } = await import("@fabwright/session");
+  const { renderDevice } = await import("@faber/session");
   let n = 0;
   try {
     await renderDevice({
@@ -450,7 +450,7 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
       },
     });
   } catch (err) {
-    process.stderr.write(`fabwright render-device: ${(err as Error).message}\n`);
+    process.stderr.write(`faber render-device: ${(err as Error).message}\n`);
     return 1;
   }
   process.stdout.write(`${n} frame(s) in ${outDir}${every && !msList.length ? `; video: ffmpeg -framerate ${Math.round(1000 / every)} -i ${outDir}/frame-%05d.png -pix_fmt yuv420p device.mp4` : ""}\n`);
@@ -458,11 +458,11 @@ async function renderDeviceCommand(p: Parsed): Promise<number> {
 }
 
 /**
- * Round 13: `fabwright relay init|serve|token|device-header`. The real device's API access: a relay the
+ * Round 13: `faber relay init|serve|token|device-header`. The real device's API access: a relay the
  * person runs or deploys holds the keys; the device holds only a revocable token for that relay.
  */
 async function relayCommand(p: Parsed): Promise<number> {
-  const r = await import("@fabwright/session");
+  const r = await import("@faber/session");
   const sub = p.pos[0];
   const dir = projectDir(p.opts);
   const say = (s: string) => process.stdout.write(`${s}\n`);
@@ -475,7 +475,7 @@ async function relayCommand(p: Parsed): Promise<number> {
       const w = r.writeRelayFolder(proj, out);
       const { spec } = r.relayConfigOf(proj);
       say(`relay written to ${w.dir} (${w.files.length} files). Hosts: ${spec.allow.map((a) => a.host).join(", ")}. Secrets by name: ${spec.secrets.join(", ") || "none"}.`);
-      say(`Next: fabwright relay token add <device name>, then run it here (fabwright relay serve) or deploy it: cd ${relative(BASE, w.dir).startsWith("..") ? w.dir : relative(BASE, w.dir) || "."} && npx wrangler deploy (README.md has the steps).`);
+      say(`Next: faber relay token add <device name>, then run it here (faber relay serve) or deploy it: cd ${relative(BASE, w.dir).startsWith("..") ? w.dir : relative(BASE, w.dir) || "."} && npx wrangler deploy (README.md has the steps).`);
       return 0;
     }
     if (sub === "token") {
@@ -485,32 +485,32 @@ async function relayCommand(p: Parsed): Promise<number> {
         const t = r.relayTokenAdd(proj, name);
         say(`device token for ${t.name}: ${t.token}`);
         say(`Saved in ${t.env}: DEVICE_TOKEN (this device's token, for flashing) and RELAY_DEVICE_TOKENS (hashes of ${t.devices.join(", ")}, for the relay).${t.ignored.length ? ` Added ${t.ignored.join(", ")} to .gitignore.` : ""}`);
-        say("Next: give the relay the new RELAY_DEVICE_TOKENS (Cloudflare: npx wrangler secret put RELAY_DEVICE_TOKENS; fabwright relay serve reads .env), then fabwright relay device-header and flash this device.");
+        say("Next: give the relay the new RELAY_DEVICE_TOKENS (Cloudflare: npx wrangler secret put RELAY_DEVICE_TOKENS; faber relay serve reads .env), then faber relay device-header and flash this device.");
         return 0;
       }
       if (action === "revoke" && name) {
         const t = r.relayTokenRevoke(proj, name);
-        say(`revoked ${t.name}; the relay still accepts: ${t.devices.join(", ") || "no device"}. Give the relay the new RELAY_DEVICE_TOKENS (npx wrangler secret put RELAY_DEVICE_TOKENS, or restart fabwright relay serve) for it to take effect.`);
+        say(`revoked ${t.name}; the relay still accepts: ${t.devices.join(", ") || "no device"}. Give the relay the new RELAY_DEVICE_TOKENS (npx wrangler secret put RELAY_DEVICE_TOKENS, or restart faber relay serve) for it to take effect.`);
         return 0;
       }
       if (action === "list") {
         const names = r.relayTokenList(proj);
-        say(names.length ? names.join("\n") : "no device tokens yet: fabwright relay token add <device name>");
+        say(names.length ? names.join("\n") : "no device tokens yet: faber relay token add <device name>");
         return 0;
       }
-      process.stderr.write(`fabwright relay token: say what to do. Why: '${action ?? ""}' needs add <device>, revoke <device> or list. Fix: fabwright relay token add star-1\n`);
+      process.stderr.write(`faber relay token: say what to do. Why: '${action ?? ""}' needs add <device>, revoke <device> or list. Fix: faber relay token add star-1\n`);
       return 2;
     }
     if (sub === "device-header") {
       const h = r.writeDeviceHeader(proj, typeof p.opts.ca === "string" ? { ca: resolve(BASE, p.opts.ca) } : {});
-      say(`wrote ${h.file} (relay ${h.relay_url}, Wi-Fi ${h.wifi_ssid}${h.added_header ? ", and FabwrightRelay.h next to it" : ""}). It holds this device's token and your Wi-Fi password: git-ignored, never compiled by Fabwright's own builds.`);
-      say(`Build and flash from ${dirname(h.file)} with the Arduino IDE or arduino-cli compile --upload (Fabwright's factory pack firmware has no relay settings).`);
+      say(`wrote ${h.file} (relay ${h.relay_url}, Wi-Fi ${h.wifi_ssid}${h.added_header ? ", and FaberRelay.h next to it" : ""}). It holds this device's token and your Wi-Fi password: git-ignored, never compiled by Faber's own builds.`);
+      say(`Build and flash from ${dirname(h.file)} with the Arduino IDE or arduino-cli compile --upload (Faber's factory pack firmware has no relay settings).`);
       return 0;
     }
     if (sub === "serve") {
       const port = typeof p.opts.port === "string" ? Number(p.opts.port) : 8787;
       const srv = await r.serveRelay(proj, { port, ...(typeof p.opts.host === "string" ? { host: p.opts.host } : {}) });
-      process.stderr.write(`Fabwright relay for ${srv.spec.project} on ${srv.url} (hosts: ${srv.spec.allow.map((a) => a.host).join(", ")}; devices: ${srv.devices.join(", ") || "none yet: fabwright relay token add <device name>"})\n`);
+      process.stderr.write(`Faber relay for ${srv.spec.project} on ${srv.url} (hosts: ${srv.spec.allow.map((a) => a.host).join(", ")}; devices: ${srv.devices.join(", ") || "none yet: faber relay token add <device name>"})\n`);
       if (srv.missing_secrets.length) process.stderr.write(`Missing secrets: ${srv.missing_secrets.join(", ")} (requests that need them get 500 with the fix). Put NAME=value in ${join(dir, ".env")}.\n`);
       process.stderr.write("One JSON line per request below (no keys, tokens or query values). Ctrl+C stops it.\n");
       session.dispose();
@@ -522,11 +522,11 @@ async function relayCommand(p: Parsed): Promise<number> {
       });
       return 0;
     }
-    process.stderr.write(`fabwright relay: say what to do. Why: '${sub ?? ""}' is not init, serve, token or device-header. Fix: fabwright relay init (then see relay/README.md).\n`);
+    process.stderr.write(`faber relay: say what to do. Why: '${sub ?? ""}' is not init, serve, token or device-header. Fix: faber relay init (then see relay/README.md).\n`);
     return 2;
   } catch (err) {
-    const msg = err instanceof FabwrightError ? err.message : (err as Error).message;
-    process.stderr.write(`fabwright relay ${sub ?? ""}: ${msg}\n`);
+    const msg = err instanceof FaberError ? err.message : (err as Error).message;
+    process.stderr.write(`faber relay ${sub ?? ""}: ${msg}\n`);
     return 1;
   } finally {
     session?.dispose();
@@ -534,12 +534,12 @@ async function relayCommand(p: Parsed): Promise<number> {
 }
 
 /**
- * Round 12 skill: `fabwright skill print|install`. The same guide the MCP server sends, as files an agent
+ * Round 12 skill: `faber skill print|install`. The same guide the MCP server sends, as files an agent
  * opened in the project folder reads by itself. Writes inside the project only, never the person's
  * global agent config.
  */
 async function skillCommand(p: Parsed): Promise<number> {
-  const sk = await import("@fabwright/agent-skill");
+  const sk = await import("@faber/agent-skill");
   const tools = TOOLS.map((t) => t.name);
   const sub = p.pos[0];
   if (sub === "print") {
@@ -552,7 +552,7 @@ async function skillCommand(p: Parsed): Promise<number> {
     };
     const fn = out[target];
     if (!fn) {
-      process.stderr.write(`fabwright skill print: no target '${target}'. Why: the guide prints as ${Object.keys(out).join(", ")}. Fix: fabwright skill print --target skill\n`);
+      process.stderr.write(`faber skill print: no target '${target}'. Why: the guide prints as ${Object.keys(out).join(", ")}. Fix: faber skill print --target skill\n`);
       return 2;
     }
     process.stdout.write(fn());
@@ -573,26 +573,26 @@ async function skillCommand(p: Parsed): Promise<number> {
       else for (const f of r.files) process.stdout.write(`${f.action.padEnd(9)} ${join(dir, f.path)}${f.why ? `\n          ${f.why}` : ""}\n`);
       return 0;
     } catch (err) {
-      process.stderr.write(`fabwright skill install: could not write the agent files in ${dir}. Why: ${(err as Error).message}. Fix: check the folder exists and is writable, or pass --project <dir>.\n`);
+      process.stderr.write(`faber skill install: could not write the agent files in ${dir}. Why: ${(err as Error).message}. Fix: check the folder exists and is writable, or pass --project <dir>.\n`);
       return 1;
     }
   }
-  process.stderr.write(`fabwright skill: say what to do. Why: '${sub ?? ""}' is not print or install. Fix: fabwright skill print, or fabwright skill install --project <dir>.\n`);
+  process.stderr.write(`faber skill: say what to do. Why: '${sub ?? ""}' is not print or install. Fix: faber skill print, or faber skill install --project <dir>.\n`);
   return 2;
 }
 
 /**
- * `fabwright setup`: install what builds and emulators need, with progress, so the first Build & Run is
- * fast. Round 11: board families install natively (~/.fabwright: arduino-cli + pinned cores and
- * libraries, Fabwright's patched QEMU, Renode), so a Mac needs no Docker; FABWRIGHT_RUNTIME=docker keeps
+ * `faber setup`: install what builds and emulators need, with progress, so the first Build & Run is
+ * fast. Round 11: board families install natively (~/.faber: arduino-cli + pinned cores and
+ * libraries, Faber's patched QEMU, Renode), so a Mac needs no Docker; FABER_RUNTIME=docker keeps
  * the round 10 behaviour (build the Docker images). Languages: MicroPython firmware (downloaded,
  * sha256 checked) or the toolchain Docker image (built from toolchains/<dir>).
  */
 async function setupCommand(what: string | undefined): Promise<number> {
-  const runner = await import("@fabwright/runner");
+  const runner = await import("@faber/runner");
   const log = (l: string) => process.stderr.write(l + "\n");
   const list = () => {
-    process.stdout.write(`${runner.runtimeSummary()}\n\nNative installs (fabwright setup <family>, or fabwright setup for all):\n`);
+    process.stdout.write(`${runner.runtimeSummary()}\n\nNative installs (faber setup <family>, or faber setup for all):\n`);
     for (const c of runner.nativeStatus()) process.stdout.write(`  ${c.installed ? "installed " : "missing   "} ${c.id.padEnd(10)} ${c.label}\n`);
     process.stdout.write(`\nFamilies: ${Object.entries(runner.SETUP_TARGETS).map(([k, v]) => `${k} (${v.label})`).join(", ")}\n`);
     process.stdout.write("\nLanguages and their support per chip (docs/firmware-languages.md):\n");
@@ -613,7 +613,7 @@ async function setupCommand(what: string | undefined): Promise<number> {
       case "micropython":
         for (const fw of runner.MICROPYTHON_FIRMWARE) {
           await runner.microPythonFirmwareBytes(fw, log);
-          process.stdout.write(`MicroPython ${fw.version} ${fw.id} (${fw.chip}): ready${fw.verified ? "" : " (not verified in Fabwright: " + (fw.note ?? "") + ")"}\n`);
+          process.stdout.write(`MicroPython ${fw.version} ${fw.id} (${fw.chip}): ready${fw.verified ? "" : " (not verified in Faber: " + (fw.note ?? "") + ")"}\n`);
         }
         return 0;
       case "esp-idf":
@@ -626,13 +626,13 @@ async function setupCommand(what: string | undefined): Promise<number> {
         return 0;
     }
     if (docker && (what === "esp32" || what === "renode" || what === "stm32" || what === "nrf52")) {
-      // FABWRIGHT_RUNTIME=docker: the round 10 path, Docker images.
+      // FABER_RUNTIME=docker: the round 10 path, Docker images.
       await runner.ensureDocker();
       if (what === "esp32") {
         await runner.ensureImage(log, runner.ESP32_IMAGE);
         process.stdout.write(`${runner.ESP32_IMAGE} (ESP32 / S3 / C3 builds): ready\n`);
         await runner.ensureEmulatorImage("qemu-esp", log);
-        process.stdout.write(`${runner.EMULATORS["qemu-esp"].image} (Espressif QEMU + Fabwright bridge): ready\n`);
+        process.stdout.write(`${runner.EMULATORS["qemu-esp"].image} (Espressif QEMU + Faber bridge): ready\n`);
         return 0;
       }
       for (const image of [runner.STM32_IMAGE, runner.MBED_NANO_IMAGE, runner.NRF52_IMAGE]) {
@@ -640,19 +640,19 @@ async function setupCommand(what: string | undefined): Promise<number> {
         process.stdout.write(`${image}: ready\n`);
       }
       await runner.ensureEmulatorImage("renode", log);
-      process.stdout.write(`${runner.EMULATORS.renode.image} (Renode 1.17.0 + Fabwright bridge): ready\n`);
+      process.stdout.write(`${runner.EMULATORS.renode.image} (Renode 1.17.0 + Faber bridge): ready\n`);
       return 0;
     }
     const target = what === undefined || what === "all" ? "all" : runner.setupTargetOf(what);
     if (!target) {
-      process.stderr.write(`fabwright setup: no toolchain called '${what}'. Why: Fabwright knows the board families ${Object.keys(runner.SETUP_TARGETS).join(", ")} (or all) and the languages micropython, esp-idf and platformio (rust and zephyr are planned). Fix: fabwright setup list.\n`);
+      process.stderr.write(`faber setup: no toolchain called '${what}'. Why: Faber knows the board families ${Object.keys(runner.SETUP_TARGETS).join(", ")} (or all) and the languages micropython, esp-idf and platformio (rust and zephyr are planned). Fix: faber setup list.\n`);
       return 2;
     }
     log(runner.runtimeSummary());
     report(await runner.setupNative(target, log));
     return 0;
   } catch (err) {
-    process.stderr.write(`fabwright setup ${what ?? "all"}: ${(err as Error).message}\n`);
+    process.stderr.write(`faber setup ${what ?? "all"}: ${(err as Error).message}\n`);
     return 1;
   }
 }

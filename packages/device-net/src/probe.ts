@@ -1,7 +1,7 @@
 // try_request: one HTTP(S) request made from inside the sandbox, the way a device would make it
 // (sandbox DNS, a TCP flow to the fake IP, TLS that trusts the sandbox CA), so an agent or a person
 // can check a mock, an allow-list entry, a secret header or a fault before any firmware exists.
-// It shows in the network log like a device request (User-Agent: fabwright-try-request).
+// It shows in the network log like a device request (User-Agent: faber-try-request).
 import http from "node:http";
 import tls from "node:tls";
 import type { DeviceNet } from "./gateway.ts";
@@ -61,7 +61,7 @@ export async function probeRequest(dn: DeviceNet, req: ProbeRequest): Promise<Pr
         createConnection: () => sock as never,
         method: (req.method ?? "GET").toUpperCase(),
         path: `${u.pathname}${u.search}`,
-        headers: { host: u.port ? `${host}:${u.port}` : host, "user-agent": "fabwright-try-request", ...(req.headers ?? {}), ...(req.body ? { "content-length": String(Buffer.byteLength(req.body)) } : {}) },
+        headers: { host: u.port ? `${host}:${u.port}` : host, "user-agent": "faber-try-request", ...(req.headers ?? {}), ...(req.body ? { "content-length": String(Buffer.byteLength(req.body)) } : {}) },
       },
       (res) => {
         const chunks: Buffer[] = [];

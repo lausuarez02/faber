@@ -1,6 +1,6 @@
 // Secrets, generic: a project names the secrets it needs (OPENAI_API_KEY, WEATHER_KEY, ...);
 // their values come from the person's environment or a .env file on their machine, never from
-// fabwright.json, the firmware or an export. The sandbox proxy puts them into outbound requests at
+// faber.json, the firmware or an export. The sandbox proxy puts them into outbound requests at
 // the edge ({{secret:NAME}} in a header template or in a header the device sends), and every
 // string that leaves this package (log, tool output, cassette, factory pack) goes through the
 // Redactor first.
@@ -70,7 +70,7 @@ export function expandSecrets(template: string, secrets: Map<string, string>, al
     if (!allowed.includes(name)) {
       throw new MissingSecretError(
         name,
-        `${host} is not allowed to receive the secret ${name} (only the hosts that list it under "secrets" in fabwright.json network.allow get it)`,
+        `${host} is not allowed to receive the secret ${name} (only the hosts that list it under "secrets" in faber.json network.allow get it)`,
         `add "${name}" to the "secrets" list of the ${host} entry in network.allow, or send the request to a host that has it`,
       );
     }
@@ -79,7 +79,7 @@ export function expandSecrets(template: string, secrets: Map<string, string>, al
       throw new MissingSecretError(
         name,
         `the project declares ${name} but it is not set on this machine (looked in the environment and the project's .env)`,
-        `add ${name}=... to the project's .env file (it is git-ignored) or export ${name} before starting Fabwright; never put it in fabwright.json or the firmware`,
+        `add ${name}=... to the project's .env file (it is git-ignored) or export ${name} before starting Faber; never put it in faber.json or the firmware`,
       );
     }
     used.push(name);

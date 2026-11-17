@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import tamagotchi from "../../../../../examples/tamagotchi/fabwright.json?raw";
-import rover from "../../../../../examples/rover/fabwright.json?raw";
-import arm from "../../../../../examples/robot-arm/fabwright.json?raw";
-import blink from "../../../../../examples/blink/fabwright.json?raw";
+import { parseProject } from "@faber/project-format";
+import tamagotchi from "../../../../../examples/tamagotchi/faber.json?raw";
+import rover from "../../../../../examples/rover/faber.json?raw";
+import arm from "../../../../../examples/robot-arm/faber.json?raw";
+import blink from "../../../../../examples/blink/faber.json?raw";
 import { caseLabel, classifyProject, lastSerialLine, screenBlankOf, screenTypeOf, serialStats, type CaseModel, type CaseOpening } from "./classify.ts";
 import { buttonLabel } from "./scene/Handheld.tsx";
 
@@ -22,7 +22,7 @@ describe("device view: classifyProject", () => {
   });
 
   it("a pocket RP2040 board with a round TFT and a passive buzzer is a handheld with a colour screen", () => {
-    const p = parseProject(JSON.stringify({ format: "fabwright/1", name: "watch", parts: [
+    const p = parseProject(JSON.stringify({ format: "faber/1", name: "watch", parts: [
       { id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0 },
       { id: "face", type: "gc9a01-round-tft", x: 200, y: 0 },
       { id: "btn", type: "pushbutton", x: 0, y: 200 },
@@ -35,7 +35,7 @@ describe("device view: classifyProject", () => {
   });
 
   // A talking egg: OLED + 1 button + an LED + a speaker, with a custom (egg) case the Case view built.
-  const egg = parseProject(JSON.stringify({ format: "fabwright/1", name: "Talking Egg", parts: [
+  const egg = parseProject(JSON.stringify({ format: "faber/1", name: "Talking Egg", parts: [
     { id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0 },
     { id: "eyes", type: "ssd1306-oled-i2c", x: 200, y: 0 },
     { id: "btn", type: "pushbutton", x: 0, y: 200 },
@@ -116,7 +116,7 @@ describe("device view: screens it knows only by their drawing (round 17)", () =>
     expect(screenTypeOf("ssd1306-oled-i2c")?.kind).toBe("oled");
     expect(screenTypeOf("led")).toBeUndefined();
     expect(screenBlankOf("epaper-154-ssd1681")).toBe("#ECEAE2");
-    const p = parseProject({ format: "fabwright/1", name: "mood", parts: [{ id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0 }, { id: "epd", type: "epaper-154-ssd1681", x: 0, y: 0 }, { id: "b", type: "pushbutton", x: 0, y: 0 }], wires: [] });
+    const p = parseProject({ format: "faber/1", name: "mood", parts: [{ id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0 }, { id: "epd", type: "epaper-154-ssd1681", x: 0, y: 0 }, { id: "b", type: "pushbutton", x: 0, y: 0 }], wires: [] });
     const l = classifyProject(p);
     expect(l.screen).toEqual({ id: "epd", type: "epaper-154-ssd1681" });
     expect(l.why).toBe("E-paper + 1 button → handheld");

@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
-import { lineDiff } from "@fabwright/session";
-import { startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
+import type { BuildRequest, BuildResult } from "@faber/runner";
+import { lineDiff } from "@faber/session";
+import { startFaberServer, type FaberServer } from "../src/serve.ts";
 
 // Round 6, switch track (decision 0004): an opened example's first version is the untouched copy,
 // History counts file changes after a restore with +N / -M lines, and "built" only where it built.
@@ -17,29 +17,29 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 
 describe("history after opening an example (round 6, switch)", () => {
   let tmp: string;
-  let srv: FabwrightServer;
+  let srv: FaberServer;
   let token: string;
-  const oldHome = process.env.FABWRIGHT_HOME;
+  const oldHome = process.env.FABER_HOME;
   const get = async (path: string): Promise<Json> => (await (await fetch(`${srv.url}${path}`)).json()) as Json;
   const send = async (method: string, path: string, body: unknown = {}): Promise<{ status: number; body: Json }> => {
-    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", "x-fabwright-token": token }, body: JSON.stringify(body) });
+    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", "x-faber-token": token }, body: JSON.stringify(body) });
     return { status: r.status, body: (await r.json()) as Json };
   };
 
   beforeAll(async () => {
-    tmp = mkdtempSync(join(tmpdir(), "fabwright-switch-"));
-    process.env.FABWRIGHT_HOME = join(tmp, "home");
+    tmp = mkdtempSync(join(tmpdir(), "faber-switch-"));
+    process.env.FABER_HOME = join(tmp, "home");
     const examples = join(tmp, "examples");
     cpSync(join(REPO_EXAMPLES, "blink"), join(examples, "blink"), { recursive: true });
     mkdirSync(join(examples, "agent-built"), { recursive: true });
-    srv = await startFabwrightServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
+    srv = await startFaberServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
     token = ((await (await fetch(`${srv.url}/api/connect`)).json()) as { token: string }).token;
   }, 30_000);
 
   afterAll(async () => {
     await srv?.close();
-    if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
-    else process.env.FABWRIGHT_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.FABER_HOME;
+    else process.env.FABER_HOME = oldHome;
     rmSync(tmp, { recursive: true, force: true });
   });
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Code2, Cpu, History, MonitorPlay, RotateCcw } from "lucide-react";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 import { STROKE } from "../shell/primitives.tsx";
 import { NO_SERVER, actorLabel, ago, api, entityLabel, type VersionDetail, type VersionSummary } from "./api.ts";
 import { useServer } from "./data.ts";
@@ -18,7 +18,7 @@ export function HistoryView() {
   const open = useProjectsUi((s) => s.history);
   const tick = useProjectsUi((s) => s.tick);
   const server = useServer();
-  const projectName = useFabwright((s) => s.project.name);
+  const projectName = useFaber((s) => s.project.name);
   const [versions, setVersions] = useState<VersionSummary[] | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [n, setN] = useState<number | undefined>();
@@ -106,9 +106,9 @@ export function HistoryView() {
       useProjectsUi.getState().bump();
       // Round 6 (R8): the same project re-read (view, caches of other tracks follow it).
       if (r.step !== null) emitProjectSwitch({ id: projectId.current, reason: "reload" });
-      useFabwright.getState().toast({ kind: "info", title: r.step === null ? `Already at version ${n}` : `Restored version ${n}`, detail: r.step === null ? r.note : "It is a new version at the end of the timeline, so nothing was lost. Undo brings the newer state back." });
+      useFaber.getState().toast({ kind: "info", title: r.step === null ? `Already at version ${n}` : `Restored version ${n}`, detail: r.step === null ? r.note : "It is a new version at the end of the timeline, so nothing was lost. Undo brings the newer state back." });
     } catch (e) {
-      useFabwright.getState().toast({ kind: "error", title: `Could not restore version ${n}`, detail: (e as Error).message });
+      useFaber.getState().toast({ kind: "error", title: `Could not restore version ${n}`, detail: (e as Error).message });
     } finally {
       setRestoring(false);
       setConfirming(false);

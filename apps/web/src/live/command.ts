@@ -1,4 +1,4 @@
-// The followed page's channel to the `fabwright serve` session (the live socket's "command" messages,
+// The followed page's channel to the `faber serve` session (the live socket's "command" messages,
 // which the server limits to WEB_OPS). LiveLayer registers the sender while the socket is open.
 let sender: ((op: string, args: Record<string, unknown>) => boolean) | undefined;
 

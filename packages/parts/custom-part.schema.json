@@ -1,13 +1,13 @@
 {
-  "$id": "urn:fabwright:custom-part:1",
-  "title": "Fabwright agent-made part (parts/<id>/part.json)",
+  "$id": "urn:faber:custom-part:1",
+  "title": "Faber agent-made part (parts/<id>/part.json)",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "format": {
-      "default": "fabwright-part/1",
+      "default": "faber-part/1",
       "type": "string",
-      "const": "fabwright-part/1"
+      "const": "faber-part/1"
     },
     "id": {
       "type": "string",

@@ -3,7 +3,7 @@
 // firmware sent (GET /api/audio/<file>, mono 16-bit, 16 kHz); the followed page plays it with
 // WebAudio in step with the run's frames. Never in automated tests (navigator.webdriver), in a
 // hidden tab or when the person muted the page's sound (the same toggle as the speech bubble).
-// window.__fabwrightAudio counts what was asked and played, for tests.
+// window.__faberAudio counts what was asked and played, for tests.
 import { speechMuted, subscribeSpeechMuted } from "../voice/speech.ts";
 import { followBase } from "./followRun.ts";
 
@@ -30,7 +30,7 @@ let current: AudioBufferSourceNode | undefined;
 
 function publish(): void {
   try {
-    (globalThis as { __fabwrightAudio?: AudioStats }).__fabwrightAudio = { ...stats };
+    (globalThis as { __faberAudio?: AudioStats }).__faberAudio = { ...stats };
   } catch {
     // no global object to write to
   }
@@ -57,7 +57,7 @@ export function runAudioUrl(file: string, base = followBase() ?? ""): string {
 
 /**
  * Plays a run's recording, starting where the run's frames start (`fromVt`, virtual ms).
- * Resolves once playback has started (or was skipped, with the reason in __fabwrightAudio.last).
+ * Resolves once playback has started (or was skipped, with the reason in __faberAudio.last).
  */
 export async function playRunAudio(a: RunAudioRef, fromVt = a.vt): Promise<void> {
   stats.requested++;

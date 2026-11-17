@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "approx",
-      "note": "The camera answers Espressif's esp32-camera driver in Fabwright's simulation build: esp_camera_init finds it when camera_config_t names the GPIOs its pins are wired to (any mismatch is reported pin by pin, like a failed probe on the board), and every esp_camera_fb_get gets a frame Fabwright renders (a test scene, an image, the webcam) at the frame size and pixel format the sketch set (JPEG, RGB565, grayscale, YUV422, RGB888), with the sensor_t settings applied (mirror, flip, brightness, contrast, saturation, special effects, colour bars). The pixel bus, XCLK, PCLK / VSYNC / HREF edges and the SCCB registers are not simulated: QEMU does not model the ESP32's camera interface, so the driver's API is wrapped instead."
+      "note": "The camera answers Espressif's esp32-camera driver in Faber's simulation build: esp_camera_init finds it when camera_config_t names the GPIOs its pins are wired to (any mismatch is reported pin by pin, like a failed probe on the board), and every esp_camera_fb_get gets a frame Faber renders (a test scene, an image, the webcam) at the frame size and pixel format the sketch set (JPEG, RGB565, grayscale, YUV422, RGB888), with the sensor_t settings applied (mirror, flip, brightness, contrast, saturation, special effects, colour bars). The pixel bus, XCLK, PCLK / VSYNC / HREF edges and the SCCB registers are not simulated: QEMU does not model the ESP32's camera interface, so the driver's API is wrapped instead."
     },
     "timing": {
       "level": "approx",

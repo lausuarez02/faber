@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-# Fabwright build image for ESP-IDF projects (firmware.language "esp-idf"), round 10.
+# Faber build image for ESP-IDF projects (firmware.language "esp-idf"), round 10.
 #
-#   docker build -t fabwright/esp-idf:5.5.5-r1 toolchains/esp-idf
+#   docker build -t faber/esp-idf:5.5.5-r1 toolchains/esp-idf
 #
 # Built FROM the arduino-esp32 image on purpose: arduino-esp32 3.3.12 is built on ESP-IDF v5.5.5
 # and ships the exact cross compilers v5.5.5 pins in tools/tools.json (xtensa-esp-elf and
@@ -13,8 +13,8 @@
 # here is the person's code.
 #
 # The wrapper builds /work/project into /work/out/merged.bin: bootloader + partition table + app
-# merged with esptool and padded to the flash size, the image Fabwright's QEMU backend boots.
-ARG BASE_IMAGE=fabwright/arduino-esp32:3.3.12-r2
+# merged with esptool and padded to the flash size, the image Faber's QEMU backend boots.
+ARG BASE_IMAGE=faber/arduino-esp32:3.3.12-r2
 FROM ${BASE_IMAGE}
 
 ARG IDF_VERSION=v5.5.5
@@ -39,10 +39,10 @@ RUN python3 ${IDF_PATH}/tools/idf_tools.py install-python-env \
 # The compilers already in the base image, under the names IDF looks for.
 ENV PATH=/opt/arduino/data/packages/esp32/tools/esp-x32/2601/bin:/opt/arduino/data/packages/esp32/tools/esp-rv32/2601/bin:${PATH}
 
-COPY fabwright-esp-idf.sh /usr/local/bin/fabwright-esp-idf
-RUN chmod a+rx /usr/local/bin/fabwright-esp-idf \
+COPY faber-esp-idf.sh /usr/local/bin/faber-esp-idf
+RUN chmod a+rx /usr/local/bin/faber-esp-idf \
  && chmod -R a+rX ${IDF_PATH} ${IDF_TOOLS_PATH} \
  && ls ${IDF_TOOLS_PATH}/python_env
 WORKDIR /work
-ENTRYPOINT ["/usr/local/bin/fabwright-esp-idf"]
+ENTRYPOINT ["/usr/local/bin/faber-esp-idf"]
 CMD ["--version"]

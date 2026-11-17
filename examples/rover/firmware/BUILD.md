@@ -6,7 +6,7 @@ cp examples/rover/firmware/build/rover.ino.hex examples/rover/firmware/rover.hex
 ```
 
 Same toolchain as Blink (`firmware/BUILD.md` there): arduino-cli 1.5.1, `arduino:avr@1.8.8`,
-image `fabwright/arduino-cli:1.5.1-avr1.8.8`, built natively on linux/arm64 (Apple Silicon). The
+image `faber/arduino-cli:1.5.1-avr1.8.8`, built natively on linux/arm64 (Apple Silicon). The
 sketch uses only the Arduino core (no libraries).
 
 sha256 of the golden hex (2026-11-09):

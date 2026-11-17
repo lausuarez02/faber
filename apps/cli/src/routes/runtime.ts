@@ -2,18 +2,18 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ApiRoute, RouteContext } from "./types.ts";
 
 /**
- * Round 11, native builds: where builds and emulators run on this computer, and `fabwright setup` from
+ * Round 11, native builds: where builds and emulators run on this computer, and `faber setup` from
  * the app with the same progress lines the CLI prints.
  *   GET  /api/runtime          {setting, summary, docker: {ok, why?}, native: [{id, label, installed, path}], families}
  *   POST /api/runtime/setup    {target: "all" | "esp32" | ...} → newline-delimited JSON:
  *                              {line} per progress line, then {done: true, steps} or {error} (what / why / fix)
- * Local-only like every route; setup needs x-fabwright-token.
+ * Local-only like every route; setup needs x-faber-token.
  */
 let running: string | undefined;
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-fabwright-token"] === ctx.token) return true;
-  ctx.json(res, 403, { error: "Missing or wrong x-fabwright-token. Why: installing toolchains needs the token from GET /api/connect, which only pages served by this Fabwright server can read. Fix: open the Fabwright app from the fabwright serve URL, or run `fabwright setup` in a terminal." });
+  if (req.headers["x-faber-token"] === ctx.token) return true;
+  ctx.json(res, 403, { error: "Missing or wrong x-faber-token. Why: installing toolchains needs the token from GET /api/connect, which only pages served by this Faber server can read. Fix: open the Faber app from the faber serve URL, or run `faber setup` in a terminal." });
   return false;
 }
 
@@ -23,7 +23,7 @@ export const runtimeRoutes: ApiRoute[] = [
     path: "/api/runtime",
     label: "GET /api/runtime",
     async handle(_req, res, ctx) {
-      const r = await import("@fabwright/runner");
+      const r = await import("@faber/runner");
       const docker = r.probeDocker();
       ctx.json(res, 200, {
         setting: r.runtimeSetting(),
@@ -41,7 +41,7 @@ export const runtimeRoutes: ApiRoute[] = [
     label: "POST /api/runtime/setup",
     async handle(req, res, ctx) {
       if (!needToken(req, res, ctx)) return;
-      const r = await import("@fabwright/runner");
+      const r = await import("@faber/runner");
       const { target = "all" } = await ctx.body<{ target?: string }>(req);
       if (target !== "all" && !r.setupTargetOf(target)) {
         return ctx.json(res, 400, { error: `No board family '${target}'. Why: setup knows ${Object.keys(r.SETUP_TARGETS).join(", ")} and all. Fix: pick one of those.` });

@@ -1,0 +1,2052 @@
+{
+  "$id": "urn:faber:project-format:1",
+  "title": "Faber project (faber.json)",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "faber/1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "parts": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+            "description": "Unique id of this part in the project, e.g. 'led1'."
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Part type id from the parts registry, e.g. 'led' or 'arduino-uno'."
+          },
+          "x": {
+            "type": "number",
+            "description": "Canvas x of the part's top-left corner, in canvas px."
+          },
+          "y": {
+            "type": "number",
+            "description": "Canvas y of the part's top-left corner, in canvas px."
+          },
+          "rotation": {
+            "default": 0,
+            "description": "Clockwise rotation in degrees.",
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 0
+              },
+              {
+                "type": "number",
+                "const": 90
+              },
+              {
+                "type": "number",
+                "const": 180
+              },
+              {
+                "type": "number",
+                "const": 270
+              }
+            ]
+          },
+          "props": {
+            "description": "Overrides for the part's props.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "standIn": {
+            "description": "Set when this part stands in for a real part Faber does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "x",
+          "y"
+        ]
+      }
+    },
+    "wires": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
+          "from": {
+            "type": "object",
+            "properties": {
+              "part": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                "description": "Part instance id."
+              },
+              "pin": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Pin id from the part's part.json."
+              }
+            },
+            "required": [
+              "part",
+              "pin"
+            ]
+          },
+          "to": {
+            "type": "object",
+            "properties": {
+              "part": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                "description": "Part instance id."
+              },
+              "pin": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Pin id from the part's part.json."
+              }
+            },
+            "required": [
+              "part",
+              "pin"
+            ]
+          },
+          "color": {
+            "description": "CSS color of the wire, e.g. '#FF4D2E'.",
+            "type": "string"
+          },
+          "waypoints": {
+            "description": "Bend points between the two pins, in canvas px.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to"
+        ]
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "properties": {
+        "board": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "description": "Part id of the MCU board that runs this firmware."
+        },
+        "language": {
+          "description": "Firmware language (default 'arduino'; a .py main file means 'micropython'). See docs/firmware-languages.md for what runs on which board.",
+          "type": "string",
+          "enum": [
+            "arduino",
+            "micropython",
+            "esp-idf",
+            "platformio",
+            "rust",
+            "zephyr"
+          ]
+        },
+        "dir": {
+          "default": "firmware",
+          "description": "Firmware folder, relative to faber.json.",
+          "type": "string",
+          "const": "firmware"
+        },
+        "sketch": {
+          "description": "Main source file inside dir: 'blink.ino' (Arduino), 'main.py' (MicroPython), 'main/main.c' (ESP-IDF), 'platformio.ini' (PlatformIO).",
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Built binary (.hex or .bin), relative to faber.json."
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "type": "string",
+              "enum": [
+                "arduino-cli",
+                "micropython",
+                "esp-idf",
+                "platformio",
+                "cargo",
+                "west"
+              ],
+              "description": "Build driver: arduino-cli (Arduino), micropython (no compile: firmware + filesystem image), esp-idf (idf.py), platformio (pio run), cargo (Rust), west (Zephyr)."
+            },
+            "fqbn": {
+              "description": "arduino-cli: fully qualified board name, e.g. 'arduino:avr:uno'. Required for arduino-cli.",
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "description": "esp-idf: IDF target, e.g. 'esp32', 'esp32c3' (default: the board's chip).",
+              "type": "string",
+              "minLength": 1
+            },
+            "env": {
+              "description": "platformio: the [env:<name>] to build (default: the first env in platformio.ini).",
+              "type": "string",
+              "minLength": 1
+            },
+            "firmware": {
+              "description": "micropython: the MicroPython firmware build to flash, e.g. 'RPI_PICO@1.29.0' (default: the board's pinned build).",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "tool"
+          ]
+        },
+        "libraries": {
+          "description": "Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Faber's pinned version.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "board",
+        "artifact"
+      ]
+    },
+    "scenarios": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+            "description": "Unique scenario id, e.g. 'blinks'."
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "steps": {
+            "default": [],
+            "description": "Steps run in order. See ScenarioStep.",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "run_ms": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Advance virtual time by this many ms."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_ms"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "wait_ms": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Same as run_ms: advance virtual time."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "wait_ms"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "press": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                      "description": "Part to press (button, switch)."
+                    },
+                    "hold_ms": {
+                      "description": "If set: hold this long, then release.",
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "press"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "release": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "release"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "set": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.field': a prop or sensor field, e.g. 'pot1.position', 'sonar1.distance'."
+                    },
+                    "value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "serial_write": {
+                      "type": "string",
+                      "description": "Text sent to the board's serial RX."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "serial_write"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "inject_fault": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "description": "disconnect | noisy | i2c_nack | i2c_nack_data | i2c_garbage | clear"
+                    },
+                    "field": {
+                      "description": "noisy: which numeric field jitters (default: the first).",
+                      "type": "string"
+                    },
+                    "amplitude": {
+                      "description": "noisy: jitter amplitude in the field's unit (default ±5% of its range).",
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "inject_fault",
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_serial": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "Substring the serial output must contain."
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "contains": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "contains"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "regex": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "regex"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: the text must NOT appear (within within_ms, or now).",
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_serial"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_pin": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.pin', e.g. 'uno.D13'."
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "high",
+                        "low"
+                      ]
+                    },
+                    "voltage": {
+                      "description": "Volts range, inclusive.",
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_pin"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_part": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*\\.[^\\s]+$",
+                      "description": "'part.field' where field is a key of the part's state (see get_part 'state'), or 'world.field' for the robot / arm physics (collisions, min_clearance_cm, travelled_cm, x, y, heading, sonar_cm, gripper_x, gripper_y, reached)."
+                    },
+                    "op": {
+                      "default": "==",
+                      "type": "string",
+                      "enum": [
+                        "==",
+                        "!=",
+                        ">",
+                        ">=",
+                        "<",
+                        "<=",
+                        "contains",
+                        "matches"
+                      ]
+                    },
+                    "value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_part",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_serial_value": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][\\w.-]*$",
+                      "description": "Name printed before a number on serial, e.g. 'hunger' matches \"hunger=40\", \"hunger: 40\" or \"hunger 40\". The latest printed value is compared."
+                    },
+                    "op": {
+                      "default": "==",
+                      "type": "string",
+                      "enum": [
+                        "==",
+                        "!=",
+                        ">",
+                        ">=",
+                        "<",
+                        "<=",
+                        "contains",
+                        "matches"
+                      ]
+                    },
+                    "value": {
+                      "type": "number"
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_serial_value",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_display": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                      "description": "Display part id, e.g. 'oled1'."
+                    },
+                    "region": {
+                      "description": "[x, y, w, h] in screen pixels; default the whole screen.",
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    "lit": {
+                      "description": "Lit pixel count inside the region, inclusive range.",
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "matches": {
+                      "description": "Name of a golden frame saved with read_display {save_as: name} (snapshots/<name>.txt).",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "tolerance": {
+                      "description": "matches: fraction of region pixels allowed to differ (default 0.02).",
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_display"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_no_errors": {
+                      "type": "boolean",
+                      "const": true,
+                      "description": "Fail if any part reports an error diagnostic (overcurrent…)."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_no_errors"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "said": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "Words it must have said (case-insensitive substring of the clip's words)."
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "contains": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "contains"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "regex": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "regex"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Words of a clip played since the previous said step (or the start), e.g. \"dizzy\" or {\"regex\": \"^hi\"}."
+                    },
+                    "part": {
+                      "description": "Only this talking part (a DFPlayer id); default any.",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: it must NOT say it (within within_ms, or so far).",
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "said"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "type": "object",
+                      "properties": {
+                        "host": {
+                          "type": "string",
+                          "minLength": 1,
+                          "description": "Host the device called, e.g. api.example.com."
+                        },
+                        "path": {
+                          "description": "Path without the query (exact, or a prefix ending in *).",
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "description": "The status the device got.",
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "count": {
+                          "description": "At least this many (default 1), counted since the scenario started.",
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "kind": {
+                          "description": "Default http or ws.",
+                          "type": "string",
+                          "enum": [
+                            "http",
+                            "ws",
+                            "mqtt"
+                          ]
+                        },
+                        "content_type": {
+                          "description": "Round 14: the Content-Type contains this, e.g. \"multipart/form-data\" or \"application/json\".",
+                          "type": "string"
+                        },
+                        "body_contains": {
+                          "description": "Round 14: the body (its text, a field value, a multipart part's name or file name) contains this, case-insensitive.",
+                          "type": "string"
+                        },
+                        "body_json": {
+                          "description": "Round 14: these fields of a JSON, form or multipart body have these values: nested objects or dot paths (\"messages.0.role\"); \"x*\" = starts with x, \"?\" = present and not empty. A multipart file part has <name>.filename, <name>.content_type, <name>.bytes.",
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "min_bytes": {
+                          "description": "Round 14: the body has at least this many bytes.",
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "host"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "within_ms": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: the device must NOT have made it (within within_ms, or so far).",
+                      "type": "boolean"
+                    },
+                    "preceded_by": {
+                      "description": "Round 14: something that must have happened shortly before the matching request.",
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "description": "Words said out loud (a clip's words, or the text the device sent to a speech API).",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "serial": {
+                          "description": "Text printed on serial.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Substring the serial output must contain."
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "capture": {
+                          "description": "A picture the camera took (part id, or true: any camera).",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                            },
+                            {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          ]
+                        },
+                        "request": {
+                          "description": "A request the device made.",
+                          "type": "object",
+                          "properties": {
+                            "host": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "host"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "min_ms": {
+                          "description": "At least this long before (default 0).",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max_ms": {
+                          "description": "At most this long before (default: any time since the scenario started).",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "request"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "network_fault": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "wifi_drop",
+                            "weak_signal",
+                            "latency",
+                            "http_error",
+                            "timeout",
+                            "dns_fail",
+                            "clear"
+                          ]
+                        },
+                        "rssi": {
+                          "type": "number"
+                        },
+                        "ms": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "status": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "host": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "network_fault"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "network_mock": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {},
+                      "description": "A mock, as add_mock_api takes it: {\"host\", \"method\"?, \"path\", \"response\": {...}} (HTTP), or a \"ws\" / \"mqtt\" mock."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "network_mock"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "camera_frame": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scene": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "image": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "A test scene name (\"face\", \"test-card\", ...) or an image path in the project (\"tests/cat.jpg\"); or {\"scene\": ...} / {\"image\": ...}."
+                    },
+                    "part": {
+                      "description": "The camera part (default: the only camera in the project).",
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "camera_frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "expect_capture": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                        },
+                        {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      ],
+                      "description": "The camera part (or true: the only / any camera)."
+                    },
+                    "count": {
+                      "description": "At least this many pictures (default 1), counted since the last matched expect_capture (or the start of the test).",
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "within_ms": {
+                      "description": "Keep simulating up to this long until it happens.",
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "absent": {
+                      "description": "true: NO picture may be taken from this step on (within within_ms).",
+                      "type": "boolean"
+                    },
+                    "preceded_by": {
+                      "description": "Something that must have happened shortly before the picture, e.g. {\"said\": \"picture\", \"min_ms\": 9000, \"max_ms\": 11000}.",
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "description": "Words said out loud (a clip's words, or the text the device sent to a speech API).",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "serial": {
+                          "description": "Text printed on serial.",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Substring the serial output must contain."
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "contains": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "contains"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "regex": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "regex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "capture": {
+                          "description": "A picture the camera took (part id, or true: any camera).",
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                            },
+                            {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          ]
+                        },
+                        "request": {
+                          "description": "A request the device made.",
+                          "type": "object",
+                          "properties": {
+                            "host": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "host"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "min_ms": {
+                          "description": "At least this long before (default 0).",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "max_ms": {
+                          "description": "At most this long before (default: any time since the scenario started).",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "expect_capture"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "reset_board": {
+                      "type": "boolean",
+                      "const": true,
+                      "description": "Reboot the firmware board, keeping its flash."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reset_board"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "set_clock": {
+                      "type": "string",
+                      "description": "ISO 8601 date-time, e.g. \"2026-12-24T09:00:00Z\"."
+                    },
+                    "name": {
+                      "description": "Optional label shown in test results.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set_clock"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "timeout_ms": {
+            "description": "Abort when virtual time passes this (default 60000).",
+            "type": "number",
+            "minimum": 0
+          },
+          "seed": {
+            "description": "Round 14: seed of the board's hardware random numbers (esp_random, random()) for this test; the default is fixed per scenario id, so 'random' firmware repeats every run. Change it to try another sequence.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "clock": {
+            "description": "Round 14: the date and time NTP gives the device at the start of this test (advancing with virtual time). Default: this computer's clock.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "world": {
+      "description": "Physical world for robots (arena, obstacles, robot / arm binding). Validated by @faber/physics parseWorld; kept as-is here.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "assembly": {
+      "description": "How it is built: 'breadboard' (default for Uno / Nano projects) or 'soldered' (hand-wired in a case; default when there is an enclosure or a pocket board).",
+      "type": "string",
+      "enum": [
+        "breadboard",
+        "soldered"
+      ]
+    },
+    "power": {
+      "description": "Power situation for the simulation and check_design (USB plugged in or not).",
+      "type": "object",
+      "properties": {
+        "usb": {
+          "description": "A USB cable is plugged into the board (default true: the board is powered from USB, as before round 6). false = it runs from its battery path only.",
+          "type": "boolean"
+        },
+        "target_hours": {
+          "description": "Round 14: hours the device should run on one charge; check_design warns (battery-life) when the estimate is under it and says what cell would make it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "duty": {
+          "description": "Round 14: how much of the time each load is on, by role (cpu, wifi, camera, display, audio) or part id: \"always\", \"off\" or {\"on_s\": 2, \"every_s\": 600}. Unset loads are guessed from the firmware (estimate_power lists the guesses).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "always",
+                  "off"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "on_s": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "every_s": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "on_s",
+                  "every_s"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "sleep": {
+          "description": "Round 14: what the board does between active moments (default: guessed from the firmware).",
+          "type": "string",
+          "enum": [
+            "none",
+            "light",
+            "deep"
+          ]
+        },
+        "wakes_per_day": {
+          "description": "Round 15: a board that sleeps wakes this many times a day (a timer each hour = 24, plus the button / lid presses you expect). Sets the CPU's awake share and how often parts with an event (an e-paper refresh) run.",
+          "type": "number",
+          "minimum": 0
+        },
+        "awake_s": {
+          "description": "Round 15: seconds the board stays awake per wake (boot, read, draw, wait for the screen; default 1).",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "enclosure": {
+      "description": "The case: shape, parameters and where parts go. Written by design_case / update_case; files are generated into case/.",
+      "type": "object",
+      "properties": {
+        "shape": {
+          "type": "string",
+          "enum": [
+            "rounded-box",
+            "pill",
+            "pebble",
+            "puck",
+            "keychain",
+            "custom"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "wall_mm": {
+              "description": "Wall thickness, mm (default 1.6, min 1.2).",
+              "type": "number",
+              "minimum": 1.2,
+              "maximum": 5
+            },
+            "corner_radius_mm": {
+              "description": "Outer corner radius for rounded-box / keychain, mm (default 4).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "color": {
+              "description": "Shell colour for renders and 3MF, e.g. '#F2EDE4'.",
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "lanyard_hole": {
+              "description": "Add a lanyard / keyring hole (default true for keychain).",
+              "type": "boolean"
+            },
+            "belt_clip": {
+              "description": "Add a belt clip on the back (default false).",
+              "type": "boolean"
+            },
+            "closure": {
+              "description": "snap = snap-fit lip; screws = M2 screws into heat-set inserts (default snap).",
+              "type": "string",
+              "enum": [
+                "snap",
+                "screws"
+              ]
+            },
+            "tolerance_mm": {
+              "description": "Clearance between mating parts, mm (default 0.2 for FDM).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "process": {
+              "description": "Target process for notes and tolerances (default fdm).",
+              "type": "string",
+              "enum": [
+                "fdm",
+                "resin",
+                "injection"
+              ]
+            },
+            "gap_mm": {
+              "description": "Free room around parts for wires, mm (default 1.5).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "edge_radius_front_mm": {
+              "description": "Round-over of the front rim, mm, or 'auto' (default: a share of the depth per shape; custom and pebble are round all over). Clamped where a side opening needs a straight wall.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "edge_radius_back_mm": {
+              "description": "Round-over of the back rim, mm, or 'auto'.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "dome_mm": {
+              "description": "How far the front and back faces bulge out (a sphere cap with a flat print pad), mm, or 'auto' (pebble and custom about 1 mm, the other shapes flat).",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "dome_back_mm": {
+              "description": "The back face's bulge when it differs from dome_mm, mm.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            },
+            "depth_mm": {
+              "description": "Overall thickness front to back, mm, or 'auto' (the thinnest that holds the parts). Same as size_mm.d.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 6,
+                  "maximum": 120
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
+            }
+          }
+        },
+        "front": {
+          "description": "Part id whose screen faces out of the front (default: the first display).",
+          "type": "string"
+        },
+        "placements": {
+          "description": "Per part id: where it goes. Parts left out are auto-packed.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "face": {
+                "description": "Face the part's exposed feature goes on; 'inside' = no opening.",
+                "type": "string",
+                "enum": [
+                  "front",
+                  "back",
+                  "left",
+                  "right",
+                  "top",
+                  "bottom",
+                  "inside"
+                ]
+              },
+              "x_mm": {
+                "description": "Position on that face from its centre, mm (+x right / +y up as you look at that face).",
+                "type": "number"
+              },
+              "y_mm": {
+                "type": "number"
+              },
+              "rotation": {
+                "description": "Turn on that face, degrees.",
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "const": 0
+                  },
+                  {
+                    "type": "number",
+                    "const": 90
+                  },
+                  {
+                    "type": "number",
+                    "const": 180
+                  },
+                  {
+                    "type": "number",
+                    "const": 270
+                  }
+                ]
+              },
+              "layer": {
+                "description": "Stack layer from the front (0 = right behind the front wall).",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9
+              },
+              "on_edge": {
+                "description": "Stand the part on its edge (its board plane front to back) instead of lying flat: narrower, thicker.",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "exclude": {
+          "description": "Part ids that are not inside the case (e.g. a test resistor, an external sensor on a cable).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outline": {
+          "description": "Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Faber fits the parts inside it.",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 20000,
+              "description": "SVG path data of the front outline in mm, e.g. 'M 0 -40 C 24 -40 30 0 30 10 C 30 30 16 40 0 40 C -16 40 -30 30 -30 10 C -30 0 -24 -40 0 -40 Z' (y down, like SVG)."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "points": {
+                  "minItems": 3,
+                  "maxItems": 400,
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "description": "Outline points [x, y] in mm, y UP (the top of the device is +y)."
+                },
+                "smooth": {
+                  "description": "true = a smooth closed curve through the points (default true); false = straight lines (corners are rounded to stay printable).",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "points"
+              ]
+            }
+          ]
+        },
+        "size_mm": {
+          "description": "Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit).",
+          "type": "object",
+          "properties": {
+            "w": {
+              "description": "Overall width (x), mm.",
+              "type": "number",
+              "minimum": 15,
+              "maximum": 250
+            },
+            "h": {
+              "description": "Overall height (y), mm.",
+              "type": "number",
+              "minimum": 15,
+              "maximum": 250
+            },
+            "d": {
+              "description": "Overall thickness (z, front to back), mm.",
+              "type": "number",
+              "minimum": 6,
+              "maximum": 120
+            }
+          }
+        },
+        "layout": {
+          "description": "Round 8: how the parts are distributed inside. Faber proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it.",
+          "type": "string",
+          "enum": [
+            "auto",
+            "thinnest",
+            "smallest",
+            "balanced"
+          ]
+        },
+        "held": {
+          "description": "Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening. Round 17: engage_mm makes it a socket the case rides on (only that much goes in), fit picks slip / press / snap, magnet puts the sensing magnet on the object.",
+          "maxItems": 4,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Short id, e.g. 'can' (not a part id)."
+              },
+              "name": {
+                "description": "What it is, for the report and the kit, e.g. 'ZYN can'.",
+                "type": "string"
+              },
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "cylinder",
+                  "box",
+                  "custom"
+                ],
+                "description": "cylinder (a tin, a lip balm), box (a card deck, a lighter), custom (any other shape: the room is its bounding box)."
+              },
+              "size_mm": {
+                "type": "object",
+                "properties": {
+                  "d": {
+                    "description": "Cylinder: diameter. Box: thickness (front to back).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 250
+                  },
+                  "h": {
+                    "description": "Cylinder: height (lid on). Box: height (y).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 250
+                  },
+                  "w": {
+                    "description": "Box: width (x).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 250
+                  }
+                },
+                "description": "The object's size, measured at its widest points, mm."
+              },
+              "orientation": {
+                "description": "Cylinder: flat = its round face to the front (default), upright = its axis along the case's height.",
+                "type": "string",
+                "enum": [
+                  "flat",
+                  "upright"
+                ]
+              },
+              "clearance_mm": {
+                "description": "Room left all round, mm (default 0.5).",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              },
+              "insert": {
+                "description": "slide = in through a slot in a side (left / right / top / bottom); pocket (default) = dropped into an opening in the back (or front, or the top for an open-top holder); snap = a pocket whose rim is narrower by lip_mm, so the object clicks in and stays.",
+                "type": "string",
+                "enum": [
+                  "slide",
+                  "pocket",
+                  "snap"
+                ]
+              },
+              "engage_mm": {
+                "description": "Round 17, a SOCKET / mount: how far the object goes into the case, mm, measured from the case's OUTER face it enters through (front or back); the rest stays outside. The case then only has to be engage_mm deep there, not the whole object: a puck that rides on a can's lid (lid-topper: engage_mm 6 of a 7 mm lid skirt), a dock a bottle stands in, a cap on a tube. The report says how far the object stands proud (object height - engage_mm). Leave out: the whole object goes in (the room is its full size + clearance).",
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 250
+              },
+              "fit": {
+                "description": "Round 17: how the pocket or socket grips the object. slip = clearance_mm all round (default 0.5, a socket 0.3): it slides on and off; press = a tight fit (default clearance 0.1 mm: print a test ring first, PETG flexes more than PLA); snap = a rim at the mouth lip_mm narrower than the object (default 0.6) that clicks over its edge (same as insert: \"snap\"). Default slip.",
+                "type": "string",
+                "enum": [
+                  "slip",
+                  "press",
+                  "snap"
+                ]
+              },
+              "from": {
+                "description": "The side it goes in through (default: right for slide, back for pocket / snap).",
+                "type": "string",
+                "enum": [
+                  "front",
+                  "back",
+                  "left",
+                  "right",
+                  "top",
+                  "bottom"
+                ]
+              },
+              "lip_mm": {
+                "description": "snap: how far the rim overlaps the object each side, mm (default 0.6).",
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 3
+              },
+              "removable": {
+                "description": "false = it goes in during assembly and stays (no opening); default true: it goes in and out with the case closed, the electronics stay.",
+                "type": "boolean"
+              },
+              "source": {
+                "description": "Where the size comes from (a datasheet, a measurement with calipers, a product page).",
+                "type": "string"
+              },
+              "sensor": {
+                "description": "Round 15: a part that must sit next to the object; the case checks the gap.",
+                "type": "object",
+                "properties": {
+                  "part": {
+                    "type": "string",
+                    "description": "The part that senses the object (a reed or Hall switch for a lid with a magnet, a lever switch the object presses)."
+                  },
+                  "max_mm": {
+                    "description": "Farthest the switch still senses: its body to the object's room, or to the object's magnet when one is declared, mm (default 8: a reed or Hall switch sees a 6 x 3 mm magnet through about 10 mm).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 50
+                  },
+                  "lift_mm": {
+                    "description": "Round 17, with a magnet on the object: how far the case moves off the object when it comes apart (the lid with the case lifted off the can), mm (default 10). The check reports the gap mounted and lifted this far, and the lift at which the switch lets go.",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 200
+                  }
+                },
+                "required": [
+                  "part"
+                ],
+                "additionalProperties": false
+              },
+              "magnet": {
+                "description": "Round 17: a magnet glued ON THE OBJECT (not in the case), e.g. on the can body just below a lid that carries the case. With sensor, the held-sensor check measures the switch-to-magnet gap mounted and with the case lifted off (sensor.lift_mm), against sensor.max_mm, and gives the magnet_mm values for test steps.",
+                "type": "object",
+                "properties": {
+                  "beyond_mm": {
+                    "type": "number",
+                    "minimum": -250,
+                    "maximum": 250,
+                    "description": "Where the magnet's centre is along the object, measured from the case's outer face the object enters through, mm: positive = outside the case (on the part of the object that stays out), negative = inside the socket. A disc glued on the object's side stands t_mm proud of it, so keep its edge clear of the case and of anything that moves with the case: at least d_mm / 2 + 0.5, plus (a lid's skirt length - engage_mm) when the case rides on a lid, e.g. 4.5 for a 6 mm magnet under a 7 mm skirt with engage_mm 6."
+                  },
+                  "angle_deg": {
+                    "description": "Where round the object, degrees, as you look at the case's front: 0 = right, 90 = top, 180 = left, 270 = bottom. Default: facing the sensor.",
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  },
+                  "radial_mm": {
+                    "description": "Distance of the magnet's centre from the object's axis, mm (default: glued on the outside of its side: radius + t_mm / 2).",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 150
+                  },
+                  "d_mm": {
+                    "description": "Magnet diameter, mm (default 6).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 30
+                  },
+                  "t_mm": {
+                    "description": "Magnet thickness, mm (default 3).",
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 20
+                  }
+                },
+                "required": [
+                  "beyond_mm"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "shape",
+              "size_mm"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "follow": {
+          "description": "Round 17: the case outline FOLLOWS a held object: its front-view footprint (a can lying flat: a circle of its diameter; a box: its w x h) + clearance + 2 x wall (+ margin). A round puck exactly a can's size: shape \"puck\" with follow {\"held\": \"can\"}. Sets size_mm w / h (leave them out); the parts are packed inside that outline, stacked in depth in front of / behind the object.",
+          "type": "object",
+          "properties": {
+            "held": {
+              "type": "string",
+              "description": "The held object's id whose outline the case follows."
+            },
+            "margin_mm": {
+              "description": "Extra room between the object's room and the wall all round, mm (default 0: the case is the object's footprint + clearance + 2 x wall).",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 40
+            }
+          },
+          "required": [
+            "held"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "shape"
+      ]
+    },
+    "network": {
+      "description": "Round 10: the device network (Wi-Fi, DNS, mocks, internet allow list, secrets by name). See docs/network.md.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "description": "offline: Wi-Fi up, nothing answers. mock (default; run_tests always uses it): only mocks and cassettes answer. internet: hosts in allow also reach the real internet.",
+          "type": "string",
+          "enum": [
+            "offline",
+            "mock",
+            "internet"
+          ]
+        },
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Host the device may reach in internet mode: \"api.example.com\" or \"*.example.com\" (no scheme, no path)."
+              },
+              "ports": {
+                "description": "Ports (default [443, 80]).",
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                }
+              },
+              "tls": {
+                "description": "inspect (default): Faber terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate.",
+                "type": "string",
+                "enum": [
+                  "inspect",
+                  "passthrough"
+                ]
+              },
+              "secrets": {
+                "description": "Secret names this host may receive.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "headers": {
+                "description": "Headers added to every request to this host, e.g. {\"Authorization\": \"Bearer {{secret:OPENAI_API_KEY}}\"}. Never a literal key.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "local": {
+                "description": "Round 14: this one host may reach this computer or the local network (a service you run). Without it, a host that resolves to a loopback / private / link-local address is refused in every mode. Not on wildcards.",
+                "type": "boolean"
+              },
+              "to": {
+                "description": "Round 14: send this host's requests to a service here instead, e.g. \"http://127.0.0.1:7821\" (needs \"local\": true; works in mock mode too; mocks still answer first). The device keeps calling its own host name.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "host"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "secrets": {
+          "description": "Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from faber.json.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+          }
+        },
+        "mocks": {
+          "description": "Mock APIs file, relative to faber.json (default network/mocks.json).",
+          "type": "string"
+        },
+        "cassette": {
+          "description": "Cassette name (network/cassettes/<name>.json) replayed in mock mode, recorded in internet mode with record: true.",
+          "type": "string"
+        },
+        "record": {
+          "type": "boolean"
+        },
+        "wifi": {
+          "description": "The sandbox Wi-Fi. Leave out: any SSID joins.",
+          "type": "object",
+          "properties": {
+            "ssid": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "The network the sandbox plays; a sketch asking for another SSID finds no access point."
+            },
+            "password": {
+              "description": "Only to rehearse a wrong password: the sandbox refuses a different one. Leave out to accept any.",
+              "type": "string",
+              "maxLength": 64
+            },
+            "rssi": {
+              "description": "Signal strength the firmware reads (default -55 dBm).",
+              "type": "integer",
+              "minimum": -100,
+              "maximum": 0
+            }
+          },
+          "required": [
+            "ssid"
+          ],
+          "additionalProperties": false
+        },
+        "relay": {
+          "description": "Round 13: limits of the API relay (faber relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md.",
+          "type": "object",
+          "properties": {
+            "requests_per_minute": {
+              "description": "Requests one device may send per minute (default 60).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6000
+            },
+            "max_request_kb": {
+              "description": "Largest request body in KiB (default 1024).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 102400
+            },
+            "max_response_kb": {
+              "description": "Largest answer or WebSocket stream in KiB (default 32768).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1048576
+            },
+            "max_stream_seconds": {
+              "description": "How long one answer or WebSocket may stream (default 300 s).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3600
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "format",
+    "name"
+  ]
+}

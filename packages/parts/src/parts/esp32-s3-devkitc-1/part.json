@@ -5,7 +5,7 @@
   "description": "Espressif's ESP32-S3-DevKitC-1 (ESP32-S3-WROOM-1, dual-core Xtensa LX7 at 240 MHz, Wi-Fi / BLE not emulated, 8 MB flash), 44 pins, two USB-C ports (USB-to-UART: Serial on UART0; native USB), BOOT and RESET buttons and an addressable RGB LED (GPIO48 on v1.0, GPIO38 on v1.1; not drawn: RMT is not emulated). Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers. 3.3 V logic only.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-s3-devkitc-1): real arduino-esp32 3.3.12 firmware built by Fabwright's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Fabwright's parts. Run on the merged jb5 emulator sources (a native QEMU build; the fabwright/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-s3-devkitc-1): real arduino-esp32 3.3.12 firmware built by Faber's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Faber's parts. Run on the merged jb5 emulator sources (a native QEMU build; the faber/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
   },
   "pins": [
     {
@@ -14,7 +14,7 @@
       "x": 9,
       "y": 30,
       "type": "power",
-      "description": "3.3 V output of the board's LDO (Fabwright checks 500 mA).",
+      "description": "3.3 V output of the board's LDO (Faber checks 500 mA).",
       "voltage": {
         "min": 3.2,
         "max": 3.4
@@ -38,7 +38,7 @@
       "x": 9,
       "y": 70,
       "type": "passive",
-      "description": "Chip enable / reset (the RESET button pulls it LOW). Not a GPIO; Fabwright does not model reset from it."
+      "description": "Chip enable / reset (the RESET button pulls it LOW). Not a GPIO; Faber does not model reset from it."
     },
     {
       "id": "GPIO4",
@@ -720,7 +720,7 @@
       "GPIO20"
     ],
     "toolchain": {
-      "image": "fabwright/arduino-esp32:3.3.12-r3",
+      "image": "faber/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:esp32s3:FlashMode=dio,FlashSize=8M",
       "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the board's default build (Serial on UART0, the USB-to-UART port).",
       "flash": "esptool --chip esp32s3 --port {port} --baud 921600 write_flash 0x0 {bin}"

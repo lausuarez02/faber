@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { registry } from "@fabwright/parts";
-import { parseProject } from "@fabwright/project-format";
+import { registry } from "@faber/parts";
+import { parseProject } from "@faber/project-format";
 import { composeSvg, validateScenario } from "../src/index.ts";
 
 // Round 5 merge: pieces from different tracks that only meet after the merge.
 
 const project = parseProject(
   JSON.stringify({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "watch",
     parts: [
       { id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 },
@@ -23,8 +23,8 @@ describe("round 5 integration", () => {
   it("screenshots clip the round GC9A01 frame to its circle, square TFTs stay square", () => {
     const frame = (w: number, h: number) => ({ width: w, height: h, data: new Uint16Array(w * h).fill(0xf800), version: 1, on: true, inverted: false });
     const svg = composeSvg(project, registry, { framebuffers: { face: frame(240, 240), tft: frame(128, 160) } });
-    expect(svg.match(/<clipPath id="fabwright-round-\d+"><ellipse /g)).toHaveLength(1);
-    expect(svg.match(/<image [^>]*clip-path="url\(#fabwright-round-\d+\)"/g)).toHaveLength(1);
+    expect(svg.match(/<clipPath id="faber-round-\d+"><ellipse /g)).toHaveLength(1);
+    expect(svg.match(/<image [^>]*clip-path="url\(#faber-round-\d+\)"/g)).toHaveLength(1);
     expect(svg.match(/<image [^>]*href="data:image\/png/g)).toHaveLength(2);
   });
 

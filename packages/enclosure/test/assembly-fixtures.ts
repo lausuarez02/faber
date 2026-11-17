@@ -2,7 +2,7 @@
 // resistors) and a puffy star (a concave custom outline).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 
 /** A puffy 5-point star (concave), as points through which a smooth curve runs (y up). */
 export function starPoints(n = 5, R = 40, r = 22): [number, number][] {

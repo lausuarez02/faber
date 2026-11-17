@@ -20,8 +20,8 @@ afterEach(() => {
 });
 
 const copy = () => {
-  process.env.FABWRIGHT_CASE_PDF = "0";
-  dir = mkdtempSync(join(tmpdir(), "fabwright-fw-"));
+  process.env.FABER_CASE_PDF = "0";
+  dir = mkdtempSync(join(tmpdir(), "faber-fw-"));
   cpSync(MUSE, dir, { recursive: true });
   return dir;
 };

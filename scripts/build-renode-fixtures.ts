@@ -1,4 +1,4 @@
-// Rebuild the Renode board fixtures (packages/sim-backends/fixtures/renode/*.hex) through Fabwright's own
+// Rebuild the Renode board fixtures (packages/sim-backends/fixtures/renode/*.hex) through Faber's own
 // build pipeline (services/runner: the same images, Serial redirection and XIAO sim.hex a project
 // build gets). Needs Docker. Golden files: rebuild only on purpose, then run the integration tests.
 //

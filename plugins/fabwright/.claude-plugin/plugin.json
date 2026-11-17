@@ -1,8 +1,0 @@
-{
-  "name": "fabwright",
-  "version": "0.1.0",
-  "description": "Fabwright for Claude Code: the hardware-design skill (plan, smallest parts that fit, how it goes inside, the printable case, what to buy and print) and the fabwright MCP server of a running Fabwright app.",
-  "author": { "name": "Fabwright" },
-  "license": "Apache-2.0",
-  "keywords": ["hardware", "arduino", "esp32", "3d-printing", "enclosure", "simulator"]
-}

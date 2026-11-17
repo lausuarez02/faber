@@ -3,7 +3,7 @@
 // each rim is now filleted, or lofted through offsets of the outline, or chamfered, and the
 // edge-radius check says what it got. These tests measure the radius on the printed mesh.
 import { describe, expect, it } from "vitest";
-import type { Project } from "@fabwright/project-format";
+import type { Project } from "@faber/project-format";
 import { buildCase } from "../src/geometry.ts";
 import { layoutInput } from "../src/engine.ts";
 import { meshOf, checkMesh, type Mesh } from "../src/mesh.ts";
@@ -38,7 +38,7 @@ export function rimRadius(m: Mesh, face: "front" | "back", ux: number, uy: numbe
 
 const project = (enclosure: Record<string, unknown>): Project =>
   ({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "edges",
     parts: [
       { id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0, rotation: 0 },

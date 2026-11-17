@@ -1,5 +1,5 @@
 // Round 13 (audio): play what an API returns. A plain WiFi.h + HTTPClient + ESP_I2S sketch written
-// for the real board (no Fabwright code): join Wi-Fi, GET raw 16-bit PCM and stream it into I2S as it
+// for the real board (no Faber code): join Wi-Fi, GET raw 16-bit PCM and stream it into I2S as it
 // arrives, then GET a WAV, read its header and stream the samples the same way. This is the shape of
 // "ask a text-to-speech API, play the answer": the API's audio bytes go straight to the amplifier.
 #include <WiFi.h>
@@ -44,7 +44,7 @@ static size_t stream(HTTPClient &http, size_t skip) {
 
 void setup() {
   Serial.begin(115200);
-  // The committed image was built before the rename: "JumperNet" still joins FabwrightNet.
+  // The committed image was built before the rename: "JumperNet" still joins FaberNet.
   WiFi.begin("JumperNet", "hunter22-wifi");
   while (WiFi.status() != WL_CONNECTED) delay(100);
   Serial.printf("wifi ip=%s\n", WiFi.localIP().toString().c_str());

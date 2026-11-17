@@ -2,7 +2,7 @@
 // collector-emitter path is a current source of hFE × Ib (active) or a 0.2 V diode drop when the
 // load cannot take that much (saturated). The state comes from the last solve and is re-solved when it
 // changes.
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
 import { round, str } from "./props.ts";
 
 export interface BjtModel {

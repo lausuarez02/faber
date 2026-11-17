@@ -4,7 +4,7 @@ Press the button: it takes a picture, asks a vision model what it sees, asks a t
 to say the answer, and plays it. The default prompt asks for a cheeky one-line roast of whatever is in
 front of the camera; change `PROMPT` in `firmware/main.ino` for anything else.
 
-There is no "see and say" feature in Fabwright. This is a project built from general parts and general
+There is no "see and say" feature in Faber. This is a project built from general parts and general
 capabilities: a camera ([docs/cameras.md](../../docs/cameras.md)), I2S audio out
 ([docs/audio.md](../../docs/audio.md)), and API calls through the device network and the relay
 ([docs/api-relay.md](../../docs/api-relay.md)).
@@ -19,7 +19,7 @@ capabilities: a camera ([docs/cameras.md](../../docs/cameras.md)), I2S audio out
 | Speaker 8 Ω 0.5 W, 20 mm | `spk` | + → OUT+, − → OUT− | $0.70 |
 | 6 mm push button | `btn` | D0 (GPIO1) to GND, `INPUT_PULLUP` | $0.15 |
 
-D6 and D7 (GPIO43 / 44) are left free on purpose: in Fabwright's simulation build they are UART0, which
+D6 and D7 (GPIO43 / 44) are left free on purpose: in Faber's simulation build they are UART0, which
 carries `Serial` (on the real board `Serial` is USB), so using them there silences the Serial panel.
 
 `check_design` gives one warning, `amp-speaker-overpower`: the amplifier can push about 1.5 W into the
@@ -40,12 +40,12 @@ under the safe 57 %. Keep it there, or strap GAIN lower.
 5. Errors are printed and shown (`vision error 503`, `speech error ...`); the speech API is not called
    when the vision API failed.
 
-Both calls go to `fabwrightRelayUrl(host, path)` with the device's token (`FabwrightRelay.h`). No API key is
+Both calls go to `faberRelayUrl(host, path)` with the device's token (`FaberRelay.h`). No API key is
 ever in the firmware.
 
-## In Fabwright (offline)
+## In Faber (offline)
 
-`pnpm fabwright test -p examples/see-and-say`, 2/2:
+`pnpm faber test -p examples/see-and-say`, 2/2:
 
 - `see-and-say`: the `face` test scene, a press, the photo, a 200 from the vision API, the sentence, a
   200 from the speech API, the amplifier playing, the speaker sounding, all 29,760 bytes played, the
@@ -58,11 +58,11 @@ peaks at the firmware's volume, and that the device build has no relay settings 
 
 What is real and what is not in the simulator:
 
-| Piece | In Fabwright |
+| Piece | In Faber |
 | --- | --- |
 | Firmware | The real arduino-esp32 build, run in Espressif's QEMU (emulated CPU, flash, PSRAM). |
-| Camera | The esp32-camera calls are answered by Fabwright's shim (simulation build only); frames are clean renders of a test scene, a picture or the webcam. The camera interface hardware is not emulated. |
-| Screen | SPI from the real Adafruit GC9A01A driver to Fabwright's GC9A01 model. |
+| Camera | The esp32-camera calls are answered by Faber's shim (simulation build only); frames are clean renders of a test scene, a picture or the webcam. The camera interface hardware is not emulated. |
+| Screen | SPI from the real Adafruit GC9A01A driver to Faber's GC9A01 model. |
 | Audio | The real ESP_I2S driver and DMA, through QEMU's I2S device, into the MAX98357A model; the page plays what the run played. |
 | Wi-Fi + HTTPS | The real WiFi / HTTPClient / TLS code; the radio is not emulated (Wi-Fi rides an emulated Ethernet card). |
 | APIs | `network/mocks.json` answers the vision call (a hand-written OpenAI-style answer). `network/cassettes/speech.json` answers the speech call with a generated voice-like chirp. Neither was recorded from a real provider; `scripts/make-network.mjs` writes both. |
@@ -90,16 +90,16 @@ The keys never go on the device. The relay holds them and adds them to each requ
 ([docs/api-relay.md](../../docs/api-relay.md)):
 
 ```sh
-# 1. the hosts and which key each gets (names only; values never go in fabwright.json)
-fabwright call set_network '{"secrets": ["VISION_API_KEY", "SPEECH_API_KEY"], "allow": [
+# 1. the hosts and which key each gets (names only; values never go in faber.json)
+faber call set_network '{"secrets": ["VISION_API_KEY", "SPEECH_API_KEY"], "allow": [
   {"host": "<vision host>", "secrets": ["VISION_API_KEY"], "headers": {"Authorization": "Bearer {{secret:VISION_API_KEY}}"}},
   {"host": "<speech host>", "secrets": ["SPEECH_API_KEY"], "headers": {"Authorization": "Bearer {{secret:SPEECH_API_KEY}}"}}]}' -p see-and-say
 # 2. the relay folder, a token for this device, the keys in .env (VISION_API_KEY=..., SPEECH_API_KEY=...)
-fabwright relay init -p see-and-say
-fabwright relay token add star-1 -p see-and-say
-fabwright relay serve -p see-and-say          # or deploy relay/ to Cloudflare Workers (relay/README.md)
+faber relay init -p see-and-say
+faber relay token add star-1 -p see-and-say
+faber relay serve -p see-and-say          # or deploy relay/ to Cloudflare Workers (relay/README.md)
 # 3. RELAY_URL, WIFI_SSID, WIFI_PASSWORD in .env, then the git-ignored header the device build reads
-fabwright relay device-header -p see-and-say
+faber relay device-header -p see-and-say
 ```
 
 The relay checks the device token, allows only the listed hosts, adds the keys, applies the limits in

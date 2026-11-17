@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Move3d } from "lucide-react";
-import type { PropSpec } from "@fabwright/sim-core";
-import { engine, useFabwright } from "../lib/app.ts";
+import type { PropSpec } from "@faber/sim-core";
+import { engine, useFaber } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { controlOf, isImu, MAX_TILT, MOTION_MS, SHAKE_DURATIONS_MS, sensorProps } from "./controls.ts";
 import { playMotion, tilt, type ImuMotion } from "./imu.ts";
@@ -20,8 +20,8 @@ import "./interact.css";
  * Values go to the running simulation only.
  */
 
-const COLLAPSE_KEY = "fabwright.liveControls.collapsed";
-const DURATION_KEY = "fabwright.liveControls.shakeMs";
+const COLLAPSE_KEY = "faber.liveControls.collapsed";
+const DURATION_KEY = "faber.liveControls.shakeMs";
 
 function readPref(key: string): string | null {
   try {
@@ -40,7 +40,7 @@ function writePref(key: string, v: string): void {
 
 export function LiveControls() {
   const active = useInteract((s) => s.active);
-  const parts = useFabwright((s) => s.project.parts);
+  const parts = useFaber((s) => s.project.parts);
   if (!active) return null;
   const imus = parts.filter((p) => isImu(getDef(p.type)));
   const sensors = parts.map((p) => ({ part: p.id, props: sensorProps(getDef(p.type)) })).filter((x) => x.props.length);
@@ -52,7 +52,7 @@ export function LiveControls() {
 function Dock({ imus, sensors, controls }: { imus: string[]; sensors: { part: string; props: PropSpec[] }[]; controls: { id: string; kind: string }[] }) {
   const [open, setOpen] = useState(() => readPref(COLLAPSE_KEY) !== "1");
   const arrange = useInteract((s) => s.arrange);
-  const paused = useFabwright((s) => s.run !== "running");
+  const paused = useFaber((s) => s.run !== "running");
   const card = useRef<HTMLElement>(null);
 
   // Reserve the card's height at the bottom of the right column (the panel column ends above it).

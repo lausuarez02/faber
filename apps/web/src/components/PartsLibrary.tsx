@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Search } from "lucide-react";
-import type { PartCategory, PartDefinition } from "@fabwright/sim-core";
-import { boardSupportOf, boardSupportSummary } from "@fabwright/parts";
+import type { PartCategory, PartDefinition } from "@faber/sim-core";
+import { boardSupportOf, boardSupportSummary } from "@faber/parts";
 import { CATEGORY_LABEL, CATEGORY_ORDER, partDefinitions, svgDataUrl } from "../lib/parts.ts";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 import { PART_MIME } from "./Canvas.tsx";
 
 function matches(def: PartDefinition, q: string): boolean {
@@ -42,10 +42,10 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
   /** Click / tap: drop the part in the middle of the visible canvas. */
   const place = (def: PartDefinition) => {
     const p = screenToFlowPosition({ x: innerWidth / 2, y: innerHeight / 2 });
-    const n = useFabwright.getState().project.parts.length % 5; // nudge repeated clicks apart
+    const n = useFaber.getState().project.parts.length % 5; // nudge repeated clicks apart
     const x = Math.round((p.x - def.spec.size.w / 2 + n * 20) / 10) * 10;
     const y = Math.round((p.y - def.spec.size.h / 2 + n * 20) / 10) * 10;
-    useFabwright.getState().addPart(def.spec.id, x, y);
+    useFaber.getState().addPart(def.spec.id, x, y);
     onPlaced?.();
   };
 
@@ -88,7 +88,7 @@ export function PartsLibrary({ onPlaced }: { onPlaced?: () => void }) {
                 const planned = def.spec.availability?.status === "planned";
                 const backend = def.spec.mcu?.backend;
                 const emu = backend === "renode" ? "Renode" : backend === "qemu-esp" ? "QEMU" : undefined;
-                const where = emu ? ` · runs in ${emu === "QEMU" ? "Espressif QEMU" : "Renode"} on this computer (natively or in Docker, via fabwright serve)` : "";
+                const where = emu ? ` · runs in ${emu === "QEMU" ? "Espressif QEMU" : "Renode"} on this computer (natively or in Docker, via faber serve)` : "";
                 // Round 10: what the board's emulator really carries (docs/boards.md), in the tooltip.
                 const support = def.spec.category === "board" ? boardSupportOf(def.spec.id) : undefined;
                 const supportText = support ? `\n\n${boardSupportSummary(support)}\n(docs/boards.md)` : "";

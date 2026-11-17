@@ -7,7 +7,7 @@
 // utterance (words, start, estimated length from the word count), shows the words while it plays
 // (`saying`) and drives SPK_1 / SPK_2 (and the DAC pins) with an RMS level, so a speaker wired
 // there sounds and the part knows a person would hear it (`audible`). Deterministic: virtual time.
-import type { Diagnostic, PartModel, PartModelFactory, Utterance } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory, Utterance } from "@faber/sim-core";
 import { UartReceiver, UartTransmitter } from "../../lib/softUart.ts";
 import { DF, DF_COMMAND_NAMES, DfFrameDecoder, clipKey, dfFrame, estimateClipMs, hex, parseClips } from "../../lib/dfplayer.ts";
 import { clamp, round, truthy } from "../../lib/props.ts";

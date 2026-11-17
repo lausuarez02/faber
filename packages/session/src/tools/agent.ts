@@ -6,8 +6,8 @@ import { didYouMean, fail } from "../errors.ts";
 import { planDevice, resolveBoard, type PlanConstraints } from "../planner.ts";
 import { recordProject } from "../recorder.ts";
 import type { ToolModule } from "./types.ts";
-import { stateDirPath } from "@fabwright/project-format/node";
-import { LEGACY_PROJECT_FILE, LEGACY_STATE_DIR, PROJECT_FILE, STATE_DIR } from "@fabwright/project-format/legacy";
+import { stateDirPath } from "@faber/project-format/node";
+import { LEGACY_PROJECT_FILE, LEGACY_STATE_DIR, PROJECT_FILE, STATE_DIR } from "@faber/project-format/legacy";
 
 /**
  * Track "agent" (owner): plan_device, record, viewer_url, delete_file, mark_stand_in.
@@ -18,7 +18,7 @@ import { LEGACY_PROJECT_FILE, LEGACY_STATE_DIR, PROJECT_FILE, STATE_DIR } from "
 const why = { type: "string", description: 'Short reason shown to the human in the step list, e.g. "remove the old test shots".' };
 
 const NO_SERVER_FIX =
-  "ask the person to start Fabwright's local server (pnpm start in the Fabwright repo, or fabwright serve --project <this folder>) and connect this agent to http://localhost:7780/mcp; meanwhile use screenshot (an image) or record (a video file)";
+  "ask the person to start Faber's local server (pnpm start in the Faber repo, or faber serve --project <this folder>) and connect this agent to http://localhost:7780/mcp; meanwhile use screenshot (an image) or record (a video file)";
 
 function relProjectPath(dir: string, path: unknown): string {
   if (typeof path !== "string" || !path.trim()) fail("missing-arg", "delete_file needs 'path'", "no path was given", 'pass a path inside the project, e.g. "shots/old.png" or "firmware/debug.ino"');
@@ -42,7 +42,7 @@ export const agentTools: ToolModule = {
       name: "plan_device",
       title: "Plan a device before building it",
       description:
-        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Fabwright simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, size_budget {footprint_mm2, flat_mm, max_thickness_mm, thickest, parts_volume_cm3, choices} (compact plans: each smaller choice and the mm it saves), total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
+        'Call this FIRST for a new wish, before placing anything. Turns the goal into a plan to show the person: which board and why, a parts list with one line of why per part, which parts Faber simulates as themselves ("simulated-exactly"), with a stand-in ("stand-in"), as an agent-made part ("agent-made", via create_part) or not at all ("not-simulated"), a rough size (parts and case in mm), battery life from each part\'s current and the battery capacity, total price and buy links, plus what the simulation cannot check. Example: {"goal": "a virtual pet that fits in my pocket and beeps when hungry", "constraints": {"pocket": true, "budget_usd": 30}}. Returns {summary, question?, board {type, why}, bom [{type, name, qty, why, source, current_ma, price_usd, buy_links}], size_mm {parts, enclosure}, battery {type, capacity_mah, avg_ma, hours}, size_budget {footprint_mm2, flat_mm, max_thickness_mm, thickest, parts_volume_cm3, choices} (compact plans: each smaller choice and the mm it saves), total_usd, cannot_check, warnings, missing_data, next}. Tell the person the summary in plain words; if question is set, ask it (one question) and wait. Figures a part does not have are listed in missing_data, never guessed.',
       inputSchema: {
         type: "object",
         properties: {
@@ -68,7 +68,7 @@ export const agentTools: ToolModule = {
       name: "record",
       title: "Video of the build",
       description:
-        'Record an MP4 the person can watch: your build replayed from the action log (parts appearing with your "why" captions, wires, the sketch, the device running in each run / run_tests, tests turning green). Only your calls by default (actor "mcp"); "all" adds the person\'s and the CLI\'s. Takes about as long as the video (speed is picked for about a minute unless given). Returns {path (absolute), url (open it in a browser), viewer_url (the live project, when Fabwright\'s server runs), duration_s}. Give the person the path or url, not a terminal command. Fails within seconds, saying how to install it, when Chromium is missing. Example: {} or {"speed": 3, "size": "1280x720"}.',
+        'Record an MP4 the person can watch: your build replayed from the action log (parts appearing with your "why" captions, wires, the sketch, the device running in each run / run_tests, tests turning green). Only your calls by default (actor "mcp"); "all" adds the person\'s and the CLI\'s. Takes about as long as the video (speed is picked for about a minute unless given). Returns {path (absolute), url (open it in a browser), viewer_url (the live project, when Faber\'s server runs), duration_s}. Give the person the path or url, not a terminal command. Fails within seconds, saying how to install it, when Chromium is missing. Example: {} or {"speed": 3, "size": "1280x720"}.',
       inputSchema: {
         type: "object",
         properties: {
@@ -83,7 +83,7 @@ export const agentTools: ToolModule = {
       name: "viewer_url",
       title: "Link to watch and play",
       description:
-        "A link the person opens in their browser on this computer: the project live on the canvas, the device running with its real firmware, buttons and knobs they can press, following every change you make. Needs Fabwright's local server (fabwright serve / pnpm start); over plain stdio it says how to start one. Returns {url, note}. Give it to the person whenever they ask to see or try the device.",
+        "A link the person opens in their browser on this computer: the project live on the canvas, the device running with its real firmware, buttons and knobs they can press, following every change you make. Needs Faber's local server (faber serve / pnpm start); over plain stdio it says how to start one. Returns {url, note}. Give it to the person whenever they ask to see or try the device.",
       inputSchema: { type: "object", properties: {} },
       readOnly: true,
     },
@@ -91,7 +91,7 @@ export const agentTools: ToolModule = {
       name: "delete_file",
       title: "Delete a file",
       description:
-        'Delete a file inside the project, e.g. a stale screenshot or a debug sketch: {"path": "shots/old.png"} or {"path": "firmware/probe.ino"}. Text files are an undoable step (undo brings them back); images, videos and other binary files are moved to .fabwright/trash/ (the result says where). Refuses fabwright.json, Fabwright\'s own .fabwright/ state and the board\'s main sketch (overwrite it with write_file instead).',
+        'Delete a file inside the project, e.g. a stale screenshot or a debug sketch: {"path": "shots/old.png"} or {"path": "firmware/probe.ino"}. Text files are an undoable step (undo brings them back); images, videos and other binary files are moved to .faber/trash/ (the result says where). Refuses faber.json, Faber\'s own .faber/ state and the board\'s main sketch (overwrite it with write_file instead).',
       inputSchema: { type: "object", properties: { path: { type: "string", description: "Relative to the project folder." }, why }, required: ["path"] },
       edits: true,
     },
@@ -99,7 +99,7 @@ export const agentTools: ToolModule = {
       name: "mark_stand_in",
       title: "Mark a part as a stand-in",
       description:
-        'Say that a placed part stands in for a real part Fabwright does not have, so BOM / WIRING exports print the real part with a STAND-IN note instead of the stand-in: {"id": "soil1", "real": "capacitive soil moisture sensor"}. plan_device lists stand-ins in its bom (source "stand-in"). Prefer a real part, or create_part, over a stand-in. {"id": "soil1", "real": null} clears it.',
+        'Say that a placed part stands in for a real part Faber does not have, so BOM / WIRING exports print the real part with a STAND-IN note instead of the stand-in: {"id": "soil1", "real": "capacitive soil moisture sensor"}. plan_device lists stand-ins in its bom (source "stand-in"). Prefer a real part, or create_part, over a stand-in. {"id": "soil1", "real": null} clears it.',
       inputSchema: { type: "object", properties: { id: { type: "string", description: "Part id, e.g. soil1." }, real: { type: ["string", "null"], description: "The real part in plain words." }, why }, required: ["id", "real"] },
       edits: true,
     },
@@ -167,13 +167,13 @@ export const agentTools: ToolModule = {
         actor: r.actor,
         steps: r.entries,
         ...(r.truncated ? { truncated: true } : {}),
-        notes: [...r.notes, ...(viewer ? [] : ["no viewer_url: Fabwright's local server is not running, so the person can watch the file but not open the live project"])],
+        notes: [...r.notes, ...(viewer ? [] : ["no viewer_url: Faber's local server is not running, so the person can watch the file but not open the live project"])],
       };
     },
 
     async viewer_url(_args, x) {
       const url = viewerUrlFor(x.session.dir);
-      if (!url) fail("no-server", "viewer_url: no Fabwright server is running for this project", "this MCP connection has no web page (a stdio server or the CLI)", NO_SERVER_FIX);
+      if (!url) fail("no-server", "viewer_url: no Faber server is running for this project", "this MCP connection has no web page (a stdio server or the CLI)", NO_SERVER_FIX);
       return { url, note: "Open it in a browser on this computer: the project runs live with its firmware, the person can press its buttons and turn its knobs, and it follows every change you make. It is a local link (it does not work on another device)." };
     },
 

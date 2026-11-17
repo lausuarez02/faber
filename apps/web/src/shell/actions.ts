@@ -1,6 +1,6 @@
 import type { ReactFlowInstance } from "@xyflow/react";
-import { parseProject, safeParseProject, serializeProject, type Project } from "@fabwright/project-format";
-import { engine, useFabwright } from "../lib/app.ts";
+import { parseProject, safeParseProject, serializeProject, type Project } from "@faber/project-format";
+import { engine, useFaber } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import type { ThemeChoice } from "../lib/store.ts";
 import { isPhone } from "../lib/ui.ts";
@@ -13,9 +13,9 @@ import { onProjectSwitch } from "../lib/projectSwitch.ts";
 let rf: ReactFlowInstance<PartFlowNode, WireFlowEdge> | undefined;
 export function setFlow(i: ReactFlowInstance<PartFlowNode, WireFlowEdge> | undefined): void {
   rf = i;
-  // Handy in devtools and Playwright: window.fabwright.flow.fitView().
-  const w = typeof window !== "undefined" ? (window as unknown as { fabwright?: Record<string, unknown> }) : undefined;
-  if (w?.fabwright) w.fabwright.flow = i;
+  // Handy in devtools and Playwright: window.faber.flow.fitView().
+  const w = typeof window !== "undefined" ? (window as unknown as { faber?: Record<string, unknown> }) : undefined;
+  if (w?.faber) w.faber.flow = i;
 }
 
 /** Room the floating chrome takes on each side, so a fit keeps parts clear of it. */
@@ -105,14 +105,14 @@ export const zoomOut = () => {
 };
 
 export function focusPart(id: string): void {
-  useFabwright.getState().select([id], []);
+  useFaber.getState().select([id], []);
   viewKept = true;
   fitNow(350, [id], 1.6);
 }
 
 export const THEME_NEXT: Record<ThemeChoice, ThemeChoice> = { system: "dark", dark: "light", light: "system" };
 export const cycleTheme = () => {
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   s.setTheme(THEME_NEXT[s.theme]);
 };
 
@@ -130,13 +130,13 @@ function save(name: string, text: string, type: string): void {
 }
 
 export function exportProject(): void {
-  const p = useFabwright.getState().project;
-  save(`${slug(p.name)}.fabwright.json`, serializeProject(p), "application/json");
+  const p = useFaber.getState().project;
+  save(`${slug(p.name)}.faber.json`, serializeProject(p), "application/json");
 }
 
 /** Bill of materials: one row per part type with the ids that use it. */
 export function exportBom(): void {
-  const p = useFabwright.getState().project;
+  const p = useFaber.getState().project;
   const rows = new Map<string, { name: string; ids: string[] }>();
   for (const part of p.parts) {
     const r = rows.get(part.type) ?? { name: getDef(part.type)?.spec.name ?? part.type, ids: [] };
@@ -149,20 +149,20 @@ export function exportBom(): void {
 
 /** Netlist: every wire as `part.pin -- part.pin`. */
 export function exportNetlist(): void {
-  const p = useFabwright.getState().project;
+  const p = useFaber.getState().project;
   const lines = [`# ${p.name}: ${p.wires.length} wires`, ...p.wires.map((w) => `${w.id}\t${w.from.part}.${w.from.pin} -- ${w.to.part}.${w.to.pin}`)];
   save(`${slug(p.name)}-netlist.txt`, `${lines.join("\n")}\n`, "text/plain");
 }
 
 export function newProject(): void {
   const project: Project = parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "Untitled",
     parts: [{ id: "uno", type: "arduino-uno", x: 0, y: 0 }],
     wires: [],
   });
   engine.stop();
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   s.loadProject(project);
   s.setFirmware({ status: "none" });
   s.setSimError(undefined);
@@ -173,12 +173,12 @@ export function newProject(): void {
 
 export async function importProjectFile(file: File): Promise<void> {
   const res = safeParseProject(await file.text());
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   if (!res.ok) {
     s.toast({
       kind: "error",
-      title: `${file.name} is not a valid fabwright.json`,
-      detail: `${res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`).join("\n")}\nFix: export a project from Fabwright or run \`fabwright check\` on the folder.`,
+      title: `${file.name} is not a valid faber.json`,
+      detail: `${res.issues.map((i) => `${i.path || "(root)"}: ${i.message}`).join("\n")}\nFix: export a project from Faber or run \`faber check\` on the folder.`,
     });
     return;
   }
@@ -195,7 +195,7 @@ export async function importProjectFile(file: File): Promise<void> {
 
 export async function loadHexFile(file: File): Promise<void> {
   const hex = await file.text();
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   if (!hex.trim().startsWith(":")) {
     s.toast({ kind: "error", title: `${file.name} is not Intel HEX`, detail: "Expected lines starting with ':'. Fix: load the <sketch>.ino.hex that arduino-cli writes (not the .elf or the _with_bootloader file)." });
     return;

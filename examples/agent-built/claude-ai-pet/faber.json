@@ -1,0 +1,64 @@
+{
+  "format": "faber/1",
+  "name": "claude-ai-pet",
+  "parts": [
+    { "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 },
+    { "id": "tft1", "type": "ili9341-tft", "x": 180, "y": -500, "rotation": 0 },
+    { "id": "wifi1", "type": "esp01-wifi", "x": 0, "y": -700, "rotation": 0 },
+    { "id": "btnTalk", "type": "pushbutton", "x": 260, "y": -660, "rotation": 0 },
+    { "id": "btnFeed", "type": "pushbutton", "x": 400, "y": -660, "rotation": 0 },
+    { "id": "btnPlay", "type": "pushbutton", "x": 540, "y": -660, "rotation": 0 },
+    { "id": "buzzer1", "type": "buzzer", "x": 680, "y": -660, "rotation": 0 },
+    { "id": "rdiv1", "type": "resistor", "x": 800, "y": -620, "rotation": 0, "props": { "resistance": 1000 } },
+    { "id": "rdiv2", "type": "resistor", "x": 0, "y": -800, "rotation": 0, "props": { "resistance": 2000 } },
+    { "id": "rtx", "type": "resistor", "x": 160, "y": -800, "rotation": 0, "props": { "resistance": 1000 } }
+  ],
+  "wires": [
+    { "id": "w1", "from": { "part": "tft1", "pin": "VCC" }, "to": { "part": "uno", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w2", "from": { "part": "tft1", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w3", "from": { "part": "tft1", "pin": "CS" }, "to": { "part": "uno", "pin": "D10" }, "color": "#F2E14A" },
+    { "id": "w4", "from": { "part": "tft1", "pin": "DC" }, "to": { "part": "uno", "pin": "D9" }, "color": "#B47CFF" },
+    { "id": "w5", "from": { "part": "tft1", "pin": "RST" }, "to": { "part": "uno", "pin": "D8" }, "color": "#E9EDF2" },
+    { "id": "w6", "from": { "part": "tft1", "pin": "MOSI" }, "to": { "part": "uno", "pin": "D11" }, "color": "#5CF2A1" },
+    { "id": "w7", "from": { "part": "tft1", "pin": "SCK" }, "to": { "part": "uno", "pin": "D13" }, "color": "#FFB23F" },
+    { "id": "w8", "from": { "part": "tft1", "pin": "MISO" }, "to": { "part": "uno", "pin": "D12" }, "color": "#4DA3FF" },
+    { "id": "w9", "from": { "part": "tft1", "pin": "LED" }, "to": { "part": "uno", "pin": "5V" }, "color": "#FF4D2E" },
+    { "id": "w10", "from": { "part": "wifi1", "pin": "VCC" }, "to": { "part": "uno", "pin": "3V3" }, "color": "#FF4D2E" },
+    { "id": "w11", "from": { "part": "wifi1", "pin": "GND" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#2B3038" },
+    { "id": "w13", "from": { "part": "uno", "pin": "D3" }, "to": { "part": "rdiv1", "pin": "1" }, "color": "#FFB23F" },
+    { "id": "w14", "from": { "part": "rdiv1", "pin": "2" }, "to": { "part": "wifi1", "pin": "RX" }, "color": "#4DA3FF" },
+    { "id": "w15", "from": { "part": "wifi1", "pin": "RX" }, "to": { "part": "rdiv2", "pin": "1" }, "color": "#F2E14A" },
+    { "id": "w16", "from": { "part": "rdiv2", "pin": "2" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#2B3038" },
+    { "id": "w17", "from": { "part": "btnTalk", "pin": "1a" }, "to": { "part": "uno", "pin": "D4" }, "color": "#E9EDF2" },
+    { "id": "w18", "from": { "part": "btnTalk", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w19", "from": { "part": "btnFeed", "pin": "1a" }, "to": { "part": "uno", "pin": "D5" }, "color": "#FFB23F" },
+    { "id": "w20", "from": { "part": "btnFeed", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.2" }, "color": "#2B3038" },
+    { "id": "w21", "from": { "part": "btnPlay", "pin": "1a" }, "to": { "part": "uno", "pin": "D6" }, "color": "#F2E14A" },
+    { "id": "w22", "from": { "part": "btnPlay", "pin": "2a" }, "to": { "part": "uno", "pin": "GND.3" }, "color": "#2B3038" },
+    { "id": "w23", "from": { "part": "buzzer1", "pin": "POS" }, "to": { "part": "uno", "pin": "D7" }, "color": "#E9EDF2" },
+    { "id": "w24", "from": { "part": "buzzer1", "pin": "NEG" }, "to": { "part": "uno", "pin": "GND.1" }, "color": "#2B3038" },
+    { "id": "w12", "from": { "part": "wifi1", "pin": "TX" }, "to": { "part": "rtx", "pin": "1" }, "color": "#5CF2A1" },
+    { "id": "w25", "from": { "part": "rtx", "pin": "2" }, "to": { "part": "uno", "pin": "D2" }, "color": "#FFB23F" }
+  ],
+  "firmware": {
+    "board": "uno",
+    "dir": "firmware",
+    "sketch": "main.ino",
+    "artifact": "firmware/main.hex",
+    "build": {
+      "tool": "arduino-cli",
+      "fqbn": "arduino:avr:uno"
+    },
+    "libraries": [
+      "Adafruit ILI9341",
+      "Adafruit GFX Library"
+    ]
+  },
+  "scenarios": [
+    { "id": "gets-hungry-beeps-then-fed", "name": "Gets hungry over time, beeps for attention, FEED fixes it", "steps": [{ "expect_serial": "pet ready", "within_ms": 10000 }, { "expect_serial": "attention: beep (hungry)", "within_ms": 45000 }, { "expect_serial": "face=hungry", "within_ms": 1000 }, { "expect_part": "buzzer1.sounding", "op": "==", "value": true, "within_ms": 1000 }, { "expect_serial": "attention: beep (hungry)", "within_ms": 9000 }, { "expect_serial_value": "food", "op": "<", "value": 20 }, { "press": "btnFeed" }, { "expect_serial": { "regex": "fed food=\\d+" }, "within_ms": 500 }, { "release": "btnFeed" }, { "expect_serial_value": "food", "op": ">=", "value": 40, "within_ms": 500 }, { "expect_serial": { "regex": "face=(happy|ok|sad|sleepy)" }, "within_ms": 2000 }, { "run_ms": 4000 }, { "absent": true, "expect_serial": "attention: beep (hungry)" }], "timeout_ms": 90000 },
+    { "id": "gets-sad-without-play", "name": "Fed but ignored, it gets sad and beeps; PLAY makes it happy", "steps": [{ "expect_serial": "pet ready", "within_ms": 10000 }, { "run_ms": 10000 }, { "press": "btnFeed" }, { "expect_serial": "fed food=", "within_ms": 500 }, { "release": "btnFeed" }, { "expect_serial": "attention: beep (sad)", "within_ms": 30000 }, { "expect_serial": "face=sad", "within_ms": 1000 }, { "expect_part": "buzzer1.sounding", "op": "==", "value": true, "within_ms": 1000 }, { "expect_serial_value": "joy", "op": "<", "value": 30 }, { "press": "btnPlay" }, { "expect_serial": "played joy=", "within_ms": 500 }, { "release": "btnPlay" }, { "expect_serial_value": "joy", "op": ">=", "value": 50, "within_ms": 500 }, { "expect_serial": { "regex": "face=(happy|ok)" }, "within_ms": 12000 }], "timeout_ms": 90000 },
+    { "id": "boots-online-happy", "name": "Boots, joins Wi-Fi, shows a happy face", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "pet ready", "within_ms": 2000 }, { "expect_serial": "face=happy", "within_ms": 3000 }, { "expect_part": "tft1.lit", "op": ">", "value": 10000, "within_ms": 2000 }, { "expect_part": "wifi1.online", "op": "==", "value": true }, { "expect_part": "buzzer1.sounding", "op": "==", "value": false }, { "expect_no_errors": true }] },
+    { "id": "talk-asks-ai-and-shows-bubble", "name": "TALK asks the AI and shows the answer in a bubble", "steps": [{ "expect_serial": "pet ready", "within_ms": 10000 }, { "run_ms": 11000 }, { "expect_part": "tft1.bright", "op": "<", "value": 8000 }, { "press": "btnTalk" }, { "expect_serial": "talk: asking brain", "within_ms": 500 }, { "expect_serial": { "regex": "brain says: [a-z]+\\|.{3,}" }, "within_ms": 6000 }, { "release": "btnTalk" }, { "expect_part": "tft1.bright", "op": ">", "value": 15000, "within_ms": 2000 }, { "expect_part": "buzzer1.sounding", "op": "==", "value": true, "within_ms": 1000 }] },
+    { "id": "wifi-drop-offline-and-retry", "name": "Wi-Fi drops: shows OFFLINE, retries, recovers and talks again", "steps": [{ "expect_serial": "wifi: online", "within_ms": 8000 }, { "expect_serial": "pet ready", "within_ms": 2000 }, { "run_ms": 11000 }, { "expect_part": "tft1.bright", "op": "<", "value": 8000 }, { "inject_fault": "wifi1", "kind": "wifi_drop" }, { "expect_serial": "wifi: offline", "within_ms": 1500 }, { "expect_part": "wifi1.online", "op": "==", "value": false }, { "expect_part": "tft1.bright", "op": ">", "value": 15000, "within_ms": 1500 }, { "expect_serial": "wifi: retry #1", "within_ms": 7000 }, { "press": "btnTalk" }, { "expect_serial": "talk: no answer (offline)", "within_ms": 5000 }, { "release": "btnTalk" }, { "expect_serial": "wifi: retry #2", "within_ms": 12000 }, { "inject_fault": "wifi1", "kind": "clear" }, { "expect_serial": "wifi: online", "within_ms": 15000 }, { "expect_part": "wifi1.online", "op": "==", "value": true }, { "run_ms": 500 }, { "press": "btnTalk" }, { "expect_serial": { "regex": "brain says: [a-z]+\\|" }, "within_ms": 8000 }, { "release": "btnTalk" }], "timeout_ms": 90000 }
+  ]
+}

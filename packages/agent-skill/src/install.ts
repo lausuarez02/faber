@@ -21,7 +21,7 @@ export interface InstallResult {
   files: { path: string; action: "written" | "updated" | "unchanged" | "kept" | "removed"; why?: string }[];
 }
 
-/** The files a project gets so any agent opened in it knows Fabwright's hardware loop. */
+/** The files a project gets so any agent opened in it knows Faber's hardware loop. */
 export function projectAgentFiles(o: RenderOptions & { projectName?: string }): AgentFile[] {
   return [
     { path: SKILL_PATH, content: renderSkillMd(o) },
@@ -33,7 +33,7 @@ export function projectAgentFiles(o: RenderOptions & { projectName?: string }): 
 
 /**
  * Write the project-level agent files (never anything outside `dir`, never the person's global
- * config). A file Fabwright wrote (it carries MARKER) is rewritten when the guide changed; a file
+ * config). A file Faber wrote (it carries MARKER) is rewritten when the guide changed; a file
  * someone else wrote is kept unless force (and the result says why and how to get ours).
  */
 export function installProjectFiles(dir: string, o: RenderOptions & { projectName?: string; force?: boolean }): InstallResult {
@@ -47,7 +47,7 @@ export function installProjectFiles(dir: string, o: RenderOptions & { projectNam
         continue;
       }
       if (!old.includes(MARKER) && !old.includes(LEGACY_MARKER) && !o.force) {
-        files.push({ path: f.path, action: "kept", why: `${f.path} was not written by Fabwright, so it was left as it is. Fix: add a line pointing to ${SKILL_PATH}, or run fabwright skill install --project ${dir} --force to replace it.` });
+        files.push({ path: f.path, action: "kept", why: `${f.path} was not written by Faber, so it was left as it is. Fix: add a line pointing to ${SKILL_PATH}, or run faber skill install --project ${dir} --force to replace it.` });
         continue;
       }
       writeFileSync(abs, f.content);
@@ -62,7 +62,7 @@ export function installProjectFiles(dir: string, o: RenderOptions & { projectNam
   if (existsSync(legacy) && readFileSync(legacy, "utf8").includes(LEGACY_MARKER)) {
     rmSync(legacy);
     if (!readdirSync(dirname(legacy)).length) rmdirSync(dirname(legacy));
-    files.push({ path: LEGACY_SKILL_PATH, action: "removed", why: `the same guide from before the rename to Fabwright; it is now ${SKILL_PATH}` });
+    files.push({ path: LEGACY_SKILL_PATH, action: "removed", why: `the same guide from before the rename to Faber; it is now ${SKILL_PATH}` });
   }
   return { dir, files };
 }

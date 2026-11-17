@@ -1,4 +1,4 @@
-// Round 10 (network): the device network as the web app sees it, from fabwright serve
+// Round 10 (network): the device network as the web app sees it, from faber serve
 // (GET /api/network, the same answer as the read_network tool: secrets are names, never values).
 // Pure view model (tested without a DOM) and the small API client.
 import { NO_SERVER, serverConnection } from "../../projects/api.ts";
@@ -66,12 +66,12 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   if (!conn) throw new Error(NO_SERVER);
   let r: Response;
   try {
-    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-fabwright-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+    r = await fetch(path, { method, headers: { accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}), ...(method === "POST" ? { "x-faber-token": conn.token } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   } catch (e) {
-    throw new Error(`Could not reach the Fabwright server. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then try again.`);
+    throw new Error(`Could not reach the Faber server. Why: ${(e as Error).message}. Fix: check that faber serve is still running, then try again.`);
   }
   const data = (await r.json().catch(() => undefined)) as (T & { error?: string }) | undefined;
-  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the fabwright serve terminal.`);
+  if (!r.ok) throw new Error(data?.error ?? `${method} ${path} failed with HTTP ${r.status}. Why: the server gave no reason. Fix: look at the faber serve terminal.`);
   return data as T;
 }
 
@@ -149,7 +149,7 @@ export function devnetRows(entries: readonly DevNetEntry[], opts: { events?: boo
   return rows.slice(-(opts.limit ?? 120)).reverse();
 }
 
-/** "joined FabwrightNet · 10.0.2.15 · -55 dBm" for the header, from the boards on the LAN and the log. */
+/** "joined FaberNet · 10.0.2.15 · -55 dBm" for the header, from the boards on the LAN and the log. */
 export function wifiSummary(snap: DevNetSnapshot): { text: string; tone: Tone } {
   const dropped = snap.faults?.some((f) => f.kind === "wifi_drop");
   if (dropped) return { text: "Wi-Fi dropped (fault)", tone: "err" };

@@ -42,12 +42,12 @@ void setup() {
   expect("OK", 500);
   esp.print(F("AT+CWMODE=1\r\n"));
   expect("OK", 500);
-  esp.print(F("AT+CWJAP=\"FabwrightNet\",\"\"\r\n"));
+  esp.print(F("AT+CWJAP=\"FaberNet\",\"\"\r\n"));
   if (!expect("OK", 15000)) { Serial.println(F("\n[join failed]")); for (;;) {} }
   Serial.println(F("\n[joined]"));
-  esp.print(F("AT+CIPSTART=\"TCP\",\"ai.fabwright\",80\r\n"));
+  esp.print(F("AT+CIPSTART=\"TCP\",\"ai.faber\",80\r\n"));
   if (!expect("OK", 5000)) { Serial.println(F("\n[connect failed]")); for (;;) {} }
-  const char req[] = "GET /health HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n";
+  const char req[] = "GET /health HTTP/1.0\r\nHost: ai.faber\r\n\r\n";
   esp.print(F("AT+CIPSEND="));
   esp.print(strlen(req));
   esp.print(F("\r\n"));

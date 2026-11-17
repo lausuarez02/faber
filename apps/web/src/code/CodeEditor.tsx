@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CircleCheck, FileCode2, Loader2, Lock, Play, Save, X } from "lucide-react";
-import { engine, initialExample, useFabwright } from "../lib/app.ts";
+import { engine, initialExample, useFaber } from "../lib/app.ts";
 import { exampleSources } from "../lib/examples.ts";
 import { useLive } from "../live/liveStore.ts";
 import { STROKE } from "../shell/primitives.tsx";
@@ -34,8 +34,8 @@ export function CodeEditor() {
   const code = useProjectsUi((s) => s.code);
   const tick = useProjectsUi((s) => s.tick);
   const server = useServer();
-  const projectName = useFabwright((s) => s.project.name);
-  const language = useFabwright((s) => languageOf(s.project.firmware));
+  const projectName = useFaber((s) => s.project.name);
+  const language = useFaber((s) => languageOf(s.project.firmware));
   const [files, setFiles] = useState<string[]>([]);
   const [path, setPath] = useState<string | undefined>();
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -103,7 +103,7 @@ export function CodeEditor() {
           list = r.files.map((f) => f.path).filter((f) => !/\.(hex|bin|elf|eep)$/.test(f));
           if (!code.path && r.main && !list.includes(r.main)) list.unshift(r.main);
         } else {
-          const p = useFabwright.getState().project;
+          const p = useFaber.getState().project;
           const sameAsExample = p.name === initialExample.project.name && initialExample.source === "file";
           const src = sameAsExample ? await exampleSources(initialExample.example) : {};
           list = Object.keys(src).sort();
@@ -112,7 +112,7 @@ export function CodeEditor() {
         if (!alive) return;
         setFiles(list);
         setLoadError(undefined);
-        const main = useFabwright.getState().project.firmware?.sketch;
+        const main = useFaber.getState().project.firmware?.sketch;
         setPath((cur) => cur ?? (code.path && list.includes(code.path) ? code.path : list.find((f) => main && f === `firmware/${main}`) ?? list.find((f) => /\.ino$/.test(f)) ?? list[0]));
       } catch (e) {
         if (alive) setLoadError((e as Error).message);
@@ -214,7 +214,7 @@ export function CodeEditor() {
       // shows the server's run (and, with the live track, reloads its own sim on the firmware event).
       if (useLive.getState().mode === "off" && res.hex) {
         engine.stop();
-        useFabwright.getState().setFirmware({ status: "ready", hex: res.hex, name: currentPath.current ?? "sketch", source: "upload" });
+        useFaber.getState().setFirmware({ status: "ready", hex: res.hex, name: currentPath.current ?? "sketch", source: "upload" });
         engine.run();
       }
     } catch (e) {
@@ -388,7 +388,7 @@ function StatusLine({ status, dirty, errors, warnings, language }: { status: Sta
   }
 }
 
-/** "arduino" unless the project says otherwise (same rule as @fabwright/project-format firmwareLanguage). */
+/** "arduino" unless the project says otherwise (same rule as @faber/project-format firmwareLanguage). */
 function languageOf(fw: { language?: string; sketch?: string; build?: { tool?: string } } | undefined): string {
   if (!fw) return "arduino";
   if (fw.language) return fw.language;

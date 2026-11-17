@@ -1,4 +1,4 @@
-import { engine, useFabwright } from "../lib/app.ts";
+import { engine, useFaber } from "../lib/app.ts";
 import { onProjectSwitch } from "../lib/projectSwitch.ts";
 import { useUi } from "../lib/ui.ts";
 import { stopMotions } from "./imu.ts";
@@ -14,7 +14,7 @@ import { stopWebcam, useCameraUi } from "./camera.ts";
  * selection of parts that still exist. The view port is handled in shell/actions.ts.
  */
 onProjectSwitch(({ reason }) => {
-  const s = useFabwright.getState();
+  const s = useFaber.getState();
   if (reason === "open") {
     stopMotions();
     stopWebcam(); // round 13: the webcam never feeds another project's camera

@@ -1,6 +1,6 @@
 # Architecture
 
-Fabwright has three layers: a **canvas** where you build, a **simulation** that runs the real firmware against models of the parts, and (from M2) an **agent** that drives both through the same tools a person uses. M0 builds the first two on the smallest slice that proves the loop: Arduino Blink with a live LED.
+Faber has three layers: a **canvas** where you build, a **simulation** that runs the real firmware against models of the parts, and (from M2) an **agent** that drives both through the same tools a person uses. M0 builds the first two on the smallest slice that proves the loop: Arduino Blink with a live LED.
 
 Decisions behind this are in [decisions/0001-m0-foundations.md](decisions/0001-m0-foundations.md). The exact APIs are in [contracts.md](contracts.md).
 
@@ -15,14 +15,14 @@ flowchart TB
   end
 
   subgraph pkgs["packages/"]
-    pf["@fabwright/project-format<br/>zod schema · parse · stable serialize · nets"]
-    core["@fabwright/sim-core<br/>Clock · DC circuit solver (MNA) · part contract · Simulation"]
-    backends["@fabwright/sim-backends<br/>McuBackend adapters (avr8js)"]
-    parts["@fabwright/parts<br/>part folders → generated registry"]
+    pf["@faber/project-format<br/>zod schema · parse · stable serialize · nets"]
+    core["@faber/sim-core<br/>Clock · DC circuit solver (MNA) · part contract · Simulation"]
+    backends["@faber/sim-backends<br/>McuBackend adapters (avr8js)"]
+    parts["@faber/parts<br/>part folders → generated registry"]
   end
 
   brand["brand/tokens.css<br/>colors · type · grid"]
-  example["examples/blink<br/>fabwright.json + firmware/blink.hex"]
+  example["examples/blink<br/>faber.json + firmware/blink.hex"]
   toolchain["toolchains/arduino<br/>arduino-cli in Docker"]
 
   canvas --> store
@@ -39,10 +39,10 @@ flowchart TB
 
 | Package | Owns | Depends on |
 | --- | --- | --- |
-| `@fabwright/project-format` | The `fabwright.json` schema, parser with readable errors, stable serializer, net builder, and JSON Schema export. | zod |
-| `@fabwright/sim-core` | The deterministic clock, the MNA DC solver, the part spec and model contract, the `McuBackend` interface, the MCU board helper, and the `Simulation` that ties them together. | project-format, zod |
-| `@fabwright/sim-backends` | Emulator adapters behind `McuBackend`. M0 has `avr8js` for the ATmega328P. | sim-core, avr8js |
-| `@fabwright/parts` | One folder per part (`part.json`, `model.ts`, `visual.svg`, `fidelity.json`, `model.test.ts`), plus a generated `registry.gen.ts` that inlines the JSON and SVG. | sim-core |
+| `@faber/project-format` | The `faber.json` schema, parser with readable errors, stable serializer, net builder, and JSON Schema export. | zod |
+| `@faber/sim-core` | The deterministic clock, the MNA DC solver, the part spec and model contract, the `McuBackend` interface, the MCU board helper, and the `Simulation` that ties them together. | project-format, zod |
+| `@faber/sim-backends` | Emulator adapters behind `McuBackend`. M0 has `avr8js` for the ATmega328P. | sim-core, avr8js |
+| `@faber/parts` | One folder per part (`part.json`, `model.ts`, `visual.svg`, `fidelity.json`, `model.test.ts`), plus a generated `registry.gen.ts` that inlines the JSON and SVG. | sim-core |
 | `apps/web` | The canvas UI, the run loop, and the part visuals with live bindings. | all of the above |
 
 Internal packages export TypeScript source, so there is no build step between packages. Vite and Vitest compile everything on the fly.
@@ -79,7 +79,7 @@ The important properties:
 
 ## Loading a project
 
-1. `parseProject(fabwright.json)` validates the structure.
+1. `parseProject(faber.json)` validates the structure.
 2. `new Simulation({ project, registry, backendFactory, firmware })`:
    - builds the nets from the wires; every ground pin is merged into node `0`;
    - creates the MCU backend for `firmware.board` and loads the `.hex`;
@@ -91,7 +91,7 @@ The important properties:
 
 | Milestone | Adds |
 | --- | --- |
-| M1 | `services/runner` (containerized arduino-cli builds), serial input, I2C/SPI buses in sim-core, a scenario test runner, and the `fabwright` CLI. |
+| M1 | `services/runner` (containerized arduino-cli builds), serial input, I2C/SPI buses in sim-core, a scenario test runner, and the `faber` CLI. |
 | M2 | `packages/agent` and an MCP server that exposes canvas and sim actions as tools. |
 | M3 | More backends behind the same `McuBackend` interface (QEMU-ESP32, rp2040js, Renode), the confidence report built from `fidelity.json`, and design-rule checks. |
 | M4 | `packages/physics` (MuJoCo or Rapier) bound to motor and sensor models. |

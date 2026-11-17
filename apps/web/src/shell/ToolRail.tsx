@@ -27,7 +27,7 @@ import {
   ZoomOut,
   type LucideIcon,
 } from "lucide-react";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { useUi, type PanelId, type Tool } from "../lib/ui.ts";
 import { PartsLibrary } from "../components/PartsLibrary.tsx";
@@ -81,10 +81,10 @@ export function ToolRail({ phone }: { phone: boolean }) {
   const panels = useUi((s) => s.panels);
   const popover = useUi((s) => s.popover);
   const expanded = useUi((s) => s.railExpanded);
-  const fw = useFabwright((s) => s.firmware.status);
-  const hasFw = useFabwright((s) => !!s.project.firmware);
-  const canUndo = useFabwright((s) => s.past.length > 0);
-  const canRedo = useFabwright((s) => s.future.length > 0);
+  const fw = useFaber((s) => s.firmware.status);
+  const hasFw = useFaber((s) => !!s.project.firmware);
+  const canUndo = useFaber((s) => s.past.length > 0);
+  const canRedo = useFaber((s) => s.future.length > 0);
   const ui = useUi.getState;
   const panel = (id: PanelId) => ({ active: panels.includes(id), onClick: () => ui().togglePanel(id) });
   const tools: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
@@ -137,8 +137,8 @@ export function ToolRail({ phone }: { phone: boolean }) {
         {add}
         <RailButton icon={Cable} label="Wire" active={tool === "wire"} onClick={() => ui().setTool(tool === "wire" ? "select" : "wire")} testId="rail-tool-wire" />
         {jump}
-        <RailButton icon={Undo2} label="Undo" onClick={() => useFabwright.getState().undo()} testId="dock-undo" disabled={!canUndo} />
-        <RailButton icon={Redo2} label="Redo" onClick={() => useFabwright.getState().redo()} testId="dock-redo" disabled={!canRedo} />
+        <RailButton icon={Undo2} label="Undo" onClick={() => useFaber.getState().undo()} testId="dock-undo" disabled={!canUndo} />
+        <RailButton icon={Redo2} label="Redo" onClick={() => useFaber.getState().redo()} testId="dock-redo" disabled={!canRedo} />
         <RailButton icon={SquareTerminal} label="Serial" {...panel("serial")} testId="rail-serial" />
         <RailButton icon={SlidersHorizontal} label="Inspect" {...panel("inspector")} testId="rail-inspect" />
         {more}
@@ -171,7 +171,7 @@ export function ToolRail({ phone }: { phone: boolean }) {
 }
 
 function JumpTo() {
-  const parts = useFabwright((s) => s.project.parts);
+  const parts = useFaber((s) => s.project.parts);
   const [q, setQ] = useState("");
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -218,9 +218,9 @@ function JumpTo() {
 }
 
 function MoreMenu() {
-  const theme = useFabwright((s) => s.theme);
-  const canUndo = useFabwright((s) => s.past.length > 0);
-  const canRedo = useFabwright((s) => s.future.length > 0);
+  const theme = useFaber((s) => s.theme);
+  const canUndo = useFaber((s) => s.past.length > 0);
+  const canRedo = useFaber((s) => s.future.length > 0);
   const ui = useUi.getState;
   const run = (fn: () => void) => () => {
     ui().setPopover(null);
@@ -228,10 +228,10 @@ function MoreMenu() {
   };
   return (
     <div role="menu">
-      <MenuItem icon={Undo2} hint="⌘Z" disabled={!canUndo} onSelect={() => useFabwright.getState().undo()} testId="menu-undo">
+      <MenuItem icon={Undo2} hint="⌘Z" disabled={!canUndo} onSelect={() => useFaber.getState().undo()} testId="menu-undo">
         Undo
       </MenuItem>
-      <MenuItem icon={Redo2} hint="⇧⌘Z" disabled={!canRedo} onSelect={() => useFabwright.getState().redo()} testId="menu-redo">
+      <MenuItem icon={Redo2} hint="⇧⌘Z" disabled={!canRedo} onSelect={() => useFaber.getState().redo()} testId="menu-redo">
         Redo
       </MenuItem>
       <div className="menu-sep" />

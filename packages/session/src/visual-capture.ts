@@ -14,8 +14,8 @@
 // ProjectSession.runTests uses runScenarioVisual: each result gets compactVisual() lines, the
 // session keeps the report for GET /api/visual-report, and images: true writes displayPng() files.
 import { deflateSync } from "node:zlib";
-import type { Project, Scenario } from "@fabwright/project-format";
-import { base64ToBytes, bytesToBase64, decodeMonoFrame, monoPixel, rgb565ToRgb, type ColorFrame, type PartRegistry, type VisualState } from "@fabwright/sim-core";
+import type { Project, Scenario } from "@faber/project-format";
+import { base64ToBytes, bytesToBase64, decodeMonoFrame, monoPixel, rgb565ToRgb, type ColorFrame, type PartRegistry, type VisualState } from "@faber/sim-core";
 import { runScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import type { Frame, SimHost } from "./sim.ts";
 
@@ -82,7 +82,7 @@ export interface VisualScenario {
 }
 
 export interface VisualReport {
-  format: "fabwright-visual-report/1";
+  format: "faber-visual-report/1";
   project: string;
   passed: number;
   failed: number;

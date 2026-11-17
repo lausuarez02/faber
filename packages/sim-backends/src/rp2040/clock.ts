@@ -1,5 +1,5 @@
 // The RP2040's virtual clock. rp2040js peripherals (TIMER, PWM, ADC sample time, UART bit timing
-// added by Fabwright) schedule alarms on an IClock; the backend advances it only from step(), by the
+// added by Faber) schedule alarms on an IClock; the backend advances it only from step(), by the
 // time each executed instruction takes at the current clk_sys. No wall clock, no timers: the same
 // firmware and inputs give the same edges on the same nanosecond on every run (decision 0003, C1).
 

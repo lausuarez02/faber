@@ -20,7 +20,7 @@ void setup() {
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(16, 8);
-  display.print(F("Fabwright"));
+  display.print(F("Faber"));
   display.display();
   Serial.println(F("SSD1306 ready"));
 }

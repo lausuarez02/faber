@@ -19,14 +19,14 @@ afterEach(() => {
 });
 
 function setup(opts: { seed?: number; persistFlash?: boolean } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-flash-seed-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-flash-seed-"));
   dirs.push(dir);
   const launches: QemuLaunchOptions[] = [];
   const launch = (o: QemuLaunchOptions): QemuProcess => {
     launches.push(o);
     // what the firmware wrote last boot: the fake "writes" by changing the flash file it was given
     const script = join(dir, `script-${launches.length}.json`);
-    writeFileSync(script, JSON.stringify({ hello: "H fabwright-esp32-bridge 6 esp32s3.gpio sync=1 feat=gpio", events: [] }));
+    writeFileSync(script, JSON.stringify({ hello: "H faber-esp32-bridge 6 esp32s3.gpio sync=1 feat=gpio", events: [] }));
     const child = spawn(process.execPath, [FAKE, String(o.bridgePort), script, join(dir, `rec-${launches.length}.json`)], { stdio: "ignore" });
     return { child, argv: qemuArgs(o, o.flashImage, "127.0.0.1"), stop: () => child.kill("SIGTERM") };
   };

@@ -8,8 +8,8 @@
 # arduino-cli wants <dir>/<dir>.ino, so each sketch is copied to toolchains/arduino/.cache first.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export FABWRIGHT_ARDUINO_IMAGE="${FABWRIGHT_ARDUINO_IMAGE:-fabwright/arduino-cli:1.5.1-avr1.8.8-libs3}"
-FQBN="${FABWRIGHT_FQBN:-arduino:avr:uno}"
+export FABER_ARDUINO_IMAGE="${FABER_ARDUINO_IMAGE:-faber/arduino-cli:1.5.1-avr1.8.8-libs3}"
+FQBN="${FABER_FQBN:-arduino:avr:uno}"
 CACHE="$REPO/toolchains/arduino/.cache/sketches"
 PARTS=("$@")
 if [[ ${#PARTS[@]} -eq 0 ]]; then

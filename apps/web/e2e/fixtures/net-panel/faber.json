@@ -1,0 +1,13 @@
+{
+  "format": "faber/1",
+  "name": "Network panel fixture",
+  "description": "An Uno project with a device network (mock mode, one mocked HTTPS API, a secret by name) for the Network panel e2e.",
+  "parts": [{ "id": "uno", "type": "arduino-uno", "x": 0, "y": 0, "rotation": 0 }],
+  "wires": [],
+  "scenarios": [],
+  "network": {
+    "mode": "mock",
+    "secrets": ["WEATHER_KEY"],
+    "allow": [{ "host": "api.weather.test", "secrets": ["WEATHER_KEY"], "headers": { "X-Api-Key": "{{secret:WEATHER_KEY}}" } }]
+  }
+}

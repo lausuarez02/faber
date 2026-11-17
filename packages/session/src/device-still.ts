@@ -3,10 +3,10 @@
 // colour screens), or the built firmware run headless when the project has no log yet (examples).
 import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { Project } from "@fabwright/project-format";
-import type { PartRegistry, VisualState } from "@fabwright/sim-core";
+import type { Project } from "@faber/project-format";
+import type { PartRegistry, VisualState } from "@faber/sim-core";
 import { SimHost, type ColorFrameImage, type Frame } from "./sim.ts";
-import { stateDirPath } from "@fabwright/project-format/node";
+import { stateDirPath } from "@faber/project-format/node";
 
 /** The device at one moment, for a still picture (gallery thumbnail): part states, HIGH wires, colour screens. */
 export interface DeviceStill {
@@ -20,7 +20,7 @@ export interface DeviceStill {
 /** Bytes read from the end of a big action log when looking for the last frames. */
 const TAIL_BYTES = 8_000_000;
 
-/** The last run's frames in <dir>/.fabwright/actions.jsonl, merged into one still; undefined when none. */
+/** The last run's frames in <dir>/.faber/actions.jsonl, merged into one still; undefined when none. */
 export function lastLoggedStill(dir: string): DeviceStill | undefined {
   const log = join(stateDirPath(dir), "actions.jsonl");
   if (!existsSync(log)) return undefined;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CAMERA_SETTINGS, GROUND } from "@fabwright/sim-core";
+import { DEFAULT_CAMERA_SETTINGS, GROUND } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 

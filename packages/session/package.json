@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/session",
+  "name": "@faber/session",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -12,16 +12,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fabwright/agent-skill": "workspace:*",
-    "@fabwright/ai-gateway": "workspace:*",
-    "@fabwright/device-net": "workspace:*",
-    "@fabwright/enclosure": "workspace:*",
-    "@fabwright/parts": "workspace:*",
-    "@fabwright/physics": "workspace:*",
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/runner": "workspace:*",
-    "@fabwright/sim-backends": "workspace:*",
-    "@fabwright/sim-core": "workspace:*",
+    "@faber/agent-skill": "workspace:*",
+    "@faber/ai-gateway": "workspace:*",
+    "@faber/device-net": "workspace:*",
+    "@faber/enclosure": "workspace:*",
+    "@faber/parts": "workspace:*",
+    "@faber/physics": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/runner": "workspace:*",
+    "@faber/sim-backends": "workspace:*",
+    "@faber/sim-core": "workspace:*",
     "fflate": "0.8.3",
     "ws": "8.22.2"
   },

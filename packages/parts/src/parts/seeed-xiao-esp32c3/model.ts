@@ -1,6 +1,6 @@
 // Seeed XIAO ESP32-C3: ESP32-family board model (round 10, decision 0006). The pads, LEDs and supply chain
 // are data for the shared ESP board model (packages/parts/src/lib/espBoard.ts).
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
 import { createEspBoardModel, limit } from "../../lib/espBoard.ts";
 
 /** ETA4054S2F (Seeed schematic / wiki): 380 mA fast charge, 40 mA trickle, CV 4.2 V. */

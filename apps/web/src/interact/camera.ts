@@ -1,5 +1,5 @@
 // Round 13: what a camera part sees, from the page. Cameras run with their board in the ESP32 emulator
-// next to `fabwright serve`, so every input goes to the session as set_camera_frame (a live command):
+// next to `faber serve`, so every input goes to the session as set_camera_frame (a live command):
 // a test scene, an image the person picks or drops (re-encoded here as a baseline JPEG), or frames
 // from their webcam. The webcam is opened only when the person turns it on, shows an indicator while
 // it is open, sends a small frame every WEBCAM_MS to the simulator on this computer only, and closes
@@ -29,7 +29,7 @@ export function showCamera(part: string, src: { scene: string } | { image: strin
   const ok = sendLiveCommand("set_camera_frame", { part, ...src });
   useCameraUi.setState((s) => ({
     shown: ok ? { ...s.shown, [part]: label } : s.shown,
-    error: ok ? undefined : "This page is not connected to fabwright serve, where the camera's board runs. Fix: open the project from fabwright serve (or wait for the Live bar to say connected), then try again.",
+    error: ok ? undefined : "This page is not connected to faber serve, where the camera's board runs. Fix: open the project from faber serve (or wait for the Live bar to say connected), then try again.",
   }));
   return ok;
 }
@@ -61,7 +61,7 @@ let stopAt = 0;
 export async function startWebcam(part: string): Promise<void> {
   stopWebcam();
   if (!navigator.mediaDevices?.getUserMedia) {
-    useCameraUi.setState({ error: "This browser gives no camera access here (it needs https or localhost). Fix: open Fabwright at http://localhost, or show the camera a picture instead." });
+    useCameraUi.setState({ error: "This browser gives no camera access here (it needs https or localhost). Fix: open Faber at http://localhost, or show the camera a picture instead." });
     return;
   }
   try {

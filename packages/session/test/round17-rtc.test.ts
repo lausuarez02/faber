@@ -5,8 +5,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject, type Scenario } from "@fabwright/project-format";
-import { registry } from "@fabwright/parts";
+import { parseProject, type Scenario } from "@faber/project-format";
+import { registry } from "@faber/parts";
 import { SimHost } from "../src/sim.ts";
 import { runScenario } from "../src/scenario.ts";
 import { powerBudget } from "../src/power-budget.ts";
@@ -17,7 +17,7 @@ const HEX = readFileSync(fileURLToPath(new URL("../../parts/src/parts/ds3231-rtc
 describe("round 17: the small RTCs follow the test clock", { timeout: 60_000 }, () => {
   it("a scenario clock and set_clock set the DS3231 mini (RTClib reads it) and the RV-3028 alike", () => {
     const project = parseProject({
-      format: "fabwright/1",
+      format: "faber/1",
       name: "two clocks",
       parts: [
         { id: "uno", type: "arduino-uno", x: 0, y: 0 },
@@ -58,7 +58,7 @@ describe("round 17: what the ZS-042's power LED costs a sleeping battery device"
   const FW = "void setup(){ esp_sleep_enable_timer_wakeup(3600ULL * 1000000ULL); esp_deep_sleep_start(); }";
   const mood = (rtc: { type: string; props?: Record<string, unknown> }) =>
     parseProject({
-      format: "fabwright/1",
+      format: "faber/1",
       name: "mood",
       parts: [
         { id: "xiao", type: "seeed-xiao-esp32c3", x: 0, y: 0 },
@@ -102,8 +102,8 @@ describe("round 17: get_part says which RTC to pick", () => {
   });
 });
 
-import { LIPO_POUCH_CELLS, thinnestCell } from "@fabwright/parts";
-import { LIPO_CELLS } from "@fabwright/enclosure";
+import { LIPO_POUCH_CELLS, thinnestCell } from "@faber/parts";
+import { LIPO_CELLS } from "@faber/enclosure";
 
 describe("round 17: the flat LiPo cells", () => {
   it("the catalog lists the common thin cells with real sizes, and the thinnest pick for a capacity", () => {

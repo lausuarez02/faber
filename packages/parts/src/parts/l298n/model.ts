@@ -1,5 +1,5 @@
-import type { CircuitBuilder, Diagnostic, ElementId, PartModel, PartModelFactory, SolveResultView } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { CircuitBuilder, Diagnostic, ElementId, PartModel, PartModelFactory, SolveResultView } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { round, truthy } from "../../lib/props.ts";
 
 /** L298 datasheet input thresholds (V). */

@@ -8,8 +8,8 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { zipSync } from "fflate";
-import { buildNets, type Project } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
+import { buildNets, type Project } from "@faber/project-format";
+import type { PartRegistry, PartSpec } from "@faber/sim-core";
 import { partLabel, partValue } from "./exporter.ts";
 import type { WireCut } from "./assembly.ts"; // round 6: the power track's wire-cut model is the one used
 
@@ -160,10 +160,10 @@ export function kicadNetlist(project: Project, registry: PartRegistry): string {
   const comps = project.parts.map((p) => {
     const spec = registry.get(p.type)?.spec;
     const value = p.standIn ? undefined : partValue(p, registry);
-    return `    (comp (ref ${q(p.id)})\n      (value ${q(value ?? spec?.sourcing?.mpn ?? spec?.name ?? p.type)})\n      (footprint ${q(spec?.sourcing?.package ?? spec?.footprint ?? "")})\n      (libsource (lib "fabwright") (part ${q(p.type)}))\n      (fields (field (name "Description") ${q(spec?.sourcing?.generic ?? spec?.name ?? p.type)})))`;
+    return `    (comp (ref ${q(p.id)})\n      (value ${q(value ?? spec?.sourcing?.mpn ?? spec?.name ?? p.type)})\n      (footprint ${q(spec?.sourcing?.package ?? spec?.footprint ?? "")})\n      (libsource (lib "faber") (part ${q(p.type)}))\n      (fields (field (name "Description") ${q(spec?.sourcing?.generic ?? spec?.name ?? p.type)})))`;
   });
   const nets = buildNets(project).map((n, i) => `    (net (code ${i + 1}) (name ${q(netName(n.pins, i))})\n${n.pins.map((p) => `      (node (ref ${q(p.part)}) (pin ${q(p.pin)}))`).join("\n")})`);
-  return `(export (version D)\n  (design\n    (source "fabwright.json")\n    (tool "Fabwright")\n    (comment (number 1) (value ${q(project.name)})))\n  (components\n${comps.join("\n")})\n  (nets\n${nets.join("\n")}))\n`;
+  return `(export (version D)\n  (design\n    (source "faber.json")\n    (tool "Faber")\n    (comment (number 1) (value ${q(project.name)})))\n  (components\n${comps.join("\n")})\n  (nets\n${nets.join("\n")}))\n`;
 }
 
 /** Zip a folder (deterministic: sorted, fixed mtime). */

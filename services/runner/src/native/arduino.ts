@@ -1,12 +1,12 @@
-// Round 11: Fabwright's native Arduino toolchain, for a machine without (working) Docker. The same
+// Round 11: Faber's native Arduino toolchain, for a machine without (working) Docker. The same
 // pinned arduino-cli, cores and libraries as the Docker images (toolchains/*/Dockerfile), installed
-// under ~/.fabwright/toolchains/arduino/<cli version> with Fabwright's own data / user / download folders,
+// under ~/.faber/toolchains/arduino/<cli version> with Faber's own data / user / download folders,
 // so it never touches a person's Arduino IDE install (~/Library/Arduino15, ~/Documents/Arduino).
 //
 //   bin/arduino-cli              the release binary, SHA-256 checked
 //   data/                        cores and their compilers (ARDUINO_DIRECTORIES_DATA)
-//   user/base/libraries          the libs3 set + Servo + Fabwright's LiquidCrystal_I2C (the runner image)
-//   user/esp32/libraries         base + network libraries + FabwrightEth + FabwrightSim (arduino-esp32 r3)
+//   user/base/libraries          the libs3 set + Servo + Faber's LiquidCrystal_I2C (the runner image)
+//   user/esp32/libraries         base + network libraries + FaberEth + FaberSim (arduino-esp32 r3)
 //   shims/python                 `python` for core recipes that call it (Seeed nRF52's UF2 step)
 //   installed/<family>.json      written last: the family is ready
 //
@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { chmodSync, cpSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, truncateSync, writeFileSync } from "node:fs";
 import { arch, platform, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { fabwrightHome } from "@fabwright/sim-backends/node";
+import { faberHome } from "@faber/sim-backends/node";
 import { REPO_ROOT } from "../config.ts";
 import { RunnerError, type ExecResult } from "../docker.ts";
 
@@ -72,7 +72,7 @@ export const NATIVE_CORES: Record<NativeFamily, NativeCore> = {
   nrf52: { family: "nrf52", label: "Seeed XIAO nRF52840", core: "Seeeduino:nrf52@1.1.13", index: SEEED_INDEX, prefix: "Seeeduino:nrf52:", libs: "base", prefixMap: true, size: "about 500 MB, 1 minute", x64Tools: "adafruit-nrfutil (the DFU zip step)" },
 };
 
-/** Board families `fabwright setup` takes (a family can need several cores). */
+/** Board families `faber setup` takes (a family can need several cores). */
 export const SETUP_FAMILIES: Record<string, { label: string; cores: NativeFamily[] }> = {
   avr: { label: "Arduino Uno / Nano (AVR)", cores: ["avr"] },
   rp2040: { label: "RP2040 (Pico, XIAO RP2040, RP2040-Zero)", cores: ["rp2040"] },
@@ -106,7 +106,7 @@ export const BASE_LIBRARIES = [
 export const ESP32_NETWORK_LIBRARIES = ["PubSubClient@2.8.0", "MQTT@2.5.3", "ArduinoJson@7.4.3", "WebSockets@2.7.2"];
 
 export function nativeArduinoDir(): string {
-  return join(fabwrightHome(), "toolchains", "arduino", ARDUINO_CLI_VERSION);
+  return join(faberHome(), "toolchains", "arduino", ARDUINO_CLI_VERSION);
 }
 
 function hostKey(): string {
@@ -185,7 +185,7 @@ export function run(cmd: string, args: readonly string[], o: { env?: NodeJS.Proc
     const timer = o.timeoutMs
       ? setTimeout(() => {
           child.kill("SIGKILL");
-          stderr += `\n[fabwright] killed after ${o.timeoutMs} ms`;
+          stderr += `\n[faber] killed after ${o.timeoutMs} ms`;
         }, o.timeoutMs)
       : undefined;
     child.on("error", (err) => {
@@ -246,7 +246,7 @@ export async function ensureArduinoCli(log: (l: string) => void = () => {}): Pro
   }
   const asset = ARDUINO_CLI_ASSETS[hostKey()];
   if (!asset) {
-    throw new RunnerError("native-unsupported", `Fabwright has no native arduino-cli for ${hostKey()}. Why: the native toolchain is pinned for macOS (arm64, x64) and Linux (x64, arm64). Fix: use Docker on this machine (start Docker Desktop, FABWRIGHT_RUNTIME=docker).`);
+    throw new RunnerError("native-unsupported", `Faber has no native arduino-cli for ${hostKey()}. Why: the native toolchain is pinned for macOS (arm64, x64) and Linux (x64, arm64). Fix: use Docker on this machine (start Docker Desktop, FABER_RUNTIME=docker).`);
   }
   const dl = join(nativeArduinoDir(), "downloads", asset.file);
   log(`downloading arduino-cli ${ARDUINO_CLI_VERSION} (${asset.file}, SHA-256 checked)…`);
@@ -293,17 +293,17 @@ function libsDir(libs: "base" | "esp32"): string {
 /** Our own libraries in the native sketchbook, copied from the repo. */
 function copyOwnLibraries(libs: "base" | "esp32"): void {
   const own = [join(REPO_ROOT, "toolchains/arduino/libraries/LiquidCrystal_I2C")];
-  if (libs === "esp32") own.push(join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightEth"), join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightSim"));
+  if (libs === "esp32") own.push(join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FaberEth"), join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FaberSim"));
   for (const src of own) {
     const dest = join(libsDir(libs), basename(src));
     rmSync(dest, { recursive: true, force: true });
     cpSync(src, dest, { recursive: true });
   }
-  // JumperEth / JumperSim (their names before the rename) stay: an older Fabwright (Jumper) checkout
+  // JumperEth / JumperSim (their names before the rename) stay: an older Faber (Jumper) checkout
   // sharing this toolchain folder still builds with them, and a build only compiles what it includes.
 }
 
-const libraryStamp = (libs: "base" | "esp32") => join(nativeArduinoDir(), "user", libs, ".fabwright-libs.json");
+const libraryStamp = (libs: "base" | "esp32") => join(nativeArduinoDir(), "user", libs, ".faber-libs.json");
 const wantedLibraries = (libs: "base" | "esp32") => ({ base: BASE_LIBRARIES, net: libs === "esp32" ? ESP32_NETWORK_LIBRARIES : [], rev: 1 });
 
 /**
@@ -334,9 +334,9 @@ async function ensureLibrarySet(libs: "base" | "esp32", log: (l: string) => void
   const want = wantedLibraries(libs);
   if (adoptPreRenameLibraries(libs)) return;
   await ensureIndex(log);
-  log(`installing the pinned Arduino libraries (${libs === "esp32" ? "libs3 + network libraries + FabwrightEth / FabwrightSim" : "libs3 + Servo"})…`);
+  log(`installing the pinned Arduino libraries (${libs === "esp32" ? "libs3 + network libraries + FaberEth / FaberSim" : "libs3 + Servo"})…`);
   let r = await cli(["lib", "install", "--no-deps", ...BASE_LIBRARIES], libs, log, 20 * 60_000);
-  if (r.code !== 0) throw new RunnerError("library-install-failed", `Could not install Fabwright's pinned Arduino libraries: ${tail(r.stderr || r.stdout)}. Fix: check your connection, then run the setup again.`);
+  if (r.code !== 0) throw new RunnerError("library-install-failed", `Could not install Faber's pinned Arduino libraries: ${tail(r.stderr || r.stdout)}. Fix: check your connection, then run the setup again.`);
   if (libs === "esp32") {
     r = await cli(["lib", "install", ...ESP32_NETWORK_LIBRARIES], libs, log, 20 * 60_000);
     if (r.code !== 0) throw new RunnerError("library-install-failed", `Could not install the ESP32 network libraries (${ESP32_NETWORK_LIBRARIES.join(", ")}): ${tail(r.stderr || r.stdout)}. Fix: check your connection, then run the setup again.`);
@@ -378,7 +378,7 @@ export function installNativeCore(f: NativeFamily, log: (l: string) => void = ()
         log(`  retrying (${i + 1}/3): ${tail(r.stderr || r.stdout, 1)}`);
       }
       if (!r || r.code !== 0) {
-        throw new RunnerError("core-install-failed", `Could not install ${c.core}: ${tail(r?.stderr || r?.stdout || "")}. Why: a download failed or the disk is full. Fix: check your connection and free disk space (${c.size}), then run \`fabwright setup\` again.`);
+        throw new RunnerError("core-install-failed", `Could not install ${c.core}: ${tail(r?.stderr || r?.stdout || "")}. Why: a download failed or the disk is full. Fix: check your connection and free disk space (${c.size}), then run \`faber setup\` again.`);
       }
       await ensureLibrarySet(c.libs, log);
       pruneCore(f);
@@ -396,10 +396,10 @@ export function pruneCore(f: NativeFamily): void {
   for (const rel of NATIVE_CORES[f].prune ?? []) rmSync(join(nativeArduinoDir(), "data", "packages", rel), { recursive: true, force: true });
 }
 
-/** The ESP32 shim's include test (toolchains/arduino-esp32/fabwright-arduino-esp32.sh NETWORK_INCLUDES). */
+/** The ESP32 shim's include test (toolchains/arduino-esp32/faber-arduino-esp32.sh NETWORK_INCLUDES). */
 const NETWORK_INCLUDE = /#[ \t]*include[ \t]*[<"](WiFi|WiFiMulti|WiFiClient|WiFiClientSecure|WiFiUdp|WiFiServer|WiFiGeneric|NetworkClientSecure|NetworkClient|Network|HTTPClient|HTTPUpdate|WebServer|WebSocketsClient|WebSockets|WebSocketsServer|ArduinoWebsockets|PubSubClient|MQTT|MQTTClient|ArduinoMqttClient|AsyncMqttClient|ESPmDNS|AsyncUDP|esp_wifi|esp_http_client|esp_websocket_client|mqtt_client)\.h[>"]/;
 
-/** The camera shim's include test (toolchains/arduino-esp32/fabwright-arduino-esp32.sh CAMERA_INCLUDES). */
+/** The camera shim's include test (toolchains/arduino-esp32/faber-arduino-esp32.sh CAMERA_INCLUDES). */
 export const CAMERA_SHIM_INCLUDE = /#[ \t]*include[ \t]*[<"](esp_camera|esp_camera_af)\.h[>"]/;
 const CAMERA_INCLUDE = CAMERA_SHIM_INCLUDE;
 
@@ -420,27 +420,27 @@ const sketchUsesNetwork = (dir: string) => sketchIncludes(dir, NETWORK_INCLUDE);
 /** True when the sketch uses Espressif's esp32-camera driver (esp_camera.h). */
 export const sketchUsesCamera = (dir: string) => sketchIncludes(dir, CAMERA_INCLUDE);
 
-/** Round 15: the deep-sleep shim's trigger (toolchains/arduino-esp32/fabwright-arduino-esp32.sh SLEEP_CALLS): the sketch deep-sleeps. */
+/** Round 15: the deep-sleep shim's trigger (toolchains/arduino-esp32/faber-arduino-esp32.sh SLEEP_CALLS): the sketch deep-sleeps. */
 export const SLEEP_SHIM_CALL = /\besp_deep_sleep(_start|_try_to_start)?\s*\(/;
 /** True when the sketch calls esp_deep_sleep / esp_deep_sleep_start. */
 export const sketchUsesSleep = (dir: string) => sketchIncludes(dir, SLEEP_SHIM_CALL);
 /** Defined for an ESP32 simulation build's sketch; JUMPER_SIM too, the name sketches written before the rename test. */
-const SIM_DEFINES = ["-DFABWRIGHT_SIM=1", "-DJUMPER_SIM=1"];
+const SIM_DEFINES = ["-DFABER_SIM=1", "-DJUMPER_SIM=1"];
 
 /** The deep-sleep shim library, used straight from the repo (simulation builds only). */
-export const FABWRIGHT_SLEEP_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightSleep");
+export const FABER_SLEEP_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FaberSleep");
 
 /** The camera shim library, used straight from the repo (simulation builds only; never installed into the person's sketchbook). */
-export const FABWRIGHT_CAMERA_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightCamera");
+export const FABER_CAMERA_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FaberCamera");
 
 /** Content hash of the camera shim's sources (part of a camera sketch's build cache key). */
 export function cameraShimHash(): string {
-  return shimHash(FABWRIGHT_CAMERA_LIB);
+  return shimHash(FABER_CAMERA_LIB);
 }
 
 /** Round 15: content hash of the deep-sleep shim's sources (part of a sleeping sketch's build cache key). */
 export function sleepShimHash(): string {
-  return shimHash(FABWRIGHT_SLEEP_LIB);
+  return shimHash(FABER_SLEEP_LIB);
 }
 
 function shimHash(lib: string): string {
@@ -499,7 +499,7 @@ export interface NativeCompile {
   outDir: string;
   /** Scratch folder for the shim's sketch copy. */
   workDir: string;
-  /** "device" builds leave the ESP32 simulation shim out (FABWRIGHT_SIM=0). */
+  /** "device" builds leave the ESP32 simulation shim out (FABER_SIM=0). */
   purpose?: "simulator" | "device";
   timeoutMs?: number;
 }
@@ -512,7 +512,7 @@ export interface NativeCompile {
 export async function compileNative(c: NativeCompile): Promise<ExecResult & { sketchCopy?: string }> {
   const f = nativeFamilyOf(c.fqbn);
   if (!f || !nativeCoreInstalled(f)) {
-    throw new RunnerError("native-missing", `Build failed: the native toolchain for ${c.fqbn} is not installed. Fix: run \`fabwright setup ${f ? Object.entries(SETUP_FAMILIES).find(([, s]) => s.cores.includes(f))?.[0] : "list"}\`, then build again.`);
+    throw new RunnerError("native-missing", `Build failed: the native toolchain for ${c.fqbn} is not installed. Fix: run \`faber setup ${f ? Object.entries(SETUP_FAMILIES).find(([, s]) => s.cores.includes(f))?.[0] : "list"}\`, then build again.`);
   }
   const core = NATIVE_CORES[f];
   adoptPreRenameLibraries(core.libs);
@@ -522,7 +522,7 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
   let sketchCopy: string | undefined;
   let note = "";
   if (f === "esp32" && c.purpose !== "device") {
-    // fabwright-arduino-esp32.sh, simulation build: each shim the sketch needs adds one include file
+    // faber-arduino-esp32.sh, simulation build: each shim the sketch needs adds one include file
     // to a copy of the sketch (the person's files are never touched) and its link-time wraps.
     const net = sketchUsesNetwork(sketch);
     const cam = sketchUsesCamera(sketch);
@@ -533,26 +533,26 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
       cpSync(sketch, sketchCopy, { recursive: true });
       const wrapFlags: string[] = [];
       if (net) {
-        writeFileSync(join(sketchCopy, "zz_fabwright_sim_shim.cpp"), "// Added by Fabwright for the simulation build only (not in your project).\n#include <FabwrightSim.h>\n");
-        wrapFlags.push(...wrapFlagsOf(join(libsDir("esp32"), "FabwrightSim", "src")));
-        note += "fabwright: simulation build, Wi-Fi shim on (WiFi.begin() joins the Fabwright sandbox network over the emulated Ethernet card)\n";
+        writeFileSync(join(sketchCopy, "zz_faber_sim_shim.cpp"), "// Added by Faber for the simulation build only (not in your project).\n#include <FaberSim.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(libsDir("esp32"), "FaberSim", "src")));
+        note += "faber: simulation build, Wi-Fi shim on (WiFi.begin() joins the Faber sandbox network over the emulated Ethernet card)\n";
       }
       if (cam) {
-        writeFileSync(join(sketchCopy, "zz_fabwright_camera_shim.cpp"), "// Added by Fabwright for the simulation build only (not in your project).\n#include <FabwrightCamera.h>\n");
-        wrapFlags.push(...wrapFlagsOf(join(FABWRIGHT_CAMERA_LIB, "src")));
-        args = [...args, "--library", FABWRIGHT_CAMERA_LIB];
-        note += "fabwright: simulation build, camera shim on (esp_camera_fb_get() gets frames from Fabwright; the device build uses the real esp32-camera driver)\n";
+        writeFileSync(join(sketchCopy, "zz_faber_camera_shim.cpp"), "// Added by Faber for the simulation build only (not in your project).\n#include <FaberCamera.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(FABER_CAMERA_LIB, "src")));
+        args = [...args, "--library", FABER_CAMERA_LIB];
+        note += "faber: simulation build, camera shim on (esp_camera_fb_get() gets frames from Faber; the device build uses the real esp32-camera driver)\n";
       }
       if (slp) {
-        writeFileSync(join(sketchCopy, "zz_fabwright_sleep_shim.cpp"), "// Added by Fabwright for the simulation build only (not in your project).\n#include <FabwrightSleep.h>\n");
-        wrapFlags.push(...wrapFlagsOf(join(FABWRIGHT_SLEEP_LIB, "src")));
-        args = [...args, "--library", FABWRIGHT_SLEEP_LIB];
-        note += "fabwright: simulation build, deep-sleep shim on (esp_deep_sleep_start() hands the board to Fabwright, which wakes it on its timer or wake pins; RTC memory and the clock survive)\n";
+        writeFileSync(join(sketchCopy, "zz_faber_sleep_shim.cpp"), "// Added by Faber for the simulation build only (not in your project).\n#include <FaberSleep.h>\n");
+        wrapFlags.push(...wrapFlagsOf(join(FABER_SLEEP_LIB, "src")));
+        args = [...args, "--library", FABER_SLEEP_LIB];
+        note += "faber: simulation build, deep-sleep shim on (esp_deep_sleep_start() hands the board to Faber, which wakes it on its timer or wake pins; RTC memory and the clock survive)\n";
       }
       // build.defines replaces the board menu's defines: keep BOARD_HAS_PSRAM for a PSRAM build, and
       // tell the camera shim the board has PSRAM the emulator lacks.
       const psram = /[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn);
-      const defines = [...SIM_DEFINES, ...(psram ? ["-DBOARD_HAS_PSRAM", ...(cam ? ["-DFABWRIGHT_SIM_PSRAM_FALLBACK=1"] : [])] : [])].join(" ");
+      const defines = [...SIM_DEFINES, ...(psram ? ["-DBOARD_HAS_PSRAM", ...(cam ? ["-DFABER_SIM_PSRAM_FALLBACK=1"] : [])] : [])].join(" ");
       args = [...args, "--build-property", `build.defines=${defines}`, "--build-property", `compiler.c.elf.extra_flags=${wrapFlags.join(" ")} `];
       sketch = sketchCopy;
     } else {
@@ -562,12 +562,12 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
   // The build folder is ours (not the OS temp one) so it can be mapped to the image's path.
   const buildPath = join(c.workDir, "build");
   args = prefixMapArgs(["--build-path", buildPath, ...args], f, c.workDir, buildPath);
-  const r = await run(arduinoCliPath(), ["compile", ...args, sketch], { env: nativeEnv(core.libs, c.purpose === "device" ? { FABWRIGHT_SIM: "0" } : {}), timeoutMs: c.timeoutMs ?? 10 * 60_000 });
+  const r = await run(arduinoCliPath(), ["compile", ...args, sketch], { env: nativeEnv(core.libs, c.purpose === "device" ? { FABER_SIM: "0" } : {}), timeoutMs: c.timeoutMs ?? 10 * 60_000 });
   const out = { ...r, stdout: note + r.stdout, ...(sketchCopy ? { sketchCopy } : {}) };
   if (r.code !== 0) return out;
   try {
     if (f === "rp2040") {
-      // toolchains/arduino-pico/fabwright-arduino.sh: ELF -> Intel HEX (flash at 0x10000000).
+      // toolchains/arduino-pico/faber-arduino.sh: ELF -> Intel HEX (flash at 0x10000000).
       const objcopy = findFirst(join(data, "packages/rp2040/tools/pqt-gcc"), (v) => `${v}/bin/arm-none-eabi-objcopy`);
       if (!objcopy) throw new Error("arm-none-eabi-objcopy not found in the arduino-pico toolchain");
       for (const elf of readdirSync(c.outDir).filter((n) => n.endsWith(".elf"))) {
@@ -575,7 +575,7 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
         if (x.code !== 0) return { ...out, code: x.code, stderr: out.stderr + x.stderr };
       }
     } else if (f === "esp32") {
-      // fabwright-arduino-esp32.sh: the merged image, padded to at least 4 MB for QEMU.
+      // faber-arduino-esp32.sh: the merged image, padded to at least 4 MB for QEMU.
       const app = readdirSync(c.outDir).find((n) => n.endsWith(".ino.bin") && !n.endsWith(".merged.bin"));
       if (app) {
         const appPath = join(c.outDir, app);
@@ -588,16 +588,16 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
           if (x.code !== 0) return { ...out, code: x.code, stderr: out.stderr + x.stderr };
         }
         if (statSync(merged).size < 4 * 1024 * 1024) truncateSync(merged, 4 * 1024 * 1024);
-        out.stdout += `fabwright: flash image ${basename(merged)} ${statSync(merged).size} bytes\n`;
+        out.stdout += `faber: flash image ${basename(merged)} ${statSync(merged).size} bytes\n`;
       }
     } else if (f === "nrf52") {
-      // toolchains/arduino-nrf52/fabwright-arduino.sh: sim.hex (MBR + SoftDevice + app) and the .uf2.
+      // toolchains/arduino-nrf52/faber-arduino.sh: sim.hex (MBR + SoftDevice + app) and the .uf2.
       const coreDir = join(data, "packages/Seeeduino/hardware/nrf52", NATIVE_CORES.nrf52.core.split("@")[1]!);
-      const x = await run("python3", [join(REPO_ROOT, "toolchains/arduino-nrf52/fabwright-sim-hex.py"), c.outDir], { env: { ...process.env, FABWRIGHT_NRF52_CORE: coreDir } });
-      if (x.code !== 0) return { ...out, code: x.code, stderr: `${out.stderr}\nfabwright: writing the simulator hex failed: ${x.stderr}` };
+      const x = await run("python3", [join(REPO_ROOT, "toolchains/arduino-nrf52/faber-sim-hex.py"), c.outDir], { env: { ...process.env, FABER_NRF52_CORE: coreDir } });
+      if (x.code !== 0) return { ...out, code: x.code, stderr: `${out.stderr}\nfaber: writing the simulator hex failed: ${x.stderr}` };
     }
   } catch (err) {
-    return { ...out, code: 1, stderr: `${out.stderr}\nfabwright: the post-build step failed: ${(err as Error).message}. Fix: run \`fabwright setup\` again to repair the native toolchain.` };
+    return { ...out, code: 1, stderr: `${out.stderr}\nfaber: the post-build step failed: ${(err as Error).message}. Fix: run \`faber setup\` again to repair the native toolchain.` };
   }
   return out;
 }

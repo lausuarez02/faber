@@ -1,6 +1,6 @@
 # Talking egg (Nano + DFPlayer Mini)
 
-Press the button and it says something. The smallest device that talks in Fabwright.
+Press the button and it says something. The smallest device that talks in Faber.
 
 | Part | Id | Notes |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ what was said, and the tests check it with `{"said": "dizzy", "within_ms": 300}`
 - `talks-on-press`: a press says "whoa, I'm dizzy!", the module reports the track finished, the
   next press says "hehe, that tickles", and it does not repeat "dizzy".
 
-`pnpm fabwright test -p examples/talking-egg-demo` (2/2).
+`pnpm faber test -p examples/talking-egg-demo` (2/2).
 
 ## Making a real one
 
@@ -35,4 +35,4 @@ into MP3s with a text-to-speech tool you install yourself (espeak-ng or piper, p
 record your own voice as `mp3/0001.mp3` …
 
 What the simulation does not check: the real voice and loudness, MP3 decoding, the card's file
-order, clone modules that need a longer start-up delay (see `fabwright fidelity -p .`).
+order, clone modules that need a longer start-up delay (see `faber fidelity -p .`).

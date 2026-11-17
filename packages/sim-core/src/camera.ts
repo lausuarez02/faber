@@ -56,7 +56,7 @@ export const frameSizeIndex = (id: string): number => CAMERA_FRAME_SIZES.findInd
 /** Pixel formats in esp32-camera's pixformat_t order. */
 export const CAMERA_PIXFORMATS = ["rgb565", "yuv422", "yuv420", "grayscale", "jpeg", "rgb888"] as const;
 export type CameraPixelFormat = (typeof CAMERA_PIXFORMATS)[number];
-/** What Fabwright renders (YUV420 and the RAW formats are not). */
+/** What Faber renders (YUV420 and the RAW formats are not). */
 export const CAMERA_RENDERED_FORMATS: readonly CameraPixelFormat[] = ["rgb565", "yuv422", "grayscale", "jpeg", "rgb888"];
 
 /** Image sensors a part can carry, with what the firmware's driver reads from them. */

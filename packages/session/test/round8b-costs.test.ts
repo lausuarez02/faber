@@ -5,7 +5,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { registry } from "@fabwright/parts";
+import { registry } from "@faber/parts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AGENT_LOOP, planDevice, ProjectSession, TOOLS } from "../src/index.ts";
 
@@ -17,15 +17,15 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(() => {
-  process.env.FABWRIGHT_CASE_PDF = "0";
+  process.env.FABER_CASE_PDF = "0";
   // the costs are time-boxed: a fixed, generous budget so a loaded test machine does not skip choices
-  process.env.FABWRIGHT_COSTS_BUDGET_MS = "90000";
-  dir = mkdtempSync(join(tmpdir(), "fabwright-costs-"));
-  writeFileSync(join(dir, "fabwright.json"), EGG);
+  process.env.FABER_COSTS_BUDGET_MS = "90000";
+  dir = mkdtempSync(join(tmpdir(), "faber-costs-"));
+  writeFileSync(join(dir, "faber.json"), EGG);
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {
-  delete process.env.FABWRIGHT_COSTS_BUDGET_MS;
+  delete process.env.FABER_COSTS_BUDGET_MS;
   s.dispose();
   rmSync(dir, { recursive: true, force: true });
 });
@@ -52,14 +52,14 @@ describe("costs in the case tools", () => {
     expect(r.fits).toBe(true);
     expect(r.costs.costs.length).toBeGreaterThan(0);
     // design_case at a size that is too small: nothing saved, the sizes that work (flat and stacked) and what breaks it
-    const before = readFileSync(join(dir, "fabwright.json"), "utf8");
+    const before = readFileSync(join(dir, "faber.json"), "utf8");
     const m = await call("design_case", { shape: "custom", outline: JSON.parse(EGG).enclosure.outline, size_mm: { w: 44, h: 57 }, params: { dome_mm: 6 }, images: false });
     expect(m.saved).toBe(false);
     expect(m.sizes_that_work.length).toBeGreaterThan(0);
     expect(m.sizes_that_work[0].label).toMatch(/flat \(1 layer\)|stacked/);
     expect(m.next).toMatch(/Sizes this outline works at: .*size_mm \{"w": [\d.]+, "h": [\d.]+\}/);
     expect(m.next).toMatch(/do not guess sizes/);
-    expect(readFileSync(join(dir, "fabwright.json"), "utf8")).toBe(before);
+    expect(readFileSync(join(dir, "faber.json"), "utf8")).toBe(before);
   }, 180_000);
 });
 

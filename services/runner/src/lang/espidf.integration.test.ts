@@ -1,18 +1,18 @@
-// ESP-IDF projects built in fabwright/esp-idf and booted in Fabwright's QEMU: blink + console on the
+// ESP-IDF projects built in faber/esp-idf and booted in Faber's QEMU: blink + console on the
 // ESP32 and ESP32-C3, and an I2C write to a part at 0x3C on the ESP32. Needs Docker with both images.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { I2cBus } from "@fabwright/sim-core";
-import { QemuEspBackend } from "@fabwright/sim-backends/qemu-esp";
+import { I2cBus } from "@faber/sim-core";
+import { QemuEspBackend } from "@faber/sim-backends/qemu-esp";
 import { buildFirmware } from "../build.ts";
 import { imagePresent } from "./docker-guard.ts";
 import { ESP_IDF_IMAGE } from "./toolchain.ts";
 
-const available = imagePresent(ESP_IDF_IMAGE.image) && imagePresent("fabwright/qemu-esp:9.2.2-20260417-jb2");
+const available = imagePresent(ESP_IDF_IMAGE.image) && imagePresent("faber/qemu-esp:9.2.2-20260417-jb2");
 
-const CMAKE = "cmake_minimum_required(VERSION 3.16)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(fabwright_app)\n";
+const CMAKE = "cmake_minimum_required(VERSION 3.16)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(faber_app)\n";
 const BLINK = (gpio: number, i2c: boolean) => `#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -43,7 +43,7 @@ describe.skipIf(!available)("ESP-IDF (idf.py in Docker, run in QEMU)", { timeout
 
   for (const [chip, gpio] of [["esp32", 2], ["esp32c3", 8]] as const) {
     it(`${chip}: builds, boots, blinks GPIO${gpio}${chip === "esp32" ? " and writes I2C0" : ""}; a typo is an error at file:line`, async () => {
-      const dir = mkdtempSync(join(tmpdir(), "fabwright-idf-"));
+      const dir = mkdtempSync(join(tmpdir(), "faber-idf-"));
       dirs.push(dir);
       const write = (rel: string, text: string) => {
         mkdirSync(dirname(join(dir, rel)), { recursive: true });

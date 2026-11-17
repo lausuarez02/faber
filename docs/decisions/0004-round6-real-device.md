@@ -16,7 +16,7 @@ one.
 
 Done in this commit (so the tracks do not edit the same lines): the optional `mechanical` and
 `sourcing` blocks in `PartSpecSchema` (R1), the optional `assembly`, `power` and `enclosure` fields
-in `ProjectSchema` (R2, R3), the `@fabwright/enclosure` package with its shared types and its
+in `ProjectSchema` (R2, R3), the `@faber/enclosure` package with its shared types and its
 dependencies installed (R4), the `case` live event (R6), `Frame.color` / `VersionFrame.color` and
 the history route passing it through (R7), `apps/web/src/lib/projectSwitch.ts` (R8), NOTICE lines
 for the CAD libraries.
@@ -85,7 +85,7 @@ Libraries: a new pinned library set **libs3** for AVR and RP2040 (R7): Adafruit 
 ST7789, ILI9341, GC9A01A (BSD / MIT), SSD1306, MPU6050 + Unified Sensor, DHT sensor library,
 FastLED (MIT), TFT_eSPI (licence checked file by file; FreeBSD for the core, its bundled fonts and
 extensions have their own notes), **Adafruit NeoPixel (LGPL-3.0)**: it is compiled into the
-person's own firmware inside the build image, never shipped in Fabwright's repo or packages; NOTICE
+person's own firmware inside the build image, never shipped in Faber's repo or packages; NOTICE
 says so, and the export's firmware README tells the person that a firmware binary they distribute
 that links NeoPixel carries LGPL-3.0 obligations (relinkable objects or source). Every existing
 golden hex must build byte-identical with libs3. The RP2040 image builds on any machine from the
@@ -104,7 +104,7 @@ committed Dockerfile through `ensureImage` (like AVR), and CI builds it.
 | CadQuery / build123d in Docker | Apache-2.0 + OCCT LGPL | B-rep (Python) | Yes | Docker only, ~1 GB image | Agent loop waits on a container; no browser |
 | OpenSCAD in Docker | GPL-2.0 (external tool) | Mesh CSG | **No** | Docker only | No STEP, no fillets |
 
-Choice: **replicad on OCCT wasm**, run on the server side (Node) inside `@fabwright/enclosure`,
+Choice: **replicad on OCCT wasm**, run on the server side (Node) inside `@faber/enclosure`,
 imported lazily (`await import(...)`) so nothing else loads 10 MB of wasm. The web Case view gets
 meshes from the server (R6), so the browser bundle never contains OCCT. LGPL-2.1 compliance: the
 wasm is the unmodified npm file loaded at run time and replaceable, disclosed in NOTICE with the
@@ -186,7 +186,7 @@ Field rules (exact names, zod in `packages/sim-core/src/part.ts`: `MechanicalSch
 - Custom parts (`create_part`): the case track adds `mechanical` and `sourcing` to
   `CustomPartSchema` (one line each in `packages/parts/src/custom/schema.ts`), then `pnpm gen`.
 - Required: a case-track spec test requires `mechanical` for every part used by a shipped example
-  (`examples/**/fabwright.json`) whose category is board, display, input, sensor, power, output or
+  (`examples/**/faber.json`) whose category is board, display, input, sensor, power, output or
   communication; `sourcing.generic` for every shipped part.
 
 ### R2. Power: parts, pins, project fields, DRC codes (power track)
@@ -247,7 +247,7 @@ input falls below Vout + dropout before the cell is empty: say at which cell vol
 `battery-overvoltage` (a 4.2 V cell straight on a 3.3 V pin), `no-power-path` (USB off and nothing
 powers the board). The Muse must report **0 errors** wired correctly.
 
-### R3. The case config in fabwright.json (`enclosure`, done in this commit)
+### R3. The case config in faber.json (`enclosure`, done in this commit)
 
 ```jsonc
 "enclosure": {
@@ -283,7 +283,7 @@ bounding box, looking at the front: **+x right, +y up, +z out of the front towar
 `DEFAULT_TOLERANCE_MM = 0.2`, `POCKET_MM = {w: 110, h: 70, d: 30}` (plan_device's pocket limit).
 Pocket verdict: `fits` ≤ 110 × 70 × 30, `tight` ≤ 130 × 80 × 35, else `no`.
 
-### R4. MCP tools (same names on the CLI: `fabwright <tool>` / `fabwright call <tool> '<json>'`)
+### R4. MCP tools (same names on the CLI: `faber <tool>` / `faber call <tool> '<json>'`)
 
 New tools live in their track's `packages/session/src/tools/<track>.ts` as a `ToolModule` and one
 appended line in `tools/index.ts` (0003 C5 rules).
@@ -292,7 +292,7 @@ appended line in `tools/index.ts` (0003 C5 rules).
 | --- | --- | --- | --- |
 | `set_power` | power | R2 | R2 |
 | `set_assembly` | power | R2 | R2 |
-| `design_case` | case | `{ shape: CaseShape, params?: CaseParams, front?: string, placements?: Record<id, CasePlacement>, exclude?: string[], save?: boolean /* default true; false = write to case/variants/<shape>/ and leave fabwright.json alone */, images?: boolean /* default true: front + exploded PNG inline */, why? }` | `CaseReport` (size_mm, inner_mm, pocket, ok, checks, files) + inline images + `next` (edits when save) |
+| `design_case` | case | `{ shape: CaseShape, params?: CaseParams, front?: string, placements?: Record<id, CasePlacement>, exclude?: string[], save?: boolean /* default true; false = write to case/variants/<shape>/ and leave faber.json alone */, images?: boolean /* default true: front + exploded PNG inline */, why? }` | `CaseReport` (size_mm, inner_mm, pocket, ok, checks, files) + inline images + `next` (edits when save) |
 | `update_case` | case | same fields, all optional; `params` / `placements` deep-merged, a placement set to `null` is removed | same; fails when there is no case: "No case yet. Why: … Fix: design_case {"shape": "pebble"}" |
 | `get_case` | case | `{}` | `CaseReport`, regenerating stale files first (read-only for the project) |
 | `export_manufacturing` | case | `{ dir?: string /* default "manufacturing" */, zip?: boolean /* default true */, zh_cn?: boolean /* default true */, why? }` | `{ dir, zip?, files: string[], missing: { item, why, fix }[], notes: string[], next }` (writes files, not an undoable edit, like `export`) |
@@ -305,7 +305,7 @@ case cannot check (snap strength, real tolerances of the person's printer).
 
 ### R5. Files on disk
 
-Generated case files are **outputs**, like `export/`: regenerated from `fabwright.json` + the parts'
+Generated case files are **outputs**, like `export/`: regenerated from `faber.json` + the parts'
 `mechanical` data, never in the undo history (binary). `case/manifest.json` holds the hash; a
 stale case (after undo, a moved part, a changed part) is regenerated by `get_case`, the route or
 the next `design_case`.
@@ -325,14 +325,14 @@ the next `design_case`.
   drawing/drawing.svg      overall size, wall, hole positions, tolerances, material / finish, print settings
   drawing/drawing.pdf      only when Playwright's Chromium is installed (otherwise missing[] says why)
   PRINT.md                 per body: orientation, supports, layer height, infill, PLA / PETG; resin and injection notes
-  variants/<shape>/…       design_case {save: false}: same layout, fabwright.json untouched
+  variants/<shape>/…       design_case {save: false}: same layout, faber.json untouched
 <project>/manufacturing/<slug>-v<version>/       (+ <slug>-v<version>.zip next to it)
   README.md                English, simple, for the supplier: what it is, what is inside, how to build, flash and test
   README.zh-CN.md          short summary (zh_cn)
   NOTES.md                 honest limits: no PCB layout (hand-wired / perfboard), what was only simulated, what to verify on a real unit
   BOM.csv                  line,refs,qty,name,mpn,manufacturer,lcsc,jlc,package,generic,unit_usd,ext_usd,buy_url,source,notes
   BOM.md
-  electronics/WIRING.md, netlist.csv (net,part,pin), fabwright.net (KiCad legacy netlist), WIRE-CUTS.csv
+  electronics/WIRING.md, netlist.csv (net,part,pin), faber.net (KiCad legacy netlist), WIRE-CUTS.csv
   firmware/firmware.hex, firmware.uf2 (RP2040), FLASHING.md, source/<the firmware folder>
   enclosure/<everything in case/ except variants/>
   assembly/ASSEMBLY.md     numbered steps with the renders
@@ -347,7 +347,7 @@ under 10 MB.
 
 ### R6. HTTP routes (`apps/cli/src/routes/case.ts`, `caseRoutes` + `caseHooks`)
 
-Local-only like every route (0003 C3); changing routes need `x-fabwright-token`; errors are
+Local-only like every route (0003 C3); changing routes need `x-faber-token`; errors are
 `{ error: "<what failed>. Why: … Fix: …" }`.
 
 | Method, path | Body | Answer |
@@ -370,10 +370,10 @@ case files were regenerated. No other track adds routes this round.
   track fills it (only for parts whose screen changed since the last frame) and draws it in videos,
   history previews (one marked line in `HistoryView.tsx`, through its own
   `apps/web/src/lib/colorFrames.ts`), gallery thumbnails (`composeSvg`) and Tests filmstrips.
-- Images: base `fabwright/arduino-cli:1.5.1-avr1.8.8-libs3`, runner
-  `fabwright/arduino-runner:1.5.1-avr1.8.8-libs3-r1`, RP2040 `fabwright/arduino-pico:6.3.1-libs3-r1`
+- Images: base `faber/arduino-cli:1.5.1-avr1.8.8-libs3`, runner
+  `faber/arduino-runner:1.5.1-avr1.8.8-libs3-r1`, RP2040 `faber/arduino-pico:6.3.1-libs3-r1`
   (FROM the libs3 runner). Exact library versions in `toolchains/arduino/LIBRARIES.md`. Old tags
-  stay buildable (env overrides `FABWRIGHT_ARDUINO_IMAGE`, `FABWRIGHT_RUNNER_IMAGE`, `FABWRIGHT_PICO_IMAGE`);
+  stay buildable (env overrides `FABER_ARDUINO_IMAGE`, `FABER_RUNNER_IMAGE`, `FABER_PICO_IMAGE`);
   golden hexes unchanged.
 
 ### R8. Per-project UI state (switch track)
@@ -397,7 +397,7 @@ project, `reload` keeps the view), case (Case view state), frames (cached colour
 
 Shared files and how they are touched:
 - **`App.tsx`: nobody.** Mount through your own `slots.tsx` and one line in `shell/slots.tsx`.
-- **Generated: `registry.gen.ts`, `fabwright.schema.json`, `custom-part.schema.json`,
+- **Generated: `registry.gen.ts`, `faber.schema.json`, `custom-part.schema.json`,
   `docs/mcp-tools.md`.** Never hand-merge: take either side, run `pnpm gen`, commit.
 - **Append-only, one line per track: `tools/index.ts`, `routes/index.ts`, `shell/slots.tsx`, NOTICE.**
 - **part.json**: power edits `pins` / `limits` / `description` of the five files above; case only
@@ -406,7 +406,7 @@ Shared files and how they are touched:
   folder is missing on the case branch, case copies `jumper-evals/round5/muse/pocket-muse` there to
   work, but **commits only `case/**`**; its tests read the project from that folder when present,
   else from `packages/enclosure/test/fixtures/pocket-muse.json`. After power's re-wire is merged
-  the lead regenerates the committed case (`fabwright design_case` on the merged project).
+  the lead regenerates the committed case (`faber design_case` on the merged project).
 - **`session.ts`**: only the methods listed; each block marked `// round 6 <track>`.
 - **`pnpm-lock.yaml`**: replicad 1.1.0, replicad-opencascadejs 1.1.0 and fflate 0.8.3 are
   installed in this commit. Another dependency: exact version at least two weeks old; at merge
@@ -415,11 +415,11 @@ Shared files and how they are touched:
 
 ### R10. Ports, isolation, merge order
 
-- Never use, kill or restart anything on **7780** (the owner's `fabwright serve`); never touch `~/.claude`.
+- Never use, kill or restart anything on **7780** (the owner's `faber serve`); never touch `~/.claude`.
 - Per track: switch `E2E_PORT=5191 E2E_HUB_PORT_BASE=8700`, canvas `5192 / 8800`, power
-  `5193 / 8900`, frames `5194 / 9000`, case `5195 / 9100`. Manual `fabwright serve` runs use
+  `5193 / 8900`, frames `5194 / 9000`, case `5195 / 9100`. Manual `faber serve` runs use
   `--port 7801…7805 --strict-port` in the same order. Unit tests: servers on port 0,
-  `FABWRIGHT_HOME` in a temp dir, AI gateway port 0.
+  `FABER_HOME` in a temp dir, AI gateway port 0.
 - Docker: only frames builds or tags toolchain images.
 - Merge order: 1. **switch**, 2. **canvas** (both web; canvas registers R8 resets on switch's
   emitter), 3. **power** (parts, DRC, the Muse example), 4. **frames** (images, colour frames;
@@ -445,7 +445,7 @@ Shared files and how they are touched:
   `caseWireCuts` in `packages/session/src/manufacturing.ts` with the same `WireCut` shape and the
   case layout's pin positions. After power merges, the lead can point the pack at
   `assembly.wireCuts` (one call in `tools/case.ts`).
-- **R4 CLI**: `fabwright <tool> '<json>'` works for every tool (a default branch in
+- **R4 CLI**: `faber <tool> '<json>'` works for every tool (a default branch in
   `apps/cli/src/main.ts` `toOp`). **MCP**: tools may return `image_files` (absolute PNG paths);
   `toContent` inlines them (`packages/mcp/src/server.ts`, 7 lines). `custom/compile.ts` passes
   `mechanical` / `sourcing` through to the compiled spec (2 lines).

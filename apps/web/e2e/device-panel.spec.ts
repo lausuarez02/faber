@@ -6,7 +6,7 @@ import { shot } from "./helpers.ts";
 // Device view page runs the project; setFrame stands in for the firmware that would draw the face
 // (an ESP32 build is not needed to check the view's frame path).
 const PROJECT = JSON.stringify({
-  format: "fabwright/1",
+  format: "faber/1",
   name: "paper",
   parts: [
     { id: "uno", type: "arduino-uno", x: 0, y: 0 },

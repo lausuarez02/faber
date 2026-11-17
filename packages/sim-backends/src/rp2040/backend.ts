@@ -16,7 +16,7 @@
 //   I2C0/1 and SPI0/1 carry whole bytes to the simulation's I2C / SPI bus when their pins are
 //   muxed onto the board's bus pins (the ones the board part tags with i2c-sda, spi-sck…).
 import { GPIOPinState, RP2040, USBCDC, type Logger } from "rp2040js";
-import type { I2cBus, McuBackend, McuBusPins, PinMode, PinState, SpiBus, Unsubscribe } from "@fabwright/sim-core";
+import type { I2cBus, McuBackend, McuBusPins, PinMode, PinState, SpiBus, Unsubscribe } from "@faber/sim-core";
 import { RP2040_BOARDS, RP2040_PIN_IDS, type Rp2040Board, type Rp2040BoardType } from "./boards.ts";
 import { VirtualClock } from "./clock.ts";
 import { FLASH_BYTES, FirmwareImageError, parseRp2040Hex } from "./hex.ts";

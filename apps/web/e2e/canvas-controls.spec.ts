@@ -15,9 +15,9 @@ test.describe.configure({ mode: "serial" });
 test("a quick click presses a button the firmware sees; body and label drags still move parts; knobs turn", async ({ page }, info) => {
   test.skip(info.project.name === "mobile", "pointer drags are covered on desktop; phones share the handlers");
   const srv = await serve(join(EXAMPLES, "tamagotchi"), hubPort(info), (dir) => {
-    const p = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { parts: object[] };
+    const p = JSON.parse(readFileSync(join(dir, "faber.json"), "utf8")) as { parts: object[] };
     p.parts.push({ id: "pot1", type: "potentiometer", x: -260, y: 260, rotation: 0 });
-    writeFileSync(join(dir, "fabwright.json"), JSON.stringify(p, null, 2));
+    writeFileSync(join(dir, "faber.json"), JSON.stringify(p, null, 2));
     freshHex(dir, "firmware/tamagotchi.hex");
   });
   try {
@@ -180,7 +180,7 @@ test("Pocket Muse: the docked Live controls never hide; dragging the IMU tilts i
 
     // Paused, a motion waits: virtual time does not move, so neither does the drop.
     await page.getByTestId("run-button").click(); // pause
-    await expect.poll(async () => (await page.evaluate(() => (window as unknown as { fabwright: { store: { getState(): { run: string } } } }).fabwright.store.getState().run))).toBe("paused");
+    await expect.poll(async () => (await page.evaluate(() => (window as unknown as { faber: { store: { getState(): { run: string } } } }).faber.store.getState().run))).toBe("paused");
     await page.getByTestId("imu-drop-imu").click();
     await page.waitForTimeout(1200);
     await expect(page.getByTestId("imu-read-imu")).toContainText("drop");
@@ -211,8 +211,8 @@ test("Pocket Muse (round 6b): screen off and clock at zero until Run; a held Sha
   const srv = await serve(join(FIXTURES, "canvas-muse"), hubPort(info), (dir) => {
     freshHex(dir, "firmware/main.hex");
     // The real Muse's log: its last run left the round screen lit (logged colour frames).
-    mkdirSync(join(dir, ".fabwright"), { recursive: true });
-    copyFileSync(join(EXAMPLES, "agent-built", "claude-pocket-muse", "agent-actions.jsonl"), join(dir, ".fabwright", "actions.jsonl"));
+    mkdirSync(join(dir, ".faber"), { recursive: true });
+    copyFileSync(join(EXAMPLES, "agent-built", "claude-pocket-muse", "agent-actions.jsonl"), join(dir, ".faber", "actions.jsonl"));
   });
   try {
     await page.goto(`/?follow=${encodeURIComponent(srv.ws)}`);
@@ -287,7 +287,7 @@ test("serial follows the newest line unless scrolled up; the view survives run, 
     const zoomed = await viewTransform(page);
 
     await page.getByTestId("run-button").click();
-    await expect.poll(async () => page.evaluate(() => (window as unknown as { fabwright: { store: { getState(): { run: string } } } }).fabwright.store.getState().run), { timeout: 20_000 }).toBe("running");
+    await expect.poll(async () => page.evaluate(() => (window as unknown as { faber: { store: { getState(): { run: string } } } }).faber.store.getState().run), { timeout: 20_000 }).toBe("running");
     await openSerial(page);
     await waitForSimTime(page, 8000);
     const con = page.getByTestId("serial-console");
@@ -344,7 +344,7 @@ test("AI pet: a quick click on TALK asks the pet, and its reply bubble stays rea
   try {
     await openAndRun(page, srv.ws, "btnTalk");
     // Joined the sandbox Wi-Fi first.
-    await expectWithinSimTime(page, 15_000, async () => /wifi: online|joined|wifi=1/.test(await serialText(page)), "the pet should join FabwrightNet");
+    await expectWithinSimTime(page, 15_000, async () => /wifi: online|joined|wifi=1/.test(await serialText(page)), "the pet should join FaberNet");
     const n0 = (await serialText(page)).length;
     const c = await center(page, "control-btnTalk");
     await page.mouse.click(c.x, c.y);

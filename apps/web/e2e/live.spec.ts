@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { shot } from "./helpers.ts";
 
-// Replay mode (?replay=<action log>): what `fabwright replay` / `fabwright record` show. The fixture is a
+// Replay mode (?replay=<action log>): what `faber replay` / `faber record` show. The fixture is a
 // real CLI session: Uno + resistor + LED, Blink firmware, a run and a test run.
 const LOG = fileURLToPath(new URL("./fixtures/blink-session.jsonl", import.meta.url));
 
@@ -18,7 +18,7 @@ test("replays an agent session: parts, wires, steps, code, serial, tests", async
   if (info.project.name === "desktop") await expect(page.getByTestId("live-code")).toContainText("firmware/main.ino");
   await shot(page, info, "replay-done");
   // Local Run is disabled while showing a session.
-  expect(await page.evaluate(() => (window as unknown as { fabwright: { engine: { isExternal: boolean } } }).fabwright.engine.isExternal)).toBe(true);
+  expect(await page.evaluate(() => (window as unknown as { faber: { engine: { isExternal: boolean } } }).faber.engine.isExternal)).toBe(true);
 });
 
 test("explains a missing action log", async ({ page }) => {

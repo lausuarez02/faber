@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { initialExample, useFabwright } from "../lib/app.ts";
+import { initialExample, useFaber } from "../lib/app.ts";
 import { exampleSources } from "../lib/examples.ts";
 import { api } from "./api.ts";
 import { useServer } from "./data.ts";
@@ -12,8 +12,8 @@ import { useProjectsUi } from "./store.ts";
 export function useFirmwareFiles(): string[] {
   const server = useServer();
   const tick = useProjectsUi((s) => s.tick);
-  const sketch = useFabwright((s) => s.project.firmware?.sketch);
-  const name = useFabwright((s) => s.project.name);
+  const sketch = useFaber((s) => s.project.firmware?.sketch);
+  const name = useFaber((s) => s.project.name);
   const [files, setFiles] = useState<string[]>([]);
   useEffect(() => {
     let alive = true;

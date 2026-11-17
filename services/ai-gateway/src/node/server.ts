@@ -21,7 +21,7 @@ export function startGatewayServer(opts: GatewayServerOptions = {}): Promise<{ s
     const send = (status: number, body: string, provider = "-", note?: string) => {
       // Few, short headers: a board reads the whole response through a 64-byte SoftwareSerial buffer.
       res.sendDate = false;
-      res.writeHead(status, { "content-length": Buffer.byteLength(body), connection: "close", "access-control-allow-origin": "*", "x-fabwright-provider": provider });
+      res.writeHead(status, { "content-length": Buffer.byteLength(body), connection: "close", "access-control-allow-origin": "*", "x-faber-provider": provider });
       res.end(body);
       log(`${req.method} ${url.pathname}${url.search} → ${status} ${Date.now() - started} ms ${provider}${note ? ` (${note})` : ""} ${JSON.stringify(body)}`);
     };

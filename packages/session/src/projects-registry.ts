@@ -2,19 +2,19 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
 /**
- * Round 5 (decision 0003, C3): the list of project folders Fabwright knows about, outside the repo's
+ * Round 5 (decision 0003, C3): the list of project folders Faber knows about, outside the repo's
  * projects/ and examples/ (which the server scans itself). Agents' new projects, folders opened with
  * `--project`, and projects created from the web app are added here so the Projects gallery can show
  * them all.
  *
- *   $FABWRIGHT_HOME/projects.json   (FABWRIGHT_HOME defaults to ~/.fabwright; tests set it to a temp dir)
+ *   $FABER_HOME/projects.json   (FABER_HOME defaults to ~/.faber; tests set it to a temp dir)
  *   { "version": 1, "projects": [{ "dir": "/abs/path", "name": "…", "source": "agent", "addedAt": "…", "lastOpenedAt": "…" }] }
  */
 export interface RegisteredProject {
-  /** Absolute folder (holds fabwright.json). The key: one entry per dir. */
+  /** Absolute folder (holds faber.json). The key: one entry per dir. */
   dir: string;
   name: string;
   /** Who created or opened it first. */
@@ -28,12 +28,12 @@ export interface ProjectsRegistryFile {
   projects: RegisteredProject[];
 }
 
-export function fabwrightHome(env: NodeJS.ProcessEnv = process.env): string {
-  return resolve(env.FABWRIGHT_HOME || userHomeDir(homedir()));
+export function faberHome(env: NodeJS.ProcessEnv = process.env): string {
+  return resolve(env.FABER_HOME || userHomeDir(homedir()));
 }
 
 export function projectsRegistryPath(env: NodeJS.ProcessEnv = process.env): string {
-  return join(fabwrightHome(env), "projects.json");
+  return join(faberHome(env), "projects.json");
 }
 
 /** Every registered project (missing or unreadable file → empty list; never throws). */
@@ -97,7 +97,7 @@ export function projectSlug(name: string): string {
 
 /**
  * A new, empty folder for a new project under `root` (decision 0003, C3): <root>/<slug>, or
- * <slug>-2, -3… when taken. Creates it and returns its absolute path. Does not write fabwright.json
+ * <slug>-2, -3… when taken. Creates it and returns its absolute path. Does not write faber.json
  * (new_project does) and does not register it (the caller does, with its source).
  */
 export function newProjectFolder(root: string, name: string): string {

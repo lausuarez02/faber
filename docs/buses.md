@@ -6,8 +6,8 @@ and for anyone driving the simulator from code or an agent.
 ## The model in one paragraph
 
 Buses are **logical**: they carry whole bytes, not SDA/SCL edges. The MCU backend's bus
-peripheral (AVR TWI and SPI in `@fabwright/sim-backends`) is the master. It calls an `I2cBus` /
-`SpiBus` from `@fabwright/sim-core` at the moment each START, address, data byte or STOP completes
+peripheral (AVR TWI and SPI in `@faber/sim-backends`) is the master. It calls an `I2cBus` /
+`SpiBus` from `@faber/sim-core` at the moment each START, address, data byte or STOP completes
 on the wire, using real timing (I2C: one SCL period per START/STOP and nine per byte, from
 `TWBR` and the prescaler, so 90 µs per byte at Wire's 100 kHz; SPI: the `SPCR`/`SPSR` clock
 divider). Part models answer as targets. The electrical side (pull-ups, supply, power) stays in
@@ -59,7 +59,7 @@ not apply to that bus.
 - Display parts expose their screen in `visualState()`: the SSD1306 as `pixels` (base64, 1 bit
   per pixel, row-major, MSB left) with `width`/`height`/`frame`/`lit`/`blank`; the LCD as
   `line0`/`line1` text plus `glyphs`/`cgram` for renderers. `decodeMonoFrame()` and
-  `monoToAscii()` in `@fabwright/sim-core` turn an OLED frame into pixels or ASCII art.
+  `monoToAscii()` in `@faber/sim-core` turn an OLED frame into pixels or ASCII art.
 
 ## Writing a bus part
 

@@ -1,4 +1,4 @@
-import type { Diagnostic, DiodeParams, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, DiodeParams, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
 import { LED_ABS_MAX_mA, LED_RATED_mA, ledBrightness } from "../../lib/led.ts";
 
 /** Per-die parameters: AlGaInP red, InGaN green and blue (typical Vf 2.1 / 3.1 / 3.1 V at 20 mA). */

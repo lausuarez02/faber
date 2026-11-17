@@ -1,10 +1,10 @@
 // The ESP32 peripherals of QEMU image jb5 (round 10 esp-periph) on REAL firmware: the official
 // MicroPython build drives LEDC PWM, a GPIO interrupt, UART1, the ADC and SPI, and each must reach
-// Fabwright's pins and buses. MicroPython needs no Docker build (its image is composed in process), so
-// this runs wherever the QEMU image (Docker) or a native jb5 build (FABWRIGHT_QEMU_ESP_RUNTIME=native) is.
+// Faber's pins and buses. MicroPython needs no Docker build (its image is composed in process), so
+// this runs wherever the QEMU image (Docker) or a native jb5 build (FABER_QEMU_ESP_RUNTIME=native) is.
 import { afterAll, describe, expect, it } from "vitest";
-import { SpiBus } from "@fabwright/sim-core";
-import { QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
+import { SpiBus } from "@faber/sim-core";
+import { QemuEspBackend, qemuImageAvailable } from "@faber/sim-backends/qemu-esp";
 import { composeMicroPython } from "./micropython.ts";
 
 const available = qemuImageAvailable();
@@ -42,7 +42,7 @@ describe.skipIf(!available)("ESP32 peripherals on real firmware (MicroPython, QE
   for (const chip of ["esp32", "esp32c3"] as const) {
     const p = PINS[chip];
 
-    it(`${chip}: PWM, a pin interrupt, UART1 and the ADC reach Fabwright`, async () => {
+    it(`${chip}: PWM, a pin interrupt, UART1 and the ADC reach Faber`, async () => {
       const main = [
         "from machine import Pin, PWM, ADC, UART",
         "import time",

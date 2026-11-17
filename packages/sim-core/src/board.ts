@@ -1,4 +1,4 @@
-import type { PropValue } from "@fabwright/project-format";
+import type { PropValue } from "@faber/project-format";
 import { GROUND, type CircuitBuilder, type ElementId, type RegulatorParams, type SolveResultView } from "./circuit.ts";
 import type { Diagnostic, PartContext, PartModel, PartSpec, VisualState } from "./part.ts";
 
@@ -11,7 +11,7 @@ export const USB_R_OUT = 0.05;
 // round 6 power
 /**
  * How a board is powered (decision 0004, R2). USB lands on `usbPin` when the project says a cable is
- * plugged in (fabwright.json power.usb, default true); everything else is the board's own supply chain
+ * plugged in (faber.json power.usb, default true); everything else is the board's own supply chain
  * (regulators, diodes) between its real supply pins, so a battery wired to VBUS / VSYS / VIN powers it
  * through the same circuit the solver uses for everything else. The MCU runs while `logicPin` is at or
  * above `minLogicV`.

@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/parts",
+  "name": "@faber/parts",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -14,12 +14,12 @@
     "gen:check": "tsx scripts/gen-registry.ts --check && tsx scripts/gen-custom-schema.ts --check"
   },
   "dependencies": {
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/sim-core": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/sim-core": "workspace:*",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@fabwright/runner": "workspace:*",
-    "@fabwright/sim-backends": "workspace:*"
+    "@faber/runner": "workspace:*",
+    "@faber/sim-backends": "workspace:*"
   }
 }

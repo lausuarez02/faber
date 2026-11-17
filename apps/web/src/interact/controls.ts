@@ -1,4 +1,4 @@
-import type { PartDefinition, PropSpec } from "@fabwright/sim-core";
+import type { PartDefinition, PropSpec } from "@faber/sim-core";
 
 /**
  * What a running part responds to (round 5, live track). Derived from the part's spec, so new parts

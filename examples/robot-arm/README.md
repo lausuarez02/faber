@@ -23,9 +23,9 @@ build because the pinned toolchain image does not include the Servo library yet.
 The `world.arm` block: base at (0, 6) cm (side view, y up), links `[12, 10]`, the shoulder angle is
 the servo angle from horizontal, the elbow is straight at 90°. Target `cup` at (15, 4) cm.
 
-## Scenarios (`fabwright test`)
+## Scenarios (`faber test`)
 
-`fabwright.json` has two scenarios an agent can run with `run_tests` (or `pnpm fabwright test -p examples/robot-arm`):
+`faber.json` has two scenarios an agent can run with `run_tests` (or `pnpm faber test -p examples/robot-arm`):
 `reaches-the-cup` (pots set from inverse kinematics, then `world.reached` contains `cup`) and
 `follows-the-pot`. Open the example in the app with `?example=robot-arm` to see the arm's side view.
 

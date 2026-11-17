@@ -1,6 +1,6 @@
-import { armPose, parseWorld, type WorldSnapshot, type WorldSpec } from "@fabwright/physics";
-import type { Project } from "@fabwright/project-format";
-import type { VisualState } from "@fabwright/sim-core";
+import { armPose, parseWorld, type WorldSnapshot, type WorldSpec } from "@faber/physics";
+import type { Project } from "@faber/project-format";
+import type { VisualState } from "@faber/sim-core";
 
 /**
  * Follow / replay have no local simulation, so the arena view is rebuilt from what the session

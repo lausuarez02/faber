@@ -1,5 +1,5 @@
 // Round 10 (network): the generic device network through the agent surface (no Docker, no
-// firmware): set_network writes fabwright.json (names only, literal keys refused with the fix),
+// firmware): set_network writes faber.json (names only, literal keys refused with the fix),
 // add_mock_api writes network/mocks.json and applies live, try_request goes through the sandbox
 // exactly like a device (DNS, TLS with the sandbox CA, mocks, faults), read_network shows it all
 // with secrets as names, scenario request / network_fault steps run against the log, and the
@@ -8,8 +8,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseScenarioStep } from "@fabwright/project-format";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { parseScenarioStep } from "@faber/project-format";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { ProjectSession } from "../src/index.ts";
 
 const SECRET = "wk-test-0123456789abcdefSECRETVALUE";
@@ -21,15 +21,15 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-net-tools-"));
-  process.env.FABWRIGHT_SANDBOX_CA_DIR = join(dir, "ca");
+  dir = mkdtempSync(join(tmpdir(), "faber-net-tools-"));
+  process.env.FABER_SANDBOX_CA_DIR = join(dir, "ca");
   s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
   await call("new_project", { template: "blank", name: "net" });
 });
 afterAll(async () => {
   s.dispose();
   await s.deviceNetwork.close();
-  delete process.env.FABWRIGHT_SANDBOX_CA_DIR;
+  delete process.env.FABER_SANDBOX_CA_DIR;
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -43,7 +43,7 @@ describe("network tools", () => {
     const r2 = await call("set_network", { allow: [{ host: "api.weather.test", secrets: ["WEATHER_KEY"], headers: { "X-Api-Key": "{{secret:WEATHER_KEY}}" } }] });
     expect(r2.secrets).toEqual([{ name: "WEATHER_KEY", set: true, hosts: ["api.weather.test"] }]);
     expect(r2.factory_notes).toContain("api.weather.test");
-    const json = readFileSync(join(dir, "fabwright.json"), "utf8");
+    const json = readFileSync(join(dir, "faber.json"), "utf8");
     expect(json).toContain('"network"');
     expect(json).toContain("{{secret:WEATHER_KEY}}");
     expect(json).not.toContain(SECRET);

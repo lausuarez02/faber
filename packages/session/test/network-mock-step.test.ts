@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseScenarioStep } from "@fabwright/project-format";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import { parseScenarioStep } from "@faber/project-format";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { ProjectSession } from "../src/index.ts";
 
 const GOLDEN = readFileSync(fileURLToPath(new URL("../../../examples/blink/firmware/blink.hex", import.meta.url)), "utf8");
@@ -18,8 +18,8 @@ const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args
 const RAIN = { host: "api.open-meteo.com", path: "/v1/forecast", response: { body: { rain: 90 } } };
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-net-mockstep-"));
-  process.env.FABWRIGHT_SANDBOX_CA_DIR = join(dir, "ca");
+  dir = mkdtempSync(join(tmpdir(), "faber-net-mockstep-"));
+  process.env.FABER_SANDBOX_CA_DIR = join(dir, "ca");
   s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
   await call("new_project", { template: "blink", name: "weather" });
   await call("set_network", { wifi: { ssid: "Home" } });
@@ -28,7 +28,7 @@ beforeAll(async () => {
 afterAll(async () => {
   s.dispose();
   await s.deviceNetwork.close();
-  delete process.env.FABWRIGHT_SANDBOX_CA_DIR;
+  delete process.env.FABER_SANDBOX_CA_DIR;
   rmSync(dir, { recursive: true, force: true });
 });
 

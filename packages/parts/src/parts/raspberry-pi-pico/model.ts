@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
 import { createRp2040BoardModel, limit } from "./rp2040-board.ts";
 
 /**
@@ -6,7 +6,7 @@ import { createRp2040BoardModel, limit } from "./rp2040-board.ts";
  * solve), ADC_VREF as 3.3 V through the board's 200 Ω filter, and the green LED on GP25.
  * GPIO pin ids are the McuBackend pin ids "GP0".."GP28".
  *
- * Power (round 6): USB (fabwright.json power.usb, default plugged) puts 5 V on VBUS; VBUS reaches VSYS
+ * Power (round 6): USB (faber.json power.usb, default plugged) puts 5 V on VBUS; VBUS reaches VSYS
  * through the on-board Schottky (MBR120-class, ~0.3 V). VSYS (1.8 to 5.5 V) feeds the RT6150
  * buck-boost that makes 3V3 (about 90 % efficient), so a LiPo or 2 × AA on VSYS powers it with USB
  * unplugged. 3V3_EN pulled LOW switches the 3.3 V regulator off (it is pulled up to VSYS by 100 kΩ).

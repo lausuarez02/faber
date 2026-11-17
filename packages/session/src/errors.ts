@@ -2,7 +2,7 @@
  * Every error an agent can see says what failed, why, and how to fix it. Agents read errors
  * literally, so the fix is a concrete next call or edit, not advice.
  */
-export class FabwrightError extends Error {
+export class FaberError extends Error {
   readonly code: string;
   readonly what: string;
   readonly why: string;
@@ -11,7 +11,7 @@ export class FabwrightError extends Error {
 
   constructor(code: string, what: string, why: string, fix: string, details?: Record<string, unknown>) {
     super(`${what}: ${why}. Fix: ${fix}`);
-    this.name = "FabwrightError";
+    this.name = "FaberError";
     this.code = code;
     this.what = what;
     this.why = why;
@@ -25,21 +25,21 @@ export class FabwrightError extends Error {
 }
 
 export function fail(code: string, what: string, why: string, fix: string, details?: Record<string, unknown>): never {
-  throw new FabwrightError(code, what, why, fix, details);
+  throw new FaberError(code, what, why, fix, details);
 }
 
-/** Wrap any thrown value as a FabwrightError (keeps FabwrightErrors as they are). */
-export function asFabwrightError(err: unknown, what = "Operation failed"): FabwrightError {
-  if (err instanceof FabwrightError) return err;
+/** Wrap any thrown value as a FaberError (keeps FaberErrors as they are). */
+export function asFaberError(err: unknown, what = "Operation failed"): FaberError {
+  if (err instanceof FaberError) return err;
   const e = err as { code?: string; message?: string };
   const msg = e?.message ?? String(err);
   if (e && typeof e.code === "string" && /Fix:/.test(msg)) {
     // RunnerError and friends already carry a fix.
-    const j = new FabwrightError(e.code, what, msg, "see above");
+    const j = new FaberError(e.code, what, msg, "see above");
     Object.defineProperty(j, "message", { value: msg });
     return j;
   }
-  return new FabwrightError("internal", what, msg, "this looks like a Fabwright bug; report it with the action log (.fabwright/actions.jsonl) attached");
+  return new FaberError("internal", what, msg, "this looks like a Faber bug; report it with the action log (.faber/actions.jsonl) attached");
 }
 
 /** "did you mean" helper: closest strings by edit distance (case-insensitive). */

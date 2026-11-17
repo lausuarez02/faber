@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
-// Fabwright API relay, the core. Copyright (c) Fabwright Authors. MIT License (see LICENSE next to it).
+// Faber API relay, the core. Copyright (c) Faber Authors. MIT License (see LICENSE next to it).
 //
 // A device calls  <RELAY_URL>/<api host>[:port]/<path>  with the header  X-Device-Token: <token>.
 // The relay checks the token (only SHA-256 hashes of device tokens are stored, in RELAY_DEVICE_TOKENS),
-// checks the host against the allow list in relay.config.mjs (made from the project's fabwright.json
+// checks the host against the allow list in relay.config.mjs (made from the project's faber.json
 // "network"), adds the API keys it holds ({{secret:NAME}} header templates, or {{secret:NAME}} sent by
 // the device) and streams the answer back. Keys never live in the firmware; a device token can only
 // reach this relay, and only the hosts on its list; removing it from RELAY_DEVICE_TOKENS revokes it.
 //
 // Plain JavaScript with no dependencies, written against the web Fetch API (Request, Response,
 // ReadableStream, crypto.subtle), so the same file runs in Node 20+ (server.mjs) and in a Cloudflare
-// Worker (worker.js). Fabwright's simulator uses the same checks (packages/device-net), so a device that
+// Worker (worker.js). Faber's simulator uses the same checks (packages/device-net), so a device that
 // works in the simulator gets the same answers from the real relay.
 
 export const TOKEN_HEADER = "x-device-token";
 /** The host the simulator plays the relay on (the simulation build's RELAY_URL). */
-export const SIM_RELAY_HOST = "relay.sandbox.fabwright";
+export const SIM_RELAY_HOST = "relay.sandbox.faber";
 export const SIM_RELAY_URL = `https://${SIM_RELAY_HOST}`;
 /** The device token the simulation build uses (the real one never goes into a simulation build). */
-export const SIM_DEVICE_TOKEN = "fabwright-sim-device-token";
+export const SIM_DEVICE_TOKEN = "faber-sim-device-token";
 export const DEFAULT_LIMITS = Object.freeze({
   requests_per_minute: 60,
   max_request_bytes: 1024 * 1024,
@@ -70,7 +70,7 @@ export function parseTarget(pathAndQuery) {
   const raw = String(pathAndQuery || "/");
   const m = /^\/+([^/?#]+)(.*)$/.exec(raw);
   const example = "/api.example.com/v1/forecast";
-  if (!m) throw new RelayError(400, "no-host-in-path", `the request path '${raw.slice(0, 80)}' does not start with the API host the relay should call`, `put the API's host first: <RELAY_URL>${example} (fabwrightRelayUrl("api.example.com", "/v1/forecast") in the firmware builds it)`);
+  if (!m) throw new RelayError(400, "no-host-in-path", `the request path '${raw.slice(0, 80)}' does not start with the API host the relay should call`, `put the API's host first: <RELAY_URL>${example} (faberRelayUrl("api.example.com", "/v1/forecast") in the firmware builds it)`);
   let [hostPart, rest] = [m[1], m[2] || "/"];
   if (!rest.startsWith("/")) rest = `/${rest}`;
   let decoded;
@@ -94,7 +94,7 @@ export function findAllow(spec, host, port) {
   if (!entry) {
     const direct = (spec.direct || []).find((a) => hostMatches(a.host, host));
     if (direct) throw new RelayError(403, "host-not-relayed", `${host} is set to TLS passthrough in the project, so the device talks to it directly, not through the relay`, `call https://${host} directly from the firmware, or change its network.allow entry to "tls": "inspect" and regenerate the relay`);
-    throw new RelayError(403, "host-not-allowed", `${host} is not on this relay's allow list (it only calls the hosts in the project's network.allow)`, `add {"host": "${host}"} to network.allow in fabwright.json, regenerate the relay (fabwright relay init) and deploy it again`);
+    throw new RelayError(403, "host-not-allowed", `${host} is not on this relay's allow list (it only calls the hosts in the project's network.allow)`, `add {"host": "${host}"} to network.allow in faber.json, regenerate the relay (faber relay init) and deploy it again`);
   }
   const ports = entry.ports && entry.ports.length ? entry.ports : [443, 80];
   if (!ports.includes(port)) throw new RelayError(403, "port-not-allowed", `${host} is allowed only on port(s) ${ports.join(", ")}, the device asked for ${port}`, `add ${port} to "ports" of the ${entry.host} entry in network.allow and regenerate the relay`);
@@ -103,13 +103,13 @@ export function findAllow(spec, host, port) {
 
 /** Which device sent this: the token's name, or a RelayError (401). Tokens are compared by SHA-256. */
 export async function identifyDevice(token, tokensVar) {
-  if (!token) throw new RelayError(401, "no-device-token", `the request has no ${TOKEN_HEADER} header, so the relay does not know which device sent it`, `send the header ${TOKEN_HEADER}: <your device token> (the firmware sends FABWRIGHT_DEVICE_TOKEN; make one with: fabwright relay token add <device name>)`);
+  if (!token) throw new RelayError(401, "no-device-token", `the request has no ${TOKEN_HEADER} header, so the relay does not know which device sent it`, `send the header ${TOKEN_HEADER}: <your device token> (the firmware sends FABER_DEVICE_TOKEN; make one with: faber relay token add <device name>)`);
   const known = parseDeviceTokens(tokensVar);
-  if (!known.length) throw new RelayError(401, "no-devices", "this relay has no device tokens yet (RELAY_DEVICE_TOKENS is empty), so it refuses every device", "fabwright relay token add <device name>, then set RELAY_DEVICE_TOKENS on the relay (wrangler secret put RELAY_DEVICE_TOKENS, or the relay's .env)");
+  if (!known.length) throw new RelayError(401, "no-devices", "this relay has no device tokens yet (RELAY_DEVICE_TOKENS is empty), so it refuses every device", "faber relay token add <device name>, then set RELAY_DEVICE_TOKENS on the relay (wrangler secret put RELAY_DEVICE_TOKENS, or the relay's .env)");
   const hash = await sha256Hex(token);
   let found;
   for (const k of known) if (timingSafeEqual(k.hash, hash)) found = k.name;
-  if (!found) throw new RelayError(401, "unknown-device-token", "the device token is not one this relay knows (mistyped, from another project, or revoked)", "flash the device with a current token (fabwright relay token add <device name>, then fabwright relay device-header and build), and make sure the relay has the same RELAY_DEVICE_TOKENS");
+  if (!found) throw new RelayError(401, "unknown-device-token", "the device token is not one this relay knows (mistyped, from another project, or revoked)", "flash the device with a current token (faber relay token add <device name>, then faber relay device-header and build), and make sure the relay has the same RELAY_DEVICE_TOKENS");
   return found;
 }
 
@@ -166,14 +166,14 @@ export class RateLimiter {
 /** Throws a RelayError (429) when the device used up its requests for now. */
 export function checkRate(limiter, device, perMinute) {
   const r = limiter.take(device);
-  if (!r.ok) throw new RelayError(429, "rate-limited", `device ${device} sent more than ${perMinute} requests in a minute`, `wait ${r.retry_after_s} s (Retry-After), or raise network.relay.requests_per_minute in fabwright.json and regenerate the relay`, { "retry-after": String(r.retry_after_s) });
+  if (!r.ok) throw new RelayError(429, "rate-limited", `device ${device} sent more than ${perMinute} requests in a minute`, `wait ${r.retry_after_s} s (Retry-After), or raise network.relay.requests_per_minute in faber.json and regenerate the relay`, { "retry-after": String(r.retry_after_s) });
 }
 
 /** Throws a RelayError (413) when a body announced by Content-Length is over the limit. */
 export function checkRequestSize(contentLength, maxBytes) {
   const n = Number(contentLength);
   if (contentLength != null && contentLength !== "" && Number.isFinite(n) && n > maxBytes) {
-    throw new RelayError(413, "request-too-large", `the request body is ${n} bytes, over this relay's limit of ${maxBytes}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in fabwright.json and regenerate the relay");
+    throw new RelayError(413, "request-too-large", `the request body is ${n} bytes, over this relay's limit of ${maxBytes}`, "send less (or stream it in parts), or raise network.relay.max_request_kb in faber.json and regenerate the relay");
   }
 }
 
@@ -184,7 +184,7 @@ export function expandSecrets(template, env, entry, host) {
   const value = String(template).replace(SECRET_RE, (_m, name) => {
     if (!allowed.includes(name)) throw new RelayError(403, "secret-not-for-host", `${host} may not receive the secret ${name} (only hosts that list it under "secrets" in network.allow get it)`, `add "${name}" to the secrets of the ${entry.host} entry in network.allow, then regenerate the relay`);
     const v = env[name];
-    if (typeof v !== "string" || !v) throw new RelayError(500, "secret-missing", `the relay has no value for ${name}`, `set it on the relay: wrangler secret put ${name} (Cloudflare), or ${name}=... in the relay's .env (fabwright relay serve reads the project's .env)`);
+    if (typeof v !== "string" || !v) throw new RelayError(500, "secret-missing", `the relay has no value for ${name}`, `set it on the relay: wrangler secret put ${name} (Cloudflare), or ${name}=... in the relay's .env (faber relay serve reads the project's .env)`);
     used.push(name);
     return v;
   });
@@ -342,7 +342,7 @@ export function logEntry(redact, fields) {
 
 /**
  * Everything checked before a request goes upstream, shared by HTTP and WebSocket and by every host
- * (Node, Workers, Fabwright's simulator): device token, rate, target host / port, size.
+ * (Node, Workers, Faber's simulator): device token, rate, target host / port, size.
  * `req` = {method, url (path + query), header(name) → string | null}.
  */
 export async function authorize(req, ctx) {
@@ -385,7 +385,7 @@ export async function handleRelay(request, ctx) {
   const redact = makeRedactor(ctx.spec, ctx.env);
   const log = ctx.log || ((e) => console.log(JSON.stringify(e)));
   if ((url.pathname === "/" || url.pathname === "/health") && request.method === "GET" && !request.headers.get(TOKEN_HEADER)) {
-    return new Response(JSON.stringify({ ok: true, relay: "fabwright", project: ctx.spec.project || "" }), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, relay: "faber", project: ctx.spec.project || "" }), { headers: { "content-type": "application/json" } });
   }
   const pathAndQuery = url.pathname + url.search;
   let a;

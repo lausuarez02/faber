@@ -1,5 +1,5 @@
 // Round 7 (voice): a project with a DFPlayer Mini talks on the canvas. The talking-egg example
-// (Nano + DFPlayer + speaker + button) served by `fabwright serve` runs its golden firmware in the page:
+// (Nano + DFPlayer + speaker + button) served by `faber serve` runs its golden firmware in the page:
 // a speech bubble with the clip's words appears next to the speaker, a press makes it say the next
 // line, the mute toggle is remembered, and the page never makes a sound under test (the browser's
 // speechSynthesis is counted: it must stay at 0 calls).
@@ -11,21 +11,21 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { expectWithinSimTime, hubPort, shot } from "./helpers.ts";
 
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const EXAMPLE = fileURLToPath(new URL("../../../examples/talking-egg-demo/", import.meta.url));
 
-test.describe("talking egg from fabwright serve", () => {
+test.describe("talking egg from faber serve", () => {
   let dir = "";
   let hub: ChildProcess | undefined;
   let port = 0;
 
   test.beforeEach(async ({ page }, info) => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-e2e-voice-"));
-    cpSync(EXAMPLE, dir, { recursive: true, filter: (p) => !p.includes(".fabwright") });
+    dir = mkdtempSync(join(tmpdir(), "faber-e2e-voice-"));
+    cpSync(EXAMPLE, dir, { recursive: true, filter: (p) => !p.includes(".faber") });
     const later = new Date(Date.now() + 60_000);
     utimesSync(join(dir, "firmware", "main.hex"), later, later); // golden hex stays fresh: no Docker build
-    const home = mkdtempSync(join(tmpdir(), "fabwright-e2e-home-"));
-    const env = { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_AI_GATEWAY_PORT: "0" };
+    const home = mkdtempSync(join(tmpdir(), "faber-e2e-home-"));
+    const env = { ...process.env, FABER_HOME: home, FABER_AI_GATEWAY_PORT: "0" };
     expect(spawnSync(process.execPath, [CLI, "status", "-p", dir], { encoding: "utf8", timeout: 60_000, env }).status).toBe(0);
     // One port per test: a hub that was just killed can still answer on its old port for a moment.
     port = hubPort(info, /mute/.test(info.title) ? 13 : 12);
@@ -34,7 +34,7 @@ test.describe("talking egg from fabwright serve", () => {
     hub.stdout?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.stderr?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.once("exit", (code) => {
-      if (code) console.log(`fabwright serve exited ${code}:\n${out.slice(-2000)}`);
+      if (code) console.log(`faber serve exited ${code}:\n${out.slice(-2000)}`);
     });
     await expect
       .poll(async () => (await fetch(`http://localhost:${port}/?local`).catch(() => undefined))?.status ?? 0, { timeout: 60_000 })
@@ -76,9 +76,9 @@ test.describe("talking egg from fabwright serve", () => {
     // The bubble belongs to the speaker part on the canvas.
     await expect(page.getByTestId("part-spk").getByTestId("speech-bubble-spk")).toHaveCount(1);
     await shot(page, info, "voice-bubble");
-    await page.evaluate(() => (window as unknown as { fabwright: { engine: { interact(id: string, k: string): void } } }).fabwright.engine.interact("btn1", "press"));
+    await page.evaluate(() => (window as unknown as { faber: { engine: { interact(id: string, k: string): void } } }).faber.engine.interact("btn1", "press"));
     await page.waitForTimeout(150);
-    await page.evaluate(() => (window as unknown as { fabwright: { engine: { interact(id: string, k: string): void } } }).fabwright.engine.interact("btn1", "release"));
+    await page.evaluate(() => (window as unknown as { faber: { engine: { interact(id: string, k: string): void } } }).faber.engine.interact("btn1", "release"));
     await expectWithinSimTime(page, 3000, async () => ((await bubble.textContent().catch(() => "")) ?? "").includes("whoa, I'm dizzy!"), 'a press should make it say "whoa, I\'m dizzy!"');
     // Done talking: the bubble goes away.
     await expectWithinSimTime(page, 4000, async () => (await bubble.count()) === 0, "the bubble should close when the clip ends");
@@ -95,7 +95,7 @@ test.describe("talking egg from fabwright serve", () => {
     await expect(mute).toHaveAttribute("aria-pressed", "false");
     await mute.click();
     await expect(mute).toHaveAttribute("aria-pressed", "true");
-    expect(await page.evaluate(() => localStorage.getItem("fabwright.speech.muted"))).toBe("1");
+    expect(await page.evaluate(() => localStorage.getItem("faber.speech.muted"))).toBe("1");
     await page.reload();
     await expect(page.getByTestId("app")).toHaveAttribute("data-firmware", "ready", { timeout: 30_000 });
     await page.getByTestId("run-button").click();

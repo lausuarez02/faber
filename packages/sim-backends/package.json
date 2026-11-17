@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/sim-backends",
+  "name": "@faber/sim-backends",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -14,8 +14,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/sim-core": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/sim-core": "workspace:*",
     "avr8js": "0.21.1",
     "intel-hex": "0.2.0",
     "rp2040js": "1.4.1"

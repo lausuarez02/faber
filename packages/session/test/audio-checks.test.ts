@@ -2,8 +2,8 @@
 // that plays sound from its firmware (tones, clips, speech an API returned). XIAO ESP32-S3 +
 // MAX98357A + a small speaker, as a keychain would have them.
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { registry } from "@fabwright/parts";
+import { parseProject } from "@faber/project-format";
+import { registry } from "@faber/parts";
 import { checkDesign } from "../src/index.ts";
 import { usageFor } from "../src/hints.ts";
 
@@ -15,7 +15,7 @@ const w = (id: string, a: string, b: string) => {
 
 function project(o: { speaker?: string; spkProps?: Record<string, unknown>; ampProps?: Record<string, unknown>; vin?: string; extra?: ReturnType<typeof w>[]; noSpeaker?: boolean } = {}) {
   return parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "talker",
     parts: [
       { id: "xiao", type: "seeed-xiao-esp32s3", x: 0, y: 0 },

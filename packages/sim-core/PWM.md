@@ -1,6 +1,6 @@
 # PWM, pulses and time in the simulation
 
-How `@fabwright/sim-core` handles `analogWrite()`, servo pulses and other fast signals, what parts
+How `@faber/sim-core` handles `analogWrite()`, servo pulses and other fast signals, what parts
 can rely on, and what it does not model.
 
 ## Measuring: `PwmMeter`

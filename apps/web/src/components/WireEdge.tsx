@@ -1,6 +1,6 @@
 import { createContext, memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
-import { routePath, routeWire, type RouteBox } from "@fabwright/sim-core";
+import { routePath, routeWire, type RouteBox } from "@faber/sim-core";
 import { engine } from "../lib/app.ts";
 
 /** Part bodies wires route around (empty: plain smooth-step wires, e.g. on very large canvases). */

@@ -13,7 +13,7 @@
  * The case design then uses the chosen proposal (enclosure.layout, default "auto" = the best one,
  * which is "balanced"). Deterministic: the same project gives the same proposals.
  */
-import type { Enclosure } from "@fabwright/project-format";
+import type { Enclosure } from "@faber/project-format";
 import { autoLayouts, type AutoCandidate, type Layout, type LayoutInput, type LayoutOptions, stackLayout } from "./layout.ts";
 import { apply } from "./mech.ts";
 import { outline, planBounds } from "./plan.ts";

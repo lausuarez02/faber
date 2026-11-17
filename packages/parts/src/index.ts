@@ -1,4 +1,4 @@
-import type { PartCategory, PartDefinition } from "@fabwright/sim-core";
+import type { PartCategory, PartDefinition } from "@faber/sim-core";
 import { partDefinitions, registry } from "./registry.gen.ts";
 
 export { partDefinitions, registry };

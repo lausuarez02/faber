@@ -1,5 +1,5 @@
-import { buildNets, type PinRef, type Project } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec, PinSpec } from "@fabwright/sim-core";
+import { buildNets, type PinRef, type Project } from "@faber/project-format";
+import type { PartRegistry, PartSpec, PinSpec } from "@faber/sim-core";
 import { audioChecks } from "./audio-checks.ts";
 import { voiceChecks } from "./voice.ts"; // round 7 voice
 import { cameraChecks } from "./drc-camera.ts"; // round 13 camera

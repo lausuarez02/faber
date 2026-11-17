@@ -18,7 +18,7 @@ const HINTS: { re: RegExp; hint: (m: RegExpMatchArray) => string }[] = [
     hint: (m) => {
       const header = m[1]!.trim();
       const lib = libraryForHeader(header);
-      if (lib) return `'${header}' comes from the "${lib}" library: add "${lib}" to firmware.libraries (MCP: set_libraries, or fabwright.json firmware.libraries) and build again.`;
+      if (lib) return `'${header}' comes from the "${lib}" library: add "${lib}" to firmware.libraries (MCP: set_libraries, or faber.json firmware.libraries) and build again.`;
       if (CORE_HEADERS.includes(header)) return `'${header}' is part of the Arduino core; check the spelling and case of the #include.`;
       return `No library provides '${header}' yet: check the #include spelling, or add the Arduino library that ships it to firmware.libraries ("Library Name" or "Library Name@1.2.3", as in the Arduino Library Manager).`;
     },

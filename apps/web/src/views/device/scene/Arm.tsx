@@ -1,11 +1,11 @@
 // The servo arm on a table: pedestal, a servo at every joint, links that follow the simulated
-// servo angles (forward kinematics from @fabwright/physics), a gripper, and the target cups that
+// servo angles (forward kinematics from @faber/physics), a gripper, and the target cups that
 // light up when the gripper reaches them. Side-view cm (y up) → scene units at ARM_SCALE.
 import { useContext, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
-import type { PhysicsBinding } from "@fabwright/physics";
+import type { PhysicsBinding } from "@faber/physics";
 import { ReadoutsContext } from "../context.ts";
 import { Board } from "./Board.tsx";
 

@@ -3,24 +3,24 @@
 // QEMU (camera port + I2S device + device network): a press captures a JPEG, the firmware POSTs it
 // to a vision API through the project's relay, sends the answer to a speech API through the relay,
 // and streams the audio it gets into I2S. Offline: the vision API is a mock, the speech API a cassette.
-// Needs the native ESP32 toolchain + QEMU jb7 (fabwright setup esp32); skipped otherwise.
+// Needs the native ESP32 toolchain + QEMU jb7 (faber setup esp32); skipped otherwise.
 import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import { canBuildArduino } from "@fabwright/runner";
-import { qemuImageAvailable } from "@fabwright/sim-backends/node";
+import { canBuildArduino } from "@faber/runner";
+import { qemuImageAvailable } from "@faber/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
 const EXAMPLE = fileURLToPath(new URL("../../../examples/see-and-say/", import.meta.url));
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32S3").ok;
-if (!ready) console.warn("skipping the see-and-say example test: the ESP32 toolchain or QEMU is not ready (Fix: pnpm fabwright setup esp32)");
+if (!ready) console.warn("skipping the see-and-say example test: the ESP32 toolchain or QEMU is not ready (Fix: pnpm faber setup esp32)");
 
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 describe.skipIf(!ready)("examples/see-and-say: picture -> vision API -> speech API -> speaker (real build, QEMU)", { timeout: 600_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-see-and-say-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-see-and-say-"));
   cpSync(EXAMPLE, dir, { recursive: true });
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
@@ -67,7 +67,7 @@ describe.skipIf(!ready)("examples/see-and-say: picture -> vision API -> speech A
     expect(file.length, audio.join("\n")).toBeGreaterThan(0);
     let peak = 0;
     for (const f of file) {
-      const wav = readFileSync(join(dir, ".fabwright", "audio", f!));
+      const wav = readFileSync(join(dir, ".faber", "audio", f!));
       const pcm = new Int16Array(wav.buffer.slice(wav.byteOffset + 44, wav.byteOffset + wav.length));
       for (const v of pcm) peak = Math.max(peak, Math.abs(v));
     }
@@ -75,12 +75,12 @@ describe.skipIf(!ready)("examples/see-and-say: picture -> vision API -> speech A
     expect(peak).toBeLessThanOrEqual(13200);
   });
 
-  it("the device build has no relay settings (the person's fabwright_device.h adds them on their machine)", async () => {
+  it("the device build has no relay settings (the person's faber_device.h adds them on their machine)", async () => {
     const dev = await s.deviceFirmware();
     expect("data" in dev, JSON.stringify(dev)).toBe(true);
     if (!("data" in dev)) return;
     const img = Buffer.from(dev.data as Uint8Array);
-    expect(img.includes(Buffer.from("relay.sandbox.fabwright"))).toBe(false);
+    expect(img.includes(Buffer.from("relay.sandbox.faber"))).toBe(false);
     expect(img.includes(Buffer.from("no relay in this build"))).toBe(true);
   });
 });

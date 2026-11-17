@@ -20,7 +20,7 @@ void setup() {
   lcd.createChar(0, heart);
   lcd.home();
   lcd.clear();
-  lcd.print(F("Hi, Fabwright "));
+  lcd.print(F("Hi, Faber "));
   lcd.write(byte(0));
   Serial.println(F("LCD ready"));
 }

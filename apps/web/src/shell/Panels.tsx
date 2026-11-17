@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Globe, Code2, Cpu, Eraser, FileCode2, FlaskConical, Gauge, GraduationCap, Keyboard, MessagesSquare, SlidersHorizontal, SquareTerminal, Upload, CircleCheck, CircleDashed } from "lucide-react";
-import { engine, useFabwright } from "../lib/app.ts";
+import { engine, useFaber } from "../lib/app.ts";
 import { getDef } from "../lib/parts.ts";
 import { PANEL_ORDER, useIsPhone, useUi, type PanelId } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
@@ -66,7 +66,7 @@ function NetworkCard() {
 export function useAutoInspector(phone: boolean): void {
   useEffect(
     () =>
-      useFabwright.subscribe((s, prev) => {
+      useFaber.subscribe((s, prev) => {
         const n = s.selectedParts.length + s.selectedWires.length;
         const was = prev.selectedParts.length + prev.selectedWires.length;
         if (n === was && s.selectedParts === prev.selectedParts && s.selectedWires === prev.selectedWires) return;
@@ -88,7 +88,7 @@ function InspectorPanel() {
 
 function SerialPanel() {
   // arduino-pico's Serial is the USB port (Serial1/Serial2 are the UARTs on pins); AVR's is UART0.
-  const project = useFabwright((s) => s.project);
+  const project = useFaber((s) => s.project);
   const id = boardOf(project)?.id;
   const type = id ? project.parts.find((p) => p.id === id)?.type : undefined;
   const usb = !!type && getDef(type)?.spec.mcu?.backend === "rp2040js";
@@ -99,7 +99,7 @@ function SerialPanel() {
   );
 }
 
-/** Round 10: boards on Fabwright's device network (requests, frames, Wi-Fi, faults); needs fabwright serve. */
+/** Round 10: boards on Faber's device network (requests, frames, Wi-Fi, faults); needs faber serve. */
 function DeviceNetworkPanel() {
   return (
     <FloatingPanel id="network" title="Network" icon={Globe} testId="panel-device-network">
@@ -109,7 +109,7 @@ function DeviceNetworkPanel() {
 }
 
 function TestsPanel() {
-  const scenarios = useFabwright((s) => s.project.scenarios);
+  const scenarios = useFaber((s) => s.project.scenarios);
   const live = useLive((s) => s.tests);
   const results = new Map(live?.results.map((r) => [r.id, r]) ?? []);
   return (
@@ -117,7 +117,7 @@ function TestsPanel() {
       <VisualTestReport />
       {scenarios.length === 0 ? (
         <p className="panel-empty">
-          No scenarios yet. Ask the agent to <code>write_scenario</code>, or add one under <code>scenarios</code> in fabwright.json, then run <code>fabwright test -p &lt;dir&gt;</code>.
+          No scenarios yet. Ask the agent to <code>write_scenario</code>, or add one under <code>scenarios</code> in faber.json, then run <code>faber test -p &lt;dir&gt;</code>.
         </p>
       ) : (
         <ul className="test-list" data-testid="test-list">
@@ -139,8 +139,8 @@ function TestsPanel() {
 }
 
 function FirmwarePanel() {
-  const fw = useFabwright((s) => s.firmware);
-  const project = useFabwright((s) => s.project);
+  const fw = useFaber((s) => s.firmware);
+  const project = useFaber((s) => s.project);
   const f = project.firmware;
   const board = boardOf(project);
   const files = useFirmwareFiles();
@@ -191,7 +191,7 @@ function FirmwarePanel() {
         ) : null}
         {fw.status === "missing" ? (
           <p className="callout callout-warn">
-            {fw.reason}. Fix: build it with <code>fabwright run -p &lt;dir&gt;</code> (Docker, or natively after <code>fabwright setup</code>), or load the .hex below.
+            {fw.reason}. Fix: build it with <code>faber run -p &lt;dir&gt;</code> (Docker, or natively after <code>faber setup</code>), or load the .hex below.
           </p>
         ) : null}
         <div className="insp-row">
@@ -209,8 +209,8 @@ function FirmwarePanel() {
 
 /** Live voltages on the board's pins, polled 5× a second while the panel is open. */
 function InstrumentsPanel() {
-  const project = useFabwright((s) => s.project);
-  const run = useFabwright((s) => s.run);
+  const project = useFaber((s) => s.project);
+  const run = useFaber((s) => s.run);
   const board = boardOf(project);
   const def = board ? getDef(project.parts.find((p) => p.id === board.id)!.type) : undefined;
   const pins = (def?.spec.pins ?? []).filter((p) => p.type === "digital" || p.type === "analog");
@@ -315,7 +315,7 @@ function HelpPanel() {
 
 function LearnPanel() {
   return (
-    <FloatingPanel id="learn" title="Learn Fabwright" icon={GraduationCap}>
+    <FloatingPanel id="learn" title="Learn Faber" icon={GraduationCap}>
       <ol className="learn">
         <li>
           <b>Place parts.</b> The white <kbd>+</kbd> on the left opens the library; click a part or drag it onto the canvas.

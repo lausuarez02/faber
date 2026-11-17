@@ -1,9 +1,9 @@
-// ESP32-family chips the Fabwright QEMU image (Espressif's QEMU fork + Fabwright's bridge patch) runs.
+// ESP32-family chips the Faber QEMU image (Espressif's QEMU fork + Faber's bridge patch) runs.
 // Pin and signal numbers are from ESP-IDF v5.5 soc/<chip>/gpio_sig_map.h and the datasheets; the
-// peripherals each chip has (and Fabwright bridges) are listed per chip so the fidelity report and
+// peripherals each chip has (and Faber bridges) are listed per chip so the fidelity report and
 // design checks can say what works on which board. See docs/esp32-emulator.md.
 
-import type { McuCapability } from "@fabwright/sim-core";
+import type { McuCapability } from "@faber/sim-core";
 
 export type EspChip = "esp32" | "esp32s3" | "esp32c3";
 
@@ -56,7 +56,7 @@ export interface EspChipInfo {
   /** Capacitive touch pins (not bridged; listed for the fidelity report). */
   touchPins: readonly number[];
   signals: EspSignals;
-  /** What Fabwright bridges on this chip with a version-3 image. */
+  /** What Faber bridges on this chip with a version-3 image. */
   capabilities: readonly EspCapability[];
 }
 

@@ -1,8 +1,8 @@
 // Server-side backend factory (decision 0006): every backend, in-process (avr8js, rp2040js) and
 // local-process (Espressif QEMU for the ESP32 family, Renode for STM32 / nRF52 boards). Node only:
-// it spawns emulator processes / Docker containers. The browser imports "@fabwright/sim-backends"
+// it spawns emulator processes / Docker containers. The browser imports "@faber/sim-backends"
 // (in-process only) and follows the server's run for process boards.
-import type { BackendFactory, McuBackend } from "@fabwright/sim-core";
+import type { BackendFactory, McuBackend } from "@faber/sim-core";
 import { backendFactory as inProcessFactory } from "./index.ts";
 import { withPinMap } from "./pinmap.ts";
 import { ESP_CHIPS, type EspChip } from "./qemu-esp/chips.ts";
@@ -65,5 +65,5 @@ export { QemuEspBackend, EmulatorError, explainEmulatorLog } from "./qemu-esp/ba
 export { QEMU_ESP_IMAGE, EMULATOR_LABEL, OWNER_LABEL, boardMac, qemuImageAvailable, qemuPreflight, qemuRuntime } from "./qemu-esp/launcher.ts";
 export type { QemuNetwork } from "./qemu-esp/launcher.ts";
 export { RENODE_IMAGE, renodeRuntime, renodeUnavailable } from "./renode/launcher.ts";
-export { fabwrightHome, runtimeSetting, probeDocker, resetDockerProbe, pickRuntime, dockerProbeMs, NATIVE_QEMU_TAG, RENODE_VERSION, nativeQemuDir, nativeQemuBinary, nativeQemuInstalled, nativeRenodeDir, nativeRenodeBinary, nativeRenodeInstalled, fabwrightRenodeBinary } from "./runtime.ts";
+export { faberHome, runtimeSetting, probeDocker, resetDockerProbe, pickRuntime, dockerProbeMs, NATIVE_QEMU_TAG, RENODE_VERSION, nativeQemuDir, nativeQemuBinary, nativeQemuInstalled, nativeRenodeDir, nativeRenodeBinary, nativeRenodeInstalled, faberRenodeBinary } from "./runtime.ts";
 export type { Runtime, RuntimeSetting, DockerProbe } from "./runtime.ts";

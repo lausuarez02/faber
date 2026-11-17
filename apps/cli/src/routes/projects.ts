@@ -3,12 +3,12 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, wri
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import {
-  FabwrightError,
+  FaberError,
   ProjectSession,
   composeSvg,
   deviceStill, // round 6 frames
   diskFirmwareFiles,
-  fabwrightHome,
+  faberHome,
   lastTestsFromLog,
   listRegisteredProjects,
   listVersions,
@@ -22,10 +22,10 @@ import {
   TEMPLATES,
   versionCount,
   versionDetail,
-} from "@fabwright/session";
+} from "@faber/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
-import { hasProjectFile, projectFilePath, stateDirPath } from "@fabwright/project-format/node";
-import { LEGACY_STATE_DIR, STATE_DIR } from "@fabwright/project-format/legacy";
+import { hasProjectFile, projectFilePath, stateDirPath } from "@faber/project-format/node";
+import { LEGACY_STATE_DIR, STATE_DIR } from "@faber/project-format/legacy";
 
 type Project = ProjectSession["project"];
 type PartRegistry = ProjectSession["registry"];
@@ -48,7 +48,7 @@ export interface ProjectCard {
   board?: string;
   boardName?: string;
   parts: number;
-  /** Scenarios in fabwright.json (beyond the contract's fields). */
+  /** Scenarios in faber.json (beyond the contract's fields). */
   scenarios?: number;
   /** ISO. */
   updatedAt: string;
@@ -72,7 +72,7 @@ export interface ProjectCard {
 const originCache = new Map<string, string | null>();
 
 /**
- * The example a project folder was copied from: `.fabwright/origin.json`, or (copies made before it
+ * The example a project folder was copied from: `.faber/origin.json`, or (copies made before it
  * existed) the `open_example` entry of its action log, which is then written to origin.json so the
  * log is read once. Undefined for a project that is not a copy.
  */
@@ -133,7 +133,7 @@ function registryOf(dir: string, ctx: RouteContext): PartRegistry {
   return existsSync(join(dir, "parts")) ? registryForProjectDir(dir) : s.registry;
 }
 
-/** fabwright.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
+/** faber.json plus the agent-made parts' files, so a thumbnail changes when a part's drawing does. */
 function drawingKey(dir: string, raw: string): string {
   raw += `\nstill:${stillKey(dir)}`; // round 6 frames: a new run redraws the screens in the thumbnail
   const root = join(dir, "parts");
@@ -153,20 +153,20 @@ function drawingKey(dir: string, raw: string): string {
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
 
-/** A FabwrightError ("what: why. Fix: fix") in the server's error shape. */
+/** A FaberError ("what: why. Fix: fix") in the server's error shape. */
 function opError(e: unknown): { error: string; code?: string } {
-  if (e instanceof FabwrightError) return { error: `${e.what}. Why: ${e.why.replace(/\.$/, "")}. Fix: ${e.fix}`, code: e.code };
+  if (e instanceof FaberError) return { error: `${e.what}. Why: ${e.why.replace(/\.$/, "")}. Fix: ${e.fix}`, code: e.code };
   return { error: (e as Error).message };
 }
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-fabwright-token"] === ctx.token) return true;
-  ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "changing a project needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
+  if (req.headers["x-faber-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-faber-token", "changing a project needs the token from GET /api/connect, which only pages served by this Faber server can read", "open the Faber app from the faber serve URL and try again"));
   return false;
 }
 
 function host(ctx: RouteContext) {
-  if (!ctx.projects) throw new Error("This server has no projects host. Why: startFabwrightServer did not pass `projects` to the routes. Fix: start it with `fabwright serve`.");
+  if (!ctx.projects) throw new Error("This server has no projects host. Why: startFaberServer did not pass `projects` to the routes. Fix: start it with `faber serve`.");
   return ctx.projects;
 }
 
@@ -186,7 +186,7 @@ function readProject(dir: string): { project?: Project; raw?: string } {
   if (!existsSync(file)) return {};
   const raw = readFileSync(file, "utf8");
   try {
-    // Shape check only (the CLI does not depend on project-format); `fabwright check` validates fully.
+    // Shape check only (the CLI does not depend on project-format); `faber check` validates fully.
     const p = JSON.parse(raw) as Project;
     return p && Array.isArray(p.parts) && Array.isArray(p.wires) ? { project: { ...p, scenarios: Array.isArray(p.scenarios) ? p.scenarios : [] }, raw } : { raw };
   } catch {
@@ -324,7 +324,7 @@ function findCard(ctx: RouteContext, id: string): ProjectCard | undefined {
 }
 
 function noProject(id: string) {
-  return err(`No project with id '${id}'`, "it is not in the projects folder, examples/ or the registry ($FABWRIGHT_HOME/projects.json), or its folder was moved", "reload the Projects view (GET /api/projects) and use one of its ids");
+  return err(`No project with id '${id}'`, "it is not in the projects folder, examples/ or the registry ($FABER_HOME/projects.json), or its folder was moved", "reload the Projects view (GET /api/projects) and use one of its ids");
 }
 
 // ------------------------------------------------------------------------------------ thumbnails
@@ -366,17 +366,17 @@ async function thumbSvg(dir: string, project: Project, ctx: RouteContext): Promi
   return composeSvg(project, registry, still ? { states: still.states, liveWires: still.live, ...(still.color ? { color: still.color } : {}) } : {});
 }
 
-/** Where a card's PNG is cached: examples (read-only, C3) under $FABWRIGHT_HOME, projects in their .fabwright/. */
+/** Where a card's PNG is cached: examples (read-only, C3) under $FABER_HOME, projects in their .faber/. */
 function thumbFile(card: ProjectCard, raw: string): string {
   const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
-  return card.readOnly ? join(fabwrightHome(), "thumbs", `${card.id}-${hash}.png`) : join(stateDirPath(card.dir), "thumbs", `${hash}.png`);
+  return card.readOnly ? join(faberHome(), "thumbs", `${card.id}-${hash}.png`) : join(stateDirPath(card.dir), "thumbs", `${hash}.png`);
 }
 
 async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Promise<void> {
   const card = findCard(ctx, id);
   if (!card) return ctx.json(res, 404, noProject(id));
   const { project, raw } = readProject(card.dir);
-  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`fabwright check -p ${card.dir}\``));
+  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`faber check -p ${card.dir}\``));
   const file = thumbFile(card, raw);
   const headers = { "cache-control": "max-age=31536000, immutable" };
   if (existsSync(file)) {
@@ -391,7 +391,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
     return;
   }
   // No Chromium for Playwright: the same drawing as SVG (an <img> shows it all the same), not cached.
-  res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-fabwright-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
+  res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store", "x-faber-note": "PNG needs Playwright's Chromium (pnpm exec playwright install chromium); served SVG instead" });
   res.end(await thumbSvg(card.dir, project, ctx)); // round 6 frames
 }
 
@@ -448,7 +448,7 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
     mkdirSync(h.root, { recursive: true });
     dir = newProjectFolder(h.root, name);
   } catch (e) {
-    return ctx.json(res, 500, err(`Could not create a folder for '${name}' in ${h.root}`, (e as Error).message, "check that the folder is writable, or start fabwright serve with --project in a writable place"));
+    return ctx.json(res, 500, err(`Could not create a folder for '${name}' in ${h.root}`, (e as Error).message, "check that the folder is writable, or start faber serve with --project in a writable place"));
   }
   try {
     if (source) {
@@ -596,7 +596,7 @@ export const projectsRoutes: ApiRoute[] = [
       const card = findCard(ctx, id!);
       if (!card) return ctx.json(res, 404, noProject(id!));
       const { project } = readProject(card.dir);
-      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`fabwright check -p ${card.dir}\` to see what is wrong`));
+      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`faber check -p ${card.dir}\` to see what is wrong`));
       return ctx.json(res, 200, { card, project, files: diskFirmwareFiles(card.dir) });
     },
   },
@@ -664,7 +664,7 @@ export const projectsRoutes: ApiRoute[] = [
         const r = await ctx.call("restore_version", { version: Number(version), ...(typeof body.why === "string" && body.why ? { why: body.why } : {}) }, { actor: "web" });
         return ctx.json(res, 200, r);
       } catch (e) {
-        return ctx.json(res, e instanceof FabwrightError && e.code === "unknown-version" ? 404 : 400, opError(e));
+        return ctx.json(res, e instanceof FaberError && e.code === "unknown-version" ? 404 : 400, opError(e));
       }
     },
   },
@@ -746,10 +746,10 @@ const versionEvents: ServerHook = (ctx) => {
 /**
  * Round 6 (switch): draw the gallery's thumbnails in the background shortly after the server starts,
  * so the first Projects page shows every card's circuit instead of blank tiles while each render
- * (about 1 s, one at a time) runs. Off in unit tests and with FABWRIGHT_WARM_THUMBS=0.
+ * (about 1 s, one at a time) runs. Off in unit tests and with FABER_WARM_THUMBS=0.
  */
 const warmThumbnails: ServerHook = (ctx) => {
-  if (process.env.VITEST || process.env.FABWRIGHT_WARM_THUMBS === "0" || !ctx.projects) return;
+  if (process.env.VITEST || process.env.FABER_WARM_THUMBS === "0" || !ctx.projects) return;
   let stopped = false;
   const timer = setTimeout(() => {
     void (async () => {

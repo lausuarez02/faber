@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { createSandboxNetwork } from "@fabwright/ai-gateway";
+import { createSandboxNetwork } from "@faber/ai-gateway";
 import { discoverGateway, NetworkPanel, probeGateway, toRows } from "./index.ts";
 
 function traffic() {
   const net = createSandboxNetwork();
-  net.join("FabwrightNet", "", 2400, "esp");
-  net.resolve("ai.fabwright");
-  const s = net.open({ host: "ai.fabwright", ip: "10.0.0.2", port: 80, tls: false, tMs: 2500, partId: "esp" });
+  net.join("FaberNet", "", 2400, "esp");
+  net.resolve("ai.faber");
+  const s = net.open({ host: "ai.faber", ip: "10.0.0.2", port: 80, tls: false, tMs: 2500, partId: "esp" });
   if ("error" in s) throw new Error("refused");
-  s.write("GET /v1/pet?a=talk&f=50&j=50&e=50 HTTP/1.0\r\nHost: ai.fabwright\r\n\r\n", 2600);
+  s.write("GET /v1/pet?a=talk&f=50&j=50&e=50 HTTP/1.0\r\nHost: ai.faber\r\n\r\n", 2600);
   return net;
 }
 
@@ -20,7 +20,7 @@ describe("network panel model", () => {
     expect(req.type).toBe("request");
     if (req.type !== "request") return;
     expect(req.method).toBe("GET");
-    expect(req.target).toBe("ai.fabwright/v1/pet?a=talk&f=50&j=50&e=50");
+    expect(req.target).toBe("ai.faber/v1/pet?a=talk&f=50&j=50&e=50");
     expect(req.status).toBe("200");
     expect(req.provider).toBe("Mock");
     expect(req.latency).toMatch(/^\d+ ms$/);
@@ -33,8 +33,8 @@ describe("NetworkPanel", () => {
   it("shows the joined station, the request and switches back to mock", async () => {
     const net = traffic();
     render(<NetworkPanel net={net} />);
-    expect(screen.getByText(/FabwrightNet · esp/)).toBeTruthy();
-    expect(screen.getByText("ai.fabwright/v1/pet?a=talk&f=50&j=50&e=50")).toBeTruthy();
+    expect(screen.getByText(/FaberNet · esp/)).toBeTruthy();
+    expect(screen.getByText("ai.faber/v1/pet?a=talk&f=50&j=50&e=50")).toBeTruthy();
     expect(screen.getByText("Mock (deterministic)")).toBeTruthy();
     await act(async () => {
       fireEvent.click(screen.getByRole("radio", { name: "Mock" }));
@@ -65,7 +65,7 @@ describe("NetworkPanel", () => {
     expect(screen.getByRole("status").textContent).toMatch(/"what is your favourite food\?" goes with the pet's next question/);
   });
 
-  it("finds the gateway fabwright serve started, or falls back to the default", async () => {
+  it("finds the gateway faber serve started, or falls back to the default", async () => {
     const served = (async () => new Response(JSON.stringify({ url: "http://127.0.0.1:8790" }), { status: 200 })) as unknown as typeof fetch;
     expect(await discoverGateway("http://127.0.0.1:8787", served)).toBe("http://127.0.0.1:8790");
     const none = (async () => new Response("{}", { status: 404 })) as unknown as typeof fetch;

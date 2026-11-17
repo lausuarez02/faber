@@ -1,6 +1,6 @@
 // Pocket boards in the browser: the three RP2040 boards are in the library, and a XIAO RP2040
-// project served by `fabwright serve` runs its real arduino-pico firmware in the page (rp2040js with
-// Fabwright's ROM): the active-low user LED blinks and USB serial prints "ready".
+// project served by `faber serve` runs its real arduino-pico firmware in the page (rp2040js with
+// Faber's ROM): the active-low user LED blinks and USB serial prints "ready".
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { expectAttrWithinSimTime, expectWithinSimTime, hubPort, openCanvas, openSerial, requireParts, shot } from "./helpers.ts";
 
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const TEMPLATE_HEX = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/template_xiao.hex", import.meta.url));
 
 test("the RP2040 boards are in the parts library", async ({ page }) => {
@@ -17,15 +17,15 @@ test("the RP2040 boards are in the parts library", async ({ page }) => {
   await requireParts(page, ["raspberry-pi-pico", "seeed-xiao-rp2040", "waveshare-rp2040-zero"]);
 });
 
-test.describe("XIAO RP2040 project from fabwright serve", () => {
+test.describe("XIAO RP2040 project from faber serve", () => {
   let dir = "";
   let hub: ChildProcess | undefined;
   let port = 0;
 
   test.beforeEach(async ({}, info) => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-e2e-xiao-"));
-    const home = mkdtempSync(join(tmpdir(), "fabwright-e2e-home-"));
-    const env = { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_AI_GATEWAY_PORT: "0" };
+    dir = mkdtempSync(join(tmpdir(), "faber-e2e-xiao-"));
+    const home = mkdtempSync(join(tmpdir(), "faber-e2e-home-"));
+    const env = { ...process.env, FABER_HOME: home, FABER_AI_GATEWAY_PORT: "0" };
     const r = spawnSync(process.execPath, [CLI, "new", dir, "--template", "xiao-rp2040"], { encoding: "utf8", timeout: 60_000, env });
     expect(r.status, r.stderr).toBe(0);
     // The golden arduino-pico build of this template's sketch (no Docker in e2e).
@@ -86,9 +86,9 @@ test.describe("XIAO RP2040 project from fabwright serve", () => {
     const out = await post({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "run", arguments: { ms: 200 } } });
     expect(out).not.toMatch(/"isError":true/);
     await expect
-      .poll(async () => page.evaluate(() => (window as unknown as { fabwright: { store: { getState(): { run: string } }; engine: { isLocalRun: boolean } } }).fabwright.store.getState().run), { timeout: 30_000 })
+      .poll(async () => page.evaluate(() => (window as unknown as { faber: { store: { getState(): { run: string } }; engine: { isLocalRun: boolean } } }).faber.store.getState().run), { timeout: 30_000 })
       .toBe("running");
-    expect(await page.evaluate(() => (window as unknown as { fabwright: { engine: { isLocalRun: boolean } } }).fabwright.engine.isLocalRun)).toBe(true);
+    expect(await page.evaluate(() => (window as unknown as { faber: { engine: { isLocalRun: boolean } } }).faber.engine.isLocalRun)).toBe(true);
     await expect(page.getByTestId("sim-error")).toHaveCount(0);
     await expectAttrWithinSimTime(page, xiao, "data-state-led-r", /^(1|true)$/, 2000);
     await expectAttrWithinSimTime(page, xiao, "data-state-led-r", /^(0|false)$/, 2000);

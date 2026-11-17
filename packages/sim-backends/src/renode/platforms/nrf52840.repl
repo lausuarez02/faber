@@ -1,28 +1,28 @@
-// nRF52840 for Fabwright boards (Arduino Nano 33 BLE, Seeed XIAO nRF52840): Renode's nrf52840 plus the
+// nRF52840 for Faber boards (Arduino Nano 33 BLE, Seeed XIAO nRF52840): Renode's nrf52840 plus the
 // peripherals Arduino cores use that Renode 1.17 does not model: SAADC (analogRead) and PWM0..3
-// (analogWrite, Servo, tone), from FabwrightNrf52.cs, and the UICR as an erased flash page that keeps what is written across a reset. Renode's own
+// (analogWrite, Servo, tone), from FaberNrf52.cs, and the UICR as an erased flash page that keeps what is written across a reset. Renode's own
 // board file (arduino_nano_33_ble.repl) is not used: it puts a camera on spi2 / twi0 0x30.
 using "platforms/cpus/nrf52840.repl"
 
-uicr: Miscellaneous.FabwrightNrf52Uicr @ sysbus 0x10001000
+uicr: Miscellaneous.FaberNrf52Uicr @ sysbus 0x10001000
 
-saadc: Miscellaneous.FabwrightNrf52Saadc @ sysbus 0x40007000
+saadc: Miscellaneous.FaberNrf52Saadc @ sysbus 0x40007000
     name: "saadc"
     IRQ -> nvic@7
 
-pwm0: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x4001C000
+pwm0: Miscellaneous.FaberNrf52Pwm @ sysbus 0x4001C000
     name: "pwm0"
     IRQ -> nvic@28
 
-pwm1: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x40021000
+pwm1: Miscellaneous.FaberNrf52Pwm @ sysbus 0x40021000
     name: "pwm1"
     IRQ -> nvic@33
 
-pwm2: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x40022000
+pwm2: Miscellaneous.FaberNrf52Pwm @ sysbus 0x40022000
     name: "pwm2"
     IRQ -> nvic@34
 
-pwm3: Miscellaneous.FabwrightNrf52Pwm @ sysbus 0x4002D000
+pwm3: Miscellaneous.FaberNrf52Pwm @ sysbus 0x4002D000
     name: "pwm3"
     IRQ -> nvic@45
 

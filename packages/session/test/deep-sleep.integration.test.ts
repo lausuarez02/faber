@@ -1,19 +1,19 @@
 // Round 15: deep sleep with real firmware. A XIAO ESP32-C3 sketch written for the real device counts
 // lid openings across deep sleeps: RTC_DATA_ATTR counters, a GPIO wake-up (a switch to ground) and an
-// hourly timer. The simulation build links the FabwrightSleep shim; Fabwright stops the firmware while it
+// hourly timer. The simulation build links the FaberSleep shim; Faber stops the firmware while it
 // sleeps (an hour of virtual time in a few seconds), wakes it on the pin or the timer, and the sketch
 // sees the right wake cause, its RTC memory and a clock moved on by the time slept.
-// Needs the native ESP32 toolchain + QEMU (fabwright setup esp32); skipped otherwise.
+// Needs the native ESP32 toolchain + QEMU (faber setup esp32); skipped otherwise.
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { canBuildArduino } from "@fabwright/runner";
-import { qemuImageAvailable } from "@fabwright/sim-backends/node";
+import { canBuildArduino } from "@faber/runner";
+import { qemuImageAvailable } from "@faber/sim-backends/node";
 import { ProjectSession } from "../src/index.ts";
 
 const ready = qemuImageAvailable() && canBuildArduino("esp32:esp32:XIAO_ESP32C3").ok;
-if (!ready) console.warn("skipping the deep-sleep firmware test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm fabwright setup esp32)");
+if (!ready) console.warn("skipping the deep-sleep firmware test: the ESP32 toolchain and QEMU are not ready (Fix: pnpm faber setup esp32)");
 
 const SKETCH = `// Counts lid openings; sleeps between them. Written for the real XIAO ESP32-C3.
 #include <sys/time.h>
@@ -44,7 +44,7 @@ void loop() {}
 const call = (s: ProjectSession, op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 describe.skipIf(!ready)("deep sleep with real firmware (real build, real QEMU)", { timeout: 900_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-sleep-fw-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-sleep-fw-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();
@@ -60,7 +60,7 @@ describe.skipIf(!ready)("deep sleep with real firmware (real build, real QEMU)",
     const b = await call(s, "build");
     expect(b.ok, JSON.stringify(b).slice(0, 3000)).toBe(true);
     // the simulation build links the shim (its console line is in the image); the device build does not
-    expect(readFileSync(join(dir, "firmware/main.bin")).includes(Buffer.from("[fabwright:sleep]"))).toBe(true);
+    expect(readFileSync(join(dir, "firmware/main.bin")).includes(Buffer.from("[faber:sleep]"))).toBe(true);
     await call(s, "write_scenario", {
       id: "count-across-sleeps",
       timeout_ms: 4_000_000,
@@ -84,7 +84,7 @@ describe.skipIf(!ready)("deep sleep with real firmware (real build, real QEMU)",
   });
 
   it("an e-paper face that survives deep sleep: the sketch draws with raw SPI, refreshes, hibernates the panel, sleeps; a reed switch wakes it", async () => {
-    const d2 = mkdtempSync(join(tmpdir(), "fabwright-sleep-epd-"));
+    const d2 = mkdtempSync(join(tmpdir(), "faber-sleep-epd-"));
     const s2 = new ProjectSession({ dir: d2, actor: "test" });
     try {
       await call(s2, "new_project", { template: "xiao-esp32c3" });
@@ -128,7 +128,7 @@ describe.skipIf(!ready)("deep sleep with real firmware (real build, real QEMU)",
   });
 
   it("wakes on either of two pins armed with different levels (two esp_deep_sleep_enable_gpio_wakeup calls, as on the chip)", async () => {
-    const d3 = mkdtempSync(join(tmpdir(), "fabwright-sleep-2pin-"));
+    const d3 = mkdtempSync(join(tmpdir(), "faber-sleep-2pin-"));
     const s3 = new ProjectSession({ dir: d3, actor: "test" });
     try {
       await call(s3, "new_project", { template: "xiao-esp32c3" });

@@ -26,7 +26,7 @@ Open <http://localhost:5173>. You get a dark canvas with a dot grid that looks l
 
 ## 3. Run Blink
 
-The **Blink** example (`examples/blink/fabwright.json`) opens by default. It has an Arduino Uno, a 220 Ω resistor and a red LED, wired D13 → resistor → LED → GND. Press **Run** in the top bar (or the Space key).
+The **Blink** example (`examples/blink/faber.json`) opens by default. It has an Arduino Uno, a 220 Ω resistor and a red LED, wired D13 → resistor → LED → GND. Press **Run** in the top bar (or the Space key).
 
 The LED turns on for one second and off for one second. That timing comes from the simulation, not your computer's clock:
 
@@ -34,14 +34,14 @@ The LED turns on for one second and off for one second. That timing comes from t
 - When the firmware sets D13 high, a small DC solver works out the current through the resistor and the LED. That current sets the LED's brightness.
 - Time is counted in CPU cycles, so the run is identical every time.
 
-Try this: delete the resistor and wire D13 straight to the LED. The LED now draws about 100 mA, and Fabwright warns about overcurrent. A real LED and a real pin would not survive that for long.
+Try this: delete the resistor and wire D13 straight to the LED. The LED now draws about 100 mA, and Faber warns about overcurrent. A real LED and a real pin would not survive that for long.
 
 ## 4. Check your setup
 
 ```sh
 pnpm typecheck
 pnpm test
-pnpm --filter @fabwright/web exec playwright install chromium   # once
+pnpm --filter @faber/web exec playwright install chromium   # once
 pnpm test:e2e                           # desktop + phone viewports
 ```
 
@@ -51,7 +51,7 @@ The `.hex` is committed, so you don't need a toolchain to run Blink. To rebuild 
 
 ## Next
 
-- [Project format](project-format.md): what is inside `fabwright.json`.
+- [Project format](project-format.md): what is inside `faber.json`.
 - [Fidelity](fidelity.md): what the simulator can and cannot promise.
 - [Adding a part](adding-a-part.md): the best first contribution.
 - [Architecture](architecture.md): how the packages fit together.

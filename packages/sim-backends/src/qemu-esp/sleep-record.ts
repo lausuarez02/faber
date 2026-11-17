@@ -1,8 +1,8 @@
-// Round 15: the deep-sleep record the FabwrightSleep shim (toolchains/arduino-esp32/libraries/FabwrightSleep)
-// writes into the last 8 KB of flash before it sleeps. Fabwright fills in why and how long the board
+// Round 15: the deep-sleep record the FaberSleep shim (toolchains/arduino-esp32/libraries/FaberSleep)
+// writes into the last 8 KB of flash before it sleeps. Faber fills in why and how long the board
 // slept, then reboots it; the shim reads it back at boot (RTC memory, the clock, the wake cause).
-// Offsets mirror jslp_header_t in fabwright_sim_sleep.c.
-import type { WakeInfo } from "@fabwright/sim-core";
+// Offsets mirror jslp_header_t in faber_sim_sleep.c.
+import type { WakeInfo } from "@faber/sim-core";
 
 export const SLEEP_RECORD_BYTES = 8192;
 const MAGIC = 0x504c534a; // "JSLP" little-endian
@@ -29,7 +29,7 @@ export function patchSleepRecord(flash: Uint8Array, info: WakeInfo): "patched" |
   return "patched";
 }
 
-/** The record's header as Fabwright sees it (tests, diagnostics). */
+/** The record's header as Faber sees it (tests, diagnostics). */
 export function readSleepRecord(flash: Uint8Array): { state: number; cause: number; wake_gpio: number; slept_us: bigint; tv_sec: bigint; lens: number[] } | undefined {
   if (flash.length < 2 * SLEEP_RECORD_BYTES) return undefined;
   const v = new DataView(flash.buffer, flash.byteOffset + flash.length - SLEEP_RECORD_BYTES, 64);

@@ -2,7 +2,7 @@
 // visualState, and that src/registry.gen.ts is up to date. A new part folder is picked up automatically.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseBindings, type PartContext } from "@fabwright/sim-core";
+import { parseBindings, type PartContext } from "@faber/sim-core";
 import { PARTS_DIR, REGISTRY_FILE, listPartFolders, renderRegistry } from "../scripts/registry-codegen.ts";
 import { checkPartFolder, boundKeys } from "./spec/validate.ts";
 import { parseSvg } from "./spec/svg.ts";

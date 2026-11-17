@@ -3,8 +3,8 @@
 // the pads behave like 3.3 V CMOS pins. The emulator itself is tested in
 // packages/sim-backends/src/renode/boards.integration.test.ts (Docker).
 import { describe, expect, it } from "vitest";
-import { GROUND, type McuBackend, type PartDefinition, type PinState } from "@fabwright/sim-core";
-import { renodeBoardOf } from "@fabwright/sim-backends/renode";
+import { GROUND, type McuBackend, type PartDefinition, type PinState } from "@faber/sim-core";
+import { renodeBoardOf } from "@faber/sim-backends/renode";
 import { registry } from "../registry.gen.ts";
 import { mount, need } from "./bench.ts";
 

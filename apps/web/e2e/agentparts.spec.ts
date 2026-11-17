@@ -7,13 +7,13 @@ import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
 // Agent-made parts (decision 0003, C4) on the canvas: parts made with create_part in a project
-// served by `fabwright serve` draw in the follow view like built-ins: the generated module drawing,
+// served by `faber serve` draw in the follow view like built-ins: the generated module drawing,
 // an agent SVG (sanitized), and a display built on a controller model.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 
-function fabwright(dir: string, ...args: string[]): string {
+function faber(dir: string, ...args: string[]): string {
   const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000 });
-  if (r.status !== 0) throw new Error(`fabwright ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
+  if (r.status !== 0) throw new Error(`faber ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
   return r.stdout;
 }
 
@@ -41,26 +41,26 @@ const ROUND = { id: "round-tft-240", name: "Round 1.28 in TFT 240x240", category
 test.describe.configure({ mode: "serial" });
 
 test("agent-made parts draw on the followed canvas, and new ones appear live", async ({ page }, info) => {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-agentparts-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-agentparts-"));
   const port = hubPort(info);
   let hub: ChildProcess | undefined;
   try {
-    fabwright(dir, "new", dir, "--template", "uno");
-    fabwright(dir, "call", "create_part", JSON.stringify({ part: SOIL, why: "no soil sensor in the catalog" }));
-    fabwright(dir, "call", "create_part", JSON.stringify({ part: BADGE, svg: BADGE_SVG, why: "a badge" }));
-    fabwright(dir, "place", "soil-moisture-sensor", "--id", "soil", "--x", "60", "--y", "-200");
-    fabwright(dir, "place", "heart-badge", "--id", "badge", "--x", "360", "--y", "-200");
-    fabwright(dir, "connect", "soil.AOUT", "uno.A0");
+    faber(dir, "new", dir, "--template", "uno");
+    faber(dir, "call", "create_part", JSON.stringify({ part: SOIL, why: "no soil sensor in the catalog" }));
+    faber(dir, "call", "create_part", JSON.stringify({ part: BADGE, svg: BADGE_SVG, why: "a badge" }));
+    faber(dir, "place", "soil-moisture-sensor", "--id", "soil", "--x", "60", "--y", "-200");
+    faber(dir, "place", "heart-badge", "--id", "badge", "--x", "360", "--y", "-200");
+    faber(dir, "connect", "soil.AOUT", "uno.A0");
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--live-port", String(port)], { stdio: ["ignore", "pipe", "pipe"] });
     await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error("fabwright serve did not start in 20 s")), 20_000);
+      const t = setTimeout(() => reject(new Error("faber serve did not start in 20 s")), 20_000);
       hub!.stdout!.on("data", (d: Buffer) => {
         if (d.toString().includes("ws:")) {
           clearTimeout(t);
           resolve();
         }
       });
-      hub!.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}`)));
+      hub!.on("exit", (code) => reject(new Error(`faber serve exited with ${code}`)));
     });
     await page.goto(`/?follow=${encodeURIComponent(`ws://127.0.0.1:${port}`)}`);
     await expect(page.getByTestId("live-bar")).toBeVisible();
@@ -79,8 +79,8 @@ test("agent-made parts draw on the followed canvas, and new ones appear live", a
     await expect(page.locator(".part-unknown")).toHaveCount(0);
 
     // A part made while the page watches.
-    fabwright(dir, "call", "create_part", JSON.stringify({ part: ROUND, why: "round face" }));
-    fabwright(dir, "place", "round-tft-240", "--id", "face", "--x", "560", "--y", "-260");
+    faber(dir, "call", "create_part", JSON.stringify({ part: ROUND, why: "round face" }));
+    faber(dir, "place", "round-tft-240", "--id", "face", "--x", "560", "--y", "-260");
     const face = page.getByTestId("part-face");
     await expect(face).toHaveAttribute("data-part-type", "round-tft-240", { timeout: 15_000 });
     await expect(face.locator('[data-screen="240x240"]')).toBeAttached();
@@ -96,21 +96,21 @@ test("agent-made parts draw on the followed canvas, and new ones appear live", a
 test("?local runs an agent-made ST7789 display with real firmware in the browser", async ({ page }, info) => {
   // Fixture: an Uno + a create_part'ed round ST7789 240x240 (st7735 controller, 240x320 RAM, IPS)
   // and an Adafruit_ST7789 sketch built by the Docker runner (firmware/main.hex).
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-agentparts-tft-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-agentparts-tft-"));
   cpSync(fileURLToPath(new URL("./fixtures/agentparts-tft", import.meta.url)), dir, { recursive: true });
   const port = hubPort(info);
   let hub: ChildProcess | undefined;
   try {
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"] });
     await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error("fabwright serve did not start in 30 s")), 30_000);
+      const t = setTimeout(() => reject(new Error("faber serve did not start in 30 s")), 30_000);
       hub!.stdout!.on("data", (d: Buffer) => {
         if (d.toString().includes("open:")) {
           clearTimeout(t);
           resolve();
         }
       });
-      hub!.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}`)));
+      hub!.on("exit", (code) => reject(new Error(`faber serve exited with ${code}`)));
     });
     await page.goto(`http://localhost:${port}/?local`);
     const face = page.getByTestId("part-face");
@@ -121,7 +121,7 @@ test("?local runs an agent-made ST7789 display with real firmware in the browser
       .poll(
         () =>
           page.evaluate(() => {
-            const f = (window as unknown as { fabwright: { engine: { simulation?: { framebuffer(id: string): { width: number; height: number; data: Uint16Array; inverted: boolean } | undefined } } } }).fabwright.engine.simulation?.framebuffer("face");
+            const f = (window as unknown as { faber: { engine: { simulation?: { framebuffer(id: string): { width: number; height: number; data: Uint16Array; inverted: boolean } | undefined } } } }).faber.engine.simulation?.framebuffer("face");
             if (!f) return "no frame";
             const px = (x: number, y: number) => (f.data[y * f.width + x]! ^ (f.inverted ? 0xffff : 0)).toString(16);
             return `${f.width}x${f.height} centre ${px(120, 60)} eye ${px(85, 95)} corner ${px(2, 2)}`;

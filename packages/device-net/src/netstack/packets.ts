@@ -4,8 +4,8 @@
 export const ETH_IPV4 = 0x0800;
 export const ETH_ARP = 0x0806;
 export const ETH_IPV6 = 0x86dd;
-/** IEEE "local experimental" EtherType 1: Fabwright's Wi-Fi control channel (see wifi.ts). */
-export const ETH_FABWRIGHT = 0x88b5;
+/** IEEE "local experimental" EtherType 1: Faber's Wi-Fi control channel (see wifi.ts). */
+export const ETH_FABER = 0x88b5;
 
 export const PROTO_ICMP = 1;
 export const PROTO_TCP = 6;

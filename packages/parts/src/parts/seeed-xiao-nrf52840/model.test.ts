@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { registry } from "../../registry.gen.ts";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
-import { renodeBoardOf } from "@fabwright/sim-backends/renode";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
+import { renodeBoardOf } from "@faber/sim-backends/renode";
 import { BoardMcu, describeRenodeBoard } from "../../lib/renodeBoardSuite.ts";
 
 describeRenodeBoard("seeed-xiao-nrf52840", { gnd: "GND.1", led: {"key": "led_r", "pin": "LED_RED", "activeLow": true} });
@@ -18,7 +18,7 @@ describe("seeed-xiao-nrf52840 data", () => {
 describe("seeed-xiao-nrf52840 built-in charger (BQ25101)", () => {
   const make = (usb: boolean, soc: number) =>
     parseProject({
-      format: "fabwright/1",
+      format: "faber/1",
       name: "xiao-lipo",
       parts: [
         { id: "board", type: "seeed-xiao-nrf52840", x: 0, y: 0 },

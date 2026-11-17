@@ -1,10 +1,10 @@
-// Real ESP32-S3 firmware through Fabwright's device network: the net-probe sketch (fixtures/net-probe,
+// Real ESP32-S3 firmware through Faber's device network: the net-probe sketch (fixtures/net-probe,
 // a plain WiFi.h + HTTPClient + PubSubClient sketch with a real root CA, built with the
-// fabwright/arduino-esp32 r3 simulation image) boots in Espressif's QEMU in lockstep, its OpenCores
+// faber/arduino-esp32 r3 simulation image) boots in Espressif's QEMU in lockstep, its OpenCores
 // network card plugged into the netstack of a DeviceNetHost. Checked: the Wi-Fi shim joins, DHCP,
 // DNS, HTTPS to a mock (mbedTLS trusts the sandbox CA), a blocked host with why / fix, a secret
 // added at the edge and masked everywhere, MQTT publish + reply, and Wi-Fi drop + reconnect.
-// Needs the QEMU image (Docker) or Fabwright's native QEMU (fabwright setup esp32) and the fixture; skipped otherwise.
+// Needs the QEMU image (Docker) or Faber's native QEMU (faber setup esp32) and the fixture; skipped otherwise.
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { MessageChannel, receiveMessageOnPort, Worker, type MessagePort } from "node:worker_threads";
 import { tmpdir } from "node:os";
@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { boardMac, QemuEspBackend, qemuImageAvailable } from "@fabwright/sim-backends/qemu-esp";
+import { boardMac, QemuEspBackend, qemuImageAvailable } from "@faber/sim-backends/qemu-esp";
 import { SandboxCA } from "../src/ca.ts";
 import { parseMocks, parseNetworkConfig } from "../src/config.ts";
 import { DeviceNetHost } from "../src/host.ts";
@@ -49,7 +49,7 @@ describe.skipIf(!available)("real ESP32-S3 firmware through the device network (
   };
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-fw-net-"));
+    dir = mkdtempSync(join(tmpdir(), "faber-fw-net-"));
     const publicCa = await SandboxCA.open(join(dir, "public-ca"));
     // The upstream runs in its own thread: this one is busy stepping the emulator in lockstep, so a
     // server here would never answer (round 11: found when the fixture was first built).
@@ -63,7 +63,7 @@ describe.skipIf(!available)("real ESP32-S3 firmware through the device network (
     host = await DeviceNetHost.start({
       config: parseNetworkConfig({
         mode: "internet",
-        wifi: { ssid: "FabwrightNet", password: "hunter22-wifi" },
+        wifi: { ssid: "FaberNet", password: "hunter22-wifi" },
         secrets: ["WEATHER_KEY"],
         allow: [{ host: "secure.api.test", secrets: ["WEATHER_KEY"], headers: { "X-Api-Key": "{{secret:WEATHER_KEY}}" } }],
       }),
@@ -117,7 +117,7 @@ describe.skipIf(!available)("real ESP32-S3 firmware through the device network (
     expect(text).not.toContain(SECRET);
     expect(text).toContain("[secret:WEATHER_KEY]");
     const entries = out.entries as Array<{ kind: string; summary: string; why?: string; fix?: string; host?: string; secrets_used?: string[] }>;
-    expect(entries.some((e) => e.kind === "wifi" && e.summary.includes('joined "FabwrightNet"'))).toBe(true);
+    expect(entries.some((e) => e.kind === "wifi" && e.summary.includes('joined "FaberNet"'))).toBe(true);
     expect(entries.some((e) => e.kind === "dhcp" && e.summary.includes("10.0.2.15") && e.summary.includes(boardMac(1)))).toBe(true);
     const blocked = entries.find((e) => e.kind === "blocked" && e.host === "blocked.example.test");
     expect(blocked?.why).toContain("not on the project's allow list");
@@ -142,6 +142,6 @@ describe.skipIf(!available)("real ESP32-S3 firmware through the device network (
     expect(serial).toMatch(/status 3\nrssi -84\n/);
     expect(serial).toMatch(/again 200 \d+ms \{"temp_c":21\.5/);
     host.drain();
-    expect(readNetwork(host, { kind: "wifi" }).entries).toContainEqual(expect.objectContaining({ summary: expect.stringMatching(/joined "FabwrightNet" .*after \d+ refused attempt/) }));
+    expect(readNetwork(host, { kind: "wifi" }).entries).toContainEqual(expect.objectContaining({ summary: expect.stringMatching(/joined "FaberNet" .*after \d+ refused attempt/) }));
   }, 120_000);
 });

@@ -1,4 +1,4 @@
-import type { PropValue } from "@fabwright/project-format";
+import type { PropValue } from "@faber/project-format";
 
 /** Read a numeric prop, falling back when missing or not a finite number. */
 export function num(v: PropValue | undefined, fallback: number): number {

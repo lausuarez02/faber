@@ -1,4 +1,4 @@
-// firmware.language "esp-idf": idf.py build in fabwright/esp-idf, then esptool merge_bin into the
+// firmware.language "esp-idf": idf.py build in faber/esp-idf, then esptool merge_bin into the
 // padded flash image the QEMU backend boots. Compiler errors map back to firmware/<path>:<line>.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";

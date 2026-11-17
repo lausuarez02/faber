@@ -2,14 +2,14 @@
  * Round 13: the kit's Connect section, for any project that reaches the network: the API keys (by
  * name, set or missing on this machine, never values), the relay that holds them (on a computer or on
  * Cloudflare Workers), one token per device, Wi-Fi and the relay address on the device, a check, and
- * what calls cost in general. Generic: it reads fabwright.json "network" only.
+ * what calls cost in general. Generic: it reads faber.json "network" only.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadSecrets, parseDeviceTokens, parseDotEnv, RELAY_ENV, relaySlug, relaySpecFrom, relayUseful, worstCaseCallsPerDay } from "@fabwright/device-net";
-import { boardSupportOf } from "@fabwright/parts";
-import type { Project } from "@fabwright/project-format";
-import type { PartRegistry } from "@fabwright/sim-core";
+import { loadSecrets, parseDeviceTokens, parseDotEnv, RELAY_ENV, relaySlug, relaySpecFrom, relayUseful, worstCaseCallsPerDay } from "@faber/device-net";
+import { boardSupportOf } from "@faber/parts";
+import type { Project } from "@faber/project-format";
+import type { PartRegistry } from "@faber/sim-core";
 import { networkConfigOf } from "../device-network.ts";
 import type { ConnectPlan } from "./types.ts";
 
@@ -53,8 +53,8 @@ export function connectPlan(project: Project, registry: PartRegistry, dir: strin
         "Or on Cloudflare Workers (free for hobby traffic; check their current limits): deploy it once, it runs without your computer.",
       ],
       commands: [
-        { label: "On this computer (from the project)", cmd: "fabwright relay serve        # http://<this computer>:8787" },
-        { label: "Or without Fabwright (Node 20+)", cmd: "cd relay && cp .env.example .env && node server.mjs" },
+        { label: "On this computer (from the project)", cmd: "faber relay serve        # http://<this computer>:8787" },
+        { label: "Or without Faber (Node 20+)", cmd: "cd relay && cp .env.example .env && node server.mjs" },
         { label: "Or on Cloudflare Workers", cmd: ["cd relay", "npx wrangler login", `npx wrangler secret put ${RELAY_ENV.tokens}`, ...spec.secrets.map((n) => `npx wrangler secret put ${n}`), `npx wrangler deploy        # https://${slug}-relay.<your account>.workers.dev`].join("\n") },
       ],
     });
@@ -66,8 +66,8 @@ export function connectPlan(project: Project, registry: PartRegistry, dir: strin
         "Lost or gave away a device? Revoke its token and give the relay the new list; the keys stay as they are.",
       ],
       commands: [
-        { label: "Make one", cmd: `fabwright relay token add ${slug}-1` },
-        { label: "Revoke one", cmd: `fabwright relay token revoke ${slug}-1` },
+        { label: "Make one", cmd: `faber relay token add ${slug}-1` },
+        { label: "Revoke one", cmd: `faber relay token revoke ${slug}-1` },
       ],
     });
   }
@@ -75,18 +75,18 @@ export function connectPlan(project: Project, registry: PartRegistry, dir: strin
     title: "Wi-Fi and the relay address on the device",
     do: [
       `Put these in the project's .env: ${needsRelay ? "RELAY_URL=<the relay's address>, " : ""}WIFI_SSID=<your Wi-Fi> and WIFI_PASSWORD=<its password>. The board needs 2.4 GHz Wi-Fi.`,
-      "fabwright relay device-header writes them, with the device token, into fabwright_device.h next to the sketch. That file is git-ignored; never share it.",
+      "faber relay device-header writes them, with the device token, into faber_device.h next to the sketch. That file is git-ignored; never share it.",
       "Build and flash from the sketch folder (Arduino IDE, or the command below). The firmware file in this kit has no token and no Wi-Fi password, so it is safe to share, but it cannot connect until you build your own.",
     ],
     commands: [
-      { label: "Write the device header", cmd: "fabwright relay device-header" },
+      { label: "Write the device header", cmd: "faber relay device-header" },
       ...(fqbn ? [{ label: "Build and flash your device", cmd: `arduino-cli compile --fqbn ${fqbn} --upload -p <port> ${sketchDir}` }] : []),
     ],
   });
   steps.push({
     title: "Check it",
     do: [
-      "Open the serial monitor: the firmware says when Wi-Fi is up and what each call answered. fabwrightRelayReady() is false (and the firmware says why) when fabwright_device.h was missing at build time.",
+      "Open the serial monitor: the firmware says when Wi-Fi is up and what each call answered. faberRelayReady() is false (and the firmware says why) when faber_device.h was missing at build time.",
       needsRelay ? "The relay logs one line per call (device, host, path, status, time; never a key, a token or query values): in the terminal running it, or npx wrangler tail on Cloudflare." : "Watch the serial monitor for each call's status.",
       "401 means the token is wrong or revoked, 403 a host or key the project does not allow (the answer says which and how to fix it), 429 too many calls a minute.",
     ],
@@ -104,7 +104,7 @@ export function connectPlan(project: Project, registry: PartRegistry, dir: strin
     ...(noRadio ? [`${boardName} has no Wi-Fi, so the real device cannot reach the network with it. Use a board with Wi-Fi (an ESP32-family board, e.g. a XIAO ESP32-S3), or add a Wi-Fi module.`] : []),
     ...(spec.direct?.length ? [`Not through the relay (end-to-end TLS): ${spec.direct.map((d) => d.host).join(", ")}; the device calls them directly and they get no key.`] : []),
     "Relayed: HTTP(S) requests, streamed answers and WebSockets. Not relayed: MQTT and other raw TCP (MQTT over WebSocket works).",
-    "In Fabwright's simulator the same firmware calls a sandbox relay with the same rules, so what worked there works here.",
+    "In Faber's simulator the same firmware calls a sandbox relay with the same rules, so what worked there works here.",
   ];
   return {
     ...(noRadio ? { warning: notes[0] } : {}),

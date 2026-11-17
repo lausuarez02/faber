@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GPIO_R_OUT, GROUND } from "@fabwright/sim-core";
+import { GPIO_R_OUT, GROUND } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need, supply } from "../../lib/bench.ts";
 

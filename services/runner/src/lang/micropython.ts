@@ -1,4 +1,4 @@
-// MicroPython as a firmware language. There is no compile step: Fabwright flashes the official,
+// MicroPython as a firmware language. There is no compile step: Faber flashes the official,
 // pinned MicroPython firmware for the chip and a littlefs filesystem holding the project's .py
 // files at the address that firmware mounts, exactly what `mpremote cp` would leave on a real board.
 // MicroPython then runs boot.py and main.py and offers its REPL on the console (USB CDC on the
@@ -35,7 +35,7 @@ export interface MicroPythonFirmware {
   layout:
     | { kind: "rp2040-uf2"; flashBytes: number; fsOffset: number; fsBytes: number }
     | { kind: "esp-bin"; flashOffset: number; flashMB: number };
-  /** Verified in Fabwright (a test boots it), or listed with the reason it is not. */
+  /** Verified in Faber (a test boots it), or listed with the reason it is not. */
   verified: boolean;
   note?: string;
 }
@@ -108,7 +108,7 @@ export function pickMicroPythonFirmware(opts: { chip: string; board?: string; sp
     const hit = all.find((f) => f.id === id && (!version || f.version === version));
     if (!hit) {
       const ids = all.filter((f) => f.chip === opts.chip).map((f) => `"${f.id}@${f.version}"`);
-      throw new RunnerError("micropython-unknown-firmware", `MicroPython firmware '${opts.spec}' is not one Fabwright has pinned. Fix: set firmware.build.firmware to one of ${ids.join(", ") || "(none for this chip)"} or remove it to use the board's default.`);
+      throw new RunnerError("micropython-unknown-firmware", `MicroPython firmware '${opts.spec}' is not one Faber has pinned. Fix: set firmware.build.firmware to one of ${ids.join(", ") || "(none for this chip)"} or remove it to use the board's default.`);
     }
     if (hit.chip !== opts.chip) throw new RunnerError("micropython-wrong-chip", `MicroPython firmware '${opts.spec}' is built for ${hit.chip}, but the board is ${opts.chip}. Fix: remove firmware.build.firmware, or pick a build for ${opts.chip}.`);
     return hit;
@@ -117,7 +117,7 @@ export function pickMicroPythonFirmware(opts: { chip: string; board?: string; sp
   const byChip = all.find((f) => f.chip === opts.chip && f.verified) ?? all.find((f) => f.chip === opts.chip);
   const hit = byBoard ?? byChip;
   if (!hit) {
-    throw new RunnerError("micropython-unsupported-chip", `MicroPython does not run on ${opts.chip} in Fabwright. Why: ${opts.chip === "atmega328p" ? "MicroPython needs far more than the ATmega328P's 2 KB of RAM" : "no MicroPython build for this chip boots in Fabwright's emulator yet (docs/firmware-languages.md lists why)"}. Fix: use Arduino (firmware.language "arduino"), or a Raspberry Pi Pico / XIAO RP2040 / ESP32 board for MicroPython.`);
+    throw new RunnerError("micropython-unsupported-chip", `MicroPython does not run on ${opts.chip} in Faber. Why: ${opts.chip === "atmega328p" ? "MicroPython needs far more than the ATmega328P's 2 KB of RAM" : "no MicroPython build for this chip boots in Faber's emulator yet (docs/firmware-languages.md lists why)"}. Fix: use Arduino (firmware.language "arduino"), or a Raspberry Pi Pico / XIAO RP2040 / ESP32 board for MicroPython.`);
   }
   return hit;
 }
@@ -200,12 +200,12 @@ function syntaxHint(kind: string, msg: string): string {
  * main.py (stored as USB_MAIN_FILE) compiled under the name "main.py", so tracebacks name the
  * project's own file and line. The build output says so.
  */
-export const USB_MAIN_FILE = "fabwright_main.py";
-export const USB_LAUNCHER = `# Added by Fabwright: the console is USB, so wait 40 ms for the computer to open it,
-# then run the project's main.py (stored as ${"fabwright_main.py"}) in this module's globals,
+export const USB_MAIN_FILE = "faber_main.py";
+export const USB_LAUNCHER = `# Added by Faber: the console is USB, so wait 40 ms for the computer to open it,
+# then run the project's main.py (stored as ${"faber_main.py"}) in this module's globals,
 # so its names stay defined at the REPL afterwards, as they would on the board.
 __import__("time").sleep_ms(40)
-exec(compile(open("${"fabwright_main.py"}").read(), "main.py", "exec"), globals())
+exec(compile(open("${"faber_main.py"}").read(), "main.py", "exec"), globals())
 `;
 
 export interface MicroPythonBuild {
@@ -243,7 +243,7 @@ export async function composeMicroPython(opts: { chip: string; board?: string; s
     const base = 0x1000_0000;
     const flash = uf2ToFlash(bytes, base, fw.layout.flashBytes);
     for (let i = fw.layout.fsOffset; i < fw.layout.flashBytes; i++) {
-      if (flash[i] !== 0xff) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} reaches into its own filesystem area (0x${(base + fw.layout.fsOffset).toString(16)}). Why: the pinned layout does not match this build. Fix: report it; this is a Fabwright bug.`);
+      if (flash[i] !== 0xff) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} reaches into its own filesystem area (0x${(base + fw.layout.fsOffset).toString(16)}). Why: the pinned layout does not match this build. Fix: report it; this is a Faber bug.`);
     }
     const fs = await buildLittleFs(files, { blockSize: 4096, blockCount: fw.layout.fsBytes / 4096 });
     flash.set(fs, fw.layout.fsOffset);
@@ -260,7 +260,7 @@ export async function composeMicroPython(opts: { chip: string; board?: string; s
     const size = (fw.layout.flashMB << 20) - end;
     if (size >= 64 * 1024) vfs = { type: 1, subtype: 0x81, offset: end, size, label: "vfs" };
   }
-  if (!vfs) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} has no 'vfs' partition and no free flash after its partitions, so there is nowhere to put main.py. Fix: report it; this is a Fabwright bug.`);
+  if (!vfs) throw new RunnerError("micropython-layout", `The MicroPython firmware ${fw.file} has no 'vfs' partition and no free flash after its partitions, so there is nowhere to put main.py. Fix: report it; this is a Faber bug.`);
   const fs = await buildLittleFs(files, { blockSize: 4096, blockCount: vfs.size / 4096 });
   flash.set(fs, vfs.offset);
   return { format: "esp-flash", binary: flash, firmware: fw, files: [...files.keys()].sort(), fsBytesUsed: used, fsBytes: vfs.size };

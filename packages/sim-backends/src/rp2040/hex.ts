@@ -57,7 +57,7 @@ export function parseRp2040Hex(text: string): { image: Uint8Array; used: number 
   if (used === 0) throw new FirmwareImageError("the firmware hex has no data. Why: the build produced an empty file. Fix: build the sketch again.");
   if (minAddr !== FLASH_BASE) {
     // arduino-pico images start with the 256-byte boot2 stage at the start of flash.
-    throw new FirmwareImageError(`the firmware does not start at 0x10000000 (lowest byte at 0x${minAddr.toString(16)}). Why: RP2040 firmware begins with the boot2 stage at the start of flash; this file is not a whole flash image. Fix: build with arduino-pico (rp2040:rp2040:<board>) and load the .hex Fabwright writes.`);
+    throw new FirmwareImageError(`the firmware does not start at 0x10000000 (lowest byte at 0x${minAddr.toString(16)}). Why: RP2040 firmware begins with the boot2 stage at the start of flash; this file is not a whole flash image. Fix: build with arduino-pico (rp2040:rp2040:<board>) and load the .hex Faber writes.`);
   }
   return { image, used };
 }

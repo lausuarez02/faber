@@ -1,8 +1,8 @@
 // compileCustomPart: an agent-made part.json (+ optional SVG) → an ordinary PartDefinition that
 // place_part / connect / run / tests / the web canvas use like a built-in. Validation errors say
 // what is wrong, why it matters and how to fix it. No fs here: Node and the browser share it.
-import type { BindingSpec, ColorFrame, Fidelity, PartDefinition, PartModelFactory, PartRegistry, PartSpec, PinSpec, PropSpec } from "@fabwright/sim-core";
-import { PartSpecSchema } from "@fabwright/sim-core";
+import type { BindingSpec, ColorFrame, Fidelity, PartDefinition, PartModelFactory, PartRegistry, PartSpec, PinSpec, PropSpec } from "@faber/sim-core";
+import { PartSpecSchema } from "@faber/sim-core";
 import { createTftModule, ILI9341_PANEL } from "../parts/ili9341-tft/model.ts";
 import { ST7735_PANEL } from "../parts/st7735-tft/model.ts";
 import { registry as builtinRegistry } from "../registry.gen.ts";
@@ -175,7 +175,7 @@ export function compileCustomPart(input: unknown, svgInput?: string | null, opts
     const problems = zodProblems(parsed.error.issues);
     throw new CustomPartError(
       `The part definition is invalid (${problems.length} problem${problems.length > 1 ? "s" : ""}): ${problems.slice(0, 6).join("; ")}${problems.length > 6 ? "; …" : ""}`,
-      "create_part only accepts the fabwright-part/1 format, so the simulator knows exactly how the part behaves",
+      "create_part only accepts the faber-part/1 format, so the simulator knows exactly how the part behaves",
       "fix those fields (JSON Schema: packages/parts/custom-part.schema.json; docs/custom-parts.md has a worked example per behaviour) and call again",
       problems,
     );

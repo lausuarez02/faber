@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { CallMeta, LiveHubCore, ProjectSession } from "@fabwright/session";
+import type { CallMeta, LiveHubCore, ProjectSession } from "@faber/session";
 
 /**
  * Round 5 (decision 0003, C3): HTTP endpoints added by a track live in apps/cli/src/routes/<track>.ts
@@ -20,13 +20,13 @@ export interface RouteContext {
   json(res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>): void;
   /** The request body parsed as JSON ({} when empty); throws a readable Error on bad JSON. */
   body<T = Record<string, unknown>>(req: IncomingMessage): Promise<T>;
-  /** The CSRF token pages get from GET /api/connect; POST routes that change things check x-fabwright-token. */
+  /** The CSRF token pages get from GET /api/connect; POST routes that change things check x-faber-token. */
   token: string;
   /** Round 5, projects track: where projects live and how to switch the active one (serve sets it). */
   projects?: ProjectsHost;
 }
 
-/** What fabwright serve gives the projects routes (decision 0003, C3). */
+/** What faber serve gives the projects routes (decision 0003, C3). */
 export interface ProjectsHost {
   /** Where new projects are created (projects/ for `pnpm start`, else the parent of --project). */
   root: string;

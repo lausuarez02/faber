@@ -8,13 +8,13 @@ these kinds, any object with a lid.
 
 `esp_deep_sleep_start()` on an ESP32 / S3 / C3 now sleeps in the simulator:
 
-- The simulation build links **FabwrightSleep** (`toolchains/arduino-esp32/libraries/FabwrightSleep`, MIT,
+- The simulation build links **FaberSleep** (`toolchains/arduino-esp32/libraries/FaberSleep`, MIT,
   simulation builds only; the device build uses ESP-IDF's sleep code unchanged). It wraps the sleep
   API at link time: the timer (`esp_sleep_enable_timer_wakeup`, `esp_deep_sleep`), `ext0`, `ext1`
   and the C3's `esp_deep_sleep_enable_gpio_wakeup`.
 - When the firmware sleeps, the shim saves what the chip keeps (every `RTC_DATA_ATTR` /
   `RTC_NOINIT_ATTR` variable and the system time) in a record in the last 8 KB of flash and prints
-  one console line, `[fabwright:sleep] {"mode":"deep","us":...,"pins":[{"gpio":3,"level":0}],"any":true,"src":"gpio"}`.
+  one console line, `[faber:sleep] {"mode":"deep","us":...,"pins":[{"gpio":3,"level":0}],"any":true,"src":"gpio"}`.
 - The simulation (`packages/sim-core/src/sleep.ts`) stops running the firmware. Virtual time then
   jumps from one part event to the next (parts tick once a second), so **an hour passes in about a
   second**. The board's pins keep their configuration (the pull-up that holds a wake pin).
@@ -42,7 +42,7 @@ a second of wall time; an e-paper face drawn over raw SPI survives the sleep).
 | `sharp-memory-lcd-128` | Sharp LS013B7DH03, 1.28 in 128 x 128 memory-in-pixel LCD | about 2 µA for a still image, 17 µA writing | line writes, clear, VCOM frames, the active-high chip select (`spi-cs-high`), DISP, a warning when VCOM is not toggled about once a second |
 
 Libraries: GxEPD2 (`GxEPD2_154_GDEY0154D67`) and Adafruit_EPD (`ThinkInk_154_Mono_D67`) drive the
-e-paper, Adafruit_SharpMem the memory LCD. None of them is in Fabwright's pinned library set yet
+e-paper, Adafruit_SharpMem the memory LCD. None of them is in Faber's pinned library set yet
 (GxEPD2 is GPL-3.0, so it would only ever be a build input of the person's firmware, as Adafruit
 NeoPixel is); the protocol models are tested with raw SPI and with byte-exact benches. Diagnostics say
 what went wrong: drawn but not refreshed, bytes sent while BUSY, a refresh with the panel supplies

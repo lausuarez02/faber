@@ -77,7 +77,7 @@ function stepMd(s: KitStep): string[] {
 export function kitMarkdown(k: BuildKit): string {
   const out = [`# Build it yourself: ${k.project}`, "", k.summary, ""];
   if (k.missing.length) out.push("## Not ready yet", "", ...k.missing.map((m) => `- **${m.item}**: ${m.why}. To fix it: ${m.say}.`), "");
-  if (k.check_first?.length) out.push("## Check before you buy", "", "Fabwright's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:", "", ...k.check_first.map((c) => `- **${c.problem}** (${c.severity}): ${c.why} Fix: ${c.fix}`), "");
+  if (k.check_first?.length) out.push("## Check before you buy", "", "Faber's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:", "", ...k.check_first.map((c) => `- **${c.problem}** (${c.severity}): ${c.why} Fix: ${c.fix}`), "");
   out.push(shoppingMd(k).replace(/^# .*\n/, "## Buy\n").replace(/^## /gm, "### ").replace(/^### Buy/m, "## Buy"));
   out.push("## Tools", "", ...k.tools.items.map((t) => `- [ ] **${t.name}** (${t.need}): ${t.why}`), "", `**Skill:** ${k.tools.skill_why}`, "", `**Time:** ${k.tools.time.note}`, "");
   out.push(printListMd(k).replace(/^# .*\n/, "## Print\n").replace(/^## (?!Print)/gm, "### "));
@@ -209,7 +209,7 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
     .join("");
   const f = k.flash;
   const flash = `<p>Board: <b>${h(f.board)}</b>${f.kit_file ? `. File: <code>${h(f.kit_file)}</code> in the download (made from <code>${h(f.file ?? "")}</code> in the project)` : ""}. Cable: ${h(f.cable ?? "USB data cable")}.</p>${f.why_missing ? `<div class="box warn"><b>${h(f.why_missing)}.</b></div>` : ""}<ol>${f.steps.map((s) => `<li>${h(s)}</li>`).join("")}</ol>${f.commands.map((c) => `<p>${h(c.label)}:</p><pre>${h(c.cmd)}</pre>`).join("")}${f.needs.length ? `<p class="why">You need: ${h(f.needs.map((n) => n.replace(/\.$/, "")).join("; "))}.</p>` : ""}`;
-  const groups: [string, (s: string) => boolean][] = [["Common problems", (s) => s === "general" || s === "part" || s === "case"], ["What Fabwright's checks said", (s) => s === "check_design"], ["Check on the real device", (s) => s === "fidelity"]];
+  const groups: [string, (s: string) => boolean][] = [["Common problems", (s) => s === "general" || s === "part" || s === "case"], ["What Faber's checks said", (s) => s === "check_design"], ["Check on the real device", (s) => s === "fidelity"]];
   const trouble = groups
     .map(([title, f2]) => {
       const rows = k.troubleshooting.filter((t) => f2(t.source));
@@ -218,9 +218,9 @@ export function kitHtml(k: BuildKit, images: Record<string, string> = {}): strin
     })
     .join("");
   const missing = k.missing.length ? `<div class="box warn"><b>Not ready yet</b><ul>${k.missing.map((m) => `<li><b>${h(m.item)}</b>: ${h(m.why)}. To fix it: ${h(m.say)}.</li>`).join("")}</ul></div>` : "";
-  const checkFirst = k.check_first?.length ? `<div class="box warn"><b>Check before you buy</b><p>Fabwright's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:</p><ul>${k.check_first.map((c) => `<li><b>${h(c.problem)}</b> (${h(c.severity)}): ${h(c.why)} Fix: ${h(c.fix)}</li>`).join("")}</ul></div>` : "";
+  const checkFirst = k.check_first?.length ? `<div class="box warn"><b>Check before you buy</b><p>Faber's design check found these in the circuit. Fix them first (ask your agent), or buy knowing why:</p><ul>${k.check_first.map((c) => `<li><b>${h(c.problem)}</b> (${h(c.severity)}): ${h(c.why)} Fix: ${h(c.fix)}</li>`).join("")}</ul></div>` : "";
   const hero = images["case/renders/front.png"] ? `<img src="${images["case/renders/front.png"]}" alt="The finished case" style="max-width:280px;width:100%;border-radius:12px;background:#0d0f12;float:right;margin:0 0 12px 16px">` : "";
-  const key = `fabwright-kit:${k.project}`;
+  const key = `faber-kit:${k.project}`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${h(k.project)} build kit</title><style>${CSS}</style></head><body><main>
 ${hero}<h1>Build it yourself: ${h(k.project)}</h1><p class="summary">${h(k.summary)}</p>
 <nav class="noprint"><a href="#buy">Buy</a><a href="#tools">Tools</a><a href="#print">Print</a><a href="#assemble">Assemble</a><a href="#flash">Flash</a>${k.connect ? '<a href="#connect">Connect</a>' : ""}<a href="#help">If it does not work</a></nav>${missing}${checkFirst}
@@ -231,6 +231,6 @@ ${hero}<h1>Build it yourself: ${h(k.project)}</h1><p class="summary">${h(k.summa
 <h2 id="flash">5. Flash</h2>${flash}
 ${connectHtml(k)}
 ${holdsHtml(k)}<h2 id="help">If something does not work</h2>${trouble}
-<p class="why">Made by Fabwright. Ticks are remembered in this browser only.</p>
+<p class="why">Made by Faber. Ticks are remembered in this browser only.</p>
 </main><script>(function(){var K=${JSON.stringify(key)};var s={};try{s=JSON.parse(localStorage.getItem(K)||"{}")||{}}catch(e){s={}}document.querySelectorAll("input[data-tick]").forEach(function(c){var id=c.getAttribute("data-tick");c.checked=!!s[id];c.addEventListener("change",function(){s[id]=c.checked;try{localStorage.setItem(K,JSON.stringify(s))}catch(e){}})})})();</script></body></html>`;
 }

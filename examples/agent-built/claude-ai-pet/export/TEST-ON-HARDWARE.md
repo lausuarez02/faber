@@ -13,7 +13,7 @@
 - [ ] wifi1 (esp01-wifi): Power the ESP-01 from a 3.3 V regulator that gives 300 mA (AMS1117-3.3 with 10 µF + 100 nF), not the Uno 3V3 pin: random resets and 'busy p...' are the symptom
 - [ ] wifi1 (esp01-wifi): Put a 1 kΩ / 2 kΩ divider on the module's RX
 - [ ] wifi1 (esp01-wifi): Set the module to 9600 baud once (AT+UART_DEF=9600,8,1,0,0) before using SoftwareSerial
-- [ ] wifi1 (esp01-wifi): Your Wi-Fi name and password in the sketch, and the gateway's LAN address (http://<your-computer>:8787) instead of ai.fabwright
+- [ ] wifi1 (esp01-wifi): Your Wi-Fi name and password in the sketch, and the gateway's LAN address (http://<your-computer>:8787) instead of ai.faber
 - [ ] wifi1 (esp01-wifi): Check the AT firmware version with AT+GMR: 1.7.x matches the sandbox; very old 0.9.x firmware answers differently
 - [ ] btnTalk (pushbutton): Debounce logic (real buttons bounce)
 - [ ] btnTalk (pushbutton): Long-press / double-click timing

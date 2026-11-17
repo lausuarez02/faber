@@ -520,7 +520,7 @@
   }
 }
 
-/* ?chrome=min: no tool rail, minimap or round buttons (used by `fabwright record`). */
+/* ?chrome=min: no tool rail, minimap or round buttons (used by `faber record`). */
 html[data-live-chrome="min"] .rail-zone,
 html[data-live-chrome="min"] .round-btn,
 html[data-live-chrome="min"] .canvas-minimap {

@@ -1,5 +1,5 @@
-import { renderGuide, renderSkillMd, SKILL_NAME } from "@fabwright/agent-skill";
-import { AGENT_LOOP, TOOLS } from "@fabwright/session";
+import { renderGuide, renderSkillMd, SKILL_NAME } from "@faber/agent-skill";
+import { AGENT_LOOP, TOOLS } from "@faber/session";
 
 /**
  * Round 12 skill: the generated agent-facing files in the repo (pnpm gen writes them; test/docs.test.ts
@@ -8,7 +8,7 @@ import { AGENT_LOOP, TOOLS } from "@fabwright/session";
 export function renderAgentSkillFiles(): Record<string, string> {
   const tools = TOOLS.map((t) => t.name);
   return {
-    [`plugins/fabwright/skills/${SKILL_NAME}/SKILL.md`]: renderSkillMd({ tools }),
+    [`plugins/faber/skills/${SKILL_NAME}/SKILL.md`]: renderSkillMd({ tools }),
     "docs/hardware-guide.md": `<!-- Generated from packages/agent-skill by \`pnpm gen\`. Do not edit by hand: change packages/agent-skill/src/knowledge.ts. -->\n\n${renderGuide({ tools })}`,
   };
 }
@@ -16,11 +16,11 @@ export function renderAgentSkillFiles(): Record<string, string> {
 /** docs/mcp-tools.md, generated from the tool definitions (kept in sync by test/docs.test.ts). */
 export function renderToolDocs(): string {
   const lines = [
-    "# Fabwright MCP tool reference",
+    "# Faber MCP tool reference",
     "",
-    "<!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @fabwright/mcp gen:docs`. Do not edit by hand. -->",
+    "<!-- Generated from packages/session/src/catalog.ts by `pnpm --filter @faber/mcp gen:docs`. Do not edit by hand. -->",
     "",
-    `${TOOLS.length} tools. The same operations are CLI subcommands (\`fabwright <tool> --json\`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).`,
+    `${TOOLS.length} tools. The same operations are CLI subcommands (\`faber <tool> --json\`) and run with the same rules. Setup and a worked example: [agents.md](agents.md).`,
     "",
     "## Recommended loop (sent as the server's instructions)",
     "",

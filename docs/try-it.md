@@ -2,7 +2,7 @@
 
 A hands-on script: what to type, what to click, and what you should see. Three parts, about
 15 minutes in all: the AI pet, the robot, then Claude Code building something new while you watch.
-Both devices were built by Claude Code with only Fabwright's tools (videos:
+Both devices were built by Claude Code with only Faber's tools (videos:
 [`docs/media/live-claude-ai-pet.mp4`](media/live-claude-ai-pet.mp4),
 [`docs/media/live-claude-robot.mp4`](media/live-claude-robot.mp4)).
 
@@ -19,7 +19,7 @@ taken (then the next free one; use what it prints). Stop it with Ctrl+C before s
 ## 1. The AI pet (colour screen, AI inside)
 
 ```sh
-pnpm fabwright test --visual -p examples/agent-built/claude-ai-pet   # 5/5, saves the Tests filmstrips (about 30 s)
+pnpm faber test --visual -p examples/agent-built/claude-ai-pet   # 5/5, saves the Tests filmstrips (about 30 s)
 pnpm start --project examples/agent-built/claude-ai-pet
 ```
 
@@ -27,7 +27,7 @@ Open **`http://localhost:7780/?local`** (`?local` = run the project here, with i
 
 1. **Run** (top right, or Space). The clock bottom-left starts counting. After about 3 s the colour
    screen on the canvas shows Pip: a face, FOOD and JOY bars, a Wi-Fi badge, and "Hi! I'm Pip.
-   Press TALK!". The Network panel on the right logs `wifi1 joined FabwrightNet`.
+   Press TALK!". The Network panel on the right logs `wifi1 joined FaberNet`.
 2. **Device view**: the third icon in the top-right group (a screen on a stand). The pet becomes a
    3D handheld with the live screen behind glass.
    - Press **1 / 2 / 3** (or click the round buttons) for **TALK / FEED / PLAY**. TALK shows a speech
@@ -56,7 +56,7 @@ Open **`http://localhost:7780/?local`** (`?local` = run the project here, with i
 ## 2. The robot (OLED face, drives itself)
 
 ```sh
-pnpm fabwright test --visual -p examples/agent-built/claude-robot   # 3/3 (about 20 s)
+pnpm faber test --visual -p examples/agent-built/claude-robot   # 3/3 (about 20 s)
 pnpm start --project examples/agent-built/claude-robot
 ```
 
@@ -82,19 +82,19 @@ pnpm start                       # follows projects/playground; open the URL it 
 In a second terminal (anywhere):
 
 ```sh
-claude mcp add --transport http fabwright http://localhost:7780/mcp     # once
+claude mcp add --transport http faber http://localhost:7780/mcp     # once
 claude
 ```
 
-In Claude Code, `/mcp` lists **fabwright** as connected. Ask for a device, for example:
+In Claude Code, `/mcp` lists **faber** as connected. Ask for a device, for example:
 
-> Use the fabwright tools to build a plant monitor on an Uno: a soil moisture knob, an SSD1306 OLED
+> Use the faber tools to build a plant monitor on an Uno: a soil moisture knob, an SSD1306 OLED
 > showing the level, and a buzzer that beeps when it is dry. Write scenario tests and run them.
 
 What to expect:
 
-- Claude Code asks permission the first time it uses each Fabwright tool (choose "don't ask again" for
-  `fabwright` to let it run).
+- Claude Code asks permission the first time it uses each Faber tool (choose "don't ask again" for
+  `faber` to let it run).
 - The canvas shows each step as it happens: parts appear, wires draw, the **Agent steps** panel lists
   every step with Claude's "why", the agent pill (bottom right) says what it is doing: "No agent"
   (grey, with Connect) until Claude calls a tool, then "building", "idle" after 10 s of quiet, and
@@ -110,10 +110,10 @@ What to expect:
   and it collapses): a tilt pad, **Shake** (a click shakes for the set duration, holding shakes for
   as long as you hold), **Drop**, **Spin**, and a slider for what each sensor measures. Motions run
   on simulation time, so they wait while paused. These values only change the running simulation,
-  never `fabwright.json`. Serial follows the newest line unless you scroll up (then **Newest** jumps
+  never `faber.json`. Serial follows the newest line unless you scroll up (then **Newest** jumps
   back); once you zoom or pan, run, save and build leave your view alone.
 
-Other agents: `codex mcp add fabwright --url http://localhost:7780/mcp`; Cursor and Claude Desktop
+Other agents: `codex mcp add faber --url http://localhost:7780/mcp`; Cursor and Claude Desktop
 snippets are in the **Install MCP** menu (top right).
 
 ## Known gaps
@@ -124,7 +124,7 @@ snippets are in the **Install MCP** menu (top right).
   build here (the Live bar says "sketch changed, not built yet").
 - **IMU motions are approximate** (a 7 Hz shake, 0.4 s of free fall then a 6 g bump, 360 °/s spin),
   played on simulation time: shapes firmware usually detects, not a model of a hand.
-- **An agent on a separate stdio MCP process** (`fabwright mcp --project`) shows as "idle" after it
+- **An agent on a separate stdio MCP process** (`faber mcp --project`) shows as "idle" after it
   stops, never "done": the server cannot see that process end. HTTP clients (`claude mcp add
   --transport http`) and `--attach` show "done".
 - **Opening a test frame in 3D** draws the Device title over the project title (top left), and the
@@ -134,6 +134,6 @@ snippets are in the **Install MCP** menu (top right).
 - **Live AI** needs the gateway running, pauses above 1x speed, and once returned an empty reply
   that was cached for 15 s (not reproduced since).
 - **Firmware builds** need Docker; the browser cannot build firmware itself.
-- **Boards**: Uno / Nano (ATmega328P) only. Wi-Fi is the ESP-01 sandbox (FabwrightNet), not the real
+- **Boards**: Uno / Nano (ATmega328P) only. Wi-Fi is the ESP-01 sandbox (FaberNet), not the real
   internet.
 - The Network panel is desktop-only; on a phone the exchange shows in the serial console.

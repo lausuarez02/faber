@@ -3,7 +3,7 @@
 Round 13. A camera is a general capability, like I2C or the device network: any part with a
 `camera` block in its part.json (a board with one built in, a module wired to a board) gives the
 firmware pictures through Espressif's **esp32-camera** driver (`esp_camera.h`), the same source on
-the board and in Fabwright. Nothing is built for one use: a doorbell, a plant-watcher or a keychain
+the board and in Faber. Nothing is built for one use: a doorbell, a plant-watcher or a keychain
 that comments on what it sees are projects made from the camera, the device network (to send a
 picture to an API) and audio out.
 
@@ -24,18 +24,18 @@ the wiring advice; a board without a camera interface (AVR, RP2040, ESP32-C3) ge
 | --- | --- |
 | The firmware (sketch, esp32-camera calls, converters such as `frame2jpg`) | **emulated**: real compiled arduino-esp32 firmware in Espressif's QEMU |
 | The camera interface (ESP32 I2S camera mode, S3 LCD_CAM, DMA, XCLK, PCLK / VSYNC / HREF, SCCB registers) | **not emulated**: QEMU has no model of it |
-| `esp_camera_init` / `esp_camera_fb_get` / `esp_camera_fb_return` / `esp_camera_sensor_get` / `sensor_t` settings / `esp_camera_deinit` / `reconfigure` | **shimmed** in the simulation build only (`toolchains/arduino-esp32/libraries/FabwrightCamera`, `-Wl,--wrap`); the device build links Espressif's driver unchanged |
-| The frames | **rendered by Fabwright** (`packages/sim-core/src/camera.ts`) at the size and pixel format the sketch asked for |
+| `esp_camera_init` / `esp_camera_fb_get` / `esp_camera_fb_return` / `esp_camera_sensor_get` / `sensor_t` settings / `esp_camera_deinit` / `reconfigure` | **shimmed** in the simulation build only (`toolchains/arduino-esp32/libraries/FaberCamera`, `-Wl,--wrap`); the device build links Espressif's driver unchanged |
+| The frames | **rendered by Faber** (`packages/sim-core/src/camera.ts`) at the size and pixel format the sketch asked for |
 | PSRAM | **emulated** on boards that declare it (`mcu.psram`; the Sense's 8 MB octal PSRAM through QEMU's SPI PSRAM model) |
 
 What the shim does like the real driver: the pins in `camera_config_t` are checked against where
 the camera is (built in, or the GPIOs a module is wired to): any difference fails like a real probe
-(`ESP_ERR_NOT_FOUND`) and Fabwright says which pin. The sensor answers with its PID (OV2640 0x26) and
+(`ESP_ERR_NOT_FOUND`) and Faber says which pin. The sensor answers with its PID (OV2640 0x26) and
 largest frame size. Frame buffers are allocated at init (`fb_count`, PSRAM or DRAM; too big:
 `ESP_ERR_NO_MEM`; a board with PSRAM the emulator lacks falls back to DRAM in the simulator only),
 must be returned with `esp_camera_fb_return` (else `fb_get` waits 4 s and returns NULL, as on the
 board), and a frame larger than its buffer is dropped (FB-OVF, with why and the fix). Formats:
-JPEG (Fabwright's baseline encoder, 4:2:2 like the OV2640, quality from `jpeg_quality` 0..63), RGB565
+JPEG (Faber's baseline encoder, 4:2:2 like the OV2640, quality from `jpeg_quality` 0..63), RGB565
 (big-endian, as the sensor sends it), grayscale, YUV422 (YUYV), RGB888 (B, G, R). Settings applied
 to the frame: frame size, pixel format, quality, mirror, flip, brightness, contrast, saturation, AE
 level, special effects, colour bars. `set_reg` keeps values but changes nothing; NVS save / load is
@@ -56,7 +56,7 @@ Who sets it:
 
 | Who | How |
 | --- | --- |
-| An agent | `set_camera_frame {"scene": "face"}` or `{"image": "tests/cat.jpg"}` (`"part"` with several cameras). Live, never saved in fabwright.json; survives reset and the next runs |
+| An agent | `set_camera_frame {"scene": "face"}` or `{"image": "tests/cat.jpg"}` (`"part"` with several cameras). Live, never saved in faber.json; survives reset and the next runs |
 | A test | the scenario step `{"camera_frame": "face"}` or `{"camera_frame": {"image": "tests/cat.jpg"}, "part": "cam1"}`; each test starts from the test card. Check with `{"expect_part": "sense.camera_frames", "op": ">=", "value": 1, "within_ms": 2000}` or the firmware's serial output |
 | The person | the Inspector's camera section: a scene, Show a picture (any image the browser opens, sent as a JPEG), drop an image on it, or the webcam |
 
@@ -71,14 +71,14 @@ draws the lens in the case's lens hole, ringed red while the camera is on.
 
 ## Bridge protocol (QEMU patch 0006)
 
-`toolchains/qemu-esp/0006-fabwright-camera.patch` adds `hw/misc/fabwright_camera.c` to the ESP32 and
+`toolchains/qemu-esp/0006-faber-camera.patch` adds `hw/misc/faber_camera.c` to the ESP32 and
 ESP32-S3 machines: registers at `0x21100000` (next to Espressif's virtual RGB panel at
 `0x21000000`) and a 4 MB frame window at `0x22000000`. Writing the command register sends one
-blocking line to Fabwright and copies the answer to the result registers; a capture then fetches the
+blocking line to Faber and copies the answer to the result registers; a capture then fetches the
 frame into the window in 4 KB chunks. Added to the bridge (version 6 unchanged, nothing removed):
 
 ```
-QEMU → Fabwright                                 Fabwright → QEMU
+QEMU → Faber                                 Faber → QEMU
 CC <ns> <cmd> <a0> … <a7>   camera command    Q <hex>   up to 8 little-endian words
 CD <offset> <n>             frame bytes        Q <hex>   the bytes
 ```
@@ -89,7 +89,7 @@ quality << 16 | fb_count << 24; a6 fb location | grab mode << 8; a7 JPEG buffer 
 address, init µs. cmd 2 capture (a0 format, a1 width, a2 height, a3 quality, a4 settings bits,
 a5 buffer capacity, a6 frame size) → status, length, width, height, format, capture µs, sequence.
 cmd 3 deinit. `CC` and `CD` are blocking lines (`BLOCKING_PREFIXES`). The native QEMU tag is
-`9.2.2-20260417-jb7` (patches 0001-0006, with the I2S device of 0004; `fabwright setup esp32` builds it next to older tags); the Docker image of that
+`9.2.2-20260417-jb7` (patches 0001-0006, with the I2S device of 0004; `faber setup esp32` builds it next to older tags); the Docker image of that
 tag is not built yet.
 
 ## Design checks
@@ -119,7 +119,7 @@ that the camera is on) use the existing `led` kind with `expose: true`.
 | What | Where |
 | --- | --- |
 | JPEG / PNG codecs, formats, scenes, CameraBus (pins, sizes) | `packages/sim-core/src/camera.test.ts` |
-| Real firmware: the `esp_camera` fixture on the ESP32-S3 (Sense pins) and the ESP32 (ESP32-CAM pins): detection, JPEG bytes equal to Fabwright's render, RGB565 pixel, grayscale, FB-OVF, capture time, a wrong pin | `packages/sim-backends/src/qemu-esp/camera.integration.test.ts` |
+| Real firmware: the `esp_camera` fixture on the ESP32-S3 (Sense pins) and the ESP32 (ESP32-CAM pins): detection, JPEG bytes equal to Faber's render, RGB565 pixel, grayscale, FB-OVF, capture time, a wrong pin | `packages/sim-backends/src/qemu-esp/camera.integration.test.ts` |
 | The Sense boots its board fixture with octal PSRAM | `packages/sim-backends/src/qemu-esp/boards.integration.test.ts` |
 | Session: template build with the shim, frames, set_camera_frame (scene, PNG, JPEG), errors, the camera_frame test, the device build without the shim | `packages/session/test/camera-session.test.ts` |
 | plan_device and check_design | `packages/session/test/camera-design.test.ts` |
@@ -130,7 +130,7 @@ that the camera is on) use the existing `led` kind with `expose: true`.
 
 - The camera interface itself is not emulated (no DVP timing, DMA or SCCB traffic).
 - No noise, exposure, white balance or lens effects; frame rates are estimates.
-- The Docker images (`fabwright/qemu-esp:…-jb7`, the arduino-esp32 image with FabwrightCamera) are
+- The Docker images (`faber/qemu-esp:…-jb7`, the arduino-esp32 image with FaberCamera) are
   not built: Docker on the development machine is broken. Native only.
 - The Sense's PDM microphone: the I2S receive path now works (patch 0004, PDM RX on the S3 is verified with a fixture source); a live browser microphone into it is not done.
 - `esp_camera_save_to_nvs` / `load_from_nvs` return `ESP_ERR_NOT_SUPPORTED` in the simulator.

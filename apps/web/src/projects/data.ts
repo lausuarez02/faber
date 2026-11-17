@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 import { useLive } from "../live/liveStore.ts";
 import { api, serverConnection, type ProjectsListing } from "./api.ts";
 import { useProjectsUi } from "./store.ts";
 
-/** "yes" when this page is served by fabwright serve, "no" when not, undefined while asking. */
+/** "yes" when this page is served by faber serve, "no" when not, undefined while asking. */
 export function useServer(): "yes" | "no" | undefined {
   const [s, setS] = useState<"yes" | "no" | undefined>(undefined);
   useEffect(() => {
@@ -50,7 +50,7 @@ export function useChangeTicker(): void {
       clearTimeout(timer);
       timer = setTimeout(() => useProjectsUi.getState().bump(), 250);
     };
-    const offProject = useFabwright.subscribe((s, prev) => {
+    const offProject = useFaber.subscribe((s, prev) => {
       if (s.project !== prev.project) bump();
     });
     const offLive = useLive.subscribe((s, prev) => {

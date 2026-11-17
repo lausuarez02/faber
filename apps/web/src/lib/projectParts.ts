@@ -1,12 +1,12 @@
 // Agent-made parts in the web app (decision 0003, C4): when the page shows a project served by
-// `fabwright serve` (follow mode ?follow=ws://host/live, or ?local), fetch its parts/ folder from
+// `faber serve` (follow mode ?follow=ws://host/live, or ?local), fetch its parts/ folder from
 // GET /api/project-parts, compile each part here (compileCustomPart sanitizes the SVG again; the
 // browser never trusts the server's markup) and put them in the registry overlay (lib/parts.ts).
 // Refetched when the project shows a type the registry does not know, or when an agent-made part
 // is in the project and the project changed (update_part).
-import { compileCustomPart, type CustomPart, type DisplayController } from "@fabwright/parts";
-import type { PartDefinition } from "@fabwright/sim-core";
-import type { Project } from "@fabwright/project-format";
+import { compileCustomPart, type CustomPart, type DisplayController } from "@faber/parts";
+import type { PartDefinition } from "@faber/sim-core";
+import type { Project } from "@faber/project-format";
 import { registry, setProjectParts } from "./parts.ts";
 
 export interface ProjectPartsPayload {
@@ -37,7 +37,7 @@ export function compilePayload(body: ProjectPartsPayload): { defs: PartDefinitio
   return { defs, tftBase, errors };
 }
 
-/** Base URL of the fabwright serve the page shows, or undefined when it shows a local example. */
+/** Base URL of the faber serve the page shows, or undefined when it shows a local example. */
 export function servedBase(search: string, origin: string): string | undefined {
   const q = new URLSearchParams(search);
   const follow = q.get("follow");
@@ -77,10 +77,10 @@ export function createProjectPartsSync(base: string, onChange: (types: Set<strin
     try {
       res = await fetchFn(`${base}/api/project-parts`);
     } catch (e) {
-      onError(`Could not load the project's agent-made parts. Why: ${(e as Error).message}. Fix: check that fabwright serve is still running, then reload the page.`);
+      onError(`Could not load the project's agent-made parts. Why: ${(e as Error).message}. Fix: check that faber serve is still running, then reload the page.`);
       return false;
     }
-    if (res.status === 404) return false; // an older fabwright serve without agent-made parts
+    if (res.status === 404) return false; // an older faber serve without agent-made parts
     const text = await res.text();
     if (!res.ok) {
       let msg = text;

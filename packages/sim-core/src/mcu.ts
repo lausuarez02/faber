@@ -20,7 +20,7 @@ export interface PinState {
 export type Unsubscribe = () => void;
 
 /**
- * A CPU emulator adapter (implemented in @fabwright/sim-backends, e.g. avr8js).
+ * A CPU emulator adapter (implemented in @faber/sim-backends, e.g. avr8js).
  * All time is in MCU cycles; backends never read the wall clock.
  */
 export interface McuBackend {
@@ -93,7 +93,7 @@ export interface McuBackend {
   /**
    * Optional (round 10, decision 0006): "in-process" (avr8js, rp2040js: runs in the browser and in
    * Node) or "process" (Espressif QEMU, Renode: a local emulator process / container that only the
-   * Fabwright server can start). Default "in-process".
+   * Faber server can start). Default "in-process".
    */
   readonly kind?: "in-process" | "process";
   /**

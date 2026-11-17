@@ -36,7 +36,7 @@ export class Cassette {
     readonly file: string,
     private redactor: Redactor,
   ) {
-    this.data = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as CassetteFile) : { version: 1, note: "Recorded by Fabwright (network.record). Secrets are redacted.", interactions: [] };
+    this.data = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as CassetteFile) : { version: 1, note: "Recorded by Faber (network.record). Secrets are redacted.", interactions: [] };
   }
 
   private key(r: { method: string; host: string; path: string; body_sha256?: string }): string {

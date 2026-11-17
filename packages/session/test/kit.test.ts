@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { ProjectSession } from "../src/index.ts";
-import type { AssemblyStep } from "@fabwright/enclosure";
+import type { AssemblyStep } from "@faber/enclosure";
 import { buildKit, planSteps, type BuildKit } from "../src/kit/index.ts";
 import { writeKitFiles } from "../src/kit/files.ts";
 import { detectSlicer, parseGcodeEstimate, printPlan } from "../src/kit/print-plan.ts";
@@ -24,10 +24,10 @@ const sessions: ProjectSession[] = [];
 afterEach(() => {
   for (const s of sessions.splice(0)) s.dispose();
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
-  delete process.env.FABWRIGHT_SLICER;
+  delete process.env.FABER_SLICER;
 });
 function open(src: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-kit-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-kit-"));
   dirs.push(dir);
   cpSync(src, dir, { recursive: true });
   const hex = join(dir, "firmware/main.hex");
@@ -93,12 +93,12 @@ describe("build kit", () => {
   });
 
   it("print estimate follows the documented formula (and a slicer's numbers when one is installed)", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "fabwright-kit-print-"));
+    const dir = mkdtempSync(join(tmpdir(), "faber-kit-print-"));
     dirs.push(dir);
     mkdirSync(join(dir, "stl"));
     writeFileSync(join(dir, "stl/front.stl"), boxStl(20, 20, 20));
     const report = { enclosure: { shape: "pebble", params: { process: "fdm", color: "#F2EDE4" } }, files: [{ path: "stl/front.stl", kind: "stl", body: "front", bytes: 0, sha256: "", print: { face_down: "front", supports: false } }, { path: "case.3mf", kind: "3mf", body: "all", bytes: 0, sha256: "" }] } as never;
-    process.env.FABWRIGHT_SLICER = "none";
+    process.env.FABER_SLICER = "none";
     const p = await printPlan({ caseDir: dir, report, slicer: "auto" });
     // V 8000, area 2400 -> solid 2400 + 20 % of 5600 = 3520 mm³; 3.52 cm³ x 1.24 x 1.05 = 4.58 g; (3520 / 4 + 100 layers x 3 s) / 60 = 19.7 min
     expect(p.items[0]).toMatchObject({ grams: 4.6, minutes: 20, source: "mesh", material: "PLA", color: "ivory", layer_mm: 0.2, infill_pct: 20, supports: false });
@@ -112,7 +112,7 @@ describe("build kit", () => {
     const fake = join(dir, "prusa-slicer");
     writeFileSync(fake, `#!/bin/sh\nwhile [ $# -gt 0 ]; do if [ "$1" = "--output" ]; then out="$2"; fi; shift; done\nprintf '; estimated printing time (normal mode) = 1h 2m 30s\\n; filament used [g] = 12.34\\n' > "$out"\n`);
     chmodSync(fake, 0o755);
-    process.env.FABWRIGHT_SLICER = fake;
+    process.env.FABER_SLICER = fake;
     const cache = join(dir, "cache.json");
     const q = await printPlan({ caseDir: dir, report, slicer: "auto", cacheFile: cache });
     expect(q.items[0]).toMatchObject({ grams: 12.3, minutes: 63, source: "slicer:PrusaSlicer" });
@@ -125,7 +125,7 @@ describe("build kit", () => {
     expect((await printPlan({ caseDir: dir, report, slicer: "cached", cacheFile: cache })).items[0]!.source).toBe("slicer:PrusaSlicer");
     const orca = join(dir, "OrcaSlicer");
     writeFileSync(orca, "");
-    process.env.FABWRIGHT_SLICER = orca;
+    process.env.FABER_SLICER = orca;
     expect(detectSlicer()).toMatchObject({ name: "OrcaSlicer", cli: false });
     const o = await printPlan({ caseDir: dir, report, slicer: "auto" });
     expect(o.items[0]!.source).toBe("mesh");
@@ -240,7 +240,7 @@ describe("build kit", () => {
     expect(out[0]!.do[0]).toMatch(/Print the case \(see the print list\)/);
     expect(out[1]!.do[0]).toMatch(/in the wire list below/);
     expect(out[4]!.do[0]).toMatch(/b's USB-C port.*the tests below/);
-    expect(out[4]!.do[1]).toBe("The tests (they passed in Fabwright's simulator): Eyes appear; Blinks.");
+    expect(out[4]!.do[1]).toBe("The tests (they passed in Faber's simulator): Eyes appear; Blinks.");
     // 3 wires on b.GND: said once, where the pad is first soldered (not on the bench), naming the one that comes later
     const crowded = out.flatMap((st, i) => st.cautions.filter((c) => /3 wires end at b pin GND/.test(c)).map(() => i));
     expect(crowded).toEqual([2]);
@@ -254,7 +254,7 @@ describe("build kit", () => {
     const s = open(MUSE);
     const p = s.project;
     p.enclosure!.params = { ...(p.enclosure!.params ?? {}), wall_mm: 2.4 };
-    writeFileSync(join(s.dir, "fabwright.json"), JSON.stringify(p, null, 2));
+    writeFileSync(join(s.dir, "faber.json"), JSON.stringify(p, null, 2));
     const s2 = new ProjectSession({ dir: s.dir, builder: noBuild, actor: "test" });
     sessions.push(s2);
     const kit = await buildKit(s2, { slicer: "off" });

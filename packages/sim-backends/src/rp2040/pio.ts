@@ -1,6 +1,6 @@
 // Deterministic PIO clocking. rp2040js 1.4.1 runs PIO state machines from setTimeout, i.e. on the
 // wall clock, one instruction per call whatever the clock divider, and keeps a Node process alive
-// while a machine is enabled. Fabwright turns that off and steps each enabled machine itself, on the
+// while a machine is enabled. Faber turns that off and steps each enabled machine itself, on the
 // virtual clock, at clk_sys / clkdiv, honouring instruction delays.
 //
 // Two shortcuts keep it fast without changing what the pins do:

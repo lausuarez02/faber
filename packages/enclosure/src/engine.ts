@@ -1,13 +1,13 @@
 /**
  * The case engine: project + parts → layout → OpenCascade bodies → files (STL, 3MF, STEP, PNG,
  * SVG / PDF, PRINT.md) + a CaseReport with fit checks. Files are outputs (R5): regenerated from
- * fabwright.json and the parts' mechanical data; case/manifest.json keeps the input hash.
+ * faber.json and the parts' mechanical data; case/manifest.json keeps the input hash.
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { Enclosure, Project } from "@fabwright/project-format";
-import type { PartSpec } from "@fabwright/sim-core";
+import type { Enclosure, Project } from "@faber/project-format";
+import type { PartSpec } from "@faber/sim-core";
 import { drawingSvg } from "./drawing.ts";
 import { buildCase, type Body, partColor } from "./geometry.ts";
 import { type Layout, type LayoutInput, resolveParams } from "./layout.ts";
@@ -101,7 +101,7 @@ export function pocketText(s: { w: number; h: number; d: number }): string {
 }
 
 export async function generateCase(project: Project, specOf: SpecOf, opts: GenerateOptions = {}): Promise<Generated> {
-  if (!project.enclosure) throw new Error("No case yet. Why: fabwright.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
+  if (!project.enclosure) throw new Error("No case yet. Why: faber.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
   const enc = project.enclosure;
   const title = opts.title ?? project.name;
   const L = opts.layout ?? layoutCase(layoutInput(project, specOf));
@@ -302,7 +302,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
   if (opts.pdf) {
     const p = await opts.pdf(svg);
     if (p.pdf) files.set("drawing/drawing.pdf", p.pdf);
-    else missing.push({ item: "drawing/drawing.pdf", why: p.why ?? "Playwright's Chromium is not installed", fix: "pnpm --filter @fabwright/web exec playwright install chromium, then get_case or export_manufacturing again (drawing.svg has the same content)" });
+    else missing.push({ item: "drawing/drawing.pdf", why: p.why ?? "Playwright's Chromium is not installed", fix: "pnpm --filter @faber/web exec playwright install chromium, then get_case or export_manufacturing again (drawing.svg has the same content)" });
   } else missing.push({ item: "drawing/drawing.pdf", why: "no PDF printer was given to the case engine", fix: "open drawing/drawing.svg in a browser and print it to PDF" });
   files.set("PRINT.md", new TextEncoder().encode(printMd(L, title, B.bodies.map((b) => ({ name: b.name, print: b.print, overhang_mm2: overhang.get(b.name) ?? 0 })), B.screws)));
 
@@ -359,7 +359,7 @@ export async function generateCase(project: Project, specOf: SpecOf, opts: Gener
 
 /** The parts of a project as the layout takes them (spec + props). */
 export function layoutInput(project: Project, specOf: SpecOf): LayoutInput {
-  if (!project.enclosure) throw new Error("No case yet. Why: fabwright.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
+  if (!project.enclosure) throw new Error("No case yet. Why: faber.json has no enclosure. Fix: design_case {\"shape\": \"pebble\"}");
   const parts = project.parts.flatMap((p) => {
     const spec = specOf(p.type);
     return spec ? [{ id: p.id, type: p.type, spec, ...(p.props ? { props: p.props as Record<string, unknown> } : {}) }] : [];
@@ -459,7 +459,7 @@ export function writeCaseFiles(dir: string, files: Map<string, Uint8Array>): voi
   }
 }
 
-/** The web view's meshes are cached outside case/ (e.g. .fabwright/case-mesh.json), keyed by the case hash. */
+/** The web view's meshes are cached outside case/ (e.g. .faber/case-mesh.json), keyed by the case hash. */
 export function writeMeshCache(file: string, mesh: CaseMesh): void {
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify(mesh));

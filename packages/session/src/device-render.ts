@@ -8,7 +8,7 @@
 //        [--url http://localhost:5173]
 //
 // Without --url it starts the web app's Vite dev server itself (port picked by the OS) and stops it
-// after. Agents get it as screenshot {view: "device", ms}; the CLI as fabwright render-device.
+// after. Agents get it as screenshot {view: "device", ms}; the CLI as faber render-device.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
@@ -19,7 +19,7 @@ const WEB_DIR = fileURLToPath(new URL("../../../apps/web/", import.meta.url));
 const PAGE = "src/views/device/dev/index.html";
 
 export interface DeviceRenderOptions {
-  /** Project folder (fabwright.json + built firmware). */
+  /** Project folder (faber.json + built firmware). */
   dir: string;
   /** Virtual ms to capture at (sorted ascending). */
   shots: number[];
@@ -60,7 +60,7 @@ function playwright(): { chromium: { launch(o?: object): Promise<Browser> } } {
       }
     }
   }
-  throw new Error("Device render needs Playwright, which was not found. Install the web app's dev dependencies (pnpm install at the repo root), then run `pnpm --filter @fabwright/web exec playwright install chromium`.");
+  throw new Error("Device render needs Playwright, which was not found. Install the web app's dev dependencies (pnpm install at the repo root), then run `pnpm --filter @faber/web exec playwright install chromium`.");
 }
 
 export async function startVite(): Promise<{ url: string; close(): Promise<void> }> {

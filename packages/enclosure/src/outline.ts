@@ -6,7 +6,7 @@
  * (periodic) cubic B-spline that both the CAD kernel (the real surface) and the packer (point in
  * outline, distance to the wall) use, so what is checked is what is printed.
  */
-import type { CaseOutline } from "@fabwright/project-format";
+import type { CaseOutline } from "@faber/project-format";
 
 export type Pt = [number, number];
 

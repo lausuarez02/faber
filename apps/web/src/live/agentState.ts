@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { serverCandidates, type AgentInfo } from "../connect/client.ts";
 
 /**
- * The one agent state on the page (decision 0003, C6). The server derives it (`fabwright serve`:
+ * The one agent state on the page (decision 0003, C6). The server derives it (`faber serve`:
  * none until an MCP client calls a tool, building while calls arrive, idle after 10 s, done when
  * the calling sessions ended) and pushes it on ws://…/live; the bottom pill, the presence avatar,
  * the Install MCP popover, the Agent steps panel and the Live bar all read it from here and from
@@ -26,7 +26,7 @@ interface AgentFeed {
   state: AgentState;
   /** Connected MCP sessions (raw presence; a connected client is not "an agent working"). */
   agents: AgentInfo[];
-  /** A Fabwright server answers. */
+  /** A Faber server answers. */
   online: boolean;
 }
 

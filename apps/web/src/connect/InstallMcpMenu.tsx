@@ -10,10 +10,10 @@ const STROKE = 1.6;
 function offlineSnippets(base: string): InstallSnippet[] {
   const mcp = `${base}/mcp`;
   return [
-    { id: "start", label: "Start Fabwright", where: "a terminal, in the Fabwright repo", kind: "command", text: "pnpm start", note: `Starts the canvas, the live link and MCP at ${mcp}.` },
-    { id: "claude-code", label: "Claude Code", where: "a terminal", kind: "command", text: `claude mcp add --transport http fabwright ${mcp}` },
-    { id: "codex", label: "Codex", where: "~/.codex/config.toml", kind: "toml", text: `[mcp_servers.fabwright]\nurl = "${mcp}"` },
-    { id: "cursor", label: "Cursor", where: "~/.cursor/mcp.json", kind: "json", text: JSON.stringify({ mcpServers: { fabwright: { url: mcp } } }, null, 2) },
+    { id: "start", label: "Start Faber", where: "a terminal, in the Faber repo", kind: "command", text: "pnpm start", note: `Starts the canvas, the live link and MCP at ${mcp}.` },
+    { id: "claude-code", label: "Claude Code", where: "a terminal", kind: "command", text: `claude mcp add --transport http faber ${mcp}` },
+    { id: "codex", label: "Codex", where: "~/.codex/config.toml", kind: "toml", text: `[mcp_servers.faber]\nurl = "${mcp}"` },
+    { id: "cursor", label: "Cursor", where: "~/.cursor/mcp.json", kind: "json", text: JSON.stringify({ mcpServers: { faber: { url: mcp } } }, null, 2) },
   ];
 }
 
@@ -68,14 +68,14 @@ export function InstallMcpMenu({ onClose }: { onClose(): void }) {
       <div className={`cx-server ${online ? "is-on" : state.status === "offline" ? "is-off" : ""}`} data-testid="mcp-server-status">
         <span className="cx-dot" aria-hidden />
         {state.status === "loading" ? (
-          <span>Looking for the Fabwright server…</span>
+          <span>Looking for the Faber server…</span>
         ) : online ? (
           <span>
             MCP server running at <code>{state.info.mcpUrl}</code>
           </span>
         ) : (
           <span>
-            No Fabwright server at <code>{state.base}</code>. Start it with <code>pnpm start</code>, then add it to your agent.
+            No Faber server at <code>{state.base}</code>. Start it with <code>pnpm start</code>, then add it to your agent.
           </span>
         )}
       </div>
@@ -91,7 +91,7 @@ export function InstallMcpMenu({ onClose }: { onClose(): void }) {
       <div className="cx-section-title">Agent</div>
       <div className="cx-state" data-testid="mcp-agent-state" data-agent-status={agent.status}>
         <span className={`cx-dot ${agent.status === "building" ? "is-busy" : agent.status === "idle" ? "is-on" : "is-off"}`} aria-hidden />
-        <span>{agent.status === "none" ? "No agent yet: nothing has called a Fabwright tool." : agentLabel(agent)}</span>
+        <span>{agent.status === "none" ? "No agent yet: nothing has called a Faber tool." : agentLabel(agent)}</span>
       </div>
       {agents.length ? (
         <ul className="cx-agents" data-testid="mcp-agents">
@@ -104,7 +104,7 @@ export function InstallMcpMenu({ onClose }: { onClose(): void }) {
           ))}
         </ul>
       ) : (
-        <p className="menu-text cx-muted">{agent.status === "none" ? "Add Fabwright to your agent with the command above, then ask it to build something. Every part it places shows up here live." : "Its MCP session has ended."}</p>
+        <p className="menu-text cx-muted">{agent.status === "none" ? "Add Faber to your agent with the command above, then ask it to build something. Every part it places shows up here live." : "Its MCP session has ended."}</p>
       )}
     </div>
   );

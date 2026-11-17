@@ -12,7 +12,7 @@ import { expectWithinSimTime, requireFastWebGL, shot, waitForSimTime } from "./h
 const SLOW_TEST_MS = process.env.CI ? 300_000 : 90_000;
 
 type W = {
-  fabwright: {
+  faber: {
     engine: {
       simulation?: { timeMs: number; serialText(): string; partState(id: string): Record<string, unknown> | undefined };
       world?: { stats(): { pose?: { x: number; y: number }; travelledCm: number; collisions: number } };
@@ -39,10 +39,10 @@ async function openDevice(page: Page): Promise<void> {
 
 /** The speed selector is on the desktop Run pill; phones keep it in the store only. */
 async function setSpeed(page: Page, speed: number): Promise<void> {
-  await page.evaluate((v) => (window as unknown as { fabwright: { store: { getState(): { setSpeed(n: number): void } } } }).fabwright.store.getState().setSpeed(v), speed);
+  await page.evaluate((v) => (window as unknown as { faber: { store: { getState(): { setSpeed(n: number): void } } } }).faber.store.getState().setSpeed(v), speed);
 }
 
-const serial = (page: Page) => page.evaluate(() => (window as unknown as W).fabwright.engine.simulation?.serialText() ?? "");
+const serial = (page: Page) => page.evaluate(() => (window as unknown as W).faber.engine.simulation?.serialText() ?? "");
 
 /** Count strongly coloured pixels in a screenshot (the 3D scene itself is grey, screens are not). */
 async function colourfulPixels(page: Page, png: Buffer): Promise<number> {
@@ -74,7 +74,7 @@ test("Install MCP shows the one-line Claude Code command", async ({ page }, info
   } else await page.getByTestId("install-mcp").click();
   const menu = page.getByTestId("install-mcp-menu");
   await expect(menu).toBeVisible();
-  await expect(menu.getByTestId("mcp-snippet-claude-code")).toHaveText(/^claude mcp add --transport http fabwright http:\/\/localhost:\d+\/mcp$/);
+  await expect(menu.getByTestId("mcp-snippet-claude-code")).toHaveText(/^claude mcp add --transport http faber http:\/\/localhost:\d+\/mcp$/);
   // Without `pnpm start` the menu says how to start the server.
   await expect(menu.getByTestId("mcp-server-status")).toContainText(/pnpm start|MCP server running/);
   await shot(page, info, "install-mcp");
@@ -107,7 +107,7 @@ test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
-        const engine = (window as unknown as W).fabwright.engine;
+        const engine = (window as unknown as W).faber.engine;
         const ticks = () => (engine.simulation?.serialText().match(/^t=\d+/gm) ?? []).length;
         const n0 = ticks();
         const watch = () => {
@@ -120,7 +120,7 @@ test("AI pet: the colour screen draws the pet and TALK shows a mock reply bubble
       }),
   );
   await waitForSimTime(page, 250); // held for 250 virtual ms (the firmware debounces 30 ms)
-  await page.evaluate(() => (window as unknown as W).fabwright.engine.interact("btnTalk", "release"));
+  await page.evaluate(() => (window as unknown as W).faber.engine.interact("btnTalk", "release"));
   await expectWithinSimTime(page, 60_000, async () => /bubble: [^.\r\n][^\r\n]+/.test(await serial(page)), "serial should print the reply bubble");
   expect(await serial(page)).toMatch(/reply 200 \w+\|/);
   // The bubble is white on the screen.
@@ -158,7 +158,7 @@ test("AI pet: the person types to the pet and the reply answers it (talk box)", 
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
-        const engine = (window as unknown as W).fabwright.engine;
+        const engine = (window as unknown as W).faber.engine;
         const ticks = () => (engine.simulation?.serialText().match(/^t=\d+/gm) ?? []).length;
         const n0 = ticks();
         const watch = () => {
@@ -171,7 +171,7 @@ test("AI pet: the person types to the pet and the reply answers it (talk box)", 
       }),
   );
   await waitForSimTime(page, 250);
-  await page.evaluate(() => (window as unknown as W).fabwright.engine.interact("btnTalk", "release"));
+  await page.evaluate(() => (window as unknown as W).faber.engine.interact("btnTalk", "release"));
   await expectWithinSimTime(page, 60_000, async () => /reply 200 \w+\|[^\r\n]*do you like/.test(await serial(page)), "the reply should answer the typed message");
   await expect(net).toContainText("with the person's message");
   await shot(page, info, "ai-pet-talk-box");
@@ -222,7 +222,7 @@ test("Device view: the rover drives in the 3D arena @gpu", async ({ page }, info
   await page.getByTestId("run-button").click();
   await openDevice(page);
   await expect(page.getByTestId("device-stage")).toHaveAttribute("data-kind", "rover");
-  const read = () => page.evaluate(() => (window as unknown as W).fabwright.engine.world?.stats());
+  const read = () => page.evaluate(() => (window as unknown as W).faber.engine.world?.stats());
   await expectWithinSimTime(page, 30_000, async () => ((await read())?.travelledCm ?? 0) > 20, "the rover should travel more than 20 cm");
   const a = await read();
   const shotA = await page.screenshot();

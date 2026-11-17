@@ -1,4 +1,4 @@
-import type { PartModelFactory } from "@fabwright/sim-core";
+import type { PartModelFactory } from "@faber/sim-core";
 import { createDiodeModel } from "../../lib/diode.ts";
 
 /**

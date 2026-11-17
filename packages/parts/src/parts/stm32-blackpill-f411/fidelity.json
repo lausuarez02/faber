@@ -3,7 +3,7 @@
   "areas": {
     "logic": {
       "level": "ok",
-      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Fabwright's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Fabwright's parts through Fabwright's bridge (every signal time-stamped to the instruction)."
+      "note": "Runs the real compiled firmware in Renode (an open-source emulator, MIT) in a local Docker container, in lockstep with Faber's clock. GPIO (with pin interrupts), Serial, Wire and SPI reach Faber's parts through Faber's bridge (every signal time-stamped to the instruction)."
     },
     "timing": {
       "level": "approx",
@@ -23,15 +23,15 @@
     }
   },
   "emulates": [
-    "STM32F411CE Cortex-M core and the peripherals Arduino sketches use, in Renode 1.17 (fabwright/renode image)",
+    "STM32F411CE Cortex-M core and the peripherals Arduino sketches use, in Renode 1.17 (faber/renode image)",
     "Digital I/O with pull-ups and pin interrupts (attachInterrupt)",
     "Serial (the board's console UART) with per-byte virtual time",
     "Wire (I2C master) to the I2C parts on the board's default pins",
     "SPI (master) to the SPI parts on the board's default pins",
-    "analogRead on ADC1 channels (Fabwright's ADC model / Renode's STM32 ADC fed by Fabwright)",
+    "analogRead on ADC1 channels (Faber's ADC model / Renode's STM32 ADC fed by Faber)",
     "analogWrite / Servo / tone through the timers' PWM outputs where Renode routes them to the pin",
     "DWT cycle counter (delayMicroseconds)",
-    "ADC1 through Renode's STM32 ADC model, fed by Fabwright"
+    "ADC1 through Renode's STM32 ADC model, fed by Faber"
   ],
   "doesNotEmulate": [
     "Other UARTs than the console (Serial2, Serial3) reaching parts",

@@ -1,5 +1,5 @@
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
-import type { PropValue } from "@fabwright/project-format";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
+import type { PropValue } from "@faber/project-format";
 import { num, truthy } from "../../lib/props.ts";
 
 const toPos = (v: PropValue | undefined, fallback: 0 | 1): 0 | 1 =>

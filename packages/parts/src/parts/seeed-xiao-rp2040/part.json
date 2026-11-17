@@ -2,7 +2,7 @@
   "id": "seeed-xiao-rp2040",
   "name": "Seeed XIAO RP2040",
   "category": "board",
-  "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V logic only. Power: USB-C (fabwright.json power.usb, default plugged in), or 3.5 to 5.5 V into the 5V pad, e.g. a 1S LiPo through a charger, a switch and a Schottky diode (no BAT pad, no charger on board).",
+  "description": "Thumb-sized RP2040 board (21 × 17.5 mm, USB-C) at 3.3 V logic: 11 GPIOs, 4 of them analog, I2C, SPI and UART on the headers, an RGB user LED. Runs real arduino-pico firmware on rp2040js. Pin ids are the GPIO numbers (GP26 = D0/A0, GP6 = D4/SDA …); in code use D0…D10 / A0…A3 or the GPIO number. 3.3 V logic only. Power: USB-C (faber.json power.usb, default plugged in), or 3.5 to 5.5 V into the 5V pad, e.g. a 1S LiPo through a charger, a switch and a Schottky diode (no BAT pad, no charger on board).",
   "pins": [
     {
       "id": "GP26",
@@ -146,7 +146,7 @@
         "min": 3.2,
         "max": 3.4
       },
-      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout): 3.3 V while the input is above about 3.55 V, then it follows the input down. Keep the load modest (Fabwright checks against 300 mA). The RP2040 and its flash run down to about 2.7 V."
+      "description": "3.3 V output of the on-board LDO (about 0.25 V dropout): 3.3 V while the input is above about 3.55 V, then it follows the input down. Keep the load modest (Faber checks against 300 mA). The RP2040 and its flash run down to about 2.7 V."
     },
     {
       "id": "GP3",

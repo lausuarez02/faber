@@ -1,11 +1,11 @@
-// Boards the Renode backend runs, as data: which platform file, which UART is Serial, how Fabwright
+// Boards the Renode backend runs, as data: which platform file, which UART is Serial, how Faber
 // pin ids map to Renode GPIO peripherals, which pins reach which ADC channel, and the bus
 // controllers Wire / SPI use. Visuals, physical data and fidelity live in the board part
 // (packages/parts/src/parts/<type>). A board is listed in the parts library only when its fixture
 // test (packages/sim-backends/src/renode/boards.integration.test.ts) boots real firmware on it.
-import type { McuBusPins } from "@fabwright/sim-core";
+import type { McuBusPins } from "@faber/sim-core";
 
-/** A Fabwright pin id → the Renode GPIO peripheral (path under sysbus) and pin number on it. */
+/** A Faber pin id → the Renode GPIO peripheral (path under sysbus) and pin number on it. */
 export interface RenodePin {
   gpio: string;
   pin: number;
@@ -15,7 +15,7 @@ export interface RenodeBoard {
   type: string;
   /** Chip, for messages and fidelity ("stm32f103c8"). */
   chip: string;
-  /** Platform description: ours ("/fabwright/platforms/…", from ./platforms) or Renode's ("platforms/…"). */
+  /** Platform description: ours ("/faber/platforms/…", from ./platforms) or Renode's ("platforms/…"). */
   platform: string;
   /** C# models compiled into Renode before the platform loads (files in ./platforms). */
   csharp?: readonly string[];
@@ -28,25 +28,25 @@ export interface RenodeBoard {
   /** Pins that reach an ADC channel: the Renode ADC peripheral (path under sysbus) and channel. */
   adc?: Readonly<Record<string, { adc: string; channel: number }>>;
   /**
-   * The controller `Wire` uses and its pins. `bridge`: "targets" (default) puts one Fabwright target per
+   * The controller `Wire` uses and its pins. `bridge`: "targets" (default) puts one Faber target per
    * address on Renode's controller model (no NACK detail); "controller" means the controller itself is
-   * Fabwright's model and asks Fabwright for every address ACK (real NACKs, faults).
+   * Faber's model and asks Faber for every address ACK (real NACKs, faults).
    */
   i2c?: { controller: string; sda: string; scl: string; bridge?: "targets" | "controller" };
-  /** The controller `SPI` uses and its pins; `bridge` as for i2c ("controller": Fabwright's own SPIM model). */
+  /** The controller `SPI` uses and its pins; `bridge` as for i2c ("controller": Faber's own SPIM model). */
   spi?: { controller: string; mosi: string; miso: string; sck: string; ss: string; bridge?: "targets" | "controller" };
-  /** Arduino FQBN that builds firmware for it (the Fabwright build image is picked from its prefix). */
+  /** Arduino FQBN that builds firmware for it (the Faber build image is picked from its prefix). */
   fqbn: string;
   /** Flash ranges to fill with 0xFF before loading (erased flash; the MBR reads unwritten words). */
   erasedFlash?: readonly { start: number; size: number }[];
   /**
    * Where the CPU finds its vector table at reset: the app's start in flash (0x08000000 on STM32,
    * 0x10000 behind the Nano 33 BLE's bootloader), or 0 for Nordic's MBR. Firmware is Intel HEX (as
-   * every Fabwright build keeps it), which has no symbols to find it from.
+   * every Faber build keeps it), which has no symbols to find it from.
    */
   vectorTableOffset: number;
   /**
-   * The app starts here behind a bootloader Fabwright does not run: its first two vector-table words are
+   * The app starts here behind a bootloader Faber does not run: its first two vector-table words are
    * copied to address 0 so the CPU reaches it at power-on and after a reset (Renode puts
    * VectorTableOffset back to 0 on a reset). Use with vectorTableOffset 0.
    */
@@ -116,8 +116,8 @@ export const RENODE_BOARDS = {
   "stm32-bluepill": {
     type: "stm32-bluepill",
     chip: "stm32f103c8",
-    platform: "/fabwright/platforms/bluepill.repl",
-    csharp: ["FabwrightStm32F1Adc.cs"],
+    platform: "/faber/platforms/bluepill.repl",
+    csharp: ["FaberStm32F1Adc.cs"],
     console: "usart1",
     clockHz: 72_000_000,
     vcc: 3.3,
@@ -134,8 +134,8 @@ export const RENODE_BOARDS = {
   "stm32-blackpill-f411": {
     type: "stm32-blackpill-f411",
     chip: "stm32f411ce",
-    platform: "/fabwright/platforms/blackpill-f411.repl",
-    csharp: ["FabwrightStm32Syscfg.cs"],
+    platform: "/faber/platforms/blackpill-f411.repl",
+    csharp: ["FaberStm32Syscfg.cs"],
     console: "usart1",
     clockHz: 100_000_000,
     vcc: 3.3,
@@ -152,8 +152,8 @@ export const RENODE_BOARDS = {
   "stm32-nucleo-f401re": {
     type: "stm32-nucleo-f401re",
     chip: "stm32f401re",
-    platform: "/fabwright/platforms/nucleo-f401re.repl",
-    csharp: ["FabwrightStm32Syscfg.cs"],
+    platform: "/faber/platforms/nucleo-f401re.repl",
+    csharp: ["FaberStm32Syscfg.cs"],
     console: "usart2",
     clockHz: 84_000_000,
     vcc: 3.3,
@@ -170,8 +170,8 @@ export const RENODE_BOARDS = {
   "arduino-nano-33-ble": {
     type: "arduino-nano-33-ble",
     chip: "nrf52840",
-    platform: "/fabwright/platforms/nrf52840.repl",
-    csharp: ["FabwrightNrf52.cs"],
+    platform: "/faber/platforms/nrf52840.repl",
+    csharp: ["FaberNrf52.cs"],
     console: "uart0",
     clockHz: 64_000_000,
     vcc: 3.3,
@@ -188,18 +188,18 @@ export const RENODE_BOARDS = {
   // Seeed XIAO nRF52840 (64 MHz), Seeeduino:nrf52 (Adafruit nRF52 core). The build is Nordic's MBR +
   // S140 SoftDevice + the app as one Intel HEX, booted through the MBR like the real board (without
   // the UF2 bootloader). Serial is USB CDC on the real board; the simulator build prints it on Serial1
-  // (UARTE0, D6 / D7). Wire = TWIM0 on D4 / D5, SPI = SPIM3 on D10 / D9 / D8 (both Fabwright's models).
+  // (UARTE0, D6 / D7). Wire = TWIM0 on D4 / D5, SPI = SPIM3 on D10 / D9 / D8 (both Faber's models).
   "seeed-xiao-nrf52840": {
     type: "seeed-xiao-nrf52840",
     chip: "nrf52840",
-    platform: "/fabwright/platforms/xiao-nrf52840.repl",
-    csharp: ["FabwrightNrf52.cs"],
+    platform: "/faber/platforms/xiao-nrf52840.repl",
+    csharp: ["FaberNrf52.cs"],
     console: "uart0",
     clockHz: 64_000_000,
     vcc: 3.3,
     pins: XIAO_NRF_PINS,
     adc: nrfAdc(XIAO_NRF_PINS),
-    // The Adafruit core drives TWI0 as TWIM (EasyDMA): Fabwright's model, real ACK / NACK per address.
+    // The Adafruit core drives TWI0 as TWIM (EasyDMA): Faber's model, real ACK / NACK per address.
     i2c: { controller: "twi0", sda: "D4", scl: "D5", bridge: "controller" },
     spi: { controller: "spim3", mosi: "D10", miso: "D9", sck: "D8", ss: "D7", bridge: "controller" },
     fqbn: "Seeeduino:nrf52:xiaonRF52840",

@@ -1,8 +1,8 @@
 // Round 7 test fixtures: a talking speaker part (the voice track adds the real one; this stands in
 // for it here) and the egg device: XIAO RP2040 + GC9A01 eyes + LiPo + TP4056 + speaker.
-import type { Project } from "@fabwright/project-format";
-import type { PartSpec } from "@fabwright/sim-core";
-import { registry } from "@fabwright/parts";
+import type { Project } from "@faber/project-format";
+import type { PartSpec } from "@faber/sim-core";
+import { registry } from "@faber/parts";
 
 function speaker(id: string, od: number, d: number, grille: number): PartSpec {
   const base = registry.get("passive-buzzer")!.spec;
@@ -80,7 +80,7 @@ export const HEART_SVG = "M 0 -14 C -6 -30 -34 -30 -34 -6 C -34 12 -12 26 0 38 C
 
 export function eggProject(enclosure: Project["enclosure"]): Project {
   return {
-    format: "fabwright/1",
+    format: "faber/1",
     name: "Talking egg",
     parts: [
       { id: "xiao", type: "seeed-xiao-rp2040", x: 0, y: 0, rotation: 0 },

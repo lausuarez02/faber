@@ -1,4 +1,4 @@
-import { projectPartsWithSvg } from "@fabwright/session";
+import { projectPartsWithSvg } from "@faber/session";
 import type { ApiRoute, ServerHook } from "./types.ts";
 
 /**

@@ -258,7 +258,7 @@
       "x": 400.0,
       "y": 14,
       "type": "power",
-      "description": "3.3 V output of the on-board LDO (Fabwright checks against 300 mA). Or feed 3.3 V here with no USB."
+      "description": "3.3 V output of the on-board LDO (Faber checks against 300 mA). Or feed 3.3 V here with no USB."
     },
     {
       "id": "VBAT",
@@ -508,7 +508,7 @@
       "x": 360.0,
       "y": 150,
       "type": "power",
-      "description": "3.3 V output of the on-board LDO (Fabwright checks against 300 mA). Or feed 3.3 V here with no USB."
+      "description": "3.3 V output of the on-board LDO (Faber checks against 300 mA). Or feed 3.3 V here with no USB."
     },
     {
       "id": "GND.2",
@@ -653,6 +653,6 @@
   },
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Fabwright's parts). Run with Renode 1.17.0's native build; the fabwright/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/renode/boards.integration.test.ts: real firmware boots; every listed pin works as an output and as an input; Wire, SPI, analogRead, analogWrite, attachInterrupt and Serial reach Faber's parts). Run with Renode 1.17.0's native build; the faber/renode Docker image (same Renode version) could not be re-run that day because Docker Desktop was failing on the test machine."
   }
 }

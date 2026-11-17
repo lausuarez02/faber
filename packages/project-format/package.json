@@ -1,5 +1,5 @@
 {
-  "name": "@fabwright/project-format",
+  "name": "@faber/project-format",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -8,7 +8,7 @@
     ".": "./src/index.ts",
     "./legacy": "./src/legacy.ts",
     "./node": "./src/node.ts",
-    "./fabwright.schema.json": "./fabwright.schema.json"
+    "./faber.schema.json": "./faber.schema.json"
   },
   "scripts": {
     "gen:schema": "tsx scripts/gen-schema.ts",

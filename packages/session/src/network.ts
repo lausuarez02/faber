@@ -1,12 +1,12 @@
-// The sandbox network (Wi-Fi + the pet AI at ai.fabwright) for session simulations, and the agent
+// The sandbox network (Wi-Fi + the pet AI at ai.faber) for session simulations, and the agent
 // operations on it: set_ai_mode, read_network_log, run_live, and the wifi_drop fault. Kept in its
 // own file so the session engine only needs a few hooks (SimHost in sim.ts, the ops in session.ts).
 //
 // Determinism: every simulation gets the deterministic mock AI. A live answer (claude CLI or
 // Anthropic API) is only used inside runLive(), which paces the simulation at real time and waits
 // for the call; plain `run` and scenario tests always use the mock, even with ai mode "live".
-import { createSandboxNetwork, type NetLogEntry, type SandboxNet } from "@fabwright/ai-gateway";
-import { chooseProvider } from "@fabwright/ai-gateway/node";
+import { createSandboxNetwork, type NetLogEntry, type SandboxNet } from "@faber/ai-gateway";
+import { chooseProvider } from "@faber/ai-gateway/node";
 import type { ToolDef } from "./catalog.ts";
 import { fail } from "./errors.ts";
 
@@ -29,7 +29,7 @@ export function createSessionNetwork(): SessionNetwork {
 export function setAiMode(net: SessionNetwork, mode: string): Record<string, unknown> {
   if (mode !== "mock" && mode !== "live") fail("bad-value", `set_ai_mode: unknown mode '${mode}'`, "modes are mock and live", 'pass { "mode": "mock" } or { "mode": "live" }');
   if (mode === "live" && !net.ai.live) {
-    const choice = chooseProvider({ prefer: process.env.FABWRIGHT_AI_PROVIDER === "mock" ? "" : (process.env.FABWRIGHT_AI_PROVIDER ?? "") });
+    const choice = chooseProvider({ prefer: process.env.FABER_AI_PROVIDER === "mock" ? "" : (process.env.FABER_AI_PROVIDER ?? "") });
     net.liveReason = choice.reason;
     if (!choice.provider) {
       fail("no-live-ai", "set_ai_mode live: no live AI provider", choice.reason, "set ANTHROPIC_API_KEY, or install Claude Code and log in with `claude`, then call set_ai_mode live again (the mock stays active meanwhile)");
@@ -123,7 +123,7 @@ export const NETWORK_TOOLS: ToolDef[] = [
     name: "set_ai_mode",
     title: "Mock or live pet AI",
     description:
-      'Choose who answers the sandbox AI host (http://ai.fabwright/v1/pet) that an ESP-01 Wi-Fi module reaches: "mock" (default; deterministic canned pet replies, 400 to 800 ms virtual latency, always used by run and run_tests) or "live" (a real model, claude-haiku-5-5, through ANTHROPIC_API_KEY or the logged-in claude CLI; used only by run_live, which runs the simulation at real time). Returns the provider that will answer. Fails with the reason when no live provider exists.',
+      'Choose who answers the sandbox AI host (http://ai.faber/v1/pet) that an ESP-01 Wi-Fi module reaches: "mock" (default; deterministic canned pet replies, 400 to 800 ms virtual latency, always used by run and run_tests) or "live" (a real model, claude-haiku-5-5, through ANTHROPIC_API_KEY or the logged-in claude CLI; used only by run_live, which runs the simulation at real time). Returns the provider that will answer. Fails with the reason when no live provider exists.',
     inputSchema: { type: "object", properties: { mode: { type: "string", enum: ["mock", "live"] } }, required: ["mode"] },
   },
   {

@@ -1,4 +1,4 @@
-import { GROUND, type Diagnostic, type ElementId, type PartModel, type PartModelFactory } from "@fabwright/sim-core";
+import { GROUND, type Diagnostic, type ElementId, type PartModel, type PartModelFactory } from "@faber/sim-core";
 import { createRenodeBoardModel, limitOf, NRF52_GPIO } from "../../lib/renodeBoard.ts";
 
 /**

@@ -5,16 +5,16 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
 import { registry } from "./registry.gen.ts";
 import { mount, need } from "./lib/bench.ts";
 
 const hex = readFileSync(fileURLToPath(new URL("../../../examples/rover/firmware/rover.hex", import.meta.url)), "utf8");
 
 const project = parseProject({
-  format: "fabwright/1",
+  format: "faber/1",
   name: "analogWrite LED",
   parts: [
     { id: "uno", type: "arduino-uno", x: 0, y: 0 },

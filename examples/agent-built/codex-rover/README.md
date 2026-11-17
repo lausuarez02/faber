@@ -1,27 +1,27 @@
 # Obstacle-avoiding rover, built by Codex
 
-Built from a one-line goal by Codex with **only Fabwright's MCP tools** (shell, exec, browser and
-computer use turned off; no access to Fabwright's source). This folder is the agent's final project,
+Built from a one-line goal by Codex with **only Faber's MCP tools** (shell, exec, browser and
+computer use turned off; no access to Faber's source). This folder is the agent's final project,
 unedited.
 
 <p align="center"><img src="../../../docs/media/agent-codex-rover.gif" alt="Replay of Codex building the rover: parts and wires appear, the rover drives in the arena view, the second firmware drives 30 s with zero collisions and both tests pass" width="720"></p>
 
 Video (37 s at 1440x900, the session replayed at 2x): [`docs/media/agent-codex-rover.mp4`](../../../docs/media/agent-codex-rover.mp4).
-Replay it yourself: `pnpm fabwright replay examples/agent-built/codex-rover/agent-actions.jsonl`.
+Replay it yourself: `pnpm faber replay examples/agent-built/codex-rover/agent-actions.jsonl`.
 
 ## The prompt (exact)
 
 > Build a small 2-wheel robot that drives around an arena and avoids walls using an ultrasonic
 > distance sensor. Use an Arduino Uno, an L298N motor driver, two DC motors on a 2WD chassis and a
 > battery pack. Prove with scenario tests that it drives for 30 seconds in the arena without
-> colliding and that it turns away when a wall is closer than 20 cm. Use the fabwright MCP tools; the
+> colliding and that it turns away when a wall is closer than 20 cm. Use the faber MCP tools; the
 > canvas is watched live, explain each step briefly in the step's why.
 
 ## The agent and how it ran
 
 - **Agent:** codex-cli 0.163.0, model gpt-6.1-sol, reasoning effort **low**, 2026-11-09.
 - **Command:** `CODEX_HOME=<isolated> codex exec --skip-git-repo-check --json -s read-only -C <folder> "<prompt>"`
-- **Config** (`$CODEX_HOME/config.toml`; the only MCP server is Fabwright):
+- **Config** (`$CODEX_HOME/config.toml`; the only MCP server is Faber):
 
 ```toml
 model = "gpt-6.1-sol"
@@ -36,9 +36,9 @@ computer_use = false
 apps = false
 # leave code_mode_host on: Codex 0.163 routes MCP calls through it
 
-[mcp_servers.fabwright]
+[mcp_servers.faber]
 command = "node"
-args = ["/path/to/fabwright/apps/cli/bin/fabwright.mjs", "mcp", "--project", "<folder>"]
+args = ["/path/to/faber/apps/cli/bin/faber.mjs", "mcp", "--project", "<folder>"]
 startup_timeout_sec = 30
 tool_timeout_sec = 600
 default_tools_approval_mode = "approve"
@@ -77,11 +77,11 @@ Right after the run, and again on 2026-11-09 against the current `main` on a cop
 
 | Check | Result |
 | --- | --- |
-| `fabwright check` | 0 errors, 0 warnings |
-| `fabwright build --force` (right after the run) | fresh compile, hex byte-identical to the agent's; flash 4584 / 32256 B |
-| `fabwright test` | 2 passed, 0 failed |
-| `fabwright fidelity` | 7 behavioral parts, 21 items to test on the real device |
-| `fabwright screenshot --ms 30000` | `final.png`: the circuit next to the arena trace, 7.42 m, 0 collisions, closest gap 7.4 cm |
+| `faber check` | 0 errors, 0 warnings |
+| `faber build --force` (right after the run) | fresh compile, hex byte-identical to the agent's; flash 4584 / 32256 B |
+| `faber test` | 2 passed, 0 failed |
+| `faber fidelity` | 7 behavioral parts, 21 items to test on the real device |
+| `faber screenshot --ms 30000` | `final.png`: the circuit next to the arena trace, 7.42 m, 0 collisions, closest gap 7.4 cm |
 
 Weak spot in the tests: only the first wall approach is checked, and there is no near-boundary case
 (at 21 cm it should not turn).
@@ -115,9 +115,9 @@ Still open (all minor; the agent worked around none of them, it just ignored the
 
 | File | What |
 | --- | --- |
-| `fabwright.json` | parts, wires, world, scenarios |
+| `faber.json` | parts, wires, world, scenarios |
 | `firmware/main.ino`, `firmware/main.hex` | the agent's sketch and its build |
 | `shots/arena-30-seconds.png` | the agent's own screenshot |
-| `final.png` | the verifier's `fabwright screenshot --ms 30000` |
+| `final.png` | the verifier's `faber screenshot --ms 30000` |
 | `export/` | BOM, wiring table, firmware.hex, hardware checklist |
 | `agent-actions.jsonl` | the session's action log, agent calls only (48 lines) |

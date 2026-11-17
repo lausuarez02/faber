@@ -1,5 +1,5 @@
-import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, ElementId, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { num, round, str } from "../../lib/props.ts";
 
 export interface BatteryPreset {

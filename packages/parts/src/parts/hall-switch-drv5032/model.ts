@@ -1,7 +1,7 @@
 // TI DRV5032 ultra-low-power Hall-effect switch (datasheet SLVSDC7H). Omnipolar: OUT is LOW while
 // |B| >= B_OP and goes back HIGH (push-pull) / released (open-drain) once |B| < B_RP. The chip only
 // looks at the field at its sampling instants (5 Hz FB, 20 Hz others), which is the output latency.
-import { GROUND, type Diagnostic, type PartModel, type PartModelFactory } from "@fabwright/sim-core";
+import { GROUND, type Diagnostic, type PartModel, type PartModelFactory } from "@faber/sim-core";
 import { MAGNET_GRADES, distanceForField, magnetInteraction, magnetOf } from "../../lib/magnet.ts";
 import { round, str } from "../../lib/props.ts";
 

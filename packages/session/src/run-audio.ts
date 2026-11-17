@@ -10,18 +10,18 @@
  */
 import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { I2sBlock, Simulation } from "@fabwright/sim-core";
-import { stateDirPath } from "@fabwright/project-format/node";
+import type { I2sBlock, Simulation } from "@faber/sim-core";
+import { stateDirPath } from "@faber/project-format/node";
 
 export const RUN_AUDIO_RATE = 16_000;
 /** Runs longer than this keep no audio (the page plays at most 10 s of a run at real speed). */
 export const RUN_AUDIO_MAX_MS = 20_000;
-/** WAV files kept in .fabwright/audio (the oldest go). */
+/** WAV files kept in .faber/audio (the oldest go). */
 const KEEP = 20;
 
 /** What the log entry of a run carries so the page can play its sound. */
 export interface RunAudio {
-  /** File name under .fabwright/audio, served at GET /api/audio/<file>. */
+  /** File name under .faber/audio, served at GET /api/audio/<file>. */
   file: string;
   /** The I2S sink(s) the sound went to (the amplifier part ids). */
   parts: string[];

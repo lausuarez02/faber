@@ -1,15 +1,15 @@
-import { Simulation, applyVisualState, restVisualState, type ColorFrame, type VisualState } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
-import type { Project, PropValue } from "@fabwright/project-format";
+import { Simulation, applyVisualState, restVisualState, type ColorFrame, type VisualState } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
+import type { Project, PropValue } from "@faber/project-format";
 import { registry, tftTypeFor } from "./parts.ts";
 import { registerDisplayRenderers } from "../renderers/displays/index.ts";
 import { registerTftRenderers } from "../renderers/tft/index.ts";
 import { colorFrameOf } from "./colorFrames.ts"; // round 6 frames
 import { filterSerial } from "./serialFilter.ts"; // round 6b
 import { createWebNetwork, hasWifiPart } from "../views/network/webNetwork.ts";
-import type { SandboxNet } from "@fabwright/ai-gateway";
-import { attachPhysics, initPhysics, type PhysicsBinding } from "@fabwright/physics";
-import type { FabwrightStore } from "./store.ts";
+import type { SandboxNet } from "@faber/ai-gateway";
+import { attachPhysics, initPhysics, type PhysicsBinding } from "@faber/physics";
+import type { FaberStore } from "./store.ts";
 import { localCopyUrl } from "./localCopy.ts";
 import { useInteract } from "../interact/store.ts";
 import { VoiceLayer } from "../voice/speech.ts"; // round 7 voice
@@ -120,7 +120,7 @@ export class Engine {
     }
   };
 
-  constructor(private readonly store: FabwrightStore) {
+  constructor(private readonly store: FaberStore) {
     store.subscribe((s, prev) => {
       if (s.project !== prev.project) {
         this.preparePhysics(s.project);
@@ -393,12 +393,12 @@ export class Engine {
   run(): void {
     const s = this.store.getState();
     if (this.external && !this.localRun && this.followRunner) {
-      // Following a `fabwright serve` session: run the project here with its latest built firmware.
+      // Following a `faber serve` session: run the project here with its latest built firmware.
       this.followRunner();
       return;
     }
     if (this.external && !this.localRun) {
-      // Following: the sim runs in the agent's session. On a `fabwright serve` page, Run opens a copy
+      // Following: the sim runs in the agent's session. On a `faber serve` page, Run opens a copy
       // of the project with its built firmware (`/?local`) where it really runs.
       const local = localCopyUrl();
       if (local) window.open(local, "_blank", "noopener");

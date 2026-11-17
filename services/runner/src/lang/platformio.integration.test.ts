@@ -1,11 +1,11 @@
-// PlatformIO (pio run in fabwright/platformio) building an Uno project that Fabwright runs on avr8js:
+// PlatformIO (pio run in faber/platformio) building an Uno project that Faber runs on avr8js:
 // blink on D13, serial, and an I2C write to a part at 0x3C with Wire. Needs Docker and the image.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { createAvrBackend } from "@fabwright/sim-backends";
-import { I2cBus } from "@fabwright/sim-core";
+import { createAvrBackend } from "@faber/sim-backends";
+import { I2cBus } from "@faber/sim-core";
 import { buildFirmware } from "../build.ts";
 import { imagePresent } from "./docker-guard.ts";
 import { PLATFORMIO_IMAGE } from "./toolchain.ts";
@@ -17,7 +17,7 @@ describe.skipIf(!available)("PlatformIO (atmelavr)", { timeout: 600_000 }, () =>
   afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
   it("builds an Uno env; the hex blinks D13, prints, and writes I2C; errors map to src/ file:line", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "fabwright-pio-"));
+    const dir = mkdtempSync(join(tmpdir(), "faber-pio-"));
     dirs.push(dir);
     const write = (rel: string, text: string) => {
       mkdirSync(dirname(join(dir, rel)), { recursive: true });

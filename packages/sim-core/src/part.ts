@@ -1,7 +1,7 @@
 import type { ColorFrame } from "./color.ts";
 import type { SimServices } from "./network.ts";
 import { z } from "zod";
-import type { PropValue } from "@fabwright/project-format";
+import type { PropValue } from "@faber/project-format";
 import type { CircuitBuilder, NodeId, SolveResultView } from "./circuit.ts";
 import type { I2cDevice, SpiDevice } from "./bus.ts";
 import type { I2sDevice } from "./i2s.ts";
@@ -75,12 +75,12 @@ export type BindingSpec = z.infer<typeof BindingSpecSchema>;
  * Simulator backends a board part may declare in `mcu.backend` (decision 0003, C1; decision 0006).
  *   avr8js    ATmega328P (Uno, Nano) through avr8js                         in-process (browser + Node)
  *   rp2040js  RP2040 (Pico, XIAO RP2040, RP2040-Zero) through rp2040js      in-process (browser + Node)
- *   qemu-esp  ESP32 / ESP32-S3 / ESP32-C3 on Espressif's QEMU + Fabwright bridge   local process (Docker)
+ *   qemu-esp  ESP32 / ESP32-S3 / ESP32-C3 on Espressif's QEMU + Faber bridge   local process (Docker)
  *   renode    Cortex-M boards (STM32, nRF52) on Renode                      local process (Docker)
  */
 export const BOARD_BACKENDS = ["avr8js", "rp2040js", "qemu-esp", "renode"] as const;
 export type BoardBackendId = (typeof BOARD_BACKENDS)[number];
-/** Backends that run as a local emulator process the Fabwright server owns (never in the browser). */
+/** Backends that run as a local emulator process the Faber server owns (never in the browser). */
 export const PROCESS_BACKENDS: readonly string[] = ["qemu-esp", "renode"];
 export const isProcessBackend = (backend: string | undefined): boolean => !!backend && PROCESS_BACKENDS.includes(backend);
 
@@ -456,7 +456,7 @@ export interface Diagnostic {
 
 /** What the simulation hands a part model when it is created. */
 export interface PartContext {
-  /** Instance id from fabwright.json, e.g. "led1". */
+  /** Instance id from faber.json, e.g. "led1". */
   readonly id: string;
   readonly spec: PartSpec;
   /** spec.props defaults merged with the instance's props. setProp() keeps this up to date. */
@@ -510,7 +510,7 @@ export interface PartContext {
   /** Host services (e.g. `network`, the sandbox Wi-Fi network) passed to the Simulation. */
   readonly services?: SimServices;
   // round 6 power
-  /** The project's power situation (fabwright.json `power`): `usb` = a USB cable is plugged into the board. Absent = USB plugged (round-5 behaviour). Live: the Simulation updates it. */
+  /** The project's power situation (faber.json `power`): `usb` = a USB cable is plugged into the board. Absent = USB plugged (round-5 behaviour). Live: the Simulation updates it. */
   readonly power?: { readonly usb: boolean };
 }
 

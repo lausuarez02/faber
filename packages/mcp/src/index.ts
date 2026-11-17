@@ -1,5 +1,5 @@
-export { createFabwrightMcpServer, startStdioServer, projectDirFromArgs, toContent, prettyClientName, SERVER_NAME, SERVER_VERSION } from "./server.ts";
-export type { FabwrightMcpOptions } from "./server.ts";
+export { createFaberMcpServer, startStdioServer, projectDirFromArgs, toContent, prettyClientName, SERVER_NAME, SERVER_VERSION } from "./server.ts";
+export type { FaberMcpOptions } from "./server.ts";
 export { createMcpHttpEndpoint, localRequestProblem } from "./http.ts";
 export type { McpHttpEndpoint, McpHttpOptions } from "./http.ts";
 export { attachUrl, startAttachedStdio } from "./attach.ts";

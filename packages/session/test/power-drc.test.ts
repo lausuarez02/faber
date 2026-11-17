@@ -3,11 +3,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { registry } from "@fabwright/parts";
-import { parseProject, type Project, type Wire } from "@fabwright/project-format";
+import { registry } from "@faber/parts";
+import { parseProject, type Project, type Wire } from "@faber/project-format";
 import { checkDesign } from "../src/drc.ts";
 
-const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse/fabwright.json", import.meta.url));
+const MUSE = fileURLToPath(new URL("../../../examples/agent-built/claude-pocket-muse/faber.json", import.meta.url));
 const muse = (): Project => parseProject(JSON.parse(readFileSync(MUSE, "utf8")));
 const codes = (p: Project) => checkDesign(p, registry).map((i) => `${i.severity}:${i.code}`);
 const w = (id: string, a: string, b: string): Wire => {
@@ -93,7 +93,7 @@ describe("check_design power path (round 6)", () => {
 
   it("a Pico on VSYS needs no diode and has no LDO dropout", () => {
     const p = parseProject({
-      format: "fabwright/1",
+      format: "faber/1",
       name: "pico-cell",
       parts: [
         { id: "pico", type: "raspberry-pi-pico", x: 0, y: 0 },

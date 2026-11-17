@@ -1,5 +1,5 @@
 // Round 6, case track (decision 0004, R3 to R5): design_case / update_case / get_case /
-// export_manufacturing on the Muse. The case config is an undoable fabwright.json edit; the files in
+// export_manufacturing on the Muse. The case config is an undoable faber.json edit; the files in
 // case/ are outputs regenerated from the config + the parts' mechanical data.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,9 +16,9 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeAll(() => {
-  process.env.FABWRIGHT_CASE_PDF = "0";
-  dir = mkdtempSync(join(tmpdir(), "fabwright-case-"));
-  writeFileSync(join(dir, "fabwright.json"), JSON.stringify(MUSE));
+  process.env.FABER_CASE_PDF = "0";
+  dir = mkdtempSync(join(tmpdir(), "faber-case-"));
+  writeFileSync(join(dir, "faber.json"), JSON.stringify(MUSE));
   s = new ProjectSession({ dir, actor: "test" });
 });
 afterAll(() => {
@@ -48,11 +48,11 @@ describe("case tools", () => {
       expect(r.image_files.map((p: string) => p.split("/").slice(-2).join("/"))).toEqual(["renders/front.png", "renders/exploded.png"]);
       for (const f of ["stl/front.stl", "stl/back.stl", "stl/cap-pet.stl", "case.3mf", "step/assembly.step", "step/front.step", "step/back.step", "renders/front.png", "renders/back.png", "renders/exploded.png", "renders/inside.png", "drawing/drawing.svg", "PRINT.md", "report.json", "manifest.json"]) expect(existsSync(join(dir, "case", f)), f).toBe(true);
       expect(r.missing.map((m: { item: string }) => m.item)).toEqual(["drawing/drawing.pdf"]);
-      const saved = JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
+      const saved = JSON.parse(readFileSync(join(dir, "faber.json"), "utf8"));
       expect(saved.enclosure).toEqual({ shape: "rounded-box" });
       // undo takes the config away; get_case then has nothing
       await call("undo");
-      expect(JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")).enclosure).toBeUndefined();
+      expect(JSON.parse(readFileSync(join(dir, "faber.json"), "utf8")).enclosure).toBeUndefined();
       await expect(call("get_case")).rejects.toThrow(/No case yet/);
       await call("redo");
       const g = await call("get_case");
@@ -82,13 +82,13 @@ describe("case tools", () => {
   );
 
   it(
-    "design_case {save: false} writes a variant and leaves fabwright.json alone",
+    "design_case {save: false} writes a variant and leaves faber.json alone",
     async () => {
-      const before = readFileSync(join(dir, "fabwright.json"), "utf8");
+      const before = readFileSync(join(dir, "faber.json"), "utf8");
       const r = await call("design_case", { shape: "puck", save: false, images: false });
       expect(r.dir).toBe(join(dir, "case", "variants", "puck"));
       expect(existsSync(join(dir, "case", "variants", "puck", "stl", "front.stl"))).toBe(true);
-      expect(readFileSync(join(dir, "fabwright.json"), "utf8")).toBe(before);
+      expect(readFileSync(join(dir, "faber.json"), "utf8")).toBe(before);
       expect(r.image_files).toBeUndefined();
     },
     T,
@@ -99,7 +99,7 @@ describe("case tools", () => {
     async () => {
       const r = await call("export_manufacturing", {});
       expect(r.dir).toMatch(/manufacturing\/pocket-muse-v\d+$/);
-      for (const f of ["README.md", "README.zh-CN.md", "NOTES.md", "BOM.csv", "BOM.md", "electronics/WIRING.md", "electronics/netlist.csv", "electronics/fabwright.net", "electronics/WIRE-CUTS.csv", "assembly/ASSEMBLY.md", "test/TEST-PLAN.md", "test/TEST-ON-HARDWARE.md", "enclosure/stl/front.stl", "enclosure/step/assembly.step", "manifest.json"]) expect(r.files, f).toContain(f);
+      for (const f of ["README.md", "README.zh-CN.md", "NOTES.md", "BOM.csv", "BOM.md", "electronics/WIRING.md", "electronics/netlist.csv", "electronics/faber.net", "electronics/WIRE-CUTS.csv", "assembly/ASSEMBLY.md", "test/TEST-PLAN.md", "test/TEST-ON-HARDWARE.md", "enclosure/stl/front.stl", "enclosure/step/assembly.step", "manifest.json"]) expect(r.files, f).toContain(f);
       expect(r.files.some((f: string) => f.startsWith("enclosure/variants"))).toBe(false);
       // the fixture has no firmware: the pack says so and how to fix it
       expect(r.missing.find((m: { item: string }) => m.item === "firmware/")).toMatchObject({ fix: expect.stringContaining("build") });
@@ -108,7 +108,7 @@ describe("case tools", () => {
       expect(bom.find((l) => l.startsWith("1,xiao,"))).toContain("102010428");
       expect(bom.some((l) => l.includes("Heat-set insert"))).toBe(true); // screws closure from update_case
       expect(bom.some((l) => /breadboard|Dupont/i.test(l))).toBe(false); // soldered build
-      expect(readFileSync(join(r.dir, "electronics/fabwright.net"), "utf8")).toMatch(/^\(export \(version D\)/);
+      expect(readFileSync(join(r.dir, "electronics/faber.net"), "utf8")).toMatch(/^\(export \(version D\)/);
       expect(readFileSync(join(r.dir, "electronics/netlist.csv"), "utf8").split("\n")[0]).toBe("net,part,pin");
       expect(readFileSync(join(r.dir, "README.zh-CN.md"), "utf8")).toContain("没有 PCB");
       const mf = JSON.parse(readFileSync(join(r.dir, "manifest.json"), "utf8"));

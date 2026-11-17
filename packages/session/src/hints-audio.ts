@@ -72,12 +72,12 @@ void loop() {
 
 /** Ways to play audio an API returns, with the licences that matter (also in docs/esp32-peripherals.md). */
 export const API_AUDIO_NOTE =
-  "Playing what an API returns: ask it for raw PCM (16 kHz, 16-bit, mono; 'audio/L16', 'pcm_16000') or WAV and stream the bytes into i2s.write() as they arrive (the example; HTTP/1.0 so no chunk framing ends up in the audio; a WebSocket works the same with the WebSockets library, LGPL-2.1). Buffer a few hundred ms before playing if the network is slow. MP3 on the device: ESP_I2S's playMP3() works (it decodes with libhelix-mp3, prebuilt in arduino-esp32 3.x, RealNetworks RPSL/RCSL: keep its notices); minimp3 (CC0, one header) is the decoder to bundle in your own code. ESP32-audioI2S, ESP8266Audio and arduino-audio-tools are GPL-3.0 (shipping them makes the firmware GPL); Fabwright ships none of them.";
+  "Playing what an API returns: ask it for raw PCM (16 kHz, 16-bit, mono; 'audio/L16', 'pcm_16000') or WAV and stream the bytes into i2s.write() as they arrive (the example; HTTP/1.0 so no chunk framing ends up in the audio; a WebSocket works the same with the WebSockets library, LGPL-2.1). Buffer a few hundred ms before playing if the network is slow. MP3 on the device: ESP_I2S's playMP3() works (it decodes with libhelix-mp3, prebuilt in arduino-esp32 3.x, RealNetworks RPSL/RCSL: keep its notices); minimp3 (CC0, one header) is the decoder to bundle in your own code. ESP32-audioI2S, ESP8266Audio and arduino-audio-tools are GPL-3.0 (shipping them makes the firmware GPL); Faber ships none of them.";
 
 export const AUDIO_HINTS: Record<string, Usage> = {
   max98357a: {
     wiring:
-      "Plays the samples the board sends over I2S (ESP32, ESP32-S3, ESP32-C3; other boards have no I2S in Fabwright). VIN → 5V / VBUS (or the battery after its switch: 3.7 V works, a bit quieter), GND → GND, BCLK, LRC (word select) and DIN → three free GPIOs passed to i2s.setPins(bclk, lrc, din) (XIAO ESP32-S3: D1 / D2 / D3). SD floating or to VIN = left / mono, to GND = off. GAIN floating = 9 dB (to VIN 6 dB, to GND 12 dB). OUT+ / OUT- → speaker + / -: bridge-tied, neither is ground. A 0.5 W speaker takes about half of full scale at 5 V: scale the samples (check_design says how far). " +
+      "Plays the samples the board sends over I2S (ESP32, ESP32-S3, ESP32-C3; other boards have no I2S in Faber). VIN → 5V / VBUS (or the battery after its switch: 3.7 V works, a bit quieter), GND → GND, BCLK, LRC (word select) and DIN → three free GPIOs passed to i2s.setPins(bclk, lrc, din) (XIAO ESP32-S3: D1 / D2 / D3). SD floating or to VIN = left / mono, to GND = off. GAIN floating = 9 dB (to VIN 6 dB, to GND 12 dB). OUT+ / OUT- → speaker + / -: bridge-tied, neither is ground. A 0.5 W speaker takes about half of full scale at 5 V: scale the samples (check_design says how far). " +
       API_AUDIO_NOTE,
     connect: ["amp.VIN -> xiao.5V", "amp.GND -> xiao.GND", "amp.BCLK -> xiao.GPIO2", "amp.LRC -> xiao.GPIO3", "amp.DIN -> xiao.GPIO4", "amp.OUT+ -> spk.+", "amp.OUT- -> spk.-"],
     example: AMP_EXAMPLE,
@@ -86,7 +86,7 @@ export const AUDIO_HINTS: Record<string, Usage> = {
   },
   inmp441: {
     wiring:
-      "An I2S microphone the board records from (ESP32, ESP32-S3, ESP32-C3). VDD → 3V3 (never 5 V), GND → GND, SCK → the I2S BCLK GPIO, WS → the WS GPIO, SD → the data-in GPIO, L/R → GND (left slot) or 3V3 (right). Pass them to i2s.setPins(bclk, ws, -1, din). In Fabwright it also stands in for a PDM microphone (the XIAO ESP32-S3 Sense's onboard one: setPinsPdmRx(42, 41), I2S_MODE_PDM_RX): whatever source sits on the board's I2S bus answers the reads.",
+      "An I2S microphone the board records from (ESP32, ESP32-S3, ESP32-C3). VDD → 3V3 (never 5 V), GND → GND, SCK → the I2S BCLK GPIO, WS → the WS GPIO, SD → the data-in GPIO, L/R → GND (left slot) or 3V3 (right). Pass them to i2s.setPins(bclk, ws, -1, din). In Faber it also stands in for a PDM microphone (the XIAO ESP32-S3 Sense's onboard one: setPinsPdmRx(42, 41), I2S_MODE_PDM_RX): whatever source sits on the board's I2S bus answers the reads.",
     connect: ["mic.VDD -> xiao.3V3", "mic.GND -> xiao.GND", "mic.SCK -> xiao.GPIO2", "mic.WS -> xiao.GPIO3", "mic.SD -> xiao.GPIO4", "mic.L/R -> xiao.GND"],
     example: MIC_EXAMPLE,
     controls:

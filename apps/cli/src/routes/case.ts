@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
-import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@fabwright/session";
+import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@faber/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
-import { projectFilePath } from "@fabwright/project-format/node";
+import { projectFilePath } from "@faber/project-format/node";
 
 /**
  * Round 6, track "case" (owner). Decision 0004, R6.
@@ -26,14 +26,14 @@ import { projectFilePath } from "@fabwright/project-format/node";
  *   GET  /api/case/file?path=      → a file from <project>/case/ (download)
  *   POST /api/manufacturing        → export_manufacturing + url of the zip
  *   GET  /api/manufacturing/:file  → a zip from <project>/manufacturing/
- * Local-only like every route; changing routes need x-fabwright-token. Errors: { error: "<what>. Why: … Fix: …" }.
+ * Local-only like every route; changing routes need x-faber-token. Errors: { error: "<what>. Why: … Fix: …" }.
  */
 
 const err = (what: string, why: string, fix: string) => ({ error: `${what}. Why: ${why}. Fix: ${fix}` });
 
 function needToken(req: IncomingMessage, res: ServerResponse, ctx: RouteContext): boolean {
-  if (req.headers["x-fabwright-token"] === ctx.token) return true;
-  ctx.json(res, 403, err("Missing or wrong x-fabwright-token", "changing the case needs the token from GET /api/connect, which only pages served by this Fabwright server can read", "open the Fabwright app from the fabwright serve URL and try again"));
+  if (req.headers["x-faber-token"] === ctx.token) return true;
+  ctx.json(res, 403, err("Missing or wrong x-faber-token", "changing the case needs the token from GET /api/connect, which only pages served by this Faber server can read", "open the Faber app from the faber serve URL and try again"));
   return false;
 }
 

@@ -1,7 +1,7 @@
 // DS3231 real-time clock (Maxim datasheet 19-5170): timekeeping registers 0x00-0x06 in BCD,
 // alarms 0x07-0x0D (stored), control 0x0E, status 0x0F (OSF), aging 0x10, temperature 0x11-0x12.
 // Time is deterministic: startTime prop + simulation time (+ whatever the sketch set).
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@faber/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { clamp, num, round, truthy } from "../../lib/props.ts";
 import { fromEpoch, formatTime, parseTime, toEpoch, bcd, unbcd, type DateTime } from "../../lib/calendar.ts";

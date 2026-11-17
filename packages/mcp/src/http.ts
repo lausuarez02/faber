@@ -2,12 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import type { AgentPresence, CallMeta, ProjectSession } from "@fabwright/session";
-import { createFabwrightMcpServer, prettyClientName } from "./server.ts";
+import type { AgentPresence, CallMeta, ProjectSession } from "@faber/session";
+import { createFaberMcpServer, prettyClientName } from "./server.ts";
 
 /**
- * Fabwright's MCP server over Streamable HTTP (POST/GET/DELETE /mcp), bound to one shared session.
- * `fabwright serve` mounts it next to the web app and the live websocket, so whatever an agent does
+ * Faber's MCP server over Streamable HTTP (POST/GET/DELETE /mcp), bound to one shared session.
+ * `faber serve` mounts it next to the web app and the live websocket, so whatever an agent does
  * through it appears on the canvas the person is watching. One MCP session (and one SDK Server) per
  * connected client; all of them call the same ProjectSession through `call` (a queue in serve).
  */
@@ -36,12 +36,12 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 export function localRequestProblem(req: IncomingMessage): string | undefined {
   const host = String(req.headers.host ?? "");
   const hostname = host.startsWith("[") ? host.slice(0, host.indexOf("]") + 1) : host.split(":")[0]!;
-  if (!LOCAL_HOSTS.has(hostname)) return `Host '${host}' is not this machine. Fabwright only answers requests for localhost / 127.0.0.1. Fix: use http://localhost:<port>/mcp.`;
+  if (!LOCAL_HOSTS.has(hostname)) return `Host '${host}' is not this machine. Faber only answers requests for localhost / 127.0.0.1. Fix: use http://localhost:<port>/mcp.`;
   const origin = req.headers.origin;
   if (origin && origin !== "null") {
     try {
       const o = new URL(origin);
-      if (!LOCAL_HOSTS.has(o.hostname) && !LOCAL_HOSTS.has(`[${o.hostname}]`)) return `Origin '${origin}' is another website. Fabwright only accepts requests from pages on localhost. Fix: open the Fabwright app from the fabwright serve URL.`;
+      if (!LOCAL_HOSTS.has(o.hostname) && !LOCAL_HOSTS.has(`[${o.hostname}]`)) return `Origin '${origin}' is another website. Faber only accepts requests from pages on localhost. Fix: open the Faber app from the faber serve URL.`;
     } catch {
       return `Origin '${origin}' is not a valid URL.`;
     }
@@ -93,7 +93,7 @@ export function createMcpHttpEndpoint(opts: McpHttpOptions): McpHttpEndpoint {
   sweep.unref();
 
   const newSession = async (req: IncomingMessage) => {
-    const via = String(req.headers["x-fabwright-transport"] ?? "") === "stdio-attach" ? "stdio-attach" : "http";
+    const via = String(req.headers["x-faber-transport"] ?? "") === "stdio-attach" ? "stdio-attach" : "http";
     // The presence entry is filled in when the client finishes initialize (clientInfo known).
     const me: { id?: string } = {};
     const touch = (patch: Partial<AgentPresence>) => {
@@ -102,7 +102,7 @@ export function createMcpHttpEndpoint(opts: McpHttpOptions): McpHttpEndpoint {
       Object.assign(a, patch, { lastSeen: new Date().toISOString() });
       changed();
     };
-    const { server } = createFabwrightMcpServer({
+    const { server } = createFaberMcpServer({
       dir: opts.dir,
       session: opts.session,
       ...(opts.call ? { call: opts.call } : {}),
@@ -160,7 +160,7 @@ export function createMcpHttpEndpoint(opts: McpHttpOptions): McpHttpEndpoint {
           }
           if (sessionId) {
             const t = transports.get(sessionId);
-            if (!t) return rpcError(res, 404, `MCP session '${sessionId}' is not known to this Fabwright server (it restarted, or the session was closed). Fix: reconnect the client (in Claude Code: /mcp, then reconnect 'fabwright').`);
+            if (!t) return rpcError(res, 404, `MCP session '${sessionId}' is not known to this Faber server (it restarted, or the session was closed). Fix: reconnect the client (in Claude Code: /mcp, then reconnect 'faber').`);
             const a = agents.get(sessionId);
             if (a) a.lastSeen = new Date().toISOString();
             return await t.handleRequest(req, res, body);
@@ -174,7 +174,7 @@ export function createMcpHttpEndpoint(opts: McpHttpOptions): McpHttpEndpoint {
         }
         if (req.method === "GET" || req.method === "DELETE") {
           const t = sessionId ? transports.get(sessionId) : undefined;
-          if (!t) return rpcError(res, sessionId ? 404 : 400, sessionId ? `MCP session '${sessionId}' is not known to this Fabwright server. Fix: reconnect the client.` : `${req.method} /mcp needs the mcp-session-id header from initialize.`);
+          if (!t) return rpcError(res, sessionId ? 404 : 400, sessionId ? `MCP session '${sessionId}' is not known to this Faber server. Fix: reconnect the client.` : `${req.method} /mcp needs the mcp-session-id header from initialize.`);
           const a = agents.get(sessionId!);
           if (req.method === "GET" && a) {
             a.streams++;
@@ -189,7 +189,7 @@ export function createMcpHttpEndpoint(opts: McpHttpOptions): McpHttpEndpoint {
         res.writeHead(405, { allow: "GET, POST, DELETE", "content-type": "application/json" });
         res.end(JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: `${req.method} is not supported on /mcp. Use POST (messages), GET (event stream) or DELETE (end session).` }, id: null }));
       } catch (err) {
-        rpcError(res, 500, `Fabwright MCP endpoint failed: ${(err as Error).message}. Fix: retry; if it keeps failing, restart fabwright serve and reconnect.`);
+        rpcError(res, 500, `Faber MCP endpoint failed: ${(err as Error).message}. Fix: retry; if it keeps failing, restart faber serve and reconnect.`);
       }
     },
     agents: list,

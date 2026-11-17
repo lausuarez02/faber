@@ -1,11 +1,11 @@
 /**
- * Round 8 (view): how the parts go inside. Fabwright works out by itself three ways to distribute the
+ * Round 8 (view): how the parts go inside. Faber works out by itself three ways to distribute the
  * parts in the case (POST /api/case/layouts): the thinnest, the smallest and a balanced one. Each
  * card draws it from the front (the outline, every part a labelled rectangle coloured by layer) and
  * in cross-section from the side (the layers stacked in depth, with mm), with its size, pocket
  * verdict, how full it is and why. Selecting one previews it in 3D (CaseView); "Use this layout"
  * builds it. In the big front view a part can be dragged (or moved with the arrow keys) to pin it
- * there: Fabwright re-arranges the rest around it and shows the new size. Below, the parts advice:
+ * there: Faber re-arranges the rest around it and shows the new size. Below, the parts advice:
  * parts the device may not need, with the mm they would save and, for a simple swap or removal,
  * an Apply button. Round 8b: "What's making it bigger": the choices in the case (a big dome, a part
  * kept in one spot, a speaker on the front, a fixed size) with what each adds and an Apply button.
@@ -21,7 +21,7 @@ const NAMES: Record<string, string> = { thinnest: "Thinnest", smallest: "Smalles
 const BLURB: Record<string, string> = {
   thinnest: "as flat as the parts allow",
   smallest: "the least space overall",
-  balanced: "Fabwright's pick for holding it",
+  balanced: "Faber's pick for holding it",
 };
 
 export interface LayoutTabProps {
@@ -31,7 +31,7 @@ export interface LayoutTabProps {
   /** The proposal shown (selected card). */
   selected: string;
   onSelect(id: string): void;
-  /** The layout the built case uses ("auto" = Fabwright's pick), and whether that case is up to date. */
+  /** The layout the built case uses ("auto" = Faber's pick), and whether that case is up to date. */
   built?: { goal: string; size: CaseReport["size_mm"] };
   /** Build the case with this layout. */
   onUse(id: string): void;
@@ -43,7 +43,7 @@ export interface LayoutTabProps {
   /** A drop that cannot be kept (it lands on a part that stays put). */
   onBlocked(message: string): void;
   onClearPins(): void;
-  /** Something says the built case is not what Fabwright would now do. */
+  /** Something says the built case is not what Faber would now do. */
   stale?: string;
   onRedistribute(): void;
   advice?: AdviceNote[];
@@ -103,10 +103,10 @@ export function LayoutTab(props: LayoutTabProps) {
             {error}
           </div>
         ) : null}
-        {!result && !error ? <div className="cv-faint">Fabwright tries the parts side by side first, then in layers, and proposes the best ways to fit them.</div> : null}
+        {!result && !error ? <div className="cv-faint">Faber tries the parts side by side first, then in layers, and proposes the best ways to fit them.</div> : null}
         {result ? (
           <div className="cv-faint cv-lt-intro">
-            The parts take {result.parts_volume_cm3} cm³. Fabwright found {result.proposals.length} ways to fit them. Pick one to see it in 3D.
+            The parts take {result.parts_volume_cm3} cm³. Faber found {result.proposals.length} ways to fit them. Pick one to see it in 3D.
           </div>
         ) : null}
         <div className="cv-cards" role="radiogroup" aria-label="Ways to fit the parts">
@@ -134,7 +134,7 @@ export function LayoutTab(props: LayoutTabProps) {
           <div className="cv-label" id="cv-move-h">
             Move a part
           </div>
-          <div className="cv-faint cv-lt-intro">Drag a part (or select it and use the arrow keys) to put it where you want. Fabwright keeps it there and arranges the rest around it.</div>
+          <div className="cv-faint cv-lt-intro">Drag a part (or select it and use the arrow keys) to put it where you want. Faber keeps it there and arranges the rest around it.</div>
           <FrontEditor p={p} pinned={pinned} busy={busy} onPin={props.onPin} onBlocked={props.onBlocked} color={colorOf} />
           {props.notice ? (
             <div className="cv-lt-notice" role="alert" data-testid="case-layout-notice">
@@ -157,15 +157,15 @@ export function LayoutTab(props: LayoutTabProps) {
               {pinnedIds.map((id) => (
                 <li key={id}>
                   <Pin size={12} aria-hidden /> <b>{id}</b> {movedHere(id) ? "moved by you" : "kept where it was put"}
-                  <button type="button" className="cv-chip" onClick={() => props.onPin(id, null)} aria-label={`Let Fabwright place ${id} again`}>
-                    Let Fabwright place it
+                  <button type="button" className="cv-chip" onClick={() => props.onPin(id, null)} aria-label={`Let Faber place ${id} again`}>
+                    Let Faber place it
                   </button>
                 </li>
               ))}
               {pinnedIds.length > 1 ? (
                 <li>
                   <button type="button" className="cv-chip" onClick={props.onClearPins} data-testid="case-pins-clear">
-                    <RotateCcw size={12} aria-hidden /> Let Fabwright place them all
+                    <RotateCcw size={12} aria-hidden /> Let Faber place them all
                   </button>
                 </li>
               ) : null}
@@ -173,7 +173,7 @@ export function LayoutTab(props: LayoutTabProps) {
           ) : null}
           {p.misses.length ? (
             <div className="cv-error" role="alert" data-testid="case-layout-misses">
-              Does not fit: {p.misses.join("; ")}. Move the part elsewhere, or let Fabwright place it.
+              Does not fit: {p.misses.join("; ")}. Move the part elsewhere, or let Faber place it.
             </div>
           ) : null}
           {p.warnings.length ? <div className="cv-lt-warn">{p.warnings.map((w) => <div key={w}>{w}</div>)}</div> : null}
@@ -215,7 +215,7 @@ function Card({ p, color, on, pick, isBuilt, onSelect }: { p: LayoutProposal; co
         <span className="cv-faint">{BLURB[p.id]}</span>
         <span className="cv-card-tags">
           {isBuilt ? <span className="cv-tag is-built">built</span> : null}
-          {pick ? <span className="cv-tag">Fabwright's pick</span> : null}
+          {pick ? <span className="cv-tag">Faber's pick</span> : null}
         </span>
       </div>
       <div className="cv-card-body">
@@ -345,7 +345,7 @@ function FrontEditor({ p, pinned, busy, onPin, onBlocked, color }: { p: LayoutPr
     if (!pl || (Math.abs(dx) < 0.3 && Math.abs(dy) < 0.3)) return false;
     const hit = landsOn(id, dx, dy);
     if (hit) {
-      onBlocked(`${id} would land on ${hit}, which is kept where it was put. Drop ${id} somewhere free, or let Fabwright place ${hit} first.`);
+      onBlocked(`${id} would land on ${hit}, which is kept where it was put. Drop ${id} somewhere free, or let Faber place ${hit} first.`);
       return false;
     }
     const pin = pl.pin ?? { x_mm: pl.x_mm, y_mm: pl.y_mm, x_sign: 1 as const };
@@ -409,7 +409,7 @@ function FrontEditor({ p, pinned, busy, onPin, onBlocked, color }: { p: LayoutPr
             transform={d ? `translate(${d.dx.toFixed(2)} ${(-d.dy).toFixed(2)})` : undefined}
             tabIndex={0}
             role="button"
-            aria-label={`${q.label}, ${isPinned ? "kept where it was put" : "placed by Fabwright"}${q.layer ? `, layer ${q.layer + 1} (behind)` : ""}${where}. Arrow keys move it 1 mm, with Shift 5 mm.`}
+            aria-label={`${q.label}, ${isPinned ? "kept where it was put" : "placed by Faber"}${q.layer ? `, layer ${q.layer + 1} (behind)` : ""}${where}. Arrow keys move it 1 mm, with Shift 5 mm.`}
             onFocus={() => setFocus(q.id)}
             onBlur={() => setFocus(undefined)}
             onPointerDown={(e) => {

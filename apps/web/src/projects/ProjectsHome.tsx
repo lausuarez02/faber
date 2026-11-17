@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Bot, CircuitBoard, Copy, FlaskConical, FolderOpen, Plus } from "lucide-react";
-import { useFabwright } from "../lib/app.ts";
+import { useFaber } from "../lib/app.ts";
 import { exampleInfos, type ExampleInfo } from "../lib/examples.ts";
 import { getDef } from "../lib/parts.ts";
 import { LogoMark } from "../components/Logo.tsx";
@@ -30,7 +30,7 @@ function closeHome(): void {
 export function ProjectsHome() {
   const open = useProjectsUi((s) => s.home);
   const server = useServer();
-  const current = useFabwright((s) => s.project.name);
+  const current = useFaber((s) => s.project.name);
   const { data, error, loading } = useProjectsListing(open);
   const [busy, setBusy] = useState<string | undefined>();
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -107,7 +107,7 @@ export function ProjectsHome() {
                 <CurrentCanvasCard onOpen={close} />
               </div>
               <p className="pj-callout" data-testid="projects-no-server">
-                Projects are saved as folders by the local server. Run <code>pnpm start</code> (or <code>fabwright serve --project &lt;folder&gt;</code>) and open the address it prints to keep every project, see its history and edit its code here.
+                Projects are saved as folders by the local server. Run <code>pnpm start</code> (or <code>faber serve --project &lt;folder&gt;</code>) and open the address it prints to keep every project, see its history and edit its code here.
               </p>
             </>
           ) : null}
@@ -128,7 +128,7 @@ export function ProjectsHome() {
         {agentBuilt.length ? (
           <section className="pj-section" aria-labelledby="pj-agents">
             <h2 id="pj-agents">Built by agents</h2>
-            <p className="pj-section-note">Claude Code and Codex built these with only Fabwright's tools. Open one to scrub through how it was made.</p>
+            <p className="pj-section-note">Claude Code and Codex built these with only Faber's tools. Open one to scrub through how it was made.</p>
             <div className="pj-grid">
               {agentBuilt.map((c) => (
                 <ExampleCard key={c.id} card={c} busy={busy} onOpen={(copy) => void run(c.id, () => openCard(c, copy))} />
@@ -271,7 +271,7 @@ export function LocalExampleCard({ info, onOpen, compact }: { info: ExampleInfo;
 }
 
 function CurrentCanvasCard({ onOpen }: { onOpen(): void }) {
-  const project = useFabwright((s) => s.project);
+  const project = useFaber((s) => s.project);
   return (
     <button type="button" className="pj-card" data-testid="project-card-current" data-active="true" onClick={onOpen}>
       <div className="pj-thumb">

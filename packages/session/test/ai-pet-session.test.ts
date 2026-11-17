@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { ProjectSession, TOOLS } from "../src/index.ts";
 
 // The AI pet through the session as an agent drives it: the network tools, colour screenshots and
@@ -13,7 +13,7 @@ const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
   throw new Error(`unexpected build of ${req.sketchDir}: the golden hex should be fresh`);
 };
 
-const dir = mkdtempSync(join(tmpdir(), "fabwright-ai-pet-"));
+const dir = mkdtempSync(join(tmpdir(), "faber-ai-pet-"));
 cpSync(EXAMPLE, dir, { recursive: true, preserveTimestamps: true });
 const later = new Date(Date.now() + 60_000);
 utimesSync(join(dir, "firmware/ai-pet.hex"), later, later);
@@ -38,7 +38,7 @@ describe("AI pet session", () => {
     const log = await call("read_network_log");
     const http = (log.entries as Record<string, unknown>[]).find((e) => typeof e.http === "string");
     expect(http).toMatchObject({ status: 200, provider: "Mock" });
-    expect(String(http!.http)).toMatch(/ai\.fabwright\/v1\/pet\?a=talk/);
+    expect(String(http!.http)).toMatch(/ai\.faber\/v1\/pet\?a=talk/);
   }, 60_000);
 
   it("the canvas screenshot embeds the colour screen", async () => {
@@ -58,9 +58,9 @@ describe("AI pet session", () => {
     expect(t.frame_images).toHaveLength(1);
     expect(existsSync(t.frame_images[0])).toBe(true);
     expect(s.lastVisualReport?.scenarios[0]?.frames.length).toBeGreaterThan(0);
-    // Saved too, so the Tests panel still has it after `fabwright serve` restarts.
-    const saved = JSON.parse(readFileSync(join(s.dir, ".fabwright", "visual-report.json"), "utf8"));
-    expect(saved).toMatchObject({ format: "fabwright-visual-report/1", passed: 1 });
+    // Saved too, so the Tests panel still has it after `faber serve` restarts.
+    const saved = JSON.parse(readFileSync(join(s.dir, ".faber", "visual-report.json"), "utf8"));
+    expect(saved).toMatchObject({ format: "faber-visual-report/1", passed: 1 });
   }, 60_000);
 
   // Agent eval (claude-ai-pet, 2026-11-09): expect_display refused the TFT ("has no screen"), so

@@ -2,7 +2,7 @@
 // painters as the canvas (renderers/displays/paint.ts), upscaled with visible pixel gaps so the
 // OLED reads as a real panel up close. Redrawn only when the frame actually changes.
 import * as THREE from "three";
-import { colorFrameToRgba, type ColorFrame, type VisualState } from "@fabwright/sim-core";
+import { colorFrameToRgba, type ColorFrame, type VisualState } from "@faber/sim-core";
 import { painterFor, type RgbaImage } from "../../renderers/displays/paint.ts";
 
 export interface ScreenTexture {

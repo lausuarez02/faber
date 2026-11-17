@@ -1,5 +1,5 @@
 import { Bot, Box, ChevronDown, Hammer, Ellipsis, FlaskConical, Globe, GraduationCap, CircleHelp, Pause, Play, Plug, Presentation, RotateCcw, SquareTerminal, Moon, Sun, SunMoon } from "lucide-react";
-import { engine, useFabwright } from "../lib/app.ts";
+import { engine, useFaber } from "../lib/app.ts";
 import { RELIABLE_SPEED, SPEEDS } from "../lib/store.ts";
 import { useUi } from "../lib/ui.ts";
 import { useLive } from "../live/liveStore.ts";
@@ -69,8 +69,8 @@ export function TopActions() {
 
 /** The single primary action: Run / Pause, with the speed as a split segment. */
 export function RunPill({ compact = false }: { compact?: boolean }) {
-  const run = useFabwright((s) => s.run);
-  const speed = useFabwright((s) => s.speed);
+  const run = useFaber((s) => s.run);
+  const speed = useFaber((s) => s.speed);
   const mode = useLive((s) => s.mode);
   // Replays show a recorded session; a followed page runs the project here (round 5).
   const external = mode === "replay";
@@ -92,7 +92,7 @@ export function RunPill({ compact = false }: { compact?: boolean }) {
       {compact ? null : (
         <label className="run-pill-speed" title={`Simulation speed. Up to ${RELIABLE_SPEED}× holds steady; above that is best effort (the status pill shows the real factor).`}>
           <span className="sr-only">Speed</span>
-          <select data-testid="speed-select" value={speed} disabled={external} onChange={(e) => useFabwright.getState().setSpeed(Number(e.target.value))}>
+          <select data-testid="speed-select" value={speed} disabled={external} onChange={(e) => useFaber.getState().setSpeed(Number(e.target.value))}>
             {SPEEDS.map((v) => (
               <option key={v} value={v}>
                 {v}×{v > RELIABLE_SPEED ? " max" : ""}
@@ -109,7 +109,7 @@ export function RunPill({ compact = false }: { compact?: boolean }) {
 /** Phones: the top-right collapses to the Run pill and a "⋯" menu with everything else. */
 export function PhoneTopActions() {
   const ui = useUi.getState;
-  const theme = useFabwright((s) => s.theme);
+  const theme = useFaber((s) => s.theme);
   const close = () => ui().setPopover(null);
   const openPanel = (id: Parameters<ReturnType<typeof ui>["openPanel"]>[0]) => {
     close();

@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { colorFrameToPng, decodeMonoFrame, monoPixel, parseBindings, restVisualState, routePath, routeWire, type ColorFrame, type PartRegistry, type RouteBox, type VisualState } from "@fabwright/sim-core";
-import type { Project, Rotation } from "@fabwright/project-format";
-import { drawArm, drawWorld, type WorldSnapshot } from "@fabwright/physics";
+import { colorFrameToPng, decodeMonoFrame, monoPixel, parseBindings, restVisualState, routePath, routeWire, type ColorFrame, type PartRegistry, type RouteBox, type VisualState } from "@faber/sim-core";
+import type { Project, Rotation } from "@faber/project-format";
+import { drawArm, drawWorld, type WorldSnapshot } from "@faber/physics";
 import { sizeOf } from "./layout.ts";
 import { SvgCtx } from "./svgCtx.ts";
 import type { ColorFrameImage } from "./sim.ts";
@@ -130,7 +130,7 @@ function colorOverlay(svg: string, png: string, size: { w: number; h: number }):
   const image = (extra: string) => `<image x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"${extra} href="data:image/png;base64,${png}"/>`;
   // A round panel (GC9A01, agent-made round glass) shows only the circle of its square frame.
   if (/<rect\b[^>]*data-screen-shape="round"/.test(svg)) {
-    const id = `fabwright-round-${++roundClips}`;
+    const id = `faber-round-${++roundClips}`;
     return `<clipPath id="${id}"><ellipse cx="${rect.x + rect.w / 2}" cy="${rect.y + rect.h / 2}" rx="${rect.w / 2}" ry="${rect.h / 2}"/></clipPath>${image(` clip-path="url(#${id})"`)}`;
   }
   return image("");
@@ -188,9 +188,9 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
   const live = new Set(opts.liveWires ?? []);
   const out: string[] = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${W} ${H}" width="${W}" height="${H}">`);
-  out.push(`<defs><pattern id="fabwright-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.2" fill="${DOT}"/></pattern>`);
-  out.push(`<filter id="fabwright-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter></defs>`);
-  out.push(`<rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="${BG}"/><rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="url(#fabwright-dots)"/>`);
+  out.push(`<defs><pattern id="faber-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.2" fill="${DOT}"/></pattern>`);
+  out.push(`<filter id="faber-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter></defs>`);
+  out.push(`<rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="${BG}"/><rect x="${minX}" y="${minY}" width="${W}" height="${H}" fill="url(#faber-dots)"/>`);
   if (opts.title) out.push(`<text x="${minX + 24}" y="${minY + 36}" font-family="Bricolage Grotesque, IBM Plex Sans, sans-serif" font-weight="700" font-size="22" fill="#E9EDF2">${esc(opts.title)}</text>`);
 
   const pinAbs = new Map<string, { x: number; y: number }>();
@@ -222,7 +222,7 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     const rot = b.p.rotation ? ` rotate(${b.p.rotation} ${spec.size.w / 2} ${spec.size.h / 2})` : "";
     // Rotation is about the unrotated centre; then shift so the rotated box sits at x,y.
     const shift = b.p.rotation === 90 || b.p.rotation === 270 ? { x: (spec.size.h - spec.size.w) / 2, y: (spec.size.w - spec.size.h) / 2 } : { x: 0, y: 0 };
-    const glow = typeof state?.brightness === "number" && state.brightness > 0.05 && spec.category !== "display" ? `<circle cx="${spec.size.w / 2}" cy="${spec.size.h / 2}" r="${Math.min(spec.size.w, spec.size.h) * 0.45}" fill="${glowColor(state)}" opacity="${Math.min(0.55, state.brightness * 0.6)}" filter="url(#fabwright-glow)"/>` : "";
+    const glow = typeof state?.brightness === "number" && state.brightness > 0.05 && spec.category !== "display" ? `<circle cx="${spec.size.w / 2}" cy="${spec.size.h / 2}" r="${Math.min(spec.size.w, spec.size.h) * 0.45}" fill="${glowColor(state)}" opacity="${Math.min(0.55, state.brightness * 0.6)}" filter="url(#faber-glow)"/>` : "";
     out.push(`<g transform="translate(${b.p.x + shift.x} ${b.p.y + shift.y})${rot}">${glow}${svg}${overlay}</g>`);
     if (opts.highlight?.includes(b.p.id)) out.push(`<rect x="${b.p.x - 6}" y="${b.p.y - 6}" width="${b.w + 12}" height="${b.h + 12}" rx="10" fill="none" stroke="#4DA3FF" stroke-width="2" stroke-dasharray="6 4"/>`);
     out.push(`<text x="${b.p.x}" y="${b.p.y + b.h + 16}" font-family="IBM Plex Mono, monospace" font-size="12" fill="${MUTED}">${esc(b.p.id)}</text>`);
@@ -240,7 +240,7 @@ export function composeSvg(project: Project, registry: PartRegistry, opts: Compo
     const d = w.waypoints?.length ? routePath([a, ...w.waypoints, z]) : routePath(routeWire(a, z, obstacles, w.from.part, w.to.part));
     const color = w.color ?? "#FF4D2E";
     const isLive = live.has(w.id);
-    if (isLive) out.push(`<path d="${d}" fill="none" stroke="${LIVE}" stroke-width="8" stroke-opacity="0.35" stroke-linejoin="round" filter="url(#fabwright-glow)"/>`);
+    if (isLive) out.push(`<path d="${d}" fill="none" stroke="${LIVE}" stroke-width="8" stroke-opacity="0.35" stroke-linejoin="round" filter="url(#faber-glow)"/>`);
     out.push(`<path d="${d}" fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="5" stroke-linejoin="round"/>`);
     out.push(`<path d="${d}" fill="none" stroke="${esc(color)}" stroke-width="3" stroke-linejoin="round"/>`);
     if (isLive) out.push(`<path d="${d}" fill="none" stroke="${LIVE}" stroke-width="1.2" stroke-dasharray="4 6" stroke-linejoin="round"/>`);

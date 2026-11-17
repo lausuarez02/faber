@@ -1,7 +1,7 @@
 // Mini submersible pump: a brushed DC motor (the dc-motor model, see lib/innerMotor.ts) driving an
 // impeller. Flow rises with speed above a threshold (the pump must overcome its own head) and is
 // integrated into pumped millilitres, so a watering scenario can check how much water went out.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
 import { innerMotor, type InnerMotorParams } from "../../lib/innerMotor.ts";
 import { clamp, num, round } from "../../lib/props.ts";
 

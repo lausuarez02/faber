@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
+import type { BuildRequest, BuildResult } from "@faber/runner";
 import { composeSvg, ProjectSession } from "../src/index.ts";
 
 const fx = (f: string) => fileURLToPath(new URL(`./fixtures/agentparts/${f}`, import.meta.url));
@@ -25,7 +25,7 @@ let s: ProjectSession;
 const call = (op: string, args: Record<string, unknown> = {}) => s.call(op, args) as Promise<Record<string, any>>;
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-agentparts-"));
+  dir = mkdtempSync(join(tmpdir(), "faber-agentparts-"));
   s = new ProjectSession({ dir, builder: fakeBuilder, actor: "test" });
 });
 afterEach(() => {

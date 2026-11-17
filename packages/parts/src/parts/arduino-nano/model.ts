@@ -1,4 +1,4 @@
-import { createMcuBoardModel, type PartModel, type PartModelFactory } from "@fabwright/sim-core";
+import { createMcuBoardModel, type PartModel, type PartModelFactory } from "@faber/sim-core";
 
 /**
  * Arduino Nano: the generic MCU board model from sim-core (GPIO = 25 Ω source, INPUT_PULLUP =

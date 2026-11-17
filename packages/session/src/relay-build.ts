@@ -1,14 +1,14 @@
-// Round 13: what a build adds for the API relay. A sketch that includes FabwrightRelay.h gets the header
-// (when its folder has none) and, in a simulation build, a fabwright_device.h that points at the sandbox
-// relay with the simulation token. The person's own fabwright_device.h (their relay token and Wi-Fi
-// password) is never compiled by Fabwright (the runner drops it), so the factory pack and the build kit
+// Round 13: what a build adds for the API relay. A sketch that includes FaberRelay.h gets the header
+// (when its folder has none) and, in a simulation build, a faber_device.h that points at the sandbox
+// relay with the simulation token. The person's own faber_device.h (their relay token and Wi-Fi
+// password) is never compiled by Faber (the runner drops it), so the factory pack and the build kit
 // firmware never carry it.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEVICE_HEADER, LEGACY_DEVICE_HEADER, LEGACY_RELAY_HEADER, LEGACY_RELAY_HEADER_SOURCE, parseNetworkConfig, RELAY_HEADER, RELAY_HEADER_SOURCE, simDeviceHeader, simLegacyDeviceHeader, type NetworkConfig } from "@fabwright/device-net";
-import type { Project } from "@fabwright/project-format";
+import { DEVICE_HEADER, LEGACY_DEVICE_HEADER, LEGACY_RELAY_HEADER, LEGACY_RELAY_HEADER_SOURCE, parseNetworkConfig, RELAY_HEADER, RELAY_HEADER_SOURCE, simDeviceHeader, simLegacyDeviceHeader, type NetworkConfig } from "@faber/device-net";
+import type { Project } from "@faber/project-format";
 
-const INCLUDES_RELAY = /#\s*include\s*[<"]FabwrightRelay\.h[>"]/;
+const INCLUDES_RELAY = /#\s*include\s*[<"]FaberRelay\.h[>"]/;
 /** A sketch written before the rename from Jumper includes the relay header by its old name. */
 const INCLUDES_LEGACY_RELAY = /#\s*include\s*[<"]JumperRelay\.h[>"]/;
 const OWN_HEADERS = new Set([RELAY_HEADER, DEVICE_HEADER, LEGACY_RELAY_HEADER, LEGACY_DEVICE_HEADER]);

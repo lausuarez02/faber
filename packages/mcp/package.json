@@ -1,25 +1,25 @@
 {
-  "name": "@fabwright/mcp",
+  "name": "@faber/mcp",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Fabwright as an MCP server (stdio): every canvas and simulator action as a tool for Claude, Codex or any MCP client.",
+  "description": "Faber as an MCP server (stdio): every canvas and simulator action as a tool for Claude, Codex or any MCP client.",
   "exports": {
     ".": "./src/index.ts"
   },
   "bin": {
-    "fabwright-mcp": "./bin/fabwright-mcp.mjs"
+    "faber-mcp": "./bin/faber-mcp.mjs"
   },
   "scripts": {
-    "start": "node bin/fabwright-mcp.mjs",
+    "start": "node bin/faber-mcp.mjs",
     "gen:docs": "tsx scripts/gen-tool-docs.ts",
     "test": "vitest run"
   },
   "dependencies": {
-    "@fabwright/agent-skill": "workspace:*",
-    "@fabwright/project-format": "workspace:*",
-    "@fabwright/session": "workspace:*",
+    "@faber/agent-skill": "workspace:*",
+    "@faber/project-format": "workspace:*",
+    "@faber/session": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2"
   },
   "devDependencies": {

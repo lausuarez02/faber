@@ -1,8 +1,8 @@
 // Round 6b: values (resistance, capacitance, chip variant, ...) everywhere a factory looks: BOM.md,
 // BOM.csv, the KiCad netlist's value field and WIRING.md.
 import { describe, expect, it } from "vitest";
-import { registry } from "@fabwright/parts";
-import type { Project } from "@fabwright/project-format";
+import { registry } from "@faber/parts";
+import type { Project } from "@faber/project-format";
 import { engValue, partValue, wiringMarkdown } from "../src/exporter.ts";
 import { bomCsv, bomLines, bomMd, kicadNetlist } from "../src/manufacturing.ts";
 

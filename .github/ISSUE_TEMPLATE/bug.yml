@@ -18,7 +18,7 @@ body:
     id: repro
     attributes:
       label: How to reproduce
-      description: Steps, or paste/attach the `fabwright.json` (and firmware) that shows the problem. Smaller is better.
+      description: Steps, or paste/attach the `faber.json` (and firmware) that shows the problem. Smaller is better.
       render: json
     validations:
       required: true
@@ -30,7 +30,7 @@ body:
         - Canvas (placing, wiring, pan/zoom)
         - Simulation (firmware, timing, circuit)
         - A specific part
-        - Project file (fabwright.json)
+        - Project file (faber.json)
         - Build / toolchain
         - Docs
         - Other

@@ -1,4 +1,4 @@
-// Fabwright's own RP2040 boot ROM: the public ROM interface (lookup tables, the float/double
+// Faber's own RP2040 boot ROM: the public ROM interface (lookup tables, the float/double
 // function tables, memory, bit, flash helpers) laid out where the pico-sdk expects it, with every
 // function implemented natively in TypeScript ("high-level emulation").
 //
@@ -481,7 +481,7 @@ export function buildRomImage(): Uint32Array {
   bytes[SF_TABLE - 2] = 0x80 / 4;
   bytes[SD_TABLE - 2] = 0x80 / 4;
 
-  const copyright = "Fabwright RP2040 ROM (high-level emulation, Apache-2.0)\0";
+  const copyright = "Faber RP2040 ROM (high-level emulation, Apache-2.0)\0";
   for (let i = 0; i < copyright.length; i++) bytes[COPYRIGHT_AT + i] = copyright.charCodeAt(i);
   view.setUint32(GIT_REV_AT, 0x4a554d50, true); // "JUMP"
   let dp = DATA_TABLE;
@@ -503,7 +503,7 @@ export function buildRomImage(): Uint32Array {
 export const ROM_FUNCTION_NAMES: readonly string[] = ROM_FUNCTIONS.map((fn) => fn.name);
 
 /**
- * Load Fabwright's ROM into `mcu` and route BKPTs: a BKPT inside the ROM is a function call; one in
+ * Load Faber's ROM into `mcu` and route BKPTs: a BKPT inside the ROM is a function call; one in
  * the firmware stops the CPU, as on a board with no debugger attached (it would lock up).
  */
 export function installRom(mcu: RP2040, host: RomHost): void {

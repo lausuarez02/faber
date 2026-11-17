@@ -1,8 +1,8 @@
 // FC-51 class IR obstacle sensor: IR LED, photodiode, LM393 comparator with a trimmer. OUT has a
 // 10 kΩ pull-up and is pulled LOW when the reflected IR beats the threshold. Behavioural: an
 // object is detected when distance ≤ threshold × the surface's reflectivity.
-import type { Diagnostic, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { GROUND } from "@fabwright/sim-core";
+import type { Diagnostic, PartModel, PartModelFactory } from "@faber/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { clamp, num, round, str, truthy } from "../../lib/props.ts";
 
 export const REFLECTIVITY: Record<string, number> = { white: 1, grey: 0.6, black: 0.2 };

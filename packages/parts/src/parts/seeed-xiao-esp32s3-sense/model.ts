@@ -1,8 +1,8 @@
 // Seeed XIAO ESP32-S3 Sense (round 13): the XIAO ESP32-S3 board model plus what the Sense board
-// carries: the camera (a general camera part on the board's own GPIOs, frames from Fabwright) and the
+// carries: the camera (a general camera part on the board's own GPIOs, frames from Faber) and the
 // PDM microphone (samples on the board's I2S bus, generic audio input).
-import type { I2sRequest, PartModel, PartModelFactory, VisualState } from "@fabwright/sim-core";
-import { base64ToBytes } from "@fabwright/sim-core";
+import type { I2sRequest, PartModel, PartModelFactory, VisualState } from "@faber/sim-core";
+import { base64ToBytes } from "@faber/sim-core";
 import { createCameraPart } from "../../lib/cameraPart.ts";
 import { createEspBoardModel, limit } from "../../lib/espBoard.ts";
 import { round, str } from "../../lib/props.ts";

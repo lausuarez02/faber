@@ -1,6 +1,6 @@
 // Lever micro switch (KW12-3 class): COM–NO closed while pressed, COM–NC closed while free.
 // Pressed by press / release / set, or by the robot physics (interact set key "pressed").
-import type { PartModel, PartModelFactory } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory } from "@faber/sim-core";
 import { truthy } from "../../lib/props.ts";
 
 export const create: PartModelFactory = (ctx): PartModel => {

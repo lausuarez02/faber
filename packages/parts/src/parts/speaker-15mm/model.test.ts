@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GROUND } from "@fabwright/sim-core";
+import { GROUND } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 

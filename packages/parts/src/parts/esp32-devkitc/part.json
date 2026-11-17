@@ -5,7 +5,7 @@
   "description": "Espressif's ESP32-DevKitC V4 with an ESP32-WROOM-32 module (dual-core Xtensa at 240 MHz, Wi-Fi / Bluetooth not emulated, 4 MB flash), 38 pins, micro-USB with a USB-serial chip (Serial on UART0), BOOT and EN buttons, a power LED but NO user LED. Runs real arduino-esp32 firmware in Espressif's QEMU on your computer (Docker). Pin ids are GPIO numbers. 3.3 V logic only; GPIO34-39 are input-only, GPIO6-11 belong to the flash.",
   "availability": {
     "status": "available",
-    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-devkitc): real arduino-esp32 3.3.12 firmware built by Fabwright's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Fabwright's parts. Run on the merged jb5 emulator sources (a native QEMU build; the fabwright/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
+    "reason": "Its fixture test passed on 2026-11-11 (packages/sim-backends/src/qemu-esp/boards.integration.test.ts, board esp32-devkitc): real arduino-esp32 3.3.12 firmware built by Faber's own pipeline boots in Espressif's QEMU; GPIO output, GPIO input with the internal pull-up, and Serial (UART0) reach Faber's parts. Run on the merged jb5 emulator sources (a native QEMU build; the faber/qemu-esp:9.2.2-20260417-jb5 Docker image itself is not built yet). Per-peripheral status: docs/boards.md."
   },
   "pins": [
     {
@@ -14,7 +14,7 @@
       "x": 9,
       "y": 30,
       "type": "power",
-      "description": "3.3 V output of the board's AMS1117 LDO (about 1 V dropout from 5V; Fabwright checks 500 mA).",
+      "description": "3.3 V output of the board's AMS1117 LDO (about 1 V dropout from 5V; Faber checks 500 mA).",
       "voltage": {
         "min": 3.2,
         "max": 3.4
@@ -26,7 +26,7 @@
       "x": 9,
       "y": 50,
       "type": "passive",
-      "description": "Chip enable / reset (pulled up, the EN button pulls it LOW). Not a GPIO; Fabwright does not model reset from it."
+      "description": "Chip enable / reset (pulled up, the EN button pulls it LOW). Not a GPIO; Faber does not model reset from it."
     },
     {
       "id": "GPIO36",
@@ -675,7 +675,7 @@
       "GPIO27"
     ],
     "toolchain": {
-      "image": "fabwright/arduino-esp32:3.3.12-r3",
+      "image": "faber/arduino-esp32:3.3.12-r3",
       "simFqbn": "esp32:esp32:esp32:FlashMode=dio",
       "simNote": "The simulator build uses DIO flash (the emulator has no QIO); everything else matches the real board.",
       "flash": "esptool --chip esp32 --port {port} --baud 921600 write_flash 0x0 {bin}"

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import type { Project } from "@fabwright/project-format";
-import { engine, useFabwright } from "../lib/app.ts";
+import type { Project } from "@faber/project-format";
+import { engine, useFaber } from "../lib/app.ts";
 import { liveParams, noteStepActors, useAgentSteps, useLive, type LiveStep } from "./liveStore.ts";
 import { expectProject, loadMainSketch, refreshCodeCard, switchProject } from "../projects/switch.ts";
 import { FollowPlayer, ReplayPlayer, parseLog, type CanvasPort, type LogEntry, type LogFrame } from "./player.ts";
@@ -17,13 +17,13 @@ import { agentLabel, feedAgentState, plural, useAgentState, type AgentState } fr
 import { applyFirmwareToStore, autoRunEnabled, autoRunOnOpen, fetchFirmware, onAutoRun, onFirmwareEvent, onSketchWritten, runFollowed, setAutoRun } from "./followRun.ts";
 
 /**
- * Follow mode (?follow=ws://127.0.0.1:7782, started by `fabwright serve`) and replay mode
- * (?replay=<url of an actions.jsonl>, started by `fabwright replay` / `fabwright record`): the canvas shows
+ * Follow mode (?follow=ws://127.0.0.1:7782, started by `faber serve`) and replay mode
+ * (?replay=<url of an actions.jsonl>, started by `faber replay` / `faber record`): the canvas shows
  * what an agent does through the MCP server or CLI, with an agent cursor, the step list with each
  * "why", accept / reject, live LEDs / displays / serial, and test results.
  */
 
-const EMPTY: Project = { format: "fabwright/1", name: "Waiting for the agent…", parts: [], wires: [], scenarios: [] };
+const EMPTY: Project = { format: "faber/1", name: "Waiting for the agent…", parts: [], wires: [], scenarios: [] };
 const SPEEDS = [0.5, 1, 2, 4, 8];
 /** Ops that change sketch files without logging their content (round 6: the code card re-reads). */
 const FILE_REWRITING_OPS = new Set(["restore_version", "undo", "redo", "reject_step"]);
@@ -43,11 +43,11 @@ function usePort(): CanvasPort {
   const rf = useReactFlow();
   const fitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return useRef<CanvasPort>({
-    getProject: () => useFabwright.getState().project,
+    getProject: () => useFaber.getState().project,
     loadProject: (p) => {
       worldTracker.setProject(p);
       useLive.getState().set({ world: worldTracker.hasRobot ? "robot" : worldTracker.hasArm ? "arm" : undefined });
-      useFabwright.getState().loadProject(p);
+      useFaber.getState().loadProject(p);
       // The latest hex the server built (GET /api/firmware), so Run here runs the agent's firmware.
       applyFirmwareToStore();
     },
@@ -155,8 +155,8 @@ export function LiveLayer() {
     engine.setExternal(true);
     // The agent's steps and the serial output are what a follower watches: open both panels.
     useUi.setState({ panels: ["agent", "serial"], inspectorAuto: false });
-    useFabwright.getState().loadProject(EMPTY);
-    useFabwright.getState().setFirmware({ status: "none" });
+    useFaber.getState().loadProject(EMPTY);
+    useFaber.getState().setFirmware({ status: "none" });
     if (params.mode === "follow") {
       // Run on this page runs the project here (round 5), with the agent's latest firmware.
       engine.setFollowRunner(() => void runFollowed());
@@ -180,7 +180,7 @@ export function LiveLayer() {
         replayPlayer = new ReplayPlayer(entries, port, params.speed);
         if (params.autoplay) setTimeout(() => replayPlayer?.play(), 900);
       })
-      .catch((err: Error) => useLive.getState().set({ error: `Could not load the action log ${params.url}: ${err.message}. Fix: check the path (fabwright replay <file> serves it for you).` }));
+      .catch((err: Error) => useLive.getState().set({ error: `Could not load the action log ${params.url}: ${err.message}. Fix: check the path (faber replay <file> serves it for you).` }));
     return () => {
       cancelled = true;
       replayPlayer?.pause();
@@ -245,7 +245,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
         // Ready to run here: the latest built hex (quietly; Run says why when there is none).
         void fetchFirmware().then(() => autoRunOnOpen());
       } else if (msg.type === "project") {
-        // Sent just before the new project's hello (fabwright serve switched projects).
+        // Sent just before the new project's hello (faber serve switched projects).
         expectProject((msg as { id?: string }).id);
       } else if (msg.type === "action" && msg.entry) {
         player.apply(msg.entry);
@@ -258,7 +258,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
       } else if (msg.type === "auto-run") {
         void onAutoRun(msg.hash);
       } else if (msg.type === "result" && msg.ok === false) {
-        useFabwright.getState().toast({ kind: "error", title: "The session refused", detail: msg.error ?? "" });
+        useFaber.getState().toast({ kind: "error", title: "The session refused", detail: msg.error ?? "" });
       }
     };
   };
@@ -273,7 +273,7 @@ function connectFollow(url: string, port: CanvasPort): () => void {
 function LiveBar() {
   const { mode, connected, dir, replay, autoRun, firmwareStale } = useLive();
   const agent = useAgentState();
-  const run = useFabwright((s) => s.run);
+  const run = useFaber((s) => s.run);
   if (mode === "follow") {
     const here = engine.isLocalRun && run !== "idle";
     return (

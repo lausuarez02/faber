@@ -1,21 +1,21 @@
-// End to end without a browser: the real examples/blink/fabwright.json, the real part registry,
+// End to end without a browser: the real examples/blink/faber.json, the real part registry,
 // the real avr8js backend and the committed golden Blink firmware.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
 import { registry } from "./registry.gen.ts";
 
 const exampleDir = new URL("../../../examples/blink/", import.meta.url);
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, exampleDir)), "utf8");
 
-const project = parseProject(read("fabwright.json"));
+const project = parseProject(read("faber.json"));
 const firmware = read(project.firmware!.artifact);
 
 describe("examples/blink with the real parts registry", { timeout: 60_000 }, () => {
-  it("fabwright.json points at the golden firmware, identical to the arduino-cli build output", () => {
+  it("faber.json points at the golden firmware, identical to the arduino-cli build output", () => {
     expect(project.firmware?.artifact).toBe("firmware/blink.hex");
     expect(firmware).toBe(read("firmware/build/blink.ino.hex"));
     for (const p of project.parts) expect(registry.get(p.type), p.type).toBeDefined();

@@ -19,7 +19,7 @@ export function exec(cmd: string, args: string[], opts: { timeoutMs?: number; cw
     const timer = opts.timeoutMs
       ? setTimeout(() => {
           child.kill("SIGKILL");
-          stderr += `\n[fabwright] killed after ${opts.timeoutMs} ms`;
+          stderr += `\n[faber] killed after ${opts.timeoutMs} ms`;
         }, opts.timeoutMs)
       : undefined;
     child.on("error", (err) => {
@@ -51,10 +51,10 @@ export async function ensureDocker(): Promise<void> {
   } catch {
     throw new RunnerError(
       "docker-missing",
-      "Build failed: the 'docker' command was not found, and Fabwright compiles firmware inside a pinned Docker image. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then build again.",
+      "Build failed: the 'docker' command was not found, and Faber compiles firmware inside a pinned Docker image. Fix: install Docker Desktop (https://www.docker.com/products/docker-desktop/), start it, then build again.",
     );
   }
-  if (res.code !== 0 && res.stderr.includes("[fabwright] killed after")) {
+  if (res.code !== 0 && res.stderr.includes("[faber] killed after")) {
     throw new RunnerError(
       "docker-not-responding",
       "Build failed: Docker Desktop is running but not answering (`docker info` took more than 20 s). Why: its engine is stuck, often after the disk filled up. Fix: free some disk space, restart Docker Desktop (whale menu, Restart), then build again.",
@@ -124,11 +124,11 @@ function ensureEsp32Image(log: (line: string) => void): Promise<void> {
       await ensureImage(log, RUNNER_IMAGE);
       log(`building ESP32 image ${ESP32_BASE_IMAGE} (arduino-esp32 core and its compilers, about 1.5 GB to download; first ESP32 build only, 5 to 15 minutes)…`);
       const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${RUNNER_IMAGE}`, "-t", ESP32_BASE_IMAGE, ESP32_DOCKERFILE_DIR], { timeoutMs: 60 * 60_000 });
-      if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 image ${ESP32_BASE_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the arduino-esp32 core, about 1.5 GB) and free disk space (6.5 GB), then build again, or run \`pnpm fabwright setup esp32\`.`);
+      if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 image ${ESP32_BASE_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the arduino-esp32 core, about 1.5 GB) and free disk space (6.5 GB), then build again, or run \`pnpm faber setup esp32\`.`);
     }
-    log(`building ESP32 simulation image ${ESP32_IMAGE} (Fabwright's Wi-Fi / TLS shim and pinned network libraries, about a minute)…`);
+    log(`building ESP32 simulation image ${ESP32_IMAGE} (Faber's Wi-Fi / TLS shim and pinned network libraries, about a minute)…`);
     const r = await exec("docker", ["build", "--build-arg", `BASE_IMAGE=${ESP32_BASE_IMAGE}`, "-t", ESP32_IMAGE, "-f", join(ESP32_DOCKERFILE_DIR, "Dockerfile.sim"), ESP32_DOCKERFILE_DIR], { timeoutMs: 30 * 60_000 });
-    if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 simulation image ${ESP32_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the Arduino library index) and free disk space, then build again, or run \`pnpm fabwright setup esp32\`.`);
+    if (r.code !== 0) throw new RunnerError("image-build-failed", `Could not build the ESP32 simulation image ${ESP32_IMAGE}: ${tail(r.stderr || r.stdout)}. Fix: check your network connection (it downloads the Arduino library index) and free disk space, then build again, or run \`pnpm faber setup esp32\`.`);
   })().catch((err) => {
     espReady = undefined;
     throw err;

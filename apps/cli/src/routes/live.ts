@@ -38,7 +38,7 @@ export function firmwareFor(ctx: RouteContext): { ok: true; info: FirmwareInfo }
   try {
     session.sync();
   } catch (err) {
-    return { ok: false, status: 500, error: `Could not read the project in ${dir}: ${(err as Error).message}. Why: fabwright.json is not valid. Fix: run \`fabwright check -p ${dir}\` and fix what it reports.` };
+    return { ok: false, status: 500, error: `Could not read the project in ${dir}: ${(err as Error).message}. Why: faber.json is not valid. Fix: run \`faber check -p ${dir}\` and fix what it reports.` };
   }
   const p = session.project;
   const boardPart = p.parts.find((x) => x.id === p.firmware?.board) ?? p.parts.find((x) => session.registry.get(x.type)?.spec.mcu);
@@ -52,7 +52,7 @@ export function firmwareFor(ctx: RouteContext): { ok: true; info: FirmwareInfo }
   const artifact = p.firmware.artifact;
   const abs = join(dir, artifact);
   if (!existsSync(abs)) {
-    return { ok: false, status: 404, error: `The firmware is not built yet: ${artifact} is missing. Why: the sketch ${p.firmware.sketch} has never been compiled. Fix: ask your agent to run it (run builds first), or run \`fabwright build -p ${dir}\`.` };
+    return { ok: false, status: 404, error: `The firmware is not built yet: ${artifact} is missing. Why: the sketch ${p.firmware.sketch} has never been compiled. Fix: ask your agent to run it (run builds first), or run \`faber build -p ${dir}\`.` };
   }
   const hex = readFileSync(abs, "utf8");
   const builtMs = statSync(abs).mtimeMs;

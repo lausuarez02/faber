@@ -15,7 +15,7 @@ import {
   buildUdp,
   ETH_ARP,
   ETH_IPV4,
-  ETH_FABWRIGHT,
+  ETH_FABER,
   FIN,
   macParse,
   parseArp,
@@ -77,7 +77,7 @@ export class TestDevice extends EventEmitter {
     this.frames.push(f);
     const e = parseEth(f);
     if (!e) return;
-    if (e.type === ETH_FABWRIGHT) {
+    if (e.type === ETH_FABER) {
       const msgs = decodeWifi(e.payload);
       this.wifi.push(...msgs);
       this.emit("wifi", msgs);
@@ -104,7 +104,7 @@ export class TestDevice extends EventEmitter {
   }
 
   sendWifi(msgs: WifiMsg[]): void {
-    this.send(buildEth(BROADCAST, this.mac, ETH_FABWRIGHT, encodeWifi(msgs)));
+    this.send(buildEth(BROADCAST, this.mac, ETH_FABER, encodeWifi(msgs)));
   }
 
   waitWifi(verb: string, ms = 2000): Promise<WifiMsg> {

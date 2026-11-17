@@ -3,7 +3,7 @@
 // Wiring it in (for Integrate):
 //   import { registerPhysicsViews } from "../renderers/physics";
 //   const physics = registerPhysicsViews();
-//   // after creating the Simulation for a project (raw = the fabwright.json text or object):
+//   // after creating the Simulation for a project (raw = the faber.json text or object):
 //   const binding = await physics.attach(sim, raw);        // undefined when the project has no "world"
 //   // show a panel for each view that applies:
 //   for (const v of physics.views) if (binding && v.applies(binding)) <v.Component binding={binding} />
@@ -11,7 +11,7 @@
 // The binding steps physics on the simulation clock (sim.every), so it needs no animation loop of
 // its own and follows pause / speed / reset of the Simulation. The views only read snapshots.
 import type { ComponentType } from "react";
-import { attachPhysics, initPhysics, worldOf, type PhysicsBinding, type SimHost } from "@fabwright/physics";
+import { attachPhysics, initPhysics, worldOf, type PhysicsBinding, type SimHost } from "@faber/physics";
 import { ArmView, WorldView, type PhysicsViewProps } from "./WorldView.tsx";
 
 export { WorldView, ArmView } from "./WorldView.tsx";
@@ -31,7 +31,7 @@ export interface PhysicsViewSpec {
 
 export interface PhysicsViews {
   views: readonly PhysicsViewSpec[];
-  /** True when the project (raw fabwright.json text or object) has a "world" block. */
+  /** True when the project (raw faber.json text or object) has a "world" block. */
   hasWorld(project: string | unknown): boolean;
   /**
    * Load the engine and attach the project's world to a running Simulation. Resolves undefined

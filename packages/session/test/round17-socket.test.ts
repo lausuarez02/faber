@@ -13,7 +13,7 @@ const CAN = { id: "can", name: "pouch can", shape: "cylinder", size_mm: { d: 70,
 const ENC = { shape: "puck", params: { edge_radius_front_mm: 2.5, edge_radius_back_mm: 1, dome_mm: 0, dome_back_mm: 0 }, follow: { held: "can", margin_mm: 2.5 }, placements: { reed: { x_mm: 0, y_mm: -33.5, layer: 1 } }, held: [CAN] };
 
 describe("round 17: a lid-topper through design_case", { timeout: 300_000 }, () => {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-socket-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-socket-"));
   const s = new ProjectSession({ dir, actor: "test" });
   afterAll(() => {
     s.dispose();

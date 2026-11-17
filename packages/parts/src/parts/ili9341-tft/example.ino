@@ -24,7 +24,7 @@ void setup() {
   tft.setTextColor(ILI9341_WHITE);
   tft.setTextSize(3);
   tft.setCursor(10, 100);
-  tft.print(F("Fabwright"));
+  tft.print(F("Faber"));
   Serial.println(F("ILI9341 drawn"));
 }
 

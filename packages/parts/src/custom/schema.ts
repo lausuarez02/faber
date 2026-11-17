@@ -4,9 +4,9 @@
 // PartDefinition. Stored in the project as parts/<id>/part.json (+ optional visual.svg).
 // JSON Schema: packages/parts/custom-part.schema.json (written by `pnpm gen`).
 import { z } from "zod";
-import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@fabwright/sim-core";
+import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@faber/sim-core";
 
-export const CUSTOM_PART_FORMAT = "fabwright-part/1";
+export const CUSTOM_PART_FORMAT = "faber-part/1";
 /** The same format under its name from before the rename from Jumper (parts/<id>/part.json in older projects). */
 export const LEGACY_CUSTOM_PART_FORMATS: readonly string[] = ["jumper-part/1"];
 
@@ -297,5 +297,5 @@ export type CustomPartInput = z.input<typeof CustomPartSchema>;
 /** JSON Schema (draft 2020-12) of part.json, input side (what an agent writes). */
 export function customPartJsonSchema(): Record<string, unknown> {
   const schema = z.toJSONSchema(CustomPartSchema, { io: "input", target: "draft-2020-12" }) as Record<string, unknown>;
-  return { $id: "urn:fabwright:custom-part:1", title: "Fabwright agent-made part (parts/<id>/part.json)", ...schema };
+  return { $id: "urn:faber:custom-part:1", title: "Faber agent-made part (parts/<id>/part.json)", ...schema };
 }

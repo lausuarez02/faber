@@ -1,11 +1,11 @@
-// Round 11: `fabwright setup` for native runtimes. One entry point for the CLI and the app, so both say
+// Round 11: `faber setup` for native runtimes. One entry point for the CLI and the app, so both say
 // the same things: what is installed, what each family needs, and progress while it installs.
-import { fabwrightHome, nativeQemuDir, nativeQemuInstalled, nativeRenodeDir, nativeRenodeInstalled, probeDocker, runtimeSetting } from "@fabwright/sim-backends/node";
+import { faberHome, nativeQemuDir, nativeQemuInstalled, nativeRenodeDir, nativeRenodeInstalled, probeDocker, runtimeSetting } from "@faber/sim-backends/node";
 import { RunnerError } from "../docker.ts";
 import { folderBytes, installNativeCore, pruneCore, NATIVE_CORES, nativeArduinoDir, nativeCoreInstalled, SETUP_FAMILIES, type NativeFamily } from "./arduino.ts";
 import { installNativeQemu, installNativeRenode } from "./emulators.ts";
 
-/** What `fabwright setup <target>` installs natively. */
+/** What `faber setup <target>` installs natively. */
 export const SETUP_TARGETS: Record<string, { label: string; cores: NativeFamily[]; qemu?: boolean; renode?: boolean }> = {
   avr: { ...SETUP_FAMILIES.avr!, label: SETUP_FAMILIES.avr!.label },
   rp2040: { ...SETUP_FAMILIES.rp2040! },
@@ -33,7 +33,7 @@ export interface NativeComponentStatus {
 export function nativeStatus(): NativeComponentStatus[] {
   return [
     ...Object.values(NATIVE_CORES).map((c) => ({ id: c.family, label: `${c.label}: ${c.core}`, installed: nativeCoreInstalled(c.family), path: nativeArduinoDir() })),
-    { id: "qemu-esp", label: "Espressif QEMU 9.2.2 + Fabwright bridge (ESP32 / S3 / C3)", installed: nativeQemuInstalled(), path: nativeQemuDir() },
+    { id: "qemu-esp", label: "Espressif QEMU 9.2.2 + Faber bridge (ESP32 / S3 / C3)", installed: nativeQemuInstalled(), path: nativeQemuDir() },
     { id: "renode", label: "Renode 1.17.0 (STM32, nRF52840)", installed: nativeRenodeInstalled(), path: nativeRenodeDir() },
   ];
 }
@@ -49,14 +49,14 @@ export interface SetupStep {
   error?: string;
 }
 
-/** One line for `fabwright setup list` / the app: where things will run and why. */
+/** One line for `faber setup list` / the app: where things will run and why. */
 export function runtimeSummary(): string {
   const s = runtimeSetting();
-  if (s !== "auto") return `FABWRIGHT_RUNTIME=${s}: every build and emulator runs ${s === "docker" ? "in Docker" : `natively (${fabwrightHome()})`}.`;
+  if (s !== "auto") return `FABER_RUNTIME=${s}: every build and emulator runs ${s === "docker" ? "in Docker" : `natively (${faberHome()})`}.`;
   const d = probeDocker();
   return d.ok
-    ? `FABWRIGHT_RUNTIME=auto: Docker answers (${d.ms} ms), so Docker runs what it has images for; native installs are used when an image is missing.`
-    : `FABWRIGHT_RUNTIME=auto: ${d.why}, so Fabwright uses its native installs in ${fabwrightHome()}.`;
+    ? `FABER_RUNTIME=auto: Docker answers (${d.ms} ms), so Docker runs what it has images for; native installs are used when an image is missing.`
+    : `FABER_RUNTIME=auto: ${d.why}, so Faber uses its native installs in ${faberHome()}.`;
 }
 
 /**
@@ -67,7 +67,7 @@ export function runtimeSummary(): string {
 export async function setupNative(target: string, log: (l: string) => void = () => {}): Promise<SetupStep[]> {
   const t = target === "all" ? undefined : setupTargetOf(target);
   if (target !== "all" && !t) {
-    throw new RunnerError("unknown-target", `fabwright setup: no board family called '${target}'. Why: native setup knows ${Object.keys(SETUP_TARGETS).join(", ")} (and all). Fix: fabwright setup list.`);
+    throw new RunnerError("unknown-target", `faber setup: no board family called '${target}'. Why: native setup knows ${Object.keys(SETUP_TARGETS).join(", ")} (and all). Fix: faber setup list.`);
   }
   const targets = t ? [SETUP_TARGETS[t]!] : Object.values(SETUP_TARGETS);
   const cores = [...new Set(targets.flatMap((x) => x.cores))];
@@ -90,7 +90,7 @@ export async function setupNative(target: string, log: (l: string) => void = () 
     if (nativeCoreInstalled(c)) pruneCore(c);
     await step(`${NATIVE_CORES[c].core} (${NATIVE_CORES[c].label})`, nativeCoreInstalled(c), () => installNativeCore(c, log), () => folderBytes(nativeArduinoDir()));
   }
-  if (targets.some((x) => x.qemu)) await step("Espressif QEMU + Fabwright bridge (built here)", nativeQemuInstalled(), () => installNativeQemu(log), () => folderBytes(nativeQemuDir()));
+  if (targets.some((x) => x.qemu)) await step("Espressif QEMU + Faber bridge (built here)", nativeQemuInstalled(), () => installNativeQemu(log), () => folderBytes(nativeQemuDir()));
   if (targets.some((x) => x.renode)) await step("Renode 1.17.0", nativeRenodeInstalled(), () => installNativeRenode(log), () => folderBytes(nativeRenodeDir()));
   const failed = steps.filter((s) => !s.ok);
   if (failed.length) {

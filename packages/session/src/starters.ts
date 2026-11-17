@@ -1,7 +1,7 @@
 // Round 10 (languages): the starter files set_firmware writes for each language, and the
 // language-specific templates. Board facts come from the board part (chip, on-board LED); nothing
 // here is per-board code beyond picking a pin.
-import type { FirmwareLanguage } from "@fabwright/project-format";
+import type { FirmwareLanguage } from "@faber/project-format";
 
 export interface StarterBoard {
   /** part.json mcu.chip, e.g. "rp2040", "esp32c3". */
@@ -10,7 +10,7 @@ export interface StarterBoard {
   type?: string;
 }
 
-/** The on-board LED GPIO a starter blinks (undefined: the board has none Fabwright draws). */
+/** The on-board LED GPIO a starter blinks (undefined: the board has none Faber draws). */
 function ledGpio(b: StarterBoard): { gpio: number; activeLow: boolean } | undefined {
   if (b.type === "raspberry-pi-pico") return { gpio: 25, activeLow: false };
   if (b.type === "seeed-xiao-rp2040") return { gpio: 25, activeLow: true }; // blue user LED
@@ -51,10 +51,10 @@ while True:
 export function espIdfFiles(b: StarterBoard): Record<string, string> {
   const led = ledGpio(b) ?? { gpio: 2, activeLow: false };
   return {
-    "firmware/CMakeLists.txt": `# ESP-IDF project (built by Fabwright with ESP-IDF v5.5.5, idf.py build).
+    "firmware/CMakeLists.txt": `# ESP-IDF project (built by Faber with ESP-IDF v5.5.5, idf.py build).
 cmake_minimum_required(VERSION 3.16)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(fabwright_app)
+project(faber_app)
 `,
     "firmware/main/CMakeLists.txt": `idf_component_register(SRCS "main.c" INCLUDE_DIRS "." REQUIRES driver)
 `,
@@ -86,7 +86,7 @@ void app_main(void)
 export function platformioFiles(b: StarterBoard & { fqbn?: string }): Record<string, string> {
   const board = b.type === "arduino-nano" ? "nanoatmega328" : "uno";
   return {
-    "firmware/platformio.ini": `; PlatformIO project (built by Fabwright with PlatformIO Core 6.2.0, platform atmelavr 5.3.0).
+    "firmware/platformio.ini": `; PlatformIO project (built by Faber with PlatformIO Core 6.2.0, platform atmelavr 5.3.0).
 [env:${board}]
 platform = atmelavr@5.3.0
 board = ${board}
@@ -129,9 +129,9 @@ export function starterFor(language: Exclude<FirmwareLanguage, "rust" | "zephyr"
   }
 }
 
-/** A small SSD1306 driver for MicroPython (Fabwright's own, Apache-2.0), on top of the built-in framebuf. */
+/** A small SSD1306 driver for MicroPython (Faber's own, Apache-2.0), on top of the built-in framebuf. */
 export const MICROPYTHON_SSD1306 = `# ssd1306.py: SSD1306 128x64 / 128x32 OLED over I2C for MicroPython.
-# Fabwright's own minimal driver (Apache-2.0). Draw with the framebuf methods
+# Faber's own minimal driver (Apache-2.0). Draw with the framebuf methods
 # (fill, text, rect, line, pixel...), then call show().
 import framebuf
 

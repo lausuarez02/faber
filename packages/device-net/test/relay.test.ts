@@ -60,7 +60,7 @@ function upstreamHandler(req: http.IncomingMessage, res: http.ServerResponse): v
 }
 
 beforeAll(async () => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-relay-"));
+  dir = mkdtempSync(join(tmpdir(), "faber-relay-"));
   upstream = http.createServer(upstreamHandler);
   const wss = new WebSocketServer({ server: upstream });
   wss.on("connection", (ws, req) => {
@@ -101,7 +101,7 @@ describe("relay config from the project's network", () => {
   });
 });
 
-describe("Node relay (fabwright relay serve / server.mjs)", () => {
+describe("Node relay (faber relay serve / server.mjs)", () => {
   it("sends a host with \"to\" to that address (a service the person runs), the key added, the device keeping its own name", async () => {
     const config = parseNetworkConfig({ mode: "mock", secrets: ["API_KEY"], allow: [{ host: "social.local", local: true, to: `http://127.0.0.1:${upPort}`, secrets: ["API_KEY"], headers: { Authorization: "Bearer {{secret:API_KEY}}" } }] });
     const spec = relaySpecFrom(config, "Cam");
@@ -288,14 +288,14 @@ describe("Node relay (fabwright relay serve / server.mjs)", () => {
 describe("generated relay/ folder", () => {
   it("has the Node server, the Worker, wrangler.toml, README and the firmware header, MIT, no secret values", () => {
     const files = relayPack(CONFIG, "Star Keychain");
-    for (const f of ["server.mjs", "worker.js", "relay-core.mjs", "relay.config.mjs", "wrangler.toml", "package.json", "README.md", "LICENSE", ".env.example", ".gitignore", "firmware/FabwrightRelay.h", "firmware/fabwright_device.example.h"]) expect(files[f], f).toBeTruthy();
+    for (const f of ["server.mjs", "worker.js", "relay-core.mjs", "relay.config.mjs", "wrangler.toml", "package.json", "README.md", "LICENSE", ".env.example", ".gitignore", "firmware/FaberRelay.h", "firmware/faber_device.example.h"]) expect(files[f], f).toBeTruthy();
     expect(files["wrangler.toml"]).toContain('name = "star-keychain-relay"');
     expect(files["wrangler.toml"]).toContain('main = "worker.js"');
     expect(files["wrangler.toml"]).toContain("wrangler secret put API_KEY");
     expect(files["README.md"]).toContain("wrangler secret put RELAY_DEVICE_TOKENS");
-    expect(files["README.md"]).toContain("fabwright relay device-header");
+    expect(files["README.md"]).toContain("faber relay device-header");
     expect(files.LICENSE).toMatch(/^MIT License/);
-    for (const f of ["server.mjs", "worker.js", "relay-core.mjs", "firmware/FabwrightRelay.h"]) expect(files[f]).toContain("SPDX-License-Identifier: MIT");
+    for (const f of ["server.mjs", "worker.js", "relay-core.mjs", "firmware/FaberRelay.h"]) expect(files[f]).toContain("SPDX-License-Identifier: MIT");
     expect(Object.values(files).join("\n")).not.toContain(KEY);
   });
 
@@ -457,12 +457,12 @@ describe("device tokens, .env and firmware headers", () => {
     const sim = simDeviceHeader(parseNetworkConfig({ wifi: { ssid: "Home" } }));
     expect(sim).toContain(`"https://${SIM_RELAY_HOST}"`);
     expect(sim).toContain(SIM_DEVICE_TOKEN);
-    expect(sim).toContain('FABWRIGHT_WIFI_SSID "Home"');
+    expect(sim).toContain('FABER_WIFI_SSID "Home"');
     const dev = deviceHeader({ relayUrl: "https://r.example.workers.dev/", token: "jdt_x", ssid: "Home", password: 'p"w', rootCa: "-----BEGIN CERTIFICATE-----\nAAA\n-----END CERTIFICATE-----" });
-    expect(dev).toContain('#define FABWRIGHT_RELAY_URL "https://r.example.workers.dev"');
-    expect(dev).toContain('#define FABWRIGHT_WIFI_PASSWORD "p\\"w"');
-    expect(dev).toContain("FABWRIGHT_RELAY_ROOT_CA");
-    expect(readFileSync(new URL("../src/relay/firmware/FabwrightRelay.h", import.meta.url), "utf8")).toContain('__has_include("fabwright_device.h")');
+    expect(dev).toContain('#define FABER_RELAY_URL "https://r.example.workers.dev"');
+    expect(dev).toContain('#define FABER_WIFI_PASSWORD "p\\"w"');
+    expect(dev).toContain("FABER_RELAY_ROOT_CA");
+    expect(readFileSync(new URL("../src/relay/firmware/FaberRelay.h", import.meta.url), "utf8")).toContain('__has_include("faber_device.h")');
   });
 });
 
@@ -476,7 +476,7 @@ describe("the simulator plays the same relay", () => {
 
   const mocks = parseMocks({ mocks: [{ host: "api.example.com", method: "POST", path: "/v1/chat", response: { body: { reply: "a mocked answer" } } }, { kind: "ws", host: "api.example.com", path: "/v1/live", on_message: [{ match: "*", send: [{ bytes: 100, repeat: 3 }] }] }] });
 
-  it("answers through relay.sandbox.fabwright/<host>/<path> with the sim token, from mocks", async () => {
+  it("answers through relay.sandbox.faber/<host>/<path> with the sim token, from mocks", async () => {
     const net = new DeviceNet({ config: parseNetworkConfig({ mode: "mock", secrets: ["API_KEY"], allow: [{ host: "api.example.com", secrets: ["API_KEY"], headers: { Authorization: "Bearer {{secret:API_KEY}}" } }] }), mocks, ca, secrets: new Map([["API_KEY", KEY]]) });
     const ok = await request(net, { host: SIM_RELAY_HOST, path: "/api.example.com/v1/chat", method: "POST", headers: { "x-device-token": SIM_DEVICE_TOKEN }, body: "{}", ca: caPem });
     expect(ok.status).toBe(200);

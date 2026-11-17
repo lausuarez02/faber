@@ -1,4 +1,4 @@
-import type { PartModel, PartModelFactory, VisualState } from "@fabwright/sim-core";
+import type { PartModel, PartModelFactory, VisualState } from "@faber/sim-core";
 import { num, round } from "../../lib/props.ts";
 
 /** Keys the physics world writes with interact({ kind: "set", key, value }). */

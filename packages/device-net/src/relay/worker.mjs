@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-// Fabwright API relay as a Cloudflare Worker. Copyright (c) Fabwright Authors. MIT License.
+// Faber API relay as a Cloudflare Worker. Copyright (c) Faber Authors. MIT License.
 //
-//   wrangler secret put RELAY_DEVICE_TOKENS     (from: fabwright relay token add <device name>)
+//   wrangler secret put RELAY_DEVICE_TOKENS     (from: faber relay token add <device name>)
 //   wrangler secret put <EACH API KEY NAME>      (the names in relay.config.mjs "secrets")
 //   wrangler deploy
 //

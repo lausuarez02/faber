@@ -1,4 +1,4 @@
-# Fabwright UI v2: floating controls on a quiet canvas
+# Faber UI v2: floating controls on a quiet canvas
 
 Status: implemented in `apps/web` (2026-11-09). Tokens live in `brand/tokens.css` (v2 block; the
 old variable names are aliases, so nothing that read them breaks).
@@ -45,8 +45,8 @@ screen on chrome. v2 gives the canvas the whole window and floats a few precise 
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Top-left**, no container: white Fabwright mark, project name (15 px, medium, editable on click)
-  and a muted `…` project menu (rename, new blank, open example, import / export `fabwright.json`,
+- **Top-left**, no container: white Faber mark, project name (15 px, medium, editable on click)
+  and a muted `…` project menu (rename, new blank, open example, import / export `faber.json`,
   load firmware `.hex`, export BOM / netlist). Subtitle in 13 px muted gray:
   `Local workspace · Arduino Uno · 6 parts` (follow mode: `Following <dir>`; replay: `Replay`).
 - **Top-right**, one container: ghost icons `Serial console`, `Tests`, `Device view`; a hairline

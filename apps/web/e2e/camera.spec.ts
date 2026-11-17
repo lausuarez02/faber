@@ -5,21 +5,21 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { hubPort, openInspector, shot } from "./helpers.ts";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
 // Round 13 (camera): a XIAO ESP32-S3 Sense placed by the agent (the camera starter template), built
-// with the real toolchain and run in the ESP32 emulator next to `fabwright serve`. The followed page
+// with the real toolchain and run in the ESP32 emulator next to `faber serve`. The followed page
 // shows what the camera captured in the lens on the canvas; the Inspector's camera section shows it
-// another scene and the next run's frames change. Needs Fabwright's native ESP32 toolchain and the QEMU
-// with the camera port (fabwright setup esp32); skipped otherwise, saying why.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
-const NATIVE = process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir());
+// another scene and the next run's frames change. Needs Faber's native ESP32 toolchain and the QEMU
+// with the camera port (faber setup esp32); skipped otherwise, saying why.
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
+const NATIVE = process.env.FABER_NATIVE_HOME || userHomeDir(homedir());
 const QEMU = join(NATIVE, "emulators/qemu-esp/9.2.2-20260417-jb7/bin/qemu-system-xtensa");
 
 function missing(): string | undefined {
-  if (!existsSync(QEMU)) return `the ESP32 emulator with the camera port is not installed (${QEMU}; Fix: fabwright setup esp32)`;
+  if (!existsSync(QEMU)) return `the ESP32 emulator with the camera port is not installed (${QEMU}; Fix: faber setup esp32)`;
   const cli = join(NATIVE, "toolchains/arduino");
-  if (!existsSync(cli) || !readdirSync(cli).length) return "the native Arduino toolchain is not installed (Fix: fabwright setup esp32)";
+  if (!existsSync(cli) || !readdirSync(cli).length) return "the native Arduino toolchain is not installed (Fix: faber setup esp32)";
   return undefined;
 }
 
@@ -50,18 +50,18 @@ const why = missing();
 test("a XIAO ESP32-S3 Sense runs in the emulator; the lens shows what its camera captured, and the Inspector changes it", async ({ page, isMobile }, info) => {
   test.skip(!!why, `the camera e2e needs the native ESP32 setup: ${why}`);
   test.setTimeout(240_000);
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-camera-e2e-"));
-  const home = mkdtempSync(join(tmpdir(), "fabwright-home-"));
-  writeFileSync(join(dir, "fabwright.json"), JSON.stringify({ format: "fabwright/1", name: "camera", parts: [], wires: [], scenarios: [] }, null, 2));
+  const dir = mkdtempSync(join(tmpdir(), "faber-camera-e2e-"));
+  const home = mkdtempSync(join(tmpdir(), "faber-home-"));
+  writeFileSync(join(dir, "faber.json"), JSON.stringify({ format: "faber/1", name: "camera", parts: [], wires: [], scenarios: [] }, null, 2));
   const port = hubPort(info);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_RUNTIME: "native" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: home, FABER_RUNTIME: "native" } });
   let err = "";
   proc.stderr!.on("data", (d: Buffer) => (err += d.toString()));
   try {
     await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 25 s: ${err}`)), 25_000);
+      const t = setTimeout(() => reject(new Error(`faber serve did not start in 25 s: ${err}`)), 25_000);
       proc.stdout!.on("data", (d: Buffer) => d.toString().includes("ws:") && (clearTimeout(t), resolve()));
-      proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}: ${err}`)));
+      proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}: ${err}`)));
     });
     await page.goto(`/?follow=${encodeURIComponent(`ws://127.0.0.1:${port}/live`)}`);
     const agent = await mcp(`http://127.0.0.1:${port}`);

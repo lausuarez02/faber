@@ -19,7 +19,7 @@ export class LittleFsError extends Error {
 }
 
 export interface LittleFsGeometry {
-  /** Erase block size in bytes (4096 on every MicroPython port Fabwright runs). */
+  /** Erase block size in bytes (4096 on every MicroPython port Faber runs). */
   blockSize: number;
   /** Number of blocks in the filesystem partition. */
   blockCount: number;
@@ -55,7 +55,7 @@ let writeFile: ((...a: unknown[]) => void) | undefined;
 
 /** A valid littlefs file name at the root: no folders, no control characters, at most 255 bytes. */
 export function checkLfsName(name: string): string | undefined {
-  if (name.includes("/")) return `'${name}' is inside a folder. Why: Fabwright writes MicroPython files at the root of the device filesystem (folders are not supported yet). Fix: put the module next to main.py and import it by name`;
+  if (name.includes("/")) return `'${name}' is inside a folder. Why: Faber writes MicroPython files at the root of the device filesystem (folders are not supported yet). Fix: put the module next to main.py and import it by name`;
   if (!name || /[\x00-\x1f]/.test(name)) return `'${name}' is not a valid file name`;
   if (new TextEncoder().encode(name).length > 255) return `'${name}' is longer than 255 bytes`;
   return undefined;

@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page } from "@playwright/test";
 
-// Round 6, canvas track: a `fabwright serve --no-web` on a temp copy of an example (or an e2e
-// fixture), followed by the Vite page, like a person opening `fabwright serve`. Same pattern as
+// Round 6, canvas track: a `faber serve --no-web` on a temp copy of an example (or an e2e
+// fixture), followed by the Vite page, like a person opening `faber serve`. Same pattern as
 // live-run.spec.ts.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 export const EXAMPLES = fileURLToPath(new URL("../../../examples/", import.meta.url));
 export const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
 
@@ -19,22 +19,22 @@ export interface Served {
 }
 
 export async function serve(src: string, port: number, edit?: (dir: string) => void): Promise<Served> {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-canvas-"));
-  const home = mkdtempSync(join(tmpdir(), "fabwright-home-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-canvas-"));
+  const home = mkdtempSync(join(tmpdir(), "faber-home-"));
   cpSync(src, dir, { recursive: true });
   edit?.(dir);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: home } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--no-web", "--no-open", "--port", String(port), "--strict-port"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: home } });
   let err = "";
   proc.stderr!.on("data", (d: Buffer) => (err += d.toString()));
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 25 s: ${err}`)), 25_000);
+    const t = setTimeout(() => reject(new Error(`faber serve did not start in 25 s: ${err}`)), 25_000);
     proc.stdout!.on("data", (d: Buffer) => {
       if (d.toString().includes("ws:")) {
         clearTimeout(t);
         resolve();
       }
     });
-    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}: ${err}`)));
+    proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}: ${err}`)));
   });
   return {
     dir,
@@ -56,19 +56,19 @@ export function freshHex(dir: string, artifact: string): void {
 }
 
 type J = {
-  fabwright: {
+  faber: {
     engine: { simulation?: { timeMs: number; partState(id: string): Record<string, unknown> | undefined }; serialText: string };
     store: { getState(): { run: string; project: { parts: { id: string; x: number; y: number }[] }; selectedParts: string[] } };
   };
 };
 
-export const partState = (page: Page, id: string) => page.evaluate((id) => (window as unknown as J).fabwright.engine.simulation?.partState(id) ?? {}, id);
-export const serialText = (page: Page) => page.evaluate(() => (window as unknown as J).fabwright.engine.serialText);
-export const runState = (page: Page) => page.evaluate(() => (window as unknown as J).fabwright.store.getState().run);
-export const selected = (page: Page) => page.evaluate(() => (window as unknown as J).fabwright.store.getState().selectedParts);
+export const partState = (page: Page, id: string) => page.evaluate((id) => (window as unknown as J).faber.engine.simulation?.partState(id) ?? {}, id);
+export const serialText = (page: Page) => page.evaluate(() => (window as unknown as J).faber.engine.serialText);
+export const runState = (page: Page) => page.evaluate(() => (window as unknown as J).faber.store.getState().run);
+export const selected = (page: Page) => page.evaluate(() => (window as unknown as J).faber.store.getState().selectedParts);
 export const partXY = (page: Page, id: string) =>
   page.evaluate((id) => {
-    const p = (window as unknown as J).fabwright.store.getState().project.parts.find((x) => x.id === id);
+    const p = (window as unknown as J).faber.store.getState().project.parts.find((x) => x.id === id);
     return p ? [p.x, p.y] : undefined;
   }, id);
 export const viewTransform = (page: Page) => page.locator(".react-flow__viewport").evaluate((el) => (el as HTMLElement).style.transform);

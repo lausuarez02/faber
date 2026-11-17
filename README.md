@@ -1,21 +1,21 @@
 <p align="center">
-  <img src="brand/wordmark.svg" alt="Fabwright" width="280">
+  <img src="brand/wordmark.svg" alt="Faber" width="280">
 </p>
 
 <p align="center"><strong>Figma for hardware, with a real simulator underneath.</strong></p>
 
 <p align="center"><sub>Formerly <strong>Jumper</strong>. Old projects, scripts and firmware keep working: see <a href="docs/migrating-from-jumper.md">migrating from Jumper</a>.</sub></p>
 
-Fabwright is an open-source browser sandbox for electronics. You place parts on a canvas, wire their pins together, and run the real compiled firmware on an emulated microcontroller. The LED on the canvas lights up because the emulated ATmega328P set its pin high and a small circuit solver pushed current through the resistor and the LED. It is not a drawing of what should happen. Anything a person can do on the canvas, an AI agent will be able to do through the same tools.
+Faber is an open-source browser sandbox for electronics. You place parts on a canvas, wire their pins together, and run the real compiled firmware on an emulated microcontroller. The LED on the canvas lights up because the emulated ATmega328P set its pin high and a small circuit solver pushed current through the resistor and the LED. It is not a drawing of what should happen. Anything a person can do on the canvas, an AI agent will be able to do through the same tools.
 
-**The promise, stated honestly.** If firmware crashes on real hardware, it should also crash in Fabwright. If it runs in Fabwright, it should run on the board, as far as the simulation can tell. Every part says what it simulates exactly, what it only approximates and what it does not simulate at all (see [fidelity](docs/fidelity.md)). Fabwright does not hide those gaps.
+**The promise, stated honestly.** If firmware crashes on real hardware, it should also crash in Faber. If it runs in Faber, it should run on the board, as far as the simulation can tell. Every part says what it simulates exactly, what it only approximates and what it does not simulate at all (see [fidelity](docs/fidelity.md)). Faber does not hide those gaps.
 
-<p align="center"><img src="docs/media/hero.png" alt="Fabwright's canvas: an Uno, an ILI9341 colour screen showing the pet Pip with a speech bubble, an ESP-01 Wi-Fi module and three buttons, with the Network panel open on the right" width="900"></p>
+<p align="center"><img src="docs/media/hero.png" alt="Faber's canvas: an Uno, an ILI9341 colour screen showing the pet Pip with a speech bubble, an ESP-01 Wi-Fi module and three buttons, with the Network panel open on the right" width="900"></p>
 
 ## Watch Claude build it
 
 Two unedited live runs (2026-11-09): Claude Code 2.1.319 connected to `pnpm start` over HTTP MCP,
-allowed **only Fabwright's tools**, while a browser recorded the canvas the whole time. Each video goes
+allowed **only Faber's tools**, while a browser recorded the canvas the whole time. Each video goes
 from the empty canvas through the build, then into the 3D Device view and the Tests filmstrips.
 
 | | |
@@ -25,7 +25,7 @@ from the empty canvas through the build, then into the 3D Device view and the Te
 
 ## Try it
 
-You need Node 24, pnpm 10 (`corepack enable`) and, for firmware builds, either `pnpm fabwright setup` (Fabwright installs its pinned toolchains and emulators natively under `~/.fabwright`, no Docker) or Docker Desktop running. See [docs/native-runtime.md](docs/native-runtime.md).
+You need Node 24, pnpm 10 (`corepack enable`) and, for firmware builds, either `pnpm faber setup` (Faber installs its pinned toolchains and emulators natively under `~/.faber`, no Docker) or Docker Desktop running. See [docs/native-runtime.md](docs/native-runtime.md).
 
 ```sh
 pnpm i
@@ -36,8 +36,8 @@ pnpm start      # canvas + live link + MCP on one port; prints the URL
    project `projects/playground` live.
 2. In another terminal, connect Claude Code (one step), then ask it for a device:
    ```sh
-   claude mcp add --transport http fabwright http://localhost:7780/mcp
-   claude "Use the fabwright tools to build a plant monitor: soil sensor, OLED, buzzer when it is dry. Write tests."
+   claude mcp add --transport http faber http://localhost:7780/mcp
+   claude "Use the faber tools to build a plant monitor: soil sensor, OLED, buzzer when it is dry. Write tests."
    ```
 3. Watch the parts, wires, firmware and tests appear on the canvas. Press **Run** to run what Claude
    built right there (it also starts by itself after each agent build): press its buttons, turn its
@@ -93,15 +93,15 @@ snap-in room sized to the object, with a lid sensor checked beside it), and devi
 an e-paper or memory-LCD screen get battery life in days. Guide: [docs/enclosures.md](docs/enclosures.md); power: [docs/power.md](docs/power.md),
 [docs/low-power.md](docs/low-power.md).
 
-## Use Fabwright from your agent
+## Use Faber from your agent
 
-One step: start Fabwright, then add it to your agent. The agent's calls appear on the canvas you are
+One step: start Faber, then add it to your agent. The agent's calls appear on the canvas you are
 watching, as it makes them.
 
 ```sh
 pnpm i          # once, in this repo
-pnpm fabwright setup   # once: native toolchains + emulators (or keep Docker Desktop running instead)
-pnpm start      # = fabwright serve: canvas + live link + MCP at http://localhost:7780/mcp
+pnpm faber setup   # once: native toolchains + emulators (or keep Docker Desktop running instead)
+pnpm start      # = faber serve: canvas + live link + MCP at http://localhost:7780/mcp
 ```
 
 `pnpm start` opens the canvas at `http://localhost:7780/` (next free port if 7780 is taken; it
@@ -110,20 +110,20 @@ for another folder. Then connect your agent (each verified 2026-11-09 against a 
 
 | Agent | One step |
 | --- | --- |
-| **Claude Code** (2.1.319) | `claude mcp add --transport http fabwright http://localhost:7780/mcp` (then `claude`; `/mcp` shows fabwright connected) |
-| **Codex** (0.163.0) | `codex mcp add fabwright --url http://localhost:7780/mcp` (or `[mcp_servers.fabwright]` / `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml`) |
-| **Cursor** | `~/.cursor/mcp.json`: `{"mcpServers": {"fabwright": {"url": "http://localhost:7780/mcp"}}}` |
-| **Claude Desktop** / any stdio client | `{"mcpServers": {"fabwright": {"command": "node", "args": ["/path/to/fabwright/apps/cli/bin/fabwright.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` |
+| **Claude Code** (2.1.319) | `claude mcp add --transport http faber http://localhost:7780/mcp` (then `claude`; `/mcp` shows faber connected) |
+| **Codex** (0.163.0) | `codex mcp add faber --url http://localhost:7780/mcp` (or `[mcp_servers.faber]` / `url = "http://localhost:7780/mcp"` in `~/.codex/config.toml`) |
+| **Cursor** | `~/.cursor/mcp.json`: `{"mcpServers": {"faber": {"url": "http://localhost:7780/mcp"}}}` |
+| **Claude Desktop** / any stdio client | `{"mcpServers": {"faber": {"command": "node", "args": ["/path/to/faber/apps/cli/bin/faber.mjs", "mcp", "--attach", "http://localhost:7780"]}}}` |
 
 The **Install MCP** menu in the app shows these with Copy buttons and the server's real URL, and
 what the agent is doing; the pill bottom-right says "No agent" until a client calls a tool, then
 "Claude Code building · place part led1", "idle" or "done". **Open in Agent** copies a starter prompt that describes the project, or
-launches Claude Code in a new Terminal in the project folder with Fabwright already connected (macOS,
+launches Claude Code in a new Terminal in the project folder with Faber already connected (macOS,
 only on your click; the exact command is shown).
 
-Without the canvas, `fabwright mcp --project <dir>` is still a plain stdio MCP server (the setups the
+Without the canvas, `faber mcp --project <dir>` is still a plain stdio MCP server (the setups the
 agent-built examples used, with headless `claude -p` / `codex exec` flags, are in
-[docs/agents.md](docs/agents.md)). Record any session with `fabwright record <project>/.fabwright/actions.jsonl
+[docs/agents.md](docs/agents.md)). Record any session with `faber record <project>/.faber/actions.jsonl
 out.mp4 --speed 2 --actor mcp` (`--actor mcp` keeps only the agent's calls). The full guide (loop,
 scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents.md); every tool is in
 [docs/mcp-tools.md](docs/mcp-tools.md).
@@ -139,11 +139,11 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
   | Board | Simulator | Toolchain |
   | --- | --- | --- |
   | Arduino Uno R3, Arduino Nano (ATmega328P, 5 V) | [avr8js](https://github.com/wokwi/avr8js) | arduino-cli `arduino:avr` |
-  | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero (RP2040, 3.3 V) | [rp2040js](https://github.com/wokwi/rp2040js) with Fabwright's own boot ROM | arduino-pico 6.3.1 ([docs/rp2040.md](docs/rp2040.md)); MicroPython 1.29.0 on the Pico / XIAO |
-  | Seeed XIAO ESP32-S3 / ESP32-C3, ESP32-C3 SuperMini, ESP32 DevKitC, ESP32-S3 DevKitC-1 (3.3 V) | Espressif's QEMU 9.2.2 with Fabwright's bridge, on your computer (native or Docker), through `fabwright serve` | arduino-esp32 3.3.12 ([docs/esp32-emulator.md](docs/esp32-emulator.md)) |
-  | STM32 Blue Pill, WeAct Black Pill F411, Seeed XIAO nRF52840, Arduino Nano 33 BLE; Nucleo-F401RE planned | [Renode](https://renode.io) 1.17 with Fabwright's bridge, on your computer (Docker or native), through `fabwright serve` | STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13 ([docs/renode.md](docs/renode.md)) |
+  | Raspberry Pi Pico, Seeed XIAO RP2040, Waveshare RP2040-Zero (RP2040, 3.3 V) | [rp2040js](https://github.com/wokwi/rp2040js) with Faber's own boot ROM | arduino-pico 6.3.1 ([docs/rp2040.md](docs/rp2040.md)); MicroPython 1.29.0 on the Pico / XIAO |
+  | Seeed XIAO ESP32-S3 / ESP32-C3, ESP32-C3 SuperMini, ESP32 DevKitC, ESP32-S3 DevKitC-1 (3.3 V) | Espressif's QEMU 9.2.2 with Faber's bridge, on your computer (native or Docker), through `faber serve` | arduino-esp32 3.3.12 ([docs/esp32-emulator.md](docs/esp32-emulator.md)) |
+  | STM32 Blue Pill, WeAct Black Pill F411, Seeed XIAO nRF52840, Arduino Nano 33 BLE; Nucleo-F401RE planned | [Renode](https://renode.io) 1.17 with Faber's bridge, on your computer (Docker or native), through `faber serve` | STM32duino 2.11.0, mbed_nano 4.4.1, Seeeduino nRF52 1.1.13 ([docs/renode.md](docs/renode.md)) |
 
-  What each board emulates, peripheral by peripheral, and the test that proves it: [docs/boards.md](docs/boards.md). Wi-Fi and BLE radios are not emulated on any board; ESP32 Wi-Fi sketches run through an emulated Ethernet card and Fabwright's sandbox network ([docs/network.md](docs/network.md)).
+  What each board emulates, peripheral by peripheral, and the test that proves it: [docs/boards.md](docs/boards.md). Wi-Fi and BLE radios are not emulated on any board; ESP32 Wi-Fi sketches run through an emulated Ethernet card and Faber's sandbox network ([docs/network.md](docs/network.md)).
 
 - **Simulation:** the real firmware arduino-cli builds, with I2C and SPI buses and cycle-timed PWM; on RP2040 also the ADC, USB serial, UARTs on pins and PIO.
   - A small DC circuit solver sets each LED's brightness from the actual current through it, so an LED wired without a resistor is flagged.
@@ -153,17 +153,17 @@ scenario steps, robots, faults, troubleshooting) is [docs/agents.md](docs/agents
 - **AI pet:** `?example=ai-pet` is an Uno with a colour screen that asks a language model what to say through an ESP-01. Tests use a deterministic mock; the Network panel's Live switch (or `set_ai_mode live`) lets Claude answer.
 - **Agents:** an MCP server (stdio, or HTTP at `/mcp` from `pnpm start`) and a CLI with the same 52 operations, scenario tests, design-rule checks (including 3.3 V logic levels and rail budgets), fault injection, a fidelity report, live follow and replay of an agent's session in the browser. `plan_device` turns a wish into a parts list with size, battery life and price before anything is placed; `record` gives the person an MP4 and `viewer_url` a link that opens the project live.
 - **Run what the agent built:** the page `pnpm start` opens follows the agent live, and Run runs the project there with the agent's latest firmware (auto-run after each agent build); buttons press, knobs turn and sensors slide while it runs. `/?local` still opens a standalone copy.
-- **Project format:** one `fabwright.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
+- **Project format:** one `faber.json` per project, checked by a schema and written so that git diffs stay small. See [docs/project-format.md](docs/project-format.md).
 - **Serial console:** the firmware's serial output (Serial.print: UART0 on AVR, USB on RP2040) shows up live next to the canvas.
 
-What is **not** there yet: building firmware without `fabwright serve` (Build & Run in the editor goes through the local server, which builds natively or in Docker), running ESP32 / STM32 / nRF52 boards in the page itself (they run in a local emulator through `fabwright serve`), ESP32 SPI over DMA and calibrated ADC millivolts (see [docs/boards.md](docs/boards.md)), BLE and the Wi-Fi radio, the RP2040's second core, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
+What is **not** there yet: building firmware without `faber serve` (Build & Run in the editor goes through the local server, which builds natively or in Docker), running ESP32 / STM32 / nRF52 boards in the page itself (they run in a local emulator through `faber serve`), ESP32 SPI over DMA and calibrated ADC millivolts (see [docs/boards.md](docs/boards.md)), BLE and the Wi-Fi radio, the RP2040's second core, and a real-hardware runner. See [STATUS.md](STATUS.md) for the honest list.
 
 ## Roadmap
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | **M0 Foundations** | Monorepo, brand, project format, canvas (pan/zoom/place/wire), parts spec + 10 parts, avr8js running Blink with a live LED, CI | Done ([STATUS.md](STATUS.md)) |
-| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `fabwright test` CLI, GitHub Action | Mostly done (48 parts; serial input from the browser and the GitHub Action are open) |
+| **M1 Real Arduino projects** | arduino-cli builds in a container, serial input, I2C/SPI, 25 parts, scenario test runner, `faber test` CLI, GitHub Action | Mostly done (48 parts; serial input from the browser and the GitHub Action are open) |
 | **M2 The agent** | MCP server exposing every canvas and sim action, built-in agent panel, prompt-to-passing-tests demo | MCP server, CLI and demos done; built-in panel open |
 | **M3 More boards** | ESP32 (QEMU), Raspberry Pi Pico (rp2040js), STM32 (Renode), 40+ parts, fidelity report, design-rule checks, exports | RP2040 boards, 48 parts, fidelity report, DRC and exports done; ESP32 planned (decision 0003), STM32 open |
 | **M4 Robots** | Physics world, motors/servos/IMU/distance sensors, rover and robot-arm demos | Rover and arm done (pulled forward) |
@@ -192,14 +192,14 @@ More detail in [docs/quickstart.md](docs/quickstart.md). The first demo, Blink, 
 
 ```
 apps/web                   the canvas app (Vite + React + React Flow)
-packages/project-format    fabwright.json schema, parser, stable serializer
+packages/project-format    faber.json schema, parser, stable serializer
 packages/sim-core          clock, DC circuit solver, part model contract, simulation loop
 packages/sim-backends      MCU emulators behind one interface (avr8js today)
 packages/parts             one folder per part + generated registry
 packages/physics           robot world: Rapier 2D rover, sonar raycast, arm kinematics, painters
 packages/session           the headless engine behind the MCP server and the CLI
 packages/mcp               MCP server (stdio)
-apps/cli                   the `fabwright` CLI (every operation, serve / replay / record)
+apps/cli                   the `faber` CLI (every operation, serve / replay / record)
 services/runner            firmware build service (arduino-cli natively or in Docker, cached)
 examples/                  blink, tamagotchi, rover, robot-arm
 toolchains/arduino         reproducible arduino-cli build image
@@ -217,4 +217,4 @@ Please read the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security prob
 
 ## License
 
-[Apache-2.0](LICENSE). Fabwright is original work. It does not use or copy assets or code from closed-source simulators. Third-party notices are in [NOTICE](NOTICE).
+[Apache-2.0](LICENSE). Faber is original work. It does not use or copy assets or code from closed-source simulators. Third-party notices are in [NOTICE](NOTICE).

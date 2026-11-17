@@ -7,12 +7,12 @@ using "platforms/cpus/stm32f103.repl"
 rcc: Python.PythonPeripheral @ sysbus 0x40021000
     size: 0x400
     initable: true
-    filename: "/fabwright/platforms/rcc_f1.py"
+    filename: "/faber/platforms/rcc_f1.py"
 
 flashCtrl: Python.PythonPeripheral @ sysbus 0x40022000
     size: 0x400
     initable: true
-    filename: "/fabwright/platforms/regstore.py"
+    filename: "/faber/platforms/regstore.py"
 
 bitbandPeripherals: Miscellaneous.BitBanding @ sysbus <0x42000000, +0x2000000>
     peripheralBase: 0x40000000
@@ -21,7 +21,7 @@ spi1: SPI.STM32SPI @ sysbus 0x40013000
     series: STM32Series.F4
     IRQ -> nvic@35
 
-// Fabwright (round 10): ADC1 (Renode has no F1 ADC; FabwrightStm32F1Adc.cs). The bridge and the DWT
+// Faber (round 10): ADC1 (Renode has no F1 ADC; FaberStm32F1Adc.cs). The bridge and the DWT
 // cycle counter are added for every board by the backend.
-adc1: Miscellaneous.FabwrightStm32F1Adc @ sysbus 0x40012400
+adc1: Miscellaneous.FaberStm32F1Adc @ sysbus 0x40012400
     name: "adc1"

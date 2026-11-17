@@ -16,6 +16,6 @@
 | 1 | Heat-shrink tubing assortment (1.5 to 3 mm) | – | – | [DigiKey](https://www.digikey.com/en/products/result?keywords=heat%20shrink%20tubing%20assortment), [Adafruit](https://www.adafruit.com/search?q=heat%20shrink%20tubing%20assortment) | one piece over every soldered joint that could touch another |
 | 1 | Rosin-core solder, 0.5 to 0.8 mm | – | – | [DigiKey](https://www.digikey.com/en/products/result?keywords=rosin%20core%20solder%200.6mm), [Adafruit](https://www.adafruit.com/search?q=rosin%20core%20solder%200.6mm) | – |
 
-Assembly: soldered (set in fabwright.json ("assembly": "soldered")).
+Assembly: soldered (set in faber.json ("assembly": "soldered")).
 
 Links are generic distributor searches unless the part lists its own. Check voltage (3.3 V vs 5 V) and I2C address variants before buying.

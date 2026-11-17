@@ -2,8 +2,8 @@
 // use (datasheet rev 1.1, section 10): addressing modes, column/page ranges, page-mode pointers,
 // display on/off, contrast, normal/inverse, entire-display-on, start line, offset, segment remap,
 // COM scan direction, COM pin configuration, multiplex ratio and the charge pump.
-import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@fabwright/sim-core";
-import { bytesToBase64 } from "@fabwright/sim-core";
+import type { Diagnostic, I2cDevice, PartModel, PartModelFactory } from "@faber/sim-core";
+import { bytesToBase64 } from "@faber/sim-core";
 import { createI2cModule } from "../../lib/i2cModule.ts";
 import { str } from "../../lib/props.ts";
 

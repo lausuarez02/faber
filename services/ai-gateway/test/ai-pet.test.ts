@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 function open(): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-ai-pet-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-ai-pet-"));
   cpSync(EXAMPLE, dir, { recursive: true, preserveTimestamps: true });
   const later = new Date(Date.now() + 60_000);
   utimesSync(join(dir, "firmware/ai-pet.hex"), later, later);
@@ -62,11 +62,11 @@ describe("examples/ai-pet", () => {
   it("golden firmware matches the build recipe", () => {
     const hex = readFileSync(join(EXAMPLE, "firmware/ai-pet.hex"), "utf8");
     expect(hex.startsWith(":")).toBe(true);
-    expect(readFileSync(join(EXAMPLE, "fabwright.json"), "utf8")).toContain('"artifact": "firmware/ai-pet.hex"');
+    expect(readFileSync(join(EXAMPLE, "faber.json"), "utf8")).toContain('"artifact": "firmware/ai-pet.hex"');
   });
 });
 
-describe.runIf(process.env.FABWRIGHT_LIVE_AI === "1")("examples/ai-pet with the live AI (FABWRIGHT_LIVE_AI=1)", () => {
+describe.runIf(process.env.FABER_LIVE_AI === "1")("examples/ai-pet with the live AI (FABER_LIVE_AI=1)", () => {
   it("TALK gets a real model's reply on the simulated screen", async () => {
     const { SimHost } = await import("../../../packages/session/src/sim.ts");
     const { setAiMode, runLive, readNetworkLog } = await import("../../../packages/session/src/network.ts");
@@ -74,10 +74,10 @@ describe.runIf(process.env.FABWRIGHT_LIVE_AI === "1")("examples/ai-pet with the 
     const { registry } = await import("../../../packages/parts/src/index.ts");
     const { colorFrameToPng } = await import("../../../packages/sim-core/src/index.ts");
     const { writeFileSync } = await import("node:fs");
-    const project = parseProject(readFileSync(join(EXAMPLE, "fabwright.json"), "utf8"));
+    const project = parseProject(readFileSync(join(EXAMPLE, "faber.json"), "utf8"));
     const host = new SimHost(project, registry, readFileSync(join(EXAMPLE, "firmware/ai-pet.hex"), "utf8"));
     cleanup.push(() => host.dispose());
-    process.env.FABWRIGHT_AI_PROVIDER ??= process.env.ANTHROPIC_API_KEY ? "anthropic-api" : "claude-cli"; // tests default to mock only
+    process.env.FABER_AI_PROVIDER ??= process.env.ANTHROPIC_API_KEY ? "anthropic-api" : "claude-cli"; // tests default to mock only
     console.log(setAiMode(host.network, "live"));
     host.run(7000);
     host.sim.interact("btnTalk", { kind: "press" });
@@ -86,7 +86,7 @@ describe.runIf(process.env.FABWRIGHT_LIVE_AI === "1")("examples/ai-pet with the 
     const r = await runLive(host.network, (ms) => host.run(ms), 9000);
     console.log(JSON.stringify(r, null, 1));
     console.log(host.sim.serialText().split("\r\n").filter((l) => /ask|reply|bubble/.test(l)).join("\n"));
-    if (process.env.FABWRIGHT_LIVE_PNG) writeFileSync(process.env.FABWRIGHT_LIVE_PNG, colorFrameToPng(host.sim.framebuffer("tft")!, 2));
+    if (process.env.FABER_LIVE_PNG) writeFileSync(process.env.FABER_LIVE_PNG, colorFrameToPng(host.sim.framebuffer("tft")!, 2));
     const log = readNetworkLog(host.network);
     expect(JSON.stringify(log)).toMatch(/Claude CLI|Anthropic API/);
     expect(host.sim.serialText()).toMatch(/reply 200 [a-z]+\|/);

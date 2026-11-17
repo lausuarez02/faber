@@ -8,7 +8,7 @@ runs while its supply is up.
 ## The model
 
 - **Boards have a supply chain.** USB (a stiff 5 V source on `VBUS` / `5V`) is there when
-  `fabwright.json` says a cable is plugged in (`"power": {"usb": true}`, the default, as before round
+  `faber.json` says a cable is plugged in (`"power": {"usb": true}`, the default, as before round
   6). Behind it are the board's own regulators: the XIAO RP2040 and RP2040-Zero have a 3.3 V LDO
   from `VBUS` (0.25 V dropout, typical); the Pico has a Schottky from `VBUS` to `VSYS` (~0.3 V) and a
   buck-boost from `VSYS` (1.8 to 5.5 V) to `3V3`, switched off by `3V3_EN` LOW; the Uno and Nano make
@@ -104,7 +104,7 @@ CPU (and light / deep sleep between active moments), Wi-Fi (connected in modem-s
 connect and upload), cameras (on vs standby), screens, I2S amplifiers (quiescent vs speech at about a
 tenth of full-scale power into the speaker), any part with `current_ma`. Each load names its source
 (ESP32 / S3 / C3 and RP2040 datasheets, the OV2640 and MAX98357A datasheets, part data). Duty cycles
-come from `fabwright.json` `power.duty` (by role `cpu`, `wifi`, `camera`, `display`, `audio`, or part id:
+come from `faber.json` `power.duty` (by role `cpu`, `wifi`, `camera`, `display`, `audio`, or part id:
 `"always"`, `"off"`, `{"on_s": 2, "every_s": 600}`) and `power.sleep`; the rest are guessed from the
 firmware (`esp_camera_deinit`, `WiFi.mode(WIFI_OFF)`, `esp_deep_sleep_start`, ...) and listed in
 `assumptions`. Usable capacity is 80 % of the cell.

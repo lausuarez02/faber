@@ -5,8 +5,8 @@
 //   camera-psram      frame buffers in PSRAM on a board without PSRAM, or PSRAM turned off in the build
 //   camera-battery    camera + Wi-Fi bursts against what the cell can give, with a battery-life estimate
 //   camera-indicator  (round 14) nothing on the device (LED, screen, the board's LED in the firmware) shows the camera is in use
-import { buildNets, type Project } from "@fabwright/project-format";
-import { CAMERA_PIN_ROLES, CAMERA_REQUIRED_ROLES, CAMERA_SENSORS, type CameraPinRole, type CameraSensorId, type PartRegistry, type PartSpec } from "@fabwright/sim-core";
+import { buildNets, type Project } from "@faber/project-format";
+import { CAMERA_PIN_ROLES, CAMERA_REQUIRED_ROLES, CAMERA_SENSORS, type CameraPinRole, type CameraSensorId, type PartRegistry, type PartSpec } from "@faber/sim-core";
 import type { DesignIssue } from "./drc.ts";
 
 /** Chips whose camera interface esp32-camera drives (ESP32: I2S camera mode; S3: LCD_CAM). */
@@ -115,7 +115,7 @@ export function cameraChecks(project: Project, registry: PartRegistry, firmwareS
         if (want !== got) diff.push(`pin_${role === "sda" ? "sccb_sda" : role === "scl" ? "sccb_scl" : role} = ${got}, but ${cam.id}'s ${role.toUpperCase()} is on GPIO${want}`);
       }
       if (diff.length) {
-        issues.push({ severity: "error", code: "camera-pins", message: `The sketch's camera_config_t does not match where ${cam.id} is: ${diff.slice(0, 4).join("; ")}${diff.length > 4 ? `; and ${diff.length - 4} more` : ""}. esp_camera_init will fail with "Camera probe failed" (ESP_ERR_NOT_FOUND), in Fabwright and on the board. Fix: ${onBoard ? `use the ${s.name}'s camera pins (get_part ${s.id} lists them)` : "use the GPIOs the camera is wired to, or rewire it"}.`, parts: [cam.id] });
+        issues.push({ severity: "error", code: "camera-pins", message: `The sketch's camera_config_t does not match where ${cam.id} is: ${diff.slice(0, 4).join("; ")}${diff.length > 4 ? `; and ${diff.length - 4} more` : ""}. esp_camera_init will fail with "Camera probe failed" (ESP_ERR_NOT_FOUND), in Faber and on the board. Fix: ${onBoard ? `use the ${s.name}'s camera pins (get_part ${s.id} lists them)` : "use the GPIOs the camera is wired to, or rewire it"}.`, parts: [cam.id] });
       }
     }
   }
@@ -131,7 +131,7 @@ export function cameraChecks(project: Project, registry: PartRegistry, firmwareS
   } else if (psramMB && /esp_camera\.h/.test(firmwareSource) && wantsPsram) {
     const fqbn = project.firmware?.build?.fqbn ?? "";
     if (fqbn && !/PSRAM=(opi|enabled)/.test(fqbn)) {
-      issues.push({ severity: "warning", code: "camera-psram", message: `The sketch puts camera frame buffers in PSRAM, but the build has PSRAM turned off (firmware.build.fqbn "${fqbn}" has no PSRAM option): on the ${board!.name} esp_camera_init fails with ESP_ERR_NO_MEM. Fix: set_firmware with fqbn "${board!.mcu!.fqbn ?? `${fqbn}:PSRAM=opi`}" (Tools > PSRAM: ${board!.mcu!.psram?.mode === "octal" ? "OPI PSRAM" : "Enabled"}). (Fabwright's emulator has no PSRAM either way: in the simulator frame buffers go in internal RAM.)`, parts: [boardPart!.id] });
+      issues.push({ severity: "warning", code: "camera-psram", message: `The sketch puts camera frame buffers in PSRAM, but the build has PSRAM turned off (firmware.build.fqbn "${fqbn}" has no PSRAM option): on the ${board!.name} esp_camera_init fails with ESP_ERR_NO_MEM. Fix: set_firmware with fqbn "${board!.mcu!.fqbn ?? `${fqbn}:PSRAM=opi`}" (Tools > PSRAM: ${board!.mcu!.psram?.mode === "octal" ? "OPI PSRAM" : "Enabled"}). (Faber's emulator has no PSRAM either way: in the simulator frame buffers go in internal RAM.)`, parts: [boardPart!.id] });
     }
   }
 

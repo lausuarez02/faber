@@ -1,10 +1,10 @@
 // Round 10 (decision 0006): the person's Run for a board that runs in a local emulator process
-// (ESP32 family on Espressif's QEMU, Renode boards). Those never run in the browser: the Fabwright
+// (ESP32 family on Espressif's QEMU, Renode boards). Those never run in the browser: the Faber
 // server owns the emulator, runs the Simulation paced to the wall clock (× speed), and streams
 // frames to every page that follows it over ws /live; button presses and sensor values come back
 // the same way. In-process boards (AVR, RP2040) keep running in the page and never come here.
-import { isProcessBackend, type VisualValue } from "@fabwright/sim-core";
-import { asFabwrightError } from "./errors.ts";
+import { isProcessBackend, type VisualValue } from "@faber/sim-core";
+import { asFaberError } from "./errors.ts";
 import { firmwareBoardOf, SimHost, type Frame } from "./sim.ts";
 import { setPartValue } from "./scenario.ts";
 import type { ProjectSession } from "./session.ts";
@@ -98,7 +98,7 @@ export class RemoteRun {
         try {
           this.host.sim.interact(cmd.part, { kind: cmd.kind ?? "press", ...(cmd.key ? { key: cmd.key } : {}), ...(cmd.value !== undefined ? { value: cmd.value } : {}) });
         } catch (err) {
-          this.send({ type: "sim-status", state: "running", error: asFabwrightError(err, `Could not press ${cmd.part}`).message });
+          this.send({ type: "sim-status", state: "running", error: asFaberError(err, `Could not press ${cmd.part}`).message });
         }
         this.emitFrame(false);
         return;
@@ -107,7 +107,7 @@ export class RemoteRun {
         try {
           setPartValue(this.host, this.session().project, this.session().registry, cmd.part, cmd.field, cmd.value);
         } catch (err) {
-          this.send({ type: "sim-status", state: "running", error: asFabwrightError(err, `Could not set ${cmd.part}.${cmd.field}`).message });
+          this.send({ type: "sim-status", state: "running", error: asFaberError(err, `Could not set ${cmd.part}.${cmd.field}`).message });
         }
         this.emitFrame(false);
         return;

@@ -6,7 +6,7 @@
 // several boards on the same run (frames for another board's MAC, broadcasts and multicasts are
 // forwarded), the far end of every TCP connection a device opens (each one becomes a gateway
 // flow to the address the device dialled, which the sandbox DNS made a fake IP, so the gateway
-// knows the host name), and the Wi-Fi access point for firmware built with Fabwright's Wi-Fi shim
+// knows the host name), and the Wi-Fi access point for firmware built with Faber's Wi-Fi shim
 // (wifi.ts). It has no policy: what a device may reach is the gateway's decision.
 import type { Duplex } from "node:stream";
 import type { NetEventDraft } from "../log.ts";
@@ -22,7 +22,7 @@ import {
   buildUdp,
   ETH_ARP,
   ETH_IPV4,
-  ETH_FABWRIGHT,
+  ETH_FABER,
   macParse,
   macStr,
   parseArp,
@@ -39,7 +39,7 @@ import {
   type Mac,
 } from "./packets.ts";
 import { TcpConn } from "./tcp.ts";
-import { ssidMatches } from "@fabwright/project-format/legacy";
+import { ssidMatches } from "@faber/project-format/legacy";
 import { AUTH_OPEN, AUTH_WPA2_PSK, bssidFor, decideJoin, decodeWifi, encodeWifi, WIFI_REASON, type AccessPoint, type WifiMsg, type WifiState } from "./wifi.ts";
 
 /** What the netstack needs from the gateway (DeviceNet implements it). */
@@ -57,7 +57,7 @@ export interface NetstackOptions {
   netmask?: string;
   /** First DHCP address. Default 10.0.2.15. */
   firstHost?: string;
-  /** Networks in range (fabwright.json network.wifi). Empty: any SSID joins. */
+  /** Networks in range (faber.json network.wifi). Empty: any SSID joins. */
   aps?: AccessPoint[];
   rssi?: number;
   /** DER of the sandbox CA, sent to firmware with the Wi-Fi shim so its TLS trusts the sandbox. */
@@ -148,7 +148,7 @@ export class Netstack {
     return [...this.devices.values()].map((d) => ({ mac: macStr(d.mac), ip: this.dhcp.leaseOf(d.mac), ssid: d.ssid, chip: d.chip, shim: d.shim, joined: d.joined }));
   }
 
-  // ------------------------------------------------------------ Wi-Fi control (from Fabwright)
+  // ------------------------------------------------------------ Wi-Fi control (from Faber)
 
   /** Wi-Fi in range or not (wifi_drop fault). Joined shim devices are told the link is lost. */
   setWifiUp(up: boolean): void {
@@ -208,7 +208,7 @@ export class Netstack {
       }
       if (!multicast) return;
     }
-    if (e.type === ETH_FABWRIGHT) {
+    if (e.type === ETH_FABER) {
       if (dev) this.onWifi(dev, decodeWifi(e.payload));
       return;
     }
@@ -310,7 +310,7 @@ export class Netstack {
 
   private sendWifi(dev: Device, msgs: WifiMsg[]): void {
     if (this.closed) return;
-    dev.port.sink.send(buildEth(dev.mac, GW_MAC, ETH_FABWRIGHT, encodeWifi(msgs)));
+    dev.port.sink.send(buildEth(dev.mac, GW_MAC, ETH_FABER, encodeWifi(msgs)));
   }
 
   private apRecord(ssid: string, ap?: AccessPoint): Record<string, string> {
@@ -328,7 +328,7 @@ export class Netstack {
       if (m.verb === "hello") {
         dev.shim = true;
         dev.chip = m.args.chip;
-        this.log({ kind: "wifi", source: "sandbox", summary: `${m.args.chip ?? "board"} (${macStr(dev.mac)}) has Fabwright's Wi-Fi shim: WiFi.begin() joins the sandbox network` });
+        this.log({ kind: "wifi", source: "sandbox", summary: `${m.args.chip ?? "board"} (${macStr(dev.mac)}) has Faber's Wi-Fi shim: WiFi.begin() joins the sandbox network` });
       } else if (m.verb === "connect") {
         dev.shim = true;
         const ssid = m.args.ssid ?? "";
@@ -358,7 +358,7 @@ export class Netstack {
         if (dev.joined) this.log({ kind: "wifi", source: "sandbox", summary: `left "${dev.ssid ?? ""}" (WiFi.disconnect())` });
         dev.joined = false;
       } else if (m.verb === "scan") {
-        const aps = this.wifi.up ? (this.wifi.aps.length ? this.wifi.aps : [{ ssid: "FabwrightNet" }]) : [];
+        const aps = this.wifi.up ? (this.wifi.aps.length ? this.wifi.aps : [{ ssid: "FaberNet" }]) : [];
         this.sendWifi(dev, [...aps.map((a) => ({ verb: "ap", args: this.apRecord(a.ssid, a as AccessPoint) })), { verb: "scan_done", args: { n: String(aps.length) } }]);
         this.log({ kind: "wifi", source: this.wifi.up ? "sandbox" : "fault", summary: `scan: ${aps.length ? aps.map((a) => `"${a.ssid}"`).join(", ") : "no networks (Wi-Fi is down)"}` });
       }

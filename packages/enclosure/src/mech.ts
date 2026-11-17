@@ -6,7 +6,7 @@
  *
  * so every case placement is a proper rotation R (det +1) plus a translation: case = R · L + T.
  */
-import type { MechFeature, Mechanical, PartSpec } from "@fabwright/sim-core";
+import type { MechFeature, Mechanical, PartSpec } from "@faber/sim-core";
 import type { Vec3 } from "./types.ts";
 
 export type Mat3 = [Vec3, Vec3, Vec3]; // rows

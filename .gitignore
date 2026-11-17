@@ -18,5 +18,5 @@ firmware/build/
 # Golden firmware is committed (each build/ folder has its own .gitignore keeping only the .hex)
 !examples/*/firmware/build/
 
-# Agent session logs and build records (fabwright mcp / CLI), and their default screenshots
-.fabwright/
+# Agent session logs and build records (faber mcp / CLI), and their default screenshots
+.faber/

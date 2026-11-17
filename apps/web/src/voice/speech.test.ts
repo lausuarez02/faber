@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
+import { parseProject } from "@faber/project-format";
 import { canSpeak, setSpeechMuted, speakerOf, speechMuted, VoiceLayer } from "./speech.ts";
 
 const project = parseProject({
-  format: "fabwright/1",
+  format: "faber/1",
   name: "t",
   parts: [
     { id: "df", type: "dfplayer-mini", x: 0, y: 0 },

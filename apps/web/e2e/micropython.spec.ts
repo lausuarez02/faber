@@ -7,11 +7,11 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { expectAttrWithinSimTime, expectWithinSimTime, hubPort, openSerial, shot } from "./helpers.ts";
 
 // Round 10 (languages): MicroPython on a Raspberry Pi Pico, end to end in the browser. A real
-// `fabwright serve` on a project made from the pico-micropython template; the person edits main.py in
+// `faber serve` on a project made from the pico-micropython template; the person edits main.py in
 // the code editor (Python mode), Build & Run flashes the official MicroPython firmware with the file
 // in its littlefs filesystem (in process, no Docker), the canvas runs it on rp2040js: the on-board
 // LED toggles, the Serial panel shows the prints, and a line typed there runs at the REPL.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 
 interface Served {
   url: string;
@@ -20,25 +20,25 @@ interface Served {
   close(): Promise<void>;
 }
 
-function fabwright(dir: string, home: string, ...args: string[]): string {
-  const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000, env: { ...process.env, FABWRIGHT_HOME: home } });
-  if (r.status !== 0) throw new Error(`fabwright ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
+function faber(dir: string, home: string, ...args: string[]): string {
+  const r = spawnSync(process.execPath, [CLI, ...args, "--project", dir], { encoding: "utf8", timeout: 60_000, env: { ...process.env, FABER_HOME: home } });
+  if (r.status !== 0) throw new Error(`faber ${args.join(" ")} failed (${r.status}): ${r.stderr || r.stdout}`);
   return r.stdout;
 }
 
 async function serve(info: TestInfo): Promise<Served> {
-  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-mpy-"));
+  const root = mkdtempSync(join(tmpdir(), "faber-e2e-mpy-"));
   const home = join(root, "home");
   const dir = join(root, "projects", "pico-py");
   mkdirSync(dir, { recursive: true });
-  const env = { ...process.env, FABWRIGHT_HOME: home };
+  const env = { ...process.env, FABER_HOME: home };
   const made = spawnSync(process.execPath, [CLI, "new", dir, "--template", "pico-micropython", "--overwrite"], { encoding: "utf8", timeout: 60_000, env });
-  if (made.status !== 0) throw new Error(`fabwright new failed (${made.status}): ${made.stderr || made.stdout}`);
+  if (made.status !== 0) throw new Error(`faber new failed (${made.status}): ${made.stderr || made.stdout}`);
   const port = hubPort(info, 1);
   const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`faber serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -48,7 +48,7 @@ async function serve(info: TestInfo): Promise<Served> {
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -119,8 +119,8 @@ test.describe("MicroPython on the Pico", () => {
         // The phone layout has no code drawer: the agent path writes and builds the same file.
         const src = join(s.dir, "..", "main.py");
         writeFileSync(src, MAIN_PY);
-        fabwright(s.dir, s.home, "write", "firmware/main.py", "--from", src);
-        fabwright(s.dir, s.home, "build");
+        faber(s.dir, s.home, "write", "firmware/main.py", "--from", src);
+        faber(s.dir, s.home, "build");
       }
 
       // Run it here on the canvas, so this page's Serial panel is the board's console.

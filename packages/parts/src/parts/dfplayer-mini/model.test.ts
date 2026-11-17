@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { DF, dfFrame } from "../../lib/dfplayer.ts";
 import { UartScriptMcu } from "../../lib/uartMcu.ts";
@@ -14,7 +14,7 @@ function rig(opts: { speaker?: boolean; clips?: string; dac?: boolean } = {}) {
     return { id, from: { part: ap!, pin: aq! }, to: { part: bp!, pin: bq! } };
   };
   const project = parseProject({
-    format: "fabwright/1",
+    format: "faber/1",
     name: "df bench",
     parts: [
       { id: "uno", type: "arduino-uno", x: 0, y: 0 },

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ScenarioSchema } from "./scenario.ts";
 
 /** The only format version this package reads and writes. */
-export const FORMAT_VERSION = "fabwright/1" as const;
+export const FORMAT_VERSION = "faber/1" as const;
 
 /** Ids of parts and wires: start with a letter, then letters, digits, `_` or `-`. */
 const Id = z
@@ -29,7 +29,7 @@ export const PartInstanceSchema = z.object({
     .string()
     .min(1)
     .optional()
-    .describe("Set when this part stands in for a real part Fabwright does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note."),
+    .describe("Set when this part stands in for a real part Faber does not have, e.g. 'potentiometer' standing in for 'capacitive soil moisture sensor'. Exports (BOM, WIRING) print the real part and a STAND-IN note."),
 });
 
 export const PinRefSchema = z.object({
@@ -71,14 +71,14 @@ export const FirmwareBuildSchema = z
 export const FirmwareSchema = z.object({
   board: Id.describe("Part id of the MCU board that runs this firmware."),
   language: FirmwareLanguageSchema.optional().describe("Firmware language (default 'arduino'; a .py main file means 'micropython'). See docs/firmware-languages.md for what runs on which board."),
-  dir: z.literal("firmware").default("firmware").describe("Firmware folder, relative to fabwright.json."),
+  dir: z.literal("firmware").default("firmware").describe("Firmware folder, relative to faber.json."),
   sketch: z.string().optional().describe("Main source file inside dir: 'blink.ino' (Arduino), 'main.py' (MicroPython), 'main/main.c' (ESP-IDF), 'platformio.ini' (PlatformIO)."),
-  artifact: z.string().min(1).describe("Built binary (.hex or .bin), relative to fabwright.json."),
+  artifact: z.string().min(1).describe("Built binary (.hex or .bin), relative to faber.json."),
   build: FirmwareBuildSchema.optional(),
   libraries: z
     .array(z.string().min(1))
     .optional()
-    .describe("Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Fabwright's pinned version."),
+    .describe("Arduino libraries the sketch needs, 'Name' or 'Name@version', e.g. ['Adafruit SSD1306@2.5.15', 'Servo']. Unversioned names get Faber's pinned version."),
 });
 
 /** The language a firmware block means: explicit, else from the build tool, else from the main file, else Arduino. */
@@ -247,9 +247,9 @@ export const EnclosureSchema = z.object({
   front: z.string().optional().describe("Part id whose screen faces out of the front (default: the first display)."),
   placements: z.record(z.string(), CasePlacementSchema).optional().describe("Per part id: where it goes. Parts left out are auto-packed."),
   exclude: z.array(z.string()).optional().describe("Part ids that are not inside the case (e.g. a test resistor, an external sensor on a cable)."),
-  outline: CaseOutlineSchema.optional().describe("Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Fabwright fits the parts inside it."),
+  outline: CaseOutlineSchema.optional().describe("Round 7, shape 'custom' only: the front outline (SVG path in mm, or {points, smooth}). Any shape; Faber fits the parts inside it."),
   size_mm: CaseSizeSchema.optional().describe("Fixed overall size (w x h x d, mm); the outline is scaled to it and the case is exactly that size. Leave a value out for 'auto' (the smallest that holds the parts). Parts that do not fit are reported with smaller swaps (check_fit)."),
-  layout: z.enum(["auto", "thinnest", "smallest", "balanced"]).optional().describe("Round 8: how the parts are distributed inside. Fabwright proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it."),
+  layout: z.enum(["auto", "thinnest", "smallest", "balanced"]).optional().describe("Round 8: how the parts are distributed inside. Faber proposes three layouts automatically (propose_layout / check_fit): 'thinnest' (fewest layers, flat first), 'smallest' (least volume), 'balanced' (pocket-friendly: thickness over 18 mm and a footprint over 110 x 70 mm weigh up). 'auto' (default) = balanced. Pin a part with placements (x_mm / y_mm, layer) and the rest is arranged around it."),
   held: z.array(HeldObjectSchema).max(4).optional().describe("Round 15: things the case holds that are not electronics (a tin, a lip balm, a card deck): shape, size, clearance and how they go in. The case keeps the parts out of their room and cuts their opening. Round 17: engage_mm makes it a socket the case rides on (only that much goes in), fit picks slip / press / snap, magnet puts the sensing magnet on the object."),
   follow: z
     .object({
@@ -275,13 +275,13 @@ export type CaseFace = (typeof CASE_FACES)[number];
 /**
  * Round 10 (network): how the simulated device reaches the network (packages/device-net). Plain,
  * committed data: secrets by NAME only (values come from the environment or the git-ignored .env).
- * Deep checks (with why / fix) are in @fabwright/device-net parseNetworkConfig.
+ * Deep checks (with why / fix) are in @faber/device-net parseNetworkConfig.
  */
 export const NetworkAllowSchema = z
   .object({
     host: z.string().min(1).describe('Host the device may reach in internet mode: "api.example.com" or "*.example.com" (no scheme, no path).'),
     ports: z.array(z.number().int().min(1).max(65535)).optional().describe("Ports (default [443, 80])."),
-    tls: z.enum(["inspect", "passthrough"]).optional().describe("inspect (default): Fabwright terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate."),
+    tls: z.enum(["inspect", "passthrough"]).optional().describe("inspect (default): Faber terminates TLS with its sandbox CA, so it can log paths, add secrets and record cassettes. passthrough: bytes go end to end with the real certificate."),
     secrets: z.array(z.string()).optional().describe("Secret names this host may receive."),
     headers: z.record(z.string(), z.string()).optional().describe('Headers added to every request to this host, e.g. {"Authorization": "Bearer {{secret:OPENAI_API_KEY}}"}. Never a literal key.'),
     local: z.boolean().optional().describe("Round 14: this one host may reach this computer or the local network (a service you run). Without it, a host that resolves to a loopback / private / link-local address is refused in every mode. Not on wildcards."),
@@ -293,8 +293,8 @@ export const NetworkSchema = z
   .object({
     mode: z.enum(["offline", "mock", "internet"]).optional().describe("offline: Wi-Fi up, nothing answers. mock (default; run_tests always uses it): only mocks and cassettes answer. internet: hosts in allow also reach the real internet."),
     allow: z.array(NetworkAllowSchema).optional(),
-    secrets: z.array(z.string().regex(/^[A-Z][A-Z0-9_]{1,63}$/, "secret names are UPPER_SNAKE_CASE, e.g. OPENAI_API_KEY")).optional().describe("Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from fabwright.json."),
-    mocks: z.string().optional().describe("Mock APIs file, relative to fabwright.json (default network/mocks.json)."),
+    secrets: z.array(z.string().regex(/^[A-Z][A-Z0-9_]{1,63}$/, "secret names are UPPER_SNAKE_CASE, e.g. OPENAI_API_KEY")).optional().describe("Secret NAMES the project needs; values come from the environment or the project's .env (git-ignored), never from faber.json."),
+    mocks: z.string().optional().describe("Mock APIs file, relative to faber.json (default network/mocks.json)."),
     cassette: z.string().optional().describe("Cassette name (network/cassettes/<name>.json) replayed in mock mode, recorded in internet mode with record: true."),
     record: z.boolean().optional(),
     wifi: z
@@ -315,7 +315,7 @@ export const NetworkSchema = z
       })
       .strict()
       .optional()
-      .describe("Round 13: limits of the API relay (fabwright relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md."),
+      .describe("Round 13: limits of the API relay (faber relay): the real device's relay and the simulator's sandbox relay use the same ones. See docs/api-relay.md."),
   })
   .strict();
 export type NetworkSettings = z.infer<typeof NetworkSchema>;
@@ -332,7 +332,7 @@ export const ProjectSchema = z
     world: z
       .record(z.string(), z.unknown())
       .optional()
-      .describe("Physical world for robots (arena, obstacles, robot / arm binding). Validated by @fabwright/physics parseWorld; kept as-is here."),
+      .describe("Physical world for robots (arena, obstacles, robot / arm binding). Validated by @faber/physics parseWorld; kept as-is here."),
     assembly: AssemblyStyleSchema.optional().describe("How it is built: 'breadboard' (default for Uno / Nano projects) or 'soldered' (hand-wired in a case; default when there is an enclosure or a pocket board)."),
     power: PowerOptionsSchema.optional().describe("Power situation for the simulation and check_design (USB plugged in or not)."),
     enclosure: EnclosureSchema.optional().describe("The case: shape, parameters and where parts go. Written by design_case / update_case; files are generated into case/."),

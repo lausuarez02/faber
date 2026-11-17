@@ -3,7 +3,7 @@
 Status: accepted · 2026-11-10
 
 The owner asked for four things: the UI must show projects and how they change, it must actually
-show the device working, Fabwright must test small "pocket" boards, and agents must be able to create
+show the device working, Faber must test small "pocket" boards, and agents must be able to create
 the parts that are missing. The synthetic user test (`jumper-evals/personas/REPORT.md`) ranks the
 same gaps: no code view, Run fails silently, an empty jargon first screen, "agent connected" when
 none is, no video for the person, missing beginner parts, stand-ins exported as real parts, and
@@ -32,13 +32,13 @@ Agent state comes from one place, the server (C6), never from "the websocket is 
 ### projects: a gallery, versions, code
 
 - **Projects home** from the server (`GET /api/projects`, C3): repo `projects/`, `examples/`,
-  `examples/agent-built/`, plus folders in the registry `$FABWRIGHT_HOME/projects.json` (C3). Opening
+  `examples/agent-built/`, plus folders in the registry `$FABER_HOME/projects.json` (C3). Opening
   an example **copies it** into `projects/<slug>` (`POST /api/projects {from}`), so it never wipes a
   circuit. Without a server (`pnpm dev`, static build) the gallery shows the bundled examples only.
 - **Versions = action-log lines that changed something** (`ok` and `project` or `file`), not the
   undo steps: steps get merged, rejected and undone, while the log is append-only and already holds
   the full project after each change, so version N is cheap to rebuild and never lies. Built hexes
-  are kept by hash in `.fabwright/builds/` (done in this commit), so version N can run its firmware.
+  are kept by hash in `.faber/builds/` (done in this commit), so version N can run its firmware.
 - **Code editor: CodeMirror 6** (MIT; installed in this commit: `codemirror@6.0.2`,
   `@codemirror/{state@6.7.6,view@6.43.15,lang-cpp@6.0.3,lint@6.9.7}`). Monaco is 5 MB and needs
   workers; a textarea has no highlighting or inline errors. Save = `write_file`, Build = `build`,
@@ -64,7 +64,7 @@ through the pins like on hardware.
 Wi-Fi replaced by OpenCores Ethernet. Shape: a `qemu-esp32` backend that runs QEMU as a child
 process (Node only; the browser shows a server-streamed state), drives GPIO through QEMU's GPIO
 chardev / a small QMP shim, maps UART0 to `onSerial`, and bridges the Ethernet NIC to the existing
-sandbox network (`ai.fabwright`). Effort: about 3 to 4 weeks for GPIO + UART + I2C + network on C3,
+sandbox network (`ai.faber`). Effort: about 3 to 4 weeks for GPIO + UART + I2C + network on C3,
 then S3. Gaps: no cycle-exact clock (QEMU icount mode gives determinism at about 10x slowdown),
 no ADC / LEDC PWM / RMT models in upstream QEMU for C3 (would need patches), no BLE, no browser
 run, a 300 MB binary per OS. Until then the ESP-01 AT sandbox stays the Wi-Fi path.
@@ -124,7 +124,7 @@ the project live. check_design fixes come from the report (C5 has the codes).
 ### C1. Board backends
 
 - A board part declares its simulator in `part.json` `mcu.backend`: **`"avr8js"` or `"rp2040js"`**
-  (`BOARD_BACKENDS` / `BoardBackendId` in `@fabwright/sim-core`; the parts validator rejects anything
+  (`BOARD_BACKENDS` / `BoardBackendId` in `@faber/sim-core`; the parts validator rejects anything
   else for shipped boards; test fakes may use other ids). The existing id `avr8js` is kept, so no
   part, project or doc changes for AVR.
 - RP2040 boards: `mcu = { backend: "rp2040js", chip: "rp2040", clockHz: 125000000, vcc: 3.3, fqbn }`
@@ -163,14 +163,14 @@ the project live. check_design fixes come from the report (C5 has the codes).
   requires all five for every shipped part. The **rp2040** track ships its three boards with all five
   filled in, so that test passes when both are merged.
 - `buyLinks` (camelCase, used by no part) is replaced by `buy_links`; `exporter.ts` reads it.
-- Instance level (fabwright.json, done in this commit): `parts[].standIn?: string` = the real part a
+- Instance level (faber.json, done in this commit): `parts[].standIn?: string` = the real part a
   stand-in represents ("capacitive soil moisture sensor"). Exports print it (agent track).
 - Fidelity (done in this commit): `fidelity.origin?: "builtin" | "agent-made"` (omitted = builtin).
 
-### C3. Server (fabwright serve) HTTP
+### C3. Server (faber serve) HTTP
 
 All endpoints are local-only (Host / Origin checked by serve before any route runs). Routes that
-change something require `x-fabwright-token` (from `GET /api/connect`). Errors are
+change something require `x-faber-token` (from `GET /api/connect`). Errors are
 `{ error: "<what failed>. Why: … Fix: …" }`. New endpoints live in
 `apps/cli/src/routes/<track>.ts` (`ApiRoute[]`) and start-up work in that file's `ServerHook[]`;
 serve.ts only mounts them (done in this commit).
@@ -181,7 +181,7 @@ serve.ts only mounts them (done in this commit).
 | --- | --- | --- |
 | `GET /api/projects` | | `{ active: id, projects: ProjectCard[], examples: ProjectCard[] }` |
 | `GET /api/projects/:id` | | `{ card: ProjectCard, project: Project, files: string[] }` |
-| `GET /api/projects/:id/thumbnail.png` | | PNG (canvas render via `composeSvg` + `svgToPng`); cached by sha256 of fabwright.json in `<dir>/.fabwright/thumbs/<hash>.png`, or `$FABWRIGHT_HOME/thumbs/<id>-<hash>.png` for read-only folders |
+| `GET /api/projects/:id/thumbnail.png` | | PNG (canvas render via `composeSvg` + `svgToPng`); cached by sha256 of faber.json in `<dir>/.faber/thumbs/<hash>.png`, or `$FABER_HOME/thumbs/<id>-<hash>.png` for read-only folders |
 | `POST /api/projects` | `{ name, template?, from?: exampleId }` | `{ id, dir }`; creates via `newProjectFolder(projectsRoot, name)`, registers it (`source: "web"`), opens it |
 | `POST /api/projects/:id/open` | | `{ id, dir }`; switches the active project, broadcasts `{type:"project"}` then a fresh `hello` |
 | `GET /api/history` | | `{ versions: VersionSummary[] }` for the active project |
@@ -205,9 +205,9 @@ VersionSummary = { version: number /* 1-based among ok action-log lines with pro
 ```
 
 - Version N's firmware: the last `entry.firmware.hash` at or before N, read from
-  `.fabwright/builds/<hash>.hex` (written by `build` since this commit).
+  `.faber/builds/<hash>.hex` (written by `build` since this commit).
 - Registry of project folders (done in this commit, `packages/session/src/projects-registry.ts`):
-  `$FABWRIGHT_HOME/projects.json` (`FABWRIGHT_HOME` defaults to `~/.fabwright`; **tests always set it to a
+  `$FABER_HOME/projects.json` (`FABER_HOME` defaults to `~/.faber`; **tests always set it to a
   temp dir**), `{ version: 1, projects: [{ dir, name, source: "agent"|"web"|"cli"|"serve", addedAt,
   lastOpenedAt }] }`, helpers `registerProject`, `listRegisteredProjects`, `unregisterProject`,
   `newProjectFolder(root, name)`, `projectSlug`, `projectId`.
@@ -229,8 +229,8 @@ VersionSummary = { version: number /* 1-based among ok action-log lines with pro
 
 **agent**: `GET /v/:id` → 302 to `/?follow=ws://<host>/live&project=<id>&autorun=1` (the
 shareable local viewer; the live track's follow page honours `autorun=1`); `GET /api/media/:file`
-serves recordings from `<project>/.fabwright/media/` only. serve starts the AI gateway (port from
-`FABWRIGHT_AI_GATEWAY_PORT`, default 8787, next free port when taken, never fails serve) in
+serves recordings from `<project>/.faber/media/` only. serve starts the AI gateway (port from
+`FABER_AI_GATEWAY_PORT`, default 8787, next free port when taken, never fails serve) in
 `agentHooks`.
 
 **agentparts**: `GET /api/project-parts` → `{ parts: { id, part: CustomPart, svg: string }[] }`
@@ -241,7 +241,7 @@ serves recordings from `<project>/.fabwright/media/` only. serve starts the AI g
 - Stored in the project: **`<project>/parts/<id>/part.json`** + optional
   **`<project>/parts/<id>/visual.svg`**. Written only through `create_part` / `update_part` (so they
   are steps, undoable, in the action log as `file` entries).
-- `part.json` has `"format": "fabwright-part/1"`, the `PartSpec` fields minus `mcu` (`id`, `name`,
+- `part.json` has `"format": "faber-part/1"`, the `PartSpec` fields minus `mcu` (`id`, `name`,
   `category`, `description`, `pins`, optional `size`, `props`, `bus`, C2 physical fields, `tags`)
   plus **`behavior`**, one of:
   `{ kind: "digital-input" }`, `{ kind: "analog-sensor" }`, `{ kind: "actuator" }`,
@@ -265,7 +265,7 @@ serves recordings from `<project>/.fabwright/media/` only. serve starts the AI g
   (`setProjectParts(defs)`), fed by agentparts' own `apps/web/src/lib/projectParts.ts`
   from `GET /api/project-parts`.
 
-### C5. MCP tools (same names as CLI: `fabwright <tool>` / `fabwright call <tool>`)
+### C5. MCP tools (same names as CLI: `faber <tool>` / `faber call <tool>`)
 
 New tools live in `packages/session/src/tools/<track>.ts` as a `ToolModule` (`tools` + `ops`),
 appended to `TOOLS` and routed by `ProjectSession.call` with the same validation, logging and undo
@@ -347,7 +347,7 @@ Shared files and how they are touched:
   `apps/web/src/live/slots.tsx` (`stage` = inside `<main class="stage">`, `chrome` = top level);
   `shell/slots.tsx` renders them (done in this commit). Other tracks needing a mount add a
   `slots.tsx` of their own and one line in `shell/slots.tsx`.
-- **`registry.gen.ts`, `fabwright.schema.json`, `custom-part.schema.json`, `docs/mcp-tools.md`:
+- **`registry.gen.ts`, `faber.schema.json`, `custom-part.schema.json`, `docs/mcp-tools.md`:
   generated.** Never hand-merge: take either side, run `pnpm gen`, commit the result.
 - **`tools/index.ts`, `routes/index.ts`, `shell/slots.tsx`: append-only**, one line per track.
 - **`catalog.ts`**: new tools never go here (C5). **`session.ts`**: only the methods listed above.
@@ -359,15 +359,15 @@ Shared files and how they are touched:
 
 ### C9. Ports and test isolation
 
-- Never use, kill or restart anything on **7780** (the owner's `fabwright serve`).
+- Never use, kill or restart anything on **7780** (the owner's `faber serve`).
 - `apps/web/playwright.config.ts`: `E2E_PORT` (Vite, default 5173), `E2E_OUTPUT_DIR`; specs that
-  start `fabwright serve` take ports from `hubPort(info, slot)` in `e2e/helpers.ts`
+  start `faber serve` take ports from `hubPort(info, slot)` in `e2e/helpers.ts`
   (`E2E_HUB_PORT_BASE`, default 7900). `apps/web/vite.config.ts` reads `VITE_PORT` for `pnpm dev`.
 - Per track: live `E2E_PORT=5181 E2E_HUB_PORT_BASE=8100`, projects `5182 / 8200`, rp2040 `5183 /
-  8300`, parts `5184 / 8400`, agentparts `5185 / 8500`, agent `5186 / 8600`. Manual `fabwright serve`
+  8300`, parts `5184 / 8400`, agentparts `5185 / 8500`, agent `5186 / 8600`. Manual `faber serve`
   runs use `--port 7791…7796 --strict-port` in the same order. AI gateway in tests: port 0.
-- Unit tests start servers on port 0 and set `FABWRIGHT_HOME` to a temp dir.
-- Docker: the rp2040 track tags its image `fabwright/arduino-pico:<pinned>`; nobody else rebuilds images.
+- Unit tests start servers on port 0 and set `FABER_HOME` to a temp dir.
+- Docker: the rp2040 track tags its image `faber/arduino-pico:<pinned>`; nobody else rebuilds images.
 
 ### C10. Merge order
 

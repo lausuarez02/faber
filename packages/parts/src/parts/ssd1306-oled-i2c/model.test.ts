@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GROUND, decodeMonoFrame, monoPixel } from "@fabwright/sim-core";
+import { GROUND, decodeMonoFrame, monoPixel } from "@faber/sim-core";
 import { registry } from "../../registry.gen.ts";
 import { mount, need } from "../../lib/bench.ts";
 import { asciiOf, frameOf, i2cWires, serialLines, unoBench } from "../../lib/firmwareBench.ts";
@@ -134,7 +134,7 @@ describe("ssd1306-oled-i2c: real firmware", { timeout: 120_000 }, () => {
     for (const [x, y] of [[0, 0], [127, 0], [0, 63], [127, 63], [64, 0], [0, 32]] as const) expect(monoPixel(f, x, y), `${x},${y}`).toBe(true);
     expect(monoPixel(f, 64, 60)).toBe(false);
     const art = asciiOf(sim, "oled");
-    // "Fabwright" in size-2 text sits in rows 8..23
+    // "Faber" in size-2 text sits in rows 8..23
     const title = art.split("\n").slice(8, 24).join("\n");
     expect(title).toMatch(/#/);
     expect(sim.diagnostics().filter((d) => d.severity !== "info")).toEqual([]);

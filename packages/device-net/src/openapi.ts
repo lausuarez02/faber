@@ -10,7 +10,7 @@ import { parse as parseYaml } from "yaml";
 import type { BodyInfo } from "./body.ts";
 import { ConfigError, type HttpMock, type HttpMockResponse } from "./config.ts";
 
-/** fabwright mock: {"kind": "openapi", "host", "spec": "<file in the project>" | {…the document…}}. */
+/** faber mock: {"kind": "openapi", "host", "spec": "<file in the project>" | {…the document…}}. */
 export interface OpenApiMock {
   kind: "openapi";
   host: string;

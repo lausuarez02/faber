@@ -1,7 +1,7 @@
 // RP2040 boards: which GPIOs each one wires to its headers and on-board parts, and the default pins
 // of arduino-pico's Wire / SPI / Serial1 (from each variant's pins_arduino.h in arduino-pico 6.3.1).
 // Pin ids are "GP0".."GP29"; the arduino-pico pin number is the GPIO number (decision 0003, C1).
-import type { McuBusPins } from "@fabwright/sim-core";
+import type { McuBusPins } from "@faber/sim-core";
 
 export type Rp2040BoardType = "raspberry-pi-pico" | "seeed-xiao-rp2040" | "waveshare-rp2040-zero";
 

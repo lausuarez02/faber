@@ -8,8 +8,8 @@
  *   amp-speaker-overpower   full-scale audio would push more power into the speaker than it is rated for
  *   amp-speaker-impedance   a speaker below the amplifier's minimum load
  */
-import { buildNets, type Project } from "@fabwright/project-format";
-import type { PartRegistry, PartSpec } from "@fabwright/sim-core";
+import { buildNets, type Project } from "@faber/project-format";
+import type { PartRegistry, PartSpec } from "@faber/sim-core";
 import type { DesignIssue } from "./drc.ts";
 import { isSpeakerType } from "./voice.ts";
 

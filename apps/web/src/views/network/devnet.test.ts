@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { devnetRows, fmtBytes, wifiSummary, type DevNetEntry } from "./devnet.ts";
 
 const E: DevNetEntry[] = [
-  { seq: 1, t_ms: 680, kind: "wifi", summary: 'joined "FabwrightNet" (RSSI -55 dBm)', source: "sandbox" },
+  { seq: 1, t_ms: 680, kind: "wifi", summary: 'joined "FaberNet" (RSSI -55 dBm)', source: "sandbox" },
   { seq: 2, t_ms: 690, kind: "dhcp", summary: "DHCP 10.0.2.15 for 02:4a:4d:00:00:01", source: "sandbox" },
   { seq: 3, t_ms: 700, kind: "dns", host: "api.weather.test", summary: "DNS api.weather.test → 198.18.0.1", source: "mock" },
   { seq: 4, t_ms: 1900, kind: "http", host: "api.weather.test", method: "GET", path: "/v1/now", status: 200, source: "internet", tls: "inspect", duration_ms: 31, bytes_in: 2048, secrets_used: ["WEATHER_KEY"], summary: "GET api.weather.test/v1/now → 200" },
@@ -25,7 +25,7 @@ describe("device network panel model", () => {
 
   it("summarizes Wi-Fi from the boards and the faults", () => {
     expect(wifiSummary({ enabled: true, boards: [] }).text).toContain("no board");
-    expect(wifiSummary({ enabled: true, boards: [{ mac: "x", ip: "10.0.2.15", ssid: "FabwrightNet", shim: true, joined: true }] })).toEqual({ text: '"FabwrightNet" · 10.0.2.15', tone: "ok" });
+    expect(wifiSummary({ enabled: true, boards: [{ mac: "x", ip: "10.0.2.15", ssid: "FaberNet", shim: true, joined: true }] })).toEqual({ text: '"FaberNet" · 10.0.2.15', tone: "ok" });
     expect(wifiSummary({ enabled: true, faults: [{ kind: "wifi_drop" }], boards: [] })).toEqual({ text: "Wi-Fi dropped (fault)", tone: "err" });
     expect(wifiSummary({ enabled: true, faults: [{ kind: "weak_signal", rssi: -88 }], boards: [{ mac: "x", ip: "10.0.2.15", shim: true, joined: true }] }).text).toContain("weak -88 dBm");
   });

@@ -4,7 +4,7 @@ export type { ExtOp, ExtOpContext, ToolModule } from "./tools/index.ts";
 export type { SessionOptions, ActionEntry, SessionEvent, Builder, CallMeta } from "./session.ts";
 export { TOOLS, AGENT_LOOP } from "./catalog.ts";
 export type { ToolDef } from "./catalog.ts";
-export { FabwrightError, fail, asFabwrightError } from "./errors.ts";
+export { FaberError, fail, asFaberError } from "./errors.ts";
 export { checkDesign } from "./drc.ts";
 export type { DesignIssue } from "./drc.ts";
 export { fidelityReport } from "./fidelity.ts";
@@ -30,7 +30,7 @@ export async function renderDevice(opts: import("./device-render.ts").DeviceRend
   const m = await import("./device-render.ts");
   return m.renderDevice(opts);
 }
-export { fabwrightHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, projectsRegistryPath, registerProject, unregisterProject } from "./projects-registry.ts";
+export { faberHome, listRegisteredProjects, newProjectFolder, projectId, projectSlug, projectsRegistryPath, registerProject, unregisterProject } from "./projects-registry.ts";
 export type { ProjectsRegistryFile, RegisteredProject } from "./projects-registry.ts";
 export type { AgentState, AgentStateEvent, LiveServerEvent } from "./live-events.ts";
 export { projectPartProblems, projectPartsWithSvg, refreshProjectParts, registryForProjectDir } from "./tools/agentparts.ts";
@@ -58,12 +58,12 @@ export { networkSnapshot } from "./tools/network.ts";
 export { SessionDeviceNet, sandboxCaDir, networkConfigOf } from "./device-network.ts";
 
 // Round 11: tests and the app ask whether this machine can build a board right now (Docker or native).
-export { canBuildArduino, runtimeSummary, nativeStatus } from "@fabwright/runner";
+export { canBuildArduino, runtimeSummary, nativeStatus } from "@faber/runner";
 // round 12 kit: the build kit (get_build_kit, GET /api/kit, the web Build it panel)
 export { buildKit, kitHtml, kitMarkdown, shoppingCsv, stlStats, detectSlicer, planSteps } from "./kit/index.ts";
 export type { BuildKit, KitOptions } from "./kit/index.ts";
 export { writeKitFiles, htmlToPdf } from "./kit/files.ts";
-// Round 13: the API relay for the real device (fabwright relay ..., factory pack relay/, kit Connect)
+// Round 13: the API relay for the real device (faber relay ..., factory pack relay/, kit Connect)
 export { ensureSecretsIgnored, relayConfigOf, relayTokenAdd, relayTokenList, relayTokenRevoke, serveRelay, writeDeviceHeader, writeRelayFolder } from "./relay-tools.ts";
 // round 13 audio: what a run played over I2S (the page plays it), and the I2S amplifier checks
 export { runAudioFile, mixRunAudio, RUN_AUDIO_RATE } from "./run-audio.ts";

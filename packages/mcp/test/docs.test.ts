@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { renderAgentSkillFiles, renderToolDocs } from "../src/docs.ts";
 
 describe("docs/mcp-tools.md", () => {
-  it("matches the tool definitions (run `pnpm --filter @fabwright/mcp gen:docs` after changing a tool)", () => {
+  it("matches the tool definitions (run `pnpm --filter @faber/mcp gen:docs` after changing a tool)", () => {
     const onDisk = readFileSync(fileURLToPath(new URL("../../../docs/mcp-tools.md", import.meta.url)), "utf8");
     expect(onDisk).toBe(renderToolDocs());
   });

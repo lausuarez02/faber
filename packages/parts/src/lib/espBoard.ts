@@ -1,7 +1,7 @@
 // Shared model for the ESP32-family boards (round 10, decision 0006): ESP32 DevKitC, ESP32-S3
 // DevKitC-1, Seeed XIAO ESP32-S3 / ESP32-C3, ESP32-C3 SuperMini. The pads, LEDs, supply chain and
 // (XIAO) the on-board Li-ion charger are data the board's model.ts passes in.
-import { createMcuBoardModel, GROUND, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@fabwright/sim-core";
+import { createMcuBoardModel, GROUND, type BoardSupply, type PartContext, type PartModel, type VisualState } from "@faber/sim-core";
 import { createLinearCharger, type LinearChargerSpec } from "./linearCharger.ts";
 
 /**

@@ -1,8 +1,8 @@
 // Standalone physics demo page (dev only): runs examples/rover or examples/robot-arm in the
 // browser with the real parts, avr8js and Rapier, and paints the world. Used to record videos:
-//   pnpm --filter @fabwright/web exec vite --port 5199
+//   pnpm --filter @faber/web exec vite --port 5199
 //   open http://localhost:5199/src/renderers/physics/demo/index.html?example=rover
-// window.__fabwrightDemo.step(ms) advances virtual time and repaints (deterministic frame capture);
+// window.__faberDemo.step(ms) advances virtual time and repaints (deterministic frame capture);
 // without ?manual the page runs at real time on its own.
 import "@fontsource/bricolage-grotesque/600.css";
 import "@fontsource/bricolage-grotesque/800.css";
@@ -12,15 +12,15 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "../../../../../../brand/tokens.css";
 import "./demo.css";
-import { parseProject } from "@fabwright/project-format";
-import { Simulation } from "@fabwright/sim-core";
-import { backendFactory } from "@fabwright/sim-backends";
-import { registry } from "@fabwright/parts";
-import { armReach, attachPhysics, initPhysics, worldOf, type PhysicsBinding } from "@fabwright/physics";
+import { parseProject } from "@faber/project-format";
+import { Simulation } from "@faber/sim-core";
+import { backendFactory } from "@faber/sim-backends";
+import { registry } from "@faber/parts";
+import { armReach, attachPhysics, initPhysics, worldOf, type PhysicsBinding } from "@faber/physics";
 import { drawArm, drawWorld, readPalette, type Ctx2D, type View } from "../paint.ts";
-import roverJson from "../../../../../../examples/rover/fabwright.json?raw";
+import roverJson from "../../../../../../examples/rover/faber.json?raw";
 import roverHex from "../../../../../../examples/rover/firmware/rover.hex?raw";
-import armJson from "../../../../../../examples/robot-arm/fabwright.json?raw";
+import armJson from "../../../../../../examples/robot-arm/faber.json?raw";
 import armHex from "../../../../../../examples/robot-arm/firmware/robot-arm.hex?raw";
 
 const params = new URLSearchParams(location.search);
@@ -31,7 +31,7 @@ const project = parseProject(raw);
 
 const root = document.getElementById("demo")!;
 root.innerHTML = `
-  <header><span class="mark">fabwright</span><span class="title">${project.name}</span><span class="sub">examples/${which === "arm" ? "robot-arm" : "rover"} · real firmware on avr8js · Rapier 2D physics</span></header>
+  <header><span class="mark">faber</span><span class="title">${project.name}</span><span class="sub">examples/${which === "arm" ? "robot-arm" : "rover"} · real firmware on avr8js · Rapier 2D physics</span></header>
   <section class="stage"><canvas id="view"></canvas></section>
   <aside id="side"></aside>`;
 const canvas = document.getElementById("view") as HTMLCanvasElement;
@@ -124,7 +124,7 @@ function step(ms: number) {
   paint();
 }
 
-(window as unknown as { __fabwrightDemo: unknown }).__fabwrightDemo = { step, sim, phys, ready: true };
+(window as unknown as { __faberDemo: unknown }).__faberDemo = { step, sim, phys, ready: true };
 paint();
 document.body.dataset.ready = "true";
 if (!params.has("manual")) {

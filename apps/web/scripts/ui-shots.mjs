@@ -17,25 +17,25 @@ const scenes = [
   { name: "serial-tests", url: "/?example=tamagotchi", act: async (p, m) => { if (m) { await p.getByTestId("phone-menu").click(); await p.getByTestId("phone-serial").click(); } else { await p.getByTestId("toggle-serial").click(); await p.getByTestId("toggle-tests").click(); } await p.getByTestId("run-button").click(); await p.waitForTimeout(1500); } },
   { name: "mcp", url: "/", act: async (p, m) => { if (m) { await p.getByTestId("phone-menu").click(); await p.waitForTimeout(200); } else await p.getByTestId("install-mcp").click(); await p.waitForTimeout(300); } },
   { name: "more", url: "/", act: async (p) => { await p.getByTestId("rail-more").click(); await p.waitForTimeout(300); } },
-  { name: "light", url: "/", act: async (p) => { await p.evaluate(() => window.fabwright.store.getState().setTheme("light")); await p.waitForTimeout(300); } },
+  { name: "light", url: "/", act: async (p) => { await p.evaluate(() => window.faber.store.getState().setTheme("light")); await p.waitForTimeout(300); } },
   { name: "device", url: "/?example=tamagotchi", act: async (p, m) => { if (m) { await p.getByTestId("phone-menu").click(); await p.getByRole("menuitem", { name: "Device view" }).click(); } else await p.getByTestId("toggle-device").click(); await p.waitForTimeout(3500); } },
   { name: "replay", url: "/?replay=" + encodeURIComponent("/@fs" + new URL("../e2e/fixtures/blink-session.jsonl", import.meta.url).pathname) + "&speed=8", act: async (p) => { await p.getByTestId("replay-index").filter({ hasText: "done" }).waitFor({ timeout: 30000 }); } },
   { name: "empty", url: "/", act: async (p) => { await p.getByTestId("project-menu").click(); await p.getByRole("menuitem", { name: "New project" }).click(); await p.waitForTimeout(500); } },
   { name: "ai-pet", url: "/?example=ai-pet", act: async (p) => {
     await p.getByTestId("app").and(p.locator('[data-firmware="ready"]')).waitFor({ timeout: 20000 });
-    await p.evaluate(() => window.fabwright.store.getState().setSpeed(2));
+    await p.evaluate(() => window.faber.store.getState().setSpeed(2));
     await p.getByTestId("run-button").click();
-    const ser = () => p.evaluate(() => window.fabwright.engine.simulation?.serialText() ?? "");
+    const ser = () => p.evaluate(() => window.faber.engine.simulation?.serialText() ?? "");
     for (let i = 0; i < 80 && !(await ser()).includes("wifi: online"); i++) await p.waitForTimeout(500);
-    await p.evaluate(() => window.fabwright.engine.interact("btnTalk", "press")); await p.waitForTimeout(250);
-    await p.evaluate(() => window.fabwright.engine.interact("btnTalk", "release"));
+    await p.evaluate(() => window.faber.engine.interact("btnTalk", "press")); await p.waitForTimeout(250);
+    await p.evaluate(() => window.faber.engine.interact("btnTalk", "release"));
     for (let i = 0; i < 60 && !/bubble: [^.\r\n]/.test(await ser()); i++) await p.waitForTimeout(500);
     await p.waitForTimeout(400);
   } },
   { name: "agent-menu", url: "/", act: async (p, m) => { if (m) return; await p.getByTestId("open-in-agent").click(); await p.waitForTimeout(300); } },
   { name: "device-rover", url: "/?example=rover", act: async (p, m) => { await p.getByTestId("run-button").click(); if (m) { await p.getByTestId("phone-menu").click(); await p.getByTestId("phone-device").click(); } else await p.getByTestId("toggle-device").click(); await p.waitForTimeout(4000); } },
   { name: "device-pet", url: "/?example=ai-pet", act: async (p, m) => { await p.getByTestId("run-button").click(); await p.waitForTimeout(3000); if (m) { await p.getByTestId("phone-menu").click(); await p.getByTestId("phone-device").click(); } else await p.getByTestId("toggle-device").click(); await p.waitForTimeout(3500); } },
-  { name: "light-pet", url: "/?example=ai-pet", act: async (p) => { await p.evaluate(() => window.fabwright.store.getState().setTheme("light")); await p.waitForTimeout(400); } },
+  { name: "light-pet", url: "/?example=ai-pet", act: async (p) => { await p.evaluate(() => window.faber.store.getState().setTheme("light")); await p.waitForTimeout(400); } },
   { name: "instruments", url: "/", act: async (p, m) => { if (m) return; await p.getByTestId("rail-instruments").click(); await p.getByTestId("run-button").click(); await p.waitForTimeout(1500); } },
 ];
 
@@ -44,7 +44,7 @@ for (const [label, ctxOpts] of [["desktop", { viewport: { width: 1440, height: 9
   for (const s of scenes) {
     if (only && (exact ? s.name !== only.slice(1) : !only.split(",").some((o) => s.name.includes(o)))) continue;
     const ctx = await browser.newContext(ctxOpts);
-    await ctx.addInitScript(() => localStorage.setItem("fabwright.theme", "dark"));
+    await ctx.addInitScript(() => localStorage.setItem("faber.theme", "dark"));
     const p = await ctx.newPage();
     const errors = [];
     p.on("pageerror", (e) => errors.push(e.message));

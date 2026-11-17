@@ -1,17 +1,17 @@
 // Round 13 (star eval): an agent asked for a device that sends what it sees to an API must learn the
-// general relay pattern (call the real API through FabwrightRelay.h), not invent a backend of its own; and
+// general relay pattern (call the real API through FaberRelay.h), not invent a backend of its own; and
 // a board's own card slot puts a microSD card on the shopping list only when the firmware uses one.
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
-import { registry } from "@fabwright/parts";
+import type { BuildRequest, BuildResult } from "@faber/runner";
+import { registry } from "@faber/parts";
 import { planDevice, ProjectSession } from "../src/index.ts";
 import { AGENT_LOOP as AGENT_INSTRUCTIONS } from "../src/catalog.ts";
 import { buildKit } from "../src/kit/index.ts";
-import * as E from "@fabwright/enclosure";
+import * as E from "@faber/enclosure";
 
 const SEE_AND_SAY = fileURLToPath(new URL("../../../examples/see-and-say", import.meta.url));
 const noBuild = async (req: BuildRequest): Promise<BuildResult> => {
@@ -24,7 +24,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 function open(src: string): ProjectSession {
-  const dir = mkdtempSync(join(tmpdir(), "fabwright-relayhint-"));
+  const dir = mkdtempSync(join(tmpdir(), "faber-relayhint-"));
   dirs.push(dir);
   cpSync(src, dir, { recursive: true });
   const s = new ProjectSession({ dir, builder: noBuild, actor: "test" });
@@ -36,8 +36,8 @@ describe("agents learn the relay for API calls", () => {
   it("get_part on a Wi-Fi board in the ESP emulator carries the network guide; other boards do not", async () => {
     const s = open(SEE_AND_SAY);
     const sense = (await s.getPart({ type: "seeed-xiao-esp32s3-sense" })) as { network?: string };
-    expect(sense.network).toMatch(/FabwrightRelay\.h/);
-    expect(sense.network).toMatch(/fabwrightRelayUrl/);
+    expect(sense.network).toMatch(/FaberRelay\.h/);
+    expect(sense.network).toMatch(/faberRelayUrl/);
     expect(sense.network).toMatch(/backend of your own/);
     const uno = (await s.getPart({ type: "arduino-uno" })) as { network?: string };
     expect(uno.network).toBeUndefined();
@@ -46,13 +46,13 @@ describe("agents learn the relay for API calls", () => {
   it("plan_device for a device that sends what it sees to an API lists the relay step", () => {
     const p = planDevice("a star keychain with a camera that sends what it sees through an api and a speaker that says funny things", { pocket: true }, registry);
     expect(p.board.type).toBe("seeed-xiao-esp32s3-sense");
-    expect(p.next.join("\n")).toMatch(/through the relay.*FabwrightRelay\.h/);
+    expect(p.next.join("\n")).toMatch(/through the relay.*FaberRelay\.h/);
     const offline = planDevice("a night light that glows when it is dark", {}, registry);
-    expect(offline.next.join("\n")).not.toMatch(/FabwrightRelay/);
+    expect(offline.next.join("\n")).not.toMatch(/FaberRelay/);
   });
 
   it("the agent instructions name the relay and say not to invent a backend", () => {
-    expect(AGENT_INSTRUCTIONS).toMatch(/fabwrightRelayUrl\(host, path\)/);
+    expect(AGENT_INSTRUCTIONS).toMatch(/faberRelayUrl\(host, path\)/);
     expect(AGENT_INSTRUCTIONS).toMatch(/never invent a backend/);
   });
 });

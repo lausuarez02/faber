@@ -39,19 +39,19 @@ importers:
 
   apps/cli:
     dependencies:
-      '@fabwright/agent-skill':
+      '@faber/agent-skill':
         specifier: workspace:*
         version: link:../../packages/agent-skill
-      '@fabwright/mcp':
+      '@faber/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../../packages/project-format
-      '@fabwright/runner':
+      '@faber/runner':
         specifier: workspace:*
         version: link:../../services/runner
-      '@fabwright/session':
+      '@faber/session':
         specifier: workspace:*
         version: link:../../packages/session
       tsx:
@@ -81,22 +81,22 @@ importers:
       '@codemirror/view':
         specifier: 6.43.15
         version: 6.43.15
-      '@fabwright/ai-gateway':
+      '@faber/ai-gateway':
         specifier: workspace:*
         version: link:../../services/ai-gateway
-      '@fabwright/parts':
+      '@faber/parts':
         specifier: workspace:*
         version: link:../../packages/parts
-      '@fabwright/physics':
+      '@faber/physics':
         specifier: workspace:*
         version: link:../../packages/physics
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../../packages/project-format
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../../packages/sim-backends
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../../packages/sim-core
       '@fontsource-variable/geist':
@@ -180,7 +180,7 @@ importers:
 
   packages/device-net:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
       '@peculiar/x509':
@@ -193,7 +193,7 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
     devDependencies:
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../sim-backends
       '@types/ws':
@@ -202,10 +202,10 @@ importers:
 
   packages/enclosure:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../sim-core
       fflate:
@@ -218,19 +218,19 @@ importers:
         specifier: 1.1.0
         version: 1.1.0
     devDependencies:
-      '@fabwright/parts':
+      '@faber/parts':
         specifier: workspace:*
         version: link:../parts
 
   packages/mcp:
     dependencies:
-      '@fabwright/agent-skill':
+      '@faber/agent-skill':
         specifier: workspace:*
         version: link:../agent-skill
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/session':
+      '@faber/session':
         specifier: workspace:*
         version: link:../session
       '@modelcontextprotocol/sdk':
@@ -243,20 +243,20 @@ importers:
 
   packages/parts:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../sim-core
       zod:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
-      '@fabwright/runner':
+      '@faber/runner':
         specifier: workspace:*
         version: link:../../services/runner
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../sim-backends
 
@@ -265,17 +265,17 @@ importers:
       '@dimforge/rapier2d-compat':
         specifier: 0.21.0
         version: 0.21.0
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../sim-core
     devDependencies:
-      '@fabwright/parts':
+      '@faber/parts':
         specifier: workspace:*
         version: link:../parts
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../sim-backends
 
@@ -287,34 +287,34 @@ importers:
 
   packages/session:
     dependencies:
-      '@fabwright/agent-skill':
+      '@faber/agent-skill':
         specifier: workspace:*
         version: link:../agent-skill
-      '@fabwright/ai-gateway':
+      '@faber/ai-gateway':
         specifier: workspace:*
         version: link:../../services/ai-gateway
-      '@fabwright/device-net':
+      '@faber/device-net':
         specifier: workspace:*
         version: link:../device-net
-      '@fabwright/enclosure':
+      '@faber/enclosure':
         specifier: workspace:*
         version: link:../enclosure
-      '@fabwright/parts':
+      '@faber/parts':
         specifier: workspace:*
         version: link:../parts
-      '@fabwright/physics':
+      '@faber/physics':
         specifier: workspace:*
         version: link:../physics
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/runner':
+      '@faber/runner':
         specifier: workspace:*
         version: link:../../services/runner
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../sim-backends
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../sim-core
       fflate:
@@ -330,10 +330,10 @@ importers:
 
   packages/sim-backends:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../sim-core
       avr8js:
@@ -348,7 +348,7 @@ importers:
 
   packages/sim-core:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../project-format
       fflate:
@@ -360,19 +360,19 @@ importers:
 
   services/ai-gateway:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../../packages/project-format
 
   services/runner:
     dependencies:
-      '@fabwright/project-format':
+      '@faber/project-format':
         specifier: workspace:*
         version: link:../../packages/project-format
-      '@fabwright/sim-backends':
+      '@faber/sim-backends':
         specifier: workspace:*
         version: link:../../packages/sim-backends
-      '@fabwright/sim-core':
+      '@faber/sim-core':
         specifier: workspace:*
         version: link:../../packages/sim-core
       '@pybricks/mpy-cross-v6':

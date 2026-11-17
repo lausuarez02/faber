@@ -1,6 +1,6 @@
 // Test bench for part models: mounts one model on a sim-core Circuit with a fake PartContext,
 // lets the test add its own sources/loads, and solves. Used by every parts/<id>/model.test.ts.
-import type { PropValue } from "@fabwright/project-format";
+import type { PropValue } from "@faber/project-format";
 import {
   Circuit,
   GROUND,
@@ -14,7 +14,7 @@ import {
   type PartModel,
   type PinState,
   type SolveResult,
-} from "@fabwright/sim-core";
+} from "@faber/sim-core";
 
 export interface BenchOptions {
   /** Instance id (element ids are scoped with it). Default: the part type id. */
@@ -23,7 +23,7 @@ export interface BenchOptions {
   /** pin id → circuit node. Pins not listed get "<id>:<pin>"; ground pins default to "0". */
   wiring?: Record<string, NodeId>;
   mcu?: McuBackend;
-  /** Round 6: the project's power situation (fabwright.json power). Default: USB plugged. */
+  /** Round 6: the project's power situation (faber.json power). Default: USB plugged. */
   power?: { usb: boolean };
 }
 

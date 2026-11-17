@@ -1,4 +1,4 @@
-// Round 10 (network): the Network panel for the device network, served by `fabwright serve`. A
+// Round 10 (network): the Network panel for the device network, served by `faber serve`. A
 // project in mock mode with one mocked HTTPS API and a secret by name: the panel shows the mode and
 // the secret (set on this machine, never its value); "Try" makes a request from inside the sandbox
 // (sandbox DNS + TLS with the sandbox CA), which shows as a request row; "Drop Wi-Fi" makes the
@@ -11,29 +11,29 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
 
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("./fixtures/net-panel/", import.meta.url));
 const SECRET = "wk-e2e-not-a-real-key-0123456789";
 
-test.describe("device network panel from fabwright serve", () => {
+test.describe("device network panel from faber serve", () => {
   let dir = "";
   let home = "";
   let hub: ChildProcess | undefined;
   let port = 0;
 
   test.beforeEach(async ({}, info) => {
-    dir = mkdtempSync(join(tmpdir(), "fabwright-e2e-net-"));
-    home = mkdtempSync(join(tmpdir(), "fabwright-e2e-home-"));
+    dir = mkdtempSync(join(tmpdir(), "faber-e2e-net-"));
+    home = mkdtempSync(join(tmpdir(), "faber-e2e-home-"));
     cpSync(FIXTURE, dir, { recursive: true });
     writeFileSync(join(dir, ".env"), `WEATHER_KEY=${SECRET}\n`);
-    const env = { ...process.env, FABWRIGHT_HOME: home, FABWRIGHT_AI_GATEWAY_PORT: "0", FABWRIGHT_SANDBOX_CA_DIR: join(home, "sandbox-ca") };
+    const env = { ...process.env, FABER_HOME: home, FABER_AI_GATEWAY_PORT: "0", FABER_SANDBOX_CA_DIR: join(home, "sandbox-ca") };
     port = hubPort(info, 14);
     hub = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env });
     let out = "";
     hub.stdout?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.stderr?.on("data", (b: Buffer) => void (out += b.toString()));
     hub.once("exit", (code) => {
-      if (code) console.log(`fabwright serve exited ${code}:\n${out.slice(-2000)}`);
+      if (code) console.log(`faber serve exited ${code}:\n${out.slice(-2000)}`);
     });
     await expect.poll(async () => (await fetch(`http://localhost:${port}/?local`).catch(() => undefined))?.status ?? 0, { timeout: 60_000 }).toBe(200);
   });

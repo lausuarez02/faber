@@ -1,6 +1,6 @@
 // Network probe firmware for the device-net Docker integration test. A plain ESP32 sketch written
 // for the real device: Wi-Fi with the real root CA set for HTTPS, HTTPClient, PubSubClient MQTT.
-// It never mentions Fabwright or keys; the simulation build's shims and the sandbox do the rest.
+// It never mentions Faber or keys; the simulation build's shims and the sandbox do the rest.
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
@@ -66,7 +66,7 @@ void setup() {
   Serial.begin(115200);
   delay(20);
   Serial.println("probe boot");
-  // The committed image was built before the rename: "JumperNet" still joins FabwrightNet.
+  // The committed image was built before the rename: "JumperNet" still joins FaberNet.
   WiFi.begin("JumperNet", "hunter22-wifi");
   while (WiFi.status() != WL_CONNECTED) delay(20);
   Serial.printf("wifi ip=%s gw=%s dns=%s rssi=%d\n", WiFi.localIP().toString().c_str(), WiFi.gatewayIP().toString().c_str(),

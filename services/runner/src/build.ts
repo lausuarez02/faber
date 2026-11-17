@@ -4,14 +4,14 @@ import { basename, join, relative } from "node:path";
 import { cacheDir, imageFor, outputFormatFor, PINNED_LIBRARIES, platformFor, RUNNER_IMAGE, SUPPORTED_FQBNS } from "./config.ts";
 import { parseCompilerOutput, type CompileDiagnostic } from "./diagnostics.ts";
 import { ensureDocker, ensureImage, exec, RunnerError } from "./docker.ts";
-import type { FirmwareLanguage } from "@fabwright/project-format";
+import type { FirmwareLanguage } from "@faber/project-format";
 import type { ImageFormat } from "./lang/registry.ts";
 import { buildMicroPython } from "./lang/build-micropython.ts";
 import { buildEspIdf } from "./lang/build-espidf.ts";
 import { buildPlatformIO } from "./lang/build-platformio.ts";
 import { arduinoRuntimeFor } from "./runtime.ts";
 import { CAMERA_SHIM_INCLUDE, cameraShimHash, SLEEP_SHIM_CALL, sleepShimHash, compileNative, installLibraryNative, nativeFamilyOf, nativeToolchainId } from "./native/arduino.ts";
-import type { Runtime } from "@fabwright/sim-backends/node";
+import type { Runtime } from "@faber/sim-backends/node";
 
 export interface BuildRequest {
   /** Absolute folder holding the sketch sources: every .ino/.h/.hpp/.c/.cpp/.S in it (and its src/ folder). */
@@ -31,21 +31,21 @@ export interface BuildRequest {
   /** ESP-IDF: target (firmware.build.target, default the chip). PlatformIO: env (firmware.build.env). */
   target?: string;
   env?: string;
-  /** "Name" or "Name@version". Names without a version resolve to Fabwright's pinned versions. */
+  /** "Name" or "Name@version". Names without a version resolve to Faber's pinned versions. */
   libraries?: readonly string[];
   /** Prefix for file paths in diagnostics, e.g. "firmware/" so errors read "firmware/pet.ino:12". */
   displayPrefix?: string;
   /** Extra `--build-property` values (e.g. "build.cdc_on_boot=0" for a simulator build). */
   buildProperties?: readonly string[];
   /**
-   * "simulator" (default) or "device". ESP32 images with the simulation shim (fabwright/arduino-esp32 r3:
+   * "simulator" (default) or "device". ESP32 images with the simulation shim (faber/arduino-esp32 r3:
    * Wi-Fi on the emulated Ethernet card, TLS trusting the sandbox CA) leave it out of a "device" build
-   * (FABWRIGHT_SIM=0), so the factory pack's firmware is plain arduino-cli output.
+   * (FABER_SIM=0), so the factory pack's firmware is plain arduino-cli output.
    */
   purpose?: "simulator" | "device";
   /**
    * Round 13: files added to the sketch for this build only (path in the sketch → text), e.g. the
-   * simulation's fabwright_device.h (the sandbox relay) or FabwrightRelay.h when the sketch includes it.
+   * simulation's faber_device.h (the sandbox relay) or FaberRelay.h when the sketch includes it.
    */
   extraSources?: Readonly<Record<string, string>>;
   /** Reuse a cached result for identical inputs (default true). */
@@ -81,8 +81,8 @@ export interface BuildResult {
 }
 
 const SOURCE_EXT = /\.(ino|pde|h|hpp|hh|c|cc|cpp|cxx|S|s)$/;
-/** The person's own device settings (relay token, Wi-Fi password): never in a build Fabwright makes. */
-export const DEVICE_SECRETS_HEADER = "fabwright_device.h";
+/** The person's own device settings (relay token, Wi-Fi password): never in a build Faber makes. */
+export const DEVICE_SECRETS_HEADER = "faber_device.h";
 /** The same file under its name from before the rename from Jumper: just as secret. */
 export const LEGACY_DEVICE_SECRETS_HEADER = "jumper_device.h";
 const inflight = new Map<string, Promise<BuildResult>>();
@@ -130,7 +130,7 @@ export function resolveLibraries(libs: readonly string[] = []): string[] {
     const name = at > 0 ? trimmed.slice(0, at).trim() : trimmed;
     let version = at > 0 ? trimmed.slice(at + 1).trim() : "";
     if (at > 0 && !/^\d+(\.\d+){0,3}([-+][\w.]+)?$/.test(version)) {
-      throw new RunnerError("bad-library", `Library '${spec}' has an invalid version '${version}'. Fix: write it as "Name@1.2.3" (as shown in the Arduino Library Manager) or just "Name" for Fabwright's pinned version.`);
+      throw new RunnerError("bad-library", `Library '${spec}' has an invalid version '${version}'. Fix: write it as "Name@1.2.3" (as shown in the Arduino Library Manager) or just "Name" for Faber's pinned version.`);
     }
     const pinned = PINNED_LIBRARIES[name];
     if (!version) version = pinned?.version ?? "";
@@ -241,8 +241,8 @@ async function ensureLibrary(spec: string, log: (l: string) => void, runtime: Ru
 }
 
 /**
- * Compile a sketch with arduino-cli in the pinned Docker image, or (round 11) Fabwright's native toolchain
- * when Docker is not usable (FABWRIGHT_RUNTIME). Identical inputs return the cached result.
+ * Compile a sketch with arduino-cli in the pinned Docker image, or (round 11) Faber's native toolchain
+ * when Docker is not usable (FABER_RUNTIME). Identical inputs return the cached result.
  * Throws RunnerError only for environment problems (Docker missing, image/library install failures);
  * compile errors come back as `ok: false` with diagnostics.
  */
@@ -258,7 +258,7 @@ export async function buildFirmware(req: BuildRequest): Promise<BuildResult> {
     case "platformio":
       return buildPlatformIO(req, t0);
     default:
-      throw new RunnerError("language-not-built", `Build failed: firmware.language '${req.language}' has no toolchain in Fabwright yet. Why: ${req.language === "rust" ? "the Rust (esp-hal / rp-hal) image is planned, not built" : "the Zephyr SDK image is planned, not built"} (docs/firmware-languages.md). Fix: use "arduino", "micropython", "esp-idf" or "platformio".`);
+      throw new RunnerError("language-not-built", `Build failed: firmware.language '${req.language}' has no toolchain in Faber yet. Why: ${req.language === "rust" ? "the Rust (esp-hal / rp-hal) image is planned, not built" : "the Zephyr SDK image is planned, not built"} (docs/firmware-languages.md). Fix: use "arduino", "micropython", "esp-idf" or "platformio".`);
   }
 }
 
@@ -270,7 +270,7 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
     throw new RunnerError("no-sketch", `Build failed: the sketch folder ${req.sketchDir} does not exist. Fix: write the sketch first, e.g. write_file("firmware/main.ino", "...").`);
   }
   const sources = collectSources(req.sketchDir);
-  // Round 13: a person's fabwright_device.h holds their device token and Wi-Fi password; Fabwright's own
+  // Round 13: a person's faber_device.h holds their device token and Wi-Fi password; Faber's own
   // builds (simulator, factory pack, build kit) never compile it. A simulation build gets its own.
   sources.delete(DEVICE_SECRETS_HEADER);
   sources.delete(LEGACY_DEVICE_SECRETS_HEADER);
@@ -285,10 +285,10 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
     h.update(`image=${runtime === "native" && family ? nativeToolchainId(family) : imageFor(req.fqbn)}\nfqbn=${req.fqbn}\nmain=${main}\nlibs=${libraries.join(",")}\n`);
     if (req.buildProperties?.length) h.update(`props=${req.buildProperties.join("\n")}\n`);
     if (req.purpose === "device") h.update("purpose=device\n");
-    // Round 13: a simulation build of a camera sketch links Fabwright's camera shim from the repo.
+    // Round 13: a simulation build of a camera sketch links Faber's camera shim from the repo.
     else if (req.fqbn.startsWith("esp32:esp32:")) {
       if ([...sources.values()].some((c) => CAMERA_SHIM_INCLUDE.test(c))) h.update(`camshim=${cameraShimHash()}\n`);
-      // Round 15: a simulation build of a deep-sleep sketch links Fabwright's sleep shim from the repo.
+      // Round 15: a simulation build of a deep-sleep sketch links Faber's sleep shim from the repo.
       if ([...sources.values()].some((c) => SLEEP_SHIM_CALL.test(c))) h.update(`sleepshim=${sleepShimHash()}\n`);
     }
     for (const [f, c] of [...sources].sort(([a], [b]) => (a < b ? -1 : 1))) h.update(`${f}\0${c}\0`);
@@ -375,25 +375,25 @@ async function compile(
   }
   mkdirSync(join(work, "out"), { recursive: true });
   // Boards whose Serial is USB CDC (not emulated): the simulator build prints Serial on the hardware UART.
-  if (platform.simSerialHeader) writeFileSync(join(work, "fabwright_sim_serial.h"), platform.simSerialHeader);
+  if (platform.simSerialHeader) writeFileSync(join(work, "faber_sim_serial.h"), platform.simSerialHeader);
   const libRoot = join(cacheDir(), "arduino-libs");
   mkdirSync(libRoot, { recursive: true });
 
   const compileArgs = [
     "--fqbn", req.fqbn, "--output-dir", `${workIn}/out`, "--warnings", "default",
     ...libDirs.flatMap((d) => ["--libraries", d]),
-    ...sketchSetupFlags(sources, platform.simSerialHeader ? `${workIn}/fabwright_sim_serial.h` : undefined, `${workIn}/sketch`),
+    ...sketchSetupFlags(sources, platform.simSerialHeader ? `${workIn}/faber_sim_serial.h` : undefined, `${workIn}/sketch`),
     ...(req.buildProperties ?? []).flatMap((p) => ["--build-property", p]),
   ];
   let r: { code: number; stdout: string; stderr: string };
   if (native) {
-    log(`compiling natively (${req.fqbn}, Fabwright's arduino-cli toolchain)…`);
+    log(`compiling natively (${req.fqbn}, Faber's arduino-cli toolchain)…`);
     r = await compileNative({ fqbn: req.fqbn, args: compileArgs, sketch: `${work}/sketch`, outDir: join(work, "out"), workDir: work, ...(req.purpose ? { purpose: req.purpose } : {}), timeoutMs: 10 * 60_000 });
   } else {
     const args = [
       "run", "--rm", ...uidArgs(), ...(platform.dockerPlatform ? ["--platform", platform.dockerPlatform] : []),
       "-v", `${work}:/work`, "-v", `${libRoot}:/extra:ro`, "-w", "/work",
-      ...(req.purpose === "device" ? ["-e", "FABWRIGHT_SIM=0"] : []),
+      ...(req.purpose === "device" ? ["-e", "FABER_SIM=0"] : []),
       image,
       "compile", ...compileArgs,
       "/work/sketch",

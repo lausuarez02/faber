@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { firmwareText } from "../firmware-text.ts";
 import { join } from "node:path";
-import type { CaseReport } from "@fabwright/enclosure";
+import type { CaseReport } from "@faber/enclosure";
 import { assemblyStyle, colorName, wireCuts, type WireCut } from "../assembly.ts";
 import { fidelityReport } from "../fidelity.ts";
 import { pinPositions } from "../manufacturing.ts";
@@ -18,7 +18,7 @@ import { cellPlugs, derivedSteps, flashPlan, kitWords, peopleWords, planSteps, r
 import type { BuildKit } from "./types.ts";
 import { powerBudget } from "../power-budget.ts";
 import { connectPlan } from "./connect.ts";
-import { stateDirPath } from "@fabwright/project-format/node";
+import { stateDirPath } from "@faber/project-format/node";
 
 export type { BuildKit, ConnectPlan } from "./types.ts";
 export { kitCsv, kitHtml, kitMarkdown, printListMd, shoppingMd } from "./render.ts";
@@ -41,7 +41,7 @@ interface LayoutCache {
   bosses: number;
 }
 
-/** Pin positions from the case layout (the factory pack's wire lengths), cached per case hash in .fabwright/kit-layout.json. */
+/** Pin positions from the case layout (the factory pack's wire lengths), cached per case hash in .faber/kit-layout.json. */
 async function casePositions(s: ProjectSession, report: CaseReport): Promise<LayoutCache | undefined> {
   const file = join(stateDirPath(s.dir), "kit-layout.json");
   if (existsSync(file)) {
@@ -54,7 +54,7 @@ async function casePositions(s: ProjectSession, report: CaseReport): Promise<Lay
   }
   if (!s.project.enclosure) return undefined;
   const reg = s.registry;
-  const { layoutCase } = await import("@fabwright/enclosure");
+  const { layoutCase } = await import("@faber/enclosure");
   const L = layoutCase({ parts: s.project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: s.project.enclosure });
   const c: LayoutCache = { hash: report.hash, positions: pinPositions(L.placed, (t) => reg.get(t)?.spec), bosses: L.bosses.length };
   try {
@@ -112,7 +112,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
 
   const has = (rel: string) => existsSync(join(caseDir, rel));
   const print = await printPlan({ caseDir, report, ...(stale ? { stale } : {}), slicer: o.slicer ?? "auto", cacheFile: join(stateDirPath(s.dir), "kit-slicer.json") });
-  const { specWithProps } = await import("@fabwright/enclosure");
+  const { specWithProps } = await import("@faber/enclosure");
   const sizeOf = (type: string, props: Record<string, unknown> | undefined) => {
     const spec = reg.get(type)?.spec;
     if (!spec) return undefined;
@@ -144,7 +144,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   const check_first = drc
     .map((line) => /^(error|warning)\s+\[([^\]]+)\]\s+(.*)$/s.exec(line))
     .filter((m): m is RegExpExecArray => !!m && !/^(assembly|case)-/.test(m[2]!))
-    .map((m) => ({ severity: m[1] as "error" | "warning", code: m[2]!, problem: m[2]!.replace(/-/g, " "), why: kitWords(m[3]!.replace(/\s*Fix:.*$/s, ""), { ref: refWords(project, reg) }), fix: kitWords(/Fix:\s*(.*)$/s.exec(m[3]!)?.[1] ?? "see the design check in Fabwright", { ref: refWords(project, reg) }) }));
+    .map((m) => ({ severity: m[1] as "error" | "warning", code: m[2]!, problem: m[2]!.replace(/-/g, " "), why: kitWords(m[3]!.replace(/\s*Fix:.*$/s, ""), { ref: refWords(project, reg) }), fix: kitWords(/Fix:\s*(.*)$/s.exec(m[3]!)?.[1] ?? "see the design check in Faber", { ref: refWords(project, reg) }) }));
   for (const st of steps) {
     st.do = st.do.map((d) => peopleWords(d, toolNames));
     st.cautions = st.cautions.map((c) => peopleWords(c, toolNames));

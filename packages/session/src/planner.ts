@@ -1,12 +1,12 @@
-import { planNetworkSteps } from "@fabwright/device-net";
-import { isProcessBackend, type PartDefinition, type PartRegistry, type PartSpec } from "@fabwright/sim-core";
-import { LIPO_CELLS } from "@fabwright/enclosure";
-import { LANGUAGES, languagesFor } from "@fabwright/runner";
+import { planNetworkSteps } from "@faber/device-net";
+import { isProcessBackend, type PartDefinition, type PartRegistry, type PartSpec } from "@faber/sim-core";
+import { LIPO_CELLS } from "@faber/enclosure";
+import { LANGUAGES, languagesFor } from "@faber/runner";
 
 /**
  * Round 5, track "agent" (decision 0003, C5 `plan_device`): turn a wish ("a pet that fits in my
  * pocket") into a plan the person can say yes to before anything is placed: which board and why, a
- * bill of materials with one line of why per part, what Fabwright simulates exactly / with a stand-in /
+ * bill of materials with one line of why per part, what Faber simulates exactly / with a stand-in /
  * with an agent-made part / not at all, a rough size, battery life, price and buy links, and what
  * the simulation cannot check.
  *
@@ -131,15 +131,15 @@ const NEEDS: Need[] = [
   { key: "wifi", match: /wi-?fi|internet|online|\bai\b|\bchat|talks? back|answers?\b|\bcloud|\bapi\b|forecast|telegram|notification to (my|the) phone/, label: "ESP-01 Wi-Fi module", ids: ["esp01-wifi"], search: ["wifi"], why: "gets on Wi-Fi to ask an AI or the internet", cannot: "real Wi-Fi range and the real internet (the sandbox network answers instead)" },
   { key: "gps", match: /\bgps|location|where (it|i) (is|am)|tracker/, label: "GPS module (NEO-6M)", ids: ["gps-neo6m", "neo-6m-gps"], search: ["gps"], why: "knows where it is from satellites", behavior: "uart-device", cannot: "a real satellite fix (needs open sky) and position accuracy" },
   // round 13: cameras are a general capability (esp32-camera on ESP32 / ESP32-S3); a board with one built in is preferred
-  { key: "camera", match: /\bcam(era)?s?\b|\bphoto(graph)?s?\b|\bpictures? of\b|\btakes? (a )?(picture|pic|photo|snapshot)|\bselfie|\bsnapshot|\bvideo\b|\bwebcam|face (recogn|detect)|\b(it|that|which|to) (can )?(see|sees)\b|\bsees? (me|you|who|what|people|things|faces?|objects?|around)|\bseeing\b|\blooks? at (me|you|people|things|what|who)\b|\blooking at\b|\bwatch(es|ing)? (me|people|the|who|what)|\bvision\b|\bwhat it sees\b/, label: "OV2640 camera module", ids: ["ov2640-camera"], search: ["camera"], why: "sees: the firmware takes pictures (esp32-camera) to look at or to send to an API", cannot: "picture quality, exposure, low light and the real frame rate (in Fabwright the camera sees a test scene, an image or your webcam)" },
-  { key: "flight", match: /\bdrone|propeller|quadcopter|\bfly(ing)?\b|\besc\b/, label: "flight parts (brushless motors, ESCs, flight controller)", ids: [], why: "a drone needs fast brushless motors and a flight controller", cannot: "flight: Fabwright does not simulate aerodynamics, propellers or brushless motors" },
+  { key: "camera", match: /\bcam(era)?s?\b|\bphoto(graph)?s?\b|\bpictures? of\b|\btakes? (a )?(picture|pic|photo|snapshot)|\bselfie|\bsnapshot|\bvideo\b|\bwebcam|face (recogn|detect)|\b(it|that|which|to) (can )?(see|sees)\b|\bsees? (me|you|who|what|people|things|faces?|objects?|around)|\bseeing\b|\blooks? at (me|you|people|things|what|who)\b|\blooking at\b|\bwatch(es|ing)? (me|people|the|who|what)|\bvision\b|\bwhat it sees\b/, label: "OV2640 camera module", ids: ["ov2640-camera"], search: ["camera"], why: "sees: the firmware takes pictures (esp32-camera) to look at or to send to an API", cannot: "picture quality, exposure, low light and the real frame rate (in Faber the camera sees a test scene, an image or your webcam)" },
+  { key: "flight", match: /\bdrone|propeller|quadcopter|\bfly(ing)?\b|\besc\b/, label: "flight parts (brushless motors, ESCs, flight controller)", ids: [], why: "a drone needs fast brushless motors and a flight controller", cannot: "flight: Faber does not simulate aerodynamics, propellers or brushless motors" },
   { key: "mic", match: /microphone|\bhears?\b|\bvoice\b|\blisten|clap/, label: "sound sensor (microphone module)", ids: ["sound-sensor", "microphone"], search: ["microphone"], why: "hears claps and noise levels (not words)", behavior: "analog-sensor", cannot: "real sound; speech recognition is far beyond these boards" },
   { key: "presence", match: /\bpir\b|someone (walks|comes|is)|people (walk|come)|presence|intruder|motion sensor|detects? (people|someone|movement)|when (someone|a person)/, label: "PIR motion sensor (HC-SR501)", ids: ["pir-motion"], search: ["pir"], why: "notices a person moving nearby (body heat)", behavior: "digital-input", cannot: "real detection range, sensitivity and false triggers from heat sources" },
   { key: "touch", match: /\btouch|\btap (it|on)|\bpet (it|him|her)\b|stroke/, label: "capacitive touch pad (TTP223)", ids: ["ttp223-touch"], search: ["touch"], why: "a pad that reacts to a finger, no moving parts", behavior: "digital-input", cannot: "real touch sensitivity through a case wall" },
   { key: "bump", match: /\bbump(ers?|s)?\b|collision|whisker|limit switch|end ?stop/, label: "lever micro switch (bump switch)", ids: ["bump-switch"], search: ["bump switch"], why: "tells the robot it touched something", qty: (g) => (/rover|robot|car/.test(g) ? 2 : 1), behavior: "digital-input", cannot: "real lever force and bounce" },
   { key: "ir", match: /line follow|\bcliff|table edge|\binfrared|\bir (sensor|obstacle)|close (by|range) obstacle/, label: "IR obstacle sensor (FC-51)", ids: ["ir-proximity"], search: ["infrared obstacle"], why: "sees a nearby obstacle or a dark line a few cm away", qty: (g) => (/line follow/.test(g) ? 2 : 1), behavior: "digital-input", cannot: "real IR reflectivity of colours and sunlight interference" },
   // round 7 voice: a device that talks plays text clips through a DFPlayer Mini and a speaker
-  { key: "voice", match: /\btalk(s|ing)?\b|\bspeak(s|ing)?\b|\bspeaker\b|\bsays?\b|\bsaying\b|\bvoice\b|\bspeech\b|\bout loud\b/, label: "MP3 player DFPlayer Mini (microSD) + 8 Ω speaker", ids: ["dfplayer-mini"], search: ["dfplayer"], why: "says words out loud: each clip on its microSD card is a sentence (in Fabwright the clips are text)", with: ["speaker", "resistor1k"], cannot: "the real voice and loudness: the simulator shows the words and the browser reads them aloud; the MP3s are made later (sd-card/make-clips.sh)" },
+  { key: "voice", match: /\btalk(s|ing)?\b|\bspeak(s|ing)?\b|\bspeaker\b|\bsays?\b|\bsaying\b|\bvoice\b|\bspeech\b|\bout loud\b/, label: "MP3 player DFPlayer Mini (microSD) + 8 Ω speaker", ids: ["dfplayer-mini"], search: ["dfplayer"], why: "says words out loud: each clip on its microSD card is a sentence (in Faber the clips are text)", with: ["speaker", "resistor1k"], cannot: "the real voice and loudness: the simulator shows the words and the browser reads them aloud; the MP3s are made later (sd-card/make-clips.sh)" },
   { key: "vibration", match: /vibrat|haptic|\brumble/, label: "coin vibration motor", ids: ["vibration-motor"], search: ["vibration"], why: "buzzes silently in your hand", behavior: "actuator", standIn: "led", cannot: "how the vibration feels" },
 ];
 const HELPERS: Record<string, Need> = {
@@ -261,7 +261,7 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
     if (able.length) {
       boards = able;
       const pico = able.find((d) => d.spec.id === "raspberry-pi-pico");
-      if (!small && pico) return { def: pico, why: `you want ${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label}, and the Raspberry Pi Pico runs it in Fabwright (the official firmware, verified), with plenty of pins and USB` };
+      if (!small && pico) return { def: pico, why: `you want ${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label}, and the Raspberry Pi Pico runs it in Faber (the official firmware, verified), with plenty of pins and USB` };
     }
   }
   if (c.board) {
@@ -278,7 +278,7 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
     const best = withCam[0];
     if (best) {
       const x = dims(best.spec);
-      return { def: best, why: `it has a camera built in (${best.spec.camera!.sensor}${best.spec.camera!.alternatives?.length ? ` or ${best.spec.camera!.alternatives.join(" / ")}` : ""}, Espressif's esp32-camera driver), so the camera needs no wires${x ? `; ${x.w} × ${x.h} × ${x.d} mm with the camera` : ""}; Wi-Fi to send what it sees${best.spec.tags?.includes("charger") ? ", a battery charger" : ""}${best.spec.tags?.includes("microphone") ? " and a microphone" : ""} too. It runs in Fabwright's ESP32 emulator (fabwright setup esp32)` };
+      return { def: best, why: `it has a camera built in (${best.spec.camera!.sensor}${best.spec.camera!.alternatives?.length ? ` or ${best.spec.camera!.alternatives.join(" / ")}` : ""}, Espressif's esp32-camera driver), so the camera needs no wires${x ? `; ${x.w} × ${x.h} × ${x.d} mm with the camera` : ""}; Wi-Fi to send what it sees${best.spec.tags?.includes("charger") ? ", a battery charger" : ""}${best.spec.tags?.includes("microphone") ? " and a microphone" : ""} too. It runs in Faber's ESP32 emulator (faber setup esp32)` };
     }
   }
 
@@ -289,7 +289,7 @@ function chooseBoard(reg: PartRegistry, c: PlanConstraints, needs5v: string[], s
     const x = dims(best.spec);
     return {
       def: best,
-      why: `the smallest board Fabwright simulates${x ? ` (${x.w} × ${x.h} mm)` : ""}${needs5v.length && (best.spec.mcu?.vcc ?? 5) >= 4.5 ? `, and it runs at 5 V like the ${needs5v.join(", ")}` : ""}, so it fits in a pocket`,
+      why: `the smallest board Faber simulates${x ? ` (${x.w} × ${x.h} mm)` : ""}${needs5v.length && (best.spec.mcu?.vcc ?? 5) >= 4.5 ? `, and it runs at 5 V like the ${needs5v.join(", ")}` : ""}, so it fits in a pocket`,
     };
   }
   const uno = reg.get("arduino-uno");
@@ -387,7 +387,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       cannot.add(`the ${n.label} will be agent-made: it behaves as described, unverified against the real part`);
     } else if (n.standIn && reg.get(n.standIn)) {
       const sd = reg.get(n.standIn)!;
-      bom.push({ type: sd.spec.id, name: n.label, qty, why: `${n.why}. Fabwright has no ${n.label}, so the ${sd.spec.name} stands in for it in the simulation`, source: "stand-in", fidelity: sd.fidelity.level, stand_in_for: n.label, buy_links: searchLinks(n.label) });
+      bom.push({ type: sd.spec.id, name: n.label, qty, why: `${n.why}. Faber has no ${n.label}, so the ${sd.spec.name} stands in for it in the simulation`, source: "stand-in", fidelity: sd.fidelity.level, stand_in_for: n.label, buy_links: searchLinks(n.label) });
       cannot.add(`the ${n.label}: the ${sd.spec.name} stands in for it, so its real behaviour is not simulated`);
     } else {
       bom.push({ type: null, name: n.label, qty, why: n.why, source: "not-simulated", buy_links: searchLinks(n.label) });
@@ -416,13 +416,13 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const wifiLine = bom.findIndex((l) => l.type === "esp01-wifi");
   if (wifiLine >= 0 && b.tags?.includes("wifi")) {
     bom.splice(wifiLine, 1);
-    choices.push(`no Wi-Fi module: the ${b.name} has Wi-Fi built in (in Fabwright its Wi-Fi sketches reach the sandbox network: mocks, cassettes, faults)`);
+    choices.push(`no Wi-Fi module: the ${b.name} has Wi-Fi built in (in Faber its Wi-Fi sketches reach the sandbox network: mocks, cassettes, faults)`);
   }
   // Round 13: a board with its own camera (or microphone) needs no camera (or microphone) module.
   const camLine = bom.findIndex((l) => l.type === "ov2640-camera");
   if (camLine >= 0 && b.camera) {
     bom.splice(camLine, 1);
-    choices.push(`no camera module: the ${b.name} has its camera built in (${b.camera.sensor}; in Fabwright it sees a test scene, an image or your webcam)`);
+    choices.push(`no camera module: the ${b.name} has its camera built in (${b.camera.sensor}; in Faber it sees a test scene, an image or your webcam)`);
   } else if (camLine >= 0 && b.mcu && !["esp32", "esp32s3"].includes(b.mcu.chip)) {
     warnings.push(`the ${b.name} (${b.mcu.chip}) cannot run a camera: esp32-camera needs an ESP32 or ESP32-S3 (the XIAO ESP32-S3 Sense has one built in)`);
   } else if (camLine >= 0) {
@@ -431,9 +431,9 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   const micLine = bom.findIndex((l) => l.type === "sound-sensor" || l.type === "microphone");
   if (micLine >= 0 && b.tags?.includes("microphone")) {
     bom.splice(micLine, 1);
-    choices.push(`no microphone module: the ${b.name} has a digital microphone built in (read with the I2S driver; in Fabwright its sound is set on the board)`);
+    choices.push(`no microphone module: the ${b.name} has a digital microphone built in (read with the I2S driver; in Faber its sound is set on the board)`);
   }
-  if (b.camera || bom.some((l) => l.type === "ov2640-camera")) cannot.add("picture quality, exposure, low light and the real frame rate: in Fabwright the camera sees a test scene, an image or your webcam (set_camera_frame, a camera_frame test step)");
+  if (b.camera || bom.some((l) => l.type === "ov2640-camera")) cannot.add("picture quality, exposure, low light and the real frame rate: in Faber the camera sees a test scene, an image or your webcam (set_camera_frame, a camera_frame test step)");
   const vcc = b.mcu?.vcc ?? 5;
   if (compact && !c.board) {
     const uno = reg.get("arduino-uno")?.spec;
@@ -536,7 +536,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       if (chg) {
         chg.props = { chargeCurrentmA: Math.min(1000, capacity) };
         const t = reg.get("tp4056-charger")?.spec.dimensions_mm;
-        choices.push(`alternative: a XIAO nRF52840 (seeed-xiao-nrf52840) charges a LiPo on the board itself and would save the TP4056${t ? ` (${t.w} x ${t.h} x ${t.d} mm)` : ""}; Fabwright runs it in Renode, which needs Docker on this computer, so the plan keeps a board that runs in the page and the TP4056 (ask for board seeed-xiao-nrf52840 to use it)`);
+        choices.push(`alternative: a XIAO nRF52840 (seeed-xiao-nrf52840) charges a LiPo on the board itself and would save the TP4056${t ? ` (${t.w} x ${t.h} x ${t.d} mm)` : ""}; Faber runs it in Renode, which needs Docker on this computer, so the plan keeps a board that runs in the page and the TP4056 (ask for board seeed-xiao-nrf52840 to use it)`);
       }
       const big = LIPO_CELLS.find((x) => x.mAh >= 500);
       if (big && pick.mAh < big.mAh) choices.push(`a ${pick.mAh} mAh cell (${pick.code}, ${pick.w} x ${pick.h} x ${pick.d} mm) instead of 500 mAh (${big.code}, ${big.w} x ${big.h} x ${big.d} mm): ${Math.round(big.w * big.h - pick.w * pick.h)} mm² less, enough for about ${target} h at ${round1(avg)} mA`);
@@ -639,7 +639,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
   if (noPrice.length) missing.push(`price: ${noPrice.join(", ")}`);
   if (c.budget_usd !== undefined && total > c.budget_usd) warnings.push(`the parts come to about $${total}, over your $${c.budget_usd} budget${noPrice.length ? " (and some prices are unknown)" : ""}`);
 
-  for (const l of bom) if (l.source === "not-simulated" && !/boost/.test(l.name)) cannot.add(`the ${l.name}: Fabwright does not simulate it`);
+  for (const l of bom) if (l.source === "not-simulated" && !/boost/.test(l.name)) cannot.add(`the ${l.name}: Faber does not simulate it`);
   if (bom.some((l) => l.type === "esp01-wifi") && vcc >= 4.5) warnings.push("the ESP-01 is a 3.3 V part: its RX needs a 1k/2k divider from the 5 V board, and it needs a 3.3 V supply that gives 300 mA peaks (the board's 3V3 pin gives 50 mA)");
 
   // One clarifying question when the wish leaves a real choice open.
@@ -657,7 +657,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
     `${goal.trim().replace(/\.$/, "")}: ${b.name}${listed.length ? ` with ${listed.join(", ")}` : ""}.`,
     ...(compact ? [`Size budget: the smallest parts that do the job, ${size_budget.footprint_mm2} mm² laid flat (${flat} × ${flat} mm), thickest ${thick} mm (${thickest}).`] : []),
     `About ${enclosure.w} × ${enclosure.h} × ${enclosure.d} mm in a case${battery && battery.hours ? `, about ${battery.hours} h per charge` : ""}, ${total > 0 ? `parts about $${total}${noPrice.length ? ` plus ${noPrice.length} unpriced line${noPrice.length > 1 ? "s" : ""}` : ""}` : "price not known yet (the parts have no price data)"}.`,
-    `${simulated} of ${bom.length} lines are parts Fabwright simulates as themselves${others.length ? `; ${others.map((l) => `${l.name} (${l.source})`).join(", ")}` : ""}.`,
+    `${simulated} of ${bom.length} lines are parts Faber simulates as themselves${others.length ? `; ${others.map((l) => `${l.name} (${l.source})`).join(", ")}` : ""}.`,
   ].join(" ");
 
   const next = [
@@ -689,7 +689,7 @@ export function planDevice(goal: string, constraints: PlanConstraints, reg: Part
       if (wantsLang && verified.includes(wantsLang as never)) return { suggested: wantsLang, why: `you asked for ${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label}: set_firmware {"language": "${wantsLang}"} after placing the board`, verified_on_board: verified };
       return {
         suggested: "arduino",
-        why: wantsLang ? `${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label} is not verified on the ${b.name} in Fabwright; Arduino is (docs/firmware-languages.md)` : "Arduino (C++) has the most examples and libraries for these parts",
+        why: wantsLang ? `${LANGUAGES[wantsLang as keyof typeof LANGUAGES].label} is not verified on the ${b.name} in Faber; Arduino is (docs/firmware-languages.md)` : "Arduino (C++) has the most examples and libraries for these parts",
         verified_on_board: verified,
       };
     })(),

@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { BuildRequest, BuildResult } from "@fabwright/runner";
-import { startFabwrightServer, type FabwrightServer } from "../src/serve.ts";
+import type { BuildRequest, BuildResult } from "@faber/runner";
+import { startFaberServer, type FaberServer } from "../src/serve.ts";
 import { freeName } from "../src/routes/projects.ts";
 
 // Round 6b (ui): opening an example twice reopens the person's copy (a new copy only when asked, as
@@ -17,18 +17,18 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 
 describe("example copies (round 6b)", () => {
   let tmp: string;
-  let srv: FabwrightServer;
+  let srv: FaberServer;
   let token: string;
-  const oldHome = process.env.FABWRIGHT_HOME;
+  const oldHome = process.env.FABER_HOME;
   const get = async (path: string): Promise<Json> => (await (await fetch(`${srv.url}${path}`)).json()) as Json;
   const send = async (method: string, path: string, body: unknown = {}): Promise<{ status: number; body: Json }> => {
-    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", "x-fabwright-token": token }, body: JSON.stringify(body) });
+    const r = await fetch(`${srv.url}${path}`, { method, headers: { "content-type": "application/json", "x-faber-token": token }, body: JSON.stringify(body) });
     return { status: r.status, body: (await r.json()) as Json };
   };
 
   beforeAll(async () => {
-    tmp = mkdtempSync(join(tmpdir(), "fabwright-copies-"));
-    process.env.FABWRIGHT_HOME = join(tmp, "home");
+    tmp = mkdtempSync(join(tmpdir(), "faber-copies-"));
+    process.env.FABER_HOME = join(tmp, "home");
     const examples = join(tmp, "examples");
     cpSync(join(REPO_EXAMPLES, "ai-pet"), join(examples, "ai-pet"), { recursive: true });
     // A checkout where the sketch is newer than the hex and has CRLF line endings.
@@ -37,14 +37,14 @@ describe("example copies (round 6b)", () => {
     const later = new Date(Date.now() + 60_000);
     utimesSync(ino, later, later);
     mkdirSync(join(examples, "agent-built"), { recursive: true });
-    srv = await startFabwrightServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
+    srv = await startFaberServer({ dir: join(tmp, "projects/playground"), port: 0, web: "none", builder, examplesRoot: examples, launcher: async () => {} });
     token = ((await (await fetch(`${srv.url}/api/connect`)).json()) as { token: string }).token;
   }, 30_000);
 
   afterAll(async () => {
     await srv?.close();
-    if (oldHome === undefined) delete process.env.FABWRIGHT_HOME;
-    else process.env.FABWRIGHT_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.FABER_HOME;
+    else process.env.FABER_HOME = oldHome;
     rmSync(tmp, { recursive: true, force: true });
   });
 

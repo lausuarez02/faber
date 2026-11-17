@@ -8,7 +8,7 @@
 //
 // The canvas engine (lib/engine.ts) owns one layer: attach when a TFT part's SVG mounts (instead of
 // the mono display layer), paint every frame after applyVisualState, detach on unmount.
-import { colorFrameToRgba, type ColorFrame, type DirtyRect, type VisualState } from "@fabwright/sim-core";
+import { colorFrameToRgba, type ColorFrame, type DirtyRect, type VisualState } from "@faber/sim-core";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";

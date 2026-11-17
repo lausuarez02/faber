@@ -1,7 +1,7 @@
 // Boards as data (decision 0006): a board part may name its pins differently from the backend
 // ("D13" on the board, "P0.13" in Renode). `mcu.pinMap` maps board pin id → backend pin id, and
 // this wrapper makes the backend speak the board's pin ids, so sim-core never needs to know.
-import type { McuBackend, McuBusPins, PinState, Unsubscribe } from "@fabwright/sim-core";
+import type { McuBackend, McuBusPins, PinState, Unsubscribe } from "@faber/sim-core";
 
 export function withPinMap<T extends McuBackend>(backend: T, pinMap: Record<string, string> | undefined): McuBackend {
   if (!pinMap || Object.keys(pinMap).length === 0) return backend;

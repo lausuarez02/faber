@@ -3,8 +3,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
 /**
- * `fabwright mcp --attach http://localhost:7780`: a stdio MCP server that forwards every message to a
- * running `fabwright serve`, so stdio-only clients drive the same live canvas the person is watching.
+ * `faber mcp --attach http://localhost:7780`: a stdio MCP server that forwards every message to a
+ * running `faber serve`, so stdio-only clients drive the same live canvas the person is watching.
  * The client's own initialize (and so its name) passes through unchanged.
  */
 
@@ -14,7 +14,7 @@ export function attachUrl(raw: string): URL {
   try {
     u = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `http://${raw}`);
   } catch {
-    throw new Error(`--attach '${raw}' is not a URL. Fix: pass the fabwright serve address, e.g. --attach http://localhost:7780`);
+    throw new Error(`--attach '${raw}' is not a URL. Fix: pass the faber serve address, e.g. --attach http://localhost:7780`);
   }
   if (!u.pathname.replace(/\/+$/, "").endsWith("/mcp")) u.pathname = `${u.pathname.replace(/\/+$/, "")}/mcp`;
   return u;
@@ -27,13 +27,13 @@ export async function startAttachedStdio(raw: string): Promise<void> {
     const r = await fetch(health, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
   } catch (err) {
-    throw new Error(`No Fabwright server at ${url.origin} (${(err as Error).message}). Fix: start it with \`pnpm start\` (or \`fabwright serve\`) in the Fabwright repo, or drop --attach to run a standalone server.`);
+    throw new Error(`No Faber server at ${url.origin} (${(err as Error).message}). Fix: start it with \`pnpm start\` (or \`faber serve\`) in the Faber repo, or drop --attach to run a standalone server.`);
   }
-  const upstream = new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-fabwright-transport": "stdio-attach" } } });
+  const upstream = new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-faber-transport": "stdio-attach" } } });
   const local = new StdioServerTransport();
   const failReply = (msg: JSONRPCMessage, err: Error) => {
     if ("id" in msg && msg.id !== undefined && "method" in msg) {
-      void local.send({ jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: `Fabwright server at ${url.origin} did not answer (${err.message}). Fix: check that fabwright serve is still running, then retry.` } });
+      void local.send({ jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: `Faber server at ${url.origin} did not answer (${err.message}). Fix: check that faber serve is still running, then retry.` } });
     }
   };
   local.onmessage = (msg) => {
@@ -44,7 +44,7 @@ export async function startAttachedStdio(raw: string): Promise<void> {
     if (typeof pv === "string") upstream.setProtocolVersion(pv);
     void local.send(msg);
   };
-  upstream.onerror = (err) => process.stderr.write(`fabwright mcp --attach: ${err.message}\n`);
+  upstream.onerror = (err) => process.stderr.write(`faber mcp --attach: ${err.message}\n`);
   const shutdown = async () => {
     await upstream.terminateSession().catch(() => {});
     await upstream.close().catch(() => {});
@@ -56,5 +56,5 @@ export async function startAttachedStdio(raw: string): Promise<void> {
   process.on("SIGTERM", () => void shutdown());
   await upstream.start();
   await local.start();
-  process.stderr.write(`fabwright MCP (stdio) attached to ${url.href}: tool calls drive the live canvas there.\n`);
+  process.stderr.write(`faber MCP (stdio) attached to ${url.href}: tool calls drive the live canvas there.\n`);
 }

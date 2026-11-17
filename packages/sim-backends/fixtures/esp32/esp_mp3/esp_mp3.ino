@@ -1,7 +1,7 @@
 // Round 13 (audio): MP3 decoded ON the device and played through I2S, the way a sketch plays an MP3
 // an API returned. arduino-esp32 3.x's ESP_I2S::playMP3() decodes with libhelix-mp3 (RealNetworks
 // RPSL / RCSL, prebuilt in the core), so this sketch is built at test time and its image is not
-// committed (Fabwright ships no RPSL code). minimp3 (CC0) is the decoder to bundle in your own code.
+// committed (Faber ships no RPSL code). minimp3 (CC0) is the decoder to bundle in your own code.
 #include <ESP_I2S.h>
 #include "tone_mp3.h"
 

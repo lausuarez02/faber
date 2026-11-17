@@ -1,6 +1,6 @@
-// Fabwright reference firmware: an AI pet on a colour screen.
+// Faber reference firmware: an AI pet on a colour screen.
 //
-// Hardware (see ../../fabwright.json): Arduino Uno; ILI9341 2.8in 320x240 TFT on SPI (CS D10,
+// Hardware (see ../../faber.json): Arduino Uno; ILI9341 2.8in 320x240 TFT on SPI (CS D10,
 // DC D9, RST D8, MOSI D11, SCK D13, LED 5V); ESP-01S Wi-Fi module with AT firmware on
 // SoftwareSerial (ESP TX -> D2, D3 -> 1k/2k divider -> ESP RX, VCC 3V3); buttons to GND on
 // D4 (talk), D5 (feed), D6 (play) with INPUT_PULLUP; active buzzer on D7.
@@ -8,7 +8,7 @@
 // The pet has food, joy and energy (0..100). TALK asks the pet's AI what it thinks; FEED and PLAY
 // change the stats and also ask the AI for a reaction. Left alone for 30 s it asks by itself
 // ("lonely"). The AI answers "<mood>|<text>" (text <= 60 chars) from
-//   GET http://ai.fabwright/v1/pet?a=<action>&f=<food>&j=<joy>&e=<energy>&n=Pip
+//   GET http://ai.faber/v1/pet?a=<action>&f=<food>&j=<joy>&e=<energy>&n=Pip
 // and the reply is shown in a speech bubble with a matching face. Without Wi-Fi the pet shows an
 // offline icon, keeps the question and asks again when the module reconnects.
 //
@@ -24,9 +24,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 
-#define WIFI_SSID "FabwrightNet"
+#define WIFI_SSID "FaberNet"
 #define WIFI_PASS ""
-#define AI_HOST "ai.fabwright"
+#define AI_HOST "ai.faber"
 #define AI_PORT 80  // the gateway on a real computer listens on 8787
 #define PET_NAME "Pip"
 #define STR2(x) #x

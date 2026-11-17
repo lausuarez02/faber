@@ -9,20 +9,20 @@ import { hubPort, shot } from "./helpers.ts";
 // Round 8b: "What's making it bigger" in the Case view's Layout tab, on the talking egg a real
 // Claude rebuilt on round-8 code (74 x 96 x 44.4 mm: a 6 mm dome on both faces, the eyes and the
 // speaker pinned on the front, a fixed 74 x 96 mm size). Each choice says what it adds in plain
-// words (no tool names) and Apply relaxes it. Real `fabwright serve`, real layouts and CAD.
-const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
+// words (no tool names) and Apply relaxes it. Real `faber serve`, real layouts and CAD.
+const CLI = fileURLToPath(new URL("../../cli/bin/faber.mjs", import.meta.url));
 const EGG = readFileSync(fileURLToPath(new URL("../../../packages/enclosure/test/fixtures/talking-egg-round8.json", import.meta.url)), "utf8");
 
 async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(): Promise<void> }> {
-  const root = mkdtempSync(join(tmpdir(), "fabwright-e2e-costs-"));
+  const root = mkdtempSync(join(tmpdir(), "faber-e2e-costs-"));
   const dir = join(root, "egg");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "fabwright.json"), EGG);
+  writeFileSync(join(dir, "faber.json"), EGG);
   const port = hubPort(info, 14);
-  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABWRIGHT_HOME: join(root, "home"), FABWRIGHT_CASE_PDF: "0" } });
+  const proc: ChildProcess = spawn(process.execPath, [CLI, "serve", "--project", dir, "--port", String(port), "--strict-port", "--no-open"], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, FABER_HOME: join(root, "home"), FABER_CASE_PDF: "0" } });
   let log = "";
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`fabwright serve did not start in 40 s:\n${log}`)), 40_000);
+    const t = setTimeout(() => reject(new Error(`faber serve did not start in 40 s:\n${log}`)), 40_000);
     const onData = (d: Buffer) => {
       log += d.toString();
       if (log.includes("MCP:")) {
@@ -32,7 +32,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
     };
     proc.stdout!.on("data", onData);
     proc.stderr!.on("data", onData);
-    proc.on("exit", (code) => reject(new Error(`fabwright serve exited with ${code}:\n${log}`)));
+    proc.on("exit", (code) => reject(new Error(`faber serve exited with ${code}:\n${log}`)));
   });
   return {
     url: `http://localhost:${port}`,
@@ -50,7 +50,7 @@ async function serve(info: TestInfo): Promise<{ url: string; dir: string; close(
   };
 }
 
-const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8"));
+const saved = (dir: string) => JSON.parse(readFileSync(join(dir, "faber.json"), "utf8"));
 
 test("Case view, Layout: what's making it bigger, in plain words, and Apply relaxes the dome", async ({ page }, info) => {
   // (its own "case-costs" project in playwright.config.ts: desktop size, after the other specs)

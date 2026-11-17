@@ -10,7 +10,7 @@ let s: ProjectSession;
 const steps = async () => ((await s.call("list_steps")) as { steps: { id: number; status: string; actor?: string; why: string }[] }).steps;
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "fabwright-person-steps-"));
+  dir = mkdtempSync(join(tmpdir(), "faber-person-steps-"));
   s = new ProjectSession({ dir, actor: "mcp" });
 });
 afterEach(() => {
@@ -32,7 +32,7 @@ describe("person steps", () => {
     expect(agent.some((x) => x.why === "the board" && x.status === "pending")).toBe(true);
     expect(list.filter((x) => x.status === "pending").every((x) => x.actor !== "web")).toBe(true);
     // the log names the person's own step on the person's entry (History shows its why)
-    const log = readFileSync(join(dir, ".fabwright", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { op: string; actor: string; step?: { id: number; why: string } });
+    const log = readFileSync(join(dir, ".faber", "actions.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as { op: string; actor: string; step?: { id: number; why: string } });
     const w = log.find((e) => e.op === "write_file")!;
     expect(w.step).toEqual({ id: own[0]!.id, why: "edited in the code editor" });
     // the LED joined the agent's open step, not the person's
@@ -55,7 +55,7 @@ describe("person steps", () => {
     await s.call("place_part", { type: "led", why: "my led" }, { actor: "web" });
     s.dispose();
     // rewrite history.json the way round 6 saved it: every step pending, no actor
-    const hf = join(dir, ".fabwright", "history.json");
+    const hf = join(dir, ".faber", "history.json");
     const h = JSON.parse(readFileSync(hf, "utf8")) as { steps: { status: string; actor?: string }[] };
     for (const st of h.steps) {
       st.status = "pending";

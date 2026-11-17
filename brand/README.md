@@ -1,21 +1,21 @@
-# Fabwright brand
+# Faber brand
 
-<img src="wordmark.svg" alt="Fabwright wordmark" width="280">
+<img src="wordmark.svg" alt="Faber wordmark" width="280">
 
 ## The name
 
-**Fabwright**: "fab" for fabrication, "wright" for a maker, as in shipwright or wheelwright. Fabwright is where you design a device, run its real firmware in a simulator, and then make it: the case, the kit, the factory files. It was called Jumper until 2026-11-17 ([decision 0008](../docs/decisions/0008-rename-to-fabwright.md)).
+**Faber**: Latin for a maker, a craftsman who works wood, stone or metal (as in *homo faber*, "man the maker"). Faber is where you design a device, run its real firmware in a simulator, and then make it: the case, the kit, the factory files. It was called Jumper until 2026-11-17 ([decision 0008](../docs/decisions/0008-rename-to-faber.md)).
 
-The CLI is `fabwright` (`fabwright run`, `fabwright test`). The name avoids the usual "lab", "studio" and "hub" names.
+The CLI is `faber` (`faber run`, `faber test`). The name avoids the usual "lab", "studio" and "hub" names.
 
 ## Logo
 
-The mark is a jumper wire, the one part every hardware project uses, bent into a hook. Each end has a dupont connector: a housing, a latch window, and a metal pin. The red wire is the brand's main accent. (The hook is the J of the project's first name, Jumper; a mark for Fabwright is open.)
+The mark is a jumper wire, the one part every hardware project uses, bent into a hook. Each end has a dupont connector: a housing, a latch window, and a metal pin. The red wire is the brand's main accent. (The hook is the J of the project's first name, Jumper; a mark for Faber is open.)
 
 | File | Use |
 | --- | --- |
 | [`logo.svg`](logo.svg) | The mark on its own, on a transparent background. It switches between dark and light colors with `prefers-color-scheme`. |
-| [`wordmark.svg`](wordmark.svg) | The mark plus "fabwright", for headers, the README and docs. Also adapts to the color scheme. |
+| [`wordmark.svg`](wordmark.svg) | The mark plus "faber", for headers, the README and docs. Also adapts to the color scheme. |
 | [`favicon.svg`](favicon.svg) | The mark on an ink tile, for browser tabs and app icons. It is simplified for 16 px (no latch windows, thicker wire). |
 | [`social-card.svg`](social-card.svg) | 1200×630 Open Graph / Twitter card (source). |
 | [`social-card.png`](social-card.png) | The same card rendered with the brand fonts. Use this for `og:image`, because social sites don't render SVG. Re-render it whenever the SVG changes. |
@@ -26,12 +26,12 @@ The mark is a jumper wire, the one part every hardware project uses, bent into a
 - The smallest size for `logo.svg` is 16 px. Below 24 px, prefer `favicon.svg`.
 - Keep the wire red (`--wire`). The housings use the text color of the theme: light housings on dark backgrounds, dark housings on light ones, like real dupont connectors. The pins use `--muted`.
 - Don't rotate, outline, add shadows, gradients or glows, or redraw the hook in a typeface.
-- The wordmark is always lower case: "fabwright". In running text, write **Fabwright**.
+- The wordmark is always lower case: "faber". In running text, write **Faber**.
 - `wordmark.svg` sets the word as live text in Bricolage Grotesque, with IBM Plex Sans and system fonts as fallbacks. If you export it for print or for use outside the web, convert the text to outlines first.
 
 ## Color
 
-Fabwright is dark first. The canvas is a dark bench with a dot grid like a breadboard. The colors come from the workbench: a red jumper wire, the green of a lit signal, and amber and blue indicator LEDs. Use them for meaning, not decoration.
+Faber is dark first. The canvas is a dark bench with a dot grid like a breadboard. The colors come from the workbench: a red jumper wire, the green of a lit signal, and amber and blue indicator LEDs. Use them for meaning, not decoration.
 
 | Token | Dark | Light | Role |
 | --- | --- | --- | --- |
@@ -47,13 +47,13 @@ Fabwright is dark first. The canvas is a dark bench with a dot grid like a bread
 | `--warn` | `#FFB23F` | `#C9800F` | Warnings: overcurrent, a stub part, an approximated fidelity area. |
 | `--data` | `#4DA3FF` | `#1F74D1` | Data and links: serial output, buses, focus rings (`--focus`). |
 
-The light theme keeps the same accents, darkened enough to stay readable on paper. All tokens live in [`tokens.css`](tokens.css). The app imports that file and must not hard-code colors. To pick a theme, set `<html data-theme="light|dark">`. With no attribute, Fabwright follows the OS setting.
+The light theme keeps the same accents, darkened enough to stay readable on paper. All tokens live in [`tokens.css`](tokens.css). The app imports that file and must not hard-code colors. To pick a theme, set `<html data-theme="light|dark">`. With no attribute, Faber follows the OS setting.
 
 Avoid purple gradients, glassmorphism, and default component-library grays. When something needs emphasis, use `--wire`. When something is happening in the simulation, use `--live`.
 
 ## Type
 
-Fabwright uses three families, all under the SIL Open Font License and bundled through `@fontsource`:
+Faber uses three families, all under the SIL Open Font License and bundled through `@fontsource`:
 
 | Family | Token | Use |
 | --- | --- | --- |
@@ -105,4 +105,4 @@ Area ratings are written as ✅ ok, ⚠️ approx, ❌ none and – n/a. See [do
 
 ## License
 
-All brand files here are original work, under the same Apache-2.0 license as the rest of the repository. Apache-2.0 does not grant trademark rights (section 6). Please don't use the name or logo in a way that suggests your project is the official Fabwright.
+All brand files here are original work, under the same Apache-2.0 license as the rest of the repository. Apache-2.0 does not grant trademark rights (section 6). Please don't use the name or logo in a way that suggests your project is the official Faber.

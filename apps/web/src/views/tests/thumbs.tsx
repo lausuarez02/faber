@@ -4,9 +4,9 @@
 //   arm     → side view of the links
 //   else    → LEDs / buzzer / buttons as dots
 import { useEffect, useMemo, useRef } from "react";
-import type { Project } from "@fabwright/project-format";
-import { armPose, parseWorld, type WorldSpec } from "@fabwright/physics";
-import { base64ToBytes, rgb565ToRgb } from "@fabwright/sim-core";
+import type { Project } from "@faber/project-format";
+import { armPose, parseWorld, type WorldSpec } from "@faber/physics";
+import { base64ToBytes, rgb565ToRgb } from "@faber/sim-core";
 import { painterFor } from "../../renderers/displays/paint.ts";
 import { screenTypeOf } from "../device/classify.ts";
 import type { DeviceSnapshot } from "./types.ts";

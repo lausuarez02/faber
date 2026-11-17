@@ -1,33 +1,33 @@
-// Round 11: where Fabwright's local programs run. Docker (pinned Linux images: Linux, CI, any machine
-// with a working engine) or native (Fabwright-managed builds under ~/.fabwright: a Mac without Docker).
+// Round 11: where Faber's local programs run. Docker (pinned Linux images: Linux, CI, any machine
+// with a working engine) or native (Faber-managed builds under ~/.faber: a Mac without Docker).
 //
-//   FABWRIGHT_RUNTIME=auto (default)  Docker when its engine answers within a short probe, otherwise the
+//   FABER_RUNTIME=auto (default)  Docker when its engine answers within a short probe, otherwise the
 //                                  native install when there is one (so native is the default on a Mac
 //                                  without Docker).
-//   FABWRIGHT_RUNTIME=docker|native   always that one.
+//   FABER_RUNTIME=docker|native   always that one.
 //
-// Older per-emulator switches (FABWRIGHT_QEMU_ESP_RUNTIME, FABWRIGHT_RENODE_RUNTIME) still win for their
+// Older per-emulator switches (FABER_QEMU_ESP_RUNTIME, FABER_RENODE_RUNTIME) still win for their
 // emulator. Node only (spawnSync).
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { userHomeDir } from "@fabwright/project-format/node";
+import { userHomeDir } from "@faber/project-format/node";
 
 export type Runtime = "docker" | "native";
 export type RuntimeSetting = Runtime | "auto";
 
 /**
- * Fabwright's own folder for native toolchains and emulators (~/.fabwright, or ~/.jumper when only that exists). Override with FABWRIGHT_NATIVE_HOME,
- * not FABWRIGHT_HOME: tests point FABWRIGHT_HOME (projects registry) at a temp folder and must still find the
+ * Faber's own folder for native toolchains and emulators (~/.faber, or ~/.jumper when only that exists). Override with FABER_NATIVE_HOME,
+ * not FABER_HOME: tests point FABER_HOME (projects registry) at a temp folder and must still find the
  * installed toolchains.
  */
-export function fabwrightHome(): string {
-  return process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir());
+export function faberHome(): string {
+  return process.env.FABER_NATIVE_HOME || userHomeDir(homedir());
 }
 
 export function runtimeSetting(): RuntimeSetting {
-  const v = (process.env.FABWRIGHT_RUNTIME ?? "auto").trim().toLowerCase();
+  const v = (process.env.FABER_RUNTIME ?? "auto").trim().toLowerCase();
   return v === "docker" || v === "native" ? v : "auto";
 }
 
@@ -40,9 +40,9 @@ export interface DockerProbe {
 
 let probeCache: { at: number; probe: DockerProbe } | undefined;
 
-/** How long the probe waits for `docker info` (FABWRIGHT_DOCKER_PROBE_MS, default 4 s). */
+/** How long the probe waits for `docker info` (FABER_DOCKER_PROBE_MS, default 4 s). */
 export function dockerProbeMs(): number {
-  const n = Number(process.env.FABWRIGHT_DOCKER_PROBE_MS);
+  const n = Number(process.env.FABER_DOCKER_PROBE_MS);
   return Number.isFinite(n) && n > 0 ? n : 4_000;
 }
 
@@ -64,13 +64,13 @@ export function probeDocker(force = false): DockerProbe {
   return probe;
 }
 
-/** Forget the cached probe (tests; after `fabwright setup` started Docker). */
+/** Forget the cached probe (tests; after `faber setup` started Docker). */
 export function resetDockerProbe(): void {
   probeCache = undefined;
 }
 
 /**
- * Picks the runtime for one program. `override` is a per-program variable (e.g. FABWRIGHT_RENODE_RUNTIME)
+ * Picks the runtime for one program. `override` is a per-program variable (e.g. FABER_RENODE_RUNTIME)
  * that wins when set; `nativeInstalled` says whether the native build is on this machine; `dockerReady`
  * (optional) says whether Docker has what it needs (the image), so an auto pick prefers a ready native
  * install over a Docker image that would first have to be built.
@@ -89,16 +89,16 @@ export function pickRuntime(o: { override?: string; nativeInstalled: () => boole
 
 // ---------------------------------------------------------------- native emulators
 
-/** Espressif QEMU 9.2.2 (tag esp-develop-9.2.2-20260417) + Fabwright's patches 0001-0006 (bridge v6: + I2S, Ethernet RX queueing; 0006 the camera port, CC/CD lines). */
+/** Espressif QEMU 9.2.2 (tag esp-develop-9.2.2-20260417) + Faber's patches 0001-0006 (bridge v6: + I2S, Ethernet RX queueing; 0006 the camera port, CC/CD lines). */
 export const NATIVE_QEMU_TAG = "9.2.2-20260417-jb7";
 export const RENODE_VERSION = "1.17.0";
 
-/** ~/.fabwright/emulators/qemu-esp/<tag>: `bin/qemu-system-xtensa`, `bin/qemu-system-riscv32`. */
+/** ~/.faber/emulators/qemu-esp/<tag>: `bin/qemu-system-xtensa`, `bin/qemu-system-riscv32`. */
 export function nativeQemuDir(): string {
-  return process.env.FABWRIGHT_QEMU_ESP_DIR || join(fabwrightHome(), "emulators", "qemu-esp", NATIVE_QEMU_TAG);
+  return process.env.FABER_QEMU_ESP_DIR || join(faberHome(), "emulators", "qemu-esp", NATIVE_QEMU_TAG);
 }
 
-/** The qemu-system-* to run natively: Fabwright's install when present, else the name (found on PATH). */
+/** The qemu-system-* to run natively: Faber's install when present, else the name (found on PATH). */
 export function nativeQemuBinary(name: string): string {
   const p = join(nativeQemuDir(), "bin", name);
   return existsSync(p) ? p : name;
@@ -108,23 +108,23 @@ export function nativeQemuInstalled(): boolean {
   return existsSync(join(nativeQemuDir(), "bin", "qemu-system-xtensa")) && existsSync(join(nativeQemuDir(), "bin", "qemu-system-riscv32"));
 }
 
-/** ~/.fabwright/emulators/renode/1.17.0 (Renode.app on macOS, the portable folder on Linux). */
+/** ~/.faber/emulators/renode/1.17.0 (Renode.app on macOS, the portable folder on Linux). */
 export function nativeRenodeDir(): string {
-  return join(fabwrightHome(), "emulators", "renode", RENODE_VERSION);
+  return join(faberHome(), "emulators", "renode", RENODE_VERSION);
 }
 
-/** Fabwright's Renode executable for this OS (whether or not it is installed). */
-export function fabwrightRenodeBinary(): string {
+/** Faber's Renode executable for this OS (whether or not it is installed). */
+export function faberRenodeBinary(): string {
   return process.platform === "darwin" ? join(nativeRenodeDir(), "Renode.app", "Contents", "MacOS", "renode") : join(nativeRenodeDir(), "renode");
 }
 
-/** The Renode to run natively: FABWRIGHT_RENODE_BIN, else Fabwright's install, else `renode` on PATH. */
+/** The Renode to run natively: FABER_RENODE_BIN, else Faber's install, else `renode` on PATH. */
 export function nativeRenodeBinary(): string {
-  if (process.env.FABWRIGHT_RENODE_BIN) return process.env.FABWRIGHT_RENODE_BIN;
-  const p = fabwrightRenodeBinary();
+  if (process.env.FABER_RENODE_BIN) return process.env.FABER_RENODE_BIN;
+  const p = faberRenodeBinary();
   return existsSync(p) ? p : "renode";
 }
 
 export function nativeRenodeInstalled(): boolean {
-  return !!process.env.FABWRIGHT_RENODE_BIN || existsSync(fabwrightRenodeBinary());
+  return !!process.env.FABER_RENODE_BIN || existsSync(faberRenodeBinary());
 }

@@ -1,12 +1,12 @@
 {
-  "name": "fabwright",
-  "owner": { "name": "Fabwright" },
-  "description": "Fabwright's Claude Code plugin, from this repository.",
+  "name": "faber",
+  "owner": { "name": "Faber" },
+  "description": "Faber's Claude Code plugin, from this repository.",
   "plugins": [
     {
-      "name": "fabwright",
-      "source": "./plugins/fabwright",
-      "description": "The hardware-design skill and the fabwright MCP server of a running Fabwright app (http://localhost:7780/mcp)."
+      "name": "faber",
+      "source": "./plugins/faber",
+      "description": "The hardware-design skill and the faber MCP server of a running Faber app (http://localhost:7780/mcp)."
     }
   ]
 }

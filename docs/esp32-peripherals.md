@@ -1,4 +1,4 @@
-# ESP32-family peripherals in Fabwright (round 10, track esp-periph)
+# ESP32-family peripherals in Faber (round 10, track esp-periph)
 
 Status 2026-11-11: **written, partly verified.** The QEMU side compiled into a dev image and the TS
 side is tested against a scripted fake QEMU, but **no new peripheral has run real firmware yet**:
@@ -10,11 +10,11 @@ fixture tests listed at the end pass.
 
 ## Architecture (generic, any ESP chip)
 
-- **QEMU (GPL-2.0, separate process):** `toolchains/qemu-esp/0002-fabwright-peripherals.patch` on top
-  of `0001` adds register-level models in `hw/misc/fabwright_periph.c` and extends the GPIO block.
-  Image tag when built: `fabwright/qemu-esp:9.2.2-20260417-jb3` (`QEMU_ESP_IMAGE`).
+- **QEMU (GPL-2.0, separate process):** `toolchains/qemu-esp/0002-faber-peripherals.patch` on top
+  of `0001` adds register-level models in `hw/misc/faber_periph.c` and extends the GPIO block.
+  Image tag when built: `faber/qemu-esp:9.2.2-20260417-jb3` (`QEMU_ESP_IMAGE`).
 - **Bridge protocol v3** (one text line per event, `protocol.ts`, `hw/gpio/esp32_gpio.c`): QEMU reports
-  what each peripheral was told to do, with virtual time; Fabwright draws the pin waveforms itself
+  what each peripheral was told to do, with virtual time; Faber draws the pin waveforms itself
   (`waveforms.ts`), so every existing part that decodes pin edges (servo, buzzer, WS2812, DFPlayer,
   ESP-01, GPS-style UART parts) works unchanged.
 - **Lockstep:** the step target can now be moved earlier while QEMU waits for any answer (`R` is
@@ -37,8 +37,8 @@ fixture tests listed at the end pass.
 | RMT TX (NeoPixel / FastLED RMT) | 8 ch | 4 ch | 2 ch | channel RAM read at transmit time, ping-pong threshold interrupt, wrap, end marker, `tx_end`; `RM` symbols drawn as edges | ✓ (WS2812 bit timing) | not run |
 | ADC (`analogRead`, `analogReadMilliVolts`) | SAR1+SAR2 (SENS) | SAR1+SAR2 (SENS) | APB_SARADC oneshot | pad voltage from the circuit (`E`), linear, full scale per attenuation (table below) | ✓ (`E` sent) | not run |
 | UART1 / UART2 | UART1+2 | UART1+2 | UART1 | bytes `V` drawn as 8N1 frames at the configured baud (`B`, from CLKDIV and the clock source); frames a part drives on the RX pin decoded at the stop bit and fed in (`X`) | ✓ (both ways) | not run |
-| I2S TX / RX (round 13, jb6) | I2S0+1, own lldesc DMA | I2S0+1 via GDMA | I2S0 via GDMA | `hw/misc/fabwright_i2s.c` (patch 0004): `ST` frames out / `SR` frames in → `I2sBus`; rate from the clock registers; see "I2S" below | ✓ | **verified** (`esp-audio.integration.test.ts`, all three chips) |
-| Camera (esp32-camera) | ✓ | ✓ | – (no camera interface) | round 13: QEMU patch 0006 camera port (`CC` / `CD` lines); the driver API is wrapped in simulation builds, frames rendered by Fabwright ([cameras.md](cameras.md)); the LCD_CAM / I2S camera hardware itself is not modelled | ✓ | ✓ (`camera.integration.test.ts`: S3 Sense pins, ESP32 ESP32-CAM pins) |
+| I2S TX / RX (round 13, jb6) | I2S0+1, own lldesc DMA | I2S0+1 via GDMA | I2S0 via GDMA | `hw/misc/faber_i2s.c` (patch 0004): `ST` frames out / `SR` frames in → `I2sBus`; rate from the clock registers; see "I2S" below | ✓ | **verified** (`esp-audio.integration.test.ts`, all three chips) |
+| Camera (esp32-camera) | ✓ | ✓ | – (no camera interface) | round 13: QEMU patch 0006 camera port (`CC` / `CD` lines); the driver API is wrapped in simulation builds, frames rendered by Faber ([cameras.md](cameras.md)); the LCD_CAM / I2S camera hardware itself is not modelled | ✓ | ✓ (`camera.integration.test.ts`: S3 Sense pins, ESP32 ESP32-CAM pins) |
 | Touch | – | – | – | not bridged | – | not emulated |
 | Wi-Fi / BT radio | – | – | – | not emulated (Ethernet MAC instead, round 9) | – | – |
 
@@ -64,7 +64,7 @@ NeoPixel). Pins per chip: `esp_pins.h`.
 
 ## To finish (in order)
 
-1. Free host disk, restart Docker Desktop, build `fabwright/qemu-esp:9.2.2-20260417-jb3`
+1. Free host disk, restart Docker Desktop, build `faber/qemu-esp:9.2.2-20260417-jb3`
    (`docker build -t … toolchains/qemu-esp`) and the fixtures (`fixtures/esp32/build.sh`).
 2. Integration tests per fixture × chip (GPIO interrupt count, LEDC period/duty on the pin, servo
    pulse 1.5 → 2.0 ms, tone 2 kHz, ADC raw for known voltages, I2C on both buses, SPI MISO,
@@ -91,7 +91,7 @@ new image start from the built image. `QemuEspBackend {seed}` passes `-seed`: th
 
 ## I2S (round 13, track audio): emulated, verified on real firmware
 
-`toolchains/qemu-esp/0004-fabwright-i2s.patch` adds `hw/misc/fabwright_i2s.c` (bridge v6; image / native tag `9.2.2-20260417-jb6`
+`toolchains/qemu-esp/0004-faber-i2s.patch` adds `hw/misc/faber_i2s.c` (bridge v6; image / native tag `9.2.2-20260417-jb6`
 when it landed, now `jb7` = patches 0001-0006 with the camera port). What it models, for ESP-IDF's `i2s_std` / `i2s_pdm` / `i2s_tdm` drivers
 and arduino-esp32's `ESP_I2S` (`I2SClass`) on top of them:
 
@@ -108,7 +108,7 @@ How a block moves: on TX start the device walks the descriptor ring; each descri
 DMA reads progressively, so a firmware filling it just ahead of the DMA is heard in full), sent as
 `ST <port> <ns> <rate> <bits> <chans> <hex>` (all-zero blocks as `z<nbytes>`), and the EOF interrupt
 returns the buffer to the driver, which is what makes `i2s.write()` block at the sample rate. RX asks
-Fabwright for the block's frames (`SR …`, answered `Q <hex>` by the first source on the `I2sBus`, e.g.
+Faber for the block's frames (`SR …`, answered `Q <hex>` by the first source on the `I2sBus`, e.g.
 the `inmp441` part), writes them into the descriptor, sets its length and SUC_EOF and interrupts.
 Samples cross as 16-bit (2 bytes) or 24 / 32-bit (4 bytes, sign-extended) little-endian.
 

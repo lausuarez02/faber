@@ -3,8 +3,8 @@
 // distance. Axially magnetised disc magnet, on its axis (the usual "magnet faces the sensor"
 // mounting): B(z) = Br/2 * ((z + T) / sqrt(R^2 + (z + T)^2) - z / sqrt(R^2 + z^2)), z from the
 // magnet's face. Off-axis and through steel it is weaker: the parts say so in fidelity.json.
-import type { PropSpec } from "@fabwright/sim-core";
-import type { PropValue } from "@fabwright/project-format";
+import type { PropSpec } from "@faber/sim-core";
+import type { PropValue } from "@faber/project-format";
 import { num, str } from "./props.ts";
 
 /** Remanence (T) of common NdFeB grades (typical, from the grade tables of magnet makers). */
