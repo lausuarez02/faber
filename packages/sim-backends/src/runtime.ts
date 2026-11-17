@@ -12,17 +12,18 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 export type Runtime = "docker" | "native";
 export type RuntimeSetting = Runtime | "auto";
 
 /**
- * Fabwright's own folder for native toolchains and emulators (~/.fabwright). Override with FABWRIGHT_NATIVE_HOME,
+ * Fabwright's own folder for native toolchains and emulators (~/.fabwright, or ~/.jumper when only that exists). Override with FABWRIGHT_NATIVE_HOME,
  * not FABWRIGHT_HOME: tests point FABWRIGHT_HOME (projects registry) at a temp folder and must still find the
  * installed toolchains.
  */
 export function fabwrightHome(): string {
-  return process.env.FABWRIGHT_NATIVE_HOME || join(homedir(), ".fabwright");
+  return process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir());
 }
 
 export function runtimeSetting(): RuntimeSetting {

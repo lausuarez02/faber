@@ -21,6 +21,24 @@
 
 #if __has_include("fabwright_device.h")
 #include "fabwright_device.h"
+#elif __has_include("jumper_device.h")
+// Written before the project was renamed from Jumper: same settings under the old names.
+#include "jumper_device.h"
+#endif
+#if !defined(FABWRIGHT_RELAY_URL) && defined(JUMPER_RELAY_URL)
+#define FABWRIGHT_RELAY_URL JUMPER_RELAY_URL
+#endif
+#if !defined(FABWRIGHT_DEVICE_TOKEN) && defined(JUMPER_DEVICE_TOKEN)
+#define FABWRIGHT_DEVICE_TOKEN JUMPER_DEVICE_TOKEN
+#endif
+#if !defined(FABWRIGHT_WIFI_SSID) && defined(JUMPER_WIFI_SSID)
+#define FABWRIGHT_WIFI_SSID JUMPER_WIFI_SSID
+#endif
+#if !defined(FABWRIGHT_WIFI_PASSWORD) && defined(JUMPER_WIFI_PASSWORD)
+#define FABWRIGHT_WIFI_PASSWORD JUMPER_WIFI_PASSWORD
+#endif
+#if !defined(FABWRIGHT_RELAY_ROOT_CA) && defined(JUMPER_RELAY_ROOT_CA)
+#define FABWRIGHT_RELAY_ROOT_CA JUMPER_RELAY_ROOT_CA
 #endif
 
 #ifndef FABWRIGHT_RELAY_URL

@@ -24,6 +24,8 @@ import {
   versionDetail,
 } from "@fabwright/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
+import { hasProjectFile, projectFilePath, stateDirPath } from "@fabwright/project-format/node";
+import { LEGACY_STATE_DIR, STATE_DIR } from "@fabwright/project-format/legacy";
 
 type Project = ProjectSession["project"];
 type PartRegistry = ProjectSession["registry"];
@@ -75,14 +77,14 @@ const originCache = new Map<string, string | null>();
  * log is read once. Undefined for a project that is not a copy.
  */
 export function copiedFrom(dir: string): string | undefined {
-  const file = join(dir, ".fabwright", "origin.json");
+  const file = join(stateDirPath(dir), "origin.json");
   const cached = originCache.get(dir);
   if (cached !== undefined) return cached ?? undefined;
   let from: string | undefined;
   try {
     if (existsSync(file)) from = (JSON.parse(readFileSync(file, "utf8")) as { from?: string }).from;
     else {
-      const log = join(dir, ".fabwright", "actions.jsonl");
+      const log = join(stateDirPath(dir), "actions.jsonl");
       if (existsSync(log)) {
         for (const line of readFileSync(log, "utf8").split("\n")) {
           if (!line.includes('"open_example"')) continue;
@@ -105,8 +107,8 @@ export function copiedFrom(dir: string): string | undefined {
 
 function writeOrigin(dir: string, from: string): void {
   try {
-    mkdirSync(join(dir, ".fabwright"), { recursive: true });
-    writeFileSync(join(dir, ".fabwright", "origin.json"), JSON.stringify({ from }) + "\n");
+    mkdirSync(stateDirPath(dir), { recursive: true });
+    writeFileSync(join(stateDirPath(dir), "origin.json"), JSON.stringify({ from }) + "\n");
     originCache.set(dir, from);
   } catch {
     // read-only folder: the log scan answers next time
@@ -180,7 +182,7 @@ async function readBody<T>(req: IncomingMessage, res: ServerResponse, ctx: Route
 // ------------------------------------------------------------------------------------------ cards
 
 function readProject(dir: string): { project?: Project; raw?: string } {
-  const file = join(dir, "fabwright.json");
+  const file = projectFilePath(dir);
   if (!existsSync(file)) return {};
   const raw = readFileSync(file, "utf8");
   try {
@@ -226,10 +228,10 @@ function makeCard(dir: string, kind: ProjectCard["kind"], ctx: RouteContext): Pr
   const boardPart = project?.parts.find((p) => p.id === boardId) ?? project?.parts.find((p) => registry.get(p.type)?.spec.category === "board");
   const readme = join(dir, "README.md");
   const description = oneLine(project?.description) ?? (existsSync(readme) ? oneLine(firstParagraph(readFileSync(readme, "utf8"))) : undefined);
-  const ownLog = join(dir, ".fabwright", "actions.jsonl");
+  const ownLog = join(stateDirPath(dir), "actions.jsonl");
   const agentLog = join(dir, "agent-actions.jsonl");
   const tests = lastTestsFromLog(existsSync(ownLog) ? ownLog : agentLog);
-  const updated = Math.max(mtime(join(dir, "fabwright.json")), mtime(ownLog));
+  const updated = Math.max(mtime(projectFilePath(dir)), mtime(ownLog));
   const id = projectId(dir);
   const readOnly = kind === "example" || kind === "agent-built";
   const agentMade = new Set((project?.parts ?? []).filter((p) => registry.get(p.type)?.fidelity.origin === "agent-made").map((p) => p.type)).size;
@@ -261,7 +263,7 @@ function childProjects(root: string, skip: Set<string> = new Set()): string[] {
   return names
     .filter((n) => !n.startsWith(".") && !skip.has(n))
     .map((n) => join(root, n))
-    .filter((d) => existsSync(join(d, "fabwright.json")));
+    .filter((d) => hasProjectFile(d));
 }
 
 interface Listing {
@@ -299,7 +301,7 @@ function listing(ctx: RouteContext): Listing {
   };
   add(active, isInside(active, h.root) ? "project" : "registered");
   for (const d of childProjects(h.root)) add(d, "project");
-  for (const r of listRegisteredProjects()) if (existsSync(join(r.dir, "fabwright.json"))) add(r.dir, isInside(r.dir, h.root) ? "project" : "registered");
+  for (const r of listRegisteredProjects()) if (hasProjectFile(r.dir)) add(r.dir, isInside(r.dir, h.root) ? "project" : "registered");
   projects.sort((a, b) => (a.dir === active ? -1 : b.dir === active ? 1 : b.updatedAt.localeCompare(a.updatedAt)));
   // Round 6b: which project is the person's copy of which example (the newest copy wins).
   const copyOfExample = new Map<string, string>();
@@ -367,14 +369,14 @@ async function thumbSvg(dir: string, project: Project, ctx: RouteContext): Promi
 /** Where a card's PNG is cached: examples (read-only, C3) under $FABWRIGHT_HOME, projects in their .fabwright/. */
 function thumbFile(card: ProjectCard, raw: string): string {
   const hash = createHash("sha256").update(drawingKey(card.dir, raw)).digest("hex").slice(0, 16);
-  return card.readOnly ? join(fabwrightHome(), "thumbs", `${card.id}-${hash}.png`) : join(card.dir, ".fabwright", "thumbs", `${hash}.png`);
+  return card.readOnly ? join(fabwrightHome(), "thumbs", `${card.id}-${hash}.png`) : join(stateDirPath(card.dir), "thumbs", `${hash}.png`);
 }
 
 async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Promise<void> {
   const card = findCard(ctx, id);
   if (!card) return ctx.json(res, 404, noProject(id));
   const { project, raw } = readProject(card.dir);
-  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${join(card.dir, "fabwright.json")} is missing or invalid`, `run \`fabwright check -p ${card.dir}\``));
+  if (!project || !raw) return ctx.json(res, 404, err(`No canvas to draw for ${card.name}`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`fabwright check -p ${card.dir}\``));
   const file = thumbFile(card, raw);
   const headers = { "cache-control": "max-age=31536000, immutable" };
   if (existsSync(file)) {
@@ -395,7 +397,7 @@ async function thumbnail(res: ServerResponse, ctx: RouteContext, id: string): Pr
 
 // -------------------------------------------------------------------------------- create / open
 
-const COPY_SKIP_DIRS = new Set([".fabwright", "media", "shots", "export", "node_modules", ".git"]);
+const COPY_SKIP_DIRS = new Set([STATE_DIR, LEGACY_STATE_DIR, "media", "shots", "export", "node_modules", ".git"]);
 const COPY_SKIP_EXT = /\.(mp4|webm|mov|gif)$/i;
 
 /** Copy an example into a new project folder; an agent-built example's log becomes the copy's history. */
@@ -412,8 +414,8 @@ function copyExample(from: string, to: string): void {
   });
   const agentLog = join(from, "agent-actions.jsonl");
   if (existsSync(agentLog)) {
-    mkdirSync(join(to, ".fabwright"), { recursive: true });
-    cpSync(agentLog, join(to, ".fabwright", "actions.jsonl"));
+    mkdirSync(stateDirPath(to), { recursive: true });
+    cpSync(agentLog, join(stateDirPath(to), "actions.jsonl"));
   }
 }
 
@@ -452,7 +454,7 @@ async function createProject(req: IncomingMessage, res: ServerResponse, ctx: Rou
     if (source) {
       copyExample(source.dir, dir);
       // The copy is its own project with the chosen name.
-      const file = join(dir, "fabwright.json");
+      const file = projectFilePath(dir);
       const data = JSON.parse(readFileSync(file, "utf8")) as { name?: string };
       if (data.name !== name) writeFileSync(file, JSON.stringify({ ...data, name }, null, 2) + "\n");
       // Round 6: the copy as it came is a version, so the person can always go back to it.
@@ -594,7 +596,7 @@ export const projectsRoutes: ApiRoute[] = [
       const card = findCard(ctx, id!);
       if (!card) return ctx.json(res, 404, noProject(id!));
       const { project } = readProject(card.dir);
-      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${join(card.dir, "fabwright.json")} is missing or invalid`, `run \`fabwright check -p ${card.dir}\` to see what is wrong`));
+      if (!project) return ctx.json(res, 422, err(`${card.name} cannot be read`, `${projectFilePath(card.dir)} is missing or invalid`, `run \`fabwright check -p ${card.dir}\` to see what is wrong`));
       return ctx.json(res, 200, { card, project, files: diskFirmwareFiles(card.dir) });
     },
   },

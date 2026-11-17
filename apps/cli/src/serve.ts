@@ -10,6 +10,7 @@ import { createLiveHub, ProjectSession, projectId, TOOLS, type AgentPresence, ty
 import { installProjectFiles } from "@fabwright/agent-skill";
 import { createMcpHttpEndpoint, localRequestProblem, type McpHttpEndpoint } from "@fabwright/mcp";
 import { HOOKS, matchRoute, ROUTES, type RouteContext } from "./routes/index.ts";
+import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * `fabwright serve` (and `pnpm start`): one local server for everything.
@@ -358,7 +359,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
     if (p === "/api/visual-report") {
       const problem = localRequestProblem(req);
       if (problem) return json(res, 403, { error: problem });
-      const saved = join(dir, ".fabwright", "visual-report.json");
+      const saved = join(stateDirPath(dir), "visual-report.json");
       const report = session.lastVisualReport ?? (existsSync(saved) ? (JSON.parse(readFileSync(saved, "utf8")) as unknown) : undefined);
       if (!report) return json(res, 404, { error: "No test report yet. Why: run_tests has not run on this server's project. Fix: ask your agent to call run_tests (or run `fabwright test --visual -p <project>`), then reopen the Tests panel." });
       return json(res, 200, report);
@@ -367,7 +368,7 @@ export async function startFabwrightServer(opts: FabwrightServerOptions): Promis
       // The followed project with its built firmware, so the browser can run a copy (`/?local`).
       const problem = localRequestProblem(req);
       if (problem) return json(res, 403, { error: problem });
-      const file = join(dir, "fabwright.json");
+      const file = projectFilePath(dir);
       if (!existsSync(file)) return json(res, 404, { error: `No fabwright.json in ${dir}. Why: the agent has not created the project yet. Fix: wait for its first step (new_project / place_part), then reload.` });
       let project: { firmware?: { artifact?: string; sketch?: string } };
       try {

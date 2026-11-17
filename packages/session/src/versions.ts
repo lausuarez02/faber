@@ -6,6 +6,7 @@ import { applyToProject, projectEntities, same, type EntityMap, type HistoryStat
 import type { ActionEntry } from "./session.ts";
 import type { VisualState } from "@fabwright/sim-core";
 import type { ColorFrameImage } from "./sim.ts";
+import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * Round 5, projects track (decision 0003, C3): a project's versions, rebuilt from its append-only
@@ -83,7 +84,7 @@ const cache = new Map<string, ParsedLog>();
 const LOG_FILE_CAP = 50_000;
 
 function readLog(dir: string): ParsedLog {
-  const file = join(dir, ".fabwright", "actions.jsonl");
+  const file = join(stateDirPath(dir), "actions.jsonl");
   if (!existsSync(file)) return { key: "", entries: [], versionIdx: [] };
   const st = statSync(file);
   const key = `${st.size}:${st.mtimeMs}`;
@@ -109,7 +110,7 @@ function readLog(dir: string): ParsedLog {
 }
 
 function readHistory(dir: string): HistoryState | undefined {
-  const f = join(dir, ".fabwright", "history.json");
+  const f = join(stateDirPath(dir), "history.json");
   if (!existsSync(f)) return undefined;
   try {
     return JSON.parse(readFileSync(f, "utf8")) as HistoryState;
@@ -252,7 +253,7 @@ export function versionCount(dir: string): number {
 /** Every version of the project in `dir`, oldest first. */
 export function listVersions(dir: string): VersionSummary[] {
   const log = readLog(dir);
-  const hf = join(dir, ".fabwright", "history.json");
+  const hf = join(stateDirPath(dir), "history.json");
   const key = `${log.key}|${existsSync(hf) ? statSync(hf).mtimeMs : 0}`;
   const hit = listCache.get(dir);
   if (hit && hit.key === key) return hit.versions;
@@ -392,7 +393,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
   const summary = listVersions(dir)[n - 1]!;
   const r = replay(dir, log, n);
   // A version line always follows a project line in practice; if the first one is file-only, use the current project file's shape.
-  const project = r.project ?? (JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as Project);
+  const project = r.project ?? (JSON.parse(readFileSync(projectFilePath(dir), "utf8")) as Project);
   const files: Record<string, string> = {};
   for (const [path, content] of r.files) {
     if (content !== null) files[path] = content;
@@ -411,7 +412,7 @@ export function versionDetail(dir: string, n: number): VersionDetail | undefined
     }
   }
   const hash = summary.firmwareHash;
-  const hexFile = hash ? join(dir, ".fabwright", "builds", `${hash}.hex`) : undefined;
+  const hexFile = hash ? join(stateDirPath(dir), "builds", `${hash}.hex`) : undefined;
   const frame = frameFor(log, n);
   return {
     version: n,
@@ -509,7 +510,7 @@ function testsLine(line: string): { passed: number; total: number; at?: string }
  * number, or undefined when fabwright.json is missing or invalid.
  */
 export function recordSnapshot(dir: string, opts: { op: string; why: string; summary: string; actor?: string; args?: Record<string, unknown> }): number | undefined {
-  const file = join(dir, "fabwright.json");
+  const file = projectFilePath(dir);
   if (!existsSync(file)) return undefined;
   const parsed = safeParseProject(readFileSync(file, "utf8"));
   if (!parsed.ok) return undefined;
@@ -525,7 +526,7 @@ export function recordSnapshot(dir: string, opts: { op: string; why: string; sum
     summary: opts.summary,
     project: parsed.project,
   };
-  mkdirSync(join(dir, ".fabwright"), { recursive: true });
-  appendFileSync(join(dir, ".fabwright", "actions.jsonl"), JSON.stringify(entry) + "\n");
+  mkdirSync(stateDirPath(dir), { recursive: true });
+  appendFileSync(join(stateDirPath(dir), "actions.jsonl"), JSON.stringify(entry) + "\n");
   return versionCount(dir);
 }

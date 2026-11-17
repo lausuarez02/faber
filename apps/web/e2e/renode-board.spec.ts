@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 // Round 10 (track renode): a Black Pill F411 runs real STM32duino firmware in Renode next to
 // `fabwright serve`, and the followed page shows its SSD1306 drawing. The agent places and wires the
@@ -15,7 +16,7 @@ const FIXTURES = fileURLToPath(new URL("../../../packages/sim-backends/fixtures/
 const RENODE_IMAGE = "fabwright/renode:1.17.0-r1";
 
 /** Round 11: Fabwright's own Renode (fabwright setup renode), which `fabwright serve` uses when Docker is not up. */
-const FABWRIGHT_RENODE = join(process.env.FABWRIGHT_NATIVE_HOME || join(homedir(), ".fabwright"), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
+const FABWRIGHT_RENODE = join(process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir()), "emulators/renode/1.17.0", process.platform === "darwin" ? "Renode.app/Contents/MacOS/renode" : "renode");
 
 function renodeMissing(): string | undefined {
   if (process.env.FABWRIGHT_RENODE_RUNTIME === "native") {

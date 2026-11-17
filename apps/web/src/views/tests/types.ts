@@ -57,5 +57,7 @@ export interface VisualReport {
 }
 
 export function isVisualReport(x: unknown): x is VisualReport {
-  return typeof x === "object" && x !== null && (x as VisualReport).format === "fabwright-visual-report/1" && Array.isArray((x as VisualReport).scenarios);
+  // "jumper-visual-report/1": the same report saved before the rename from Jumper.
+  const format = (x as { format?: unknown } | null)?.format;
+  return typeof x === "object" && x !== null && (format === "fabwright-visual-report/1" || format === "jumper-visual-report/1") && Array.isArray((x as VisualReport).scenarios);
 }

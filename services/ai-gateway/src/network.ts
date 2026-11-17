@@ -8,6 +8,7 @@
 import { parseHttpRequest, httpResponse, type HttpRequest } from "./http.ts";
 import { cleanMessage, PetRequestError, parsePetQuery } from "./protocol.ts";
 import { PetAi, PROVIDER_LABELS, type PetAnswer, type ProviderId } from "./petAi.ts";
+import { currentSandboxHost, SANDBOX_SSID, ssidMatches } from "@fabwright/project-format/legacy";
 
 export interface AccessPoint {
   ssid: string;
@@ -103,7 +104,7 @@ export class SandboxNet {
 
   constructor(opts: SandboxNetworkOptions = {}) {
     this.ai = opts.ai ?? new PetAi();
-    this.aps = opts.accessPoints ?? [{ ssid: "FabwrightNet", password: "", rssi: -52, channel: 6 }];
+    this.aps = opts.accessPoints ?? [{ ssid: SANDBOX_SSID, password: "", rssi: -52, channel: 6 }];
     this.liveAllowed = opts.liveAllowed ?? (() => true);
     this.logLimit = opts.logLimit ?? 500;
     this.hosts.set("ai.fabwright", { ip: "10.0.0.2", handler: (req, ctx) => this.petHandler(req, ctx) });
@@ -216,7 +217,7 @@ export class SandboxNet {
   }
 
   join(ssid: string, password: string, tMs: number, partId: string): 0 | 1 | 2 | 3 | 4 {
-    const ap = this.dropped ? undefined : this.aps.find((a) => a.ssid === ssid);
+    const ap = this.dropped ? undefined : this.aps.find((a) => ssidMatches(ssid, a.ssid));
     let code: 0 | 2 | 3 = 0;
     if (!ap) code = 3;
     else if (ap.password !== "" && ap.password !== password) code = 2;
@@ -252,13 +253,13 @@ export class SandboxNet {
   resolve(host: string): string | undefined {
     const h = host.toLowerCase();
     if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) return [...this.hosts.values()].some((x) => x.ip === h) ? h : undefined;
-    const ip = this.hosts.get(h)?.ip;
+    const ip = (this.hosts.get(h) ?? this.hosts.get(currentSandboxHost(h)))?.ip;
     this.push({ t: 0, kind: "dns", host, ...(ip ? { ip } : {}), message: ip ? `${host} → ${ip}` : `${host}: DNS Fail (sandbox hosts: ${[...this.hosts.keys()].join(", ")})` });
     return ip;
   }
 
   open(o: { host: string; ip: string; port: number; tls: boolean; tMs: number; partId: string }) {
-    const entry = [...this.hosts.entries()].find(([name, h]) => name === o.host.toLowerCase() || h.ip === o.ip);
+    const entry = [...this.hosts.entries()].find(([name, h]) => name === o.host.toLowerCase() || name === currentSandboxHost(o.host) || h.ip === o.ip);
     const portOk = o.tls ? o.port === 443 : o.port === 80;
     if (!entry || !portOk || this.dropped) {
       this.push({ t: o.tMs, kind: "tcp", event: "refused", host: o.host, port: o.port, tls: o.tls, partId: o.partId, message: `${o.host}:${o.port} refused${entry && !portOk ? ` (${o.host} serves HTTP on 80 and HTTPS/SSL on 443)` : ""}` });

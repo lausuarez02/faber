@@ -11,7 +11,8 @@
 import net from "node:net";
 import type { DeviceNet } from "./gateway.ts";
 
-const HEADER = /^FABWRIGHT-FLOW\/1 (tcp|udp) (\d+\.\d+\.\d+\.\d+) (\d+)(?: (\d+))?$/;
+// JUMPER-FLOW/1: the same header from a client written before the rename.
+const HEADER = /^(?:FABWRIGHT|JUMPER)-FLOW\/1 (tcp|udp) (\d+\.\d+\.\d+\.\d+) (\d+)(?: (\d+))?$/;
 
 export function serveFlows(dn: DeviceNet, listen: { port?: number; path?: string }): Promise<net.Server> {
   const server = net.createServer((sock) => {

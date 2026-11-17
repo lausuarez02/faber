@@ -6,7 +6,8 @@
   "type": "module",
   "description": "The fabwright command: every Fabwright operation as a subcommand (--json for machines), plus mcp, serve, replay and record.",
   "bin": {
-    "fabwright": "./bin/fabwright.mjs"
+    "fabwright": "./bin/fabwright.mjs",
+    "jumper": "./bin/jumper.mjs"
   },
   "exports": {
     ".": "./src/index.ts"
@@ -17,6 +18,7 @@
   "dependencies": {
     "@fabwright/agent-skill": "workspace:*",
     "@fabwright/mcp": "workspace:*",
+    "@fabwright/project-format": "workspace:*",
     "@fabwright/runner": "workspace:*",
     "@fabwright/session": "workspace:*",
     "tsx": "4.23.15",

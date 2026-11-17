@@ -12,6 +12,7 @@ import { basename, dirname, join } from "node:path";
 import { fail } from "./errors.ts";
 import { actorCounts, filterActionLog, startLiveHub } from "./live.ts";
 import { loadPlaywright } from "./screenshot.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 const INSTALL_CHROMIUM = "pnpm --filter @fabwright/web exec playwright install chromium";
 
@@ -121,7 +122,7 @@ function ffmpegConvert(bin: string, raw: string, out: string): Promise<boolean> 
 export async function recordProject(opts: RecordOptions): Promise<RecordResult> {
   const actor = opts.actor ?? "mcp";
   if (actor !== "mcp" && actor !== "all") fail("bad-arg", `record: unknown actor '${String(actor)}'`, 'actor picks whose calls the video shows: "mcp" (the agent) or "all"', 'pass { "actor": "mcp" } (default) or { "actor": "all" }');
-  const log = join(opts.dir, ".fabwright", "actions.jsonl");
+  const log = join(stateDirPath(opts.dir), "actions.jsonl");
   if (!existsSync(log)) fail("nothing-to-record", "record: this project has no action log yet", `${log} does not exist, so nothing has been built here`, "build something first (place_part, connect, write_file, run), then record");
   const text = readFileSync(log, "utf8");
   const plan = replayPlan(text, actor);
@@ -142,7 +143,7 @@ export async function recordProject(opts: RecordOptions): Promise<RecordResult> 
   if (problem) fail("no-browser", "record: cannot record a video here", problem, `meanwhile use screenshot (a PNG of the circuit), or the viewer_url link; after installing, call record again`);
   const pw = load()!;
 
-  const media = join(opts.dir, ".fabwright", "media");
+  const media = join(stateDirPath(opts.dir), "media");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "");
   const out = opts.out ?? join(media, `build-${stamp}.mp4`);
   mkdirSync(dirname(out), { recursive: true });

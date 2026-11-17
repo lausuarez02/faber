@@ -290,14 +290,49 @@ function libsDir(libs: "base" | "esp32"): string {
   return join(nativeArduinoDir(), "user", libs, "libraries");
 }
 
-async function ensureLibrarySet(libs: "base" | "esp32", log: (l: string) => void): Promise<void> {
-  const stamp = join(nativeArduinoDir(), "user", libs, ".fabwright-libs.json");
-  const want = { base: BASE_LIBRARIES, net: libs === "esp32" ? ESP32_NETWORK_LIBRARIES : [], rev: 1 };
-  try {
-    if (JSON.stringify(JSON.parse(readFileSync(stamp, "utf8"))) === JSON.stringify(want)) return;
-  } catch {
-    // not installed yet
+/** Our own libraries in the native sketchbook, copied from the repo. */
+function copyOwnLibraries(libs: "base" | "esp32"): void {
+  const own = [join(REPO_ROOT, "toolchains/arduino/libraries/LiquidCrystal_I2C")];
+  if (libs === "esp32") own.push(join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightEth"), join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightSim"));
+  for (const src of own) {
+    const dest = join(libsDir(libs), basename(src));
+    rmSync(dest, { recursive: true, force: true });
+    cpSync(src, dest, { recursive: true });
   }
+  // JumperEth / JumperSim (their names before the rename) stay: an older Fabwright (Jumper) checkout
+  // sharing this toolchain folder still builds with them, and a build only compiles what it includes.
+}
+
+const libraryStamp = (libs: "base" | "esp32") => join(nativeArduinoDir(), "user", libs, ".fabwright-libs.json");
+const wantedLibraries = (libs: "base" | "esp32") => ({ base: BASE_LIBRARIES, net: libs === "esp32" ? ESP32_NETWORK_LIBRARIES : [], rev: 1 });
+
+/**
+ * A library set installed before the rename from Jumper (.jumper-libs.json) has the same pinned
+ * libraries; only our own shim libraries have new names. Swap those in place (no index update, no
+ * download) and stamp it. True when the set is current afterwards.
+ */
+export function adoptPreRenameLibraries(libs: "base" | "esp32"): boolean {
+  const want = JSON.stringify(wantedLibraries(libs));
+  try {
+    if (JSON.stringify(JSON.parse(readFileSync(libraryStamp(libs), "utf8"))) === want) return true;
+  } catch {
+    // no current stamp
+  }
+  try {
+    const legacy = join(nativeArduinoDir(), "user", libs, ".jumper-libs.json");
+    if (JSON.stringify(JSON.parse(readFileSync(legacy, "utf8"))) !== want) return false;
+  } catch {
+    return false;
+  }
+  copyOwnLibraries(libs);
+  writeFileSync(libraryStamp(libs), want);
+  return true;
+}
+
+async function ensureLibrarySet(libs: "base" | "esp32", log: (l: string) => void): Promise<void> {
+  const stamp = libraryStamp(libs);
+  const want = wantedLibraries(libs);
+  if (adoptPreRenameLibraries(libs)) return;
   await ensureIndex(log);
   log(`installing the pinned Arduino libraries (${libs === "esp32" ? "libs3 + network libraries + FabwrightEth / FabwrightSim" : "libs3 + Servo"})…`);
   let r = await cli(["lib", "install", "--no-deps", ...BASE_LIBRARIES], libs, log, 20 * 60_000);
@@ -306,13 +341,7 @@ async function ensureLibrarySet(libs: "base" | "esp32", log: (l: string) => void
     r = await cli(["lib", "install", ...ESP32_NETWORK_LIBRARIES], libs, log, 20 * 60_000);
     if (r.code !== 0) throw new RunnerError("library-install-failed", `Could not install the ESP32 network libraries (${ESP32_NETWORK_LIBRARIES.join(", ")}): ${tail(r.stderr || r.stdout)}. Fix: check your connection, then run the setup again.`);
   }
-  const own = [join(REPO_ROOT, "toolchains/arduino/libraries/LiquidCrystal_I2C")];
-  if (libs === "esp32") own.push(join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightEth"), join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightSim"));
-  for (const src of own) {
-    const dest = join(libsDir(libs), basename(src));
-    rmSync(dest, { recursive: true, force: true });
-    cpSync(src, dest, { recursive: true });
-  }
+  copyOwnLibraries(libs);
   writeFileSync(stamp, JSON.stringify(want));
 }
 
@@ -395,6 +424,9 @@ export const sketchUsesCamera = (dir: string) => sketchIncludes(dir, CAMERA_INCL
 export const SLEEP_SHIM_CALL = /\besp_deep_sleep(_start|_try_to_start)?\s*\(/;
 /** True when the sketch calls esp_deep_sleep / esp_deep_sleep_start. */
 export const sketchUsesSleep = (dir: string) => sketchIncludes(dir, SLEEP_SHIM_CALL);
+/** Defined for an ESP32 simulation build's sketch; JUMPER_SIM too, the name sketches written before the rename test. */
+const SIM_DEFINES = ["-DFABWRIGHT_SIM=1", "-DJUMPER_SIM=1"];
+
 /** The deep-sleep shim library, used straight from the repo (simulation builds only). */
 export const FABWRIGHT_SLEEP_LIB = join(REPO_ROOT, "toolchains/arduino-esp32/libraries/FabwrightSleep");
 
@@ -483,6 +515,7 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
     throw new RunnerError("native-missing", `Build failed: the native toolchain for ${c.fqbn} is not installed. Fix: run \`fabwright setup ${f ? Object.entries(SETUP_FAMILIES).find(([, s]) => s.cores.includes(f))?.[0] : "list"}\`, then build again.`);
   }
   const core = NATIVE_CORES[f];
+  adoptPreRenameLibraries(core.libs);
   const data = join(nativeArduinoDir(), "data");
   let args = [...c.args];
   let sketch = c.sketch;
@@ -519,11 +552,11 @@ export async function compileNative(c: NativeCompile): Promise<ExecResult & { sk
       // build.defines replaces the board menu's defines: keep BOARD_HAS_PSRAM for a PSRAM build, and
       // tell the camera shim the board has PSRAM the emulator lacks.
       const psram = /[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn);
-      const defines = ["-DFABWRIGHT_SIM=1", ...(psram ? ["-DBOARD_HAS_PSRAM", ...(cam ? ["-DFABWRIGHT_SIM_PSRAM_FALLBACK=1"] : [])] : [])].join(" ");
+      const defines = [...SIM_DEFINES, ...(psram ? ["-DBOARD_HAS_PSRAM", ...(cam ? ["-DFABWRIGHT_SIM_PSRAM_FALLBACK=1"] : [])] : [])].join(" ");
       args = [...args, "--build-property", `build.defines=${defines}`, "--build-property", `compiler.c.elf.extra_flags=${wrapFlags.join(" ")} `];
       sketch = sketchCopy;
     } else {
-      args = [...args, "--build-property", `build.defines=-DFABWRIGHT_SIM=1${/[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn) ? " -DBOARD_HAS_PSRAM" : ""}`];
+      args = [...args, "--build-property", `build.defines=${SIM_DEFINES.join(" ")}${/[:,]PSRAM=(opi|enabled)\b/.test(c.fqbn) ? " -DBOARD_HAS_PSRAM" : ""}`];
     }
   }
   // The build folder is ours (not the OS temp one) so it can be mapped to the image's path.

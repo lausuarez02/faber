@@ -1,3 +1,5 @@
+// First: pre-rename settings (jumper.* keys) are copied to their new names before anything reads them.
+import "./lib/legacyStorage.ts";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/geist";

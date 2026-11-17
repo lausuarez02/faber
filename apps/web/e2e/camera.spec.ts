@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { hubPort, openInspector, shot } from "./helpers.ts";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 // Round 13 (camera): a XIAO ESP32-S3 Sense placed by the agent (the camera starter template), built
 // with the real toolchain and run in the ESP32 emulator next to `fabwright serve`. The followed page
@@ -12,7 +13,7 @@ import { hubPort, openInspector, shot } from "./helpers.ts";
 // another scene and the next run's frames change. Needs Fabwright's native ESP32 toolchain and the QEMU
 // with the camera port (fabwright setup esp32); skipped otherwise, saying why.
 const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
-const NATIVE = process.env.FABWRIGHT_NATIVE_HOME || join(homedir(), ".fabwright");
+const NATIVE = process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir());
 const QEMU = join(NATIVE, "emulators/qemu-esp/9.2.2-20260417-jb7/bin/qemu-system-xtensa");
 
 function missing(): string | undefined {

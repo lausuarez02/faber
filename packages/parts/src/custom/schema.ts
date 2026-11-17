@@ -7,6 +7,8 @@ import { z } from "zod";
 import { MechanicalSchema, PART_CATEGORIES, PinTypeSchema, PropSpecSchema, SourcingSchema } from "@fabwright/sim-core";
 
 export const CUSTOM_PART_FORMAT = "fabwright-part/1";
+/** The same format under its name from before the rename from Jumper (parts/<id>/part.json in older projects). */
+export const LEGACY_CUSTOM_PART_FORMATS: readonly string[] = ["jumper-part/1"];
 
 /** Display controllers an agent-made display can reuse. gc9a01 needs the built-in GC9A01 part (parts track). */
 export const DISPLAY_CONTROLLERS = ["ssd1306", "st7735", "ili9341", "gc9a01"] as const;
@@ -251,7 +253,7 @@ export type Behavior = z.infer<typeof BehaviorSchema>;
 
 export const CustomPartSchema = z
   .object({
-    format: z.literal(CUSTOM_PART_FORMAT).default(CUSTOM_PART_FORMAT),
+    format: z.preprocess((v) => (typeof v === "string" && LEGACY_CUSTOM_PART_FORMATS.includes(v) ? CUSTOM_PART_FORMAT : v), z.literal(CUSTOM_PART_FORMAT).default(CUSTOM_PART_FORMAT)),
     /** Type id, kebab-case, must not be a built-in type, e.g. "capacitive-soil-sensor". */
     id: z.string().regex(/^[a-z][a-z0-9-]*$/, 'ids are kebab-case: lowercase letters, digits and "-", starting with a letter (e.g. "soil-moisture-sensor")').max(48),
     name: z.string().min(1).max(80),

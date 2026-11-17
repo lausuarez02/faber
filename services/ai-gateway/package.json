@@ -15,5 +15,8 @@
   "scripts": {
     "start": "node bin/ai-gateway.mjs",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@fabwright/project-format": "workspace:*"
   }
 }

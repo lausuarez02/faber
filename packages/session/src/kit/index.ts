@@ -18,6 +18,7 @@ import { cellPlugs, derivedSteps, flashPlan, kitWords, peopleWords, planSteps, r
 import type { BuildKit } from "./types.ts";
 import { powerBudget } from "../power-budget.ts";
 import { connectPlan } from "./connect.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 export type { BuildKit, ConnectPlan } from "./types.ts";
 export { kitCsv, kitHtml, kitMarkdown, printListMd, shoppingMd } from "./render.ts";
@@ -42,7 +43,7 @@ interface LayoutCache {
 
 /** Pin positions from the case layout (the factory pack's wire lengths), cached per case hash in .fabwright/kit-layout.json. */
 async function casePositions(s: ProjectSession, report: CaseReport): Promise<LayoutCache | undefined> {
-  const file = join(s.dir, ".fabwright", "kit-layout.json");
+  const file = join(stateDirPath(s.dir), "kit-layout.json");
   if (existsSync(file)) {
     try {
       const c = JSON.parse(readFileSync(file, "utf8")) as LayoutCache;
@@ -57,7 +58,7 @@ async function casePositions(s: ProjectSession, report: CaseReport): Promise<Lay
   const L = layoutCase({ parts: s.project.parts.flatMap((p) => (reg.get(p.type) ? [{ id: p.id, type: p.type, spec: reg.get(p.type)!.spec }] : [])), enclosure: s.project.enclosure });
   const c: LayoutCache = { hash: report.hash, positions: pinPositions(L.placed, (t) => reg.get(t)?.spec), bosses: L.bosses.length };
   try {
-    mkdirSync(join(s.dir, ".fabwright"), { recursive: true });
+    mkdirSync(stateDirPath(s.dir), { recursive: true });
     writeFileSync(file, JSON.stringify(c));
   } catch {
     // a read-only project still gets its kit
@@ -110,7 +111,7 @@ export async function buildKit(s: ProjectSession, o: KitOptions = {}): Promise<B
   const screws = screwsOn ? { count: layout?.bosses || 4, size: "M2 x 6 mm pan head (length: enclosure PRINT.md)", inserts: "M2 x 3 mm brass heat-set insert" } : undefined;
 
   const has = (rel: string) => existsSync(join(caseDir, rel));
-  const print = await printPlan({ caseDir, report, ...(stale ? { stale } : {}), slicer: o.slicer ?? "auto", cacheFile: join(s.dir, ".fabwright", "kit-slicer.json") });
+  const print = await printPlan({ caseDir, report, ...(stale ? { stale } : {}), slicer: o.slicer ?? "auto", cacheFile: join(stateDirPath(s.dir), "kit-slicer.json") });
   const { specWithProps } = await import("@fabwright/enclosure");
   const sizeOf = (type: string, props: Record<string, unknown> | undefined) => {
     const spec = reg.get(type)?.spec;

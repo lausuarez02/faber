@@ -66,7 +66,8 @@ void setup() {
   Serial.begin(115200);
   delay(20);
   Serial.println("probe boot");
-  WiFi.begin("FabwrightNet", "hunter22-wifi");
+  // The committed image was built before the rename: "JumperNet" still joins FabwrightNet.
+  WiFi.begin("JumperNet", "hunter22-wifi");
   while (WiFi.status() != WL_CONNECTED) delay(20);
   Serial.printf("wifi ip=%s gw=%s dns=%s rssi=%d\n", WiFi.localIP().toString().c_str(), WiFi.gatewayIP().toString().c_str(),
                 WiFi.dnsIP().toString().c_str(), WiFi.RSSI());

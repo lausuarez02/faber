@@ -9,6 +9,7 @@ import { stepSummary } from "./history.ts";
 import type { Frame } from "./sim.ts"; // round 6 frames
 import { createAgentStateTracker } from "./agent-state.ts";
 import type { AgentState, LiveServerEvent } from "./live-events.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * Live hub: lets the web canvas follow a project that any process edits (MCP server, CLI, another
@@ -289,7 +290,7 @@ export function createLiveHub(opts: LiveHubOptions): LiveHubCore {
   let watcher: FSWatcher | undefined;
   const tryWatch = () => {
     try {
-      watcher ??= watch(resolve(dir, ".fabwright"), () => pump());
+      watcher ??= watch(resolve(stateDirPath(dir)), () => pump());
     } catch {
       // folder not there yet; the poll below catches up
     }

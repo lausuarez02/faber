@@ -51,7 +51,7 @@ import { findPart, fmtRef, resolveRef, specOf } from "./pins.ts";
 import { readNetworkLog, runLive, setAiMode } from "./network.ts";
 import { SessionDeviceNet } from "./device-network.ts"; // round 10 network
 import { relayBuildSources } from "./relay-build.ts"; // round 13 relay
-import { DEVICE_HEADER, NETWORK_HINTS } from "@fabwright/device-net";
+import { DEVICE_HEADER, LEGACY_DEVICE_HEADER, NETWORK_HINTS } from "@fabwright/device-net";
 import type { DeviceNetHost } from "@fabwright/device-net";
 import { runScenario, setPartValue, validateScenario, type ScenarioOptions, type ScenarioResult } from "./scenario.ts";
 import { composeSvg, svgToPng } from "./screenshot.ts";
@@ -67,6 +67,8 @@ import { viewerUrlFor } from "./agent-runtime.ts";
 import { chromiumProblem } from "./recorder.ts";
 import { newProjectFolder, projectId, projectSlug, registerProject } from "./projects-registry.ts";
 import { compactVisual, displayPng, runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
+import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
+import { LEGACY_PROJECT_FILE, PROJECT_FILE } from "@fabwright/project-format/legacy";
 
 export type Builder = (req: BuildRequest) => Promise<BuildResult>;
 
@@ -251,10 +253,10 @@ export class ProjectSession {
   // =================================================================== plumbing
 
   get projectFile(): string {
-    return join(this.dir, "fabwright.json");
+    return projectFilePath(this.dir);
   }
   private get metaDir(): string {
-    return join(this.dir, ".fabwright");
+    return stateDirPath(this.dir);
   }
   get actionLogFile(): string {
     return join(this.metaDir, "actions.jsonl");
@@ -378,8 +380,8 @@ export class ProjectSession {
     if (!n) return 0;
     const lines = this.planBuffer.splice(0).map((e) => JSON.stringify({ ...e, moved_from: this.dir }) + "\n").join("");
     try {
-      mkdirSync(join(dir, ".fabwright"), { recursive: true });
-      appendFileSync(join(dir, ".fabwright", "actions.jsonl"), lines);
+      mkdirSync(stateDirPath(dir), { recursive: true });
+      appendFileSync(join(stateDirPath(dir), "actions.jsonl"), lines);
     } catch {
       // logging must never break an op
     }
@@ -1114,7 +1116,8 @@ export class ProjectSession {
   async readFile(args: { path: string }): Promise<unknown> {
     const doc = typeof args.path === "string" ? this.relPackDocPath(args.path) : undefined;
     if (doc) return doc;
-    const rel = args.path === "fabwright.json" ? "fabwright.json" : this.relFirmwarePath(args.path);
+    // The project file under its name in this folder (fabwright.json, or jumper.json from before the rename).
+    const rel = args.path === PROJECT_FILE || args.path === LEGACY_PROJECT_FILE ? basename(this.projectFile) : this.relFirmwarePath(args.path);
     const abs = join(this.dir, rel);
     if (!existsSync(abs)) fail("no-file", `No file ${rel}`, `files are: ${this.listFirmwareFiles().join(", ") || "none"}`, "list_files shows what exists; write_file creates one");
     const content = readFileSync(abs, "utf8");
@@ -1175,7 +1178,7 @@ export class ProjectSession {
     if (!info.sketchDir || !existsSync(info.sketchDir)) return [];
     const ext = info.language === "arduino" ? SOURCE_EXT : LANGUAGES[info.language].sourceExt;
     // fabwright_device.h (the person's relay token and Wi-Fi password) is never built by Fabwright, so it never makes the firmware stale
-    if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f) && f !== DEVICE_HEADER).sort();
+    if (info.language === "arduino" || info.language === "micropython") return readdirSync(info.sketchDir).filter((f) => ext.test(f) && f !== DEVICE_HEADER && f !== LEGACY_DEVICE_HEADER).sort();
     const out: string[] = [];
     const walk = (d: string) => {
       for (const n of readdirSync(d).sort()) {
@@ -1837,7 +1840,7 @@ export class ProjectSession {
   /** PNGs of the screen at each scenario's first failing check (or its last check), for run_tests {images: true}. */
   private writeFrameImages(visuals: VisualScenario[]): string[] {
     const out: string[] = [];
-    const dir = join(this.dir, ".fabwright", "test-frames");
+    const dir = join(stateDirPath(this.dir), "test-frames");
     for (const v of visuals) {
       const checks = v.frames.filter((f) => f.kind.startsWith("expect") || !f.ok);
       const f = checks.find((c) => !c.ok) ?? checks[checks.length - 1];

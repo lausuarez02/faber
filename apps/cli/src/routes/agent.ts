@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { projectDirById, projectId, setServerBase, startPetGateway, type PetGateway } from "@fabwright/session";
 import type { ApiRoute, ServerHook } from "./types.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * Round 5, track "agent" (owner). Decision 0003, C3.
@@ -52,8 +53,8 @@ export const agentRoutes: ApiRoute[] = [
       if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(file) || !MEDIA_TYPES[ext]) {
         return ctx.json(res, 400, { error: `Bad media name '${file}'. Why: only recordings in the project's .fabwright/media folder (mp4, webm, png, gif; letters, digits, . _ -) are served. Fix: use the url the record tool returned.` });
       }
-      const abs = join(ctx.dir(), ".fabwright", "media", file);
-      if (!existsSync(abs)) return ctx.json(res, 404, { error: `No recording ${file}. Why: it is not in ${join(ctx.dir(), ".fabwright", "media")} (another project is open, or it was deleted). Fix: ask the agent to call record again.` });
+      const abs = join(stateDirPath(ctx.dir()), "media", file);
+      if (!existsSync(abs)) return ctx.json(res, 404, { error: `No recording ${file}. Why: it is not in ${join(stateDirPath(ctx.dir()), "media")} (another project is open, or it was deleted). Fix: ask the agent to call record again.` });
       const size = statSync(abs).size;
       const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ""));
       const headers = { "content-type": MEDIA_TYPES[ext]!, "accept-ranges": "bytes", "cache-control": "no-store" };

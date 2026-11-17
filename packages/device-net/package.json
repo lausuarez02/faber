@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fabwright/project-format": "workspace:*",
     "@peculiar/x509": "1.14.3",
     "ws": "8.22.2",
     "yaml": "^2.9.1"

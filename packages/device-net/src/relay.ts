@@ -31,6 +31,9 @@ export const RELAY_ENV = {
 /** The header file a device build includes; git-ignored, never compiled by Fabwright's own builds. */
 export const DEVICE_HEADER = "fabwright_device.h";
 export const RELAY_HEADER = "FabwrightRelay.h";
+/** Their names before the rename from Jumper: sketches that include JumperRelay.h keep building, and a person's jumper_device.h is still a secret Fabwright never compiles. */
+export const LEGACY_DEVICE_HEADER = "jumper_device.h";
+export const LEGACY_RELAY_HEADER = "JumperRelay.h";
 
 /** Does the project reach any API the relay could serve (inspect hosts)? */
 export function relayUseful(config: NetworkConfig): boolean {
@@ -109,6 +112,11 @@ export function simDeviceHeader(config: NetworkConfig): string {
   ].join("\n");
 }
 
+/** jumper_device.h for the simulation build of a sketch whose own (pre-rename) JumperRelay.h copy reads it. */
+export function simLegacyDeviceHeader(config: NetworkConfig): string {
+  return simDeviceHeader(config).replace(/#define FABWRIGHT_/g, "#define JUMPER_");
+}
+
 /** fabwright_device.h for the person's own device: from their .env. Contains a token and a Wi-Fi password: git-ignored. */
 export function deviceHeader(o: { relayUrl: string; token: string; ssid?: string; password?: string; rootCa?: string }): string {
   const ca = o.rootCa?.trim()
@@ -132,6 +140,8 @@ export function deviceHeader(o: { relayUrl: string; token: string; ssid?: string
 }
 
 export const RELAY_HEADER_SOURCE = (): string => own(`firmware/${RELAY_HEADER}`);
+/** JumperRelay.h: forwards the pre-rename names (jumperRelayUrl, JUMPER_TOKEN_HEADER, …) to FabwrightRelay.h. */
+export const LEGACY_RELAY_HEADER_SOURCE = (): string => own(`firmware/${LEGACY_RELAY_HEADER}`);
 
 const MIT = (year: number) => `MIT License
 

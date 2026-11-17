@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, join, normalize, relative, resolve, sep } from "node:path";
 import { adviceNotes, assemblyPlanFor, caseIsStale, caseMesh, deviceCase, draftCosts, layoutProposals, opsForApply, previewFit } from "@fabwright/session";
 import type { ApiRoute, RouteContext, ServerHook } from "./types.ts";
+import { projectFilePath } from "@fabwright/project-format/node";
 
 /**
  * Round 6, track "case" (owner). Decision 0004, R6.
@@ -74,7 +75,7 @@ function variantsOf(dir: string): { shape: string; size_mm: unknown; pocket: unk
   return out;
 }
 
-const noCase = (dir: string) => err("No case yet", `${join(dir, "fabwright.json")} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
+const noCase = (dir: string) => err("No case yet", `${projectFilePath(dir)} has no enclosure`, 'pick a shape in the Case view, or ask the agent: design_case {"shape": "pebble"}');
 
 export const caseRoutes: ApiRoute[] = [
   {

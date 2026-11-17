@@ -39,6 +39,7 @@ import {
   type Mac,
 } from "./packets.ts";
 import { TcpConn } from "./tcp.ts";
+import { ssidMatches } from "@fabwright/project-format/legacy";
 import { AUTH_OPEN, AUTH_WPA2_PSK, bssidFor, decideJoin, decodeWifi, encodeWifi, WIFI_REASON, type AccessPoint, type WifiMsg, type WifiState } from "./wifi.ts";
 
 /** What the netstack needs from the gateway (DeviceNet implements it). */
@@ -337,11 +338,12 @@ export class Netstack {
           dev.failStreak = undefined;
           dev.joined = true;
           dev.ssid = ssid;
-          const ap = this.wifi.aps.find((a) => a.ssid === ssid);
+          const ap = this.wifi.aps.find((a) => ssidMatches(ssid, a.ssid));
           const out: WifiMsg[] = [{ verb: "connected", args: this.apRecord(ssid, ap) }];
           if (this.o.caDer) out.push({ verb: "ca", args: { der: this.o.caDer.toString("hex") } });
           this.sendWifi(dev, out);
-          this.log({ kind: "wifi", source: "sandbox", summary: `joined "${ssid}" (RSSI ${ap?.rssi ?? this.wifi.rssi} dBm)${retries ? ` after ${retries} refused attempt${retries > 1 ? "s" : ""}` : ""}` });
+          const asked = ap && ap.ssid !== ssid ? ` (the firmware asked for "${ssid}", its name before the rename)` : "";
+          this.log({ kind: "wifi", source: "sandbox", summary: `joined "${ap?.ssid ?? ssid}"${asked} (RSSI ${ap?.rssi ?? this.wifi.rssi} dBm)${retries ? ` after ${retries} refused attempt${retries > 1 ? "s" : ""}` : ""}` });
         } else {
           dev.joined = false;
           this.sendWifi(dev, [{ verb: "failed", args: { reason: String(d.reason), after_ms: d.reason === WIFI_REASON.NO_AP_FOUND ? "2000" : "1000" } }]);

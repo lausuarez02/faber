@@ -7,6 +7,7 @@
 import type { Diagnostic, PartModel, PartModelFactory, SandboxNetwork, SandboxSocket } from "@fabwright/sim-core";
 import { UartReceiver, UartTransmitter } from "../../lib/softUart.ts";
 import { num } from "../../lib/props.ts";
+import { SANDBOX_SSID, ssidMatches } from "@fabwright/project-format/legacy";
 
 /** Delays in virtual ms, measured on an ESP-01S with AT 1.7.4 at 115200 baud (rounded). */
 export const ESP_TIMING = {
@@ -48,8 +49,8 @@ interface Link {
 
 /** A network with Wi-Fi but no hosts, used when the host attached none: joins work, every host is "DNS Fail". */
 const NO_INTERNET: SandboxNetwork = {
-  accessPoints: () => [{ ssid: "FabwrightNet", rssi: -52, secured: false, channel: 6 }],
-  join: (ssid) => (ssid === "FabwrightNet" ? 0 : 3),
+  accessPoints: () => [{ ssid: SANDBOX_SSID, rssi: -52, secured: false, channel: 6 }],
+  join: (ssid) => (ssidMatches(ssid, SANDBOX_SSID) ? 0 : 3),
   linkUp: () => true,
   resolve: () => undefined,
   open: () => ({ error: "unreachable" }),

@@ -1,3 +1,4 @@
+import { upgradeLegacyFormat } from "./legacy.ts";
 import { FORMAT_VERSION, ProjectSchema, type PartInstance, type PinRef, type Project, type Wire } from "./schema.ts";
 
 /** One readable validation problem. `path` is like "wires[2].from.part". */
@@ -39,7 +40,8 @@ export function safeParseProject(input: string | unknown): ParseResult {
       return { ok: false, issues: [{ path: "", message: `not valid JSON: ${(err as Error).message}` }] };
     }
   }
-  const res = ProjectSchema.safeParse(data);
+  // A project file written before the rename says "jumper/1": the same format under its old name.
+  const res = ProjectSchema.safeParse(upgradeLegacyFormat(data, FORMAT_VERSION));
   if (res.success) return { ok: true, project: res.data };
   return {
     ok: false,

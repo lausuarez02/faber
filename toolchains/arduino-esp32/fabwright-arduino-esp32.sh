@@ -1,7 +1,7 @@
 #!/bin/sh
 # Thin wrapper around arduino-cli for ESP32 builds. Any arguments go to arduino-cli unchanged,
 # except for `compile` in a simulation build (the default, FABWRIGHT_SIM=1):
-#   - -DFABWRIGHT_SIM=1 is defined for the sketch.
+#   - -DFABWRIGHT_SIM=1 is defined for the sketch (and -DJUMPER_SIM=1, its name before the rename).
 #   - When the sketch uses the network (WiFi.h, HTTPClient, NetworkClientSecure, WebSockets, MQTT
 #     libraries, esp_wifi.h, ...), the FabwrightSim library is linked in and the Wi-Fi driver and
 #     mbedTLS chain verification are wrapped (-Wl,--wrap=...), so the unmodified sketch joins Fabwright's
@@ -43,7 +43,7 @@ if [ "$1" = "compile" ] && [ "${FABWRIGHT_SIM:-1}" != "0" ]; then
   uses "$NETWORK_INCLUDES" && NET=1
   uses "$CAMERA_INCLUDES" && CAM=1
   [ -n "$DIR" ] && grep -rqsE "esp_deep_sleep(_start|_try_to_start)?[[:space:]]*\(" "$DIR" --include='*.ino' --include='*.cpp' --include='*.c' --include='*.h' --include='*.hpp' && SLP=1
-  DEFINES="-DFABWRIGHT_SIM=1"
+  DEFINES="-DFABWRIGHT_SIM=1 -DJUMPER_SIM=1" # JUMPER_SIM: the name sketches written before the rename test
   case "$*" in *PSRAM=opi*|*PSRAM=enabled*) DEFINES="$DEFINES -DBOARD_HAS_PSRAM"; [ "$CAM" = 1 ] && DEFINES="$DEFINES -DFABWRIGHT_SIM_PSRAM_FALLBACK=1";; esac
   if [ "$NET" = 1 ] || [ "$CAM" = 1 ] || [ "$SLP" = 1 ]; then
     COPY="$(mktemp -d /tmp/jsim.XXXXXX)/$(basename "$DIR")"

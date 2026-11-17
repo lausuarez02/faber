@@ -6,6 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./legacy": "./src/legacy.ts",
+    "./node": "./src/node.ts",
     "./fabwright.schema.json": "./fabwright.schema.json"
   },
   "scripts": {

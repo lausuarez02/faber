@@ -44,7 +44,8 @@ static size_t stream(HTTPClient &http, size_t skip) {
 
 void setup() {
   Serial.begin(115200);
-  WiFi.begin("FabwrightNet", "hunter22-wifi");
+  // The committed image was built before the rename: "JumperNet" still joins FabwrightNet.
+  WiFi.begin("JumperNet", "hunter22-wifi");
   while (WiFi.status() != WL_CONNECTED) delay(100);
   Serial.printf("wifi ip=%s\n", WiFi.localIP().toString().c_str());
   i2s.setPins(BCLK, WS, DOUT);

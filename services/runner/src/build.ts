@@ -83,6 +83,8 @@ export interface BuildResult {
 const SOURCE_EXT = /\.(ino|pde|h|hpp|hh|c|cc|cpp|cxx|S|s)$/;
 /** The person's own device settings (relay token, Wi-Fi password): never in a build Fabwright makes. */
 export const DEVICE_SECRETS_HEADER = "fabwright_device.h";
+/** The same file under its name from before the rename from Jumper: just as secret. */
+export const LEGACY_DEVICE_SECRETS_HEADER = "jumper_device.h";
 const inflight = new Map<string, Promise<BuildResult>>();
 
 /**
@@ -271,6 +273,7 @@ async function buildArduino(reqIn: BuildRequest, t0: number): Promise<BuildResul
   // Round 13: a person's fabwright_device.h holds their device token and Wi-Fi password; Fabwright's own
   // builds (simulator, factory pack, build kit) never compile it. A simulation build gets its own.
   sources.delete(DEVICE_SECRETS_HEADER);
+  sources.delete(LEGACY_DEVICE_SECRETS_HEADER);
   for (const [rel, text] of Object.entries(req.extraSources ?? {})) sources.set(rel, text);
   const main = pickMain(sources, req.sketchDir, req.main);
   const libraries = resolveLibraries(req.libraries);

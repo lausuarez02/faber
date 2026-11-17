@@ -12,11 +12,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 const CLI = fileURLToPath(new URL("../../cli/bin/fabwright.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("./fixtures/esp32-audio/", import.meta.url));
 /** The ESP32 toolchain and QEMU Fabwright installs natively (fabwright setup esp32). */
-const NATIVE = join(process.env.FABWRIGHT_NATIVE_HOME ?? join(homedir(), ".fabwright"));
+const NATIVE = join(process.env.FABWRIGHT_NATIVE_HOME ?? userHomeDir(homedir()));
 const ready = existsSync(join(NATIVE, "emulators", "qemu-esp", "9.2.2-20260417-jb7", "bin", "qemu-system-xtensa")) && existsSync(join(NATIVE, "toolchains", "arduino"));
 
 test.describe("an ESP32-S3 that plays sound, followed from fabwright serve", () => {

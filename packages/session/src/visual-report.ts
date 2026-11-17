@@ -14,6 +14,7 @@ import type { PartRegistry } from "@fabwright/sim-core";
 import { SimHost } from "./sim.ts";
 import { loadSnapshot } from "./snapshots.ts";
 import { runScenarioVisual, type VisualReport, type VisualScenario } from "./visual-capture.ts";
+import { projectFilePath } from "@fabwright/project-format/node";
 
 export interface VisualReportOptions {
   /** Only this scenario id. */
@@ -24,7 +25,7 @@ export interface VisualReportOptions {
 }
 
 export function loadProjectDir(dir: string): { project: Project; hex: string | undefined } {
-  const file = join(dir, "fabwright.json");
+  const file = projectFilePath(dir);
   if (!existsSync(file)) throw new Error(`No fabwright.json in ${dir}. Pass a project folder (one with fabwright.json), e.g. examples/tamagotchi.`);
   const project = parseProject(readFileSync(file, "utf8"));
   const art = project.firmware?.artifact;

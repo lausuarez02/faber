@@ -11,6 +11,7 @@
 import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { I2sBlock, Simulation } from "@fabwright/sim-core";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 export const RUN_AUDIO_RATE = 16_000;
 /** Runs longer than this keep no audio (the page plays at most 10 s of a run at real speed). */
@@ -95,7 +96,7 @@ export function wavBytes(pcm: Int16Array, rate = RUN_AUDIO_RATE): Buffer {
 }
 
 /** The folder run audio lives in. */
-export const runAudioDir = (projectDir: string) => join(projectDir, ".fabwright", "audio");
+export const runAudioDir = (projectDir: string) => join(stateDirPath(projectDir), "audio");
 
 /** A safe file name from GET /api/audio/<file> (no paths), or undefined. */
 export function runAudioFile(projectDir: string, name: string): string | undefined {

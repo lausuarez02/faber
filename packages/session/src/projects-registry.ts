@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 /**
  * Round 5 (decision 0003, C3): the list of project folders Fabwright knows about, outside the repo's
@@ -28,7 +29,7 @@ export interface ProjectsRegistryFile {
 }
 
 export function fabwrightHome(env: NodeJS.ProcessEnv = process.env): string {
-  return resolve(env.FABWRIGHT_HOME || join(homedir(), ".fabwright"));
+  return resolve(env.FABWRIGHT_HOME || userHomeDir(homedir()));
 }
 
 export function projectsRegistryPath(env: NodeJS.ProcessEnv = process.env): string {

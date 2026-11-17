@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { hubPort, shot } from "./helpers.ts";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 // Round 5, projects track (decision 0003, C3): the Projects home, opening an example as its own
 // project, the History scrubber with restore, and the code editor's save / Build & Run, against a
@@ -201,7 +202,7 @@ test.describe("projects (served)", () => {
     test.skip(info.project.name !== "desktop", "the editor is exercised once, on desktop");
     const docker = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], { encoding: "utf8", timeout: 15_000 });
     // Round 11: or Fabwright's native AVR toolchain (fabwright setup avr), which builds without Docker.
-    const nativeAvr = existsSync(join(process.env.FABWRIGHT_NATIVE_HOME || join(homedir(), ".fabwright"), "toolchains/arduino/1.5.1/installed/avr.json"));
+    const nativeAvr = existsSync(join(process.env.FABWRIGHT_NATIVE_HOME || userHomeDir(homedir()), "toolchains/arduino/1.5.1/installed/avr.json"));
     test.skip(docker.status !== 0 && !nativeAvr, "Build & Run compiles with arduino-cli (Docker or `fabwright setup avr`), and neither is ready here");
     const s = await serve(info);
     try {

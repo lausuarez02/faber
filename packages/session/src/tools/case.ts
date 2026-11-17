@@ -19,6 +19,7 @@ import { loadPlaywright } from "../screenshot.ts";
 import type { ProjectSession } from "../session.ts";
 import { listVersions } from "../versions.ts";
 import type { ToolModule } from "./types.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * Round 6, track "case" (owner). Decision 0004, R3 to R6.
@@ -521,7 +522,7 @@ async function generateInto(s: ProjectSession, project: Project, caseDir: string
   const fw = firmwareText(s);
   const g = await generateCase(project, (t) => s.registry.get(t)?.spec, { title: project.name, pdf: pdfFromSvg, wires: planWires(project, s.registry), ...(fw !== undefined ? { firmwareText: fw } : {}) });
   writeCaseFiles(caseDir, g.files);
-  if (caseDir === join(s.dir, "case")) writeMeshCache(join(s.dir, ".fabwright", "case-mesh.json"), g.mesh);
+  if (caseDir === join(s.dir, "case")) writeMeshCache(join(stateDirPath(s.dir), "case-mesh.json"), g.mesh);
   return { report: g.report, dir: caseDir, missing: g.missing };
 }
 
@@ -941,7 +942,7 @@ ${report ? `- Checks at design time: ${report.checks.map((c) => `${c.id} ${c.ok 
 export async function caseMesh(s: ProjectSession): Promise<{ mesh: import("@fabwright/enclosure").CaseMesh; regenerated: boolean; report: CaseReport }> {
   const st = await caseState(s);
   const { readMeshCache, generateCase, writeMeshCache } = await import("@fabwright/enclosure");
-  const file = join(s.dir, ".fabwright", "case-mesh.json");
+  const file = join(stateDirPath(s.dir), "case-mesh.json");
   const cached = readMeshCache(file, st.report.hash);
   if (cached) return { mesh: cached, regenerated: st.regenerated, report: st.report };
   const g = await generateCase(s.project, (t) => s.registry.get(t)?.spec, { renders: false });
@@ -1012,7 +1013,7 @@ export async function deviceCase(s: ProjectSession): Promise<DeviceCase | null> 
   const stale = manifest.hash !== hash;
   // the project the case was built from: today's parts with the enclosure as it was saved then
   const built: Project = stale ? { ...s.project, enclosure: (manifest.enclosure ?? report.enclosure ?? s.project.enclosure) as Enclosure } : s.project;
-  const cacheFile = join(s.dir, ".fabwright", "case-mesh.json");
+  const cacheFile = join(stateDirPath(s.dir), "case-mesh.json");
   let mesh = E.readMeshCache(cacheFile, report.hash);
   let L: import("@fabwright/enclosure").Layout | undefined;
   if (!mesh) {

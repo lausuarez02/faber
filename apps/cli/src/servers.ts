@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { actorCounts, loadPlaywright, startLiveHub, type LiveHub } from "@fabwright/session";
+import { stateDirPath } from "@fabwright/project-format/node";
+import { LEGACY_STATE_DIR, STATE_DIR } from "@fabwright/project-format/legacy";
 
 const WEB_DIR = fileURLToPath(new URL("../../web/", import.meta.url));
 
@@ -62,7 +64,7 @@ function waitForever(cleanup: () => Promise<void>): Promise<number> {
 /** Folder that owns an action log: <project>/.fabwright/actions.jsonl → <project>. */
 function projectOfLog(log: string): string {
   const d = dirname(log);
-  return d.endsWith(".fabwright") ? dirname(d) : d;
+  return d.endsWith(STATE_DIR) || d.endsWith(LEGACY_STATE_DIR) ? dirname(d) : d;
 }
 
 /** --actor mcp / --client claude / --session <sid> as a query string for the hub's /replay. */
@@ -133,7 +135,7 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
         return await waitForever(() => srv.close());
       }
       case "replay": {
-        const log = resolve(base, pos[0] ?? join(projectDir, ".fabwright/actions.jsonl"));
+        const log = resolve(base, pos[0] ?? join(stateDirPath(projectDir), "actions.jsonl"));
         const { hub, web, url } = await startReplay(log, opts);
         process.stdout.write(`Replaying ${log}\n  open: ${url}\nCtrl+C to stop.\n`);
         if (!opts["no-open"]) openBrowser(url);
@@ -143,7 +145,7 @@ export async function runServerCommand(cmd: string, pos: string[], opts: Opts, p
         });
       }
       case "record": {
-        const log = resolve(base, pos[0] ?? join(projectDir, ".fabwright/actions.jsonl"));
+        const log = resolve(base, pos[0] ?? join(stateDirPath(projectDir), "actions.jsonl"));
         const out = resolve(base, pos[1] ?? "fabwright-replay.mp4");
         return await record(log, out, opts);
       }

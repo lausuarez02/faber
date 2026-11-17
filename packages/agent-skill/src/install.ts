@@ -1,10 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { MARKER, renderAgentsMd, renderClaudeMd, renderSkillMd, SKILL_NAME, type RenderOptions } from "./render.ts";
 
 export const SKILL_PATH = `.claude/skills/${SKILL_NAME}/SKILL.md`;
 export const AGENTS_PATH = "AGENTS.md";
 export const CLAUDE_PATH = "CLAUDE.md";
+/** What these files said before the rename from Jumper: still ours to update. */
+export const LEGACY_MARKER = "Written by Jumper (jumper skill install).";
+/** The skill's path before the rename; removed when it is ours, so an agent does not load two guides. */
+export const LEGACY_SKILL_PATH = ".claude/skills/jumper-hardware/SKILL.md";
 
 export interface AgentFile {
   /** Path relative to the project folder. */
@@ -14,7 +18,7 @@ export interface AgentFile {
 
 export interface InstallResult {
   dir: string;
-  files: { path: string; action: "written" | "updated" | "unchanged" | "kept"; why?: string }[];
+  files: { path: string; action: "written" | "updated" | "unchanged" | "kept" | "removed"; why?: string }[];
 }
 
 /** The files a project gets so any agent opened in it knows Fabwright's hardware loop. */
@@ -42,7 +46,7 @@ export function installProjectFiles(dir: string, o: RenderOptions & { projectNam
         files.push({ path: f.path, action: "unchanged" });
         continue;
       }
-      if (!old.includes(MARKER) && !o.force) {
+      if (!old.includes(MARKER) && !old.includes(LEGACY_MARKER) && !o.force) {
         files.push({ path: f.path, action: "kept", why: `${f.path} was not written by Fabwright, so it was left as it is. Fix: add a line pointing to ${SKILL_PATH}, or run fabwright skill install --project ${dir} --force to replace it.` });
         continue;
       }
@@ -53,6 +57,12 @@ export function installProjectFiles(dir: string, o: RenderOptions & { projectNam
     mkdirSync(dirname(abs), { recursive: true });
     writeFileSync(abs, f.content);
     files.push({ path: f.path, action: "written" });
+  }
+  const legacy = join(dir, LEGACY_SKILL_PATH);
+  if (existsSync(legacy) && readFileSync(legacy, "utf8").includes(LEGACY_MARKER)) {
+    rmSync(legacy);
+    if (!readdirSync(dirname(legacy)).length) rmdirSync(dirname(legacy));
+    files.push({ path: LEGACY_SKILL_PATH, action: "removed", why: `the same guide from before the rename to Fabwright; it is now ${SKILL_PATH}` });
   }
   return { dir, files };
 }

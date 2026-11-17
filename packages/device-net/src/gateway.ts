@@ -28,6 +28,7 @@ import { expandSecrets, MissingSecretError, Redactor } from "./secrets.ts";
 import { FrameReader, opName } from "./ws-frames.ts";
 import { relaySpecFrom } from "./relay.ts";
 import { authorize, RateLimiter, RelayError, sha256Hex, SIM_DEVICE_TOKEN, SIM_RELAY_HOST, TOKEN_HEADER, type RelayTarget } from "./relay/relay-core.mjs";
+import { currentSandboxHost } from "@fabwright/project-format/legacy";
 
 export interface Clock {
   /** ms since the network started (virtual time when a backend drives it). */
@@ -204,7 +205,7 @@ export class DeviceNet {
       return { ok: false, why: `the project's network mode is offline: the device has Wi-Fi but no host answers (this is how a test checks the no-internet path)`, fix: `set fabwright.json network.mode to "mock" and ${mockHint}, or to "internet" with {"host": "${host}"} in network.allow` };
     }
     // Round 13: the simulator plays the project's API relay (same allow list, token and limits as the real one).
-    if (host === SIM_RELAY_HOST) return { ok: true };
+    if (currentSandboxHost(host) === SIM_RELAY_HOST) return { ok: true };
     const sandbox = this.mocks.hasHost(host) || this.cassette?.hasHost(host);
     const entry = allow.find((a) => hostMatches(a.host, host));
     if (mode === "internet" && entry) {
@@ -471,7 +472,7 @@ export class DeviceNet {
   private async onRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     let ctx = this.ctxOf(req.socket);
     let maxBody = Infinity;
-    if (ctx.host === SIM_RELAY_HOST) {
+    if (currentSandboxHost(ctx.host) === SIM_RELAY_HOST) {
       const r = await this.relayUnwrap(req, ctx);
       if ("error" in r) {
         req.resume();
@@ -645,7 +646,7 @@ export class DeviceNet {
 
   private async onUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
     let ctx = this.ctxOf(socket);
-    if (ctx.host === SIM_RELAY_HOST) {
+    if (currentSandboxHost(ctx.host) === SIM_RELAY_HOST) {
       const r = await this.relayUnwrap(req, ctx);
       if ("error" in r) {
         return this.relayRefused(r.error, "WS", req.url ?? "/", (st, h, b) => {

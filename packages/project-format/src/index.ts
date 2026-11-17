@@ -75,3 +75,19 @@ export {
   normalizeScenarioStep,
 } from "./scenario.ts";
 export type { ScenarioStep, CompareOp, StepKind, StepIssue } from "./scenario.ts";
+export {
+  PROJECT_FILE,
+  LEGACY_PROJECT_FILE,
+  STATE_DIR,
+  LEGACY_STATE_DIR,
+  HOME_DIR,
+  LEGACY_HOME_DIR,
+  LEGACY_FORMAT_VERSIONS,
+  SANDBOX_SSID,
+  LEGACY_SANDBOX_SSID,
+  LEGACY_SANDBOX_HOSTS,
+  applyLegacyEnv,
+  upgradeLegacyFormat,
+  currentSandboxHost,
+  ssidMatches,
+} from "./legacy.ts";

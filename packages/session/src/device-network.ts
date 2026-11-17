@@ -19,12 +19,13 @@ import {
 } from "@fabwright/device-net";
 import type { Project } from "@fabwright/project-format";
 import { fail } from "./errors.ts";
+import { userHomeDir } from "@fabwright/project-format/node";
 
 export const DEFAULT_MOCKS_FILE = "network/mocks.json";
 
 /** The per-machine sandbox CA folder (never in a project or an export). FABWRIGHT_SANDBOX_CA_DIR overrides. */
 export function sandboxCaDir(): string {
-  return process.env.FABWRIGHT_SANDBOX_CA_DIR ?? join(homedir(), ".fabwright", "sandbox-ca");
+  return process.env.FABWRIGHT_SANDBOX_CA_DIR ?? join(userHomeDir(homedir()), "sandbox-ca");
 }
 
 /** fabwright.json "network" as the gateway's config, with field / why / fix on a bad value. */

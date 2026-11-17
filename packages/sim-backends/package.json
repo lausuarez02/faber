@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fabwright/project-format": "workspace:*",
     "@fabwright/sim-core": "workspace:*",
     "avr8js": "0.21.1",
     "intel-hex": "0.2.0",

@@ -1,11 +1,13 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync } from "node:fs";
-import { basename, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { serverBase, viewerUrlFor } from "../agent-runtime.ts";
 import { didYouMean, fail } from "../errors.ts";
 import { planDevice, resolveBoard, type PlanConstraints } from "../planner.ts";
 import { recordProject } from "../recorder.ts";
 import type { ToolModule } from "./types.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
+import { LEGACY_PROJECT_FILE, LEGACY_STATE_DIR, PROJECT_FILE, STATE_DIR } from "@fabwright/project-format/legacy";
 
 /**
  * Track "agent" (owner): plan_device, record, viewer_url, delete_file, mark_stand_in.
@@ -151,7 +153,7 @@ export const agentTools: ToolModule = {
         ...(args.ms !== undefined ? { maxMs: Number(args.ms) } : {}),
       });
       const base = serverBase();
-      const inMedia = r.path.startsWith(join(dir, ".fabwright", "media") + sep);
+      const inMedia = r.path.startsWith(join(stateDirPath(dir), "media") + sep);
       const url = base && inMedia ? `${base}/api/media/${encodeURIComponent(basename(r.path))}` : pathToFileURL(r.path).href;
       const viewer = viewerUrlFor(dir);
       x.summary(`recorded a ${r.duration_s} s video (${r.entries} steps)`);
@@ -178,9 +180,10 @@ export const agentTools: ToolModule = {
     async delete_file(args, x) {
       const s = x.session;
       const rel = relProjectPath(s.dir, args.path);
-      if (rel === "fabwright.json") fail("protected-file", "delete_file: refusing to delete fabwright.json", "it is the project itself", "remove parts, wires or tests with remove; start over with new_project");
-      if (rel === ".fabwright" || (rel.startsWith(".fabwright/") && !rel.startsWith(".fabwright/media/") && !rel.startsWith(".fabwright/test-frames/"))) {
-        fail("protected-file", `delete_file: refusing to delete ${rel}`, "the .fabwright folder holds the action log, undo history and build cache", "leave it; only .fabwright/media and .fabwright/test-frames files can be deleted");
+      if (rel === PROJECT_FILE || rel === LEGACY_PROJECT_FILE) fail("protected-file", `delete_file: refusing to delete ${rel}`, "it is the project itself", "remove parts, wires or tests with remove; start over with new_project");
+      const state = [STATE_DIR, LEGACY_STATE_DIR].find((d) => rel === d || rel.startsWith(`${d}/`));
+      if (state && !rel.startsWith(`${state}/media/`) && !rel.startsWith(`${state}/test-frames/`)) {
+        fail("protected-file", `delete_file: refusing to delete ${rel}`, `the ${state} folder holds the action log, undo history and build cache`, `leave it; only ${state}/media and ${state}/test-frames files can be deleted`);
       }
       const abs = join(s.dir, rel);
       if (!existsSync(abs)) fail("no-file", `delete_file: no file ${rel}`, `nothing exists at ${abs}`, "check the path (list_files shows firmware files)");
@@ -189,13 +192,13 @@ export const agentTools: ToolModule = {
       if (sketch && rel === sketch) fail("protected-file", `delete_file: ${rel} is the board's main sketch`, "the firmware build points at it", "overwrite it with write_file instead");
       const buf = readFileSync(abs);
       if (isBinary(buf) || buf.length > 2_000_000) {
-        const trash = join(s.dir, ".fabwright", "trash");
+        const trash = join(stateDirPath(s.dir), "trash");
         mkdirSync(trash, { recursive: true });
         let dest = join(trash, basename(rel));
         for (let i = 2; existsSync(dest); i++) dest = join(trash, basename(rel).replace(/(\.[^.]*)?$/, `-${i}$1`));
         renameSync(abs, dest);
-        x.summary(`deleted ${rel} (moved to .fabwright/trash)`);
-        return { deleted: rel, undoable: false, kept_in: dest, note: "binary files are not part of the undo history; it is kept in .fabwright/trash in case it is needed" };
+        x.summary(`deleted ${rel} (moved to ${basename(dirname(trash))}/trash)`);
+        return { deleted: rel, undoable: false, kept_in: dest, note: `binary files are not part of the undo history; it is kept in ${basename(dirname(trash))}/trash in case it is needed` };
       }
       x.commit(`delete_file ${rel}`, s.project, { [rel]: null });
       x.summary(`deleted ${rel}`);

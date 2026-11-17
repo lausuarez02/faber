@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
 import { FabwrightError, ProjectSession, registerProject, TOOLS } from "@fabwright/session";
+import { projectFilePath, stateDirPath } from "@fabwright/project-format/node";
 
 /**
  * `fabwright`: the same operations as the MCP tools, as subcommands. Human output is YAML; --json prints
@@ -396,7 +397,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     print(result, json);
     const r = result as Record<string, unknown>;
     if (mapped.op === "run_tests" && p.opts.visual && session.lastVisualReport) {
-      const out = resolve(BASE, typeof p.opts.out === "string" ? p.opts.out : join(session.dir, ".fabwright", "visual-report.json"));
+      const out = resolve(BASE, typeof p.opts.out === "string" ? p.opts.out : join(stateDirPath(session.dir), "visual-report.json"));
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, JSON.stringify(session.lastVisualReport));
       process.stderr.write(`visual report: ${out} (open the Tests panel in the web app, or serve it with fabwright serve)\n`);
@@ -561,7 +562,7 @@ async function skillCommand(p: Parsed): Promise<number> {
     const dir = projectDir(p.opts);
     let name: string | undefined;
     try {
-      name = (JSON.parse(readFileSync(join(dir, "fabwright.json"), "utf8")) as { name?: string }).name;
+      name = (JSON.parse(readFileSync(projectFilePath(dir), "utf8")) as { name?: string }).name;
     } catch {
       name = undefined;
     }

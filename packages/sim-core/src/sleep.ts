@@ -45,6 +45,8 @@ export interface WakeInfo {
 }
 
 export const SLEEP_MARKER = "[fabwright:sleep]";
+/** The marker a sleep shim built before the rename from Jumper prints (a cached firmware image). */
+export const LEGACY_SLEEP_MARKER = "[jumper:sleep]";
 
 /**
  * Parse one console line. Returns the request, an error that says what is wrong (a shim and a
@@ -52,9 +54,11 @@ export const SLEEP_MARKER = "[fabwright:sleep]";
  * `pinId` maps a GPIO number to the backend's pin id (ESP: "GPIO<n>").
  */
 export function parseSleepMarker(line: string, pinId: (gpio: number) => string = (g) => `GPIO${g}`): SleepRequest | { error: string } | undefined {
-  const at = line.indexOf(SLEEP_MARKER);
+  let marker = SLEEP_MARKER;
+  let at = line.indexOf(marker);
+  if (at < 0) at = line.indexOf((marker = LEGACY_SLEEP_MARKER));
   if (at < 0) return undefined;
-  const text = line.slice(at + SLEEP_MARKER.length).trim();
+  const text = line.slice(at + marker.length).trim();
   let o: unknown;
   try {
     o = JSON.parse(text);

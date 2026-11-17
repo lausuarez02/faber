@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { Project } from "@fabwright/project-format";
 import type { PartRegistry, VisualState } from "@fabwright/sim-core";
 import { SimHost, type ColorFrameImage, type Frame } from "./sim.ts";
+import { stateDirPath } from "@fabwright/project-format/node";
 
 /** The device at one moment, for a still picture (gallery thumbnail): part states, HIGH wires, colour screens. */
 export interface DeviceStill {
@@ -21,7 +22,7 @@ const TAIL_BYTES = 8_000_000;
 
 /** The last run's frames in <dir>/.fabwright/actions.jsonl, merged into one still; undefined when none. */
 export function lastLoggedStill(dir: string): DeviceStill | undefined {
-  const log = join(dir, ".fabwright", "actions.jsonl");
+  const log = join(stateDirPath(dir), "actions.jsonl");
   if (!existsSync(log)) return undefined;
   let text: string;
   const fd = openSync(log, "r");
@@ -87,7 +88,7 @@ export async function deviceStill(dir: string, project: Project, registry: PartR
 /** Changes when the still a thumbnail shows may have changed (the action log grew). For cache keys. */
 export function stillKey(dir: string): string {
   try {
-    return String(statSync(join(dir, ".fabwright", "actions.jsonl")).size);
+    return String(statSync(join(stateDirPath(dir), "actions.jsonl")).size);
   } catch {
     return "";
   }

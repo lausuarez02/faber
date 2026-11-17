@@ -17,6 +17,7 @@
 //                     ap ssid=<s> bssid=<mac> channel=<n> rssi=<dBm> auth=<n>   (one per network)
 //                     scan_done n=<count>
 //                     ca der=<hex>                            (the sandbox CA, trusted in the sim build)
+import { ssidMatches } from "@fabwright/project-format/legacy";
 
 export const WIFI_MAGIC = "JWIFI/1";
 
@@ -96,7 +97,7 @@ export function decideJoin(w: WifiState, ssid: string, pass: string): JoinDecisi
     return { ok: false, ssid, reason: WIFI_REASON.NO_AP_FOUND, why: "Wi-Fi is down (a wifi_drop fault is active), so no network is in range", fix: "clear the fault (inject_network_fault {\"kind\": \"clear\"}); the firmware should retry on its own" };
   }
   if (!w.aps.length) return { ok: true, ssid };
-  const ap = w.aps.find((a) => a.ssid === ssid);
+  const ap = w.aps.find((a) => ssidMatches(ssid, a.ssid));
   if (!ap) {
     return { ok: false, ssid, reason: WIFI_REASON.NO_AP_FOUND, why: `the firmware asked for "${ssid}", but the sandbox only has ${w.aps.map((a) => `"${a.ssid}"`).join(", ")} (fabwright.json network.wifi)`, fix: `use the same SSID in the sketch and in network.wifi.ssid, or remove network.wifi to accept any SSID` };
   }
